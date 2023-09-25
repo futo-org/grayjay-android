@@ -1,0 +1,256 @@
+<resources>
+    <string name="cast">Cast</string>
+    <string name="search">Search</string>
+    <string name="add_to_query">Add to query</string>
+    <string name="thumbnail">Thumbnail</string>
+    <string name="channel_image">Channel image</string>
+    <string name="add_to">Add to</string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
+    <string name="add_to_queue">Add to queue</string>
+    <string name="home">Home</string>
+    <string name="recommendations">Recommendations</string>
+    <string name="more">More</string>
+    <string name="playlists">Playlists</string>
+    <string name="subscriptions">Subscriptions</string>
+    <string name="loading">Loading</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="failed_to_retrieve_data_are_you_connected">Failed to retrieve data, are you connected?</string>
+    <string name="settings">Settings</string>
+    <string name="history">History</string>
+    <string name="sources">Sources</string>
+    <string name="buy">Buy</string>
+    <string name="the_top_source_will_be_considered_primary">The top source will be considered primary</string>
+    <string name="defaults">Defaults</string>
+    <string name="home_screen">Home Screen</string>
+    <string name="preferred_quality">Preferred Quality</string>
+    <string name="update">Update</string>
+    <string name="close">Close</string>
+    <string name="never">Never</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">There is an update available, do you wish to update?</string>
+    <string name="downloading_update">Downloading update...</string>
+    <string name="installing_update">Installing update...</string>
+    <string name="done">Done</string>
+    <string-array name="home_screen_array">
+        <item>Recommendations</item>
+        <item>Subscriptions</item>
+    </string-array>
+    <string-array name="playback_speeds">
+        <item>0.25</item>
+        <item>0.5</item>
+        <item>0.75</item>
+        <item>1.0</item>
+        <item>1.25</item>
+        <item>1.5</item>
+        <item>1.75</item>
+        <item>2.0</item>
+        <item>2.25</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>Automatic (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>None (Audio Only)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 Threads</item>
+        <item>2 Threads</item>
+        <item>4 Threads</item>
+        <item>6 Threads</item>
+        <item>8 Threads</item>
+        <item>10 Threads</item>
+        <item>15 Threads</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>Never</item>
+        <item>Every 15 Minutes</item>
+        <item>Every Hour</item>
+        <item>Every 3 Hours</item>
+        <item>Every 6 Hours</item>
+        <item>Every 12 Hours</item>
+        <item>Every Day</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>Low Bitrate</item>
+        <item>High Bitrate</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>On Startup</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>Disabled</item>
+        <item>Enabled</item>
+        <item>Same as System</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>Disabled</item>
+        <item>Enabled</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>On Unmetered</item>
+        <item>On Wifi &amp; Ethernet</item>
+        <item>Always</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>Disabled</item>
+        <item>Enabled</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>Name Ascending</item>
+        <item>Name Descending</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>Preview</item>
+        <item>List</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>None</item>
+        <item>Keep Playing</item>
+        <item>Player Overlay</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>Start At Beginning</item>
+        <item>Resume After 10s</item>
+        <item>Always Resume</item>
+    </string-array>
+    <string-array name="languages">
+        <item>English</item>
+        <item>Spanish</item>
+        <item>French</item>
+        <item>French</item>
+        <item>Korean</item>
+        <item>Thai</item>
+        <item>Vietnamese</item>
+        <item>Indonesian</item>
+        <item>Hindi</item>
+        <item>Arabic</item>
+        <item>Turkish</item>
+        <item>Russian</item>
+    </string-array>
+    <string name="success">Success</string>
+    <string name="failed_to_update_with_error">Failed to update package with error</string>
+    <string name="general_failure">The operation failed in a generic way</string>
+    <string name="aborted">The operation failed because it was actively aborted</string>
+    <string name="blocked">The operation failed because it was blocked</string>
+    <string name="conflict">The operation failed because it conflicts (or is inconsistent with) with another package already installed on the device</string>
+    <string name="incompatible">The operation failed because it is fundamentally incompatible with this device</string>
+    <string name="invalid">The operation failed because one or more of the APKs was invalid</string>
+    <string name="not_enough_storage">The operation failed because of storage issues</string>
+    <string name="live">LIVE</string>
+    <string name="click_to_read_more">Click to read more</string>
+    <string name="click_to_hide">Click to hide</string>
+    <string name="version">Version</string>
+    <string name="sort_by">Sort by</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="unsubscribe">Unsubscribe</string>
+    <string name="background">Background</string>
+    <string name="background_revert">Video</string>
+    <string name="add">Add</string>
+    <string name="download">Download</string>
+    <string name="share">Share</string>
+    <string name="view_all">View all</string>
+    <string name="creators">Creators</string>
+    <string name="enabled">Enabled</string>
+    <string name="discover">Discover</string>
+    <string name="find_new_video_sources_to_add">Find new video sources to add</string>
+    <string name="these_sources_have_been_disabled">These sources have been disabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="watch_later">Watch Later</string>
+    <string name="create">Create</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="confirm">Confirm</string>
+    <string name="confirm_delete_playlist">Are you sure you want to delete this playlist?</string>
+    <string name="confirm_delete_subscription">Are you sure you want to delete this subscription?</string>
+    <string name="confirm_remove_source">Removing this source will result in some of your subscriptions not being resolved.</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="play_all">Play all</string>
+    <string name="pic2pic">Picture2Picture</string>
+    <string name="search_history">Search history</string>
+    <string name="app_error">App Error</string>
+    <string name="developer">Developer</string>
+    <string name="remove_historical_suggestion">Remove historical suggestion</string>
+    <string name="comments">Comments</string>
+    <string name="reached_the_end_of_the_playlist">Reached the end of the playlist</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">The playlist will restart after the video is finished</string>
+    <string name="restart_now">Restart Now</string>
+    <string name="end_of_queue_reached">End of queue reached</string>
+    <string name="end_of_playlist_reached">End of playlist reached</string>
+    <string name="end_of_watch_later_reached">End of watch later reached</string>
+    <string name="reached_the_end_of_the_queue">Reached the end of the queue</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">The queue will restart after the video is finished</string>
+    <string name="up_next">Up next</string>
+    <string name="queue">Queue</string>
+    <string name="clear">Clear</string>
+    <string name="last_hour">Last hour</string>
+    <string name="last_24_hours">Last 24 hours</string>
+    <string name="last_week">Last week</string>
+    <string name="last_30_days">Last 30 days</string>
+    <string name="last_year">Last year</string>
+    <string name="all_time">All time</string>
+    <string name="are_you_sure_delete_historical">Are you sure you want to remove these historical entries?</string>
+    <string name="removed">removed</string>
+    <string name="add_source">Add Source</string>
+    <string name="repository_url">Repository URL</string>
+    <string name="script_url">Script URL</string>
+    <string name="source_permissions_explanation">These are the permissions the plugin requires to function</string>
+    <string name="source_explain_eval_access">The plugin will have access to eval capacity</string>
+    <string name="source_explain_script_url">The plugin will have access to the following domains</string>
+    <string name="scan_qr">Scan QR</string>
+    <string name="scan_qr_explain">Scan a QR code to install</string>
+    <string name="enter_url_explain">Enter a URL to load the plugin config from.</string>
+    <string name="enter_url">Enter URL</string>
+    <string name="install">Install</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">No devices found. It may take a while for your device to show up, please be patient</string>
+    <string name="not_ready">Not ready</string>
+    <string name="connect">Connect</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
+    <string name="storage_space">Storage Space</string>
+    <string name="downloads">Downloads</string>
+    <string name="deselect_all">Deselect All</string>
+    <string name="select_all">Select All</string>
+    <string name="add_casting_device">Add Casting Device</string>
+    <string name="new_activity">New activity</string>
+    <string name="creator_is_on_neopass">Creator is on NeoPass</string>
+    <string name="options">Options</string>
+    <string name="export">Export</string>
+    <string name="delete">Delete</string>
+    <string name="loading_update">Loading update...</string>
+    <string name="polycentric_explanation">As you browse online videos and want to leave a comment, consider trying Polycentric, a new way to manage your online presence that\'s both easy to use and focused on your needs. Here\'s why creating a Polycentric profile is a great choice:\n\n 1. You\'re in Control: With Polycentric, your data isn\'t stored in one place controlled by a single company. Instead, it\'s spread across multiple locations, giving you more control over your online presence. You decide where your data is stored and can easily switch between providers or add new ones.\n\n 2. Privacy and Security: Polycentric keeps your information safe by using advanced security techniques. You can trust that your personal details are well-protected and only accessible by those you choose to share them with.\n\n 3. Seamless Networking: Polycentric lets you connect with others and interact with their content without being tied to a single platform. If a provider becomes unreliable or tries to block access, your Polycentric client will automatically find information from other sources, keeping you connected.\n\n 4. Smart Search and Recommendations: Polycentric uses multiple sources for search and recommendations, offering you top-notch performance while ensuring no single provider has too much influence over the results you see.\n\n 5. Adaptable and Open: Polycentric is designed to be flexible and open to new developments, allowing for constant improvements and new features that adapt to the needs of its users.\n\n 6. By creating a Polycentric profile, you can leave comments on online videos and enjoy a more personalized online experience. See for yourself how this user-friendly solution puts you in control of your digital life. Sign up for Polycentric today!</string>
+    <string name="publish">Publish</string>
+    <string name="usage">Usage</string>
+    <string name="enable_in_home">Enable in home</string>
+    <string name="enable_in_search">Enable in search</string>
+    <string name="check">Check</string>
+    <string name="buy_text">Grayjay is not an easy or cheap app to build and maintain. We have full time engineers working on the app and its surrounding systems. And will likely not make its money back anytime soon, if ever.\n\nFUTO’s mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason we are in favor of users actually paying for the software.\n\nThat is why Grayjay wants you to pay for the software.</string>
+    <string-array name="casting_device_type_array">
+        <item>FastCast</item>
+        <item>ChromeCast</item>
+        <item>AirPlay</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>None</item>
+        <item>Error</item>
+        <item>Warning</item>
+        <item>Information</item>
+        <item>Verbose</item>
+    </string-array>
+</resources>

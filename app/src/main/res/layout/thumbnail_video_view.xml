@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/video_player"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        app:default_artwork="@drawable/placeholder_video_thumbnail"
+        app:use_artwork="true"
+        app:use_controller="false"
+        app:resize_mode="fit"
+        app:show_buffering="when_playing"
+        android:layout_marginBottom="6dp" />
+    <com.google.android.exoplayer2.ui.PlayerControlView
+        android:id="@+id/video_player_controller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="-6dp"
+        android:layout_marginRight="-6dp"
+        app:show_timeout="-1"
+        app:controller_layout_id="@layout/thumbnail_player_ui" />
+</RelativeLayout>

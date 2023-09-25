@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PillButton">
+        <attr name="pillIcon" format="reference" />
+        <attr name="pillText" format="string" />
+    </declare-styleable>
+</resources>

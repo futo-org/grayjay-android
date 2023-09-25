@@ -1,0 +1,36 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+- buildAndDeployApkUnstable
+- buildAndDeployApkStable
+
+buildAndDeployApkUnstable:
+  stage: buildAndDeployApkUnstable
+  script:
+    - sh deploy-unstable.sh
+  only:
+    - tags
+  except:
+    - ^(dev)
+  when: manual
+
+buildAndDeployApkStable:
+  stage: buildAndDeployApkStable
+  script:
+    - sh deploy-stable.sh
+  only:
+    - tags
+  except:
+    - branches
+  when: manual
+
+buildAndDeployApkStable:
+  stage: buildAndDeployApkStable
+  script:
+    - sh deploy-playstore.sh
+  only:
+    - tags
+  except:
+    - branches
+  when: manual

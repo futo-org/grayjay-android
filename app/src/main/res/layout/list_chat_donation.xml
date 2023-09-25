@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_comment"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="14dp"
+    android:layout_marginBottom="14dp"
+    android:layout_marginStart="14dp"
+    android:layout_marginEnd="14dp"
+    android:padding="10dp"
+    android:background="#252525"
+    android:orientation="vertical">
+
+    <ImageView
+        android:id="@+id/image_thumbnail"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_outline"
+        android:clipToOutline="true"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/channel_image"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:src="@drawable/placeholder_channel_thumbnail" />
+
+    <TextView
+        android:id="@+id/text_author"
+        android:layout_width="wrap_content"
+        android:layout_height="35dp"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:fontFamily="@font/inter_regular"
+        android:textColor="@color/white"
+        android:textSize="13sp"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintTop_toTopOf="@id/image_thumbnail"
+        tools:text="ShortCircuit" />
+
+
+    <LinearLayout
+        android:id="@+id/donation_amount_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintRight_toRightOf="parent"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/background_pill"
+        android:gravity="center"
+        app:layout_constraintTop_toTopOf="@id/text_author">
+        <TextView
+            android:id="@+id/donation_amount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="$100" />
+    </LinearLayout>
+
+
+    <com.futo.platformplayer.views.behavior.NonScrollingTextView
+        android:id="@+id/text_body"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="0dp"
+        android:layout_marginStart="10dp"
+        android:background="@color/transparent"
+        android:fontFamily="@font/inter_regular"
+        android:isScrollContainer="false"
+        android:textColor="#838383"
+        android:textSize="13sp"
+        app:layout_constraintTop_toBottomOf="@id/text_author"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintRight_toRightOf="@id/donation_amount_container"
+        tools:text="@string/lorem_ipsum" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+	    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+	    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+	    <!--<link href="./dependencies/vuetify.min.css" rel="stylesheet">-->
+		<link href="https://cdn.jsdelivr.net/npm/vuetify@2.7.1/dist/vuetify.min.css" rel="stylesheet">
+
+	  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+	
+		<style>
+			html {
+				overflow: hidden;
+			}
+			#topMenu {
+				width: 100%;
+				height: 70px;
+				background-color: black;
+			}
+			.menuTab {
+				display: inline-block;
+				height: 100%;
+				padding-left: 20px;
+				padding-right: 20px;
+				vertical-align: top;
+				line-height: 70px;
+				color: #AAAAAA;
+				cursor: pointer;
+			}
+			.menuTab.active {
+				background-color: #140a4a;
+				color: white;
+			}
+			
+			#mainContainer {
+			
+			}
+			#mainContainer .page {
+				position: absolute;
+				top: 70px;
+				left: 0px;
+				width: 100%;
+				height: calc(100% - 70px);
+				overflow-y: auto;
+			}
+			
+			.requestCard {
+				margin: 10px;
+			}
+			.requestCard .title {
+				margin-left: 10px;
+			}
+			.requestCard .description {
+				font-weight: lighter;
+				margin-left: 10px;
+			}
+			.requestCard .code {
+				font-weight: lighter;
+				margin-left: 10px;
+				background-color: rgba(0,0,0,.3);
+				font-family: consolas;
+				padding: 10px;
+			}
+			
+			.requestCard .parameter {
+				position: relative;
+				width: 100%;
+				padding: 5px;
+				margin-bottom: 10px;
+				border-radius: 20px;
+				margin: 5px;
+			}
+			.requestCard .parameter .name {
+				position: absolute;
+				width: 100px;
+				margin-left: 10px;
+				text-align: right;
+				padding: 10px;
+				top: 0px;
+				left: 0px;
+			}
+			.requestCard .parameter .description {
+				top: 0px;
+				padding: 5px;
+				font-weight: lighter;
+				margin-left: 120px;
+			}
+			.requestCard .parameter input {
+				margin: 10px;
+				background-color: #444444;
+				margin-left: 120px;
+				color: white;
+				padding: 5px;
+				width: calc(100% - 140px);
+			}
+			
+			.testResult {
+				height: calc(100% - 125px);
+				overflow-y: auto;
+				white-space: pre-wrap;
+				background-color: #222222;
+				padding: 10px;
+				font-family: consolas, "Courier New";
+				font-size: 10px;
+			}
+			.testResult.exception {
+				color: red;
+			}
+
+			.property {
+				font-weight: 300;
+				margin-bottom: 15px;
+			}
+			.property .key {
+				color: white;
+			}
+			.property .value {
+				color: #999999;
+			}
+
+			.logContainer {
+				background-color: rgba(0,0,0,.5);
+				border-radius: 30px;
+				height: 500px;
+				font-family: consolas;
+				font-size: 16px;
+				padding: 30px;
+				overflow-y: auto;
+			}
+			.logLine {
+				color: white;
+			}
+			.logLine.exception {
+				color: red;
+			}
+			.logLine.system {
+				color: blue;
+			}
+			.logType {
+				display: inline-block;
+				font-weight: lighter;
+			}
+			.logMsg {
+				display: inline-block;
+				font-weight: 300;
+				white-space: pre-wrap;
+			}
+
+			.pastPluginUrl {
+			    margin-left: auto;
+				margin-right: auto;
+				width: 500px;
+				text-align: center;
+				margin-top: 10px;
+				margin-bottom: 10px;
+				padding: 10px;
+				background-color: #1e1e1e;
+				border-radius: 50px;
+				box-shadow: 0px 1px 2px #131313;
+				font-weight: lighter;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+	  <div id="app">
+		<v-app>
+		  <v-main>
+			<div id="topMenu">
+				<div style="height: 100%; display: inline-block; padding-left: 10px; padding-right: 20px;">
+					<img src="./dependencies/FutoMainLogo.svg"
+						style="margin-top: 20px;" />
+				</div>
+				<div class="menuTab" :class="{ 'active': page == 'Plugin' }" @click="page = 'Plugin'">
+					Overview
+				</div>
+				<div class="menuTab" :class="{ 'active': page == 'Testing' }" @click="page = 'Testing'">
+					Testing
+				</div>
+				<div class="menuTab" :class="{ 'active': page == 'Integration' }" @click="page = 'Integration'">
+					Integration
+				</div>
+				<div class="menuTab" :class="{ 'active': page == 'Settings' }" @click="page = 'Settings'">
+					Settings
+				</div>
+				<div style="right: 370px; top: 15px; position: absolute" v-if="Plugin?.currentPlugin?.authentication">
+					<v-btn @click="loginTestPlugin()" v-if="!Plugin.isLoggedIn">
+						Login
+					</v-btn>
+					<v-btn @click="logoutTestPlugin()" v-if="Plugin.isLoggedIn">
+						Logout
+					</v-btn>
+				</div>
+				<img v-if="Plugin.currentPlugin"
+					 :src="Plugin.currentPluginIcon"
+					 style="right: 300px; top: 10px; width: 50px; width: 50px; position: absolute;" />
+				<div v-if="Plugin.currentPlugin" style="position: absolute; right: 100px; top: 12px; width: 180px;">
+					<div>
+						{{Plugin.currentPlugin.name}}
+					</div>
+					<div>
+						Last updated: {{Plugin.lastLoadTime}}
+					</div>
+				</div>
+				<v-btn class="mx-2" fab dark color="#140a4a" style="position: absolute; right: 10px; top: 5px;"
+					@click="reloadPlugin()" v-if="Plugin.currentPluginUrl">
+					<v-icon dark>mdi-refresh</v-icon>
+				</v-btn>
+			</div>
+			<div id="mainContainer">
+				<div class="page" v-if="page == 'Plugin'">
+					<div v-if="!Plugin.currentPlugin && !Plugin.currentScript">
+						<div style="margin-left: auto; margin-right: auto; width: 750px; vertical-align: top; padding-left: 40px;">
+							<v-card style="width: 450px; margin-top: 80px; display: inline-block;">
+								<v-card-text>
+									<div>
+										<v-text-field label="Plugin Config Json Url"
+													  v-model="Plugin.newPluginUrl"></v-text-field>
+										<div style="margin-top: -10px;">
+											<v-switch v-model="Plugin.loadUsingTag"
+													  label="Load using script tag"></v-switch>
+											<div style="font-size: 11px; margin-top: -20px; color: #888888">
+												Loading via script tag might give issues reloading script, as it makes the script part of DOM, but does allow debugging via dev console.
+											</div>
+										</div>
+									</div>
+								</v-card-text>
+								<v-card-actions>
+									<v-spacer></v-spacer>
+									<v-btn @click="loadPlugin(Plugin.newPluginUrl)">Load Plugin</v-btn>
+								</v-card-actions>
+							</v-card>
+							<v-card style="width: 250px; margin-top: 80px; display: inline-block; vertical-align: top;">
+								<v-card-title>
+									Package Overrides
+								</v-card-title>
+								<v-card-text>
+									<div>
+										<div style="font-size: 12px; font-weight: lighter;">
+											Enabling a package override replaces the package with a browser implementation.
+											This generally improves speed, at the cost of test accuracy.
+										</div>
+										<div v-for="(value, name, index) in Plugin.packagesOverridden">
+											<v-switch v-model="Plugin.packagesOverridden[name]" :label="name" :change="saveOverrides()"></v-switch>
+										</div>
+									</div>
+								</v-card-text>
+							</v-card>
+						</div>
+
+
+						<div v-if="pastPluginUrls" style="margin-top: 60px;">
+							<h2 style="font-weight: lighter; text-align: center;">Past Plugins</h2>
+							<div class="pastPluginUrl" v-for="pastPluginUrl in pastPluginUrls" @click="this.Plugin.newPluginUrl = pastPluginUrl; loadPlugin(pastPluginUrl)">
+								{{pastPluginUrl}}
+							</div>
+						</div>
+					</div>
+
+					<v-card style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 20px;"
+							v-if="Plugin.currentPluginError">
+						<v-card-text>
+							<div>
+								<h2 style="color: red">Errors in Plugin</h2>
+								{{Plugin.currentPluginError}}
+							</div>
+						</v-card-text>
+					</v-card>
+					<v-card style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 20px;"
+							v-if="Plugin.currentPlugin && Plugin.currentScript">
+						<v-card-text>
+							<div>
+								<h2>Your plugin is loaded</h2>
+								You can now use testing methods available on the webapp. <br /> <br />
+								The information and warnings the user will see when installing the app can be viewed below.
+							</div>
+						</v-card-text>
+					</v-card>
+					<v-card style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 20px;"
+							v-if="Plugin.currentPlugin && Plugin.currentScript">
+						<v-card-text>
+							<div>
+								<div style="height: 100px;">
+									<img :src="Plugin.currentPluginIcon"
+										 style="width: 100px; position: absolute; top: 0px; left: 0px; margin: 10px;" />
+									<div style="position: absolute; right: 5px; top: 5px;">
+										Last updated: {{Plugin.lastLoadTime}}
+									</div>
+									<div style="width: calc(100% - 100px); height: 100px; position: absolute; top: 0px; right: 0px; padding-top: 40px; padding-left: 40px;">
+										<h2>{{Plugin.currentPlugin.name}}</h2>
+										<div>
+											<span>By </span>
+											<span v-if="!Plugin.currentPlugin.authorUrl">{{Plugin.currentPlugin.author}}</span>
+											<span v-if="Plugin.currentPlugin.authorUrl">
+												<a :href="Plugin.currentPlugin.authorUrl" style="text-decoration: none;">
+													{{Plugin.currentPlugin.author}}
+												</a>
+											</span>
+										</div>
+									</div>
+								</div>
+								<div style="color: #999999">
+									{{Plugin.currentPlugin.description}}
+								</div>
+								<div style="margin-top: 30px;">
+									<div class="property">
+										<div class="key">
+											Version
+										</div>
+										<div class="value">
+											{{Plugin.currentPlugin.version}}
+										</div>
+									</div>
+									<div class="property">
+										<div class="key">
+											Repository URL
+										</div>
+										<div class="value">
+											<a :href="Plugin.currentPlugin.scriptUrl">
+												{{Plugin.currentPlugin.repositoryUrl}}
+											</a>
+										</div>
+									</div>
+									<div class="property">
+										<div class="key">
+											Script URL
+										</div>
+										<div class="value">
+											<a :href="Plugin.currentPlugin.scriptUrl">
+												{{Plugin.currentPlugin.scriptUrl}}
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</v-card-text>
+						<v-card-actions>
+							<v-spacer></v-spacer>
+							<a href="/reference_autocomplete.js" download="ref.js" style="text-decoration: none; margin-right: 10px;">
+								<v-btn>Ref.js</v-btn>
+							</a>
+							<a href="/reference_plugin.d.ts" download="plugin.d.ts" style="text-decoration: none; margin-right: 10px;">
+								<v-btn>Plugin.d.ts</v-btn>
+							</a>
+							<v-btn @click="reloadPlugin()">Reload</v-btn>
+						</v-card-actions>
+					</v-card>
+					<div v-if="Plugin.warnings && Plugin.warnings.length > 0">
+						<h2 style="text-align: center; margin-top: 40px;">Warnings</h2>
+						<div style="text-align: center; color: #999999; font-size: 14px;">
+							These are the warnings a user will see when they attempt to install this plugin
+						</div>
+						<v-card style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 20px; min-height: 130px;"
+								v-for="warning in Plugin.warnings">
+							<v-card-text>
+								<div>
+									<div class="material-symbols-outlined"
+										 style="width: 100px; margin: 10px; color: rgb(194, 83, 83); font-size: 100px; position: absolute; top: 10px; left: 10px;">
+										security
+									</div>
+									<div style="margin-left: 120px;">
+										<div style="font-size: 18px;">
+											{{warning.first}}
+										</div>
+										<div style="color: #C25353">
+											{{warning.second}}
+										</div>
+									</div>
+								</div>
+							</v-card-text>
+						</v-card>
+					</div>
+				</div>
+				<div class="page" v-if="page == 'Testing'">
+					<v-card style="margin-top: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto; width: 500px;" v-if="!Plugin.currentPlugin">
+						<v-card-title>
+							No Plugin Loaded
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div>
+								Load a plugin before doing testing.
+							</div>
+						</v-card-text>
+					</v-card>
+					<div style="width: 50%" v-if="Plugin.currentPlugin">
+						<!--Get Home-->
+						<v-card class="requestCard" v-for="req in Testing.requests">
+							<v-card-text>
+								<div class="title">
+									<span v-if="req.isOptional">(Optional)</span>
+									<span>{{req.title}}</span>
+								</div>
+								<!--
+								<div v-if="req.title == 'enable'" style="position: absolute; top:3px; right: 18px">
+									<v-checkbox v-model="Plugin.enableOnReload" label="Enable on Refresh" />
+								</div> -->
+								<div class="description">
+									{{req.description}}
+								</div>
+								<div class="code">
+									{{req.code}}
+								</div>
+								<div>
+									<div class="parameter" v-for="parameter in req.parameters">
+										<div class="name">
+											{{parameter.name}}
+										</div>
+										<div class="description">
+											{{parameter.description}}
+										</div>
+										<input type="text" :placeholder="parameter.name + ' value'" v-model="parameter.value" />
+									</div>
+								</div>
+							</v-card-text>
+							<v-card-actions>
+								<v-spacer></v-spacer>
+								<v-btn @click="testSource(req)">
+									Test
+								</v-btn>
+							</v-card-actions>
+						</v-card>
+					</div>
+					<div style="position: fixed; right: 0px; top: 70px;width: 50%; height: 100%; background-color: black;" v-if="Plugin.currentPlugin">
+						<h2 style="padding: 10px; font-weight: lighter;">Results</h2>
+						<div style="position: absolute; top: 10px; right: 10px;">
+							<v-btn @click="copyClipboard(Testing.lastResult)" v-if="Testing.lastResult && !Testing.lastResultError">Copy</v-btn>
+						</div>
+						<div v-if="!Testing.lastResult && !Testing.lastResultError" style="padding: 10px; font-weight: lighter;">
+							No test done yet
+						</div>
+						<div v-if="Testing.lastResult && !Testing.lastResultError" class="testResult">{{Testing.lastResult}}</div>
+						<div v-if="Testing.lastResultError" class="testResult exception">{{Testing.lastResultError}}</div>
+					</div>
+				</div>
+
+				<div class="page" v-if="page == 'Integration'">
+					<v-card style="margin-top: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto; width: 500px;" v-if="!Plugin.currentPlugin">
+						<v-card-title>
+							No Plugin Loaded
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div>
+								Load a plugin before doing integration testing.
+							</div>
+						</v-card-text>
+					</v-card>
+					<v-card style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 20px;"
+							v-if="Plugin.currentPluginError">
+						<v-card-text>
+							<div>
+								<h2 style="color: red">Errors in Plugin</h2>
+								Its best to fix errors before doing any integration testing
+							</div>
+						</v-card-text>
+					</v-card>
+					<v-card style="margin-top: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto; width: 500px;" v-if="Plugin.currentPlugin">
+						<v-card-title>
+							Integration Testing
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div>
+								<div style="margin-bottom: 10px;">
+									Integration testing allows you to upload your loaded plugin onto your phone, and get logs below to find any exceptions in actual usage.
+								</div>
+								<div v-if="Integration.lastInjectTime">
+									Last Injected: {{Integration.lastInjectTime}} <br />
+									Click Inject Plugin again to update to last version.
+								</div>
+								<div v-if="!Integration.lastInjectTime">
+									Plugin is not yet injected. Click "Inject Plugin" to load the plugin on your phone.
+								</div>
+							</div>
+						</v-card-text>
+						<v-card-actions>
+							<v-spacer></v-spacer>
+							<v-btn @click="injectDevPlugin()">Inject Plugin</v-btn>
+						</v-card-actions>
+					</v-card>
+					<v-card style="margin: 20px;" v-if="Plugin.currentPlugin">
+						<v-card-title>
+							Device Logs
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div class="logContainer">
+								<div class="logLine" v-for="line in Integration.logs" :class="{exception: line.type == 'EXCEPTION', system: line.type == 'SYSTEM'}">
+									<div class="logType" style="vertical-align: top;">
+										[{{line.type}}]
+									</div>
+									<div class="logMsg">{{line.log}}</div>
+								</div>
+							</div>
+						</v-card-text>
+						<v-card-actions>
+							<v-spacer></v-spacer>
+							<v-btn>Clear</v-btn>
+						</v-card-actions>
+					</v-card>
+				</div>
+
+				<div class="page" v-if="page == 'Settings'">
+					<v-card style="margin-top: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto; width: 500px;">
+						<v-card-title>
+							Settings
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div>
+								<div style="height: 30px;">
+									<v-checkbox label="Enable on Reload" v-model="settings.enableOnReload"></v-checkbox>
+								</div>
+								<div style="height: 30px;">
+									<v-checkbox label="Login on Reload" v-model="settings.loginOnReload">></v-checkbox>
+								</div>
+							</div>
+						</v-card-text>
+						<v-card-actions>
+							<v-spacer></v-spacer>
+							<v-btn @click="saveSettings()">Save</v-btn>
+						</v-card-actions>
+					</v-card>
+				</div>
+
+			</div>
+		  </v-main>
+		</v-app>
+	  </div>
+
+	  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+	  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.7.1/dist/vuetify.min.js"></script>
+	  <!--<script src="./dependencies/vue.js"></script>-->
+	  <!--<script src="./dependencies/vuetify.js"></script>-->
+	  <script src="./source_docs.js"></script>
+	  <script src="./source.js"></script>
+	  <script src="./dev_bridge.js"></script>
+	  <script>
+	  	IS_TESTING = true;
+	  	let lastScriptTag = null;
+		new Vue({
+		  el: '#app',
+		  data: {
+			page: "Plugin",
+			pastPluginUrls: [],
+			settings: {},
+			Integration: {
+				lastLogIndex: -1,
+				lastLogDevID: "",
+				logs: [],
+				lastInjectTime: ""
+			},
+			Plugin: {
+				loadUsingTag: false,
+				newPluginUrl: "",
+				packagesOverridden: packageOverridesEnabled,
+				currentPluginUrl: "",
+				currentPlugin: null,
+				currentPluginError: "",
+				currentScript: "",
+				lastLoadTime: "",
+				didInitialLoad: false,
+				enableOnReload: false,
+				isLoggedIn: false
+			},
+			Testing: {
+				requests: sourceDocs.map(x=>{
+					x.parameters.forEach(y=>y.value = null);
+					return x;
+				}),
+				lastResult: "",
+				lastResultError: ""
+			}
+		  },
+		  mounted() {
+		  	let existing = localStorage.getItem("pastPlugins");
+		  	if(!existing)
+		  		existing = [];
+		  	else
+		  		existing = JSON.parse(existing);
+
+
+		  	let settingsStr = localStorage.getItem("settings");
+		  	if(!settingsStr)
+		  		this.settings = {};
+		  	else
+		  		this.settings = JSON.parse(settingsStr);
+
+
+		  	this.pastPluginUrls = existing.slice(0, 5);
+
+			this.loadOverrides();
+
+		  	window.onerror = (event, source, lineno, colno, error)=>{
+		  		Vue.nextTick(()=>{
+		  			if(error)
+		  				this.Plugin.currentPluginError = error + " (" + lineno + ", " + colno + ")";
+		  			else
+		  				this.Plugin.currentPluginError = "There is an error in your script, check console for info";
+		  		});
+		  	};
+		  	setInterval(()=>{
+				try{
+					if(!this.Plugin.currentPlugin)
+						return;
+
+					getDevLogs(this.Integration.lastLogIndex, (newLogs)=> {
+						if(newLogs.length > 0) {
+							let firstLog = newLogs[0];
+							let lastLog = newLogs[newLogs.length - 1];
+							Vue.nextTick(()=>{
+								let lastDevId = this.Integration.lastLogDevID;
+								this.Integration.lastLogDevID = lastLog.devId;
+								this.Integration.lastLogIndex = lastLog.id;
+								for(i = 0; i < newLogs.length; i++) {
+									const log = newLogs[i];
+									console.log("Log", log);
+									if(lastDevId != log.devId) {
+										this.Integration.logs = [];
+										lastDevId = log.devId;
+										this.Integration.logs.unshift({
+											id: -1,
+											devId: lastDevId,
+											message: "New Dev Session: " + lastDevId
+										});
+									}
+									this.Integration.logs.unshift(log)
+								};
+							});
+						}
+					});
+				}
+				catch(ex) {
+					console.error("Failed update", ex);
+				}
+		  	}, 1000);
+		  	setInterval(()=>{
+		  		try{
+					this.isTestLoggedIn();
+				}catch(ex){}
+		  	}, 2500);
+		  },
+		  methods: {
+		  	loadOverrides() {
+				let overridesExisting = localStorage.getItem("overrides");
+				if(overridesExisting && overridesExisting != "undefined") {
+					try{
+						const overrides = JSON.parse(overridesExisting);
+						for(override in this.Plugin.packagesOverridden) {
+							if(overrides[override])
+								this.Plugin.packagesOverridden[override] = true;
+						}
+					}
+					catch(ex) {
+						console.error(ex);
+					}
+				}
+				this.Plugin.didInitialLoad = true;
+		  	},
+		  	saveOverrides() {
+		  		if(this.Plugin.packagesOverridden && this.Plugin.didInitialLoad) {
+					let overridesExisting = JSON.stringify(this.Plugin.packagesOverridden);
+					localStorage.setItem("overrides", overridesExisting);
+				}
+		  	},
+			loadPlugin(url) {
+				Vue.nextTick(()=>{
+					this.Plugin.currentPluginUrl = url;
+					this.reloadPlugin();
+				});
+			},
+			loginTestPlugin() {
+				pluginLoginTestPlugin();
+				setTimeout(()=>{
+					reloadPackages();
+					this.isTestLoggedIn((loggedIn)=>{
+						if(loggedIn && this.settings.enableOnReload)
+							this.testSource(this.Testing.requests.find(x=>x.title == 'enable'));
+					});
+				}, 1000);
+			},
+			logoutTestPlugin() {
+				pluginLogoutTestPlugin();
+			},
+			reloadPlugin() {
+				const url = this.Plugin.currentPluginUrl;
+				const pluginResp = httpGETBypass(url, {}, "text/json");
+				if(pluginResp.code != 200) {
+					alert("Failed to get plugin, check log")
+					console.error("Failed to get plugin", pluginResp);
+				}
+				else {
+					this.Plugin.currentPlugin = JSON.parse(pluginResp.body);
+					this.Plugin.currentPlugin.sourceUrl = url;
+				}
+				this.Plugin.currentPluginIcon = new URL(this.Plugin.currentPlugin.iconUrl, url).href
+
+				let currentPastPlugins = this.pastPluginUrls;
+				currentPastPlugins = currentPastPlugins.filter(x=>x.toLowerCase() != url.toLowerCase());
+				currentPastPlugins.unshift(url);
+				this.pastPluginUrls = currentPastPlugins;
+				localStorage.setItem("pastPlugins", JSON.stringify(currentPastPlugins));
+
+				try {
+					this.Plugin.warnings = pluginGetWarnings(this.Plugin.currentPlugin);
+				}
+				catch(ex) {
+					alert("Failed to validate config, check log")
+					console.error("Failed to validate config", ex);
+					return;
+				}
+
+
+				if(!this.Plugin.currentPlugin.scriptUrl) {
+					alert("Misssing plugin script, check log")
+					console.error("Failed to get plugin due to missing script");
+				}
+
+				let absScriptUrl = new URL(this.Plugin.currentPlugin.scriptUrl, url).href;
+				console.log("Loading script (Abs):" + absScriptUrl);
+
+				const scriptResp = httpGETBypass(absScriptUrl, {}, "application/js");
+				if(pluginResp.code != 200) {
+					alert("Failed to get plugin")
+					console.error("Failed to get plugin", pluginResp);
+				}
+				else {
+						this.Plugin.currentScript = scriptResp.body;
+						try{
+							//TODO: Load packages
+							const testPluginPackages = pluginUpdateTestPlugin(this.Plugin.currentPlugin);
+							console.log("Required packages:", testPluginPackages);
+							applyPackages(testPluginPackages);
+
+							if(this.Plugin.loadUsingTag)
+							{
+								this.Plugin.currentPluginError = ""
+								//Create script tag
+								const scriptUrl = absScriptUrl + "?x=" + new Date().getTime();
+								if(lastScriptTag)
+									lastScriptTag.parentNode.removeChild(lastScriptTag);
+								lastScriptTag = document.createElement('script');
+								lastScriptTag.src = scriptUrl;
+								lastScriptTag.crossorigin = "anonymous";
+								lastScriptTag.onerror = function() {
+									Vue.nextTick(()=>{
+										this.Plugin.currentPluginError = "Exception loading script: " + scriptUrl;
+									});
+								}
+								document.getElementsByTagName('body')[0].appendChild(lastScriptTag);
+							}
+							else
+								eval(this.Plugin.currentScript);
+
+							const date = new Date();
+							this.Plugin.lastLoadTime =
+								(date.getHours()+"").padStart(2, '0') + ":" +
+								(date.getMinutes()+"").padStart(2, '0') + ":" +
+								(date.getSeconds()+"").padStart(2, '0');
+
+
+							if(this.settings.loginOnReload) {
+								this.loginTestPlugin()
+							}
+							else if(this.settings.enableOnReload)
+								this.testSource(this.Testing.requests.find(x=>x.title == 'enable'));
+						}
+						catch(ex) {
+							alert("Failed to load plugin script, check log");
+							console.error("Failed to load plugin script", ex);
+							this.Plugin.currentPluginError = "Exception loading script:\n" + ex;
+						}
+				}
+			},
+			isTestLoggedIn(cb) {
+				pluginIsLoggedIn((isLoggedIn)=> {
+					Vue.nextTick(()=>{
+						const hasChanged = isLoggedIn != isLoggedIn;
+						this.Plugin.isLoggedIn = isLoggedIn;
+
+						if(hasChanged)
+							clearPackages();
+
+						if(cb)
+							cb(isLoggedIn);
+					});
+				}, (ex)=> {
+					if(cb)
+						cb(false);
+				});
+			},
+			injectDevPlugin() {
+				this.Integration.lastLogDevID = uploadDevPlugin(this.Plugin.currentPlugin);
+				this.Integration.logs = [
+					{
+						id: -1,
+						devId: this.Integration.lastLogDevID,
+						type: 'SYSTEM',
+						log: 'New Injected Session [' + this.Integration.lastLogDevID + ']'
+					}
+				];
+				const date = new Date();
+				this.Integration.lastInjectTime =
+								(date.getHours()+"").padStart(2, '0') + ":" +
+								(date.getMinutes()+"").padStart(2, '0') + ":" +
+								(date.getSeconds()+"").padStart(2, '0');
+			},
+			testSource(req) {
+				const name = req.title;
+				const parameterVals = req.parameters.map(x=>{
+					if(x.value && x.value.startsWith && x.value.startsWith("json:"))
+						return JSON.parse(x.value.substring(5));
+					return x.value
+				});
+
+				if(name == "enable") {
+					if(parameterVals.length > 0)
+						parameterVals[0] = this.Plugin.currentPlugin;
+					else
+						parameterVals.push(this.Plugin.currentPlugin);
+					if(parameterVals.length > 1)
+						parameterVals[1] = __DEV_SETTINGS;
+					else
+						parameterVals.push(__DEV_SETTINGS);
+				}
+
+				const func = source[name];
+				if(!func)
+					alert("Test func not found");
+
+				try {
+					const result = func(...parameterVals);
+					console.log("Result for " + req.title, result);
+					this.Testing.lastResult = "//Results [" + name + "]\n" +
+						JSON.stringify(result, null, 3);
+					this.Testing.lastResultError = "";
+				}
+				catch(ex) {
+					console.error("Failed to run test for " + req.title, ex);
+					this.Testing.lastResult = ""
+					if(ex.message)
+						this.Testing.lastResultError = "//Results [" + name + "]\n\n" +
+							"Error: " + ex.message + "\n\n" + ex.stack;
+					else
+						this.Testing.lastResultError = "//Results [" + name + "]\n\n" +
+							"Error: " + ex;
+				}
+			},
+			showTestResults(results) {
+			
+			},
+			copyClipboard(cpy) {
+				if(navigator.clipboard)
+					navigator.clipboard.writeText(cpy);
+				else {
+					var textArea = document.createElement("textarea");
+					textArea.value = cpy;
+					textArea.style.top = "0";
+					textArea.style.left = "0";
+					textArea.style.position = "fixed";
+					document.body.appendChild(textArea);
+					textArea.focus();
+					textArea.select();
+					try {
+						document.execCommand('copy');
+				  	} catch (err) { console.error('Failed to copy', err); }
+				  	document.body.removeChild(textArea);
+				}
+			},
+
+			saveSettings() {
+				let settingsStr = JSON.stringify(this.settings);
+				localStorage.setItem("settings", settingsStr);
+			}
+		  },
+		  vuetify: new Vuetify({
+			theme: {
+				dark: true
+			}
+		  }),
+		});
+		function copyTextToClipboard(text) {
+		  if (!navigator.clipboard) {
+			fallbackCopyTextToClipboard(text);
+			return;
+		  }
+		  navigator.clipboard.writeText(text).then(function() {
+			console.log('Async: Copying to clipboard was successful!');
+		  }, function(err) {
+			console.error('Async: Could not copy text: ', err);
+		  });
+		}
+	  </script>
+	</body>
+</html>

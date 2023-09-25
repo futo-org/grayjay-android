@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="10dp"
+    android:animateLayoutChanges="true"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:id="@+id/downloads_top"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/storage_space"
+            android:textColor="@color/white"
+            android:layout_marginBottom="8dp"
+            android:textSize="20dp" />
+
+        <com.futo.platformplayer.views.others.ProgressBar
+            android:id="@+id/downloads_usage_progress"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            app:activeColor="@color/colorPrimary"
+            app:inactiveColor="#333333"
+            android:background="#333333" /> <!--TODO: Implement Storage view-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp">
+            <TextView
+                android:id="@+id/downloads_usage_used"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#E0E0E0"
+                android:fontFamily="@font/inter_extra_light"
+                android:textSize="11dp"
+                android:text="5.64GB Used" />
+            <TextView
+                android:id="@+id/downloads_usage_available"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#E0E0E0"
+                android:gravity="end"
+                android:layout_gravity="end"
+                android:fontFamily="@font/inter_extra_light"
+                android:textSize="11dp"
+                android:text="13.32GB Available" />
+        </LinearLayout>
+
+        <com.futo.platformplayer.views.announcements.AnnouncementView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:category="download"
+            android:layout_marginTop="8dp" />
+
+        <!--Active Downloads-->
+        <LinearLayout
+            android:id="@+id/downloads_active_downloads_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18dp"
+                    android:textColor="@color/white"
+                    android:text="Downloading"
+                    />
+                <TextView
+                    android:id="@+id/downloads_active_downloads_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:fontFamily="@font/inter_extra_light"
+                    android:textColor="#ACACAC"
+                    android:textSize="15dp"
+                    android:text="(5)"
+                    />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/downloads_active_downloads_list"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <!--Fill Programmatically-->
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <!--Playlists-->
+        <LinearLayout
+            android:id="@+id/downloads_playlist_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18dp"
+                    android:textColor="@color/white"
+                    android:text="Playlists"
+                    />
+                <TextView
+                    android:id="@+id/downloads_playlist_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:textSize="15dp"
+                    android:fontFamily="@font/inter_extra_light"
+                    android:textColor="#ACACAC"
+                    android:text="(7 playlists, 85 videos)"
+                    />
+            </LinearLayout>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:id="@+id/downloads_playlist_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <!--Fill Programmatically-->
+            </LinearLayout>
+        </LinearLayout>
+
+        <!--Videos-->
+        <LinearLayout
+            android:id="@+id/downloads_videos_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18dp"
+                android:textColor="@color/white"
+                android:text="Videos" />
+            <TextView
+                android:id="@+id/downloads_videos_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:textSize="15dp"
+                android:fontFamily="@font/inter_extra_light"
+                android:textColor="#ACACAC"
+                android:text="(12 videos)" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list_downloaded"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>

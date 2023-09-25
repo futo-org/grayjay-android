@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="20dp"
+    android:viewportWidth="40"
+    android:viewportHeight="20">
+
+    <path
+      android:name="background"
+      android:pathData="M10,0L30,0A10,10 0,0 1,40 10L40,10A10,10 0,0 1,30 20L10,20A10,10 0,0 1,0 10L0,10A10,10 0,0 1,10 0z"
+      android:fillColor="#FF2D63ED" />
+
+    <group
+        android:name="foregroundContainer"
+        android:translateX="21"
+        android:translateY="2">
+      <path
+        android:name="foreground"
+        android:pathData="M8,8m-6.75,0a6.75,6.75 0,1 1,13.5 0a6.75,6.75 0,1 1,-13.5 0"
+        android:strokeWidth="1.5"
+        android:strokeColor="#FF2A2A2A" />
+  </group>
+</vector>

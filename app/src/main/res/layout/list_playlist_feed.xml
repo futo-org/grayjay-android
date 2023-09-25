@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="115dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/item_playlist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp">
+        <FrameLayout
+            android:id="@+id/player_container"
+            android:layout_width="178dp"
+            android:layout_height="100dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/image_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/thumbnail"
+                app:shapeAppearanceOverlay="@style/roundedCorners_4dp"
+                app:srcCompat="@drawable/placeholder_video_thumbnail"
+                android:background="@drawable/video_thumbnail_outline" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:gravity="center_vertical"
+                android:background="#CC000000"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
+                <com.futo.platformplayer.views.platform.PlatformIndicator
+                    android:id="@+id/thumbnail_platform"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_gravity="end"
+                    android:layout_marginStart="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:text="Playlist"
+                    android:layout_marginStart="8dp"/>
+
+                <Space android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/text_video_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8dp"
+                    android:fontFamily="@font/inter_regular"
+                    tools:text="100"
+                    android:textColor="@color/gray_7f"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:text=" Videos"
+                    android:layout_marginRight="10dp"
+                    android:textColor="@color/gray_7f" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp">
+
+            <TextView
+                android:id="@+id/text_playlist_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="2dp"
+                android:layout_weight="1"
+                android:textSize="13dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_light"
+                tools:text="Legendary grant recipient: Marvin Wißfeld of MicroG Very loong title"
+                android:maxLines="2"
+                android:ellipsize="end"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent" />
+
+            <TextView
+                android:id="@+id/text_channel_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="10dp"
+                android:textColor="@color/gray_e0"
+                android:fontFamily="@font/inter_extra_light"
+                tools:text="Two Minute Papers"
+                app:layout_constrainedWidth="true"
+                app:layout_constraintHorizontal_bias="0"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/image_neopass_channel"
+                app:layout_constraintTop_toBottomOf="@id/text_playlist_name" />
+
+            <ImageView
+                android:id="@+id/image_neopass_channel"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:contentDescription="NeoPass channel"
+                app:srcCompat="@drawable/neopass"
+                app:layout_constraintLeft_toRightOf="@id/text_channel_name"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="@id/text_channel_name"
+                app:layout_constraintBottom_toBottomOf="@id/text_channel_name"
+                android:layout_marginStart="4dp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/text_playlist_items"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:textSize="8dp"
+                android:ellipsize="end"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_extra_light"
+                tools:text="Aussies Rank Cinema Snacks • 6:52\nAussies Try Each Other’s Entertainer Plates • 11:50 "
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/text_channel_name"
+                app:layout_constraintRight_toRightOf="parent"
+                android:layout_marginTop="2dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:textSize="10dp"
+                android:ellipsize="end"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_light"
+                tools:text="View full playlist"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/text_playlist_items"
+                app:layout_constraintRight_toRightOf="parent"
+                android:layout_marginTop="2dp"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+</LinearLayout>

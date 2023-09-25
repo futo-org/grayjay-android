@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="50dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:id="@+id/root">
+
+    <ImageView
+        android:id="@+id/image_platform"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_peertube"
+        android:background="@drawable/rounded_outline" />
+
+    <TextView
+        android:id="@+id/text_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="Twitter"
+        android:fontFamily="@font/inter_regular"
+        android:textColor="@color/white"
+        android:textSize="12dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:layout_marginStart="8dp" />
+</LinearLayout>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintDimensionRatio="H,16:13">
+
+        <FrameLayout
+            android:id="@+id/player_container"
+            android:layout_width="match_parent"
+            android:layout_height="250dp">
+
+            <ImageView
+                android:id="@+id/image_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/thumbnail"
+                android:scaleType="centerCrop"
+                android:layout_marginBottom="6dp"
+                tools:srcCompat="@drawable/placeholder_video_thumbnail" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:background="#CC000000"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:id="@+id/text_playlist_items"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="2"
+                    android:textSize="10dp"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/inter_thin"
+                    tools:text="Aussies Rank Cinema Snacks • 6:52\nAussies Try Each Other’s Entertainer Plates • 11:50 "
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toLeftOf="@id/text_video_count"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginStart="8dp" />
+
+                <TextView
+                    android:id="@+id/text_video_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:fontFamily="@font/inter_light"
+                    tools:text="100"
+                    android:textColor="@color/gray_7f"
+                    app:layout_constraintRight_toLeftOf="@id/text_videos"
+                    app:layout_constraintBottom_toBottomOf="@id/text_videos" />
+
+                <TextView
+                    android:id="@+id/text_playlist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:text="Playlist"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="@color/gray_e0"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/text_videos"/>
+
+                <TextView
+                    android:id="@+id/text_videos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:fontFamily="@font/inter_light"
+                    android:text=" Videos"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="@color/gray_7f"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/text_playlist"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </FrameLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal"
+            android:paddingBottom="15dp">
+
+            <com.futo.platformplayer.views.others.CreatorThumbnail
+                android:id="@+id/creator_thumbnail"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@id/creator_thumbnail"
+                app:layout_constraintLeft_toRightOf="@id/creator_thumbnail"
+                app:layout_constraintRight_toLeftOf="@id/container_info"
+                android:orientation="vertical"
+                android:paddingStart="10dp">
+
+                <TextView
+                    android:id="@+id/text_playlist_name"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="viewStart"
+                    android:layout_marginTop="-3dp"
+                    android:textSize="14dp"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/inter_regular"
+                    tools:text="I Thought FSD is Terrible in SNOW | 8 inch SNOW | FSD Beta 10.69.2.4"
+                    android:maxLines="2" />
+
+                <TextView
+                    android:id="@+id/text_channel_name"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:textSize="12dp"
+                    android:textColor="@color/gray_e0"
+                    android:fontFamily="@font/inter_extra_light"
+                    tools:text="Two Minute Papers" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/container_info"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginEnd="6dp"
+                android:paddingLeft="10dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.futo.platformplayer.views.platform.PlatformIndicator
+                    android:id="@+id/thumbnail_platform"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:scaleType="centerInside" />
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

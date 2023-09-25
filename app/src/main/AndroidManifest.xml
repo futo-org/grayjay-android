@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FutoVideo"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="@string/authority"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+
+        <service android:name=".services.MediaPlaybackService"
+            android:enabled="true"
+            android:foregroundServiceType="mediaPlayback" />
+        <service android:name=".services.DownloadService"
+            android:enabled="true" />
+        <service android:name=".services.ExportingService"
+            android:enabled="true" />
+
+        <receiver android:name=".receivers.MediaControlReceiver" />
+
+        <activity
+            android:name=".activities.MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="grayjay" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="file" />
+
+                <data android:mimeType="application/json" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="content" />
+
+                <data android:mimeType="application/json" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="file" />
+
+                <data android:mimeType="application/zip" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="content" />
+
+                <data android:mimeType="application/zip" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="polycentric" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".activities.TestActivity"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.DeveloperActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.ExceptionActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.LoginActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.AddSourceActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:theme="@style/Theme.FutoVideo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="vfuto" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activities.AddSourceOptionsActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricHomeActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricBackupActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricCreateProfileActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricProfileActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricWhyActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.PolycentricImportProfileActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.ManageTabsActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+
+
+        <activity
+            android:name=".activities.AddSourceOptionsActivity$QRCaptureActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+    </application>
+</manifest>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:background="@color/black">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="20dp"
+        android:paddingBottom="15dp">
+
+        <ImageButton
+            android:id="@+id/button_back"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:paddingRight="20dp"
+            app:srcCompat="@drawable/ic_back_thin_white_16dp" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/add_source"
+                android:textSize="24dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_extra_light" />
+        </FrameLayout>
+
+        <Space
+            android:layout_width="20dp"
+            android:layout_height="match_parent" />
+
+    </LinearLayout>
+
+
+    <ImageView
+        android:visibility="gone"
+        android:id="@+id/loader"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:srcCompat="@drawable/ic_loader_animated"
+        android:layout_gravity="top|center_horizontal"
+        android:alpha="0.7"
+        android:layout_marginTop="80dp"
+        android:contentDescription="@string/loading" />
+
+    <ScrollView
+        android:id="@+id/configContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.futo.platformplayer.views.sources.SourceHeaderView
+                android:id="@+id/source_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!--Permissions-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18dp"
+                    android:textColor="@color/white"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/inter_light"
+                    android:text="Permissions" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:textColor="@color/text_color_tinted"
+                    android:fontFamily="@font/inter_extra_light"
+                    android:text="@string/source_permissions_explanation" />
+
+                <LinearLayout
+                    android:id="@+id/source_permissions"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <com.futo.platformplayer.views.sources.SourceInfoView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.futo.platformplayer.views.sources.SourceInfoView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!--Security Warnings-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18dp"
+                    android:textColor="@color/white"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/inter_light"
+                    android:text="Security Warnings" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:textColor="@color/text_color_tinted"
+                    android:fontFamily="@font/inter_extra_light"
+                    android:text="These are warnings of plugin behavior and implementation" />
+
+                <LinearLayout
+                    android:id="@+id/source_warnings"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <com.futo.platformplayer.views.sources.SourceInfoView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/button_cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cancel"
+                    android:layout_marginEnd="28dp"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/colorPrimary"
+                    android:background="@color/transparent" />
+
+                <LinearLayout
+                    android:id="@+id/button_install"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/install"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

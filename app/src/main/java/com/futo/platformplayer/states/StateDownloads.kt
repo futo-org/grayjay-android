@@ -1,0 +1,396 @@
+package com.futo.platformplayer.states
+
+import android.os.StatFs
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.media.PlatformID
+import com.futo.platformplayer.api.media.exceptions.AlreadyQueuedException
+import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.downloads.PlaylistDownloadDescriptor
+import com.futo.platformplayer.downloads.VideoLocal
+import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.downloads.VideoExport
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.DiskUsage
+import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.models.PlaylistDownloaded
+import com.futo.platformplayer.services.DownloadService
+import com.futo.platformplayer.services.ExportingService
+import com.futo.platformplayer.stores.*
+import com.futo.platformplayer.stores.v2.ManagedStore
+import okhttp3.internal.platform.Platform
+import java.io.File
+
+/***
+ * Used to maintain downloads
+ */
+class StateDownloads {
+    private val _downloadsDirectory: File = FragmentedStorage.getOrCreateDirectory("downloads");
+    private val _downloadsStat = StatFs(_downloadsDirectory.absolutePath);
+
+    private val _downloaded = FragmentedStorage.storeJson<VideoLocal>("downloaded")
+        .load()
+        .apply { afterLoadingDownloaded(this) };
+    private val _downloading = FragmentedStorage.storeJson<VideoDownload>("downloading")
+        .load().apply {
+            for(video in this.getItems())
+                video.changeState(VideoDownload.State.QUEUED);
+        };
+    private val _downloadPlaylists = FragmentedStorage.storeJson<PlaylistDownloadDescriptor>("playlistDownloads")
+        .load();
+
+    private val _exporting = FragmentedStorage.storeJson<VideoExport>("exporting")
+        .load();
+
+    private lateinit var _downloadedSet: HashSet<PlatformID>;
+
+    val onExportsChanged = Event0();
+    val onDownloadsChanged = Event0();
+    val onDownloadedChanged = Event0();
+
+    private fun afterLoadingDownloaded(v: ManagedStore<VideoLocal>) {
+        _downloadedSet = HashSet(v.getItems().map { it.id });
+    }
+
+    fun getTotalUsage(reload: Boolean): DiskUsage {
+        if(reload)
+            _downloadsStat.restat(_downloadsDirectory.absolutePath);
+        val usage = _downloadsDirectory.listFiles()?.sumOf { it.length() } ?: 0;
+        val available = _downloadsStat.availableBytes;
+        return DiskUsage(usage, available);
+    }
+
+    fun getCachedVideo(id: PlatformID): VideoLocal? {
+        return _downloaded.findItem  { it.id.equals(id) };
+    }
+    fun updateCachedVideo(vid: VideoLocal) {
+        Logger.i("StateDownloads", "Updating local video ${vid.name}");
+        _downloaded.save(vid);
+        onDownloadedChanged.emit();
+    }
+    fun deleteCachedVideo(id: PlatformID) {
+        Logger.i("StateDownloads", "Deleting local video ${id.value}");
+        val downloaded = getCachedVideo(id);
+        if(downloaded != null) {
+            synchronized(_downloadedSet) {
+                _downloadedSet.remove(id);
+            }
+            _downloaded.delete(downloaded);
+        }
+        onDownloadedChanged.emit();
+    }
+
+    fun isDownloaded(id: PlatformID): Boolean {
+        synchronized(_downloadedSet) {
+            return _downloadedSet.contains(id);
+        }
+    }
+
+    fun getCachedPlaylists(): List<PlaylistDownloaded> {
+        return _downloadPlaylists.getItems()
+            .map { Pair(it, StatePlaylists.instance.getPlaylist(it.id)) }
+            .filter { it.second != null }
+            .map { PlaylistDownloaded(it.first, it.second!!) }
+            .toList();
+    }
+    fun hasCachedPlaylist(playlistId: String): Boolean {
+        return _downloadPlaylists.hasItem {  it.id == playlistId };
+    }
+    fun getCachedPlaylist(playlistId: String): PlaylistDownloaded? {
+        val descriptor = getPlaylistDownload(playlistId) ?: return null;
+        val playlist = StatePlaylists.instance.getPlaylist(playlistId) ?: return null;
+        return PlaylistDownloaded(descriptor, playlist);
+    }
+    fun getPlaylistDownload(playlistId: String): PlaylistDownloadDescriptor? {
+        return _downloadPlaylists.findItem { it.id == playlistId };
+    }
+    fun deleteCachedPlaylist(id: String) {
+        val pdl = getPlaylistDownload(id);
+        if(pdl != null)
+            _downloadPlaylists.delete(pdl);
+        getDownloading().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
+            .forEach { removeDownload(it) };
+        getDownloadedVideos().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
+            .forEach { deleteCachedVideo(it.id) };
+    }
+
+    fun getDownloadedVideos(): List<VideoLocal> {
+        return _downloaded.getItems();
+    }
+
+    fun getDownloadPlaylists(): List<PlaylistDownloadDescriptor> {
+        return _downloadPlaylists.getItems();
+    }
+    fun isPlaylistCached(id: String): Boolean {
+        return getDownloadPlaylists().any{it.id == id};
+    }
+
+    fun getDownloading(): List<VideoDownload> {
+        return _downloading.getItems();
+    }
+    fun updateDownloading(download: VideoDownload) {
+        _downloading.save(download, false, true);
+    }
+
+
+    fun removeDownload(download: VideoDownload) {
+        download.isCancelled = true;
+        _downloading.delete(download);
+        onDownloadsChanged.emit();
+    }
+
+    fun checkForDownloadsTodos() {
+        val hasPlaylistChanged = checkForOutdatedPlaylists();
+        val hasDownloads = _downloading.hasItems();
+
+        if((hasPlaylistChanged || hasDownloads) && Settings.instance.downloads.shouldDownload())
+            StateApp.withContext {
+                DownloadService.getOrCreateService(it);
+            }
+    }
+    fun checkForOutdatedPlaylists(): Boolean {
+        var hasChanged = false;
+        val playlistsDownloaded = getCachedPlaylists();
+        for(playlist in playlistsDownloaded) {
+            val playlistDownload = getPlaylistDownload(playlist.playlist.id) ?: continue;
+
+            if(playlist.playlist.videos.any{ getCachedVideo(it.id) == null }) {
+                Logger.i(TAG, "Found new videos on playlist [${playlist.playlist.name}]");
+                continueDownload(playlistDownload, playlist.playlist);
+                hasChanged = true;
+            }
+        }
+        return hasChanged;
+    }
+
+    fun continueDownload(playlistDownload: PlaylistDownloadDescriptor, playlist: Playlist) {
+        var hasNew = false;
+        for(item in playlist.videos) {
+            val existing = getCachedVideo(item.id);
+            if(existing == null) {
+                val ongoingDownload = getDownloading().find { it.id.value == item.id.value && it.id.value != null };
+                if(ongoingDownload != null) {
+                    Logger.i(TAG, "New playlist video (already downloading) ${item.name}");
+                    ongoingDownload.groupID = playlist.id;
+                    ongoingDownload.groupType = VideoDownload.GROUP_PLAYLIST;
+                }
+                else {
+                    Logger.i(TAG, "New playlist video ${item.name}");
+                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate)
+                        .withGroup(VideoDownload.GROUP_PLAYLIST, playlist.id), false);
+                    hasNew = true;
+                }
+            }
+            else {
+                Logger.i(TAG, "New playlist video (already downloaded) ${item.name}");
+                if(existing.groupID == null) {
+                    existing.groupID = playlist.id;
+                    existing.groupType = VideoDownload.GROUP_PLAYLIST;
+                    synchronized(_downloadedSet) {
+                        _downloadedSet.add(existing.id);
+                    }
+                    _downloaded.save(existing);
+                }
+            }
+        }
+        if(playlist.videos.isNotEmpty() && Settings.instance.downloads.shouldDownload()) {
+            if(hasNew) {
+                UIDialogs.toast("Downloading [${playlist.name}]")
+                StateApp.withContext {
+                    DownloadService.getOrCreateService(it);
+                }
+            }
+            onDownloadsChanged.emit();
+        }
+    }
+    fun download(playlist: Playlist, targetPixelcount: Long?, targetBitrate: Long?) {
+        val playlistDownload = PlaylistDownloadDescriptor(playlist.id, targetPixelcount, targetBitrate);
+        _downloadPlaylists.save(playlistDownload);
+        continueDownload(playlistDownload, playlist);
+    }
+    fun download(video: IPlatformVideo, targetPixelcount: Long?, targetBitrate: Long?) {
+        download(VideoDownload(video, targetPixelcount, targetBitrate));
+    }
+    fun download(video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: SubtitleRawSource?) {
+        download(VideoDownload(video, videoSource, audioSource, subtitleSource));
+    }
+
+    private fun download(videoState: VideoDownload, notify: Boolean = true) {
+        val shortName = if(videoState.name.length > 23)
+            videoState.name.substring(0, 20) + "...";
+        else
+            videoState.name;
+
+        try {
+            validateDownload(videoState);
+            _downloading.save(videoState);
+
+
+            if(notify) {
+                if(Settings.instance.downloads.shouldDownload()) {
+                    UIDialogs.toast("Downloading [${shortName}]")
+                    StateApp.withContext {
+                        DownloadService.getOrCreateService(it);
+                    }
+                    onDownloadsChanged.emit();
+                }
+                else {
+                    UIDialogs.toast("Registered [${shortName}]\n(Can't download now)");
+                }
+            }
+        }
+        catch(ex: Throwable) {
+            Logger.e(TAG, "Failed to start download", ex);
+            StateApp.withContext {
+                UIDialogs.showDialog(
+                    it,
+                    R.drawable.ic_error,
+                    "Failed to start download due to:\n${ex.message}", null, null,
+                    0,
+                    UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY)
+                );
+            }
+        }
+    }
+    private fun validateDownload(videoState: VideoDownload) {
+        if(_downloading.hasItem { it.videoEither.url == videoState.videoEither.url })
+            throw IllegalStateException("Video [${videoState.name}] is already queued for dowload");
+
+        val existing = getCachedVideo(videoState.id);
+        if(existing != null) {
+            //Verify for better video
+            val targetPx = if(videoState.targetPixelCount != null)
+                videoState.targetPixelCount!!.toInt();
+            else if(videoState.videoSource != null)
+                videoState.videoSource!!.width * videoState.videoSource!!.height;
+            else
+                null;
+            if(targetPx != null) {
+                val bestExistingVideo = existing.videoSource.maxBy { it.width * it.height };
+                val bestPx = bestExistingVideo.height * bestExistingVideo.width;
+                if (bestPx.toFloat() / targetPx >= 0.85f)
+                    throw IllegalStateException("A higher resolution video source is already downloaded");
+            }
+
+            //Verify for better bitrate
+            val targetBitrate = if(videoState.targetBitrate != null)
+                videoState.targetBitrate!!.toInt();
+            else if(videoState.audioSource != null)
+                videoState.audioSource!!.bitrate;
+            else
+                null;
+            if(targetBitrate != null) {
+                val bestExistingAudio = existing.audioSource.maxBy { it.bitrate };
+                if(bestExistingAudio.bitrate / targetBitrate >= 0.85f)
+                    throw IllegalStateException("A higher bitrate audio source is already downloaded");
+            }
+        }
+    }
+
+    fun cleanupDownloads(): Pair<Int, Long> {
+        val expected = getDownloadedVideos();
+        val validFiles = HashSet(expected.flatMap { it.videoSource.map { it.filePath } + it.audioSource.map { it.filePath } });
+
+        var totalDeleted: Long = 0;
+        var totalDeletedCount = 0;
+        for(file in _downloadsDirectory.listFiles()) {
+            val absUrl = file.absolutePath;
+            if(!validFiles.contains(absUrl)) {
+                Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
+                totalDeletedCount++;
+                totalDeleted += file.length();
+                file.delete();
+            }
+        }
+        return Pair(totalDeletedCount, totalDeleted);
+    }
+
+    fun getDownloadsDirectory(): File{
+        return _downloadsDirectory;
+    }
+
+
+
+    //Export
+    fun getExporting(): List<VideoExport> {
+        return _exporting.getItems();
+    }
+    fun checkForExportTodos() {
+        if(_exporting.hasItems()) {
+            StateApp.withContext {
+                ExportingService.getOrCreateService(it);
+            }
+        }
+    }
+
+    fun validateExport(export: VideoExport) {
+        if(_exporting.hasItem { it.videoLocal.url == export.videoLocal.url })
+            throw AlreadyQueuedException("Video [${export.videoLocal.name}] is already queued for export");
+    }
+    fun export(videoLocal: VideoLocal, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, notify: Boolean = true) {
+        val shortName = if(videoLocal.name.length > 23)
+            videoLocal.name.substring(0, 20) + "...";
+        else
+            videoLocal.name;
+
+        val videoExport = VideoExport(videoLocal, videoSource, audioSource, subtitleSource);
+
+        try {
+            validateExport(videoExport);
+            _exporting.save(videoExport);
+
+            if(notify) {
+                if(videoSource == null)
+                    UIDialogs.toast("Exporting [${shortName}]\nIn your music directory under Grayjay");
+                else
+                    UIDialogs.toast("Exporting [${shortName}]\nIn your movies directory under Grayjay");
+                StateApp.withContext { ExportingService.getOrCreateService(it) };
+                onExportsChanged.emit();
+            }
+        }
+        catch (ex: AlreadyQueuedException) {
+            Logger.e(TAG, "File is already queued for export.", ex);
+            StateApp.withContext { ExportingService.getOrCreateService(it) };
+        }
+        catch(ex: Throwable) {
+            StateApp.withContext {
+                UIDialogs.showDialog(
+                    it,
+                    R.drawable.ic_error,
+                    "Failed to start export due to:\n${ex.message}", null, null,
+                    0,
+                    UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY)
+                );
+            }
+        }
+    }
+
+
+    fun removeExport(export: VideoExport) {
+        _exporting.delete(export);
+        export.isCancelled = true;
+        onExportsChanged.emit();
+    }
+
+    companion object {
+        const val TAG = "StateDownloads";
+
+        private var _instance : StateDownloads? = null;
+        val instance : StateDownloads
+            get(){
+            if(_instance == null)
+                _instance = StateDownloads();
+            return _instance!!;
+        };
+
+        fun finish() {
+            _instance?.let {
+                _instance = null;
+            }
+        }
+    }
+}

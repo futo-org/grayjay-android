@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/transparent"
+    app:layoutDescription="@xml/videodetail_scene"
+    app:layout_collapseMode="parallax">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/touchContainer"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="#222222" />
+
+    <com.futo.platformplayer.fragment.mainactivity.main.VideoDetailView
+        android:id="@+id/fragview_videodetail"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/touchContainer"
+        app:layout_constraintEnd_toEndOf="@+id/touchContainer"
+        app:layout_constraintStart_toStartOf="@+id/touchContainer"
+        app:layout_constraintTop_toTopOf="@+id/touchContainer"
+        android:nestedScrollingEnabled="false" />
+
+</com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout>

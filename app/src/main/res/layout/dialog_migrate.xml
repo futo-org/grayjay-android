@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="@color/gray_1d">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="30dp"
+        android:paddingBottom="30dp">
+
+        <FrameLayout
+            android:id="@+id/dialog_ui_choice_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible">
+            <ImageView
+                android:id="@+id/migrate_icon"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_move_up" />
+
+        </FrameLayout>
+        <FrameLayout
+            android:id="@+id/dialog_ui_progress_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/update_spinner"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_update_animated"
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/text_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10/100"
+                android:layout_gravity="center"
+                android:textSize="14dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular" />
+
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Migration"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_extra_light"
+            android:layout_marginTop="15dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+        <TextView
+            android:id="@+id/migrate_type_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Playlists"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+        <TextView
+            android:id="@+id/migrate_count_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10 items"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_light"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_choice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Items require migration or are corrupted, would you like to restore them from backup now?"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="If ignored you will be asked again next startup."
+                android:textSize="13sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_light"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Sources required need to be enabled"
+                android:textSize="13sp"
+                android:textColor="@color/pastel_red"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/button_ignore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ignore"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/colorPrimary"
+                    android:background="@color/transparent" />
+
+
+                <Button
+                    android:id="@+id/button_delete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/pastel_red"
+                    android:background="@color/transparent" />
+
+                <LinearLayout
+                    android:id="@+id/button_restore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:layout_marginEnd="28dp"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Restore"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                android:layout_gravity="center">
+
+                <TextView
+                    android:id="@+id/migrate_result_restored_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:text="Restored 7 items"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/inter_regular"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/migrate_result_failed_count_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:text="(7 failed)"
+                    android:textSize="14sp"
+                    android:textColor="@color/pastel_red"
+                    android:fontFamily="@font/inter_regular" />
+            </LinearLayout>
+
+            <TextView android:id="@+id/migrate_result_failed_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="textStart"
+                android:text="Failed to restore 2 items"
+                android:textSize="14sp"
+                android:textColor="@color/pastel_red"
+                android:fontFamily="@font/inter_regular"
+                android:maxLines="6"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="10dp"
+                android:padding="8dp"
+                android:background="@drawable/background_16_round_4dp" />
+
+            <TextView
+                android:id="@+id/migrate_result_fplugin_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Required plugin for 1 items"
+                android:textSize="14sp"
+                android:textColor="#FFA500"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/button_retry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Retry"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/colorPrimary"
+                    android:background="@color/transparent" />
+
+                <Button
+                    android:id="@+id/button_delete_failed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/pastel_red"
+                    android:background="@color/transparent" />
+
+                <LinearLayout
+                    android:id="@+id/button_ok"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:layout_marginEnd="28dp"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ok"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+
+    </LinearLayout>
+</LinearLayout>

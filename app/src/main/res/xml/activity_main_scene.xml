@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Transition
+        app:constraintSetEnd="@id/expanded"
+        app:constraintSetStart="@id/collapsed"
+        app:duration="300"
+        app:motionInterpolator="easeInOut">
+        <KeyFrameSet>
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragment_bottom_bar">
+                <CustomAttribute
+                    app:attributeName="translationY"
+                    app:customDimension="0dp" />
+            </KeyAttribute>
+
+            <KeyAttribute
+                app:framePosition="75"
+                app:motionTarget="@id/fragment_bottom_bar">
+                <CustomAttribute
+                    app:attributeName="translationY"
+                    app:customDimension="55dp" />
+            </KeyAttribute>
+        </KeyFrameSet>
+    </Transition>
+
+
+    <ConstraintSet android:id="@+id/expanded">
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/collapsed">
+    </ConstraintSet>
+</MotionScene>

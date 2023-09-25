@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintDimensionRatio="H,16:13">
+
+        <FrameLayout
+            android:id="@+id/player_container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintDimensionRatio="H,16:9">
+
+            <ImageView
+                android:id="@+id/image_video_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/thumbnail"
+                android:scaleType="centerCrop"
+                android:layout_marginBottom="6dp"
+                tools:srcCompat="@drawable/placeholder_video_thumbnail" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.futo.platformplayer.views.platform.PlatformIndicator
+                    android:id="@+id/thumbnail_platform_nested"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:layout_margin="5dp"
+                    android:scaleType="centerInside"
+                    tools:src="@drawable/ic_peertube"/>
+
+                <LinearLayout
+                    android:id="@+id/thumbnail_live_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="13dp"
+                    android:paddingTop="0dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:background="@drawable/background_thumbnail_live"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintRight_toRightOf="parent">
+
+                    <TextView
+                        android:id="@+id/thumbnail_live"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:paddingLeft="2dp"
+                        android:paddingRight="2dp"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12dp"
+                        android:text="@string/live"
+                        android:layout_gravity="center"
+                        android:textStyle="normal" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/thumbnail_duration_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginBottom="13dp"
+                    android:paddingTop="0dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:background="@drawable/background_thumbnail_duration"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintRight_toRightOf="parent">
+
+                    <TextView
+                        android:id="@+id/thumbnail_duration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:paddingLeft="2dp"
+                        android:paddingRight="2dp"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12dp"
+                        android:text="0:00"
+                        android:layout_gravity="center"
+                        android:textStyle="normal" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            <LinearLayout
+                android:id="@+id/container_loader"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="6dp"
+                android:background="#DD000000"
+                android:visibility="gone"
+                android:orientation="vertical">
+
+
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/container_unavailable"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="6dp"
+                android:background="#DD000000"
+                android:visibility="gone"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="50dp"
+                    android:layout_weight="1"
+                    android:text="The following content cannot be opened in Grayjay due to a missing plugin."
+                    android:textAlignment="center" />
+                <TextView
+                    android:id="@+id/text_nested_url"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#828EFF"
+                    android:layout_weight="1"
+                    android:text="Unknown"
+                    android:textAlignment="center" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="50dp"
+                    android:layout_weight="1"
+                    android:text="Tap to open in browser"
+                    android:textAlignment="center" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="-6dp"
+            app:layout_constraintTop_toBottomOf="@id/player_container"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="top"
+                android:orientation="horizontal"
+                android:layout_gravity="center_vertical"
+                android:paddingBottom="5dp">
+
+                <com.futo.platformplayer.views.others.CreatorThumbnail
+                    android:id="@+id/creator_thumbnail"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="10dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="@id/creator_thumbnail"
+                    app:layout_constraintLeft_toRightOf="@id/creator_thumbnail"
+                    app:layout_constraintRight_toLeftOf="@id/container_info"
+                    android:orientation="vertical"
+                    android:paddingStart="10dp">
+
+                    <TextView
+                        android:id="@+id/text_video_name"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:textAlignment="viewStart"
+                        android:layout_marginTop="-3dp"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        tools:text="I Thought FSD is Terrible in SNOW | 8 inch SNOW | FSD Beta 10.69.2.4"
+                        android:maxLines="2" />
+
+                    <TextView
+                        android:id="@+id/text_channel_name"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:maxLines="1"
+                        android:textSize="12dp"
+                        android:textColor="@color/gray_e0"
+                        android:fontFamily="@font/inter_extra_light"
+                        tools:text="Two Minute Papers" />
+
+                    <TextView
+                        android:id="@+id/text_video_metadata"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:gravity="center_vertical"
+                        android:textSize="12dp"
+                        android:textColor="@color/gray_e0"
+                        android:fontFamily="@font/inter_extra_light"
+                        tools:text="57K views • 1 day ago" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/container_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginEnd="6dp"
+                    android:paddingLeft="10dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <FrameLayout android:id="@+id/layout_downloaded"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="8dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="fitXY"
+                            app:srcCompat="@drawable/download_for_offline" />
+                    </FrameLayout>
+
+                    <com.futo.platformplayer.views.platform.PlatformIndicator
+                        android:id="@+id/thumbnail_platform"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:scaleType="centerInside"
+                        tools:src="@drawable/ic_peertube"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/container_buttons"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:orientation="horizontal"
+                    android:paddingEnd="6dp">
+                    <ImageButton
+                        android:id="@+id/button_add_to_queue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="1dp"
+                        android:paddingTop="7dp"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="5dp"
+                        android:paddingBottom="3dp"
+                        app:srcCompat="@drawable/ic_queue_16dp"
+                        android:background="@drawable/edit_text_background"
+                        android:contentDescription="@string/add_to_queue" />
+
+                    <LinearLayout
+                        android:id="@+id/button_add_to"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@drawable/edit_text_background"
+                        android:layout_marginStart="4dp"
+                        android:gravity="center_vertical"
+                        android:padding="4dp">
+                        <ImageButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="4dp"
+                            app:srcCompat="@drawable/ic_add_white_8dp"
+                            android:layout_marginStart="4dp"
+                            android:contentDescription="@string/options" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/options"
+                            android:background="@color/transparent"
+                            android:textSize="12dp"
+                            android:textColor="@color/white"
+                            android:fontFamily="@font/inter_light"
+                            android:layout_marginEnd="4dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

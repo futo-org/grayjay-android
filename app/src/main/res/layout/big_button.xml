@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="7dp"
+    android:paddingStart="7dp"
+    android:paddingEnd="12dp"
+    android:background="@drawable/background_big_button"
+    android:id="@+id/root">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/button_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="0dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_playlist" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/button_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/white"
+            android:textSize="14dp"
+            android:gravity="center_vertical"
+            android:fontFamily="@font/inter_light"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Import Subscriptions" />
+
+        <TextView
+            android:id="@+id/button_sub_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/gray_ac"
+            android:textSize="12dp"
+            android:gravity="center_vertical"
+            android:fontFamily="@font/inter_extra_light"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Attempts to fetch your subscriptions from this source" />
+    </LinearLayout>
+</LinearLayout>

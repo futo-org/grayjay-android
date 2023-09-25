@@ -1,0 +1,336 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/videodetail_queue"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="14dp"
+    android:layout_marginRight="14dp"
+    android:layout_marginTop="5dp">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/videodetail_up_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:includeFontPadding="false"
+            android:textSize="17dp"
+            android:text="@string/up_next" />
+        <TextView
+            android:id="@+id/videodetail_queue_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/gray_ac"
+            android:fontFamily="@font/inter_extra_light"
+            android:includeFontPadding="false"
+            app:layout_constraintLeft_toRightOf="@id/videodetail_up_next"
+            app:layout_constraintBottom_toBottomOf="@id/videodetail_up_next"
+            android:layout_marginLeft="6dp"
+            android:textSize="14dp"
+            android:text="@string/queue" />
+        <TextView
+            android:id="@+id/videodetail_queue_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#585656"
+            android:includeFontPadding="false"
+            android:fontFamily="@font/inter_regular"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/videodetail_up_next"
+            android:layout_marginLeft="10dp"
+            android:textSize="12dp"
+            tools:text="1/4" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_videodetail_description"
+        android:layout_marginTop="5dp"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="110dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/videodetail_queue_box"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clickable="true"
+                android:padding="10dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/videodetail_queue_thumbnail"
+                    android:clickable="true"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintWidth_percent="0.4"
+                    app:shapeAppearanceOverlay="@style/roundedCorners_4dp"
+                    app:srcCompat="@drawable/placeholder_video_thumbnail"
+                    android:scaleType="centerCrop" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toRightOf="@id/videodetail_queue_thumbnail"
+                    android:layout_marginStart="12dp">
+                    <TextView
+                        android:id="@+id/videodetail_queue_title"
+                        android:clickable="true"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_light"
+                        android:textSize="14dp"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        tools:text="My New Ride or Die with a longer title" />
+                    <TextView
+                        android:id="@+id/videodetail_queue_meta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/gray_ac"
+                        android:fontFamily="@font/inter_light"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="10dp"
+                        tools:text="98K - 3 hours ago"
+                        android:layout_marginTop="8dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+                        <ImageView
+                            android:id="@+id/videodetail_queue_channel_image"
+                            android:background="@drawable/rounded_outline"
+                            android:clipToOutline="true"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            app:srcCompat="@drawable/ic_peertube" />
+                        <TextView
+                            android:id="@+id/videodetail_queue_channel_name"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/white"
+                            android:fontFamily="@font/inter_extra_light"
+                            android:textSize="12dp"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="6dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            tools:text="Louis Rossman" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/videodetail_end_of_playlist"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/text_end_of_queue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_light"
+                    android:textColor="@color/white"
+                    android:text="@string/reached_the_end_of_the_playlist"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/button_restart_now" />
+
+                <LinearLayout
+                    android:id="@+id/button_restart_now"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/background_button_primary_round"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    app:layout_constraintTop_toBottomOf="@id/text_end_of_queue"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="24dp"
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/ic_play_notif" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16dp"
+                        android:fontFamily="@font/inter_light"
+                        android:textColor="@color/white"
+                        android:text="@string/restart_now"/>
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_1f" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:clickable="true">
+
+            <LinearLayout
+                android:id="@+id/button_clear"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    app:tint="#B0ADAD"
+                    app:srcCompat="@drawable/ic_clear_16dp"
+                    android:scaleType="centerCrop" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear"
+                    android:includeFontPadding="false"
+                    android:fontFamily="@font/inter_light"
+                    android:textSize="14dp"
+                    android:textColor="@color/gray_8f"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/gray_1f" />
+
+            <LinearLayout
+                android:id="@+id/button_shuffle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:gravity="center"
+                android:clickable="true">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    app:tint="#B0ADAD"
+                    app:srcCompat="@drawable/ic_shuffle"
+                    android:scaleType="centerCrop"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Shuffle"
+                    android:includeFontPadding="false"
+                    android:fontFamily="@font/inter_light"
+                    android:textSize="14dp"
+                    android:textColor="@color/gray_8f"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/layout_repeat_divider"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/gray_1f" />
+
+            <LinearLayout
+                android:id="@+id/button_repeat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:gravity="center"
+                android:clickable="true">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    app:tint="#B0ADAD"
+                    app:srcCompat="@drawable/ic_repeat"
+                    android:scaleType="centerCrop"
+                    android:layout_marginTop="0.5dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="@font/inter_light"
+                    android:includeFontPadding="false"
+                    android:text="Repeat"
+                    android:textColor="@color/gray_8f"
+                    android:textSize="14dp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/gray_1f" />
+
+            <LinearLayout
+                android:id="@+id/button_view"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:gravity="center"
+                android:clickable="true">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    app:tint="#B0ADAD"
+                    app:srcCompat="@drawable/ic_view_queue"
+                    android:scaleType="centerCrop"
+                    android:layout_marginTop="1dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View"
+                    android:includeFontPadding="false"
+                    android:fontFamily="@font/inter_light"
+                    android:textSize="14dp"
+                    android:textColor="@color/gray_8f"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/root">
+
+    <ImageView
+        android:id="@+id/image_channel_thumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:srcCompat="@drawable/ic_futo_logo"
+        android:background="@drawable/rounded_outline"
+        android:clipToOutline="true"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/channel_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_new_activity"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/new_activity"
+        app:layout_constraintWidth_percent="0.32"
+        app:layout_constraintDimensionRatio="1:1"
+        app:srcCompat="@drawable/background_button_primary_round"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_neopass"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/creator_is_on_neopass"
+        app:layout_constraintWidth_percent="0.32"
+        app:layout_constraintDimensionRatio="1:1"
+        app:srcCompat="@drawable/neopass_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

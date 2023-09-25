@@ -1,0 +1,30 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+includeBuild('dep/polycentricandroid') {
+    dependencySubstitution {
+        substitute module('com.polycentric.core:app') with project(':app')
+    }
+}
+
+includeBuild('dep/futopay/android') {
+    dependencySubstitution {
+        substitute module('com.futo.futopay:app') with project(':app')
+    }
+}
+
+rootProject.name = "FutoVideo"
+include ':app'

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/background_button_black"
+        android:padding="10dp">
+
+        <EditText
+            android:id="@+id/edit_postal_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="text"
+            android:imeOptions="actionDone"
+            android:singleLine="true"
+            android:hint="ZIP code (36925, ...)"
+            android:layout_marginTop="2dp"
+            android:background="@drawable/background_30_round_4dp"/>
+
+        <TextView
+            android:id="@+id/text_subtext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_regular"
+            android:textSize="12dp"
+            android:textColor="#999999"
+            android:layout_marginTop="2dp"
+            android:text="Required to accurately calculate the applicable sales tax"/>
+
+        <FrameLayout
+            android:id="@+id/button_submit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/background_button_primary"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="5dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Submit"
+                android:textSize="18dp"
+                android:fontFamily="@font/inter_bold" />
+        </FrameLayout>
+
+    </LinearLayout>
+</LinearLayout>

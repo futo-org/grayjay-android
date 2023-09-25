@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FutoVideoPlayer">
+        <attr name="showSettings" format="boolean" />
+        <attr name="showFullScreen" format="boolean" />
+        <attr name="showMinimize" format="boolean" />
+    </declare-styleable>
+</resources>

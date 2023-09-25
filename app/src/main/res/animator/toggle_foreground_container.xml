@@ -1,0 +1,6 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="300"
+    android:propertyName="translateX"
+    android:valueFrom="2"
+    android:valueTo="21"
+    android:interpolator="@android:anim/accelerate_decelerate_interpolator" />

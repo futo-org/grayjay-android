@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DescButton">
+        <attr name="desc_icon" format="reference" />
+        <attr name="desc_title" format="string" />
+        <attr name="desc_description" format="string" />
+    </declare-styleable>
+</resources>

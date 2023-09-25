@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="47dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/search"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:scaleType="center"
+        app:srcCompat="@drawable/ic_search_white_16dp" />
+
+    <TextView android:id="@+id/text_suggestion"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall"
+        android:gravity="center_vertical"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:layout_weight="1" />
+
+    <ImageButton
+        android:id="@+id/button_add_to_query"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/add_to_query"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_add_to_query_16dp" />
+
+    <ImageButton
+        android:id="@+id/button_remove"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/remove_historical_suggestion"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_close_thin"
+        android:visibility="gone" />
+</LinearLayout>

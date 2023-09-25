@@ -1,0 +1,12 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_loader" >
+  <target
+      android:name="rotationGroup1"
+      android:animation="@animator/rotation_1500_clockwise" />
+  <target
+      android:name="rotationGroup2"
+      android:animation="@animator/rotation_2500_counter_clockwise" />
+  <target
+      android:name="rotationGroup3"
+      android:animation="@animator/rotation_2000_clockwise" />
+</animated-vector>

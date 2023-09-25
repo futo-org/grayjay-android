@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <objectAnimator
+        android:propertyName="strokeColor"
+        android:duration="300"
+        android:valueFrom="#FF2D63ED"
+        android:valueTo="#FF2A2A2A"
+        android:valueType="colorType"
+        android:interpolator="@android:anim/accelerate_decelerate_interpolator" />
+</set>

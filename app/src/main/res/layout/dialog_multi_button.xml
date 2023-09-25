@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="@color/gray_1d">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="40dp">
+
+        <ImageView
+            android:id="@+id/dialog_icon"
+            android:layout_width="86dp"
+            android:layout_height="86dp"
+            app:srcCompat="@drawable/ic_no_internet_86dp" />
+
+        <TextView
+            android:id="@+id/dialog_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/failed_to_retrieve_data_are_you_connected"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:textAlignment="center"
+            android:layout_marginTop="25dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+        <TextView
+            android:id="@+id/dialog_text_details"
+            android:layout_width="match_parent"
+            android:textColor="#AAAAAA"
+            android:fontFamily="@font/inter_regular"
+            android:text=""
+            android:textAlignment="center"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:textSize="9dp"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/dialog_text_code"
+            android:layout_width="match_parent"
+            android:textColor="#AAAAAA"
+            android:fontFamily="monospace"
+            android:text="source.getVideoDetails(...)"
+            android:textAlignment="center"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginTop="5dp"
+            android:padding="5dp"
+            android:background="#111111"
+            android:textSize="8dp"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:id="@+id/dialog_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="28dp" />
+    </LinearLayout>
+</LinearLayout>

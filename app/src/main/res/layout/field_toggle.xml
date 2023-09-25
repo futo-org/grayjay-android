@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableRow  xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="10dp">
+    <LinearLayout
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/field_title"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/gray_ac"
+            android:fontFamily="@font/inter_light"
+            android:text="@string/home_screen" />
+        <TextView
+            android:id="@+id/field_description"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:textSize="11dp"
+            android:textColor="#666666"
+            android:fontFamily="@font/inter_light"
+            android:text="" />
+    </LinearLayout>
+
+    <com.futo.platformplayer.views.others.Toggle
+        android:id="@+id/field_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginStart="20dp"/>
+</TableRow>

@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="125dp"
+    android:height="125dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+  <group android:translateX="26"
+      android:translateY="20">
+    <group
+        android:name="rotationGroup1"
+        android:pivotX="113.0"
+        android:pivotY="121.0"
+        android:rotation="0.0">
+      <path
+          android:pathData="M57.31,63.67C25.81,94.29 24.91,144.64 55.38,176.37C85.84,208.1 136.19,209.24 168.06,179.01L158.36,168.92C132.07,193.79 90.59,192.83 65.47,166.67C40.36,140.52 41.09,99.03 67.01,73.77L57.31,63.67Z"
+          android:fillColor="#2D63ED"
+          android:fillType="evenOdd"/>
+    </group>
+    <group
+        android:name="rotationGroup2"
+        android:pivotX="113.0"
+        android:pivotY="121.0"
+        android:rotation="0.0">
+      <path
+          android:pathData="M15.01,136.36C23.41,190.35 73.83,227.51 127.96,219.45C182.09,211.38 219.49,161.13 211.77,107.04L197.93,109.1C204.5,155.55 172.37,198.68 125.9,205.6C79.42,212.53 36.11,180.64 28.86,134.29L15.01,136.36Z"
+          android:fillColor="#0044C8"
+          android:fillType="evenOdd"/>
+    </group>
+    <group
+        android:name="rotationGroup3"
+        android:pivotX="113.0"
+        android:pivotY="121.0"
+        android:rotation="0.0">
+      <path
+          android:pathData="M96.53,239.8C161.63,249.14 222.15,204.18 231.92,139.04C241.69,73.9 197.01,13.17 132.04,3L129.96,16.85C187.29,25.86 226.69,79.47 218.07,136.96C209.45,194.45 156.06,234.15 98.61,225.95L96.53,239.8Z"
+          android:fillColor="#0022A6"
+          android:fillType="evenOdd"/>
+    </group>
+  </group>
+</vector>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Transition
+        app:constraintSetEnd="@id/expanded"
+        app:constraintSetStart="@id/collapsed"
+        app:duration="300"
+        app:motionInterpolator="easeInOut">
+
+        <OnSwipe
+            app:dragDirection="dragUp"
+            app:maxAcceleration="200"
+            app:touchAnchorId="@+id/touchContainer"
+            app:nestedScrollFlags="disableScroll"
+            app:touchAnchorSide="top" />
+
+        <KeyFrameSet>
+            <!--
+            <KeyAttribute
+                android:alpha="0"
+                app:framePosition="0"
+                app:motionTarget="@id/contentContainer" />
+
+            <KeyAttribute
+                android:alpha="1"
+                app:framePosition="100"
+                app:motionTarget="@id/contentContainer" /> -->
+
+            <KeyAttribute
+                app:framePosition="3"
+                app:motionTarget="@id/touchContainer">
+                <CustomAttribute
+                    app:attributeName="cardElevation"
+                    app:customDimension="0dp" />
+            </KeyAttribute>
+
+            <!--Minimize Progress-->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="MinimizeProgress"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="MinimizeProgress"
+                    app:customFloatValue="1" />
+            </KeyAttribute>
+
+            <!--Controller Alpha-->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="ControllerAlpha"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="ControllerAlpha"
+                    app:customFloatValue="1" />
+            </KeyAttribute>
+
+            <!--Content Alpha-->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="ContentAlpha"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="30"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="ContentAlpha"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="ContentAlpha"
+                    app:customFloatValue="1" />
+            </KeyAttribute>
+
+            <!--MinimizeControlsAlpha Alpha -->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="MinimizeControlsAlpha"
+                    app:customFloatValue="1" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="20"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="MinimizeControlsAlpha"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="MinimizeControlsAlpha"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+
+
+
+            <!--Padding Right-->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="VideoMinimize"
+                    app:customFloatValue="1" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="20"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="VideoMinimize"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="VideoMinimize"
+                    app:customFloatValue="0" />
+            </KeyAttribute>
+
+            <!--Padding Top-->
+            <KeyAttribute
+                app:framePosition="0"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="TopPadding"
+                    app:customDimension="1dp" />
+            </KeyAttribute>
+            <KeyAttribute
+                app:framePosition="100"
+                app:motionTarget="@id/fragview_videodetail">
+                <CustomAttribute
+                    app:attributeName="TopPadding"
+                    app:customDimension="0dp" />
+            </KeyAttribute>
+
+        </KeyFrameSet>
+    </Transition>
+
+    <ConstraintSet android:id="@+id/expanded">
+
+        <Constraint
+            android:id="@id/touchContainer"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Constraint
+            android:id="@id/fragview_videodetail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/collapsed">
+
+        <Constraint
+            android:id="@id/touchContainer"
+            android:layout_height="60dp"
+            android:layout_width="match_parent"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="48dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <Constraint
+            android:id="@id/fragview_videodetail"
+            android:layout_height="60dp"
+            android:layout_width="match_parent"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="48dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+    </ConstraintSet>
+
+</MotionScene>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="47dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageButton
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="4dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_construction" />
+
+    <!--<ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingRight="12dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_futo_logo_text" />-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="8dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15dp"
+            android:fontFamily="@font/inter_bold"
+            android:text="UNDER"
+            android:textColor="@color/white"
+            android:layout_marginTop="3dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20dp"
+            android:fontFamily="@font/inter_bold"
+            android:text="CONSTRUCTION"
+            android:textColor="@color/white"
+            android:layout_marginTop="-8dp"/>
+    </LinearLayout>
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <!--Back Button-->
+    <com.futo.platformplayer.views.casting.CastButton
+        android:id="@+id/button_cast"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingStart="16dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="13dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_cast_white_25dp" />
+
+    <!--Back Button-->
+    <ImageButton
+        android:id="@+id/button_add"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingStart="5dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_add_400" />
+</LinearLayout>

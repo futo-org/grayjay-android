@@ -1,0 +1,147 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="80dp">
+        <ImageView
+            android:id="@+id/source_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_peertube"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/source_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@id/source_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="13dp"
+            android:textColor="@color/white"
+            android:textSize="18dp"
+            android:text="Some Plugin" />
+
+        <LinearLayout
+            android:id="@+id/byContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toEndOf="@id/source_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginBottom="15dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="By"
+                android:fontFamily="@font/inter_extra_light"
+                android:textSize="15dp"
+                android:textColor="@color/text_color_tinted" />
+            <TextView
+                android:id="@+id/source_by"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FUTO"
+                android:fontFamily="@font/inter_extra_light"
+                android:layout_marginLeft="5dp"
+                android:textSize="15dp"
+                android:textColor="@color/white" />
+            <TextView
+                android:id="@+id/source_author_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(a5f64b3)"
+                android:fontFamily="@font/inter_extra_light"
+                android:layout_marginLeft="7dp"
+                android:textSize="15dp"
+                android:textColor="@color/text_color_tinted" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/source_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_color_tinted"
+        android:fontFamily="@font/inter_extra_light"
+        android:text="A plugin that adds Youtube as a source" />
+
+    <!--Version-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/inter_light"
+            android:text="Version" />
+        <TextView
+            android:id="@+id/source_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/text_color_tinted"
+            android:fontFamily="@font/inter_extra_light"
+            android:text="3" />
+    </LinearLayout>
+
+    <!--Repo Url-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/inter_light"
+            android:text="@string/repository_url" />
+        <TextView
+            android:id="@+id/source_repo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/colorPrimary"
+            android:fontFamily="@font/inter_extra_light"
+            android:text="https://some.repository.url/whatever/something" />
+    </LinearLayout>
+
+    <!--Script Url-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/inter_light"
+            android:text="@string/script_url" />
+        <TextView
+            android:id="@+id/source_script"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/colorPrimary"
+            android:fontFamily="@font/inter_extra_light"
+            android:text="https://some.repository.url/whatever/someScript.js" />
+    </LinearLayout>
+</LinearLayout>

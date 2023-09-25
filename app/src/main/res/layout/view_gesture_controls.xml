@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:layoutDirection="ltr"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/layout_controls_rewind"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/image_rewind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_rewind_animated" />
+
+        <TextView
+            android:id="@+id/text_rewind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 Seconds"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_controls_fast_forward"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/image_fastforward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_fastforward_animated" />
+
+        <TextView
+            android:id="@+id/text_fastforward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 Seconds"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginTop="8dp"
+            app:activeColor="@color/white"
+            app:inactiveColor="@color/transparent" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/layout_controls_sound"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="30dp"
+        android:background="@drawable/background_gesture_controls"
+        android:visibility="gone">
+
+        <com.futo.platformplayer.views.others.CircularProgressBar
+            android:id="@+id/progress_sound"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            app:strokeWidth="7dp"
+            android:layout_margin="10dp"
+            android:layout_gravity="center"
+            app:inactiveColor="@color/transparent"
+            app:activeColor="@color/white"
+            app:progress="60%" />
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/ic_volume_up_1"
+            android:contentDescription="volume" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/layout_controls_brightness"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="30dp"
+        android:background="@drawable/background_gesture_controls"
+        android:visibility="gone">
+
+        <com.futo.platformplayer.views.others.CircularProgressBar
+            android:id="@+id/progress_brightness"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            app:strokeWidth="7dp"
+            android:layout_margin="10dp"
+            android:layout_gravity="center"
+            app:inactiveColor="@color/transparent"
+            app:activeColor="@color/white"
+            app:progress="60%" />
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/ic_brightness_1"
+            android:contentDescription="volume" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/layout_controls_fullscreen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/background_gesture_controls"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_regular"
+            android:text="Toggle fullscreen"
+            android:textColor="@color/white"
+            android:textSize="16dp"/>
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

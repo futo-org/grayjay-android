@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BulletPointView">
+        <attr name="bulletColor" format="color" />
+        <attr name="valueColor" format="color" />
+
+        <attr name="bulletText" format="string" />
+    </declare-styleable>
+</resources>

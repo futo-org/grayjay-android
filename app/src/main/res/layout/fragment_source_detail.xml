@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <com.futo.platformplayer.views.sources.SourceHeaderView
+                android:id="@+id/source_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <com.futo.platformplayer.views.fields.FieldForm
+                    android:id="@+id/source_app_setings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                </com.futo.platformplayer.views.fields.FieldForm>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/source_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.futo.platformplayer.views.fields.FieldForm
+                    android:id="@+id/source_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                </com.futo.platformplayer.views.fields.FieldForm>
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <FrameLayout android:id="@+id/layout_loader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#AA000000"
+        android:visibility="gone">
+
+        <ImageView android:id="@+id/image_spinner"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:srcCompat="@drawable/ic_loader_animated"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</FrameLayout>

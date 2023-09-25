@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="32dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="0dp"
+    android:paddingStart="7dp"
+    android:paddingEnd="12dp"
+    android:layout_marginEnd="5dp"
+    android:background="@drawable/background_pill"
+    android:orientation="vertical"
+    android:id="@+id/root">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/donation_author_image"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginRight="5dp"
+            android:layout_marginLeft="5dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/placeholder_profile" />
+
+        <TextView
+            android:id="@+id/donation_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="5dp"
+            app:layout_constraintLeft_toRightOf="@id/donation_author_image"
+            app:layout_constraintTop_toTopOf="parent"
+            android:textColor="@color/white"
+            android:textSize="13dp"
+            android:gravity="center_vertical"
+            android:fontFamily="@font/inter_light"
+            tools:text="$100" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/expire_bar"
+        android:background="#AAFFFFFF"
+        android:scaleX="0"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="5dp"
+        android:elevation="5dp"
+        android:orientation="horizontal" />
+
+</LinearLayout>

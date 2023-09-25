@@ -1,0 +1,9 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="600"
+    android:propertyName="fillAlpha"
+    android:valueFrom="0"
+    android:valueTo="1"
+    android:startOffset="400"
+    android:repeatMode="reverse"
+    android:repeatCount="infinite"
+    android:interpolator="@android:anim/linear_interpolator" />

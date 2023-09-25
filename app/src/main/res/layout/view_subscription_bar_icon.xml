@@ -1,0 +1,29 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="60dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:clickable="true"
+    android:id="@+id/root">
+
+    <com.futo.platformplayer.views.others.CreatorThumbnail
+        android:id="@+id/creator_thumbnail"
+        android:layout_width="55dp"
+        android:layout_height="55dp" />
+
+    <TextView
+        android:id="@+id/text_channel_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="Louis Rossman"
+        android:fontFamily="@font/inter_medium"
+        android:textColor="@color/gray_ac"
+        android:textSize="9dp"
+        android:maxLines="1"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end" />
+</LinearLayout>

@@ -1,0 +1,15 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle">
+
+  <target
+      android:name="background"
+      android:animation="@animator/toggle_background_reverse" />
+
+  <target
+      android:name="foreground"
+      android:animation="@animator/toggle_foreground_reverse" />
+
+  <target
+      android:name="foregroundContainer"
+      android:animation="@animator/toggle_foreground_container_reverse" />
+</animated-vector>

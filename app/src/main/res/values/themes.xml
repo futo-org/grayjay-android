@@ -1,0 +1,72 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.FutoVideo.ImageButton" parent="Widget.AppCompat.ImageButton">
+        <item name="android:background">@null</item>
+    </style>
+
+    <style name="Theme.FutoVideo.TextView" parent="Widget.AppCompat.TextView">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">14dp</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+    </style>
+
+    <style name="Theme.FutoVideo.CheckedTextView" parent="Widget.AppCompat.TextView">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">14dp</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+    </style>
+
+    <style name="Theme.FutoVideo.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorHint">@color/gray_ac</item>
+        <item name="android:background">@drawable/edit_text_background</item>
+        <item name="android:textCursorDrawable">@drawable/edit_text_cursor</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="Theme.FutoVideo.ListView" parent="Widget.AppCompat.ListView">
+        <item name="android:divider">@null</item>
+        <item name="android:dividerHeight">0dp</item>
+    </style>
+
+    <style name="Theme.FutoVideo" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorSecondary">@color/gray_e0</item>
+        <item name="colorSecondaryVariant">@color/gray_30</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <item name="android:statusBarColor">@color/black</item>
+
+        <item name="imageButtonStyle">@style/Theme.FutoVideo.ImageButton</item>
+        <item name="editTextStyle">@style/Theme.FutoVideo.EditText</item>
+        <item name="android:listViewStyle">@style/Theme.FutoVideo.ListView</item>
+        <item name="android:textViewStyle">@style/Theme.FutoVideo.TextView</item>
+        <item name="android:checkedTextViewStyle">@style/Theme.FutoVideo.CheckedTextView</item>
+    </style>
+
+    <style name="Theme.FutoVideo.NoActionBar" parent="Theme.FutoVideo">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <style name="Theme.FutoVideo.TextAppearance.TabLayout" parent="@android:style/TextAppearance.Medium">
+        <item name="android:textSize">12dp</item>
+        <item name="android:textColor">@color/gray_8c</item>
+        <item name="android:fontFamily">@font/inter_medium</item>
+    </style>
+
+    <style name="Theme.FutoVideo.TextAppearance.EditText" parent="@android:style/TextAppearance.Medium">
+        <item name="android:textSize">20dp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+    </style>
+
+</resources>

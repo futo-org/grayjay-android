@@ -1,0 +1,6 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_update" >
+  <target
+      android:name="rotationGroup1"
+      android:animation="@animator/rotation_1500_clockwise" />
+</animated-vector>

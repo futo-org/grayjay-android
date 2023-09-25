@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintDimensionRatio="H,16:13">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="#474747" />
+
+        <ImageView
+            android:id="@+id/image_author_thumbnail"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/rounded_outline"
+            android:clipToOutline="true"
+            android:contentDescription="@string/channel_image"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/placeholder_channel_thumbnail" />
+
+        <TextView
+            android:id="@+id/text_author_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/inter_extra_light"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:textColor="@color/gray_e0"
+            android:textSize="10dp"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toRightOf="@id/image_author_thumbnail"
+            app:layout_constraintRight_toLeftOf="@id/image_neopass_channel"
+            app:layout_constraintTop_toTopOf="@id/image_author_thumbnail"
+            tools:text="Two Minute Papers" />
+
+        <ImageView
+            android:id="@+id/image_neopass_channel"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="NeoPass channel"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/text_author_name"
+            app:layout_constraintLeft_toRightOf="@id/text_author_name"
+            app:layout_constraintRight_toLeftOf="@id/platform_indicator"
+            app:layout_constraintTop_toTopOf="@id/text_author_name"
+            app:srcCompat="@drawable/neopass" />
+
+        <TextView
+            android:id="@+id/text_metadata"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:gravity="center_vertical"
+            android:textSize="10dp"
+            android:textColor="@color/gray_e0"
+            android:fontFamily="@font/inter_extra_light"
+            tools:text="1 day ago"
+            app:layout_constraintLeft_toRightOf="@id/image_author_thumbnail"
+            app:layout_constraintTop_toBottomOf="@id/text_author_name"
+            app:layout_constraintRight_toLeftOf="@id/platform_indicator"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp" />
+
+        <com.futo.platformplayer.views.platform.PlatformIndicator
+            android:id="@+id/platform_indicator"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:scaleType="centerInside"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintTop_toTopOf="@id/image_author_thumbnail"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/image_author_thumbnail" />
+
+        <LinearLayout
+            android:id="@+id/layout_text"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/image_author_thumbnail"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/layout_images"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/text_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="To be more specific, the negative impact of the vital decisions will possibly result in The Trace of Dependent Customization (Mohamed Stiles in The Book of the Software Engineering."
+                android:textSize="16sp"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/white"
+                android:gravity="bottom"
+                android:layout_marginTop="4dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:ellipsize="end"
+                android:maxLines="2" />
+
+            <TextView
+                android:id="@+id/text_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="To be more specific, the negative impact of the vital decisions will possibly result in The Trace of Dependent Customization (Mohamed Stiles in The Book of the Software Engineering. To be more specific, the negative impact of the vital decisions will possibly result in The Trace of Dependent Customization (Mohamed Stiles in The Book of the Software Engineering."
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_regular"
+                android:textColor="@color/white"
+                android:layout_marginTop="2dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintTop_toBottomOf="@id/text_title"
+                app:layout_constraintBottom_toTopOf="@id/layout_images"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/image_like_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                app:srcCompat="@drawable/ic_thumb_up" />
+
+            <TextView
+                android:id="@+id/text_likes"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:text="500K"
+                android:textColor="@color/white"
+                android:textSize="13dp" />
+
+            <ImageView
+                android:id="@+id/image_dislike_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="2dp"
+                app:srcCompat="@drawable/ic_thumb_down" />
+
+            <TextView
+                android:id="@+id/text_dislikes"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:text="500K"
+                android:textColor="@color/white"
+                android:textSize="13dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_comments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:id="@+id/image_comments"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="2dp"
+                app:srcCompat="@drawable/ic_forum" />
+
+            <TextView
+                android:id="@+id/text_comments"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:text="55"
+                android:textColor="@color/white"
+                android:textSize="13dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_images"
+            android:layout_width="match_parent"
+            android:layout_height="105dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/layout_rating"
+            app:layout_constraintStart_toStartOf="parent"
+            android:gravity="center"
+            android:layout_marginBottom="18dp">
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="25dp"
+            android:background="@drawable/background_fade"
+            app:layout_constraintBottom_toTopOf="@id/layout_images"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_marginBottom="10dp"/>
+
+        <LinearLayout
+            android:id="@+id/layout_image_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="@id/layout_images"
+            app:layout_constraintBottom_toBottomOf="@id/layout_images"
+            android:padding="3dp"
+            android:background="@drawable/background_pill_transparent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:gravity="center_vertical"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="4dp">
+
+            <ImageView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                app:srcCompat="@drawable/ic_image" />
+
+            <TextView
+                android:id="@+id/text_image_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_light"
+                android:textSize="11dp"
+                android:textColor="@color/white"
+                tools:text="3 Images"
+                android:layout_marginStart="2dp"/>
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="#474747" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

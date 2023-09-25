@@ -1,0 +1,34 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="50dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="7dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginBottom="4dp"
+    android:clickable="true"
+    android:id="@+id/root"
+    android:background="@drawable/background_pill_black">
+
+    <ImageView
+        android:id="@+id/image_button"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:scaleType="fitCenter"
+        tools:srcCompat="@drawable/ic_home"/>
+
+    <TextView
+        android:id="@+id/text_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="Home"
+        android:fontFamily="@font/inter_light"
+        android:textColor="@color/white"
+        android:textSize="16dp"
+        android:layout_marginEnd="20dp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

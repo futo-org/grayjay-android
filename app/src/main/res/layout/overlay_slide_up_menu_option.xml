@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginTop="10dp"
+    android:background="@drawable/background_slide_up_option"
+    android:id="@+id/slide_up_menu_item_root"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/slide_up_menu_item_image"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginLeft="15dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_share" />
+    <TextView
+        android:id="@+id/slide_up_menu_item_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="45dp"
+        android:text="Cat videos"
+        android:textSize="11dp"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/inter_light"
+        android:textColor="@color/white" />
+    <TextView
+        android:id="@+id/slide_up_menu_item_subtext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="15dp"
+        android:text="3 videos"
+        android:textSize="11dp"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/inter_light"
+        android:textColor="#ACACAC" />
+
+</RelativeLayout>

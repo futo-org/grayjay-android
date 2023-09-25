@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:layoutDirection="ltr"
+    android:orientation="vertical">
+
+    <com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
+        android:id="@+id/layout_bar"
+        android:layout_width="match_parent"
+        android:layout_height="12dp"
+        app:shouldInterceptTouches="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <com.google.android.exoplayer2.ui.DefaultTimeBar
+            android:id="@id/exo_progress"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:layout_marginBottom="0dp"
+            app:bar_height="2dp"
+            app:scrubber_enabled_size="1dp"
+            app:scrubber_disabled_size="1dp"
+            app:scrubber_dragged_size="1dp"
+            app:scrubber_color="@color/colorPrimary"
+            app:played_color="@color/colorPrimary"
+            app:buffered_color="#BBEEEEEE"
+            app:unplayed_color="#88EEEEEE" />
+    </com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

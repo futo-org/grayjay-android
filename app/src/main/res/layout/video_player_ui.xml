@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:layoutDirection="ltr"
+    android:orientation="vertical"
+    tools:targetApi="28">
+
+    <ImageButton
+        android:id="@+id/exo_minimize"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:scaleType="fitCenter"
+        android:clickable="true"
+        android:padding="3dp"
+        android:layout_marginStart="5dp"
+        app:srcCompat="@drawable/ic_minimize"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+        <ImageButton
+            android:id="@+id/exo_cast"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_cast" />
+        <ImageButton
+            android:id="@+id/exo_rotate_lock"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_screen_lock_rotation" />
+        <ImageButton
+            android:id="@+id/exo_settings"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_settings" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@id/exo_play"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:padding="10dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:clickable="true"
+        app:srcCompat="@drawable/ic_play_white_nopad" />
+
+    <ImageButton
+        android:id="@id/exo_pause"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:padding="10dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:clickable="true"
+        app:srcCompat="@drawable/ic_pause_white" />
+
+    <ImageButton
+        android:id="@+id/exo_fullscreen"
+        android:layout_width="55dp"
+        android:layout_height="40dp"
+        android:clickable="true"
+        app:srcCompat="@drawable/ic_expand"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingStart="5dp"
+        android:paddingTop="15dp"
+        android:paddingEnd="5dp"
+        android:scaleType="fitCenter"
+        android:layout_marginBottom="18dp" />
+
+    <TextView
+        android:id="@id/exo_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:paddingStart="24dp"
+        android:paddingEnd="4dp"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:text="00:00"
+        android:layout_gravity="bottom"
+        android:textStyle="normal"
+        android:layout_marginBottom="3dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/exo_progress" />
+
+    <TextView
+        android:id="@+id/text_divider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#AAAAAA"
+        android:textSize="13sp"
+        android:layout_gravity="bottom"
+        android:text="/"
+        app:layout_constraintLeft_toRightOf="@id/exo_position"
+        app:layout_constraintTop_toTopOf="@id/exo_position"
+        app:layout_constraintBottom_toBottomOf="@id/exo_position" />
+
+    <TextView
+        android:id="@id/exo_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:textColor="#AAAAAA"
+        android:textSize="12sp"
+        android:text="00:00"
+        android:layout_gravity="bottom"
+        android:textStyle="normal"
+        app:layout_constraintLeft_toRightOf="@id/text_divider"
+        app:layout_constraintTop_toTopOf="@id/exo_position"
+        app:layout_constraintBottom_toBottomOf="@id/exo_position"/>
+    <com.google.android.exoplayer2.ui.SubtitleView
+        android:id="@id/exo_subtitles"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.google.android.exoplayer2.ui.DefaultTimeBar
+        android:id="@id/exo_progress"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_marginBottom="-2dp"
+        app:bar_height="2dp"
+        app:scrubber_drawable="@drawable/player_thumb"
+        app:scrubber_disabled_size="0dp"
+        app:scrubber_enabled_size="12dp"
+        app:played_color="@color/transparent"
+        app:buffered_color="@color/transparent"
+        app:unplayed_color="@color/transparent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

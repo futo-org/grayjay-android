@@ -1,0 +1,207 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.10'
+    id 'org.ajoberstar.grgit' version '1.7.2'
+    id 'com.google.protobuf'
+    id 'kotlin-parcelize'
+}
+
+ext {
+    gitVersionName = grgit.describe()
+    gitVersionCode = gitVersionName.isInteger() ? gitVersionName.toInteger() : 1
+}
+
+println("Version Name: $gitVersionName")
+println("Version Code: $gitVersionCode")
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('/opt/key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.22.3'
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option "lite"
+                }
+            }
+        }
+    }
+}
+
+android {
+    namespace 'com.futo.platformplayer'
+    compileSdk 33
+    flavorDimensions "buildType"
+    productFlavors {
+        stable {
+            dimension "buildType"
+            applicationId "com.futo.platformplayer"
+            buildConfigField "boolean", "IS_UNSTABLE_BUILD", "false"
+            buildConfigField "boolean", "IS_PLAYSTORE_BUILD", "false"
+            resValue "string", "app_name", "Grayjay"
+            resValue "string", "authority", "com.futo.platformplayer"
+        }
+        unstable {
+            dimension "buildType"
+            applicationId "com.futo.platformplayer.d"
+            buildConfigField "boolean", "IS_UNSTABLE_BUILD", "true"
+            buildConfigField "boolean", "IS_PLAYSTORE_BUILD", "false"
+            resValue "string", "app_name", "Grayjay Unstable"
+            resValue "string", "authority", "com.futo.platformplayer.d"
+            getIsDefault().set(true)
+        }
+        playstore {
+            dimension "buildType"
+            applicationId "com.futo.platformplayer.playstore"
+            buildConfigField "boolean", "IS_UNSTABLE_BUILD", "false"
+            buildConfigField "boolean", "IS_PLAYSTORE_BUILD", "true"
+            resValue "string", "app_name", "Grayjay"
+            resValue "string", "authority", "com.futo.platformplayer.playstore"
+        }
+    }
+
+    android.applicationVariants.all { variant ->
+        if (variant.flavorName == "unstable") {
+            variant.preBuildProvider.configure {
+                doFirst {
+                    println("UNSTABLE BUILD")
+                }
+            }
+        }
+
+        if (variant.flavorName == "stable") {
+            variant.preBuildProvider.configure {
+                doFirst {
+                    println("STABLE BUILD")
+                }
+            }
+        }
+
+        if (variant.flavorName == "playstore") {
+            variant.preBuildProvider.configure {
+                doFirst {
+                    println("PLAYSTORE BUILD")
+                }
+            }
+        }
+    }
+
+    defaultConfig {
+        minSdk 29
+        targetSdk 33
+        versionCode gitVersionCode
+        versionName gitVersionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+
+            include "x86", "x86_64", "arm64-v8a", "armeabi-v7a"
+            universalApk true
+        }
+    }
+}
+
+dependencies {
+
+    //Core
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.google.android.material:material:1.5.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+
+    //Images
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.15.1'
+    implementation 'com.github.bumptech.glide:glide:4.15.1'
+
+    //Async
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2"
+
+    //HTTP
+    implementation "com.squareup.okhttp3:okhttp:4.10.0"
+
+    //JSON
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1" //Used for structured json
+    implementation 'com.google.code.gson:gson:2.10.1' //Used for complex/anonymous cases like during development conversions (eg. V8RemoteObject)
+
+    //JS
+    implementation("com.caoccao.javet:javet-android:2.2.1")
+
+    //Exoplayer
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-rtsp:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-transformer:2.18.7'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
+
+    //Other
+    implementation 'org.jmdns:jmdns:3.5.1'
+    implementation 'org.jsoup:jsoup:1.15.3'
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'com.arthenica:ffmpeg-kit-full:5.1'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.7.20'
+    implementation 'com.github.dhaval2404:imagepicker:2.1'
+    implementation 'com.google.zxing:core:3.4.1'
+    implementation 'com.journeyapps:zxing-android-embedded:4.2.0'
+    implementation 'com.caverock:androidsvg-aar:1.4'
+
+    //Protobuf
+    implementation 'com.google.protobuf:protobuf-javalite:3.22.3'
+
+    implementation 'com.polycentric.core:app:1.0'
+    implementation 'com.futo.futopay:app:1.0'
+    implementation 'androidx.work:work-runtime-ktx:2.8.1'
+    implementation 'androidx.concurrent:concurrent-futures-ktx:1.1.0'
+
+    //Payment
+    implementation 'com.stripe:stripe-android:20.28.3'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.2'
+    testImplementation "org.jetbrains.kotlin:kotlin-test:1.8.20"
+    testImplementation "org.xmlunit:xmlunit-core:2.9.1"
+    testImplementation "org.mockito:mockito-core:5.4.0"
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+}

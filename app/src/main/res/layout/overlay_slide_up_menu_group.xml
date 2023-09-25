@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:layout_marginTop="10dp">
+    <TextView
+        android:id="@+id/slide_up_menu_group_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recently Used Playlist"
+        android:textColor="@color/white"
+        android:fontFamily="@font/inter_semibold"
+        android:textSize="11dp" />
+
+    <LinearLayout
+        android:id="@+id/slide_up_menu_group_items"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
