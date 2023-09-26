@@ -190,7 +190,9 @@ class UIDialogs {
                 "\nPlugin [${ex.config.name}]" else "";
             showDialog(context,
                 R.drawable.ic_error_pred,
-                "${msg}${pluginInfo}", (if(ex != null ) "${ex.message}" else ""), if(ex is PluginException) ex.code else null,
+                "${msg}${pluginInfo}",
+                (if(ex != null ) "${ex.message}" else ""),
+                if(ex is PluginException) ex.code else null,
                 0,
                 UIDialogs.Action("Retry", {
                     retryAction?.invoke();
@@ -209,14 +211,14 @@ class UIDialogs {
         fun showDataRetryDialog(context: Context, reason: String? = null, retryAction: (() -> Unit)? = null, closeAction: (() -> Unit)? = null) {
             val retryButtonAction = Action("Retry", retryAction ?: {}, ActionStyle.PRIMARY)
             val closeButtonAction = Action("Close", closeAction ?: {}, ActionStyle.ACCENT)
-            showDialog(context, R.drawable.ic_no_internet_86dp, "Data Retry", reason, null, 0, retryButtonAction, closeButtonAction)
+            showDialog(context, R.drawable.ic_no_internet_86dp, "Data Retry", reason, null, 0, closeButtonAction, retryButtonAction)
         }
 
 
         fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null) {
             val confirmButtonAction = Action("Confirm", action, ActionStyle.PRIMARY)
             val cancelButtonAction = Action("Cancel", cancelAction ?: {}, ActionStyle.ACCENT)
-            showDialog(context, R.drawable.ic_error, text, null, null, 1, cancelButtonAction, confirmButtonAction)
+            showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction)
         }
 
         fun showUpdateAvailableDialog(context: Context, lastVersion: Int) {

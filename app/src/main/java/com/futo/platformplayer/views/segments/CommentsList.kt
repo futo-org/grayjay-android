@@ -22,14 +22,20 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import java.net.UnknownHostException
 
 class CommentsList : ConstraintLayout {
     private val _llmReplies: LinearLayoutManager;
     private val _taskLoadComments = if(!isInEditMode) TaskHandler<suspend () -> IPager<IPlatformComment>, IPager<IPlatformComment>>(StateApp.instance.scopeGetter, { it(); })
         .success { pager -> onCommentsLoaded(pager); }
+        .exception<UnknownHostException> {
+            UIDialogs.toast("Failed to load comments");
+            setLoading(false);
+        }
         .exception<Throwable> {
-            Logger.w(ChannelFragment.TAG, "Failed to load comments.", it);
-            UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, ::fetchComments);
+            Logger.e(TAG, "Failed to load comments.", it);
+            UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load comments. " + (it.message ?: ""), it, ::fetchComments);
+            setLoading(false);
         } else TaskHandler(IPlatformVideoDetails::class.java, StateApp.instance.scopeGetter);
 
     private var _nextPageHandler: TaskHandler<IPager<IPlatformComment>, List<IPlatformComment>> = TaskHandler<IPager<IPlatformComment>, List<IPlatformComment>>(StateApp.instance.scopeGetter, {

@@ -55,6 +55,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
     val onContentUrlClicked = Event2<String, ContentType>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
+    val onAddToQueueClicked = Event1<IPlatformContent>();
 
     private fun getContentPager(channel: IPlatformChannel): IPager<IPlatformContent> {
         Logger.i(TAG, "getContentPager");
@@ -147,6 +148,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
             this.onContentClicked.subscribe(this@ChannelContentsFragment.onContentClicked::emit);
             this.onChannelClicked.subscribe(this@ChannelContentsFragment.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@ChannelContentsFragment.onAddToClicked::emit);
+            this.onAddToQueueClicked.subscribe(this@ChannelContentsFragment.onAddToQueueClicked::emit);
         }
 
         _llmVideo = LinearLayoutManager(view.context);

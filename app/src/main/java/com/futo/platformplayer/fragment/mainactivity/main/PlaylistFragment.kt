@@ -284,13 +284,17 @@ class PlaylistFragment : MainFragment() {
                 _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
                 _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
                 _buttonDownload.setOnClickListener {
-                    StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+                    UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete the downloaded videos?", {
+                        StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+                    });
                 }
             }
             else if(isDownloaded) {
                 _buttonDownload.setImageResource(R.drawable.ic_download_off);
                 _buttonDownload.setOnClickListener {
-                    StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+                    UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete the downloaded videos?", {
+                        StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+                    });
                 }
             }
             else {

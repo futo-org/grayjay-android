@@ -18,6 +18,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
     val onContentClicked = Event2<IPlatformContent, Long>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
+    val onAddToQueueClicked = Event1<IPlatformContent>();
 
     override fun getItemCount(): Int {
         return _cache.size;
@@ -51,6 +52,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
                 onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit);
                 onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit);
                 onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit);
+                onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit);
             };
             1 -> ChannelListFragment.newInstance().apply { onClickChannel.subscribe(onChannelClicked::emit) };
             //2 -> ChannelStoreFragment.newInstance();

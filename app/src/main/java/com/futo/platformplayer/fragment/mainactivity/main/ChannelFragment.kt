@@ -38,6 +38,7 @@ import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
@@ -180,6 +181,13 @@ class ChannelFragment : MainFragment() {
                 _overlayContainer.let {
                     if(content is IPlatformVideo)
                         _slideUpOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it);
+                }
+            }
+            adapter.onAddToQueueClicked.subscribe { content ->
+                if(content is IPlatformVideo) {
+                    StatePlayer.instance.addToQueue(content);
+                    val name = if (content.name.length > 20) (content.name.subSequence(0, 20).toString() + "...") else content.name;
+                    UIDialogs.toast(context, "Queued [$name]", false);
                 }
             }
             adapter.onContentUrlClicked.subscribe { url, contentType ->

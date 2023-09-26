@@ -60,7 +60,6 @@ class MediaPlaybackService : Service() {
         }
 
         try {
-
             setupNotificationRequirements();
 
             notifyMediaSession(null, null);
@@ -235,6 +234,7 @@ class MediaPlaybackService : Service() {
         var builder = NotificationCompat.Builder(this, MEDIA_NOTIF_TAG)
             .setSmallIcon(icon)
             .setOngoing(true)
+            .setSilent(true)
             .setContentIntent(PendingIntent.getActivity(this, 5, bringUpIntent, PendingIntent.FLAG_IMMUTABLE))
             .setStyle(if(hasQueue)
                     androidx.media.app.NotificationCompat.MediaStyle()

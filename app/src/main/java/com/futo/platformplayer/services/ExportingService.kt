@@ -163,6 +163,7 @@ class ExportingService : Service() {
         var builder = NotificationCompat.Builder(this, EXPORT_NOTIF_TAG)
             .setSmallIcon(R.drawable.ic_export)
             .setOngoing(true)
+            .setSilent(true)
             .setContentIntent(PendingIntent.getActivity(this, 5, bringUpIntent, PendingIntent.FLAG_IMMUTABLE))
             .setContentTitle("${export.state}: ${export.videoLocal.name}")
             .setContentText(export.getExportInfo())

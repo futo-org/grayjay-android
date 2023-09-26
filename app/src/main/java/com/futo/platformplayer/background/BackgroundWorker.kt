@@ -55,6 +55,7 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
                     .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
                     .setContentTitle("Grayjay")
                     .setContentText("Failed subscriptions update\n${ex.message}")
+                    .setSilent(true)
                     .setChannelId(notificationChannel.id).build());
             }
 
@@ -72,6 +73,7 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
             .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
             .setContentTitle("Grayjay")
             .setContentText("Updating subscriptions...")
+            .setSilent(true)
             .setChannelId(notificationChannel.id)
             .setProgress(1, 0, true);
 
@@ -109,6 +111,7 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
                 .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
                 .setContentTitle("Grayjay")
                 .setContentText("${newItems.size} new content from ${newSubChanges.size} creators")
+                .setSilent(true)
                 .setChannelId(notificationChannel.id).build());
     }
 }
