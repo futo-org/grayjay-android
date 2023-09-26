@@ -1869,7 +1869,11 @@ class VideoDetailView : ConstraintLayout {
         }
 
         fragment.lifecycleScope.launch(Dispatchers.IO) {
-            playbackTracker.onProgress(positionMs.toDouble() / 1000, isPlaying);
+            try {
+                playbackTracker.onProgress(positionMs.toDouble() / 1000, isPlaying);
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to notify progress.", e);
+            }
         }
     }
 

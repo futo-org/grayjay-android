@@ -9,7 +9,7 @@ plugins {
 
 ext {
     gitVersionName = grgit.describe()
-    gitVersionCode = gitVersionName.isInteger() ? gitVersionName.toInteger() : 1
+    gitVersionCode = gitVersionName != null && gitVersionName.isInteger() ? gitVersionName.toInteger() : 1
 }
 
 println("Version Name: $gitVersionName")

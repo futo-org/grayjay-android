@@ -29,7 +29,7 @@ import javax.jmdns.ServiceTypeListener
 class StateCasting {
     private val _scopeIO = CoroutineScope(Dispatchers.IO);
     private val _scopeMain = CoroutineScope(Dispatchers.Main);
-    private lateinit var _jmDNS: JmDNS;
+    private var _jmDNS: JmDNS? = null;
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
 
     private val _castServer = ManagedHttpServer(9999);
@@ -162,14 +162,16 @@ class StateCasting {
 
         _scopeIO.launch {
             try {
-                _jmDNS = JmDNS.create(InetAddress.getLocalHost());
-                _jmDNS.addServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
-                _jmDNS.addServiceListener("_airplay._tcp.local.", _airPlayServiceListener);
-                _jmDNS.addServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
+                val jmDNS = JmDNS.create(InetAddress.getLocalHost());
+                jmDNS.addServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
+                jmDNS.addServiceListener("_airplay._tcp.local.", _airPlayServiceListener);
+                jmDNS.addServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
 
                 if (BuildConfig.DEBUG) {
-                    _jmDNS.addServiceTypeListener(_serviceTypeListener);
+                    jmDNS.addServiceTypeListener(_serviceTypeListener);
                 }
+
+                _jmDNS = jmDNS;
             } catch (e: Throwable) {
                 Logger.e(TAG, "Failed to start casting service.", e);
             }
@@ -189,18 +191,21 @@ class StateCasting {
 
         Logger.i(TAG, "CastingService stopping.")
 
-        _scopeIO.launch {
-            try {
-                _jmDNS.removeServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
-                _jmDNS.removeServiceListener("_airplay._tcp", _airPlayServiceListener);
+        val jmDNS = _jmDNS;
+        if (jmDNS != null) {
+            _scopeIO.launch {
+                try {
+                    jmDNS.removeServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
+                    jmDNS.removeServiceListener("_airplay._tcp", _airPlayServiceListener);
 
-                if (BuildConfig.DEBUG) {
-                    _jmDNS.removeServiceTypeListener(_serviceTypeListener);
+                    if (BuildConfig.DEBUG) {
+                        jmDNS.removeServiceTypeListener(_serviceTypeListener);
+                    }
+
+                    jmDNS.close();
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to stop mDNS.", e);
                 }
-
-                _jmDNS.close();
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to stop mDNS.", e);
             }
         }
 

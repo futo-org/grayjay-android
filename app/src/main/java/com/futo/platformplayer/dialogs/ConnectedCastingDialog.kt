@@ -53,7 +53,17 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
             dismiss();
         };
 
-        _sliderVolume.addOnChangeListener(OnChangeListener { _, value, _ -> StateCasting.instance.activeDevice?.changeVolume(value.toDouble()); });
+        //TODO: Check if volume slider is properly hidden in all cases
+        _sliderVolume.addOnChangeListener(OnChangeListener { _, value, _ ->
+            val activeDevice = StateCasting.instance.activeDevice ?: return@OnChangeListener;
+            if (activeDevice.canSetVolume) {
+                try {
+                    activeDevice.changeVolume(value.toDouble());
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to change volume.", e);
+                }
+            }
+        });
 
         setLoading(false);
         updateDevice();
