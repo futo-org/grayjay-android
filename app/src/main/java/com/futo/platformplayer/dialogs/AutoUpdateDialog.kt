@@ -176,8 +176,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
             withContext(Dispatchers.Main) {
                 onReceiveResult("Failed to download update.");
             }
-        }
-        finally {
+        } finally {
             withContext(Dispatchers.Main) {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }

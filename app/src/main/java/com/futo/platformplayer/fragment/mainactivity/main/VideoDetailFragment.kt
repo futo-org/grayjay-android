@@ -142,7 +142,6 @@ class VideoDetailFragment : MainFragment {
     }
     override fun onHide() {
         super.onHide();
-        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     fun preventPictureInPicture() {
@@ -175,6 +174,7 @@ class VideoDetailFragment : MainFragment {
         _viewDetail?.onStop();
         close();
 
+        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         StatePlayer.instance.clearQueue();
         StatePlayer.instance.setPlayerClosed();
     }

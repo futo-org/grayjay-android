@@ -200,6 +200,8 @@ class ImportDialog : AlertDialog {
                         _uiResultBot.visibility = View.VISIBLE;
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to update import UI.", e)
+                    } finally {
+                        window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     }
                 }
             } catch (e: Throwable) {
