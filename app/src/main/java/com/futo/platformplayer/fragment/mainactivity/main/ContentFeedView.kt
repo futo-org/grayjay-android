@@ -125,6 +125,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
 
     protected open fun onContentClicked(content: IPlatformContent, time: Long) {
         if(content is IPlatformVideo) {
+            StatePlayer.instance.clearQueue();
             if (Settings.instance.playback.shouldResumePreview(time))
                 fragment.navigate<VideoDetailFragment>(content.withTimestamp(time)).maximizeVideoDetail();
             else
@@ -137,7 +138,10 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     }
     protected open fun onContentUrlClicked(url: String, contentType: ContentType) {
         when(contentType) {
-            ContentType.MEDIA -> fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
+            ContentType.MEDIA -> {
+                StatePlayer.instance.clearQueue();
+                fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
+            };
             ContentType.PLAYLIST -> fragment.navigate<PlaylistFragment>(url);
             ContentType.URL -> fragment.navigate<BrowserFragment>(url);
             else -> {};

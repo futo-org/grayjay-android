@@ -136,7 +136,7 @@ class StatePlayer {
     fun setQueueType(queueType : String) {
         when(queueType) {
             TYPE_QUEUE -> {
-                _queueRemoveOnFinish = true;
+                _queueRemoveOnFinish = false;
             }
             TYPE_WATCHLATER -> {
                 _queueRemoveOnFinish = true;

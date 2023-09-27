@@ -301,6 +301,7 @@ class VideoDetailView : ConstraintLayout {
         _player.attachPlayer();
 
         _container_content_liveChat.onRaidNow.subscribe {
+            StatePlayer.instance.clearQueue();
             fragment.navigate<VideoDetailFragment>(it.targetUrl);
         };
 

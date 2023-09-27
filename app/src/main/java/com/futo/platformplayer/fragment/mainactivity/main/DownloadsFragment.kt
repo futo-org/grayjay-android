@@ -13,6 +13,7 @@ import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
 import com.futo.platformplayer.views.others.ProgressBar
@@ -123,6 +124,7 @@ class DownloadsFragment : MainFragment() {
             _listDownloaded = findViewById<RecyclerView>(R.id.list_downloaded)
                 .asAnyWithTop(findViewById(R.id.downloads_top)) {
                     it.onClick.subscribe {
+                        StatePlayer.instance.clearQueue();
                         _frag.navigate<VideoDetailFragment>(it).maximizeVideoDetail();
                     }
                 };

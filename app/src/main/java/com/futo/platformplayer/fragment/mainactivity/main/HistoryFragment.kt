@@ -12,6 +12,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.others.TagsView
 import com.futo.platformplayer.views.adapters.HistoryListAdapter
@@ -44,6 +45,7 @@ class HistoryFragment : MainFragment() {
         adapter.onClick.subscribe { v ->
             val diff = v.video.duration - v.position;
             val vid: Any = if (diff > 5) { v.video.withTimestamp(v.position) } else { v.video };
+            StatePlayer.instance.clearQueue();
             navigate<VideoDetailFragment>(vid).maximizeVideoDetail();
             editSearch.clearFocus();
             inputMethodManager.hideSoftInputFromWindow(editSearch.windowToken, 0);

@@ -170,6 +170,7 @@ class ChannelFragment : MainFragment() {
             adapter.onChannelClicked.subscribe { c -> fragment.navigate<ChannelFragment>(c) }
             adapter.onContentClicked.subscribe { v, _ ->
                 if(v is IPlatformVideo) {
+                    StatePlayer.instance.clearQueue();
                     fragment.navigate<VideoDetailFragment>(v).maximizeVideoDetail();
                 } else if (v is IPlatformPlaylist) {
                     fragment.navigate<PlaylistFragment>(v);
@@ -192,7 +193,10 @@ class ChannelFragment : MainFragment() {
             }
             adapter.onContentUrlClicked.subscribe { url, contentType ->
                 when(contentType) {
-                    ContentType.MEDIA -> fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
+                    ContentType.MEDIA -> {
+                        StatePlayer.instance.clearQueue();
+                        fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
+                    };
                     ContentType.URL -> fragment.navigate<BrowserFragment>(url);
                     else -> {};
                 }
