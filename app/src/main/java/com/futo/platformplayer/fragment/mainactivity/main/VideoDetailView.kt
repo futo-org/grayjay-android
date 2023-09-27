@@ -916,7 +916,9 @@ class VideoDetailView : ConstraintLayout {
         if(videoDetail.datetime != null && videoDetail.datetime!! > OffsetDateTime.now())
             UIDialogs.toast(context, "Planned in ${videoDetail.datetime?.toHumanNowDiffString(true)}")
 
-        _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
+        if (!videoDetail.isLive) {
+            _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
+        }
 
         val video = if(videoDetail is VideoLocal)
             videoDetail;
@@ -1381,8 +1383,8 @@ class VideoDetailView : ConstraintLayout {
             ?.toList() ?: listOf();
 
         _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, "Quality", null, true,
-            if (!_isCasting && video?.isLive != true) SlideUpMenuTitle(this.context).apply { setTitle("Playback Rate") } else null,
-            if (!_isCasting && video?.isLive != true) SlideUpMenuButtonList(this.context).apply {
+            if (!_isCasting) SlideUpMenuTitle(this.context).apply { setTitle("Playback Rate") } else null,
+            if (!_isCasting) SlideUpMenuButtonList(this.context).apply {
                 setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), _player.getPlaybackRate().toString());
                 onClick.subscribe { v ->
                     if (_isCasting) {
@@ -1652,7 +1654,7 @@ class VideoDetailView : ConstraintLayout {
 
     private fun setCastEnabled(isCasting: Boolean) {
         Logger.i(TAG, "setCastEnabled(isCasting=$isCasting)")
-        _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
+
         video?.let { updateQualitySourcesOverlay(it); };
 
         _isCasting = isCasting;
@@ -1666,6 +1668,10 @@ class VideoDetailView : ConstraintLayout {
             StateCasting.instance.stopVideo();
             _cast.stopTimeJob();
             _cast.visibility = View.GONE;
+
+            if (video?.isLive == false) {
+                _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
+            }
         }
     }
 
