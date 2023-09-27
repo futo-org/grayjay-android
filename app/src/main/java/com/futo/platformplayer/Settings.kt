@@ -213,19 +213,27 @@ class Settings : FragmentedStorageFileJson() {
 
         fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
 
-        @FormField("Background Behavior", FieldForm.DROPDOWN, "", 5)
+        @FormField("Auto-Rotate Dead Zone", FieldForm.DROPDOWN, "Auto-rotate deadzone in degrees", 5)
+        @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
+        var autoRotateDeadZone: Int = 0;
+
+        fun getAutoRotateDeadZoneDegrees(): Int {
+            return autoRotateDeadZone * 5;
+        }
+
+        @FormField("Background Behavior", FieldForm.DROPDOWN, "", 6)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 
         fun isBackgroundContinue() = backgroundPlay == 1;
         fun isBackgroundPictureInPicture() = backgroundPlay == 2;
 
-        @FormField("Resume After Preview", FieldForm.DROPDOWN, "When watching a video in preview mode, resume at the position when opening the video", 4)
+        @FormField("Resume After Preview", FieldForm.DROPDOWN, "When watching a video in preview mode, resume at the position when opening the video", 7)
         @DropdownFieldOptionsId(R.array.resume_after_preview)
         var resumeAfterPreview: Int = 1;
 
 
-        @FormField("Live Chat Webview", FieldForm.TOGGLE, "Use the live chat web window when available over native implementation.", 5)
+        @FormField("Live Chat Webview", FieldForm.TOGGLE, "Use the live chat web window when available over native implementation.", 8)
         var useLiveChatWindow: Boolean = true;
 
         fun shouldResumePreview(previewedPosition: Long): Boolean{

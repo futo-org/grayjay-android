@@ -2,7 +2,9 @@ package com.futo.platformplayer.listeners
 
 import android.content.Context
 import android.view.OrientationEventListener
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.logging.Logger
 
 class OrientationManager : OrientationEventListener {
 
@@ -11,31 +13,36 @@ class OrientationManager : OrientationEventListener {
     var orientation : Orientation = Orientation.PORTRAIT;
 
     constructor(context: Context) : super(context) { }
-    constructor(context: Context, rate: Int) : super(context, rate) { }
-    init {
-
-    }
 
     override fun onOrientationChanged(orientationAnglep: Int) {
-        if(orientationAnglep == -1)
+        if (orientationAnglep == -1) return
+
+        val deadZone = Settings.instance.playback.getAutoRotateDeadZoneDegrees()
+        val isInDeadZone = when (orientation) {
+            Orientation.PORTRAIT -> orientationAnglep in 0 until (60 - deadZone) || orientationAnglep in (300 + deadZone) .. 360
+            Orientation.REVERSED_LANDSCAPE -> orientationAnglep in (60 + deadZone) until (140 - deadZone)
+            Orientation.REVERSED_PORTRAIT -> orientationAnglep in (140 + deadZone) until (220 - deadZone)
+            Orientation.LANDSCAPE -> orientationAnglep in (220 + deadZone) until (300 - deadZone)
+        }
+
+        if (isInDeadZone) {
             return;
+        }
 
-        var newOrientation = Orientation.PORTRAIT;
-        if(orientationAnglep > 60 && orientationAnglep < 140)
-            newOrientation = Orientation.REVERSED_LANDSCAPE;
-        else if(orientationAnglep >= 140 && orientationAnglep <= 220)
-            newOrientation = Orientation.REVERSED_PORTRAIT;
-        else if(orientationAnglep >= 220 && orientationAnglep <= 300)
-            newOrientation = Orientation.LANDSCAPE;
-        else
-            newOrientation = Orientation.PORTRAIT;
+        val newOrientation = when (orientationAnglep) {
+            in 60 until 140 -> Orientation.REVERSED_LANDSCAPE
+            in 140 until 220 -> Orientation.REVERSED_PORTRAIT
+            in 220 until 300 -> Orientation.LANDSCAPE
+            else -> Orientation.PORTRAIT
+        }
 
-        if(newOrientation != orientation) {
-            orientation = newOrientation;
-            onOrientationChanged.emit(newOrientation);
+        Logger.i("OrientationManager", "Orientation=$newOrientation orientationAnglep=$orientationAnglep");
+
+        if (newOrientation != orientation) {
+            orientation = newOrientation
+            onOrientationChanged.emit(newOrientation)
         }
     }
-
 
     //TODO: Perhaps just use ActivityInfo orientations instead..
     enum class Orientation {

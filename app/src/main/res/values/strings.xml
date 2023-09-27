@@ -99,6 +99,12 @@
         <item>Enabled</item>
         <item>Same as System</item>
     </string-array>
+    <string-array name="auto_rotate_dead_zone">
+        <item>0</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+    </string-array>
     <string-array name="enabled_disabled_array">
         <item>Disabled</item>
         <item>Enabled</item>
