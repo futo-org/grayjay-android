@@ -191,18 +191,20 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         updateTrackSelector();
     }
     private fun updateTrackSelector() {
-        var builder = DefaultTrackSelector.Parameters.Builder();
-        if(builder != null){
-            if(_targetTrackVideoHeight > 0)
-                builder = builder
-                    .setMinVideoSize(0, height - 10)
-                    .setMaxVideoSize(9999, height + 10);
-            if(_targetTrackAudioBitrate > 0)
-                builder = builder
-                    .setMaxAudioBitrate(_targetTrackAudioBitrate);
+        var builder = DefaultTrackSelector.Parameters.Builder(context);
+        if(_targetTrackVideoHeight > 0) {
+            builder = builder
+                .setMinVideoSize(0, _targetTrackVideoHeight - 10)
+                .setMaxVideoSize(9999, _targetTrackVideoHeight + 10);
+        }
 
-            if(exoPlayer?.player?.trackSelector != null)
-                exoPlayer!!.player.trackSelector!!.parameters = builder.build();
+        if(_targetTrackAudioBitrate > 0) {
+            builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
+        }
+
+        val trackSelector = exoPlayer?.player?.trackSelector;
+        if(trackSelector != null) {
+            trackSelector.parameters = builder.build();
         }
     }
 
