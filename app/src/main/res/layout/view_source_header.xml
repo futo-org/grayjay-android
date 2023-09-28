@@ -144,4 +144,27 @@
             android:fontFamily="@font/inter_extra_light"
             android:text="https://some.repository.url/whatever/someScript.js" />
     </LinearLayout>
+
+    <!--Script Url-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/inter_light"
+            android:text="Signature" />
+        <TextView
+            android:id="@+id/source_signature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/colorPrimary"
+            android:fontFamily="@font/inter_extra_light"
+            android:text="Valid" />
+    </LinearLayout>
 </LinearLayout>

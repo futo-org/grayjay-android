@@ -23,6 +23,7 @@ class SourceHeaderView : LinearLayout {
     private val _sourceVersion: TextView;
     private val _sourceRepositoryUrl: TextView;
     private val _sourceScriptUrl: TextView;
+    private val _sourceSignature: TextView;
 
     private var _config : SourcePluginConfig? = null;
 
@@ -38,6 +39,7 @@ class SourceHeaderView : LinearLayout {
         _sourceVersion = findViewById(R.id.source_version);
         _sourceRepositoryUrl = findViewById(R.id.source_repo);
         _sourceScriptUrl = findViewById(R.id.source_script);
+        _sourceSignature = findViewById(R.id.source_signature);
 
         _sourceBy.setOnClickListener {
             if(!_config?.authorUrl.isNullOrEmpty())
@@ -76,6 +78,20 @@ class SourceHeaderView : LinearLayout {
             _sourceBy.setTextColor(resources.getColor(R.color.colorPrimary));
         else
             _sourceBy.setTextColor(Color.WHITE);
+
+        if (!config.scriptPublicKey.isNullOrEmpty() && !config.scriptSignature.isNullOrEmpty()) {
+            val script = StatePlugins.instance.getScript(config.id);
+            if (script != null && config.validate(script)) {
+                _sourceSignature.setTextColor(Color.rgb(0, 255, 0));
+                _sourceSignature.text = "Signature is valid";
+            } else {
+                _sourceSignature.setTextColor(Color.rgb(255, 0, 0));
+                _sourceSignature.text = "Signature is invalid";
+            }
+        } else {
+            _sourceSignature.setTextColor(Color.rgb(255, 0, 0));
+            _sourceSignature.text = "No signature available";
+        }
     }
 
     fun clear() {
