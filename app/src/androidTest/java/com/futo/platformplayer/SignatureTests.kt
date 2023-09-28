@@ -62,6 +62,27 @@ class SignatureTests {
 
     }
 
+    @Test
+    fun testSignatureSignSh() {
+        val somePlugin = SourcePluginConfig(
+            "Script",
+            "A plugin that adds Script as a source",
+            "FUTO",
+            "https://futo.org",
+            "https://futo.org",
+            "./Script.js",
+            1,
+            "./script.png",
+            "394dba51-fa0c-450c-8f17-6a00df362218",
+            "cQcTqsbGgEXGXycTl+Byf5+DmxTQLE6AjlS+IzRA0Dce915B2brFyr5tymwd2zCEL7HVSpX5g0fia0GRPcujSu21o0yy/iU4AtA1LAP8ZYgQxYSinUs2/q/B3MQYiJCrB9e2K+2Fr8p6CGG5usa4kkYDel4/tofdX3vwQjeEf8hZemPu8Gda39luTqJahQZZ9IZoif8RT9wpQmIXJ4/A+e3PW1m8+3QL3oiMPDos2csFG7Hko/AbBonJJvwr/ywh/+sNutKryvdeIlZgLBMudfrVEfoBdXePhRqSwBpFRuMPmCe63VvhRfu1EzoelGz2cskxsC9ia6b/TE6KPJvJ4w==",
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzhBcOpjK+ArDFL94tXTsnmByyKEjN2LsuXk7Dtl6hKVUxOs7RuZ/Ok+CTacXP3/AmsjfOT9g4Rd5gUg3MHsA0PG5Jc8pzV0FHsTNSO6x9XdJv1CwmMqneQuoNxZfiw6MBCe6y0nMM1vaLYdkXniD39EFHyvYPgSTsF9AUljfmHHH7H7J7rxTbW2p7VYwUp2KNn9Q49G9H7A14hs3y1SsLK2y8fJCQ2XR1ARWrI/6xeOoAo23rSqMrML4O3ukaEG1wjidlPr3zdb8GfSHRBi/0qzTwXx7cFnffPqmoHhnMwmTFlhOO8TdwVRm0cWee3Zz2VsETW4Pd27K8NPH2RELGQIDAQAB"
+        );
+        val script = "//this is just an empty script";
+
+        assert(somePlugin.validate(script), { "Invalid signature" });
+
+    }
+
     companion object {
         private const val TAG = "SignatureTests";
     }
