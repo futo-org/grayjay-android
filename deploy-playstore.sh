@@ -1,6 +1,10 @@
 #!/bin/sh
 DOCUMENT_ROOT=/var/www/html
 
+# Sign sources
+echo "Signing all sources..."
+bash ./sign-all-sources.sh
+
 # Build content
 echo "Building content..."
 ./gradlew --stacktrace bundlePlaystoreRelease
