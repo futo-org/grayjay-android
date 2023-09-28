@@ -1,5 +1,6 @@
 package com.futo.platformplayer.api.media.platforms.js.models
 
+import androidx.core.text.HtmlCompat
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.PlatformID
@@ -7,8 +8,10 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.decodeUnicode
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.logging.Logger
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -38,7 +41,8 @@ open class JSContent : IPlatformContent, IPluginSourced {
         val contextName = "PlatformContent";
 
         id = PlatformID.fromV8(_pluginConfig, _content.getOrThrow(config, "id", contextName));
-        name = _content.getOrThrow(config, "name", contextName);
+        name = HtmlCompat.fromHtml(_content.getOrThrow<String>(config, "name", contextName).decodeUnicode(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString();
+        Logger.i("JSContent", "name=$name");
         author = PlatformAuthorLink.fromV8(_pluginConfig, _content.getOrThrow(config, "author", contextName));
 
         val datetimeInt = _content.getOrThrow<Int>(config, "datetime", contextName).toLong();

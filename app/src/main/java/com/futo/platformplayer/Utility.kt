@@ -9,9 +9,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Looper
 import android.os.OperationCanceledException
-import android.util.DisplayMetrics
 import android.util.TypedValue
-import android.view.Display
 import android.view.View
 import android.view.WindowInsetsController
 import android.widget.TextView
@@ -22,17 +20,12 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
-import com.futo.platformplayer.states.StatePlatform
-import org.json.JSONArray
-import org.json.JSONObject
-import userpackage.Protocol
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.math.abs
-import kotlin.math.min
 
 private val _allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
 fun getRandomString(sizeOfRandomString: Int): String {
@@ -156,4 +149,57 @@ fun File.share(context: Context) {
     val chooserIntent = Intent.createChooser(shareIntent, "Share");
     chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     context.startActivity(chooserIntent);
+}
+
+fun String.decodeUnicode(): String {
+    val sb = StringBuilder()
+    var i = 0
+
+    while (i < this.length) {
+        var ch = this[i]
+
+        if (ch == '\\' && i + 1 < this.length) {
+            i++
+            ch = this[i]
+            when (ch) {
+                '\\' -> sb.append('\\')
+                't' -> sb.append('\t')
+                'n' -> sb.append('\n')
+                'r' -> sb.append('\r')
+                'f' -> sb.append('\u000C')
+                'b' -> sb.append('\b')
+                '"' -> sb.append('"')
+                '\'' -> sb.append('\'')
+                'u' -> {
+                    if (i + 4 < this.length) {
+                        val unicode = this.substring(i + 1, i + 5)
+                        try {
+                            sb.append(unicode.toInt(16).toChar())
+                        } catch (e: NumberFormatException) {
+                            throw IOException("Invalid Unicode sequence: $unicode")
+                        }
+                        i += 4
+                    } else {
+                        throw IOException("Incomplete Unicode sequence")
+                    }
+                }
+                in '0'..'7' -> {
+                    val end = (i + 3).coerceAtMost(this.length)
+                    val octal = this.substring(i, end).takeWhile { it in '0'..'7' }
+                    try {
+                        sb.append(octal.toInt(8).toChar())
+                        i += octal.length - 1
+                    } catch (e: NumberFormatException) {
+                        throw IOException("Invalid Octal sequence: $octal")
+                    }
+                }
+                else -> sb.append(ch)
+            }
+        } else {
+            sb.append(ch)
+        }
+
+        i++
+    }
+    return sb.toString()
 }
