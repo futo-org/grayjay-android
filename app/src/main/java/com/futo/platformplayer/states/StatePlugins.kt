@@ -177,18 +177,16 @@ class StatePlugins {
     }
     fun installPlugin(context: Context, scope: CoroutineScope, sourceUrl: String, handler: ((Boolean) -> Unit)? = null) {
         scope.launch(Dispatchers.IO) {
+            val client = ManagedHttpClient();
+            val config: SourcePluginConfig;
             try {
-                val configResp = ManagedHttpClient().get(sourceUrl);
+                val configResp = client.get(sourceUrl);
                 if(!configResp.isOk)
                     throw IllegalStateException("Failed request with ${configResp.code}");
                 val configJson = configResp.body?.string();
                 if(configJson.isNullOrEmpty())
                     throw IllegalStateException("No response");
-                val config = SourcePluginConfig.fromJson(configJson, sourceUrl);
-
-                withContext(Dispatchers.Main) {
-                    installPlugin(context, scope, config, handler);
-                }
+                config = SourcePluginConfig.fromJson(configJson, sourceUrl);
             }
             catch(ex: SerializationException) {
                 Logger.e(TAG, "Failed decode config", ex);
@@ -199,8 +197,8 @@ class StatePlugins {
                             finish();
                             handler?.invoke(false);
                         }, UIDialogs.ActionStyle.PRIMARY));
-
                 };
+                return@launch;
             }
             catch(ex: Exception) {
                 Logger.e(TAG, "Failed fetch config", ex);
@@ -209,13 +207,36 @@ class StatePlugins {
                         handler?.invoke(false);
                     });
                 };
+                return@launch;
+            }
+
+            val script: String?
+            try {
+                val scriptResp = client.get(config.absoluteScriptUrl);
+                if (!scriptResp.isOk)
+                    throw IllegalStateException("script not available [${scriptResp.code}]");
+                script = scriptResp.body?.string();
+                if (script.isNullOrEmpty())
+                    throw IllegalStateException("script empty");
+            } catch (ex: Exception) {
+                Logger.e(TAG, "Failed fetch script", ex);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.showGeneralErrorDialog(context, "Failed to fetch script", ex);
+                };
+                return@launch;
+            }
+
+            withContext(Dispatchers.Main) {
+                installPlugin(context, scope, config, script, handler);
             }
         }
     }
-    fun installPlugin(context: Context, scope: CoroutineScope, config: SourcePluginConfig, handler: ((Boolean)->Unit)? = null) {
+    fun installPlugin(context: Context, scope: CoroutineScope, config: SourcePluginConfig, script: String, handler: ((Boolean)->Unit)? = null) {
         val client = ManagedHttpClient();
         val warnings = config.getWarnings();
 
+        if (script.isEmpty())
+            throw IllegalStateException("script empty");
 
         fun doInstall(reinstall: Boolean) {
             UIDialogs.showDialogProgress(context) {
@@ -224,13 +245,6 @@ class StatePlugins {
 
                 scope.launch(Dispatchers.IO) {
                     try {
-                        val scriptResp = client.get(config.absoluteScriptUrl);
-                        if (!scriptResp.isOk)
-                            throw IllegalStateException("script not available [${scriptResp.code}]");
-                        val script = scriptResp.body?.string();
-                        if (script.isNullOrEmpty())
-                            throw IllegalStateException("script empty");
-
                         withContext(Dispatchers.Main) {
                             it.setText("Validating script...");
                             it.setProgress(0.25);

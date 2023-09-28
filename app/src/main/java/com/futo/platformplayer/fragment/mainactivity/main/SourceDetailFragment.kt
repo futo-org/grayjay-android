@@ -185,7 +185,7 @@ class SourceDetailFragment : MainFragment() {
             val config = _config;
 
             if (config != null) {
-                _sourceHeader.loadConfig(config);
+                _sourceHeader.loadConfig(config, StatePlugins.instance.getScript(config.id));
             } else {
                 _sourceHeader.clear();
             }

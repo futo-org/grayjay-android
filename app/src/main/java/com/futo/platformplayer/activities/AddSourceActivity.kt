@@ -42,7 +42,8 @@ class AddSourceActivity : AppCompatActivity() {
 
     private val _client = ManagedHttpClient();
 
-    private var _config : SourcePluginConfig? = null;
+    private var _config: SourcePluginConfig? = null;
+    private var _script: String? = null;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -81,7 +82,7 @@ class AddSourceActivity : AppCompatActivity() {
         }
         _buttonInstall.setOnClickListener {
             _config?.let {
-                install(_config!!);
+                install(_config!!, _script!!);
             };
         };
 
@@ -114,6 +115,7 @@ class AddSourceActivity : AppCompatActivity() {
         setLoading(true);
 
         lifecycleScope.launch(Dispatchers.IO) {
+            val config: SourcePluginConfig;
             try {
                 val configResp = _client.get(url);
                 if(!configResp.isOk)
@@ -121,33 +123,51 @@ class AddSourceActivity : AppCompatActivity() {
                 val configJson = configResp.body?.string();
                 if(configJson.isNullOrEmpty())
                     throw IllegalStateException("No response");
-                val config = SourcePluginConfig.fromJson(configJson, url);
 
-                withContext(Dispatchers.Main) {
-                    loadConfig(config);
-                }
-            }
-            catch(ex: SerializationException) {
+                config = SourcePluginConfig.fromJson(configJson, url);
+            } catch(ex: SerializationException) {
                 Logger.e(TAG, "Failed decode config", ex);
                 withContext(Dispatchers.Main) {
                     UIDialogs.showDialog(this@AddSourceActivity, R.drawable.ic_error,
                         "Invalid Config Format", null, null,
                         0, UIDialogs.Action("Ok", { finish() }, UIDialogs.ActionStyle.PRIMARY));
                 };
-            }
-            catch(ex: Exception) {
+                return@launch;
+            } catch(ex: Exception) {
                 Logger.e(TAG, "Failed fetch config", ex);
                 withContext(Dispatchers.Main) {
                     UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, "Failed to fetch configuration", ex);
                 };
+                return@launch;
+            }
+
+            val script: String?
+            try {
+                val scriptResp = _client.get(config.absoluteScriptUrl);
+                if (!scriptResp.isOk)
+                    throw IllegalStateException("script not available [${scriptResp.code}]");
+                script = scriptResp.body?.string();
+                if (script.isNullOrEmpty())
+                    throw IllegalStateException("script empty");
+            } catch (ex: Exception) {
+                Logger.e(TAG, "Failed fetch script", ex);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, "Failed to fetch script", ex);
+                };
+                return@launch;
+            }
+
+            withContext(Dispatchers.Main) {
+                loadConfig(config, script);
             }
         };
     }
 
-    fun loadConfig(config: SourcePluginConfig) {
+    private fun loadConfig(config: SourcePluginConfig, script: String) {
         _config = config;
+        _script = script;
 
-        _sourceHeader.loadConfig(config);
+        _sourceHeader.loadConfig(config, script);
         _sourcePermissions.removeAllViews();
         _sourceWarnings.removeAllViews();
 
@@ -171,7 +191,7 @@ class AddSourceActivity : AppCompatActivity() {
 
         val pastelRed = resources.getColor(R.color.pastel_red);
 
-        for(warning in config.getWarnings())
+        for(warning in config.getWarnings(script))
             _sourceWarnings.addView(
                 SourceInfoView(this,
                 R.drawable.ic_security_pred,
@@ -182,8 +202,8 @@ class AddSourceActivity : AppCompatActivity() {
         setLoading(false);
     }
 
-    fun install(config: SourcePluginConfig) {
-        StatePlugins.instance.installPlugin(this, lifecycleScope, config) {
+    fun install(config: SourcePluginConfig, script: String) {
+        StatePlugins.instance.installPlugin(this, lifecycleScope, config, script) {
             if(it)
                 backToSources();
         }

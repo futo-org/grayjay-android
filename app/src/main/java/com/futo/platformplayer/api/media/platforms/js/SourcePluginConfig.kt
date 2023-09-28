@@ -4,6 +4,7 @@ import android.net.Uri
 import com.futo.platformplayer.SignatureProvider
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.decodeFromString
 import java.net.URL
 import java.util.*
@@ -77,6 +78,15 @@ class SourcePluginConfig(
 
     fun getWarnings(scriptToCheck: String? = null) : List<Pair<String,String>> {
         val list = mutableListOf<Pair<String,String>>();
+
+        val currentlyInstalledPlugin = StatePlugins.instance.getPlugin(id);
+        if (currentlyInstalledPlugin != null) {
+            if (currentlyInstalledPlugin.config.scriptPublicKey != scriptPublicKey) {
+                list.add(Pair(
+                    "Different Author",
+                    "This plugin was signed by a different author. Please ensure that this is correct and that the plugin was not provided by a malicious actor."));
+            }
+        }
 
         if(scriptPublicKey.isNullOrEmpty() || scriptSignature.isNullOrEmpty())
             list.add(Pair(

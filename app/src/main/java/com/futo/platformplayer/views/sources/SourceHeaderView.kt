@@ -55,7 +55,7 @@ class SourceHeaderView : LinearLayout {
         };
     }
 
-    fun loadConfig(config: SourcePluginConfig) {
+    fun loadConfig(config: SourcePluginConfig, script: String?) {
         _config = config;
 
         val loadedIcon = StatePlugins.instance.getPluginIconOrNull(config.id);
@@ -80,8 +80,10 @@ class SourceHeaderView : LinearLayout {
             _sourceBy.setTextColor(Color.WHITE);
 
         if (!config.scriptPublicKey.isNullOrEmpty() && !config.scriptSignature.isNullOrEmpty()) {
-            val script = StatePlugins.instance.getScript(config.id);
-            if (script != null && config.validate(script)) {
+            if (script == null) {
+                _sourceSignature.setTextColor(Color.rgb(0xAC, 0xAC, 0xAC));
+                _sourceSignature.text = "Script is not available";
+            } else  if (config.validate(script)) {
                 _sourceSignature.setTextColor(Color.rgb(0, 255, 0));
                 _sourceSignature.text = "Signature is valid";
             } else {
