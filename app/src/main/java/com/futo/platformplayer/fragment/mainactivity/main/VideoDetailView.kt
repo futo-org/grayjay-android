@@ -94,6 +94,7 @@ import com.google.android.exoplayer2.Format
 import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException
+import com.google.common.base.Stopwatch
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.*
 import userpackage.Protocol
@@ -930,12 +931,21 @@ class VideoDetailView : ConstraintLayout {
             val me = this;
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val tracker = video.getPlaybackTracker() ?: StatePlatform.instance.getPlaybackTracker(video.url);
+                    val stopwatch = com.futo.platformplayer.debug.Stopwatch()
+                    var tracker = video.getPlaybackTracker()
+                    Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+
+                    if (tracker == null) {
+                        stopwatch.reset()
+                        tracker = StatePlatform.instance.getPlaybackTracker(video.url);
+                        Logger.i(TAG, "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+                    }
+
                     if(me.video == video)
                         me._playbackTracker = tracker;
                 }
                 catch(ex: Throwable) {
-                    fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         UIDialogs.showGeneralErrorDialog(context, "Failed to get Playback Tracker", ex);
                     };
                 }

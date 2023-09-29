@@ -62,6 +62,7 @@ class StatePlatform {
     private val _enabledClients : ArrayList<IPlatformClient> = ArrayList();
 
     private val _clientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
+    private val _trackerClientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
 
     private val _primaryClientPersistent = FragmentedStorage.get<StringStorage>("primaryClient");
     private var _primaryClientObj : IPlatformClient? = null;
@@ -246,6 +247,22 @@ class StatePlatform {
         };
         return pool.getClient(capacity);
     }
+    fun getTrackerClientPooled(parentClient: IPlatformClient, capacity: Int): IPlatformClient {
+        val pool = synchronized(_trackerClientPools) {
+            if(!_trackerClientPools.containsKey(parentClient))
+                _trackerClientPools[parentClient] = PlatformClientPool(parentClient).apply {
+                    this.onDead.subscribe { client, pool ->
+                        synchronized(_trackerClientPools) {
+                            if(_trackerClientPools[parentClient] == pool)
+                                _trackerClientPools.remove(parentClient);
+                        }
+                    }
+                }
+            _trackerClientPools[parentClient]!!;
+        };
+        return pool.getClient(capacity);
+    }
+
     fun getClientsByClaimType(claimType: Int): List<IPlatformClient> {
         return getEnabledClients().filter { it.isClaimTypeSupported(claimType) };
     }
@@ -605,7 +622,12 @@ class StatePlatform {
     }
 
     fun getPlaybackTracker(url: String): IPlaybackTracker? {
-        return getContentClientOrNull(url)?.getPlaybackTracker(url);
+        val baseClient = getContentClientOrNull(url) ?: return null;
+        if (baseClient !is JSClient) {
+            return baseClient.getPlaybackTracker(url);
+        }
+        val client = getTrackerClientPooled(baseClient, 1);
+        return client.getPlaybackTracker(url);
     }
 
     fun hasEnabledChannelClient(url : String) : Boolean = getEnabledClients().any { it.isChannelUrl(url) };
