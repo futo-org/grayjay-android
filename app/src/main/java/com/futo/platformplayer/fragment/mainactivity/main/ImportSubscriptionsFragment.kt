@@ -32,7 +32,7 @@ class ImportSubscriptionsFragment : MainFragment() {
 
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
-        super.onShown(parameter, isBack);
+        super.onShownWithView(parameter, isBack);
         _view?.onShown(parameter, isBack);
     }
 
