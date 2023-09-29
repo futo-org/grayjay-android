@@ -572,6 +572,7 @@ class StatePlatform {
                     pagers.put(it.searchChannels(query), 1f);
             }
             catch(ex: Throwable) {
+                Logger.e(TAG, "Failed search channels", ex)
                 UIDialogs.toast("Failed search channels on [${it.name}]\n(${ex.message})");
             }
         };
