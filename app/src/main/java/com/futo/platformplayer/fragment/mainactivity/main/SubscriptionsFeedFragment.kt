@@ -124,8 +124,8 @@ class SubscriptionsFeedFragment : MainFragment() {
             if (announcementsView == null && !isHomeEnabled) {
                 val c = context;
                 if (c != null) {
-                    _announcementsView = AnnouncementView(c).apply {
-                        headerView?.addView(AnnouncementView(c))
+                    _announcementsView = AnnouncementView(c, null).apply {
+                        headerView?.addView(this)
                     };
                 }
             }

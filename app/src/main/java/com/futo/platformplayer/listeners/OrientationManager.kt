@@ -14,6 +14,8 @@ class OrientationManager : OrientationEventListener {
 
     constructor(context: Context) : super(context) { }
 
+    //TODO: Something weird is going on here
+    //TODO: Old implementation felt pretty good for me, but now with 0 deadzone still feels bad, even though code should be identical?
     override fun onOrientationChanged(orientationAnglep: Int) {
         if (orientationAnglep == -1) return
 

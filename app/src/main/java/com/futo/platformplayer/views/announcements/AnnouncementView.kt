@@ -5,6 +5,8 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
@@ -14,6 +16,9 @@ import com.futo.platformplayer.states.SessionAnnouncement
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanNowDiffString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AnnouncementView : LinearLayout {
     private val _root: ConstraintLayout;
@@ -28,8 +33,12 @@ class AnnouncementView : LinearLayout {
     private val _category: String?;
     private var _currentAnnouncement: Announcement? = null;
 
+    private val _scope: CoroutineScope?;
+
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_announcement, this);
+
+        _scope = findViewTreeLifecycleOwner()?.lifecycleScope ?: StateApp.instance.scopeOrNull; //TODO: Fetch correct scope
 
         val dp10 = 10.dp(resources);
         setPadding(dp10, dp10, dp10, dp10);
@@ -73,7 +82,9 @@ class AnnouncementView : LinearLayout {
 
         super.onAttachedToWindow()
         StateAnnouncement.instance.onAnnouncementChanged.subscribe(this) {
-            refresh();
+            _scope?.launch(Dispatchers.Main) {
+                refresh();
+            }
         }
 
         refresh();

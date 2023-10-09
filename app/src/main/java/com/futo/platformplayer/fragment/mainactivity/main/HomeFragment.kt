@@ -84,8 +84,8 @@ class HomeFragment : MainFragment() {
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
 
         constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
-            _announcementsView = AnnouncementView(context).apply {
-                headerView.addView(AnnouncementView(context))
+            _announcementsView = AnnouncementView(context, null).apply {
+                headerView.addView(this);
             };
 
             _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({ fragment.lifecycleScope }, {
