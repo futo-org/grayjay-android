@@ -6,13 +6,16 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.*
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.ReadOnlyTextField
 import com.google.android.material.button.MaterialButton
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
     private lateinit var _form: FieldForm;
     private lateinit var _buttonBack: ImageButton;
 
@@ -76,6 +79,28 @@ class SettingsActivity : AppCompatActivity() {
         if(_lastActivity == this)
             _lastActivity = null;
         overridePendingTransition(R.anim.slide_lighten, R.anim.slide_out_up)
+    }
+
+
+
+
+    private var resultLauncherMap =  mutableMapOf<Int, (ActivityResult)->Unit>();
+    private var requestCode: Int? = -1;
+    private val resultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) {
+            result: ActivityResult ->
+        val handler = synchronized(resultLauncherMap) {
+            resultLauncherMap.remove(requestCode);
+        }
+        if(handler != null)
+            handler(result);
+    };
+    override fun launchForResult(intent: Intent, code: Int, handler: (ActivityResult)->Unit) {
+        synchronized(resultLauncherMap) {
+            resultLauncherMap[code] = handler;
+        }
+        requestCode = code;
+        resultLauncher.launch(intent);
     }
 
     companion object {

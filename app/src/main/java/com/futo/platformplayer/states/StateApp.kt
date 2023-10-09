@@ -2,7 +2,9 @@ package com.futo.platformplayer.states
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.AudioManager
@@ -10,12 +12,20 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.DisplayMetrics
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.work.*
 import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
@@ -43,6 +53,9 @@ class StateApp {
     val isMainActive: Boolean get() = contextOrNull != null && contextOrNull is MainActivity; //if context is MainActivity, it means its active
 
     private val externalRootDirectory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Grayjay");
+
+
+
     fun getExternalRootDirectory(): File? {
         if(!externalRootDirectory.exists()) {
             val result = externalRootDirectory.mkdirs();
@@ -156,6 +169,32 @@ class StateApp {
             }
         }
         return state;
+    }
+
+    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, path: Uri?, handle: (Uri?)->Unit)
+    {
+        if(activity is Context)
+        {
+            UIDialogs.showDialog(activity, R.drawable.ic_security, "Missing Access", "Please grant access to ${name}", null, 0,
+                UIDialogs.Action("Cancel", {}),
+                UIDialogs.Action("Ok", {
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    if(path != null)
+                        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+                    intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        .and(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        .and(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                        .and(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+
+                    activity.launchForResult(intent, 99) {
+                        if(it.resultCode == Activity.RESULT_OK) {
+                            handle(it.data?.data);
+                        }
+                        else
+                            UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
+                    };
+                }, UIDialogs.ActionStyle.PRIMARY));
+        }
     }
 
     //Lifecycle

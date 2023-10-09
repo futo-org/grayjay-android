@@ -10,6 +10,9 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.WindowCompat
@@ -24,6 +27,7 @@ import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
@@ -48,7 +52,7 @@ import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
 import java.util.*
 
-class MainActivity : AppCompatActivity {
+class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     //TODO: Move to dimensions
     private val HEIGHT_MENU_DP = 48f;
@@ -363,6 +367,7 @@ class MainActivity : AppCompatActivity {
 
         //startActivity(Intent(this, TestActivity::class.java));
     }
+
 
     /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -890,6 +895,28 @@ class MainActivity : AppCompatActivity {
             paddingBottom += HEIGHT_VIDEO_MINIMIZED_DP;
 
         _fragContainerMain.setPadding(0,0,0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingBottom, resources.displayMetrics).toInt());
+    }
+
+
+
+
+    private var resultLauncherMap =  mutableMapOf<Int, (ActivityResult)->Unit>();
+    private var requestCode: Int? = -1;
+    private val resultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) {
+            result: ActivityResult ->
+        val handler = synchronized(resultLauncherMap) {
+            resultLauncherMap.remove(requestCode);
+        }
+        if(handler != null)
+            handler(result);
+    };
+    override fun launchForResult(intent: Intent, code: Int, handler: (ActivityResult)->Unit) {
+        synchronized(resultLauncherMap) {
+            resultLauncherMap[code] = handler;
+        }
+        requestCode = code;
+        resultLauncher.launch(intent);
     }
 
     companion object {
