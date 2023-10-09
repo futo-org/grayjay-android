@@ -1,6 +1,7 @@
 package com.futo.platformplayer.engine
 
 import android.content.Context
+import android.os.Looper
 import com.caoccao.javet.exceptions.JavetCompilationException
 import com.caoccao.javet.exceptions.JavetExecutionException
 import com.caoccao.javet.interop.V8Host
@@ -17,6 +18,7 @@ import com.futo.platformplayer.engine.exceptions.*
 import com.futo.platformplayer.engine.internal.V8Converter
 import com.futo.platformplayer.engine.packages.*
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateAssets
 import kotlinx.coroutines.*
 
@@ -24,6 +26,7 @@ class V8Plugin {
     val config: IV8PluginConfig;
     private val _client: ManagedHttpClient;
     private val _clientAuth: ManagedHttpClient;
+
 
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
@@ -137,6 +140,8 @@ class V8Plugin {
         return executeTyped<V8Value>(js);
     }
     fun <T : V8Value> executeTyped(js: String) : T {
+        warnIfMainThread("V8Plugin.executeTyped");
+
         val runtime = _runtime ?: throw IllegalStateException("JSPlugin not started yet");
         return catchScriptErrors("Plugin[${config.name}]", js) { runtime.getExecutor(js).execute() };
     }

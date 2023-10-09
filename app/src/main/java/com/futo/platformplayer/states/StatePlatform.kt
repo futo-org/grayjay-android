@@ -45,7 +45,7 @@ import kotlin.streams.toList
  */
 class StatePlatform {
     private val TAG = "StatePlatform";
-    private val VIDEO_CACHE = 1024 * 1024 * 10;
+    private val VIDEO_CACHE = 100;
 
     private val _scope = CoroutineScope(Dispatchers.IO);
 
@@ -92,6 +92,7 @@ class StatePlatform {
                 return@BatchedTaskHandler null;
             else {
                 val cached = synchronized(_cache) { _cache.get(it); } ?: return@BatchedTaskHandler null;
+                Logger.i(TAG, "Video Cache Hit [${cached.video.name}]");
                 if (cached.creationTime.getNowDiffSeconds() > _cacheExpirationSeconds) {
                     Logger.i(TAG, "Invalidated cache for [${it}]");
                     synchronized(_cache) {

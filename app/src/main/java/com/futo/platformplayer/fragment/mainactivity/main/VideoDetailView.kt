@@ -927,6 +927,7 @@ class VideoDetailView : ConstraintLayout {
             StateDownloads.instance.getCachedVideo(videoDetail.id) ?: videoDetail;
         this.video = video;
         this._playbackTracker = null;
+
         if(video is JSVideoDetails) {
             val me = this;
             fragment.lifecycleScope.launch(Dispatchers.IO) {
@@ -1001,6 +1002,7 @@ class VideoDetailView : ConstraintLayout {
         _subTitle.text = subTitleSegments.joinToString(" • ");
 
         _rating.onLikeDislikeUpdated.remove(this);
+
         if (ref != null) {
             _rating.visibility = View.GONE;
 
@@ -1085,12 +1087,14 @@ class VideoDetailView : ConstraintLayout {
             _layoutRating.visibility = View.GONE;
         }
 
+
         //Overlay
         updateQualitySourcesOverlay(video);
 
         setLoading(false);
 
         //Set Mediasource
+
         val toResume = _videoResumePositionMilliseconds;
         _videoResumePositionMilliseconds = 0;
         loadCurrentVideo(toResume);
@@ -1117,6 +1121,7 @@ class VideoDetailView : ConstraintLayout {
             _layoutResume.visibility = View.GONE;
             _textResume.text = "";
         }
+
 
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
         StatePlayer.instance.setCurrentlyPlaying(video);

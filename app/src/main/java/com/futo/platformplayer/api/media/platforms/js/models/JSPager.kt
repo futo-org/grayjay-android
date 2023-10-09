@@ -1,11 +1,14 @@
 package com.futo.platformplayer.api.media.platforms.js.models
 
+import android.os.Looper
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.warnIfMainThread
 
 abstract class JSPager<T> : IPager<T> {
     protected val plugin: V8Plugin;
@@ -37,6 +40,8 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun nextPage() {
+        warnIfMainThread("JSPager.nextPage");
+
         pager = plugin.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
             pager.invoke("nextPage", arrayOf<Any>());
         };
@@ -53,6 +58,8 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun getResults(): List<T> {
+        warnIfMainThread("JSPager.getResults");
+
         val previousResults = _lastResults?.let {
             if(!_resultChanged)
                 return@let it;

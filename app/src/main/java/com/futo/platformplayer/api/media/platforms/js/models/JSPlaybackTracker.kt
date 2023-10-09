@@ -6,6 +6,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.warnIfMainThread
 
 class JSPlaybackTracker: IPlaybackTracker {
     private val _config: IV8PluginConfig;
@@ -20,6 +21,7 @@ class JSPlaybackTracker: IPlaybackTracker {
         private set;
 
     constructor(config: IV8PluginConfig, obj: V8ValueObject) {
+        warnIfMainThread("JSPlaybackTracker.constructor");
         if(!obj.has("onProgress"))
             throw ScriptImplementationException(config, "Missing onProgress on PlaybackTracker");
         if(!obj.has("nextRequest"))
@@ -31,6 +33,7 @@ class JSPlaybackTracker: IPlaybackTracker {
     }
 
     override fun onInit(seconds: Double) {
+        warnIfMainThread("JSPlaybackTracker.onInit");
         synchronized(_obj) {
             if(_hasCalledInit)
                 return;
@@ -44,6 +47,7 @@ class JSPlaybackTracker: IPlaybackTracker {
     }
 
     override fun onProgress(seconds: Double, isPlaying: Boolean) {
+        warnIfMainThread("JSPlaybackTracker.onProgress");
         synchronized(_obj) {
             if(!_hasCalledInit && _hasInit)
                 onInit(seconds);

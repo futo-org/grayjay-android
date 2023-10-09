@@ -1,5 +1,6 @@
 package com.futo.platformplayer.constructs
 
+import android.provider.Settings.Global
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.*
 
@@ -39,8 +40,7 @@ class BatchedTaskHandler<TParameter, TResult> {
 
             //Cached
             if(result != null)
-            //TODO: Replace with some kind of constant Deferred<IPlatformStreamVideo>
-                return _scope.async { result as TResult }
+                return CompletableDeferred(result as TResult);
             //Already requesting
             if(taskResult != null)
                 return taskResult as Deferred<TResult>;

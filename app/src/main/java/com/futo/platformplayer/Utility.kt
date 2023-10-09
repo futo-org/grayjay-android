@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
@@ -49,6 +50,11 @@ fun findNonRuntimeException(ex: Throwable?): Throwable? {
         return findNonRuntimeException(ex.cause)
     else
         return ex;
+}
+
+fun warnIfMainThread(context: String) {
+    if(BuildConfig.DEBUG && Looper.myLooper() == Looper.getMainLooper())
+        Logger.w(V8Plugin.TAG, "JAVASCRIPT ON MAIN THREAD\nAt: ${context}\n" + Thread.currentThread().stackTrace);
 }
 
 fun ensureNotMainThread() {
