@@ -16,6 +16,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.IPlatformClient
+import com.futo.platformplayer.api.media.PlatformMultiClientPool
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
@@ -68,6 +70,8 @@ private val _regexHexColor = Regex("(#[a-fA-F0-9]{8})|(#[a-fA-F0-9]{6})|(#[a-fA-
 fun String.isHexColor(): Boolean {
     return _regexHexColor.matches(this);
 }
+
+fun IPlatformClient.fromPool(pool: PlatformMultiClientPool) = pool.getClientPooled(this);
 
 fun IPlatformVideo.withTimestamp(sec: Long) =  PlatformVideoWithTime(this, sec);
 

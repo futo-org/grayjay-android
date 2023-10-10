@@ -4,13 +4,17 @@ class PlatformMultiClientPool {
     private val _maxCap: Int;
     private val _clientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
 
+    private var _isFake = false;
+
     constructor(maxCap: Int = -1) {
         _maxCap = if(maxCap > 0)
             maxCap
         else 99;
     }
 
-    fun getClientPooled(parentClient: IPlatformClient, capacity: Int): IPlatformClient {
+    fun getClientPooled(parentClient: IPlatformClient, capacity: Int = _maxCap): IPlatformClient {
+        if(_isFake)
+            return parentClient;
         val pool = synchronized(_clientPools) {
             if(!_clientPools.containsKey(parentClient))
                 _clientPools[parentClient] = PlatformClientPool(parentClient).apply {
@@ -24,5 +28,11 @@ class PlatformMultiClientPool {
             _clientPools[parentClient]!!;
         };
         return pool.getClient(capacity.coerceAtMost(_maxCap));
+    }
+
+    //Allows for testing disabling pooling without changing callers
+    fun asFake(): PlatformMultiClientPool {
+        _isFake = true;
+        return this;
     }
 }

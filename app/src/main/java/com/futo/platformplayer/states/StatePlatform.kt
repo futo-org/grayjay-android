@@ -31,6 +31,7 @@ import com.futo.platformplayer.awaitFirstNotNullDeferred
 import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.fromPool
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
@@ -63,8 +64,18 @@ class StatePlatform {
     private val _availableClients : ArrayList<IPlatformClient> = ArrayList();
     private val _enabledClients : ArrayList<IPlatformClient> = ArrayList();
 
-    private val _channelClientPool = PlatformMultiClientPool(15);
-    private val _trackerClientPool = PlatformMultiClientPool(1);
+    //ClientPools are used to isolate plugin usage of certain components from others
+    //This prevents for example a background task like subscriptions from blocking a user from opening a video
+    //It also allows parallel usage of plugins that would otherwise be impossible.
+    //Pools always follow the behavior of the base client. So if user disables a plugin, it kills all pooled clients.
+    //Each pooled client adds additional memory usage.
+    //WARNING: Be careful with pooling some calls, as they might use the plugin subsequently afterwards. For example pagers might block plugins in future calls.
+    private val _mainClientPool = PlatformMultiClientPool(2); //Used for all main user events, generally user critical
+    private val _pagerClientPool = PlatformMultiClientPool(2); //Used primarily for calls that result in front-end pagers, preventing them from blocking other calls.
+    private val _channelClientPool = PlatformMultiClientPool(15); //Used primarily for subscription/background channel fetches
+    private val _trackerClientPool = PlatformMultiClientPool(1); //Used exclusively for playback trackers
+    private val _liveEventClientPool = PlatformMultiClientPool(1); //Used exclusively for live events
+
 
     private val _primaryClientPersistent = FragmentedStorage.get<StringStorage>("primaryClient");
     private var _primaryClientObj : IPlatformClient? = null;
@@ -86,8 +97,9 @@ class StatePlatform {
     private val _batchTaskGetVideoDetails: BatchedTaskHandler<String, IPlatformContentDetails> = BatchedTaskHandler<String, IPlatformContentDetails>(_scope,
         { url ->
             Logger.i(StatePlatform::class.java.name, "Fetching video details [${url}]");
-            _enabledClients.find { it.isContentDetailsUrl(url) }?.getContentDetails(url)
-            ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
+            _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
+                _mainClientPool.getClientPooled(it).getContentDetails(url)
+            } ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
         },
         {
             if(!Settings.instance.browsing.videoCache)
@@ -363,7 +375,7 @@ class StatePlatform {
                 synchronized(clientIdsOngoing) {
                     clientIdsOngoing.add(it.id);
                 }
-                val homeResult = it.getHome();
+                val homeResult = it.fromPool(_pagerClientPool).getHome();
                 synchronized(clientIdsOngoing) {
                     clientIdsOngoing.remove(it.id);
                 }
@@ -383,7 +395,7 @@ class StatePlatform {
         val deferred: List<Pair<IPlatformClient, Deferred<IPager<IPlatformContent>?>>> = clients.map {
             return@map Pair(it, scope.async(Dispatchers.IO) {
                 try {
-                    val searchResult = it.getHome();
+                    val searchResult = it.fromPool(_pagerClientPool).getHome();
                     return@async searchResult;
                 } catch(ex: Throwable) {
                     Logger.e(TAG, "getHomeRefresh", ex);
@@ -774,7 +786,7 @@ class StatePlatform {
         if(!client.capabilities.hasGetComments)
             return EmptyPager();
 
-        return client.getComments(url);
+        return client.fromPool(_mainClientPool).getComments(url);
     }
     fun getSubComments(comment: IPlatformComment): IPager<IPlatformComment> {
         Logger.i(TAG, "Platform - getSubComments");
@@ -785,7 +797,7 @@ class StatePlatform {
     fun getLiveEvents(url: String): IPager<IPlatformLiveEvent>? {
         Logger.i(TAG, "Platform - getLiveChat");
         var client = getContentClient(url);
-        return client.getLiveEvents(url);
+        return client.fromPool(_liveEventClientPool).getLiveEvents(url);
     }
     fun getLiveChatWindow(url: String): ILiveChatWindowDescriptor? {
         Logger.i(TAG, "Platform - getLiveChat");
