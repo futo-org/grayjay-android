@@ -8,6 +8,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.PlatformClientPool
+import com.futo.platformplayer.api.media.PlatformMultiClientPool
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.FilterGroup
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -38,6 +39,7 @@ import com.futo.platformplayer.stores.*
 import kotlinx.coroutines.*
 import okhttp3.internal.concat
 import java.time.OffsetDateTime
+import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap.PlatformMutabilityMapping
 import kotlin.streams.toList
 
 /***
@@ -61,8 +63,8 @@ class StatePlatform {
     private val _availableClients : ArrayList<IPlatformClient> = ArrayList();
     private val _enabledClients : ArrayList<IPlatformClient> = ArrayList();
 
-    private val _clientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
-    private val _trackerClientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
+    private val _channelClientPool = PlatformMultiClientPool(15);
+    private val _trackerClientPool = PlatformMultiClientPool(1);
 
     private val _primaryClientPersistent = FragmentedStorage.get<StringStorage>("primaryClient");
     private var _primaryClientObj : IPlatformClient? = null;
@@ -232,36 +234,6 @@ class StatePlatform {
     }
     fun getClient(id: String): IPlatformClient {
         return getClientOrNull(id) ?: throw IllegalArgumentException("Client with id $id does not exist");
-    }
-    fun getClientPooled(parentClient: IPlatformClient, capacity: Int): IPlatformClient {
-        val pool = synchronized(_clientPools) {
-            if(!_clientPools.containsKey(parentClient))
-                _clientPools[parentClient] = PlatformClientPool(parentClient).apply {
-                    this.onDead.subscribe { client, pool ->
-                        synchronized(_clientPools) {
-                            if(_clientPools[parentClient] == pool)
-                                _clientPools.remove(parentClient);
-                        }
-                    }
-                }
-            _clientPools[parentClient]!!;
-        };
-        return pool.getClient(capacity);
-    }
-    fun getTrackerClientPooled(parentClient: IPlatformClient, capacity: Int): IPlatformClient {
-        val pool = synchronized(_trackerClientPools) {
-            if(!_trackerClientPools.containsKey(parentClient))
-                _trackerClientPools[parentClient] = PlatformClientPool(parentClient).apply {
-                    this.onDead.subscribe { client, pool ->
-                        synchronized(_trackerClientPools) {
-                            if(_trackerClientPools[parentClient] == pool)
-                                _trackerClientPools.remove(parentClient);
-                        }
-                    }
-                }
-            _trackerClientPools[parentClient]!!;
-        };
-        return pool.getClient(capacity);
     }
 
     fun getClientsByClaimType(claimType: Int): List<IPlatformClient> {
@@ -627,7 +599,7 @@ class StatePlatform {
         if (baseClient !is JSClient) {
             return baseClient.getPlaybackTracker(url);
         }
-        val client = getTrackerClientPooled(baseClient, 1);
+        val client = _trackerClientPool.getClientPooled(baseClient, 1);
         return client.getPlaybackTracker(url);
     }
 
@@ -651,7 +623,7 @@ class StatePlatform {
         val clientCapabilities = baseClient.getChannelCapabilities();
 
         val client = if(usePooledClients > 1)
-            getClientPooled(baseClient, usePooledClients);
+            _channelClientPool.getClientPooled(baseClient, usePooledClients);
         else baseClient;
 
         var lastStream: OffsetDateTime? = null;

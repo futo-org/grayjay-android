@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -38,6 +39,11 @@ class StatePlaylists {
         })
         .load();
     private val _historyStore = FragmentedStorage.storeJson<HistoryVideo>("history")
+        .withRestore(object: ReconstructStore<HistoryVideo>() {
+            override fun toReconstruction(obj: HistoryVideo): String = obj.toReconString();
+            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): HistoryVideo
+                = HistoryVideo.fromReconString(backup, null);
+        })
         .load();
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
@@ -49,7 +55,7 @@ class StatePlaylists {
     val onWatchLaterChanged = Event0();
 
     fun toMigrateCheck(): List<ManagedStore<*>> {
-        return listOf(playlistStore, _watchlistStore);
+        return listOf(playlistStore, _watchlistStore, _historyStore);
     }
 
     fun getWatchLater() : List<SerializedPlatformVideo> {
@@ -122,6 +128,11 @@ class StatePlaylists {
                 }
 
                 if (shouldUpdate) {
+
+                    //A unrecovered item
+                    if(historyVideo.video.author.id.value == null && historyVideo.video.duration == 0L)
+                        historyVideo.video = SerializedPlatformVideo.fromVideo(video);
+
                     historyVideo.position = pos;
                     historyVideo.date = OffsetDateTime.now();
                     _historyStore.saveAsync(historyVideo);

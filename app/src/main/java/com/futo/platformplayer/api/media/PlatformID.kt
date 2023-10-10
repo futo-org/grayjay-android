@@ -6,6 +6,7 @@ import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
 import com.futo.polycentric.core.combineHashCodes
+import okhttp3.internal.platform.Platform
 
 @kotlinx.serialization.Serializable
 class PlatformID {
@@ -40,6 +41,8 @@ class PlatformID {
     }
 
     companion object {
+        val NONE = PlatformID("Unknown", null);
+
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformID {
             val contextName = "PlatformID";
             return PlatformID(
@@ -48,6 +51,10 @@ class PlatformID {
                 config.id,
                 value.getOrDefault(config, "claimType", contextName, 0) ?: 0,
                 value.getOrDefault(config, "claimFieldType", contextName, -1) ?: -1);
+        }
+
+        fun asUrlID(url: String): PlatformID {
+            return PlatformID("URL", url, null);
         }
     }
 }

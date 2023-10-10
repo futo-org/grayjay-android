@@ -16,6 +16,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.encryption.EncryptionProvider
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.logging.Logger
@@ -201,7 +202,8 @@ class StateBackup {
             );
             val storesToSave = getAllMigrationStores()
                 .associateBy { it.name }
-                .mapValues { it.value.getAllReconstructionStrings() };
+                .mapValues { it.value.getAllReconstructionStrings() }
+                .toMutableMap();
             val settings = Settings.instance.encode();
             val pluginSettings = StatePlugins.instance.getPlugins()
                 .associateBy { it.config.id }
@@ -211,7 +213,12 @@ class StateBackup {
                 .associateBy { it.config.id }
                 .mapValues { it.value.config.sourceUrl!! };
 
-            return ExportStructure(exportInfo, settings, storesToSave, pluginUrls, pluginSettings);
+
+            val export = ExportStructure(exportInfo, settings, storesToSave, pluginUrls, pluginSettings);
+            //export.videoCache = StatePlaylists.instance.getHistory()
+            //    .distinctBy { it.video.url }
+            //    .map { it.video };
+            return export;
         }
 
 
@@ -387,6 +394,7 @@ class StateBackup {
         val plugins: Map<String, String>,
         val pluginSettings: Map<String, Map<String, String?>>,
     ) {
+        var videoCache: List<SerializedPlatformVideo>? = null;
 
         fun asZip(): ByteArray {
             return ByteArrayOutputStream().use { byteStream ->
