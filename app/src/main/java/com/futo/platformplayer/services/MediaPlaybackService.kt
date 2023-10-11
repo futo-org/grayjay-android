@@ -91,32 +91,38 @@ class MediaPlaybackService : Service() {
         _mediaSession?.setCallback(object: MediaSessionCompat.Callback() {
             override fun onSeekTo(pos: Long) {
                 super.onSeekTo(pos)
-                Log.i(TAG, "Media session callback onSeekTo(pos = $pos)");
+                Logger.i(TAG, "Media session callback onSeekTo(pos = $pos)");
                 MediaControlReceiver.onSeekToReceived.emit(pos);
             }
 
             override fun onPlay() {
                 super.onPlay();
-                Log.i(TAG, "Media session callback onPlay()");
+                Logger.i(TAG, "Media session callback onPlay()");
                 MediaControlReceiver.onPlayReceived.emit();
             }
 
             override fun onPause() {
                 super.onPause();
-                Log.i(TAG, "Media session callback onPause()");
+                Logger.i(TAG, "Media session callback onPause()");
                 MediaControlReceiver.onPauseReceived.emit();
             }
 
             override fun onStop() {
                 super.onStop();
-                Log.i(TAG, "Media session callback onStop()");
+                Logger.i(TAG, "Media session callback onStop()");
                 MediaControlReceiver.onCloseReceived.emit();
             }
 
             override fun onSkipToPrevious() {
                 super.onSkipToPrevious();
-                Log.i(TAG, "Media session callback onSkipToPrevious()");
+                Logger.i(TAG, "Media session callback onSkipToPrevious()");
                 MediaControlReceiver.onPreviousReceived.emit();
+            }
+
+            override fun onSkipToNext() {
+                super.onSkipToNext()
+                Logger.i(TAG, "Media session callback onSkipToNext()");
+                MediaControlReceiver.onNextReceived.emit();
             }
         });
     }
@@ -285,6 +291,7 @@ class MediaPlaybackService : Service() {
                 PlaybackStateCompat.ACTION_PLAY or
                 PlaybackStateCompat.ACTION_PAUSE or
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                 PlaybackStateCompat.ACTION_PLAY_PAUSE
             )
             .setState(state, pos, 1f, SystemClock.elapsedRealtime())

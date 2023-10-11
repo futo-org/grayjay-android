@@ -502,7 +502,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
-        MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo() };
+        MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo(true) };
         MediaControlReceiver.onPreviousReceived.subscribe(this) { prevVideo() };
         MediaControlReceiver.onCloseReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onCloseReceived")
@@ -1363,9 +1363,11 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    fun nextVideo(): Boolean {
+    fun nextVideo(forceLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
-        val next = StatePlayer.instance.nextQueueItem(_player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
+        var next = StatePlayer.instance.nextQueueItem(_player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
+        if(next == null && forceLoop)
+            next = StatePlayer.instance.restartQueue();
         if(next != null) {
             setVideoOverview(next);
             return true;
