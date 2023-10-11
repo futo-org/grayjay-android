@@ -10,7 +10,10 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.views.Loader
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.ReadOnlyTextField
 import com.google.android.material.button.MaterialButton
@@ -18,6 +21,7 @@ import com.google.android.material.button.MaterialButton
 class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
     private lateinit var _form: FieldForm;
     private lateinit var _buttonBack: ImageButton;
+    private lateinit var _loader: Loader;
 
     private lateinit var _devSets: LinearLayout;
     private lateinit var _buttonDev: MaterialButton;
@@ -33,9 +37,10 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         _buttonBack = findViewById(R.id.button_back);
         _buttonDev = findViewById(R.id.button_dev);
         _devSets = findViewById(R.id.dev_settings);
+        _loader = findViewById(R.id.loader);
 
-        _form.fromObject(Settings.instance);
         _form.onChanged.subscribe { field, value ->
+            Logger.i("SettingsActivity", "Setting [${field.field?.name}] changed, saving");
             _form.setObjectValues();
             Settings.instance.save();
         };
@@ -59,6 +64,15 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
             }
         };
         _lastActivity = this;
+
+        reloadSettings();
+    }
+
+    fun reloadSettings() {
+        _loader.start();
+        _form.fromObject(lifecycleScope, Settings.instance) {
+            _loader.stop();
+        };
     }
 
     override fun onResume() {

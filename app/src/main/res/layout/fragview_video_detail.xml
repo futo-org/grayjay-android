@@ -303,6 +303,7 @@
                         android:id="@+id/videodetail_channel_button"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
                         android:orientation="horizontal"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintLeft_toLeftOf="parent"
@@ -311,21 +312,22 @@
 
                         <com.futo.platformplayer.views.others.CreatorThumbnail
                             android:id="@+id/creator_thumbnail"
-                            android:layout_width="27dp"
-                            android:layout_height="27dp" />
+                            android:layout_width="35dp"
+                            android:layout_height="35dp" />
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:layout_marginStart="6dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="5dp"
                             android:orientation="vertical">
                             <TextView
                                 android:id="@+id/videodetail_channel_name"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:paddingEnd="10dp"
                                 android:textColor="@color/white"
                                 android:layout_gravity="center"
-                                android:layout_marginTop="-4dp"
                                 android:ellipsize="end"
                                 android:maxLines="1"
                                 tools:text="Channel Name" />

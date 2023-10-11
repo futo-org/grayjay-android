@@ -8,6 +8,10 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.reflect.Field
@@ -33,6 +37,28 @@ class FieldForm : LinearLayout {
         _root = findViewById(R.id.field_form_root);
     }
 
+    fun fromObject(scope: CoroutineScope, obj : Any, onLoaded: (()->Unit)? = null) {
+        _root.removeAllViews();
+
+        scope.launch(Dispatchers.Default) {
+            val newFields = getFieldsFromObject(context, obj);
+
+            withContext(Dispatchers.Main) {
+                for (field in newFields) {
+                    if (field !is View)
+                        throw java.lang.IllegalStateException("Only views can be IFields");
+
+                    _root.addView(field as View);
+                    field.onChanged.subscribe { a1, a2 ->
+                        onChanged.emit(a1, a2);
+                    };
+                }
+                _fields = newFields;
+
+                onLoaded?.invoke();
+            }
+        }
+    }
     fun fromObject(obj : Any) {
         _root.removeAllViews();
         val newFields = getFieldsFromObject(context, obj);

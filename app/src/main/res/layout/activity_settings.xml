@@ -52,6 +52,13 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+            <com.futo.platformplayer.views.Loader
+                android:id="@+id/loader"
+                android:layout_marginBottom="15dp"
+                android:layout_marginTop="15dp"
+                android:layout_width="match_parent"
+                android:layout_height="60dp" />
+
             <com.futo.platformplayer.views.fields.FieldForm
                 android:id="@+id/settings_form"
                 android:layout_width="match_parent"
