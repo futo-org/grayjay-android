@@ -241,7 +241,7 @@ class VideoDetailView : ConstraintLayout {
 
     private var _liveTryJob: Job? = null;
     private val _liveStreamCheckInterval = listOf(
-        Pair(-10 * 60, 5 * 60), //around 10 minutes, try every 1 minute
+        Pair(-10 * 60, 5 * 60), //around 10 minutes, try every 5 minute
         Pair(-5 * 60, 30), //around 5 minutes, try every 30 seconds
         Pair(0, 10) //around live, try every 10 seconds
     );
@@ -2171,7 +2171,6 @@ class VideoDetailView : ConstraintLayout {
                             UIDialogs.toast(context, "Planned in ${videoDetail.datetime?.toHumanNowDiffString(true)}");
                         }
                     startLiveTry(liveTryVideo);
-                    _liveTryJob = null;
                 }
                 else
                     withContext(Dispatchers.Main) {
