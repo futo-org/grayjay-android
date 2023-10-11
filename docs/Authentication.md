@@ -20,18 +20,33 @@ Here is an example of such an authentication configuration:
 
 ```json
 	"authentication": {
-		"userAgent": "Some User Agent", //Optional
 		"loginUrl": "https://platform.com/some/login/url",
+		"completionUrl": "https://platform.com/some/required/page", //Optional
+		"loginButton": ".someContainer div .someButton" //Optional
+		"userAgent": "Some User Agent", //Optional
 		"domainHeadersToFind": { //Optional
 			".platform.com": ["authorization"],
 			"subdomain.platform.com": ["someHeader"],
 			".somerelatedplatform.com": ["someOtherHeader"],
 		},
 		"cookiesToFind": ["someCookieToFind", "someOtherCookieToFind"], //Optional
-		"cookiesExclOthers": false //Optional
+		//"cookiesExclOthers": false //Optional
+		//"allowedDomains": ["platform.com", "subdomain.platform.com"] //Optional
 	}
 ```
-Most platforms will only need a single header or cookie to function, but for some you may need very specific cookies for specific subdomains. The ```cookiesExclOthers``` property can be used in the niche scenario where all other cookies should be disgarded when authenticated request are used. This is rather uncommon.
+Most platforms will only need a single header or cookie to function, but for some you may need very specific cookies for specific subdomains. 
+
+| | Property | Usage |
+|--|--|--|
+| **Mandatory** | ```loginUrl``` | Used to set the initial url for the login browser. |
+| Optional | ```completionUrl``` | Can be used to set a url that needs to be visited before concluding login. |
+| Optional | ```loginButton``` | Can be used to trigger a html element by providing a query selector to a single html element. This button is then "clicked" after the page finishes loading. This supports full query selector including classes, ids, tags, and more advanced like :first-child. |
+| Optional | ```userAgent``` | Can be used to set the user-agent of the browser during login. |
+| Optional | ```domainHeadersToFind``` | Can be used to find headers for specific subdomains. |
+| Optional | ```cookiesToFind``` |  Can be used to find specific cookies. |
+| Optional | ```cookiesExclOthers``` |Can be used in the niche scenario where all other cookies should be disgarded when authenticated request are used. This is rather uncommon. |
+| Optional | ```allowedDomains``` | Can be used to only fulfill the above requirements on the domains specified in this property, any other domains may be cancelled. (NOT USEFUL FOR MOST PLUGINS) |
+
 
 ## Header Behavior
 Headers are exclusively applied to the domains they are retrieved from. A plugin CANNOT send a header to a domain that it is not related to. 
