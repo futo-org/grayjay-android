@@ -70,11 +70,11 @@ class StatePlatform {
     //Pools always follow the behavior of the base client. So if user disables a plugin, it kills all pooled clients.
     //Each pooled client adds additional memory usage.
     //WARNING: Be careful with pooling some calls, as they might use the plugin subsequently afterwards. For example pagers might block plugins in future calls.
-    private val _mainClientPool = PlatformMultiClientPool(2); //Used for all main user events, generally user critical
-    private val _pagerClientPool = PlatformMultiClientPool(2); //Used primarily for calls that result in front-end pagers, preventing them from blocking other calls.
-    private val _channelClientPool = PlatformMultiClientPool(15); //Used primarily for subscription/background channel fetches
-    private val _trackerClientPool = PlatformMultiClientPool(1); //Used exclusively for playback trackers
-    private val _liveEventClientPool = PlatformMultiClientPool(1); //Used exclusively for live events
+    private val _mainClientPool = PlatformMultiClientPool("Main", 2); //Used for all main user events, generally user critical
+    private val _pagerClientPool = PlatformMultiClientPool("Pagers", 2); //Used primarily for calls that result in front-end pagers, preventing them from blocking other calls.
+    private val _channelClientPool = PlatformMultiClientPool("Channels", 15); //Used primarily for subscription/background channel fetches
+    private val _trackerClientPool = PlatformMultiClientPool("Trackers", 1); //Used exclusively for playback trackers
+    private val _liveEventClientPool = PlatformMultiClientPool("LiveEvents", 1); //Used exclusively for live events
 
 
     private val _primaryClientPersistent = FragmentedStorage.get<StringStorage>("primaryClient");

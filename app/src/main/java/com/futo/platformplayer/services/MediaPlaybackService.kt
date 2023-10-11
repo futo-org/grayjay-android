@@ -50,7 +50,7 @@ class MediaPlaybackService : Service() {
     private var _focusRequest: AudioFocusRequest? = null;
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Logger.i(TAG, "onStartCommand");
+        Logger.v(TAG, "onStartCommand");
 
 
         if(!FragmentedStorage.isInitialized) {
@@ -122,12 +122,12 @@ class MediaPlaybackService : Service() {
     }
 
     override fun onCreate() {
-        Logger.i(TAG, "onCreate called");
+        Logger.v(TAG, "onCreate");
         super.onCreate()
     }
 
     override fun onDestroy() {
-        Logger.i(TAG, "onDestroy called");
+        Logger.v(TAG, "onDestroy");
         _instance = null;
         MediaControlReceiver.onCloseReceived.emit();
         super.onDestroy();
@@ -138,7 +138,7 @@ class MediaPlaybackService : Service() {
     }
 
     fun closeMediaSession() {
-        Logger.i(TAG, "closeMediaSession called");
+        Logger.v(TAG, "closeMediaSession");
         stopForeground(true);
 
         val focusRequest = _focusRequest;
@@ -159,7 +159,7 @@ class MediaPlaybackService : Service() {
     }
 
     fun updateMediaSession(videoUpdated: IPlatformVideo?) {
-        Logger.i(TAG, "updateMediaSession called");
+        Logger.v(TAG, "updateMediaSession");
         var isUpdating = false;
         val video: IPlatformVideo;
         if(videoUpdated == null) {
@@ -270,7 +270,7 @@ class MediaPlaybackService : Service() {
         val notif = builder.build();
         notif.flags = notif.flags or NotificationCompat.FLAG_ONGOING_EVENT or NotificationCompat.FLAG_NO_CLEAR;
 
-        Logger.i(TAG, "Updating notification bitmap=${if (bitmap != null) "not null" else "null"} channelId=${channel.id} icon=${icon} video=${video?.name ?: ""} playWhenReady=${playWhenReady} session.sessionToken=${session.sessionToken}");
+        Logger.i(TAG, "Updating notification bitmap=${if (bitmap != null) "yes" else "no."} channelId=${channel.id} icon=${icon} video=${video?.name ?: ""} playWhenReady=${playWhenReady} session.sessionToken=${session.sessionToken}");
 
         startForeground(MEDIA_NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
 

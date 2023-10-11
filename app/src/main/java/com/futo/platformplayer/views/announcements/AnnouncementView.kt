@@ -78,8 +78,6 @@ class AnnouncementView : LinearLayout {
     }
 
     override fun onAttachedToWindow() {
-        Logger.i(TAG, "onAttachedToWindow");
-
         super.onAttachedToWindow()
         StateAnnouncement.instance.onAnnouncementChanged.subscribe(this) {
             _scope?.launch(Dispatchers.Main) {
@@ -91,14 +89,12 @@ class AnnouncementView : LinearLayout {
     }
 
     override fun onDetachedFromWindow() {
-        Logger.i(TAG, "onDetachedFromWindow");
-
         super.onDetachedFromWindow()
         StateAnnouncement.instance.onAnnouncementChanged.remove(this)
     }
 
     private fun refresh() {
-        Logger.i(TAG, "refresh");
+        Logger.v(TAG, "refresh");
         val announcements = StateAnnouncement.instance.getVisibleAnnouncements(_category);
         setAnnouncement(announcements.firstOrNull(), announcements.size);
     }

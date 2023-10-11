@@ -392,7 +392,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onResume() {
         super.onResume();
-        Logger.i(TAG, "onResume")
+        Logger.v(TAG, "onResume")
 
         val curOrientation = _orientationManager.orientation;
 
@@ -408,13 +408,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         val videoToOpen = StateSaved.instance.videoToOpen;
 
         if (_wasStopped) {
-            Logger.i(TAG, "_wasStopped is true");
-            Logger.i(TAG, "set _wasStopped = false");
             _wasStopped = false;
 
-            Logger.i(TAG, "onResume videoToOpen=$videoToOpen");
-
             if (videoToOpen != null && _fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
+                Logger.i(TAG, "onResume videoToOpen=$videoToOpen");
                 if (StatePlatform.instance.hasEnabledVideoClient(videoToOpen.url)) {
                     navigate(_fragVideoDetail, UrlVideoWithTime(videoToOpen.url, videoToOpen.timeSeconds, false));
                     _fragVideoDetail.maximizeVideoDetail(true);
@@ -427,13 +424,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onPause() {
         super.onPause();
-        Logger.i(TAG, "onPause")
+        Logger.v(TAG, "onPause")
         _isVisible = false;
     }
 
     override fun onStop() {
         super.onStop()
-        Logger.i(TAG, "_wasStopped = true");
+        Logger.v(TAG, "_wasStopped = true");
         _wasStopped = true;
     }
 
@@ -722,22 +719,20 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
             _fragVideoDetail.onOrientationChanged(OrientationManager.Orientation.PORTRAIT);
         }
-
-        Logger.i(TAG, "onRestart5");
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
 
         val isStop: Boolean = lifecycle.currentState == Lifecycle.State.CREATED;
-        Logger.i(TAG, "onPictureInPictureModeChanged isInPictureInPictureMode=$isInPictureInPictureMode isStop=$isStop")
+        Logger.v(TAG, "onPictureInPictureModeChanged isInPictureInPictureMode=$isInPictureInPictureMode isStop=$isStop")
         _fragVideoDetail?.onPictureInPictureModeChanged(isInPictureInPictureMode, isStop, newConfig);
-        Logger.i(TAG, "onPictureInPictureModeChanged Ready");
+        Logger.v(TAG, "onPictureInPictureModeChanged Ready");
     }
 
     override fun onDestroy() {
         super.onDestroy();
-        Logger.i(TAG, "onDestroy")
+        Logger.v(TAG, "onDestroy")
 
         _orientationManager.disable();
 

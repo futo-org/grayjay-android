@@ -27,11 +27,19 @@ class StatePlugins {
     private val TAG = "StatePlugins";
 
     private val FORCE_REINSTALL_EMBEDDED = false;
+    private var _isFirstEmbedUpdate = true;
 
     private val _pluginScripts = FragmentedStorage.getDirectory<PluginScriptsDirectory>();
     private var _plugins = FragmentedStorage.storeJson<SourcePluginDescriptor>("plugins")
         .load();
     private val iconsDir = FragmentedStorage.getDirectory<PluginIconStorage>();
+
+
+    private val _syncObject = Object()
+    private var _embeddedSources: Map<String, String>? = null
+    private var _embeddedSourcesDefault: List<String>? = null
+    private var _sourcesUnderConstruction: Map<String, ImageVariable>? = null
+
 
     fun getPluginIconOrNull(id: String): ImageVariable? {
         if(iconsDir.hasIcon(id))
@@ -52,18 +60,6 @@ class StatePlugins {
             null
         }
     }
-
-    @Serializable
-    private data class PluginConfig(
-        val SOURCES_EMBEDDED: Map<String, String>,
-        val SOURCES_EMBEDDED_DEFAULT: List<String>,
-        val SOURCES_UNDER_CONSTRUCTION: Map<String, String>
-    )
-
-    private val _syncObject = Object()
-    private var _embeddedSources: Map<String, String>? = null
-    private var _embeddedSourcesDefault: List<String>? = null
-    private var _sourcesUnderConstruction: Map<String, ImageVariable>? = null
 
     private fun ensureSourcesConfigLoaded(context: Context) {
         if (_embeddedSources != null && _embeddedSourcesDefault != null && _sourcesUnderConstruction != null) {
@@ -122,8 +118,11 @@ class StatePlugins {
                     Logger.i(TAG, "Found outdated embedded plugin [${existing.config.id}] ${existing.config.name}, deleting and reinstalling");
                     deletePlugin(embedded.key);
                 }
+                else if(existing != null && _isFirstEmbedUpdate)
+                    Logger.i(TAG, "Embedded plugin [${existing.config.id}] ${existing.config.name}, up to date (${existing.config.version} >= ${embeddedConfig?.version})");
             }
         }
+        _isFirstEmbedUpdate = false;
     }
     fun installMissingEmbeddedPlugins(context: Context) {
         val plugins = getPlugins();
@@ -421,6 +420,13 @@ class StatePlugins {
         _plugins.save(descriptor);
     }
 
+
+    @Serializable
+    private data class PluginConfig(
+        val SOURCES_EMBEDDED: Map<String, String>,
+        val SOURCES_EMBEDDED_DEFAULT: List<String>,
+        val SOURCES_UNDER_CONSTRUCTION: Map<String, String>
+    )
 
     companion object {
         private var _instance : StatePlugins? = null;

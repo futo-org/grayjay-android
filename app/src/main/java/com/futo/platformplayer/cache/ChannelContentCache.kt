@@ -111,7 +111,7 @@ class ChannelContentCache {
         init {
             val results = pager.getResults();
 
-            Logger.i(TAG, "Caching ${results.size} subscription initial results");
+            Logger.i(TAG, "Caching ${results.size} subscription initial results [${pager.hashCode()}]");
             scope.launch(Dispatchers.IO) {
                 try {
                     val newCacheItems = instance.cacheVideos(results);

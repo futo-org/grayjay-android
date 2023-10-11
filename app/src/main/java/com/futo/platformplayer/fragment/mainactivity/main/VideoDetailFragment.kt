@@ -306,12 +306,12 @@ class VideoDetailFragment : MainFragment {
 
     override fun onResume() {
         super.onResume();
-        Logger.i(TAG, "onResume");
+        Logger.v(TAG, "onResume");
         _isActive = true;
         _leavingPiP = false;
 
         _viewDetail?.let {
-            Logger.i(TAG, "onResume preventPictureInPicture=false");
+            Logger.v(TAG, "onResume preventPictureInPicture=false");
             it.preventPictureInPicture = false;
 
             if (state != State.CLOSED) {
@@ -326,7 +326,7 @@ class VideoDetailFragment : MainFragment {
     }
     override fun onPause() {
         super.onPause();
-        Logger.i(TAG, "onPause");
+        Logger.v(TAG, "onPause");
         _isActive = false;
 
         if(!isInPictureInPicture && state != State.CLOSED)
@@ -334,7 +334,7 @@ class VideoDetailFragment : MainFragment {
     }
 
     override fun onStop() {
-        Logger.i(TAG, "onStop");
+        Logger.v(TAG, "onStop");
 
         stopIfRequired();
         super.onStop();
@@ -352,7 +352,7 @@ class VideoDetailFragment : MainFragment {
             shouldStop = false;
         }
 
-        Logger.i(TAG, "shouldStop: $shouldStop");
+        Logger.v(TAG, "shouldStop: $shouldStop");
         if(shouldStop) {
             _viewDetail?.let {
                 val v = it.video ?: return@let;
@@ -361,13 +361,13 @@ class VideoDetailFragment : MainFragment {
 
             _viewDetail?.onStop();
             StateCasting.instance.onStop();
-            Logger.i(TAG, "called onStop() shouldStop: $shouldStop");
+            Logger.v(TAG, "called onStop() shouldStop: $shouldStop");
         }
     }
 
     override fun onDestroyMainView() {
         super.onDestroyMainView();
-        Logger.i(TAG, "onDestroyMainView");
+        Logger.v(TAG, "onDestroyMainView");
         _viewDetail?.let {
             _viewDetail = null;
             it.onDestroy();

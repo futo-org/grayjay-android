@@ -107,7 +107,7 @@ class GestureControlView : LinearLayout {
                 } else {
                     val rx = p0.x / width;
                     val ry = p0.y / height;
-                    Logger.i(TAG, "rx = $rx, ry = $ry, _isFullScreen = $_isFullScreen")
+                    Logger.v(TAG, "rx = $rx, ry = $ry, _isFullScreen = $_isFullScreen")
                     if (ry > 0.1 && ry < 0.9) {
                         if (_isFullScreen && rx < 0.4) {
                             startAdjustingBrightness();

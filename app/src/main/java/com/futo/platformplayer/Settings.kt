@@ -333,7 +333,7 @@ class Settings : FragmentedStorageFileJson() {
             "Submit logs to help us narrow down issues", 1
         )
         fun submitLogs() {
-            StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
                     if (!Logger.submitLogs()) {
                         withContext(Dispatchers.Main) {
@@ -462,7 +462,7 @@ class Settings : FragmentedStorageFileJson() {
         fun viewChangelog() {
             UIDialogs.toast("Retrieving changelog");
             SettingsActivity.getActivity()?.let {
-                StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
                         val version = StateUpdate.instance.downloadVersionCode(ManagedHttpClient()) ?: return@launch;
                         Logger.i(TAG, "Version retrieved $version");

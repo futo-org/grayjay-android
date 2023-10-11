@@ -42,7 +42,6 @@ open class JSContent : IPlatformContent, IPluginSourced {
 
         id = PlatformID.fromV8(_pluginConfig, _content.getOrThrow(config, "id", contextName));
         name = HtmlCompat.fromHtml(_content.getOrThrow<String>(config, "name", contextName).decodeUnicode(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString();
-        Logger.i("JSContent", "name=$name");
         author = PlatformAuthorLink.fromV8(_pluginConfig, _content.getOrThrow(config, "author", contextName));
 
         val datetimeInt = _content.getOrThrow<Int>(config, "datetime", contextName).toLong();

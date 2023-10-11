@@ -67,7 +67,7 @@ class CommentViewHolder : ViewHolder {
                 processHandle.opinion(c.reference, Opinion.neutral);
             }
 
-            StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
                     processHandle.fullyBackfillServers();
                 } catch (e: Throwable) {

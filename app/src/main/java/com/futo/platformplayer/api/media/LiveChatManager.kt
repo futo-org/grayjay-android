@@ -94,7 +94,10 @@ class LiveChatManager {
                         if(_pager is JSLiveEventPager)
                             nextInterval = _pager.nextRequest.coerceAtLeast(800).toLong();
 
-                        Logger.i(TAG, "New Live Events (${newEvents.size}) [${newEvents.map { it.type.name }.joinToString(", ")}]");
+                        if(newEvents.size > 0)
+                            Logger.i(TAG, "New Live Events (${newEvents.size}) [${newEvents.map { it.type.name }.joinToString(", ")}]");
+                        else
+                            Logger.v(TAG, "No new Live Events");
 
                         _scope.launch(Dispatchers.Main) {
                             try {

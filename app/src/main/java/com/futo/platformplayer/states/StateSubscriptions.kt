@@ -67,7 +67,7 @@ class StateSubscriptions {
         return Pair(_lastGlobalSubscriptionProgress, _lastGlobalSubscriptionTotal);
     }
     fun updateSubscriptionFeed(scope: CoroutineScope, onlyIfNull: Boolean = false, onProgress: ((Int, Int)->Unit)? = null) {
-        Logger.i(TAG, "updateSubscriptionFeed");
+        Logger.v(TAG, "updateSubscriptionFeed");
         scope.launch(Dispatchers.IO) {
             synchronized(_globalSubscriptionsLock) {
                 if (isGlobalUpdating || (onlyIfNull && _globalSubscriptionFeed != null)) {

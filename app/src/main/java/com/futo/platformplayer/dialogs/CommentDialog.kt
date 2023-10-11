@@ -57,7 +57,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
             val processHandle = StatePolycentric.instance.processHandle!!
             val eventPointer = processHandle.post(comment, null, ref)
 
-            StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
                     processHandle.fullyBackfillServers()
                 } catch (e: Throwable) {

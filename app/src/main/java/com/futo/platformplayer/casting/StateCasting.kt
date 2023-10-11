@@ -64,7 +64,7 @@ class StateCasting {
         }
 
         override fun serviceResolved(event: ServiceEvent) {
-            Logger.i(TAG, "ChromeCast service resolved: " + event.info);
+            Logger.v(TAG, "ChromeCast service resolved: " + event.info);
             addOrUpdateDevice(event);
         }
 

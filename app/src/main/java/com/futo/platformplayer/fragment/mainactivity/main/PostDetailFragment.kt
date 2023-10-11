@@ -355,7 +355,7 @@ class PostDetailFragment : MainFragment {
                                 processHandle.opinion(ref, Opinion.neutral);
                             }
 
-                            StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+                            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                                 try {
                                     processHandle.fullyBackfillServers();
                                 } catch (e: Throwable) {

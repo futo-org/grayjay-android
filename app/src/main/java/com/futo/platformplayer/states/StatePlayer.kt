@@ -25,7 +25,7 @@ class StatePlayer {
     private val MIN_BUFFER_DURATION = 10000;
     private val MAX_BUFFER_DURATION = 60000;
     private val MIN_PLAYBACK_START_BUFFER = 500;
-    private val MIN_PLAYBACK_RESUME_BUFFER = 1000;
+    private val MIN_PLAYBACK_RESUME_BUFFER = 2500;
     private val BUFFER_SIZE = 1024 * 64;
 
     var isOpen : Boolean = false

@@ -130,9 +130,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        Logger.i(TAG, "Attached onConnectionAvailable listener.");
+        Logger.v(TAG, "Attached onConnectionAvailable listener.");
         StateApp.instance.onConnectionAvailable.subscribe(_referenceObject) {
-            Logger.i(TAG, "onConnectionAvailable");
+            Logger.v(TAG, "onConnectionAvailable");
 
             val pos = position;
             val dur = duration;

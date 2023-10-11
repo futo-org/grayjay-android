@@ -328,7 +328,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
-        Logger.i(TAG, "onPlaybackStateChanged $playbackState");
+        Logger.v(TAG, "onPlaybackStateChanged $playbackState");
         val timeLeft = abs(position - duration);
 
         if (playbackState == ExoPlayer.STATE_ENDED) {

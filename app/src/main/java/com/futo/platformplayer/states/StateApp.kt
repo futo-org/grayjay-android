@@ -299,7 +299,7 @@ class StateApp {
         }
 
         Logger.onLogSubmitted.subscribe {
-            scopeGetter().launch(Dispatchers.Main) {
+            scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     if (it != null) {
                         UIDialogs.toast("Uploaded " + (it ?: "null"), true);
@@ -510,7 +510,6 @@ class StateApp {
                 if (_lastNetworkState != NetworkState.DISCONNECTED) {
                     scopeOrNull?.launch(Dispatchers.Main) {
                         try {
-                            Logger.i(TAG, "onConnectionAvailable emitted");
                             onConnectionAvailable.emit();
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Failed to emit onConnectionAvailable", e)

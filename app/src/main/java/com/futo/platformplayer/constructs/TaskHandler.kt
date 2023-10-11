@@ -91,7 +91,7 @@ class TaskHandler<TParameter, TResult> {
                     if (!onError.emit(e, parameter)) {
                         Logger.e(TAG, "Uncaught exception handled by TaskHandler.", e);
                     } else {
-                        Logger.w(TAG, "Handled exception in TaskHandler invoke.", e);
+                        //Logger.w(TAG, "Handled exception in TaskHandler invoke.", e); (Prevents duplicate logs)
                     }
                 }
             }

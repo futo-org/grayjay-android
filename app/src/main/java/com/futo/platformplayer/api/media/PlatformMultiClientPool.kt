@@ -1,12 +1,14 @@
 package com.futo.platformplayer.api.media
 
 class PlatformMultiClientPool {
+    private val _name: String;
     private val _maxCap: Int;
     private val _clientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
 
     private var _isFake = false;
 
-    constructor(maxCap: Int = -1) {
+    constructor(name: String, maxCap: Int = -1) {
+        _name = name;
         _maxCap = if(maxCap > 0)
             maxCap
         else 99;
@@ -17,7 +19,7 @@ class PlatformMultiClientPool {
             return parentClient;
         val pool = synchronized(_clientPools) {
             if(!_clientPools.containsKey(parentClient))
-                _clientPools[parentClient] = PlatformClientPool(parentClient).apply {
+                _clientPools[parentClient] = PlatformClientPool(parentClient, _name).apply {
                     this.onDead.subscribe { client, pool ->
                         synchronized(_clientPools) {
                             if(_clientPools[parentClient] == pool)

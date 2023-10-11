@@ -100,6 +100,7 @@ import kotlinx.coroutines.*
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.collections.ArrayList
+import kotlin.math.abs
 import kotlin.math.roundToLong
 import kotlin.streams.toList
 
@@ -232,9 +233,19 @@ class VideoDetailView : ConstraintLayout {
 
     private val DP_5 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics);
     private val DP_2 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics);
+
     private var _retryJob: Job? = null;
     private var _retryCount = 0;
-    private val _retryIntervals: Array<Long> = arrayOf(1, 2, 4, 8, 16, 32);
+    //TODO: Determine better behavior, waiting 60 seconds for an error that is guaranteed to happen is a bit much. (Needed? If so, maybe need special UI for retrying)
+    private val _retryIntervals: Array<Long> = arrayOf(1, 1);//2, 4, 8, 16, 32);
+
+    private var _liveTryJob: Job? = null;
+    private val _liveStreamCheckInterval = listOf(
+        Pair(-10 * 60, 5 * 60), //around 10 minutes, try every 1 minute
+        Pair(-5 * 60, 30), //around 5 minutes, try every 30 seconds
+        Pair(0, 10) //around live, try every 10 seconds
+    );
+
 
     constructor(context: Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.fragview_video_detail, this);
@@ -660,7 +671,7 @@ class VideoDetailView : ConstraintLayout {
 
     //Lifecycle
     fun onResume() {
-        Logger.i(TAG, "onResume");
+        Logger.v(TAG, "onResume");
         _onPauseCalled = false;
 
         Logger.i(TAG, "_video: ${video?.name ?: "no video"}");
@@ -694,7 +705,7 @@ class VideoDetailView : ConstraintLayout {
         _player.updateRotateLock();
     }
     fun onPause() {
-        Logger.i(TAG, "onPause");
+        Logger.v(TAG, "onPause");
 
         _onPauseCalled = true;
         _taskLoadVideo.cancel();
@@ -722,6 +733,8 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.hide();
         _retryJob?.cancel();
         _retryJob = null;
+        _liveTryJob?.cancel();
+        _liveTryJob = null;
         _taskLoadVideo.cancel();
         handleStop();
         _didStop = true;
@@ -808,6 +821,8 @@ class VideoDetailView : ConstraintLayout {
 
         _retryJob?.cancel();
         _retryJob = null;
+        _liveTryJob?.cancel();
+        _liveTryJob = null;
         _retryCount = 0;
         fetchVideo();
 
@@ -897,6 +912,8 @@ class VideoDetailView : ConstraintLayout {
 
             _retryJob?.cancel();
             _retryJob = null;
+            _liveTryJob?.cancel();
+            _liveTryJob = null;
             _retryCount = 0;
             fetchVideo();
         }
@@ -1034,7 +1051,7 @@ class VideoDetailView : ConstraintLayout {
                                 processHandle.opinion(ref, Opinion.neutral);
                             }
 
-                            StateApp.instance.scopeGetter().launch(Dispatchers.IO) {
+                            fragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
                                     processHandle.fullyBackfillServers();
                                 } catch (e: Throwable) {
@@ -1130,6 +1147,8 @@ class VideoDetailView : ConstraintLayout {
         if(video.isLive && video.live != null) {
             loadLiveChat(video);
         }
+        if(video.isLive && video.live == null && !video.video.videoSources.any())
+            startLiveTry(video);
 
         updateMoreButtons();
     }
@@ -1259,7 +1278,7 @@ class VideoDetailView : ConstraintLayout {
         //If LiveStream, set to end
         if(videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
             if (video?.isLive == true) {
-                _player.seekToEnd(5000);
+                _player.seekToEnd(6000);
             }
 
             val videoTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
@@ -1961,7 +1980,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {
-        Logger.i(TAG, "setProgressBarOverlayed(isOverlayed: ${isOverlayed ?: "null"})");
+        Logger.v(TAG, "setProgressBarOverlayed(isOverlayed: ${isOverlayed ?: "null"})");
         isOverlayed?.let{ _cast.setProgressBarOverlayed(it) };
 
         if(isOverlayed == null) {
@@ -2080,6 +2099,8 @@ class VideoDetailView : ConstraintLayout {
                 _retryCount = 0;
                 _retryJob?.cancel();
                 _retryJob = null;
+                _liveTryJob?.cancel();
+                _liveTryJob = null;
                 UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load video (ScriptException)", it, ::fetchVideo);
             }
         }
@@ -2090,6 +2111,8 @@ class VideoDetailView : ConstraintLayout {
                 _retryCount = 0;
                 _retryJob?.cancel();
                 _retryJob = null;
+                _liveTryJob?.cancel();
+                _liveTryJob = null;
                 UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load video", it, ::fetchVideo);
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
@@ -2107,19 +2130,61 @@ class VideoDetailView : ConstraintLayout {
             Log.i(TAG, "handleErrorOrCall _retryCount=$_retryCount, starting retry job");
 
             _retryJob?.cancel();
-            _retryJob = StateApp.instance.scopeGetter().launch(Dispatchers.Main) {
+            _retryJob = StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     delay(_retryIntervals[_retryCount++] * 1000);
                     fetchVideo();
                 } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to fetch video.", e)
+                    Logger.e(TAG, "Failed to retry fetch video.", e)
                 }
             }
+            _liveTryJob?.cancel();
+            _liveTryJob = null;
         } else if (isConnected && nextVideo()) {
             Log.i(TAG, "handleErrorOrCall retries failed, is connected, skipped to next video");
         } else {
             Log.i(TAG, "handleErrorOrCall retries failed, no video to skip to, called action");
             action();
+        }
+    }
+
+    private fun startLiveTry(liveTryVideo: IPlatformVideoDetails) {
+        val datetime = liveTryVideo.datetime ?: return;
+        val diffSeconds = datetime.getNowDiffSeconds();
+        val toWait = _liveStreamCheckInterval.toList().sortedBy { abs(diffSeconds - it.first) }.firstOrNull()?.second?.toLong() ?: return;
+
+        fragment.lifecycleScope.launch(Dispatchers.Main){
+            UIDialogs.toast(context, "Not yet available, retrying in ${toWait}s");
+        }
+
+        _liveTryJob?.cancel();
+        _liveTryJob = fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                delay(toWait * 1000);
+                val videoDetail = StatePlatform.instance.getContentDetails(liveTryVideo.url, true).await();
+                if(videoDetail !is IPlatformVideoDetails)
+                    throw IllegalStateException("Expected media content, found ${video?.contentType}");
+
+                if(videoDetail.datetime != null && videoDetail.live == null && !videoDetail.video.videoSources.any()) {
+                    if(videoDetail.datetime!! > OffsetDateTime.now())
+                        withContext(Dispatchers.Main) {
+                            UIDialogs.toast(context, "Planned in ${videoDetail.datetime?.toHumanNowDiffString(true)}");
+                        }
+                    startLiveTry(liveTryVideo);
+                    _liveTryJob = null;
+                }
+                else
+                    withContext(Dispatchers.Main) {
+                        setVideoDetails(videoDetail);
+                        _liveTryJob = null;
+                    }
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to live try fetch video.", ex);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(context, "Failed to retry for live stream");
+                }
+            }
         }
     }
 

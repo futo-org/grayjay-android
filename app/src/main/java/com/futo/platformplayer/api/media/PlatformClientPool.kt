@@ -11,12 +11,14 @@ class PlatformClientPool {
     private val _parent: JSClient;
     private val _pool: HashMap<JSClient, Int> = hashMapOf();
     private var _poolCounter = 0;
+    private val _poolName: String?;
 
     var isDead: Boolean = false
         private set;
     val onDead = Event2<JSClient, PlatformClientPool>();
 
-    constructor(parentClient: IPlatformClient) {
+    constructor(parentClient: IPlatformClient, name: String? = null) {
+        _poolName = name;
         if(parentClient !is JSClient)
             throw IllegalArgumentException("Pooling only supported for JSClients right now");
         Logger.i(TAG, "Pool for ${parentClient.name} was started");
@@ -47,7 +49,7 @@ class PlatformClientPool {
             _poolCounter++;
             reserved = _pool.keys.find { !it.isBusy };
             if(reserved == null && _pool.size < capacity) {
-                Logger.i(TAG, "Started additional [${_parent.name}] client in pool (${_pool.size + 1}/${capacity})");
+                Logger.i(TAG, "Started additional [${_parent.name}] client in pool [${_poolName}] (${_pool.size + 1}/${capacity})");
                 reserved = _parent.getCopy();
                 reserved?.initialize();
                 _pool[reserved!!] = _poolCounter;

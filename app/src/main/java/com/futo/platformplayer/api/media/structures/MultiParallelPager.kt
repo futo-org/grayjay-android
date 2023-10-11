@@ -137,11 +137,11 @@ abstract class MultiParallelPager<T> : IPager<T>, IAsyncPager<T> {
                 }
             }
         }
-        Logger.i(TAG, "Pager prepare in ${timeForPage}ms");
+        Logger.v(TAG, "Pager prepare in ${timeForPage}ms");
         val timeAwait = measureTimeMillis {
             _currentResults = results.map { it.await() }.mapNotNull { it };
         };
-        Logger.i(TAG, "Pager load in ${timeAwait}ms");
+        Logger.v(TAG, "Pager load in ${timeAwait}ms");
 
         _currentResultExceptions = exceptions;
         return _currentResults;

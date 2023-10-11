@@ -63,7 +63,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
             }
         }.start();
 
-        Logger.i(TAG, "Started ${port}. \n" + getAddresses().map { it.hostAddress }.joinToString("\n"));
+        Logger.i(TAG, "Started HTTP Server ${port}. \n" + getAddresses().map { it.hostAddress }.joinToString("\n"));
     }
     @Synchronized
     fun stop() {
