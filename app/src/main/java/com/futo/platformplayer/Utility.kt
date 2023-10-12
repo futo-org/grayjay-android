@@ -78,8 +78,10 @@ fun IPlatformClient.fromPool(pool: PlatformMultiClientPool) = pool.getClientPool
 fun IPlatformVideo.withTimestamp(sec: Long) =  PlatformVideoWithTime(this, sec);
 
 fun DocumentFile.getInputStream(context: Context) = context.contentResolver.openInputStream(this.uri);
-fun DocumentFile.getOutputStream(context: Context, using: ((OutputStream?)->Unit)? = null) = context.contentResolver.openOutputStream(this.uri);
-fun DocumentFile.copyTo(context: Context, file: DocumentFile) = this.getInputStream(context).use { input -> file.getOutputStream(context)?.let { output -> input?.copyTo(output) } };
+fun DocumentFile.getOutputStream(context: Context) = context.contentResolver.openOutputStream(this.uri);
+fun DocumentFile.copyTo(context: Context, file: DocumentFile) = this.getInputStream(context).use { input ->
+    file.getOutputStream(context)?.use { output -> input?.copyTo(output) }
+};
 fun DocumentFile.readBytes(context: Context) = this.getInputStream(context).use { input -> input?.readBytes() };
 fun DocumentFile.writeBytes(context: Context, byteArray: ByteArray) = context.contentResolver.openOutputStream(this.uri)?.use {
     it.write(byteArray);
