@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.icu.util.Output
 import android.os.Build
 import android.os.Looper
 import android.os.OperationCanceledException
@@ -15,6 +16,7 @@ import android.view.WindowInsetsController
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.PlatformMultiClientPool
@@ -75,6 +77,14 @@ fun IPlatformClient.fromPool(pool: PlatformMultiClientPool) = pool.getClientPool
 
 fun IPlatformVideo.withTimestamp(sec: Long) =  PlatformVideoWithTime(this, sec);
 
+fun DocumentFile.getInputStream(context: Context) = context.contentResolver.openInputStream(this.uri);
+fun DocumentFile.getOutputStream(context: Context, using: ((OutputStream?)->Unit)? = null) = context.contentResolver.openOutputStream(this.uri);
+fun DocumentFile.copyTo(context: Context, file: DocumentFile) = this.getInputStream(context).use { input -> file.getOutputStream(context)?.let { output -> input?.copyTo(output) } };
+fun DocumentFile.readBytes(context: Context) = this.getInputStream(context).use { input -> input?.readBytes() };
+fun DocumentFile.writeBytes(context: Context, byteArray: ByteArray) = context.contentResolver.openOutputStream(this.uri)?.use {
+    it.write(byteArray);
+    it.flush();
+};
 
 fun loadBitmap(url: String): Bitmap {
     try {

@@ -406,6 +406,33 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
+    @FormField("External Storage", FieldForm.GROUP, "", 12)
+    var storage = Storage();
+    @Serializable
+    class Storage {
+        var storage_general: String? = null;
+        var storage_download: String? = null;
+
+        fun getStorageGeneralUri(): Uri? = storage_general?.let { Uri.parse(it) };
+        fun getStorageDownloadUri(): Uri? = storage_download?.let { Uri.parse(it) };
+        fun isStorageMainValid(context: Context): Boolean = StateApp.instance.isValidStorageUri(context, getStorageGeneralUri());
+        fun isStorageDownloadValid(context: Context): Boolean = StateApp.instance.isValidStorageUri(context, getStorageDownloadUri());
+
+        @FormField("Change external General directory", FieldForm.BUTTON, "Change the external directory for general files, used for persistent files like auto-backup", 3)
+        fun changeStorageGeneral() {
+            SettingsActivity.getActivity()?.let {
+                StateApp.instance.changeExternalGeneralDirectory(it);
+            }
+        }
+        @FormField("Change external Downloads directory", FieldForm.BUTTON, "Change the external storage for download files, used for exported download files", 4)
+        fun changeStorageDownload() {
+            SettingsActivity.getActivity()?.let {
+                StateApp.instance.changeExternalDownloadDirectory(it);
+            }
+        }
+    }
+
+
     @FormField("Auto Update", "group", "Configure the auto updater", 12)
     var autoUpdate = AutoUpdate();
     @Serializable
@@ -511,7 +538,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField("Set Automatic Backup", FieldForm.BUTTON, "Configure daily backup in case of catastrophic failure. (Written to the external Grayjay directory)", 1)
         fun configureAutomaticBackup() {
-            UIDialogs.showAutomaticBackupDialog(SettingsActivity.getActivity()!!);
+            UIDialogs.showAutomaticBackupDialog(SettingsActivity.getActivity()!!, autoBackupPassword != null) {
+                SettingsActivity.getActivity()?.reloadSettings();
+            };
         }
         @FormField("Restore Automatic Backup", FieldForm.BUTTON, "Restore a previous automatic backup", 2)
         fun restoreAutomaticBackup() {
@@ -542,6 +571,7 @@ class Settings : FragmentedStorageFileJson() {
             StatePayment.instance.clearLicenses();
             SettingsActivity.getActivity()?.let {
                 UIDialogs.toast(it, "Licenses cleared, might require app restart");
+                it.reloadSettings();
             }
         }
     }

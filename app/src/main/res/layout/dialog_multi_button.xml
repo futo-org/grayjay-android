@@ -66,6 +66,7 @@
             android:orientation="horizontal"
             android:gravity="end"
             android:layout_marginTop="28dp"
-            android:layout_marginBottom="28dp" />
+            android:layout_marginBottom="28dp">
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

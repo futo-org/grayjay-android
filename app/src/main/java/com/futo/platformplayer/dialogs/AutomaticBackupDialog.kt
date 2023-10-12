@@ -11,6 +11,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.google.android.material.button.MaterialButton
 
@@ -58,13 +59,13 @@ class AutomaticBackupDialog(context: Context) : AlertDialog(context) {
             }
             clearFocus();
             dismiss();
+
             Logger.i(TAG, "Set AutoBackupPassword");
             Settings.instance.backup.autoBackupPassword = _editPassword.text.toString();
             Settings.instance.backup.didAskAutoBackup = true;
             Settings.instance.save();
 
             UIDialogs.toast(context, "AutoBackup enabled");
-
             try {
                 StateBackup.startAutomaticBackup(true);
             }

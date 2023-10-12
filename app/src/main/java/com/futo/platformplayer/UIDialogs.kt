@@ -15,7 +15,9 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.*
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -90,11 +92,25 @@ class UIDialogs {
         }
 
 
-        fun showAutomaticBackupDialog(context: Context) {
-            val dialog = AutomaticBackupDialog(context);
-            registerDialogOpened(dialog);
-            dialog.setOnDismissListener { registerDialogClosed(dialog) };
-            dialog.show();
+        fun showAutomaticBackupDialog(context: Context, skipRestoreCheck: Boolean = false, onClosed: (()->Unit)? = null) {
+            val dialogAction: ()->Unit = {
+                val dialog = AutomaticBackupDialog(context);
+                registerDialogOpened(dialog);
+                dialog.setOnDismissListener { registerDialogClosed(dialog); onClosed?.invoke() };
+                dialog.show();
+            };
+            if(StateBackup.hasAutomaticBackup() && !skipRestoreCheck)
+                UIDialogs.showDialog(context, R.drawable.ic_move_up, "An old backup is available", "Would you like to restore this backup?", null, 0,
+                    UIDialogs.Action("Cancel", {}), //To nothing
+                    UIDialogs.Action("Override", {
+                        dialogAction();
+                    }, UIDialogs.ActionStyle.DANGEROUS),
+                    UIDialogs.Action("Restore", {
+                        UIDialogs.showAutomaticRestoreDialog(context, StateApp.instance.scope);
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            else {
+                dialogAction();
+            }
         }
         fun showAutomaticRestoreDialog(context: Context, scope: CoroutineScope) {
             val dialog = AutomaticRestoreDialog(context, scope);
@@ -134,10 +150,10 @@ class UIDialogs {
                     val buttonView = TextView(context);
                     val dp10 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, resources.displayMetrics).toInt();
                     val dp28 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28f, resources.displayMetrics).toInt();
-                    val dp14 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14.0f, resources.displayMetrics);
+                    val dp14 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14.0f, resources.displayMetrics).toInt();
                     buttonView.layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
                         if(actions.size > 1)
-                            this.marginEnd = dp28;
+                            this.marginEnd = if(actions.size > 2) dp14 else dp28;
                     };
                     buttonView.setTextColor(Color.WHITE);
                     buttonView.textSize = 14f;
@@ -151,8 +167,9 @@ class UIDialogs {
                         ActionStyle.DANGEROUS_TEXT -> buttonView.setTextColor(ContextCompat.getColor(context, R.color.pastel_red))
                         else -> buttonView.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary))
                     }
+                    val paddingSpecialButtons = if(actions.size > 2) dp14 else dp28;
                     if(act.style != ActionStyle.NONE && act.style != ActionStyle.DANGEROUS_TEXT)
-                        buttonView.setPadding(dp28, dp10, dp28, dp10);
+                        buttonView.setPadding(paddingSpecialButtons, dp10, paddingSpecialButtons, dp10);
                     else
                         buttonView.setPadding(dp10, dp10, dp10, dp10);
 

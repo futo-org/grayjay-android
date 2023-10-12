@@ -11,7 +11,7 @@
         android:id="@+id/field_group_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="16dp"
+        android:textSize="20dp"
         android:textColor="@color/white"
         android:fontFamily="@font/inter_light"
         android:text="@string/defaults"

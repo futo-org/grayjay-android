@@ -52,9 +52,8 @@ import java.util.concurrent.TimeUnit
 class StateApp {
     val isMainActive: Boolean get() = contextOrNull != null && contextOrNull is MainActivity; //if context is MainActivity, it means its active
 
+    /*
     private val externalRootDirectory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Grayjay");
-
-
 
     fun getExternalRootDirectory(): File? {
         if(!externalRootDirectory.exists()) {
@@ -65,6 +64,57 @@ class StateApp {
         }
         else
             return externalRootDirectory;
+    }*/
+
+    fun getExternalGeneralDirectory(context: Context): DocumentFile? {
+        val generalUri = Settings.instance.storage.getStorageGeneralUri();
+        if(isValidStorageUri(context, generalUri))
+            return DocumentFile.fromTreeUri(context, generalUri!!);
+        return null;
+    }
+    fun changeExternalGeneralDirectory(context: IWithResultLauncher, onChanged: ((DocumentFile?)->Unit)? = null) {
+        if(context is Context)
+            requestDirectoryAccess(context, "General Files", "This directory is used to save auto-backups and other persistent files.", null) {
+                if(it != null)
+                    context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION));
+                if(it != null && isValidStorageUri(context, it)) {
+                    Logger.i(TAG, "Changed external general directory: ${it}");
+                    Settings.instance.storage.storage_general = it.toString();
+                    Settings.instance.save();
+
+                    onChanged?.invoke(getExternalGeneralDirectory(context));
+                }
+                else
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        UIDialogs.toast("Failed to gain access to\n [${it?.lastPathSegment}]");
+                    };
+            };
+    }
+    fun getExternalDownloadDirectory(context: Context): DocumentFile? {
+        val downloadUri = Settings.instance.storage.storage_download?.let { Uri.parse(it) };
+        if(isValidStorageUri(context, downloadUri))
+            return DocumentFile.fromTreeUri(context, downloadUri!!);
+        return null;
+    }
+    fun changeExternalDownloadDirectory(context: IWithResultLauncher, onChanged: ((DocumentFile?)->Unit)? = null) {
+        if(context is Context)
+            requestDirectoryAccess(context, "Download Exports", "This directory is used to export downloads to for external usage.", null) {
+                if(it != null)
+                    context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION.or(Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION)));
+                if(it != null && isValidStorageUri(context, it)) {
+                    Logger.i(TAG, "Changed external download directory: ${it}");
+                    Settings.instance.storage.storage_general = it.toString();
+                    Settings.instance.save();
+
+                    onChanged?.invoke(getExternalDownloadDirectory(context));
+                }
+            };
+    }
+    fun isValidStorageUri(context: Context, uri: Uri?): Boolean {
+        if(uri == null)
+            return false;
+
+        return context.contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission && it.isWritePermission };
     }
 
     //Scope
@@ -171,20 +221,20 @@ class StateApp {
         return state;
     }
 
-    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, path: Uri?, handle: (Uri?)->Unit)
+    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit)
     {
         if(activity is Context)
         {
-            UIDialogs.showDialog(activity, R.drawable.ic_security, "Missing Access", "Please grant access to ${name}", null, 0,
+            UIDialogs.showDialog(activity, R.drawable.ic_security, "Directory required for\n${name}", "Please select a directory for ${name}.\n${purpose}".trim(), null, 0,
                 UIDialogs.Action("Cancel", {}),
                 UIDialogs.Action("Ok", {
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
                     if(path != null)
                         intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
                     intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        .and(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        .and(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                        .and(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+                        .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                        .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
 
                     activity.launchForResult(intent, 99) {
                         if(it.resultCode == Activity.RESULT_OK) {
@@ -377,15 +427,31 @@ class StateApp {
         val interval = Settings.instance.subscriptions.getSubscriptionsBackgroundIntervalMinutes();
         scheduleBackgroundWork(context, interval != 0, interval);
 
-
         if(!Settings.instance.backup.didAskAutoBackup && !Settings.instance.backup.shouldAutomaticBackup()) {
             StateAnnouncement.instance.registerAnnouncement("backup", "Set Automatic Backup", "Configure daily backups of your data to restore in case of catastrophic failure.", AnnouncementType.SESSION, null, null, "Configure", {
-                UIDialogs.showAutomaticBackupDialog(context);
-                StateAnnouncement.instance.deleteAnnouncement("backup");
+                if(context is IWithResultLauncher && !Settings.instance.storage.isStorageMainValid(context)) {
+                    UIDialogs.toast("Missing general directory");
+                    changeExternalGeneralDirectory(context) {
+                        UIDialogs.showAutomaticBackupDialog(context);
+                        StateAnnouncement.instance.deleteAnnouncement("backup");
+                    };
+                }
+                else {
+                    UIDialogs.showAutomaticBackupDialog(context);
+                    StateAnnouncement.instance.deleteAnnouncement("backup");
+                }
             }, "No Backup", {
                 Settings.instance.backup.didAskAutoBackup = true;
                 Settings.instance.save();
             });
+        }
+        else if(Settings.instance.backup.didAskAutoBackup && Settings.instance.backup.shouldAutomaticBackup() && !Settings.instance.storage.isStorageMainValid(context)) {
+            if(context is IWithResultLauncher) {
+                Logger.i(TAG, "Backup set without general directory, please select general external directory");
+                changeExternalGeneralDirectory(context) {
+                    Logger.i(TAG, "Directory set, Auto-backup should resume to this location");
+                };
+            }
         }
 
         instance.scopeOrNull?.launch(Dispatchers.IO) {

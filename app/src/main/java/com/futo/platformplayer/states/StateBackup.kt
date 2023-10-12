@@ -17,11 +17,17 @@ import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.copyTo
+import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.encryption.EncryptionProvider
+import com.futo.platformplayer.getInputStream
 import com.futo.platformplayer.getNowDiffHours
+import com.futo.platformplayer.getOutputStream
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.writeBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,20 +53,22 @@ class StateBackup {
 
         private val _autoBackupLock = Object();
 
-        private fun getAutomaticBackupDocumentFiles(context: Context, root: Uri, create: Boolean = false): Pair<DocumentFile?, DocumentFile?> {
-            val dir = DocumentFile.fromTreeUri(context, root);
-            if(dir == null)
-                throw IllegalStateException("Can't access external document files");
+        private fun getAutomaticBackupDocumentFiles(context: Context, create: Boolean = false): Pair<DocumentFile?, DocumentFile?> {
+            if(!Settings.instance.storage.isStorageMainValid(context))
+                return Pair(null, null);
+            val uri = Settings.instance.storage.getStorageGeneralUri() ?: return Pair(null, null);
+            val dir = DocumentFile.fromTreeUri(context, uri) ?: return Pair(null, null);
             val mainBackupFile = dir.findFile("GrayjayBackup.ezip") ?: if(create) dir.createFile("grayjay/ezip", "GrayjayBackup.ezip") else null;
             val secondaryBackupFile = dir.findFile("GrayjayBackup.ezip.old") ?: if(create) dir.createFile("grayjay/ezip", "GrayjayBackup.ezip.old") else null;
             return Pair(mainBackupFile, secondaryBackupFile);
         }
+        /*
         private fun getAutomaticBackupFiles(): Pair<File, File> {
             val dir = StateApp.instance.getExternalRootDirectory();
             if(dir == null)
                 throw IllegalStateException("Can't access external files");
             return Pair(File(dir, "GrayjayBackup.ezip"), File(dir, "GrayjayBackup.ezip.old"))
-        }
+        }*/
 
 
         fun getAllMigrationStores(): List<ManagedStore<*>> = listOf(
@@ -77,10 +85,11 @@ class StateBackup {
             return password.padStart(32, '9');
         }
         fun hasAutomaticBackup(): Boolean {
-            if(StateApp.instance.getExternalRootDirectory() == null)
+            val context = StateApp.instance.contextOrNull ?: return false;
+            if(!Settings.instance.storage.isStorageMainValid(context))
                 return false;
-            val files = getAutomaticBackupFiles();
-            return files.first.exists() || files.second.exists();
+            val files = getAutomaticBackupDocumentFiles(context,);
+            return files.first?.exists() ?: false || files.second?.exists() ?: false;
         }
         fun startAutomaticBackup(force: Boolean = false) {
             val lastBackupHoursAgo = Settings.instance.backup.lastAutoBackupTime.getNowDiffHours();
@@ -93,20 +102,27 @@ class StateBackup {
                 try {
                     Logger.i(TAG, "Starting AutoBackup (Last ${lastBackupHoursAgo} ago)");
                     synchronized(_autoBackupLock) {
+                        val context = StateApp.instance.contextOrNull ?: return@synchronized;
                         val data = export();
                         val zip = data.asZip();
 
                         val encryptedZip = EncryptionProvider.instance.encrypt(zip, getAutomaticBackupPassword());
 
-                        val backupFiles = getAutomaticBackupFiles();
-                        val exportFile = backupFiles.first;
-                        if (exportFile.exists())
-                            exportFile.copyTo(backupFiles.second, true);
+                        if(!Settings.instance.storage.isStorageMainValid(context)) {
+                            StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                                UIDialogs.toast("Missing permissions for auto-backup, please set the external general directory in settings");
+                            }
+                        }
+                        else {
+                            val backupFiles = getAutomaticBackupDocumentFiles(context, true);
+                            val exportFile = backupFiles.first;
+                            if (exportFile?.exists() == true && backupFiles.second != null)
+                                exportFile!!.copyTo(context, backupFiles.second!!);
+                            exportFile!!.writeBytes(context, encryptedZip);
 
-                        exportFile.writeBytes(encryptedZip);
-
-                        Settings.instance.backup.lastAutoBackupTime = OffsetDateTime.now(); //OffsetDateTime.now();
-                        Settings.instance.save();
+                            Settings.instance.backup.lastAutoBackupTime = OffsetDateTime.now(); //OffsetDateTime.now();
+                            Settings.instance.save();
+                        }
                     }
                     Logger.i(TAG, "Finished AutoBackup");
                 }
@@ -119,28 +135,22 @@ class StateBackup {
             }
         }
 
-        //TODO: This contains a temporary workaround to make it semi-compatible with > Android 11. By mixing "File" and "DocumentFile" usage.
-        //TODO: For now this is used to at least recover and gain temporary access to docs after losing access (due to permission lost after reinstall)
-        //TODO: Should be replaced with a more re-usable system that leverages OPEN_DOCUMENT_TREE once, and somehow persist this content after uninstall
-        //TODO: DocumentFiles are not compatible with normal files and require its own system.
-        //TODO: Investigate persistence of DOCUMENT_TREE files after uninstall...
-        fun restoreAutomaticBackup(context: Context, scope: CoroutineScope, password: String, ifExists: Boolean = false, withStream: InputStream? = null) {
+        //TODO: This goes has recently changed to use DocumentFiles and DocumentTree, and might need additional checks/edgecases covered.
+        fun restoreAutomaticBackup(context: Context, scope: CoroutineScope, password: String, ifExists: Boolean = false) {
             if(ifExists && !hasAutomaticBackup()) {
                 Logger.i(TAG, "No AutoBackup exists, not restoring");
                 return;
             }
 
-            //TODO: Sadly on reinstalls of app this fails on file permissions.
-
             Logger.i(TAG, "Starting AutoBackup restore");
             synchronized(_autoBackupLock) {
 
-                val backupFiles = getAutomaticBackupFiles();
+                val backupFiles = getAutomaticBackupDocumentFiles(StateApp.instance.context, false);
                 try {
-                    if (!backupFiles.first.exists() && withStream == null)
+                    if (backupFiles.first?.exists() != true)
                         throw IllegalStateException("Backup file does not exist");
 
-                    val backupBytesEncrypted = if(withStream != null) withStream.readBytes() else backupFiles.first.readBytes();
+                    val backupBytesEncrypted = backupFiles.first!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.first?.uri}]");
                     val backupBytes = EncryptionProvider.instance.decrypt(backupBytesEncrypted, getAutomaticBackupPassword(password));
                     importZipBytes(context, scope, backupBytes);
                     Logger.i(TAG, "Finished AutoBackup restore");
@@ -154,21 +164,21 @@ class StateBackup {
                     else null;
                     if(activity != null) {
                         if(activity is IWithResultLauncher)
-                            StateApp.instance.requestDirectoryAccess(activity, "Grayjay Backup Directory", backupFiles.first.parent?.toUri()) {
+                            StateApp.instance.requestDirectoryAccess(activity, "Grayjay Backup Directory", "Allows restoring of a backup", backupFiles.first?.parentFile?.uri) {
                                 if(it != null) {
-                                    val customFiles = StateBackup.getAutomaticBackupDocumentFiles(activity, it);
+                                    val customFiles = StateBackup.getAutomaticBackupDocumentFiles(activity);
                                     if(customFiles.first != null && customFiles.first!!.isFile && customFiles.first!!.exists() && customFiles.first!!.canRead())
-                                        restoreAutomaticBackup(context, scope, password, ifExists, activity.contentResolver.openInputStream(customFiles.first!!.uri));
+                                        restoreAutomaticBackup(context, scope, password, ifExists);
                                 }
                             };
                     }
                 }
                 catch (ex: Throwable) {
                     Logger.e(TAG, "Failed main AutoBackup restore", ex)
-                    if (!backupFiles.second.exists())
+                    if (backupFiles.second?.exists() != true)
                         throw ex;
 
-                    val backupBytesEncrypted = backupFiles.second.readBytes();
+                    val backupBytesEncrypted = backupFiles.second!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.second?.uri}]");
                     val backupBytes = EncryptionProvider.instance.decrypt(backupBytesEncrypted, getAutomaticBackupPassword(password));
                     importZipBytes(context, scope, backupBytes);
                     Logger.i(TAG, "Finished AutoBackup restore");
