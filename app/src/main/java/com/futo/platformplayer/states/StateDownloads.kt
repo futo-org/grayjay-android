@@ -108,6 +108,11 @@ class StateDownloads {
     fun getPlaylistDownload(playlistId: String): PlaylistDownloadDescriptor? {
         return _downloadPlaylists.findItem { it.id == playlistId };
     }
+    fun savePlaylistDownload(playlistDownload: PlaylistDownloadDescriptor) {
+        synchronized(playlistDownload.preventDownload) {
+            _downloadPlaylists.save(playlistDownload);
+        }
+    }
     fun deleteCachedPlaylist(id: String) {
         val pdl = getPlaylistDownload(id);
         if(pdl != null)
@@ -157,12 +162,15 @@ class StateDownloads {
         val playlistsDownloaded = getCachedPlaylists();
         for(playlist in playlistsDownloaded) {
             val playlistDownload = getPlaylistDownload(playlist.playlist.id) ?: continue;
-
-            if(playlist.playlist.videos.any{ getCachedVideo(it.id) == null }) {
-                Logger.i(TAG, "Found new videos on playlist [${playlist.playlist.name}]");
+            val toIgnore = playlistDownload.getPreventDownloadList();
+            val missingVideoCount = playlist.playlist.videos.count { !toIgnore.contains(it.url) && getCachedVideo(it.id) == null };
+            if(missingVideoCount > 0) {
+                Logger.i(TAG, "Found new videos (${missingVideoCount}) on playlist [${playlist.playlist.name}] to download");
                 continueDownload(playlistDownload, playlist.playlist);
                 hasChanged = true;
             }
+            else
+                Logger.v(TAG, "Offline playlist [${playlist.playlist.name}] is up to date");
         }
         return hasChanged;
     }
@@ -171,6 +179,11 @@ class StateDownloads {
         var hasNew = false;
         for(item in playlist.videos) {
             val existing = getCachedVideo(item.id);
+
+            if(!playlistDownload.shouldDownload(item)) {
+                Logger.i(TAG, "Not downloading for playlist [${playlistDownload.id}] Video [${item.name}]:${item.url}")
+                continue;
+            }
             if(existing == null) {
                 val ongoingDownload = getDownloading().find { it.id.value == item.id.value && it.id.value != null };
                 if(ongoingDownload != null) {

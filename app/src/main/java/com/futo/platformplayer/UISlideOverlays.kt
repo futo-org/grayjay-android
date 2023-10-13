@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.view.View
 import android.view.ViewGroup
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.api.http.server.handlers.HttpConstantHandler
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
@@ -29,7 +28,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class UISlideOverlays {
     companion object {
@@ -68,6 +66,12 @@ class UISlideOverlays {
                 return null;
             }
 
+            if(!VideoHelper.isDownloadable(video)) {
+                Logger.i(TAG, "Attempted to open downloads without valid sources for [${video.name}]: ${video.url}");
+                UIDialogs.toast( "No downloadable sources (yet)");
+                return null;
+            }
+
             items.add(SlideUpMenuGroup(container.context, "Video", videoSources,
                 listOf(listOf(SlideUpMenuItem(container.context, R.drawable.ic_movie, "None", "Audio Only", "none", {
                     selectedVideo = null;
@@ -76,7 +80,7 @@ class UISlideOverlays {
                         menu?.setOk("Download");
                 }, false)) +
                 videoSources
-                .filter { it is IVideoUrlSource }
+                .filter { it.isDownloadable() }
                 .map {
                     SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it, {
                         selectedVideo = it as IVideoUrlSource;
@@ -88,14 +92,14 @@ class UISlideOverlays {
             ));
 
             if(Settings.instance.downloads.getDefaultVideoQualityPixels() > 0 && videoSources.size > 0)
-                selectedVideo = VideoHelper.selectBestVideoSource(videoSources.filter { it is IVideoUrlSource }.asIterable(),
+                selectedVideo = VideoHelper.selectBestVideoSource(videoSources.filter { it.isDownloadable() }.asIterable(),
                     Settings.instance.downloads.getDefaultVideoQualityPixels(),
                     FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) as IVideoUrlSource;
 
 
             audioSources?.let { audioSources ->
                 items.add(SlideUpMenuGroup(container.context, "Audio", audioSources, audioSources
-                    .filter { it is IAudioUrlSource }
+                    .filter { VideoHelper.isDownloadable(it) }
                     .map {
                         SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, "${it.bitrate}", it, {
                             selectedAudio = it as IAudioUrlSource;
@@ -111,7 +115,7 @@ class UISlideOverlays {
                 menu?.selectOption(asources, preferredAudioSource);
 
 
-                selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioUrlSource }.asIterable(),
+                selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it.isDownloadable() }.asIterable(),
                     FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
                     Settings.instance.playback.getPrimaryLanguage(container.context),
                     if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioUrlSource?;

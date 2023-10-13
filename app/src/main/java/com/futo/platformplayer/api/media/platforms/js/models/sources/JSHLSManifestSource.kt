@@ -7,7 +7,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 
-class JSHLSManifestSource : IVideoUrlSource, IHLSManifestSource, JSSource {
+class JSHLSManifestSource : IHLSManifestSource, JSSource {
     override val width : Int = 0;
     override val height : Int = 0;
     override val container : String get() = "application/vnd.apple.mpegurl";
@@ -27,9 +27,5 @@ class JSHLSManifestSource : IVideoUrlSource, IHLSManifestSource, JSSource {
         duration = _obj.getOrThrow<Int>(config, "duration", contextName).toLong();
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
-    }
-
-    override fun getVideoUrl(): String {
-        return url;
     }
 }

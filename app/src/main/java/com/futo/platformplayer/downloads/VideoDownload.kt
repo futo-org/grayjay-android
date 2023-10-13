@@ -13,8 +13,11 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.exceptions.DownloadException
+import com.futo.platformplayer.hasAnySource
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.isDownloadable
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.toHumanBitrate
@@ -147,27 +150,37 @@ class VideoDownload {
             if(original !is IPlatformVideoDetails)
                 throw IllegalStateException("Original content is not media?");
 
+            if(original.video.hasAnySource() && !original.isDownloadable()) {
+                Logger.i(TAG, "Attempted to download unsupported video [${original.name}]:${original.url}");
+                throw DownloadException("Unsupported video for downloading", false);
+            }
+
             videoDetails = SerializedPlatformVideoDetails.fromVideo(original, if (subtitleSource != null) listOf(subtitleSource!!) else listOf());
             if(videoSource == null && targetPixelCount != null) {
                 val vsource = VideoHelper.selectBestVideoSource(videoDetails!!.video, targetPixelCount!!.toInt(), arrayOf())
-                    ?: throw IllegalStateException("Could not find a valid video source for video");
-                if(vsource is IVideoUrlSource)
-                    videoSource = VideoUrlSource.fromUrlSource(vsource);
-                else
-                    throw IllegalStateException("Download video source is not a url source");
+                //    ?: throw IllegalStateException("Could not find a valid video source for video");
+                if(vsource != null) {
+                    if (vsource is IVideoUrlSource)
+                        videoSource = VideoUrlSource.fromUrlSource(vsource);
+                    else
+                        throw DownloadException("Video source is not supported for downloading (yet)", false);
+                }
             }
 
             if(audioSource == null && targetBitrate != null) {
                 val asource = VideoHelper.selectBestAudioSource(videoDetails!!.video, arrayOf(), null, targetPixelCount)
                     ?: if(videoSource != null ) null
-                    else throw IllegalStateException("Could not find a valid audio source for video");
+                    else throw DownloadException("Could not find a valid video or audio source for download")
                 if(asource == null)
                     audioSource = null;
                 else if(asource is IAudioUrlSource)
                     audioSource = AudioUrlSource.fromUrlSource(asource);
                 else
-                    throw IllegalStateException("Download audio source is not a url source");
+                    throw DownloadException("Audio source is not supported for downloading (yet)", false);
             }
+
+            if(videoSource == null && audioSource == null)
+                throw DownloadException("No valid sources found for video/audio");
         }
     }
     suspend fun download(client: ManagedHttpClient, onProgress: ((Double) -> Unit)? = null) = coroutineScope {

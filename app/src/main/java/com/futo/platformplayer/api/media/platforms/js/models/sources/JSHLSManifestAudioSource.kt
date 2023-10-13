@@ -9,7 +9,7 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.orNull
 
-class JSHLSManifestAudioSource : IAudioUrlSource, IHLSManifestAudioSource, JSSource {
+class JSHLSManifestAudioSource : IHLSManifestAudioSource, JSSource {
     override val container : String get() = "application/vnd.apple.mpegurl";
     override val codec: String = "HLS";
     override val name : String;
@@ -31,9 +31,6 @@ class JSHLSManifestAudioSource : IAudioUrlSource, IHLSManifestAudioSource, JSSou
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
     }
 
-    override fun getAudioUrl(): String {
-        return url;
-    }
 
     companion object {
         fun fromV8HLSNullable(config: IV8PluginConfig, obj: V8Value?) : JSHLSManifestAudioSource? = obj.orNull { fromV8HLS(config, it as V8ValueObject) };

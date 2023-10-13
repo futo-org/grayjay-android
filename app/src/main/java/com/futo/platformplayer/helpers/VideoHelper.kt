@@ -4,7 +4,10 @@ import android.net.Uri
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.logging.Logger
@@ -16,6 +19,12 @@ import com.google.android.exoplayer2.upstream.ResolvingDataSource
 
 class VideoHelper {
     companion object {
+
+        fun isDownloadable(detail: IPlatformVideoDetails) =
+            (detail.video.videoSources.any { isDownloadable(it) }) ||
+                    (if (detail is VideoUnMuxedSourceDescriptor) detail.audioSources.any { isDownloadable(it) } else false);
+        fun isDownloadable(source: IVideoSource) = source is IVideoUrlSource;
+        fun isDownloadable(source: IAudioSource) = source is IAudioUrlSource;
 
         fun selectBestVideoSource(desc: IVideoSourceDescriptor, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? = selectBestVideoSource(desc.videoSources.toList(), desiredPixelCount, prefContainers);
         fun selectBestVideoSource(sources: Iterable<IVideoSource>, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? {

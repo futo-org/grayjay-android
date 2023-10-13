@@ -12,6 +12,7 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.exceptions.DownloadException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.Announcement
 import com.futo.platformplayer.states.AnnouncementType
@@ -133,6 +134,22 @@ class DownloadService : Service() {
                     //Corrupt?
                     Logger.w(TAG, "Video had no video or videodetail, removing download");
                     StateDownloads.instance.removeDownload(currentVideo);
+                }
+                else if(ex is DownloadException && !ex.isRetryable) {
+                    Logger.w(TAG, "Video had exception that should not be retried");
+                    StateDownloads.instance.removeDownload(currentVideo);
+                    //Ensure impossible downloads are not retried for playlists
+                    if(currentVideo.video != null && currentVideo.groupID != null && currentVideo.groupType == VideoDownload.GROUP_PLAYLIST) {
+                        StateDownloads.instance.getPlaylistDownload(currentVideo.groupID!!)?.let {
+                            synchronized(it.preventDownload) {
+                                if(currentVideo?.video?.url != null && !it.preventDownload.contains(currentVideo!!.video!!.url)) {
+                                    it.preventDownload.add(currentVideo!!.video!!.url);
+                                    StateDownloads.instance.savePlaylistDownload(it);
+                                    Logger.w(TAG, "Preventing further download attempts in playlist [${it.id}] for [${currentVideo?.name}]:${currentVideo?.video?.url}");
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                     Logger.e(TAG, "Failed download [${currentVideo.name}]: ${ex.message}", ex);
