@@ -1,12 +1,16 @@
 package com.futo.platformplayer.states
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.os.StatFs
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.AlreadyQueuedException
 import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
@@ -146,6 +150,19 @@ class StateDownloads {
         download.isCancelled = true;
         _downloading.delete(download);
         onDownloadsChanged.emit();
+    }
+    fun preventPlaylistDownload(download: VideoDownload) {
+        if(download.video != null && download.groupID != null && download.groupType == VideoDownload.GROUP_PLAYLIST) {
+            getPlaylistDownload(download.groupID!!)?.let {
+                synchronized(it.preventDownload) {
+                    if(download.video?.url != null && !it.preventDownload.contains(download.video!!.url)) {
+                        it.preventDownload.add(download.video!!.url);
+                        savePlaylistDownload(it);
+                        Logger.w(TAG, "Preventing further download attempts in playlist [${it.id}] for [${download.name}]:${download.video?.url}");
+                    }
+                }
+            }
+        }
     }
 
     fun checkForDownloadsTodos() {
@@ -302,6 +319,32 @@ class StateDownloads {
                     throw IllegalStateException("A higher bitrate audio source is already downloaded");
             }
         }
+    }
+
+    suspend fun downloadSubtitles(subtitle: ISubtitleSource, contentResolver: ContentResolver): SubtitleRawSource? {
+        val subtitleUri = subtitle.getSubtitlesURI();
+        if(subtitleUri == null)
+            return null;
+        var subtitles: String? = null;
+        if ("file" == subtitleUri.scheme) {
+            val inputStream = contentResolver.openInputStream(subtitleUri);
+            inputStream?.use { stream ->
+                val reader = stream.bufferedReader();
+                subtitles = reader.use { it.readText() };
+            }
+        } else if ("http" == subtitleUri.scheme || "https" == subtitleUri.scheme) {
+            val client = ManagedHttpClient();
+            val subtitleResponse = client.get(subtitleUri.toString());
+            if (!subtitleResponse.isOk) {
+                throw Exception("Cannot fetch subtitles from source '${subtitleUri}': ${subtitleResponse.code}");
+            }
+
+            subtitles = subtitleResponse.body?.toString()
+                ?: throw Exception("Subtitles are invalid '${subtitleUri}': ${subtitleResponse.code}");
+        } else {
+            throw NotImplementedError("Unsuported scheme");
+        }
+        return if (subtitles != null) SubtitleRawSource(subtitle.name, subtitle.format, subtitles!!) else null;
     }
 
     fun cleanupDownloads(): Pair<Int, Long> {

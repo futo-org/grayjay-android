@@ -68,6 +68,7 @@ class ActiveDownloadItem: LinearLayout {
 
         _videoCancel.setOnClickListener {
             StateDownloads.instance.removeDownload(_download);
+            StateDownloads.instance.preventPlaylistDownload(_download);
         };
 
         _download.onProgressChanged.subscribe(this) {

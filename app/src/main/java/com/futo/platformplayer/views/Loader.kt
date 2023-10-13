@@ -5,8 +5,10 @@ import android.graphics.drawable.Animatable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.core.view.updateLayoutParams
 import com.futo.platformplayer.R
 
 class Loader : LinearLayout {
@@ -15,7 +17,7 @@ class Loader : LinearLayout {
     private val _animatable: Animatable;
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
-        LayoutInflater.from(context).inflate(R.layout.view_loader, this, true);
+        inflate(context, R.layout.view_loader, this);
         _imageLoader = findViewById(R.id.image_loader);
         _animatable = _imageLoader.drawable as Animatable;
 
@@ -25,6 +27,18 @@ class Loader : LinearLayout {
             attrArr.recycle();
         } else {
             _automatic = false;
+        }
+
+        visibility = View.GONE;
+    }
+    constructor(context: Context, automatic: Boolean, height: Int = -1) : super(context) {
+        inflate(context, R.layout.view_loader, this);
+        _imageLoader = findViewById(R.id.image_loader);
+        _animatable = _imageLoader.drawable as Animatable;
+        _automatic = automatic;
+
+        if(height > 0) {
+            layoutParams = ViewGroup.LayoutParams(LayoutParams.MATCH_PARENT, height);
         }
 
         visibility = View.GONE;

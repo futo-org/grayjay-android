@@ -40,7 +40,7 @@ class SlideUpMenuOverlay : RelativeLayout {
         _groupItems = listOf();
     }
 
-    constructor(context: Context, parent: ViewGroup, titleText: String, okText: String?, animated: Boolean, items: List<View>): super(context){
+    constructor(context: Context, parent: ViewGroup, titleText: String, okText: String?, animated: Boolean, items: List<View>, hideButtons: Boolean = false): super(context){
         init(animated, okText);
         _container = parent;
         if(!_container!!.children.contains(this)) {
@@ -49,6 +49,12 @@ class SlideUpMenuOverlay : RelativeLayout {
         }
         _textTitle.text = titleText;
         _groupItems = items;
+
+        if(hideButtons) {
+            _textCancel.visibility = GONE;
+            _textOK.visibility = GONE;
+            _textTitle.textAlignment = TextView.TEXT_ALIGNMENT_CENTER;
+        }
 
         setItems(items);
     }

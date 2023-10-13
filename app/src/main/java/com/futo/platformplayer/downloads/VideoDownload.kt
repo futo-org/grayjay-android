@@ -22,6 +22,7 @@ import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -30,7 +31,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.time.OffsetDateTime
-import java.util.concurrent.CancellationException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.ThreadLocalRandom
@@ -371,7 +371,7 @@ class VideoDownload {
             }
 
             if (isCancelled)
-                throw IllegalStateException("Cancelled");
+                throw CancellationException("Cancelled");
         } while (read > 0);
 
         lastSpeed = 0;
@@ -423,7 +423,7 @@ class VideoDownload {
             }
 
             if(isCancelled)
-                throw IllegalStateException("Cancelled");
+                throw CancellationException("Cancelled", null);
         }
         onProgress(sourceLength, totalRead, 0);
     }

@@ -19,6 +19,7 @@ import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.stores.FragmentedStorage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -138,18 +139,7 @@ class DownloadService : Service() {
                 else if(ex is DownloadException && !ex.isRetryable) {
                     Logger.w(TAG, "Video had exception that should not be retried");
                     StateDownloads.instance.removeDownload(currentVideo);
-                    //Ensure impossible downloads are not retried for playlists
-                    if(currentVideo.video != null && currentVideo.groupID != null && currentVideo.groupType == VideoDownload.GROUP_PLAYLIST) {
-                        StateDownloads.instance.getPlaylistDownload(currentVideo.groupID!!)?.let {
-                            synchronized(it.preventDownload) {
-                                if(currentVideo?.video?.url != null && !it.preventDownload.contains(currentVideo!!.video!!.url)) {
-                                    it.preventDownload.add(currentVideo!!.video!!.url);
-                                    StateDownloads.instance.savePlaylistDownload(it);
-                                    Logger.w(TAG, "Preventing further download attempts in playlist [${it.id}] for [${currentVideo?.name}]:${currentVideo?.video?.url}");
-                                }
-                            }
-                        }
-                    }
+                    StateDownloads.instance.preventPlaylistDownload(currentVideo);
                 }
                 else
                     Logger.e(TAG, "Failed download [${currentVideo.name}]: ${ex.message}", ex);
@@ -157,9 +147,10 @@ class DownloadService : Service() {
                 currentVideo.changeState(VideoDownload.State.ERROR);
                 ignore.add(currentVideo);
 
-                StateAnnouncement.instance.registerAnnouncement(currentVideo?.id?.value?:"" + currentVideo?.id?.pluginId?:"" + "_FailDownload",
-                    "Download failed",
-                    "Download for [${currentVideo.name}] failed.\nDownloads are automatically retried.\nReason: ${ex.message}", AnnouncementType.SESSION, null, "download");
+                if(ex !is CancellationException)
+                    StateAnnouncement.instance.registerAnnouncement(currentVideo?.id?.value?:"" + currentVideo?.id?.pluginId?:"" + "_FailDownload",
+                        "Download failed",
+                        "Download for [${currentVideo.name}] failed.\nDownloads are automatically retried.\nReason: ${ex.message}", AnnouncementType.SESSION, null, "download");
 
                 //Give it a sec
                 Thread.sleep(500);

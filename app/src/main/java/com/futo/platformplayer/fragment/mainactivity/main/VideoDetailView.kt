@@ -608,7 +608,7 @@ class VideoDetailView : ConstraintLayout {
             },
             RoundButton(context, R.drawable.ic_download, "Download", TAG_DOWNLOAD) {
                 video?.let {
-                    _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(context.contentResolver, it, _overlayContainer);
+                    _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
                 };
             },
             RoundButton(context, R.drawable.ic_share, "Share", TAG_SHARE) {

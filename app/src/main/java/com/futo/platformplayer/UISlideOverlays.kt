@@ -17,6 +17,7 @@ import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.*
+import com.futo.platformplayer.views.Loader
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
@@ -28,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.IllegalStateException
 
 class UISlideOverlays {
     companion object {
@@ -43,7 +45,7 @@ class UISlideOverlays {
             menu.show();
         }
 
-        fun showDownloadVideoOverlay(contentResolver: ContentResolver, video: IPlatformVideoDetails, container: ViewGroup): SlideUpMenuOverlay? {
+        fun showDownloadVideoOverlay(video: IPlatformVideoDetails, container: ViewGroup, contentResolver: ContentResolver? = null): SlideUpMenuOverlay? {
             val items = arrayListOf<View>();
             var menu: SlideUpMenuOverlay? = null;
 
@@ -121,18 +123,21 @@ class UISlideOverlays {
                     if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioUrlSource?;
             }
 
-            items.add(SlideUpMenuGroup(container.context, "Subtitles", subtitleSources, subtitleSources
-                .map {
-                    SlideUpMenuItem(container.context, R.drawable.ic_edit, it.name, "", it, {
-                        if (selectedSubtitle == it) {
-                            selectedSubtitle = null;
-                            menu?.selectOption(subtitleSources, null);
-                        } else {
-                            selectedSubtitle = it;
-                            menu?.selectOption(subtitleSources, it);
-                        }
-                    }, false);
-                }));
+            //ContentResolver is required for subtitles..
+            if(contentResolver != null) {
+                items.add(SlideUpMenuGroup(container.context, "Subtitles", subtitleSources, subtitleSources
+                    .map {
+                        SlideUpMenuItem(container.context, R.drawable.ic_edit, it.name, "", it, {
+                            if (selectedSubtitle == it) {
+                                selectedSubtitle = null;
+                                menu?.selectOption(subtitleSources, null);
+                            } else {
+                                selectedSubtitle = it;
+                                menu?.selectOption(subtitleSources, it);
+                            }
+                        }, false);
+                    }));
+            }
 
             menu = SlideUpMenuOverlay(container.context, container, "Download Video", null, true, items);
 
@@ -157,29 +162,12 @@ class UISlideOverlays {
                         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                             try {
                                 val subtitleUri = subtitleToDownload.getSubtitlesURI();
-                                if (subtitleUri != null) {
-                                    var subtitles: String? = null;
-                                    if ("file" == subtitleUri.scheme) {
-                                        val inputStream = contentResolver.openInputStream(subtitleUri);
-                                        inputStream?.use { stream ->
-                                            val reader = stream.bufferedReader();
-                                            subtitles = reader.use { it.readText() };
-                                        }
-                                    } else if ("http" == subtitleUri.scheme || "https" == subtitleUri.scheme) {
-                                        val client = ManagedHttpClient();
-                                        val subtitleResponse = client.get(subtitleUri.toString());
-                                        if (!subtitleResponse.isOk) {
-                                            throw Exception("Cannot fetch subtitles from source '${subtitleUri}': ${subtitleResponse.code}");
-                                        }
-
-                                        subtitles = subtitleResponse.body?.toString()
-                                            ?: throw Exception("Subtitles are invalid '${subtitleUri}': ${subtitleResponse.code}");
-                                    } else {
-                                        throw Exception("Unsuported scheme");
-                                    }
+                                //TODO: Remove uri dependency, should be able to work with raw aswell?
+                                if (subtitleUri != null && contentResolver != null) {
+                                    val subtitlesRaw = StateDownloads.instance.downloadSubtitles(subtitleToDownload, contentResolver);
 
                                     withContext(Dispatchers.Main) {
-                                        StateDownloads.instance.download(video, selectedVideo, selectedAudio, if (subtitles != null) SubtitleRawSource(subtitleToDownload.name, subtitleToDownload.format, subtitles!!) else null);
+                                        StateDownloads.instance.download(video, selectedVideo, selectedAudio, subtitlesRaw);
                                     }
                                 } else {
                                     withContext(Dispatchers.Main) {
@@ -195,10 +183,41 @@ class UISlideOverlays {
             };
             return menu.apply { show() };
         }
-        fun showDownloadVideoOverlay(video: IPlatformVideo, container: ViewGroup) {
-            showUnknownVideoDownload("Video", container) { px, bitrate ->
-                StateDownloads.instance.download(video, px, bitrate)
+        fun showDownloadVideoOverlay(video: IPlatformVideo, container: ViewGroup, useDetails: Boolean = false) {
+            val handleUnknownDownload: ()->Unit = {
+                showUnknownVideoDownload("Video", container) { px, bitrate ->
+                    StateDownloads.instance.download(video, px, bitrate)
+                };
             };
+            if(!useDetails)
+                handleUnknownDownload();
+            else {
+                val scope = StateApp.instance.scopeOrNull;
+
+                if(scope != null) {
+                    val loader = showLoaderOverlay("Fetching video details", container);
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val videoDetails = StatePlatform.instance.getContentDetails(video.url, false).await();
+                            if(videoDetails !is IPlatformVideoDetails)
+                                throw IllegalStateException("Not a video details");
+
+                            withContext(Dispatchers.Main) {
+                                if(showDownloadVideoOverlay(videoDetails, container, StateApp.instance.contextOrNull?.contentResolver) == null)
+                                    loader.hide(true);
+                            }
+                        }
+                        catch(ex: Throwable) {
+                            withContext(Dispatchers.Main) {
+                                UIDialogs.toast("Failed to fetch details for download");
+                                handleUnknownDownload();
+                                loader.hide(true);
+                            }
+                        }
+                    }
+                }
+                else handleUnknownDownload();
+            }
         }
         fun showDownloadPlaylistOverlay(playlist: Playlist, container: ViewGroup) {
             showUnknownVideoDownload("Video", container) { px, bitrate ->
@@ -273,6 +292,18 @@ class UISlideOverlays {
             menu.show();
         }
 
+        fun showLoaderOverlay(text: String, container: ViewGroup): SlideUpMenuOverlay {
+            val dp70 = 70.dp(container.context.resources);
+            val dp15 = 15.dp(container.context.resources);
+            val overlay = SlideUpMenuOverlay(container.context, container, text, null, true, listOf(
+                Loader(container.context, true, dp70).apply {
+                    this.setPadding(0, dp15, 0, dp15);
+                }
+            ), true);
+            overlay.show();
+            return overlay;
+        }
+
         fun showVideoOptionsOverlay(video: IPlatformVideo, container: ViewGroup, onVideoHidden: (()->Unit)? = null): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
             val lastUpdated = StatePlaylists.instance.getLastUpdatedPlaylist();
@@ -295,7 +326,7 @@ class UISlideOverlays {
                 SlideUpMenuItem(container.context, R.drawable.ic_visibility_off, "Hide", "Hide from Home", "hide",
                     { StateMeta.instance.addHiddenVideo(video.url); onVideoHidden?.invoke() }),
                 SlideUpMenuItem(container.context, R.drawable.ic_download, "Download", "Download the video", "download",
-                    { showDownloadVideoOverlay(video, container); }, false)
+                    { showDownloadVideoOverlay(video, container, true); }, false)
             ))
             items.add(
                 SlideUpMenuGroup(container.context, "Add To", "addto",
@@ -348,7 +379,7 @@ class UISlideOverlays {
                     SlideUpMenuItem(container.context, R.drawable.ic_watchlist_add, StatePlayer.TYPE_WATCHLATER, "${watchLater.size} videos", "watch later",
                         { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
                     SlideUpMenuItem(container.context, R.drawable.ic_download, "Download", "Download the video", "download",
-                        { showDownloadVideoOverlay(video, container); }, false))
+                        { showDownloadVideoOverlay(video, container, true); }, false))
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
