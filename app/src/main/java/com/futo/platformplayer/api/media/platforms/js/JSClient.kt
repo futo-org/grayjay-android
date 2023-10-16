@@ -26,6 +26,8 @@ import com.futo.platformplayer.api.media.platforms.js.models.*
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.engine.exceptions.PluginEngineException
+import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptValidationException
 import com.futo.platformplayer.logging.Logger
@@ -289,7 +291,8 @@ open class JSClient : IPlatformClient {
                 .value;
         }
         catch(ex: Throwable) {
-            announcePluginUnhandledException("isChannelUrl", ex);
+            if(ex !is PluginEngineException)
+                announcePluginUnhandledException("isChannelUrl", ex);
             return false;
         }
     }
@@ -565,7 +568,7 @@ open class JSClient : IPlatformClient {
             StateAnnouncement.instance.registerAnnouncement("PluginUnhandled_${config.id}_${method}",
                 "Plugin ${config.name} encountered an error in [${method}]",
                 "${ex.message}\nPlease contact the plugin developer",
-                AnnouncementType.RECURRING,
+                AnnouncementType.SESSION_RECURRING,
                 OffsetDateTime.now());
         }
         catch(_: Throwable) {}

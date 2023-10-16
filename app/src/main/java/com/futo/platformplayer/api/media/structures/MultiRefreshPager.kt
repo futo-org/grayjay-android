@@ -1,5 +1,6 @@
 package com.futo.platformplayer.api.media.structures
 
+import com.futo.platformplayer.api.media.models.contents.PlatformContentPlaceholder
 import com.futo.platformplayer.api.media.structures.ReusablePager.Companion.asReusable
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
@@ -37,8 +38,12 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
                 synchronized(_pending) {
                     _pending.remove(pendingPager);
                 }
-                if(error != null)
+                if(error != null) {
                     onPagerError.emit(error);
+                    val replacing = _placeHolderPagersPaired[pendingPager];
+                    if(replacing != null)
+                        updatePager(null, replacing, error);
+                }
                 else
                     updatePager(pendingPager.getCompleted());
             }
@@ -60,9 +65,17 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
     override fun nextPage() = synchronized(_pagersReusable){ _currentPager.nextPage() };
     override fun getResults(): List<T> = synchronized(_pagersReusable){ _currentPager.getResults() };
 
-    private fun updatePager(pagerToAdd: IPager<T>?) {
-        if(pagerToAdd == null)
+    private fun updatePager(pagerToAdd: IPager<T>?, toReplacePager: IPager<T>? = null, error: Throwable? = null) {
+        if(pagerToAdd == null) {
+            if(toReplacePager != null && toReplacePager is PlaceholderPager && error != null) {
+                val pluginId = toReplacePager.placeholderFactory.invoke().id?.pluginId ?: "";
+                _currentPager = PlaceholderPager(5) {
+                    return@PlaceholderPager PlatformContentPlaceholder(pluginId, error)
+                } as IPager<T>;
+                onPagerChanged.emit(_currentPager);
+            }
             return;
+        }
         synchronized(_pagersReusable) {
             Logger.i("RefreshMultiDistributionContentPager", "Received new pager for RefreshPager")
             _pagersReusable.add(pagerToAdd.asReusable());

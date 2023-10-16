@@ -110,7 +110,10 @@ class HomeFragment : MainFragment() {
                 Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, "Failed to get Home", it, {
                     loadResults()
-                });
+                }) {
+                    finishRefreshLayoutLoader();
+                    setLoading(false);
+                };
             };
         }
 

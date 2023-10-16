@@ -1,7 +1,6 @@
 package com.futo.platformplayer.engine
 
 import android.content.Context
-import android.os.Looper
 import com.caoccao.javet.exceptions.JavetCompilationException
 import com.caoccao.javet.exceptions.JavetExecutionException
 import com.caoccao.javet.interop.V8Host
@@ -18,9 +17,7 @@ import com.futo.platformplayer.engine.exceptions.*
 import com.futo.platformplayer.engine.internal.V8Converter
 import com.futo.platformplayer.engine.packages.*
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateAssets
-import kotlinx.coroutines.*
 
 class V8Plugin {
     val config: IV8PluginConfig;
@@ -31,13 +28,28 @@ class V8Plugin {
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
 
+    private val _runtimeLock = Object();
     var _runtime : V8Runtime? = null;
 
     private val _deps : LinkedHashMap<String, String> = LinkedHashMap();
     private val _depsPackages : MutableList<V8Package> = mutableListOf();
     private var _script : String? = null;
 
+    var isStopped = true;
     val onStopped = Event1<V8Plugin>();
+
+    //TODO: Implement a more universal isBusy system for plugins + JSClient + pooling? TBD if propagation would be beneficial
+    private val _busyCounterLock = Object();
+    private var _busyCounter = 0;
+    val isBusy get() = synchronized(_busyCounterLock) { _busyCounter > 0 };
+
+    /**
+     * Called before a busy counter is about to be removed.
+     * Is primarily used to prevent additional calls to dead runtimes.
+     *
+     * Parameter is the busy count after this execution
+     */
+    val afterBusy = Event1<Int>();
 
     constructor(context: Context, config: IV8PluginConfig, script: String? = null, client: ManagedHttpClient = ManagedHttpClient(), clientAuth: ManagedHttpClient = ManagedHttpClient()) {
         this._client = client;
@@ -81,7 +93,7 @@ class V8Plugin {
 
     fun start() {
         val script = _script ?: throw IllegalStateException("Attempted to start V8 without script");
-        synchronized(this) {
+        synchronized(_runtimeLock) {
             if (_runtime != null)
                 return;
 
@@ -121,19 +133,25 @@ class V8Plugin {
                 catchScriptErrors("Plugin[${config.name}]") {
                     it.getExecutor(script).executeVoid()
                 };
+                isStopped = false;
             }
         }
     }
     fun stop(){
         Logger.i(TAG, "Stopping plugin [${config.name}]");
-        synchronized(this) {
-            _runtime?.let {
-                _runtime = null;
-                if(!it.isClosed && !it.isDead)
-                    it.close();
-            };
+        isStopped = true;
+        whenNotBusy {
+            synchronized(_runtimeLock) {
+                isStopped = true;
+                _runtime?.let {
+                    _runtime = null;
+                    if(!it.isClosed && !it.isDead)
+                        it.close();
+                    Logger.i(TAG, "Stopped plugin [${config.name}]");
+                };
+            }
+            onStopped.emit(this);
         }
-        onStopped.emit(this);
     }
 
     fun execute(js: String) : V8Value {
@@ -141,13 +159,52 @@ class V8Plugin {
     }
     fun <T : V8Value> executeTyped(js: String) : T {
         warnIfMainThread("V8Plugin.executeTyped");
+        if(isStopped)
+            throw PluginEngineStoppedException(config, "Instance is stopped", js);
+
+        synchronized(_busyCounterLock) {
+            _busyCounter++;
+        }
 
         val runtime = _runtime ?: throw IllegalStateException("JSPlugin not started yet");
-        return catchScriptErrors("Plugin[${config.name}]", js) { runtime.getExecutor(js).execute() };
+        try {
+            return catchScriptErrors("Plugin[${config.name}]", js) {
+                runtime.getExecutor(js).execute()
+            };
+        }
+        finally {
+            synchronized(_busyCounterLock) {
+                //Free busy *after* afterBusy calls are done to prevent calls on dead runtimes
+                try {
+                    afterBusy.emit(_busyCounter - 1);
+                }
+                catch(ex: Throwable) {
+                    Logger.e(TAG, "Unhandled V8Plugin.afterBusy", ex);
+                }
+                _busyCounter--;
+            }
+        }
     }
     fun executeBoolean(js: String) : Boolean? = catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueBoolean>(js).value };
     fun executeString(js: String) : String? = catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueString>(js).value };
     fun executeInteger(js: String) : Int? = catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueInteger>(js).value };
+
+    fun whenNotBusy(handler: (V8Plugin)->Unit) {
+        synchronized(_busyCounterLock) {
+            if(_busyCounter == 0)
+                handler(this);
+            else {
+                val tag = Object();
+                afterBusy.subscribe(tag) {
+                    if(it == 0) {
+                        Logger.w(TAG, "V8Plugin afterBusy handled");
+                        afterBusy.remove(tag);
+                        handler(this);
+                    }
+                }
+            }
+        }
+    }
 
     private fun getPackage(context: Context, packageName: String): V8Package {
         //TODO: Auto get all package types?

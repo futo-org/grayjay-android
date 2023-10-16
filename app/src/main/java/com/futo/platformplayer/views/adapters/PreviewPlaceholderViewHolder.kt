@@ -3,8 +3,10 @@ package com.futo.platformplayer.views.adapters
 import android.content.Context
 import android.graphics.drawable.Animatable
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
@@ -18,6 +20,7 @@ class PreviewPlaceholderViewHolder : ContentPreviewViewHolder {
 
     private val _loader: ImageView;
     private val _platformIndicator: PlatformIndicator;
+    private val _error: TextView;
 
     val context: Context;
 
@@ -30,15 +33,28 @@ class PreviewPlaceholderViewHolder : ContentPreviewViewHolder {
         context = itemView.context;
         _loader = itemView.findViewById(R.id.loader);
         _platformIndicator = itemView.findViewById(R.id.thumbnail_platform);
+        _error = itemView.findViewById(R.id.text_error);
 
-        (_loader.drawable as Animatable?)?.start(); //TODO: stop?
+        (_loader.drawable as Animatable?)?.start();
     }
 
     override fun bind(content: IPlatformContent) {
-        if(content is PlatformContentPlaceholder)
+        if(content is PlatformContentPlaceholder) {
             _platformIndicator.setPlatformFromClientID(content.id.pluginId);
-        else
+            _error.text = content.error?.message ?: "";
+            if(content.error != null) {
+                _loader.visibility = View.GONE;
+                (_loader.drawable as Animatable?)?.stop();
+            }
+            else {
+                _loader.visibility = View.VISIBLE;
+                (_loader.drawable as Animatable?)?.start();
+            }
+        }
+        else {
             _platformIndicator.clearPlatform();
+            (_loader.drawable as Animatable?)?.stop();
+        }
     }
 
     override fun preview(video: IPlatformContentDetails?, paused: Boolean) { }

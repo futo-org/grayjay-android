@@ -6,11 +6,11 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
  * A placeholder pager simply generates PlatformContent by some creator function.
  */
 class PlaceholderPager : IPager<IPlatformContent> {
-    private val _creator: ()->IPlatformContent;
+    val placeholderFactory: ()->IPlatformContent;
     private val _pageSize: Int;
 
     constructor(pageSize: Int, placeholderCreator: ()->IPlatformContent) {
-        _creator = placeholderCreator;
+        placeholderFactory = placeholderCreator;
         _pageSize = pageSize;
     }
 
@@ -18,7 +18,7 @@ class PlaceholderPager : IPager<IPlatformContent> {
     override fun getResults(): List<IPlatformContent> {
         val pages = ArrayList<IPlatformContent>();
         for(item in 1.._pageSize)
-            pages.add(_creator());
+            pages.add(placeholderFactory());
         return pages;
     }
     override fun hasMorePages(): Boolean = true;

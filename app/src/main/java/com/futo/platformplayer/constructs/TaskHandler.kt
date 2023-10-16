@@ -57,6 +57,7 @@ class TaskHandler<TParameter, TResult> {
     fun run(parameter: TParameter) {
         val id = ++_idGenerator;
 
+        var handled = false;
         _scope().launch(_dispatcher) {
             if (id != _idGenerator)
                 return@launch;
@@ -67,24 +68,31 @@ class TaskHandler<TParameter, TResult> {
                     return@launch;
 
                 withContext(Dispatchers.Main) {
-                    if (id != _idGenerator)
+                    if (id != _idGenerator) {
+                        handled = true;
                         return@withContext;
+                    }
 
                     try {
                         onSuccess.emit(result);
+                        handled = true;
                     }
                     catch (e: Throwable) {
                         Logger.w(TAG, "Handled exception in TaskHandler onSuccess.", e);
                         onError.emit(e, parameter);
+                        handled = true;
                     }
                 }
             }
             catch (e: Throwable) {
                 Log.i("TaskHandler", "TaskHandler.run in exception: " + e.message);
-                if (id != _idGenerator)
+                if (id != _idGenerator) {
+                    handled = true;
                     return@launch;
+                }
 
                 withContext(Dispatchers.Main) {
+                    handled = true;
                     if (id != _idGenerator)
                         return@withContext;
 
@@ -95,7 +103,18 @@ class TaskHandler<TParameter, TResult> {
                     }
                 }
             }
-        }
+        }/*.invokeOnCompletion { //Commented for now, because it doesn't fix the bug it was intended to fix, but might want it later anyway
+            if(!handled) {
+                if(it is CancellationException) {
+                    Logger.w(TAG, "Detected unhandled TaskHandler due to cancellation, forwarding cancellation");
+                    onError.emit(it, parameter);
+                }
+                else {
+                    //TODO: Forward exception?
+                    Logger.w(TAG, "Detected unhandled TaskHandler due to [${it}]", it);
+                }
+            }
+        }*/
     }
 
     @Synchronized

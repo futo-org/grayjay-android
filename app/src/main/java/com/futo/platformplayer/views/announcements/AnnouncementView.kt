@@ -100,7 +100,8 @@ class AnnouncementView : LinearLayout {
     }
 
     private fun setAnnouncement(announcement: Announcement?, count: Int) {
-        Logger.i(TAG, "setAnnouncement announcement=$announcement count=$count");
+        if(count == 0 && announcement == null)
+            Logger.i(TAG, "setAnnouncement announcement=$announcement count=$count");
 
         _currentAnnouncement = announcement;
 

@@ -399,13 +399,15 @@ class StatePlatform {
                     return@async searchResult;
                 } catch(ex: Throwable) {
                     Logger.e(TAG, "getHomeRefresh", ex);
-                    return@async null;
+                    throw ex;
+                    //return@async null;
                 }
             });
         }.toList();
 
         val finishedPager = deferred.map { it.second }.awaitFirstNotNullDeferred() ?: return EmptyPager();
         val toAwait = deferred.filter { it.second != finishedPager.first };
+
         return RefreshDistributionContentPager(
             listOf(finishedPager.second),
             toAwait.map { it.second },

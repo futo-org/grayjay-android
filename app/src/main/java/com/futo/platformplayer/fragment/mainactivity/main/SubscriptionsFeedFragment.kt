@@ -28,6 +28,7 @@ import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -168,7 +169,12 @@ class SubscriptionsFeedFragment : MainFragment() {
             .success { loadedResult(it); }
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
-                UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
+                if(it !is CancellationException)
+                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
+                else {
+                    finishRefreshLayoutLoader();
+                    setLoading(false);
+                }
             };
 
         private fun initializeToolbarContent() {
@@ -251,7 +257,11 @@ class SubscriptionsFeedFragment : MainFragment() {
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to finish loading", e)
                 }
-            }
+            }/*.invokeOnCompletion { //Commented for now, because it doesn't fix the bug it was intended to fix, but might want it later anyway
+                if(it is CancellationException) {
+                    setLoading(false);
+                }
+            }*/
         }
 
         private fun handleExceptions(exs: List<Throwable>) {

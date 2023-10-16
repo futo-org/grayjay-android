@@ -8,6 +8,10 @@ abstract class EventBase<Handler, ConditionalHandler>: IEvent {
     protected val _conditionalListeners = mutableListOf<TaggedHandler<ConditionalHandler>>();
     protected val _listeners = mutableListOf<TaggedHandler<Handler>>();
 
+    fun hasListeners(): Boolean =
+        synchronized(_listeners){_listeners.isNotEmpty()} ||
+        synchronized(_conditionalListeners){_conditionalListeners.isNotEmpty()};
+
     fun subscribeConditional(listener: ConditionalHandler) {
         synchronized(_conditionalListeners) {
             _conditionalListeners.add(TaggedHandler(listener));
@@ -65,10 +69,7 @@ abstract class EventBase<Handler, ConditionalHandler>: IEvent {
 
 class Event0() : EventBase<(()->Unit), (()->Boolean)>() {
     fun emit() : Boolean {
-        var handled: Boolean;
-        synchronized(_listeners) {
-            handled = _listeners.isNotEmpty();
-        }
+        var handled = false;
 
         synchronized(_conditionalListeners) {
             for (conditional in _conditionalListeners)
@@ -76,6 +77,7 @@ class Event0() : EventBase<(()->Unit), (()->Boolean)>() {
         }
 
         synchronized(_listeners) {
+            handled = handled || _listeners.isNotEmpty();
             for (handler in _listeners)
                 handler.handler.invoke();
         }
@@ -85,17 +87,14 @@ class Event0() : EventBase<(()->Unit), (()->Boolean)>() {
 }
 class Event1<T1>() : EventBase<((T1)->Unit), ((T1)->Boolean)>() {
     fun emit(value : T1): Boolean {
-        var handled: Boolean;
-        synchronized(_listeners) {
-            handled = _listeners.isNotEmpty();
-        }
-
+        var handled = false;
         synchronized(_conditionalListeners) {
             for (conditional in _conditionalListeners)
                 handled = handled || conditional.handler.invoke(value);
         }
 
         synchronized(_listeners) {
+            handled = handled || _listeners.isNotEmpty();
             for (handler in _listeners)
                 handler.handler.invoke(value);
         }
@@ -105,10 +104,7 @@ class Event1<T1>() : EventBase<((T1)->Unit), ((T1)->Boolean)>() {
 }
 class Event2<T1, T2>() : EventBase<((T1, T2)->Unit), ((T1, T2)->Boolean)>() {
     fun emit(value1 : T1, value2 : T2): Boolean {
-        var handled: Boolean;
-        synchronized(_listeners) {
-            handled = _listeners.isNotEmpty();
-        }
+        var handled = false;
 
         synchronized(_conditionalListeners) {
             for (conditional in _conditionalListeners)
@@ -116,6 +112,7 @@ class Event2<T1, T2>() : EventBase<((T1, T2)->Unit), ((T1, T2)->Boolean)>() {
         }
 
         synchronized(_listeners) {
+            handled = handled || _listeners.isNotEmpty();
             for (handler in _listeners)
                 handler.handler.invoke(value1, value2);
         }
@@ -126,10 +123,7 @@ class Event2<T1, T2>() : EventBase<((T1, T2)->Unit), ((T1, T2)->Boolean)>() {
 
 class Event3<T1, T2, T3>() : EventBase<((T1, T2, T3)->Unit), ((T1, T2, T3)->Boolean)>() {
     fun emit(value1 : T1, value2 : T2, value3 : T3): Boolean {
-        var handled: Boolean;
-        synchronized(_listeners) {
-            handled = _listeners.isNotEmpty();
-        }
+        var handled = false;
 
         synchronized(_conditionalListeners) {
             for (conditional in _conditionalListeners)
@@ -137,6 +131,7 @@ class Event3<T1, T2, T3>() : EventBase<((T1, T2, T3)->Unit), ((T1, T2, T3)->Bool
         }
 
         synchronized(_listeners) {
+            handled = handled || _listeners.isNotEmpty();
             for (handler in _listeners)
                 handler.handler.invoke(value1, value2, value3);
         }

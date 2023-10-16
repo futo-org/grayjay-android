@@ -58,7 +58,7 @@ fun findNonRuntimeException(ex: Throwable?): Throwable? {
 
 fun warnIfMainThread(context: String) {
     if(BuildConfig.DEBUG && Looper.myLooper() == Looper.getMainLooper())
-        Logger.w(V8Plugin.TAG, "JAVASCRIPT ON MAIN THREAD\nAt: ${context}\n" + Thread.currentThread().stackTrace);
+        Logger.w(V8Plugin.TAG, "JAVASCRIPT ON MAIN THREAD\nAt: ${context}\n" + Thread.currentThread().stackTrace.joinToString { it.toString() });
 }
 
 fun ensureNotMainThread() {
