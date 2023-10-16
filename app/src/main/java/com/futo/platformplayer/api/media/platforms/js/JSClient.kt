@@ -291,8 +291,7 @@ open class JSClient : IPlatformClient {
                 .value;
         }
         catch(ex: Throwable) {
-            if(ex !is PluginEngineException)
-                announcePluginUnhandledException("isChannelUrl", ex);
+            announcePluginUnhandledException("isChannelUrl", ex);
             return false;
         }
     }
@@ -564,6 +563,8 @@ open class JSClient : IPlatformClient {
     }
 
     private fun announcePluginUnhandledException(method: String, ex: Throwable) {
+        if(ex is PluginEngineException)
+            return;
         try {
             StateAnnouncement.instance.registerAnnouncement("PluginUnhandled_${config.id}_${method}",
                 "Plugin ${config.name} encountered an error in [${method}]",
