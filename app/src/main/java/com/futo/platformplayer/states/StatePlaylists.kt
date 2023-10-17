@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
+import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -263,6 +264,11 @@ class StatePlaylists {
                 catch(ex: ScriptUnavailableException) {
                     Logger.w(TAG, "${name}:[${it}] is no longer available");
                     builder.messages.add("${name}:[${it}] is no longer available");
+                    return@map null;
+                }
+                catch(ex: NoPlatformClientException) {
+                    //TODO: Propagate this to dialog, and then back, allowing users to enable plugins...
+                    builder.messages.add("No source enabled for [${it}]");
                     return@map null;
                 }
                 catch(ex: Throwable) {

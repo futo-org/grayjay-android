@@ -118,6 +118,7 @@ class ManagedStore<T>{
         val builder = ReconstructStore.Builder();
 
         for (recon in items) {
+            onProgress?.invoke(0, total);
             //Retry once
             for (i in 0 .. 1) {
                 try {

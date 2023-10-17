@@ -607,6 +607,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 return;
             };
         };
+
         val name = when(type) {
             "Playlist" -> recon.split("\n").filter { !it.startsWith(ManagedStore.RECONSTRUCTION_HEADER_OPERATOR) }.firstOrNull() ?: type;
             else -> type
