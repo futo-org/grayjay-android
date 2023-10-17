@@ -5,72 +5,73 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
+import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.matchesDomain
 
 class JSHttpClient : ManagedHttpClient {
     private val _jsClient: JSClient?;
     private val _auth: SourceAuth?;
+    private val _captcha: SourceCaptchaData?;
 
     var doUpdateCookies: Boolean = true;
     var doApplyCookies: Boolean = true;
     var doAllowNewCookies: Boolean = true;
     val isLoggedIn: Boolean get() = _auth != null;
 
-    private var _currentCookieMap: HashMap<String, HashMap<String, String>>?;
+    private var _currentCookieMap: HashMap<String, HashMap<String, String>>;
 
-    constructor(jsClient: JSClient?, auth: SourceAuth? = null) : super() {
+    constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null) : super() {
         _jsClient = jsClient;
         _auth = auth;
+        _captcha = captcha;
 
+        _currentCookieMap = hashMapOf();
         if(!auth?.cookieMap.isNullOrEmpty()) {
-            _currentCookieMap = hashMapOf();
             for(domainCookies in auth!!.cookieMap!!)
-                _currentCookieMap!!.put(domainCookies.key, HashMap(domainCookies.value));
+                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
         }
-        else _currentCookieMap = null;
+        if(!captcha?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in auth!!.cookieMap!!)
+                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+        }
+
     }
 
     override fun clone(): ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
         newClient._currentCookieMap = if(_currentCookieMap != null)
-            HashMap(_currentCookieMap!!.toList().associate { Pair(it.first, HashMap(it.second)) })
+            HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
         else
-            null;
+            hashMapOf();
         return newClient;
     }
 
     override fun beforeRequest(request: Request) {
+        val domain = Uri.parse(request.url).host!!.lowercase();
+
         val auth = _auth;
         if (auth != null) {
-            val domain = Uri.parse(request.url).host!!.lowercase();
-
             //TODO: Possibly add doApplyHeaders
             for (header in auth.headers.filter { domain.matchesDomain(it.key) }.flatMap { it.value.entries })
                 request.headers[header.key] = header.value;
-
-            if(doApplyCookies) {
-                if (!_currentCookieMap.isNullOrEmpty()) {
-                    val cookiesToApply = hashMapOf<String, String>();
-                    synchronized(_currentCookieMap!!) {
-                        for(cookie in _currentCookieMap!!
-                                .filter { domain.matchesDomain(it.key) }
-                                .flatMap { it.value.toList() })
-                            cookiesToApply[cookie.first] = cookie.second;
-                    };
-
-                    if(cookiesToApply.size > 0) {
-                        val cookieString = cookiesToApply.map { it.key + "=" + it.value }.joinToString("; ");
-                        request.headers["Cookie"] = cookieString;
-                    }
-                    //printTestCode(request.url, request.body, auth.headers, cookieString, request.headers.filter { !auth.headers.containsKey(it.key) });
-                }
-            }
         }
 
-        if (exemptionId != null) {
-            val cookie = request.headers["Cookie"];
-            request.headers["Cookie"] = (cookie ?: "") + ";$exemptionId"
-            Logger.i(TAG, "Exemption ID applied: ${request.headers["Cookie"]}")
+        if(doApplyCookies) {
+            if (!_currentCookieMap.isNullOrEmpty()) {
+                val cookiesToApply = hashMapOf<String, String>();
+                synchronized(_currentCookieMap!!) {
+                    for(cookie in _currentCookieMap!!
+                        .filter { domain.matchesDomain(it.key) }
+                        .flatMap { it.value.toList() })
+                        cookiesToApply[cookie.first] = cookie.second;
+                };
+
+                if(cookiesToApply.size > 0) {
+                    val cookieString = cookiesToApply.map { it.key + "=" + it.value }.joinToString("; ");
+                    request.headers["Cookie"] = cookieString;
+                }
+                //printTestCode(request.url, request.body, auth.headers, cookieString, request.headers.filter { !auth.headers.containsKey(it.key) });
+            }
         }
 
         _jsClient?.validateUrlOrThrow(request.url);
@@ -86,7 +87,7 @@ class JSHttpClient : ManagedHttpClient {
             val defaultCookieDomain =
                 "." + domainParts.drop(domainParts.size - 2).joinToString(".");
             for (header in resp.headers) {
-                if (_currentCookieMap != null && header.key.lowercase() == "set-cookie") {
+                if ((_auth != null || _currentCookieMap.isNotEmpty()) && header.key.lowercase() == "set-cookie") {
                     val newCookies = cookieStringToMap(header.value);
                     for (cookie in newCookies) {
                         val endIndex = cookie.value.indexOf(";");
@@ -162,7 +163,4 @@ class JSHttpClient : ManagedHttpClient {
         Logger.i("Testing", code);
     }
 
-    companion object {
-        var exemptionId: String? = null;
-    }
 }

@@ -13,22 +13,28 @@ class SourcePluginDescriptor {
 
     var appSettings: AppPluginSettings = AppPluginSettings();
 
-    var authEncrypted: String?
+    var authEncrypted: String? = null
+        private set;
+    var captchaEncrypted: String? = null
         private set;
 
     val flags: List<String>;
 
     @kotlinx.serialization.Transient
     val onAuthChanged = Event0();
+    @kotlinx.serialization.Transient
+    val onCaptchaChanged = Event0();
 
-    constructor(config :SourcePluginConfig, authEncrypted: String? = null) {
+    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null) {
         this.config = config;
         this.authEncrypted = authEncrypted;
+        this.captchaEncrypted = captchaEncrypted;
         this.flags = listOf();
     }
-    constructor(config :SourcePluginConfig, authEncrypted: String? = null, flags: List<String>) {
+    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null, flags: List<String>) {
         this.config = config;
         this.authEncrypted = authEncrypted;
+        this.captchaEncrypted = captchaEncrypted;
         this.flags = flags;
     }
 
@@ -41,6 +47,13 @@ class SourcePluginDescriptor {
         return map;
     }
 
+    fun updateCaptcha(captcha: SourceCaptchaData?) {
+        captchaEncrypted = captcha?.toEncrypted();
+        onCaptchaChanged.emit();
+    }
+    fun getCaptchaData(): SourceCaptchaData? {
+        return SourceCaptchaData.fromEncrypted(captchaEncrypted);
+    }
 
     fun updateAuth(str: SourceAuth?) {
         authEncrypted = str?.toEncrypted();

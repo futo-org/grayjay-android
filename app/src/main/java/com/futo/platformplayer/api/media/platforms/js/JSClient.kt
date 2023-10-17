@@ -25,9 +25,11 @@ import com.futo.platformplayer.api.media.platforms.js.internal.*
 import com.futo.platformplayer.api.media.platforms.js.models.*
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.exceptions.PluginEngineException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptValidationException
 import com.futo.platformplayer.logging.Logger
@@ -61,6 +63,7 @@ open class JSClient : IPlatformClient {
     private var _enabled: Boolean = false;
 
     private val _auth: SourceAuth?;
+    private val _captcha: SourceCaptchaData?;
 
     private val _injectedSaveState: String?;
 
@@ -87,6 +90,7 @@ open class JSClient : IPlatformClient {
     val enableInHome get() = descriptor.appSettings.tabEnabled.enableHome ?: true
 
     val onDisabled = Event1<JSClient>();
+    val onCaptchaException = Event2<JSClient, ScriptCaptchaRequiredException>();
 
     constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String? = null) {
         this._context = context;
@@ -95,10 +99,11 @@ open class JSClient : IPlatformClient {
         this.descriptor = descriptor;
         _injectedSaveState = saveState;
         _auth = descriptor.getAuth();
+        _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _client = JSHttpClient(this);
-        _clientAuth = JSHttpClient(this, _auth);
+        _client = JSHttpClient(this, null, _captcha);
+        _clientAuth = JSHttpClient(this, _auth, _captcha);
         _plugin = V8Plugin(context, descriptor.config, null, _client, _clientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
@@ -110,6 +115,11 @@ open class JSClient : IPlatformClient {
         }
         else
             throw IllegalStateException("Script for plugin [${descriptor.config.name}] was not available");
+
+        _plugin.onScriptException.subscribe {
+            if(it is ScriptCaptchaRequiredException)
+                onCaptchaException.emit(this, it);
+        };
     }
     constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String?, script: String) {
         this._context = context;
@@ -118,15 +128,21 @@ open class JSClient : IPlatformClient {
         this.descriptor = descriptor;
         _injectedSaveState = saveState;
         _auth = descriptor.getAuth();
+        _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _client = JSHttpClient(this);
-        _clientAuth = JSHttpClient(this, _auth);
+        _client = JSHttpClient(this, null, _captcha);
+        _clientAuth = JSHttpClient(this, _auth, _captcha);
         _plugin = V8Plugin(context, descriptor.config, script, _client, _clientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
         _plugin.withScript(script);
         _script = script;
+
+        _plugin.onScriptException.subscribe {
+            if(it is ScriptCaptchaRequiredException)
+                onCaptchaException.emit(this, it);
+        };
     }
 
     open fun getCopy(): JSClient {

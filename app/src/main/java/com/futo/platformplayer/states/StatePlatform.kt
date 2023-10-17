@@ -172,7 +172,11 @@ class StatePlatform {
                     _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
                             ImageVariable(plugin.config.absoluteIconUrl, null);
 
-                    _availableClients.add(JSClient(context, plugin));
+                    val client = JSClient(context, plugin);
+                    client.onCaptchaException.subscribe { client, ex ->
+                        StateApp.instance.handleCaptchaException(client, ex);
+                    }
+                    _availableClients.add(client);
                 }
 
                 if(_availableClients.distinctBy { it.id }.count() < _availableClients.size)
@@ -287,6 +291,9 @@ class StatePlatform {
                     StatePlugins.instance.getPlugin(id)
                         ?: throw IllegalStateException("Client existed, but plugin config didn't")
                 );
+            newClient.onCaptchaException.subscribe { client, ex ->
+                StateApp.instance.handleCaptchaException(client, ex);
+            }
 
             synchronized(_clientsLock) {
                 if (_enabledClients.contains(client)) {

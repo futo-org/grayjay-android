@@ -15,29 +15,36 @@ class DevJSClient : JSClient {
 
     private val _devScript: String;
     private var _auth: SourceAuth? = null;
+    private var _captcha: SourceCaptchaData? = null;
 
     val devID: String;
 
-    constructor(context: Context, config: SourcePluginConfig, script: String, auth: SourceAuth? = null, devID: String? = null): super(context, SourcePluginDescriptor(config, auth?.toEncrypted(), listOf("DEV")), null, script) {
+    constructor(context: Context, config: SourcePluginConfig, script: String, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, devID: String? = null): super(context, SourcePluginDescriptor(config, auth?.toEncrypted(), captcha?.toEncrypted(), listOf("DEV")), null, script) {
         _devScript = script;
         _auth = auth;
+        _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
     }
-    constructor(context: Context, descriptor: SourcePluginDescriptor, script: String, auth: SourceAuth? = null, savedState: String? = null, devID: String? = null): super(context, descriptor, savedState, script) {
+    //TODO: Misisng auth/captcha pass on purpose?
+    constructor(context: Context, descriptor: SourcePluginDescriptor, script: String, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, savedState: String? = null, devID: String? = null): super(context, descriptor, savedState, script) {
         _devScript = script;
         _auth = auth;
+        _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
     }
 
+    fun setCaptcha(captcha: SourceCaptchaData? = null) {
+        _captcha = captcha;
+    }
     fun setAuth(auth: SourceAuth? = null) {
         _auth = auth;
     }
     fun recreate(context: Context): DevJSClient {
-        return DevJSClient(context, config, _devScript, _auth, devID);
+        return DevJSClient(context, config, _devScript, _auth, _captcha, devID);
     }
 
     override fun getCopy(): JSClient {
-        return DevJSClient(_context, descriptor, _script, _auth, saveState(), devID);
+        return DevJSClient(_context, descriptor, _script, _auth, _captcha, saveState(), devID);
     }
 
     override fun initialize() {

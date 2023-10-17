@@ -46,6 +46,7 @@ class LoginWebViewClient : WebViewClient {
         onPageLoaded.emit(view, url);
     }
 
+    //TODO: Use new WebViewRequirementExtractor when time to test extensively
     override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
         if(request == null)
             return super.shouldInterceptRequest(view, request as WebResourceRequest?);

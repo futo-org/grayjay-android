@@ -25,11 +25,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.work.*
 import com.futo.platformplayer.*
 import com.futo.platformplayer.R
+import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
+import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
 import com.futo.platformplayer.logging.LogLevel
@@ -634,6 +640,26 @@ class StateApp {
                 .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
                 .build();
             _connectivityManager!!.registerNetworkCallback(netReq, _connectivityEvents);
+        }
+    }
+
+    fun handleCaptchaException(client: JSClient, exception: ScriptCaptchaRequiredException) {
+        Logger.w(HomeFragment.TAG, "[${client.name}] Plugin captcha required.", exception);
+
+        scopeOrNull?.launch(Dispatchers.Main) {
+            UIDialogs.showConfirmationDialog(context, "Captcha required\nPlugin [${client.config.name}]", {
+                CaptchaActivity.showCaptcha(context, client.config, exception.url, exception.body) {
+                    StatePlugins.instance.setPluginCaptcha(client.config.id, it);
+                    scopeOrNull?.launch(Dispatchers.IO) {
+                        try {
+                            StatePlatform.instance.reloadClient(context, client.config.id);
+                        } catch (e: Throwable) {
+                            Logger.e(SourceDetailFragment.TAG, "Failed to reload client.", e)
+                            return@launch;
+                        }
+                    }
+                }
+            })
         }
     }
 

@@ -35,6 +35,7 @@ class SourcePluginConfig(
 
     val settings: List<Setting> = listOf(),
 
+    var captcha: SourcePluginCaptchaConfig? = null,
     val authentication: SourcePluginAuthConfig? = null,
     var sourceUrl: String? = null,
     val constants: HashMap<String, String> = hashMapOf(),

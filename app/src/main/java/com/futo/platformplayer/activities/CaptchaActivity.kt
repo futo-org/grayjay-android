@@ -10,7 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
+import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginCaptchaConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.logging.Logger
@@ -41,38 +43,48 @@ class CaptchaActivity : AppCompatActivity() {
         _webView.settings.javaScriptEnabled = true;
         CookieManager.getInstance().setAcceptCookie(true);
 
-        val url = if (intent.hasExtra("url"))
+
+        val config = if(intent.hasExtra("plugin"))
+            Json.decodeFromString<SourcePluginConfig>(intent.getStringExtra("plugin")!!);
+        else null;
+
+        val captchaConfig = if(config != null)
+            config.captcha ?: throw IllegalStateException("Plugin has no captcha support");
+        else if(intent.hasExtra("captcha"))
+            Json.decodeFromString<SourcePluginCaptchaConfig>(intent.getStringExtra("captcha")!!);
+        else throw IllegalStateException("No valid configuration?");
+        //TODO: Backwards compat removal?
+
+        val extraUrl = if (intent.hasExtra("url"))
             intent.getStringExtra("url");
         else null;
 
-        if (url == null) {
-            throw Exception("URL is missing");
-        }
-
-        val body = if (intent.hasExtra("body"))
+        val extraBody = if (intent.hasExtra("body"))
             intent.getStringExtra("body");
         else null;
 
-        if (body == null) {
-            throw Exception("Body is missing");
-        }
-
+        _webView.settings.userAgentString = captchaConfig.userAgent ?: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
         _webView.settings.useWideViewPort = true;
         _webView.settings.loadWithOverviewMode = true;
 
-        val webViewClient = CaptchaWebViewClient();
-        webViewClient.onCaptchaFinished.subscribe { googleAbuseCookie ->
-            Logger.i(TAG, "Abuse cookie found: $googleAbuseCookie");
+        val webViewClient = if(config != null) CaptchaWebViewClient(config) else CaptchaWebViewClient(captchaConfig);
+        webViewClient.onCaptchaFinished.subscribe { captcha ->
             _callback?.let {
                 _callback = null;
-                it.invoke(googleAbuseCookie);
+                it.invoke(captcha);
             }
             finish();
         };
         _webView.settings.domStorageEnabled = true;
         _webView.webViewClient = webViewClient;
-        _webView.loadDataWithBaseURL(url, body, "text/html", "utf-8", null);
-        //_webView.loadUrl(url);
+
+        if(captchaConfig.captchaUrl != null)
+            _webView.loadUrl(captchaConfig.captchaUrl);
+        else if(extraUrl != null && extraBody != null)
+            _webView.loadDataWithBaseURL(extraUrl, extraBody, "text/html", "utf-8", null);
+        else if(extraUrl != null)
+            _webView.loadUrl(extraUrl);
+        else throw IllegalStateException("No valid captcha info provided");
     }
 
     override fun finish() {
@@ -88,31 +100,21 @@ class CaptchaActivity : AppCompatActivity() {
 
     companion object {
         private val TAG = "CaptchaActivity";
-        private var _callback: ((String?) -> Unit)? = null;
+        private var _callback: ((SourceCaptchaData?) -> Unit)? = null;
 
-        private fun getCaptchaIntent(context: Context, url: String, body: String): Intent {
+        private fun getCaptchaIntent(context: Context, config: SourcePluginConfig, url: String? = null, body: String? = null): Intent {
             val intent = Intent(context, CaptchaActivity::class.java);
-            intent.putExtra("url", url);
-            intent.putExtra("body", body);
+            if(url != null)
+                intent.putExtra("url", url);
+            if(body != null)
+                intent.putExtra("body", body);
+            intent.putExtra("plugin", Json.encodeToString(config));
             return intent;
         }
 
-        fun showCaptcha(context: Context, url: String, body: String, callback: ((String?) -> Unit)? = null) {
-            val cookieManager = CookieManager.getInstance();
-            val cookieString = cookieManager.getCookie("https://youtube.com")
-            val cookieMap = cookieString.split(";")
-                .map { it.trim() }
-                .map { it.split("=", limit = 2) }
-                .filter { it.size == 2 }
-                .associate { it[0] to it[1] };
-
-            if (cookieMap.containsKey("GOOGLE_ABUSE_EXEMPTION")) {
-                callback?.invoke("GOOGLE_ABUSE_EXEMPTION=" + cookieMap["GOOGLE_ABUSE_EXEMPTION"]);
-                return;
-            }
-
+        fun showCaptcha(context: Context, config: SourcePluginConfig, url: String? = null, body: String? = null, callback: ((SourceCaptchaData?) -> Unit)? = null) {
             _callback = callback;
-            context.startActivity(getCaptchaIntent(context, url, body));
+            context.startActivity(getCaptchaIntent(context, config, url, body));
         }
     }
 }

@@ -51,6 +51,8 @@ class V8Plugin {
      */
     val afterBusy = Event1<Int>();
 
+    val onScriptException = Event1<ScriptException>();
+
     constructor(context: Context, config: IV8PluginConfig, script: String? = null, client: ManagedHttpClient = ManagedHttpClient(), clientAuth: ManagedHttpClient = ManagedHttpClient()) {
         this._client = client;
         this._clientAuth = clientAuth;
@@ -217,7 +219,13 @@ class V8Plugin {
     }
 
     fun <T : Any> catchScriptErrors(context: String, code: String? = null, handle: ()->T): T {
-        return catchScriptErrors(this.config, context, code, handle);
+        try {
+            return catchScriptErrors(this.config, context, code, handle);
+        }
+        catch(ex: ScriptException) {
+            onScriptException.emit(ex);
+            throw ex;
+        }
     }
 
     companion object {
@@ -242,7 +250,7 @@ class V8Plugin {
                 if(result is V8ValueObject) {
                     val type = result.getString("plugin_type");
                     if(type != null && type.endsWith("Exception"))
-                        Companion.throwExceptionFromV8(
+                        throwExceptionFromV8(
                             config,
                             result.getOrThrow(config, "plugin_type", "V8Plugin"),
                             result.getOrThrow(config, "message", "V8Plugin"),
@@ -261,26 +269,26 @@ class V8Plugin {
             catch(executeEx: JavetExecutionException) {
                 if(executeEx.scriptingError?.context?.containsKey("plugin_type") == true) {
                     val pluginType = executeEx.scriptingError.context["plugin_type"].toString();
+
+                    //Captcha
                     if (pluginType == "CaptchaRequiredException") {
                         throw ScriptCaptchaRequiredException(config,
-                            executeEx.scriptingError.context["url"].toString(),
-                            executeEx.scriptingError.context["body"].toString(),
-                            executeEx, executeEx.scriptingError?.stack, codeStripped)
-                    };
+                            executeEx.scriptingError.context["url"]?.toString(),
+                            executeEx.scriptingError.context["body"]?.toString(),
+                            executeEx, executeEx.scriptingError?.stack, codeStripped);
+                    }
 
-                    val exMessage = extractJSExceptionMessage(executeEx);
+                    //Others
                     throwExceptionFromV8(
                         config,
                         pluginType,
-                        (exMessage ?: ""),
+                        (extractJSExceptionMessage(executeEx) ?: ""),
                         executeEx,
                         executeEx.scriptingError?.stack,
                         codeStripped
                     );
                 }
-
-                val exMessage = extractJSExceptionMessage(executeEx);
-                throw ScriptExecutionException(config, "${exMessage}", null, executeEx.scriptingError?.stack, codeStripped);
+                throw ScriptExecutionException(config, extractJSExceptionMessage(executeEx) ?: "", null, executeEx.scriptingError?.stack, codeStripped);
             }
             catch(ex: Exception) {
                 throw ex;

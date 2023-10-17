@@ -98,20 +98,6 @@ class HomeFragment : MainFragment() {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
             .success { loadedResult(it); }
-            .exception<ScriptCaptchaRequiredException> {
-                Logger.w(TAG, "Plugin captcha required.", it);
-
-                UIDialogs.showConfirmationDialog(context, "Captcha required\nPlugin [${it.config.name}]", action = {
-                    CaptchaActivity.showCaptcha(context, it.url, it.body) {
-                        if (it != null) {
-                            Logger.i(TAG, "Captcha entered $it")
-                            JSHttpClient.exemptionId = it;
-                            //TODO: Reload plugin when captcha completed? is it necessary
-                            loadResults();
-                        }
-                    }
-                })
-            }
             .exception<ScriptExecutionException> {
                 Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,

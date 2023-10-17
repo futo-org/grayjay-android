@@ -894,7 +894,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
 
 
-
+    //TODO: Only calls last handler due to missing request codes on ActivityResultLaunchers.
     private var resultLauncherMap =  mutableMapOf<Int, (ActivityResult)->Unit>();
     private var requestCode: Int? = -1;
     private val resultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(

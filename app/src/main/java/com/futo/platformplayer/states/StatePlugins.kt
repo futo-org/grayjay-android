@@ -6,6 +6,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
+import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.logging.Logger
@@ -372,7 +373,7 @@ class StatePlugins {
             if(icon != null)
                 iconsDir.saveIconBinary(config.id, icon);
 
-            _plugins.save(SourcePluginDescriptor(config, null, flags));
+            _plugins.save(SourcePluginDescriptor(config, null, null, flags));
             return null;
         }
         catch(ex: Throwable) {
@@ -407,6 +408,18 @@ class StatePlugins {
         }
     }
 
+    fun setPluginCaptcha(id: String, captcha: SourceCaptchaData?) {
+        if(id == StateDeveloper.DEV_ID) {
+            StatePlatform.instance.getDevClient()?.let {
+                it.setCaptcha(captcha);
+            };
+            return;
+        }
+
+        val descriptor = getPlugin(id) ?: throw IllegalArgumentException("Plugin [${id}] does not exist");
+        descriptor.updateCaptcha(captcha);
+        _plugins.save(descriptor);
+    }
     fun setPluginAuth(id: String, auth: SourceAuth?) {
         if(id == StateDeveloper.DEV_ID) {
             StatePlatform.instance.getDevClient()?.let {
