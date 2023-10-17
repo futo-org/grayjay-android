@@ -64,6 +64,14 @@ class ScriptException extends Error {
         }
     }
 }
+class CaptchaRequiredException extends Error {
+    constructor(url, body) {
+        super(JSON.stringify({ 'plugin_type': 'CaptchaRequiredException', url, body }));
+        this.plugin_type = "CaptchaRequiredException";
+        this.url = url;
+        this.body = body;
+    }
+}
 class UnavailableException extends ScriptException {
     constructor(msg) {
         super("UnavailableException", msg);

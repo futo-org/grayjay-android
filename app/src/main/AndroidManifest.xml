@@ -128,6 +128,10 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
+            android:name=".activities.CaptchaActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
             android:name=".activities.LoginActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />

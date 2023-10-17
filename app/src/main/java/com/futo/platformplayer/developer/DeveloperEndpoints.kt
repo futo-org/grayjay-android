@@ -416,7 +416,7 @@ class DeveloperEndpoints(private val context: Context) {
             val resp = _client.get(body.url!!, body.headers);
 
             context.respondCode(200,
-                Json.encodeToString(PackageHttp.BridgeHttpResponse(resp.code, resp.body?.string())),
+                Json.encodeToString(PackageHttp.BridgeHttpResponse(resp.url, resp.code, resp.body?.string())),
                 context.query.getOrDefault("CT", "text/plain"));
         }
         catch(ex: Exception) {

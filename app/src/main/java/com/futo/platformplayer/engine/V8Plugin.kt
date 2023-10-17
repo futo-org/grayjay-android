@@ -259,18 +259,27 @@ class V8Plugin {
                 throw ScriptCompilationException(config, "Compilation: ${scriptEx.message}\n(${scriptEx.scriptingError.lineNumber})[${scriptEx.scriptingError.startColumn}-${scriptEx.scriptingError.endColumn}]: ${scriptEx.scriptingError.sourceLine}", null, codeStripped);
             }
             catch(executeEx: JavetExecutionException) {
-                val exMessage = extractJSExceptionMessage(executeEx);
+                if(executeEx.scriptingError?.context?.containsKey("plugin_type") == true) {
+                    val pluginType = executeEx.scriptingError.context["plugin_type"].toString();
+                    if (pluginType == "CaptchaRequiredException") {
+                        throw ScriptCaptchaRequiredException(config,
+                            executeEx.scriptingError.context["url"].toString(),
+                            executeEx.scriptingError.context["body"].toString(),
+                            executeEx, executeEx.scriptingError?.stack, codeStripped)
+                    };
 
-                if(executeEx.scriptingError?.context?.containsKey("plugin_type") == true)
+                    val exMessage = extractJSExceptionMessage(executeEx);
                     throwExceptionFromV8(
                         config,
-                        executeEx.scriptingError.context["plugin_type"].toString(),
+                        pluginType,
                         (exMessage ?: ""),
                         executeEx,
                         executeEx.scriptingError?.stack,
                         codeStripped
                     );
+                }
 
+                val exMessage = extractJSExceptionMessage(executeEx);
                 throw ScriptExecutionException(config, "${exMessage}", null, executeEx.scriptingError?.stack, codeStripped);
             }
             catch(ex: Exception) {

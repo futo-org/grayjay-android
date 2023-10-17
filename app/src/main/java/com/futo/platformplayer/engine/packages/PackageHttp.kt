@@ -108,11 +108,12 @@ class PackageHttp: V8Package {
     }
 
     @kotlinx.serialization.Serializable
-    class BridgeHttpResponse(val code: Int, val body: String?, val headers: Map<String, List<String>>? = null) : IV8Convertable {
+    class BridgeHttpResponse(val url: String, val code: Int, val body: String?, val headers: Map<String, List<String>>? = null) : IV8Convertable {
         val isOk = code >= 200 && code < 300;
 
         override fun toV8(runtime: V8Runtime): V8Value? {
             val obj = runtime.createV8ValueObject();
+            obj.set("url", url);
             obj.set("code", code);
             obj.set("body", body);
             obj.set("headers", headers);
@@ -227,7 +228,7 @@ class PackageHttp: V8Package {
                     val resp = client.requestMethod(method, url, headers);
                     val responseBody = resp.body?.string();
                     logResponse(method, url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
         }
@@ -241,7 +242,7 @@ class PackageHttp: V8Package {
                     val resp = client.requestMethod(method, url, body, headers);
                     val responseBody = resp.body?.string();
                     logResponse(method, url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
         }
@@ -256,7 +257,7 @@ class PackageHttp: V8Package {
                     val resp = client.get(url, headers);
                     val responseBody = resp.body?.string();
                     logResponse("GET", url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
         }
@@ -270,7 +271,7 @@ class PackageHttp: V8Package {
                     val resp = client.post(url, body, headers);
                     val responseBody = resp.body?.string();
                     logResponse("POST", url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
         }
@@ -367,7 +368,7 @@ class PackageHttp: V8Package {
             }
             //Forward timeouts
             catch(ex: SocketTimeoutException) {
-                return BridgeHttpResponse(408, null);
+                return BridgeHttpResponse("", 408, null);
             }
         }
     }
@@ -461,7 +462,7 @@ class PackageHttp: V8Package {
         }
         //Forward timeouts
         catch(ex: SocketTimeoutException) {
-            return BridgeHttpResponse(408, null);
+            return BridgeHttpResponse("", 408, null);
         }
     }
 

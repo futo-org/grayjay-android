@@ -67,6 +67,12 @@ class JSHttpClient : ManagedHttpClient {
             }
         }
 
+        if (exemptionId != null) {
+            val cookie = request.headers["Cookie"];
+            request.headers["Cookie"] = (cookie ?: "") + ";$exemptionId"
+            Logger.i(TAG, "Exemption ID applied: ${request.headers["Cookie"]}")
+        }
+
         _jsClient?.validateUrlOrThrow(request.url);
         super.beforeRequest(request)
     }
@@ -154,5 +160,9 @@ class JSHttpClient : ManagedHttpClient {
         }
 
         Logger.i("Testing", code);
+    }
+
+    companion object {
+        var exemptionId: String? = null;
     }
 }

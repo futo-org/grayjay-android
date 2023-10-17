@@ -8,21 +8,26 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.others.CaptchaWebViewClient
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.FeedStyle
@@ -93,6 +98,20 @@ class HomeFragment : MainFragment() {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
             .success { loadedResult(it); }
+            .exception<ScriptCaptchaRequiredException> {
+                Logger.w(TAG, "Plugin captcha required.", it);
+
+                UIDialogs.showConfirmationDialog(context, "Captcha required\nPlugin [${it.config.name}]", action = {
+                    CaptchaActivity.showCaptcha(context, it.url, it.body) {
+                        if (it != null) {
+                            Logger.i(TAG, "Captcha entered $it")
+                            JSHttpClient.exemptionId = it;
+                            //TODO: Reload plugin when captcha completed? is it necessary
+                            loadResults();
+                        }
+                    }
+                })
+            }
             .exception<ScriptExecutionException> {
                 Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,
@@ -101,14 +120,14 @@ class HomeFragment : MainFragment() {
                 );
             }
             .exception<ScriptImplementationException> {
-                Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
+                Logger.w(TAG, "Plugin failure.", it);
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,
                     UIDialogs.Action("Ignore", {}),
                     UIDialogs.Action("Sources", { fragment.navigate<SourcesFragment>() }, UIDialogs.ActionStyle.PRIMARY)
                 );
             }
             .exception<Throwable> {
-                Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
+                Logger.w(TAG, "Failed to load channel.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, "Failed to get Home", it, {
                     loadResults()
                 }) {
