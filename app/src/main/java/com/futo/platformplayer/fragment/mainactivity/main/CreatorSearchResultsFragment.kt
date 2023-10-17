@@ -13,6 +13,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.views.FeedStyle
 
@@ -56,6 +57,7 @@ class CreatorSearchResultsFragment : MainFragment() {
         constructor(fragment: CreatorSearchResultsFragment, inflater: LayoutInflater): super(fragment, inflater) {
             _taskSearch = TaskHandler<String, IPager<PlatformAuthorLink>>({fragment.lifecycleScope}, { query -> StatePlatform.instance.searchChannels(query) })
                 .success { loadedResult(it); }
+                .exception<ScriptCaptchaRequiredException> {  }
                 .exception<Throwable> {
                     Logger.w(ChannelFragment.TAG, "Failed to load results.", it);
                     UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });

@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
@@ -52,7 +53,8 @@ class ChannelListFragment : Fragment, IChannelTabFragment {
         _authorLinks.add(PlatformAuthorLink(it.id, it.name, it.url, it.thumbnail));
         adapter.notifyItemInserted(adapter.childToParentPosition(_authorLinks.size - 1));
         loadNext();
-    }.exceptionWithParameter<Throwable> { ex, para ->
+    }.exception<ScriptCaptchaRequiredException> {  }
+        .exceptionWithParameter<Throwable> { ex, para ->
         Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
         UIDialogs.toast(requireContext(), "Failed to fetch\n${para}", false)
         loadNext();

@@ -126,7 +126,7 @@ class StatePolycentric {
         }
     }
 
-    fun getChannelContent(profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent> {
+    fun getChannelContent(profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
         //TODO: Currently abusing subscription concurrency for parallelism
         val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
         val pagers = profile.ownedClaims.groupBy { it.claim.claimType }.mapNotNull {
@@ -138,7 +138,7 @@ class StatePolycentric {
                 return@mapNotNull null;
             }
 
-            return@mapNotNull StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency);
+            return@mapNotNull StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency, ignorePlugins);
         }.toTypedArray();
 
         val pager = MultiChronoContentPager(pagers);

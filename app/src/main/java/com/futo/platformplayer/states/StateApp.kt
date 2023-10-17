@@ -643,12 +643,17 @@ class StateApp {
         }
     }
 
+    private var hasCaptchaDialog = false;
     fun handleCaptchaException(client: JSClient, exception: ScriptCaptchaRequiredException) {
         Logger.w(HomeFragment.TAG, "[${client.name}] Plugin captcha required.", exception);
 
         scopeOrNull?.launch(Dispatchers.Main) {
+            if(hasCaptchaDialog)
+                return@launch;
+            hasCaptchaDialog = true;
             UIDialogs.showConfirmationDialog(context, "Captcha required\nPlugin [${client.config.name}]", {
                 CaptchaActivity.showCaptcha(context, client.config, exception.url, exception.body) {
+                    hasCaptchaDialog = false;
                     StatePlugins.instance.setPluginCaptcha(client.config.id, it);
                     scopeOrNull?.launch(Dispatchers.IO) {
                         try {
@@ -659,6 +664,8 @@ class StateApp {
                         }
                     }
                 }
+            }, {
+                hasCaptchaDialog = false;
             })
         }
     }

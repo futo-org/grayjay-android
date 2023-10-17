@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.views.FeedStyle
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +87,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
                 }
             })
-            .success { loadedResult(it); }
+            .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, "Failed to load results.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });

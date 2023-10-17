@@ -29,6 +29,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.states.StatePolycentric
@@ -76,7 +77,9 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         }).success {
             setLoading(false);
             setPager(it);
-        }.exception<Throwable> {
+        }
+        .exception<ScriptCaptchaRequiredException> {  }
+        .exception<Throwable> {
             Logger.w(TAG, "Failed to load initial videos.", it);
             UIDialogs.showGeneralRetryErrorDialog(requireContext(), it.message ?: "", it, { loadNextPage() });
     };

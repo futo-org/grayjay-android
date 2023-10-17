@@ -18,6 +18,7 @@ class CaptchaWebViewClient : WebViewClient {
     private val _pluginConfig: SourcePluginConfig?;
     private val _captchaConfig: SourcePluginCaptchaConfig;
 
+    private var _didNotify = false;
     private val _extractor: WebViewRequirementExtractor;
 
     constructor(config: SourcePluginConfig) : super() {
@@ -58,7 +59,8 @@ class CaptchaWebViewClient : WebViewClient {
             return super.shouldInterceptRequest(view, request as WebResourceRequest?);
 
         val extracted = _extractor.handleRequest(view, request);
-        if(extracted != null) {
+        if(extracted != null && !_didNotify) {
+            _didNotify = true;
             onCaptchaFinished.emit(SourceCaptchaData(
                extracted.cookies,
                extracted.headers

@@ -5,6 +5,8 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.api.media.structures.ReusablePager.Companion.asReusable
 import com.futo.platformplayer.cache.ChannelContentCache
@@ -12,6 +14,7 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.exceptions.PluginException
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -230,8 +233,11 @@ class StateSubscriptions {
         var finished = 0;
         val exceptionMap: HashMap<Subscription, Throwable> = hashMapOf();
         val concurrency = Settings.instance.subscriptions.getSubscriptionsConcurrency();
+        val failedPlugins = arrayListOf<String>();
         for (sub in getSubscriptions().filter { StatePlatform.instance.hasEnabledChannelClient(it.channel.url) }) {
             tasks.add(_subscriptionsPool.submit<Pair<Subscription, IPager<IPlatformContent>?>> {
+                val toIgnore = synchronized(failedPlugins){ failedPlugins.toList() };
+
                 var polycentricProfile : PolycentricCache.CachedPolycentricProfile? = null;
                 val getProfileTime = measureTimeMillis {
                     try {
@@ -258,9 +264,9 @@ class StateSubscriptions {
                     val time = measureTimeMillis {
                         val profile = polycentricProfile?.profile
                         pager = if (profile != null)
-                            StatePolycentric.instance.getChannelContent(profile, true, concurrency)
+                            StatePolycentric.instance.getChannelContent(profile, true, concurrency, toIgnore)
                         else
-                            StatePlatform.instance.getChannelContent(sub.channel.url, true, concurrency);
+                            StatePlatform.instance.getChannelContent(sub.channel.url, true, concurrency, toIgnore);
 
                         if (cacheScope != null)
                             pager = ChannelContentCache.cachePagerResults(cacheScope, pager) {
@@ -276,11 +282,21 @@ class StateSubscriptions {
                     );
                 }
                 catch(ex: Throwable) {
+                    Logger.e(TAG, "Subscription [${sub.channel.name}] failed", ex);
                     finished++;
                     onProgress?.invoke(finished, tasks.size);
                     val channelEx = ChannelException(sub.channel, ex);
                     synchronized(exceptionMap) {
                         exceptionMap.put(sub, channelEx);
+                    }
+                    if(ex is ScriptCaptchaRequiredException) {
+                        synchronized(failedPlugins) {
+                            //Fail all subscription calls to plugin if it has a captcha issue
+                            if(ex.config is SourcePluginConfig && !failedPlugins.contains(ex.config.id)) {
+                                Logger.w(TAG, "Subscriptions fetch ignoring plugin [${ex.config.name}] due to Captcha");
+                                failedPlugins.add(ex.config.id);
+                            }
+                        }
                     }
                     if(!withCacheFallback)
                         throw channelEx;

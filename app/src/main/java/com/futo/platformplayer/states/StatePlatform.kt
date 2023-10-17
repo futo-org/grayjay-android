@@ -625,9 +625,13 @@ class StatePlatform {
     }
 
     fun hasEnabledChannelClient(url : String) : Boolean = getEnabledClients().any { it.isChannelUrl(url) };
-    fun getChannelClient(url : String) : IPlatformClient = getChannelClientOrNull(url)
+    fun getChannelClient(url : String, exclude: List<String>? = null) : IPlatformClient = getChannelClientOrNull(url, exclude)
         ?: throw NoPlatformClientException("No client enabled that supports this channel url (${url})");
-    fun getChannelClientOrNull(url : String) : IPlatformClient? = getEnabledClients().find { it.isChannelUrl(url) };
+    fun getChannelClientOrNull(url : String, exclude: List<String>? = null) : IPlatformClient? =
+        if(exclude == null)
+            getEnabledClients().find { it.isChannelUrl(url) }
+        else
+            getEnabledClients().find { !exclude.contains(it.id) && it.isChannelUrl(url) };
 
     fun getChannel(url: String, updateSubscriptions: Boolean = true): Deferred<IPlatformChannel>  {
         Logger.i(TAG, "Platform - getChannel");
@@ -638,9 +642,9 @@ class StatePlatform {
             return _scope.async { getChannelLive(url, updateSubscriptions) };
     }
 
-    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0): IPager<IPlatformContent> {
+    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
         Logger.i(TAG, "Platform - getChannelVideos");
-        val baseClient = getChannelClient(channelUrl);
+        val baseClient = getChannelClient(channelUrl, ignorePlugins);
         val clientCapabilities = baseClient.getChannelCapabilities();
 
         val client = if(usePooledClients > 1)
@@ -666,11 +670,11 @@ class StatePlatform {
                 if(sub != null) {
                     val daysSinceLiveStream = sub.lastLiveStream.getNowDiffDays()
                     if(daysSinceLiveStream > 7) {
-                        Logger.i(TAG, "Subscription [${channelUrl}] Last livestream > 7 days, skipping live streams [${daysSinceLiveStream} days ago]");
+                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 7 days, skipping live streams [${daysSinceLiveStream} days ago]");
                         toQuery.remove(ResultCapabilities.TYPE_LIVE);
                     }
                     if(daysSinceLiveStream > 14) {
-                        Logger.i(TAG, "Subscription [${channelUrl}] Last livestream > 15 days, skipping streams [${daysSinceLiveStream} days ago]");
+                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 15 days, skipping streams [${daysSinceLiveStream} days ago]");
                         toQuery.remove(ResultCapabilities.TYPE_STREAMS);
                     }
                 }

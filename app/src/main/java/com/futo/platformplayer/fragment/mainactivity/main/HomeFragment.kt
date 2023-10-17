@@ -98,6 +98,7 @@ class HomeFragment : MainFragment() {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
             .success { loadedResult(it); }
+            .exception<ScriptCaptchaRequiredException> {  }
             .exception<ScriptExecutionException> {
                 Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,
