@@ -31,7 +31,7 @@ class JSHttpClient : ManagedHttpClient {
                 _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
         }
         if(!captcha?.cookieMap.isNullOrEmpty()) {
-            for(domainCookies in auth!!.cookieMap!!)
+            for(domainCookies in captcha!!.cookieMap!!)
                 _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
         }
 
