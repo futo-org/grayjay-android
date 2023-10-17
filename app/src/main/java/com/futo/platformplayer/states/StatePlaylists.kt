@@ -267,9 +267,10 @@ class StatePlaylists {
                     return@map null;
                 }
                 catch(ex: NoPlatformClientException) {
+                    throw ReconstructionException(name, "No source enabled for [${it}]", ex);
                     //TODO: Propagate this to dialog, and then back, allowing users to enable plugins...
-                    builder.messages.add("No source enabled for [${it}]");
-                    return@map null;
+                    //builder.messages.add("No source enabled for [${it}]");
+                    //return@map null;
                 }
                 catch(ex: Throwable) {
                     throw ReconstructionException(name, "${name}:[${it}] ${ex.message}", ex);
