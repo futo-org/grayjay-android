@@ -130,6 +130,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                     };
                 }
             }
+
+            if (!StateSubscriptions.instance.isGlobalUpdating) {
+                finishRefreshLayoutLoader();
+            }
         }
 
         override fun cleanup() {

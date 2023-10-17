@@ -23,6 +23,7 @@ import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
@@ -134,6 +135,8 @@ class HomeFragment : MainFragment() {
             } else {
                 setLoading(false);
             }
+
+            finishRefreshLayoutLoader();
         }
 
         override fun reload() {
