@@ -4,6 +4,7 @@ variables:
 stages:
 - buildAndDeployApkUnstable
 - buildAndDeployApkStable
+- buildAndDeployPlaystore
 
 buildAndDeployApkUnstable:
   stage: buildAndDeployApkUnstable
@@ -25,8 +26,8 @@ buildAndDeployApkStable:
     - branches
   when: manual
 
-buildAndDeployApkStable:
-  stage: buildAndDeployApkStable
+buildAndDeployPlaystore:
+  stage: buildAndDeployPlaystore
   script:
     - sh deploy-playstore.sh
   only:
