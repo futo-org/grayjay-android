@@ -25,7 +25,8 @@ class DedupContentPager : IPager<IPlatformContent>, IAsyncPager<IPlatformContent
         _currentResults = dedupResults(_basePager.getResults());
     }
 
-    override fun hasMorePages(): Boolean = _basePager.hasMorePages();
+    override fun hasMorePages(): Boolean =
+        _basePager.hasMorePages();
     override fun nextPage() {
         _basePager.nextPage()
         _currentResults = dedupResults(_basePager.getResults());

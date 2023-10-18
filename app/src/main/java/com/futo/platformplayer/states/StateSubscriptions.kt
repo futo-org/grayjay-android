@@ -219,13 +219,13 @@ class StateSubscriptions {
         }
     }
 
-    fun getSubscriptionsFeed(allowFailure: Boolean = false): MultiChronoContentPager {
+    fun getSubscriptionsFeed(allowFailure: Boolean = false): IPager<IPlatformContent> {
         val result = getSubscriptionsFeedWithExceptions(allowFailure, true);
         if(result.second.any())
             throw result.second.first();
         return result.first;
     }
-    fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope? = null, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<MultiChronoContentPager, List<Throwable>> {
+    fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope? = null, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
         val subsPager: Array<IPager<IPlatformContent>>;
         val exs: ArrayList<Throwable> = arrayListOf();
 
@@ -343,9 +343,10 @@ class StateSubscriptions {
             throw exs.first();
 
         Logger.i(TAG, "Subscription pager with ${subsPager.size} channels");
-        val pager = MultiChronoContentPager(subsPager, allowFailure);
+        val pager = MultiChronoContentPager(subsPager, allowFailure, 15);
         pager.initialize();
-        return Pair(pager, exs);
+        //return Pair(pager, exs);
+        return Pair(DedupContentPager(pager), exs);
     }
 
     //New Migration

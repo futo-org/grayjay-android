@@ -16,7 +16,7 @@ abstract class MultiPager<T> : IPager<T> {
     protected val _subSinglePagers : MutableList<SingleItemPager<T>>;
     protected val _failedPagers: ArrayList<IPager<T>> = arrayListOf();
 
-    private val _pageSize : Int = 9;
+    private var _pageSize : Int = 9;
 
     private var _didInitialize = false;
 
@@ -27,7 +27,8 @@ abstract class MultiPager<T> : IPager<T> {
 
     val totalPagers: Int get() = _pagers.size;
 
-    constructor(pagers : List<IPager<T>>, allowFailure: Boolean = false) {
+    constructor(pagers : List<IPager<T>>, allowFailure: Boolean = false, pageSize: Int = 9) {
+        this._pageSize = pageSize;
         this.allowFailure = allowFailure;
         _pagers = pagers.toMutableList();
         _subSinglePagers = _pagers.map { SingleItemPager(it) }.toMutableList();

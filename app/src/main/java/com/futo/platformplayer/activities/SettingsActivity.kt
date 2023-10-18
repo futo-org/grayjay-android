@@ -52,17 +52,6 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
             startActivity(Intent(this, DeveloperActivity::class.java));
         }
 
-        var devCounter = 0;
-        _form.findField("code")?.assume<ReadOnlyTextField>()?.setOnClickListener {
-            devCounter++;
-            if(devCounter > 5) {
-                devCounter = 0;
-                SettingsDev.instance.developerMode = true;
-                SettingsDev.instance.save();
-                updateDevMode();
-                UIDialogs.toast(this, "You are now in developer mode");
-            }
-        };
         _lastActivity = this;
 
         reloadSettings();
@@ -72,6 +61,18 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         _loader.start();
         _form.fromObject(lifecycleScope, Settings.instance) {
             _loader.stop();
+
+            var devCounter = 0;
+            _form.findField("code")?.assume<ReadOnlyTextField>()?.setOnClickListener {
+                devCounter++;
+                if(devCounter > 5) {
+                    devCounter = 0;
+                    SettingsDev.instance.developerMode = true;
+                    SettingsDev.instance.save();
+                    updateDevMode();
+                    UIDialogs.toast(this, "You are now in developer mode");
+                }
+            };
         };
     }
 

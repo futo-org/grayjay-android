@@ -7,7 +7,7 @@ import java.util.stream.IntStream
  * A PlatformContent MultiPager that orders the results of a page based on the datetime of a content item
  */
 class MultiChronoContentPager : MultiPager<IPlatformContent> {
-    constructor(pagers : Array<IPager<IPlatformContent>>, allowFailure: Boolean = false) : super(pagers.map { it }.toList(), allowFailure) {}
+    constructor(pagers : Array<IPager<IPlatformContent>>, allowFailure: Boolean = false, pageSize: Int = 9) : super(pagers.map { it }.toList(), allowFailure, pageSize) {}
 
     @Synchronized
     override fun selectItemIndex(options: Array<SelectionOption<IPlatformContent>>): Int {
