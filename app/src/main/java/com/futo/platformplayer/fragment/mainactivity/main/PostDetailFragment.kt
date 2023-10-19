@@ -601,7 +601,7 @@ class PostDetailFragment : MainFragment {
             val subscribers = value?.author?.subscribers;
             if(subscribers != null && subscribers > 0) {
                 _channelMeta.visibility = View.VISIBLE;
-                _channelMeta.text = value.author.subscribers!!.toHumanNumber() + " subscribers";
+                _channelMeta.text = if((value.author?.subscribers ?: 0) > 0) value.author.subscribers!!.toHumanNumber() + " subscribers" else "";
             } else {
                 _channelMeta.visibility = View.GONE;
                 _channelMeta.text = "";

@@ -873,7 +873,7 @@ class VideoDetailView : ConstraintLayout {
         _channelName.text = video.author.name;
         _playWhenReady = true;
         if(video.author.subscribers != null) {
-            _channelMeta.text = video.author.subscribers!!.toHumanNumber() + " subscribers";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
@@ -982,7 +982,7 @@ class VideoDetailView : ConstraintLayout {
         _title.text = video.name;
         _channelName.text = video.author.name;
         if(video.author.subscribers != null) {
-            _channelMeta.text = video.author.subscribers!!.toHumanNumber() + " subscribers";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
