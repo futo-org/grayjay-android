@@ -1,7 +1,10 @@
 package com.futo.platformplayer.activities
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.*
 import com.futo.platformplayer.views.buttons.BigButton
@@ -13,6 +16,31 @@ class AddSourceOptionsActivity : AppCompatActivity() {
 
     lateinit var _buttonQR: BigButton;
     lateinit var _buttonURL: BigButton;
+
+    private val _qrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+        scanResult?.let {
+            val content = it.contents
+            if (content == null) {
+                UIDialogs.toast(this, "Failed to scan QR code")
+                return@let
+            }
+
+            val url = if (content.startsWith("https://")) {
+                content
+            } else if (content.startsWith("grayjay://plugin/")) {
+                content.substring("grayjay://plugin/".length)
+            } else {
+                UIDialogs.toast(this, "Not a plugin URL")
+                return@let;
+            }
+
+            val intent = Intent(this, AddSourceActivity::class.java).apply {
+                data = Uri.parse(url);
+            };
+            startActivity(intent);
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -37,8 +65,9 @@ class AddSourceOptionsActivity : AppCompatActivity() {
             integrator.setBeepEnabled(false)
             integrator.setBarcodeImageEnabled(true)
             integrator.setCaptureActivity(QRCaptureActivity::class.java);
-            integrator.initiateScan()
+            _qrCodeResultLauncher.launch(integrator.createScanIntent())
         }
+
         _buttonURL.onClick.subscribe {
             UIDialogs.toast(this, "Not implemented yet..");
         }
