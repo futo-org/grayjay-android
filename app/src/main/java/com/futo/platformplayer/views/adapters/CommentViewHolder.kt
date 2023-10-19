@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
@@ -35,12 +36,14 @@ class CommentViewHolder : ViewHolder {
     private val _buttonReplies: PillButton;
     private val _layoutRating: LinearLayout;
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
+    private val _layoutComment: ConstraintLayout;
 
     var onClick = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
     constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_comment, viewGroup, false)) {
+        _layoutComment = itemView.findViewById(R.id.layout_comment);
         _creatorThumbnail = itemView.findViewById(R.id.image_thumbnail);
         _textAuthor = itemView.findViewById(R.id.text_author);
         _textMetadata = itemView.findViewById(R.id.text_metadata);
@@ -53,29 +56,31 @@ class CommentViewHolder : ViewHolder {
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
 
-        _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { processHandle, hasLiked, hasDisliked ->
+        _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
             if (c !is PolycentricPlatformComment) {
                 throw Exception("Not implemented for non polycentric comments")
             }
 
-            if (hasLiked) {
-                processHandle.opinion(c.reference, Opinion.like);
-            } else if (hasDisliked) {
-                processHandle.opinion(c.reference, Opinion.dislike);
+            if (args.hasLiked) {
+                args.processHandle.opinion(c.reference, Opinion.like);
+            } else if (args.hasDisliked) {
+                args.processHandle.opinion(c.reference, Opinion.dislike);
             } else {
-                processHandle.opinion(c.reference, Opinion.neutral);
+                args.processHandle.opinion(c.reference, Opinion.neutral);
             }
+
+            _layoutComment.alpha = if (args.dislikes > 2 && args.dislikes / (args.likes + args.dislikes) >= 0.7) 0.5f else 1.0f;
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
-                    processHandle.fullyBackfillServers();
+                    args.processHandle.fullyBackfillServers();
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to backfill servers.", e)
                 }
             }
 
-            StatePolycentric.instance.updateLikeMap(c.reference, hasLiked, hasDisliked)
+            StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
         _buttonReplies.onClick.subscribe {
@@ -96,6 +101,13 @@ class CommentViewHolder : ViewHolder {
             _textMetadata.text = " • ${date.toHumanNowDiffString()} ago";
         } else {
             _textMetadata.visibility = View.GONE;
+        }
+
+        val rating = comment.rating;
+        if (rating is RatingLikeDislikes) {
+            _layoutComment.alpha = if (rating.dislikes > 0 && rating.dislikes / (rating.likes + rating.dislikes) >= 0.7) 0.5f else 1.0f;
+        } else {
+            _layoutComment.alpha = 1.0f;
         }
 
         _textBody.text = comment.message.fixHtmlLinks();

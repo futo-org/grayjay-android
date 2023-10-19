@@ -1042,24 +1042,24 @@ class VideoDetailView : ConstraintLayout {
                     withContext(Dispatchers.Main) {
                         _rating.visibility = View.VISIBLE;
                         _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                        _rating.onLikeDislikeUpdated.subscribe(this) { processHandle, newHasLiked, newHasDisliked ->
-                            if (newHasLiked) {
-                                processHandle.opinion(ref, Opinion.like);
-                            } else if (newHasDisliked) {
-                                processHandle.opinion(ref, Opinion.dislike);
+                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                            if (args.hasLiked) {
+                                args.processHandle.opinion(ref, Opinion.like);
+                            } else if (args.hasDisliked) {
+                                args.processHandle.opinion(ref, Opinion.dislike);
                             } else {
-                                processHandle.opinion(ref, Opinion.neutral);
+                                args.processHandle.opinion(ref, Opinion.neutral);
                             }
 
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
-                                    processHandle.fullyBackfillServers();
+                                    args.processHandle.fullyBackfillServers();
                                 } catch (e: Throwable) {
                                     Logger.e(TAG, "Failed to backfill servers", e)
                                 }
                             }
 
-                            StatePolycentric.instance.updateLikeMap(ref, newHasLiked, newHasDisliked)
+                            StatePolycentric.instance.updateLikeMap(ref, args.hasLiked, args.hasDisliked)
                         };
                     }
                 } catch (e: Throwable) {

@@ -43,7 +43,7 @@ class StateTelemetry {
                 );
 
                 val headers = hashMapOf(
-                    "Content-Type" to "text/plain"
+                    "Content-Type" to "application/json"
                 );
 
                 val json = Json.encodeToString(telemetry);
