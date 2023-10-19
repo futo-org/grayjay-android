@@ -434,21 +434,19 @@ class StateApp {
         ).flatten(), 0);
 
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
-            val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
-            val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.config.subscriptionRateLimit}" }.joinToString("\n");
-            if (!subRequestCounts.any { clientCount ->
-                    clientCount.key.config.subscriptionRateLimit
-                        ?.let { rateLimit -> clientCount.value > rateLimit } == true
-                }) {
-                Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
-            scope.launch {
-                delay(5000);
-                StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+            scope.launch(Dispatchers.IO) {
+                val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
+                val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.config.subscriptionRateLimit}" }.joinToString("\n");
+                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.config.subscriptionRateLimit?.let { rateLimit -> clientCount.value > rateLimit } == true };
+                if (isRateLimitReached) {
+                    Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
+                    delay(5000);
+                    StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+                }
+                else
+                    Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
             }
         }
-        else
-            Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
-    }
 
         val interval = Settings.instance.subscriptions.getSubscriptionsBackgroundIntervalMinutes();
         scheduleBackgroundWork(context, interval != 0, interval);

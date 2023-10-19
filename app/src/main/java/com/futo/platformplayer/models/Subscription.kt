@@ -5,6 +5,7 @@ import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
+import com.futo.platformplayer.states.StatePlatform
 import java.time.OffsetDateTime
 
 @kotlinx.serialization.Serializable
@@ -41,6 +42,8 @@ class Subscription {
     fun shouldFetchStreams() = lastLiveStream.getNowDiffDays() < 7;
     fun shouldFetchLiveStreams() = lastLiveStream.getNowDiffDays() < 14;
     fun shouldFetchPosts() = lastPost.getNowDiffDays() < 2;
+
+    fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 
     fun updateChannel(channel: IPlatformChannel) {
         this.channel = SerializedChannel.fromChannel(channel);

@@ -1610,10 +1610,10 @@ class VideoDetailView : ConstraintLayout {
         _lastSubtitleSource = toSet;
     }
 
-    private fun handleUnavailableVideo() {
+    private fun handleUnavailableVideo(msg: String? = null) {
         if (!nextVideo()) {
             if(video?.datetime == null || video?.datetime!! < OffsetDateTime.now().minusHours(1))
-                UIDialogs.showDialog(context, R.drawable.ic_lock, "Unavailable video", "This video is unavailable.", null, 0,
+                UIDialogs.showDialog(context, R.drawable.ic_lock, "Unavailable video", msg ?: "This video is unavailable.", null, 0,
                     UIDialogs.Action("Back", {
                         this@VideoDetailView.onClose.emit();
                     }, UIDialogs.ActionStyle.PRIMARY));
@@ -2092,7 +2092,7 @@ class VideoDetailView : ConstraintLayout {
         }
         .exception<ScriptUnavailableException> {
             Logger.w(TAG, "exception<ScriptUnavailableException>", it);
-            handleUnavailableVideo();
+            handleUnavailableVideo(it.message);
         }
         .exception<ScriptException> {
             Logger.w(TAG, "exception<ScriptException>", it)

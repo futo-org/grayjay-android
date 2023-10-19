@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
@@ -63,7 +64,8 @@ class Settings : FragmentedStorageFileJson() {
         try {
             val i = Intent(Intent.ACTION_VIEW);
             val subject = "Feedback Grayjay";
-            val body = "Hey,\n\nI have some feedback on the Grayjay app.\nVersion information (version_name = ${BuildConfig.VERSION_NAME}, version_code = ${BuildConfig.VERSION_CODE}, flavor = ${BuildConfig.FLAVOR}, build_type = ${BuildConfig.BUILD_TYPE}})\n\n";
+            val body = "Hey,\n\nI have some feedback on the Grayjay app.\nVersion information (version_name = ${BuildConfig.VERSION_NAME}, version_code = ${BuildConfig.VERSION_CODE}, flavor = ${BuildConfig.FLAVOR}, build_type = ${BuildConfig.BUILD_TYPE}})\n" +
+                    "Device information (brand= ${Build.BRAND}, manufacturer = ${Build.MANUFACTURER}, device = ${Build.DEVICE}, version-sdk = ${Build.VERSION.SDK_INT}, version-os = ${Build.VERSION.BASE_OS})\n\n";
             val data = Uri.parse("mailto:grayjay@futo.org?subject=" + Uri.encode(subject) + "&body=" + Uri.encode(body));
             i.data = data;
 
@@ -217,7 +219,7 @@ class Settings : FragmentedStorageFileJson() {
 
         fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
 
-        @FormField("Auto-Rotate Dead Zone", FieldForm.DROPDOWN, "Auto-rotate deadzone in degrees", 5)
+        @FormField("Auto-Rotate Dead Zone", FieldForm.DROPDOWN, "This prevents the device from rotating within the given amount of degrees.", 5)
         @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
         var autoRotateDeadZone: Int = 0;
 

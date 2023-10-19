@@ -1,6 +1,7 @@
 package com.futo.platformplayer.activities
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -40,7 +41,8 @@ class ExceptionActivity : AppCompatActivity() {
         val context = intent.getStringExtra(EXTRA_CONTEXT) ?: "Unknown Context";
         val stack = intent.getStringExtra(EXTRA_STACK) ?: "Something went wrong... missing stack trace?";
 
-        val exceptionString = "Version information (version_name = ${BuildConfig.VERSION_NAME}, version_code = ${BuildConfig.VERSION_CODE}, flavor = ${BuildConfig.FLAVOR}, build_type = ${BuildConfig.BUILD_TYPE})\n\n" +
+        val exceptionString = "Version information (version_name = ${BuildConfig.VERSION_NAME}, version_code = ${BuildConfig.VERSION_CODE}, flavor = ${BuildConfig.FLAVOR}, build_type = ${BuildConfig.BUILD_TYPE})\n" +
+                "Device information (brand= ${Build.BRAND}, manufacturer = ${Build.MANUFACTURER}, device = ${Build.DEVICE}, version-sdk = ${Build.VERSION.SDK_INT}, version-os = ${Build.VERSION.BASE_OS})\n\n" +
                 Logging.buildLogString(LogLevel.ERROR, TAG, "Uncaught exception (\"$context\"): $stack");
         try {
             val file = File(filesDir, "log.txt");
