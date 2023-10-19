@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 
 class PlatformClientPool {
     private val _parent: JSClient;
@@ -51,6 +52,11 @@ class PlatformClientPool {
             if(reserved == null && _pool.size < capacity) {
                 Logger.i(TAG, "Started additional [${_parent.name}] client in pool [${_poolName}] (${_pool.size + 1}/${capacity})");
                 reserved = _parent.getCopy();
+
+                reserved?.onCaptchaException?.subscribe { client, ex ->
+                    StateApp.instance.handleCaptchaException(client, ex);
+                };
+
                 reserved?.initialize();
                 _pool[reserved!!] = _poolCounter;
             }
