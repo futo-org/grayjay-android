@@ -75,10 +75,10 @@ class AddSourceActivity : AppCompatActivity() {
         _buttonInstall = findViewById(R.id.button_install);
 
         _buttonBack.setOnClickListener {
-            onBackPressed();
+            finish();
         };
         _buttonCancel.setOnClickListener {
-            onBackPressed();
+            finish();
         }
         _buttonInstall.setOnClickListener {
             _config?.let {

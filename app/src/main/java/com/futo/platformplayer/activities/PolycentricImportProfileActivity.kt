@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
@@ -14,6 +15,7 @@ import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.*
 import com.google.zxing.integration.android.IntentIntegrator
+import com.journeyapps.barcodescanner.CaptureActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -26,6 +28,16 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
     private lateinit var _buttonScanProfile: LinearLayout;
     private lateinit var _buttonImportProfile: LinearLayout;
     private lateinit var _editProfile: EditText;
+
+    private val _qrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+        scanResult?.let {
+            if (it.contents != null) {
+                val scannedUrl = it.contents
+                import(scannedUrl)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -45,10 +57,15 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
         };
 
         _buttonScanProfile.setOnClickListener {
-            val integrator = IntentIntegrator(this);
-            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
-            integrator.setPrompt("Scan a QR code");
-            integrator.initiateScan();
+            val integrator = IntentIntegrator(this)
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+            integrator.setPrompt("Scan a QR code")
+            integrator.setOrientationLocked(true);
+            integrator.setCameraId(0)
+            integrator.setBeepEnabled(false)
+            integrator.setBarcodeImageEnabled(true)
+            integrator.setCaptureActivity(QRCaptureActivity::class.java);
+            _qrCodeResultLauncher.launch(integrator.createScanIntent())
         };
 
         _buttonImportProfile.setOnClickListener {
@@ -63,18 +80,6 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
         val url = intent.getStringExtra("url");
         if (url != null) {
             import(url);
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
-        if (result != null) {
-            if (result.contents != null) {
-                val scannedUrl = result.contents;
-                import(scannedUrl);
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -125,5 +130,9 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "PolycentricImportProfileActivity";
+    }
+
+    class QRCaptureActivity: CaptureActivity() {
+
     }
 }

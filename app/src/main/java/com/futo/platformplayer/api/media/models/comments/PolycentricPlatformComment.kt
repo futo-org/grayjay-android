@@ -39,4 +39,8 @@ class PolycentricPlatformComment : IPlatformComment {
     fun cloneWithUpdatedReplyCount(replyCount: Int?): PolycentricPlatformComment {
         return PolycentricPlatformComment(contextUrl, author, message, rating, date, reference, replyCount);
     }
+
+    companion object {
+        val MAX_COMMENT_SIZE = 2000
+    }
 }
