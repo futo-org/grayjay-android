@@ -37,7 +37,6 @@ class StateTelemetry {
                     BuildConfig.BUILD_TYPE,
                     BuildConfig.DEBUG,
                     BuildConfig.IS_UNSTABLE_BUILD,
-                    Instant.now().epochSecond,
                     Build.BRAND,
                     Build.MANUFACTURER,
                     Build.MODEL
