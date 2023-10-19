@@ -12,10 +12,19 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNumber
 import com.futo.polycentric.core.ProcessHandle
+
+data class OnLikeDislikeUpdatedArgs(
+    val processHandle: ProcessHandle,
+    val likes: Long,
+    val hasLiked: Boolean,
+    val dislikes: Long,
+    val hasDisliked: Boolean,
+);
 
 class PillRatingLikesDislikes : LinearLayout {
     private val _textLikes: TextView;
@@ -29,7 +38,7 @@ class PillRatingLikesDislikes : LinearLayout {
     private var _dislikes = 0L;
     private var _hasDisliked = false;
 
-    val onLikeDislikeUpdated = Event3<ProcessHandle, Boolean, Boolean>();
+    val onLikeDislikeUpdated = Event1<OnLikeDislikeUpdatedArgs>();
 
     constructor(context : Context, attrs : AttributeSet?) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.rating_likesdislikes, this, true);
@@ -76,7 +85,7 @@ class PillRatingLikesDislikes : LinearLayout {
 
         _textLikes.text = _likes.toHumanNumber();
         updateColors();
-        onLikeDislikeUpdated.emit(processHandle, _hasLiked, _hasDisliked);
+        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(processHandle, _likes, _hasLiked, _dislikes, _hasDisliked));
     }
 
     fun dislike(processHandle: ProcessHandle) {
@@ -96,7 +105,7 @@ class PillRatingLikesDislikes : LinearLayout {
 
         _textDislikes.text = _dislikes.toHumanNumber();
         updateColors();
-        onLikeDislikeUpdated.emit(processHandle, _hasLiked, _hasDisliked);
+        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(processHandle, _likes, _hasLiked, _dislikes, _hasDisliked));
     }
 
     private fun updateColors() {
