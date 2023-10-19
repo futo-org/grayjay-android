@@ -41,6 +41,7 @@ class SourcePluginConfig(
     val constants: HashMap<String, String> = hashMapOf(),
 
     //TODO: These should be vals...but prob for serialization reasons cannot be changed.
+    var subscriptionRateLimit: Int? = null,
     var enableInSearch: Boolean = true,
     var enableInHome: Boolean = true,
     var supportedClaimTypes: List<Int> = listOf()

@@ -27,6 +27,7 @@ class ResultCapabilities(
         const val TYPE_VIDEOS = "VIDEOS";
         const val TYPE_STREAMS = "STREAMS";
         const val TYPE_LIVE = "LIVE";
+        const val TYPE_POSTS = "POSTS";
         const val TYPE_MIXED = "MIXED";
 
         const val ORDER_CHONOLOGICAL = "CHRONOLOGICAL";

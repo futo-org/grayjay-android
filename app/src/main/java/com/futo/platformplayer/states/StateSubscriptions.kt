@@ -2,6 +2,7 @@ package com.futo.platformplayer.states
 
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -18,6 +19,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
@@ -217,6 +219,31 @@ class StateSubscriptions {
             if(doSave)
                 _subscriptions.save(sub);
         }
+    }
+
+    fun getSubscriptionRequestCount(): Map<JSClient, Int> {
+        val subs = getSubscriptions();
+        val pluginReqCounts = mutableMapOf<JSClient, Int>();
+
+        for(sub in subs) {
+            val client = StatePlatform.instance.getChannelClientOrNull(sub.channel.url);
+            if(client !is JSClient)
+                continue;
+
+            val channelCaps = client.getChannelCapabilities();
+            if(!pluginReqCounts.containsKey(client))
+                pluginReqCounts[client] = 1;
+            else
+                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+
+            if(channelCaps.hasType(ResultCapabilities.TYPE_STREAMS) && sub.shouldFetchStreams())
+                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+            if(channelCaps.hasType(ResultCapabilities.TYPE_LIVE) && sub.shouldFetchLiveStreams())
+                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+            if(channelCaps.hasType(ResultCapabilities.TYPE_POSTS) && sub.shouldFetchPosts())
+                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+        }
+        return pluginReqCounts;
     }
 
     fun getSubscriptionsFeed(allowFailure: Boolean = false): IPager<IPlatformContent> {

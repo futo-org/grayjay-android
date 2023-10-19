@@ -140,7 +140,11 @@ class Settings : FragmentedStorageFileJson() {
                 return FeedStyle.THUMBNAIL;
         }
 
-        @FormField("Background Update", FieldForm.DROPDOWN, "Experimental background update for subscriptions cache (requires restart)", 6)
+        @FormField("Fetch on app boot", FieldForm.TOGGLE, "Shortly after opening the app, start fetching subscriptions.", 6)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var fetchOnAppBoot: Boolean = true;
+
+        @FormField("Background Update", FieldForm.DROPDOWN, "Experimental background update for subscriptions cache (requires restart)", 7)
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
 
@@ -156,7 +160,7 @@ class Settings : FragmentedStorageFileJson() {
         };
 
 
-        @FormField("Subscription Concurrency", FieldForm.DROPDOWN, "Specify how many threads are used to fetch channels (requires restart)", 7)
+        @FormField("Subscription Concurrency", FieldForm.DROPDOWN, "Specify how many threads are used to fetch channels (requires restart)", 8)
         @DropdownFieldOptionsId(R.array.thread_count)
         var subscriptionConcurrency: Int = 3;
 

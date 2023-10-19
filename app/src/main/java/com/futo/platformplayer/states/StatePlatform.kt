@@ -664,18 +664,23 @@ class StatePlatform {
                 toQuery.add(ResultCapabilities.TYPE_STREAMS);
             if(clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE))
                 toQuery.add(ResultCapabilities.TYPE_LIVE);
+            if(clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS))
+                toQuery.add(ResultCapabilities.TYPE_POSTS);
 
             if(isSubscriptionOptimized) {
                 val sub = StateSubscriptions.instance.getSubscription(channelUrl);
                 if(sub != null) {
-                    val daysSinceLiveStream = sub.lastLiveStream.getNowDiffDays()
-                    if(daysSinceLiveStream > 7) {
-                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 7 days, skipping live streams [${daysSinceLiveStream} days ago]");
+                    if(!sub.shouldFetchStreams()) {
+                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 7 days, skipping live streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
                         toQuery.remove(ResultCapabilities.TYPE_LIVE);
                     }
-                    if(daysSinceLiveStream > 14) {
-                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 15 days, skipping streams [${daysSinceLiveStream} days ago]");
+                    if(!sub.shouldFetchLiveStreams()) {
+                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 15 days, skipping streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
                         toQuery.remove(ResultCapabilities.TYPE_STREAMS);
+                    }
+                    if(!sub.shouldFetchPosts()) {
+                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 5 days, skipping posts [${sub.lastPost.getNowDiffDays()} days ago]");
+                        toQuery.remove(ResultCapabilities.TYPE_POSTS);
                     }
                 }
             }

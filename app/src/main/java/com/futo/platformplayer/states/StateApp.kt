@@ -28,6 +28,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -44,7 +45,10 @@ import com.futo.platformplayer.receivers.AudioNoisyReceiver
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.stripe.android.core.utils.encodeToJson
 import kotlinx.coroutines.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.*
@@ -429,10 +433,22 @@ class StateApp {
             StatePlaylists.instance.toMigrateCheck()
         ).flatten(), 0);
 
-        scope.launch {
-            delay(5000);
-            StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+        if(Settings.instance.subscriptions.fetchOnAppBoot) {
+            val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
+            val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.config.subscriptionRateLimit}" }.joinToString("\n");
+            if (!subRequestCounts.any { clientCount ->
+                    clientCount.key.config.subscriptionRateLimit
+                        ?.let { rateLimit -> clientCount.value > rateLimit } == true
+                }) {
+                Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
+            scope.launch {
+                delay(5000);
+                StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+            }
         }
+        else
+            Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
+    }
 
         val interval = Settings.instance.subscriptions.getSubscriptionsBackgroundIntervalMinutes();
         scheduleBackgroundWork(context, interval != 0, interval);
