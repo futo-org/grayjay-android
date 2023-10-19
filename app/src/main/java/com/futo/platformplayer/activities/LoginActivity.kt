@@ -3,7 +3,9 @@ package com.futo.platformplayer.activities
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -68,9 +70,15 @@ class LoginActivity : AppCompatActivity() {
                 view?.evaluateJavascript("setTimeout(()=> document.querySelector(\"${authConfig.loginButton}\")?.click(), 1000)", {});
             }
         }
-        //TODO: Required for some...TBD what to do with it. Clear on finish?
         _webView.settings.domStorageEnabled = true;
 
+        /*
+        _webView.webChromeClient = object: WebChromeClient() {
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                Logger.w(TAG, "Login Console: " + consoleMessage?.message());
+                return super.onConsoleMessage(consoleMessage);
+            }
+        }*/
         _webView.webViewClient = webViewClient;
         _webView.loadUrl(authConfig.loginUrl);
     }

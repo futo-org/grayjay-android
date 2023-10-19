@@ -20,10 +20,10 @@ class PlatformContentSerializer() : JsonContentPolymorphicSerializer<SerializedP
         if(obj?.jsonPrimitive?.isString ?: true)
             return when(obj?.jsonPrimitive?.contentOrNull) {
                 "MEDIA" -> SerializedPlatformVideo.serializer();
-                "NESTED" -> SerializedPlatformNestedContent.serializer();
+                "NESTED_VIDEO" -> SerializedPlatformNestedContent.serializer();
                 "ARTICLE" -> throw NotImplementedError("Articles not yet implemented");
                 "POST" -> throw NotImplementedError("Post not yet implemented");
-                else -> throw NotImplementedError("Unknown Content Type Value: ${obj?.jsonPrimitive?.int}")
+                else -> throw NotImplementedError("Unknown Content Type Value: ${obj?.jsonPrimitive?.contentOrNull}")
             };
         else
             return when(obj?.jsonPrimitive?.int) {
