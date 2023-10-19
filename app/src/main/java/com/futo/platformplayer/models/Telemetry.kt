@@ -9,7 +9,6 @@ data class Telemetry(
     val buildType: String,
     val debug: Boolean,
     val isUnstableBuild: Boolean,
-    val time: Long,
     val brand: String,
     val manufacturer: String,
     val model: String

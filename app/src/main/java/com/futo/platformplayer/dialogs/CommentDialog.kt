@@ -57,7 +57,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 _textCharacterCount.text = count.toString();
 
-                if (count > MAX_COMMENT_SIZE) {
+                if (count > PolycentricPlatformComment.MAX_COMMENT_SIZE) {
                     _textCharacterCount.setTextColor(Color.RED);
                     _textCharacterCountMax.setTextColor(Color.RED);
                     _buttonCreate.alpha = 0.4f;
@@ -79,7 +79,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
         _buttonCreate.setOnClickListener {
             clearFocus();
 
-            if (_editComment.text.count() > MAX_COMMENT_SIZE) {
+            if (_editComment.text.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) {
                 UIDialogs.toast(context, "Comment should be less than 5000 characters");
                 return@setOnClickListener;
             }
@@ -131,6 +131,5 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
 
     companion object {
         private val TAG = "CommentDialog";
-        private val MAX_COMMENT_SIZE = 5000;
     }
 }
