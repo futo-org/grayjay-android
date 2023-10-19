@@ -302,7 +302,7 @@ class StatePolycentric {
                         thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
                         subscribers = null
                     ),
-                    msg = post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE),
+                    msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
                     rating = RatingLikeDislikes(likes, dislikes),
                     date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
                     replyCount = replies.toInt(),
