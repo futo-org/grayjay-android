@@ -13,6 +13,7 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.TaskHandler
@@ -280,8 +281,12 @@ class SubscriptionsFeedFragment : MainFragment() {
             Logger.i(TAG, "Subscriptions load");
             if(recyclerData.results.size == 0) {
                 val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
-                Logger.i(TAG, "Subscription show cache (${cachePager.getResults().size})");
+                val results = cachePager.getResults();
+                Logger.i(TAG, "Subscription show cache (${results.size})");
+                setTextCentered(if (results.isEmpty()) "No results found\nSwipe down to refresh" else null);
                 setPager(cachePager);
+            } else {
+                setTextCentered(null);
             }
             _taskGetPager.run(withRefetch);
         }
@@ -294,6 +299,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                     finishRefreshLayoutLoader();
                     setLoading(false);
                     setPager(pager);
+                    setTextCentered(if (pager.getResults().isEmpty()) "No results found\nSwipe down to refresh" else null);
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to finish loading", e)
                 }
