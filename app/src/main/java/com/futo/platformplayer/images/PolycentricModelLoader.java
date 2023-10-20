@@ -61,9 +61,21 @@ public class PolycentricModelLoader implements ModelLoader<String, ByteBuffer> {
             _deferred.invokeOnCompletion(throwable -> {
                 if (throwable != null) {
                     callback.onLoadFailed(new Exception(throwable));
+                    return Unit.INSTANCE;
                 }
-                final ByteBuffer completed = _deferred.getCompleted();
-                callback.onDataReady(completed);
+
+                Deferred<ByteBuffer> deferred = _deferred;
+                if (deferred == null) {
+                    callback.onLoadFailed(new Exception("Deferred is null"));
+                    return Unit.INSTANCE;
+                }
+
+                ByteBuffer completed = deferred.getCompleted();
+                if (completed != null) {
+                    callback.onDataReady(completed);
+                } else {
+                    callback.onLoadFailed(new Exception("Completed is null"));
+                }
                 return Unit.INSTANCE;
             });
         }
