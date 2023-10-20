@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.futo.futopay.PaymentConfigurations
 import com.futo.futopay.PaymentManager
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
@@ -68,9 +69,12 @@ class BuyFragment : MainFragment() {
                 }
             }
 
-            _buttonBuy.setOnClickListener {
-                buy();
-            }
+            if(!BuildConfig.IS_PLAYSTORE_BUILD)
+                _buttonBuy.setOnClickListener {
+                    buy();
+                }
+            else
+                _buttonBuy.visibility = View.GONE;
             _buttonPaid.setOnClickListener {
                 paid();
             }

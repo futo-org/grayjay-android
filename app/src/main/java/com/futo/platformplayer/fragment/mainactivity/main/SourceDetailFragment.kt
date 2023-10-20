@@ -263,10 +263,18 @@ class SourceDetailFragment : MainFragment() {
                 BigButtonGroup(c, "Management",
                     BigButton(c, "Uninstall", "Removes the plugin from the app", R.drawable.ic_block) {
                         uninstallSource();
-                    }.withBackground(R.drawable.background_big_button_red),
+                    }.withBackground(R.drawable.background_big_button_red).apply {
+                        this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                        };
+                    },
                     if(clientIfExists?.captchaEncrypted != null)
-                        BigButton(c, "Delete Captcha", "Deletes captcha for this plugin", R.drawable.ic_block) {
+                        BigButton(c, "Delete Captcha", "Deletes stored captcha answer for this plugin", R.drawable.ic_block) {
                             clientIfExists?.updateCaptcha(null);
+                        }.apply {
+                            this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                                setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                            };
                         }.withBackground(R.drawable.background_big_button_red)
                     else null
                 )
