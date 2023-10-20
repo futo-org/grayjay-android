@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.webkit.CookieManager
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -44,7 +45,7 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(
         "Manage Polycentric identity", FieldForm.BUTTON,
-        "Manage your Polycentric identity", -2
+        "Manage your Polycentric identity", -3
     )
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
@@ -53,6 +54,19 @@ class Settings : FragmentedStorageFileJson() {
             } else {
                 it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
             }
+        }
+    }
+
+    @FormField(
+        "Open FAQ", FieldForm.BUTTON,
+        "Get answers to common questions", -2
+    )
+    fun openFAQ() {
+        try {
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://grayjay.app/faq.html"))
+            SettingsActivity.getActivity()?.startActivity(browserIntent);
+        } catch (e: Throwable) {
+            //Ignored
         }
     }
 
