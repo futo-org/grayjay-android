@@ -6,6 +6,7 @@ import com.futo.platformplayer.logging.Logger
 import okhttp3.Call
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
@@ -28,7 +29,11 @@ open class ManagedHttpClient {
 
     constructor(builder: OkHttpClient.Builder = OkHttpClient.Builder()) {
         _builderTemplate = builder;
-        client = builder.build();
+        client = builder.addNetworkInterceptor { chain ->
+            val request = beforeRequest(chain.request());
+            val response = afterRequest(chain.proceed(request));
+            return@addNetworkInterceptor response;
+        }.build();
     }
 
     open fun clone(): ManagedHttpClient {
@@ -116,7 +121,7 @@ open class ManagedHttpClient {
     fun execute(request : Request) : Response {
         ensureNotMainThread();
 
-        beforeRequest(request);
+        //beforeRequest(request);
 
         Logger.v(TAG, "HTTP Request [${request.method}] ${request.url} - [${if(request.body != null) request.body.size else 0}]");
 
@@ -156,23 +161,16 @@ open class ManagedHttpClient {
         if(true)
             Logger.v(TAG, "HTTP Response [${request.method}] ${request.url} - [${time}ms]");
 
-        afterRequest(request, resp);
+        //afterRequest(request, resp);
         return resp;
     }
 
     //Set Listeners
-    fun setOnBeforeRequest(listener : (Request)->Unit) {
-        this.onBeforeRequest = listener;
+    open fun beforeRequest(request: okhttp3.Request): okhttp3.Request {
+        return request;
     }
-    fun setOnAfterRequest(listener : (Request, Response)->Unit) {
-        this.onAfterRequest = listener;
-    }
-
-    open fun beforeRequest(request: Request) {
-        onBeforeRequest?.invoke(request);
-    }
-    open fun afterRequest(request: Request, resp: Response) {
-        onAfterRequest?.invoke(request, resp);
+    open fun afterRequest(resp: okhttp3.Response): okhttp3.Response {
+        return resp;
     }
 
 

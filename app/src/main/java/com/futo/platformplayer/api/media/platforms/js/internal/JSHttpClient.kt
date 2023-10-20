@@ -31,8 +31,12 @@ class JSHttpClient : ManagedHttpClient {
                 _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
         }
         if(!captcha?.cookieMap.isNullOrEmpty()) {
-            for(domainCookies in captcha!!.cookieMap!!)
-                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+            for(domainCookies in captcha!!.cookieMap!!) {
+                if(_currentCookieMap.containsKey(domainCookies.key))
+                    _currentCookieMap[domainCookies.key]?.putAll(domainCookies.value);
+                else
+                    _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+            }
         }
 
     }
@@ -46,14 +50,18 @@ class JSHttpClient : ManagedHttpClient {
         return newClient;
     }
 
-    override fun beforeRequest(request: Request) {
-        val domain = Uri.parse(request.url).host!!.lowercase();
-
+    override fun beforeRequest(request: okhttp3.Request): okhttp3.Request {
+        val domain = request.url.host.lowercase();
         val auth = _auth;
+
+        val newBuilder = if(auth != null || doApplyCookies)
+            request.newBuilder();
+        else
+            null;
         if (auth != null) {
             //TODO: Possibly add doApplyHeaders
             for (header in auth.headers.filter { domain.matchesDomain(it.key) }.flatMap { it.value.entries })
-                request.headers[header.key] = header.value;
+                newBuilder?.header(header.key, header.value);
         }
 
         if(doApplyCookies) {
@@ -71,36 +79,34 @@ class JSHttpClient : ManagedHttpClient {
 
                     val existingCookies = request.headers["Cookie"];
                     if(!existingCookies.isNullOrEmpty())
-                        request.headers["Cookie"] = existingCookies.trim(';') + "; " + cookieString;
+                        newBuilder?.header("Cookie", existingCookies.trim(';') + "; " + cookieString);
                     else
-                        request.headers["Cookie"] = cookieString;
+                        newBuilder?.header("Cookie", cookieString);
                 }
                 //printTestCode(request.url, request.body, auth.headers, cookieString, request.headers.filter { !auth.headers.containsKey(it.key) });
             }
         }
 
-        _jsClient?.validateUrlOrThrow(request.url);
-        super.beforeRequest(request)
+        _jsClient?.validateUrlOrThrow(request.url.toString());
+        return newBuilder?.let { it.build() } ?: request;
     }
 
-    override fun afterRequest(request: Request, resp: Response) {
-        super.afterRequest(request, resp)
-
+    override fun afterRequest(resp: okhttp3.Response): okhttp3.Response {
         if(doUpdateCookies) {
-            val domain = Uri.parse(request.url).host!!.lowercase();
-            val domainParts = domain!!.split(".");
+            val domain = resp.request.url.host.lowercase();
+            val domainParts = domain.split(".");
             val defaultCookieDomain =
                 "." + domainParts.drop(domainParts.size - 2).joinToString(".");
             for (header in resp.headers) {
-                if ((_auth != null || _currentCookieMap.isNotEmpty()) && header.key.lowercase() == "set-cookie") {
-                    val newCookies = cookieStringToMap(header.value);
-                    for (cookie in newCookies) {
-                        val endIndex = cookie.value.indexOf(";");
-                        var cookieValue = cookie.value;
+                if ((_auth != null || _currentCookieMap.isNotEmpty()) && header.first.lowercase() == "set-cookie") {
+                    //val newCookies = cookieStringToMap(header.second.split("; "));
+                    val cookie = cookieStringToPair(header.second);
+                    //for (cookie in newCookies) {
+                        var cookieValue = cookie.second;
                         var domainToUse = domain;
 
-                        if (endIndex > 0) {
-                            val cookieParts = cookie.value.split(";");
+                        if (!cookie.first.isNullOrEmpty() && !cookie.second.isNullOrEmpty()) {
+                            val cookieParts = cookie.second.split(";");
                             if (cookieParts.size == 0)
                                 continue;
                             cookieValue = cookieParts[0].trim();
@@ -126,23 +132,28 @@ class JSHttpClient : ManagedHttpClient {
                             _currentCookieMap!!.put(domainToUse, newMap)
                             newMap;
                         }
-                        if(cookieMap.containsKey(cookie.key) || doAllowNewCookies)
-                            cookieMap.put(cookie.key, cookieValue);
-                    }
+                        if(cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                            cookieMap.put(cookie.first, cookieValue);
+                    //}
                 }
             }
         }
+        return resp;
     }
 
 
     private fun cookieStringToMap(parts: List<String>): Map<String, String> {
         val map = hashMapOf<String, String>();
         for(cookie in parts) {
-            val cookieKey = cookie.substring(0, cookie.indexOf("="));
-            val cookieVal = cookie.substring(cookie.indexOf("=") + 1);
-            map.put(cookieKey.trim(), cookieVal.trim());
+            val pair = cookieStringToPair(cookie)
+            map.put(pair.first, pair.second);
         }
         return map;
+    }
+    private fun cookieStringToPair(cookie: String): Pair<String, String> {
+        val cookieKey = cookie.substring(0, cookie.indexOf("="));
+        val cookieVal = cookie.substring(cookie.indexOf("=") + 1);
+        return Pair(cookieKey.trim(), cookieVal.trim());
     }
 
     //Prints out code for test reproduction..
