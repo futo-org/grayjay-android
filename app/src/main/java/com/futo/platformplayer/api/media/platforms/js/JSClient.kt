@@ -4,6 +4,7 @@ import android.content.Context
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
+import com.caoccao.javet.values.primitive.V8ValueNull
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
@@ -23,6 +24,7 @@ import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.platforms.js.internal.*
 import com.futo.platformplayer.api.media.platforms.js.models.*
+import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -431,8 +433,11 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("url", "A content url (this platform)")
     override fun getComments(url: String): IPager<IPlatformComment> = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSCommentPager(config, plugin,
-            plugin.executeTyped("source.getComments(${Json.encodeToString(url)})"));
+        val pager = plugin.executeTyped<V8Value>("source.getComments(${Json.encodeToString(url)})");
+        if (pager !is V8ValueObject) { //TODO: Maybe solve this better
+            return@isBusyWith EmptyPager<IPlatformComment>();
+        }
+        return@isBusyWith JSCommentPager(config, plugin, pager);
     }
     @JSDocs(17, "source.getSubComments(comment)", "Gets replies for a given comment")
     @JSDocsParameter("comment", "Comment object that was returned by getComments")
