@@ -2,6 +2,7 @@ package com.futo.platformplayer.others
 
 import android.net.Uri
 import android.webkit.*
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.constructs.Event1
@@ -43,6 +44,8 @@ class LoginWebViewClient : WebViewClient {
     private var urlFound = false;
 
     override fun onPageFinished(view: WebView?, url: String?) {
+        if(BuildConfig.DEBUG)
+            Logger.i(TAG, "Login Url Page: " + url);
         super.onPageFinished(view, url);
         onPageLoaded.emit(view, url);
     }
@@ -56,11 +59,29 @@ class LoginWebViewClient : WebViewClient {
             return null;
         }
 
+        var completionUrlExcludeQuery = false
+        var completionUrlToCheck = if(urlFound) null else _authConfig.completionUrl;
+        if(completionUrlToCheck != null) {
+            if(completionUrlToCheck.endsWith("?*")) {
+                completionUrlToCheck = completionUrlToCheck.substring(0, completionUrlToCheck.length - 2);
+                completionUrlExcludeQuery = true;
+            }
+        }
+
+
         val domain = request.url.host;
         val domainLower = request.url.host?.lowercase();
+        val urlString = request.url.toString();
         if(_authConfig.completionUrl == null)
             urlFound = true;
-        else urlFound = urlFound || request.url == Uri.parse(_authConfig.completionUrl);
+        else urlFound = urlFound || (
+                if(completionUrlExcludeQuery)
+                    (if(urlString.contains("?"))
+                        urlString.substring(0, urlString.indexOf("?")) == completionUrlToCheck
+                    else urlString == completionUrlToCheck)
+                else
+                    request.url == Uri.parse(_authConfig.completionUrl)
+        );
 
         //HEADERS
         if(domainLower != null) {

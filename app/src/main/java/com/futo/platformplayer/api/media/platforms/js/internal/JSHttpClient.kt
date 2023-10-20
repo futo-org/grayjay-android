@@ -68,7 +68,12 @@ class JSHttpClient : ManagedHttpClient {
 
                 if(cookiesToApply.size > 0) {
                     val cookieString = cookiesToApply.map { it.key + "=" + it.value }.joinToString("; ");
-                    request.headers["Cookie"] = cookieString;
+
+                    val existingCookies = request.headers["Cookie"];
+                    if(!existingCookies.isNullOrEmpty())
+                        request.headers["Cookie"] = existingCookies.trim(';') + "; " + cookieString;
+                    else
+                        request.headers["Cookie"] = cookieString;
                 }
                 //printTestCode(request.url, request.body, auth.headers, cookieString, request.headers.filter { !auth.headers.containsKey(it.key) });
             }

@@ -14,13 +14,13 @@ class BigButtonGroup : LinearLayout {
         _header = findViewById(R.id.header_title);
         _buttons = findViewById(R.id.buttons);
     }
-    constructor(context: Context, header: String, vararg buttons: BigButton) : super(context) {
+    constructor(context: Context, header: String, vararg buttons: BigButton?) : super(context) {
         inflate(context, R.layout.big_button_group, this);
         _header = findViewById(R.id.header_title);
         _buttons = findViewById(R.id.buttons);
 
         _header.text = header;
-        for(button in buttons)
+        for(button in buttons.filterNotNull())
             _buttons.addView(button);
     }
 

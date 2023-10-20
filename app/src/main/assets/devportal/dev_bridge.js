@@ -217,6 +217,9 @@ function pluginUpdateTestPlugin(config) {
 }
 function pluginLoginTestPlugin() {
     return syncGET("/plugin/loginTestPlugin", {});
+}//captchaLoginTestPlugin
+function pluginCaptchaTestPlugin(url, html) {
+    return syncPOST("/plugin/captchaTestPlugin?url=" + url, {}, html);
 }
 function pluginLogoutTestPlugin() {
     return syncGET("/plugin/logoutTestPlugin", {});

@@ -16,6 +16,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -320,7 +321,16 @@ class StateSubscriptions {
                         synchronized(failedPlugins) {
                             //Fail all subscription calls to plugin if it has a captcha issue
                             if(ex.config is SourcePluginConfig && !failedPlugins.contains(ex.config.id)) {
-                                Logger.w(TAG, "Subscriptions fetch ignoring plugin [${ex.config.name}] due to Captcha");
+                                Logger.w(TAG, "Subscriptionsgnoring plugin [${ex.config.name}] due to Captcha");
+                                failedPlugins.add(ex.config.id);
+                            }
+                        }
+                    }
+                    else if(ex is ScriptCriticalException) {
+                        synchronized(failedPlugins) {
+                            //Fail all subscription calls to plugin if it has a critical issue
+                            if(ex.config is SourcePluginConfig && !failedPlugins.contains(ex.config.id)) {
+                                Logger.w(TAG, "Subscriptions ignoring plugin [${ex.config.name}] due to critical exception:\n" + ex.message);
                                 failedPlugins.add(ex.config.id);
                             }
                         }

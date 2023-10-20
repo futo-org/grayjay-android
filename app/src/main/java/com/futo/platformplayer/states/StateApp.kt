@@ -29,6 +29,7 @@ import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.Serializer
+import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -672,13 +673,20 @@ class StateApp {
             UIDialogs.showConfirmationDialog(context, "Captcha required\nPlugin [${client.config.name}]", {
                 CaptchaActivity.showCaptcha(context, client.config, exception.url, exception.body) {
                     hasCaptchaDialog = false;
-                    StatePlugins.instance.setPluginCaptcha(client.config.id, it);
-                    scopeOrNull?.launch(Dispatchers.IO) {
-                        try {
-                            StatePlatform.instance.reloadClient(context, client.config.id);
-                        } catch (e: Throwable) {
-                            Logger.e(SourceDetailFragment.TAG, "Failed to reload client.", e)
-                            return@launch;
+
+                    if(client is DevJSClient) {
+                        client.setCaptcha(it);
+                        client.recreate(context);
+                    }
+                    else {
+                        StatePlugins.instance.setPluginCaptcha(client.config.id, it);
+                        scopeOrNull?.launch(Dispatchers.IO) {
+                            try {
+                                StatePlatform.instance.reloadClient(context, client.config.id);
+                            } catch (e: Throwable) {
+                                Logger.e(SourceDetailFragment.TAG, "Failed to reload client.", e)
+                                return@launch;
+                            }
                         }
                     }
                 }

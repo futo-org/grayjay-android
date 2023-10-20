@@ -298,6 +298,7 @@ class V8Plugin {
         private fun throwExceptionFromV8(config: IV8PluginConfig, pluginType: String, msg: String, innerEx: Exception? = null, stack: String? = null, code: String? = null) {
             when(pluginType) {
                 "ScriptException" -> throw ScriptException(config, msg, innerEx, stack, code);
+                "CriticalException" -> throw ScriptCriticalException(config, msg, innerEx, stack, code);
                 "AgeException" -> throw ScriptAgeException(config, msg, innerEx, stack, code);
                 "UnavailableException" -> throw ScriptUnavailableException(config, msg, innerEx, stack, code);
                 "ScriptExecutionException" -> throw ScriptExecutionException(config, msg, innerEx, stack, code);

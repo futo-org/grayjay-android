@@ -1,6 +1,7 @@
 package com.futo.platformplayer.developer
 
 import android.content.Context
+import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.LoginActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.HttpContext
@@ -196,6 +197,28 @@ class DeveloperEndpoints(private val context: Context) {
         try {
             _testPluginVariables.clear();
             context.respondCode(200);
+        }
+        catch(ex: Throwable) {
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+        }
+    }
+    @HttpPOST("/plugin/captchaTestPlugin")
+    fun pluginCaptchaTestPlugin(context: HttpContext) {
+        val config = _testPlugin?.config as SourcePluginConfig;
+        val url = context.query.get("url")
+        val html = context.readContentString();
+        try {
+            val captchaConfig = config.captcha;
+            if(captchaConfig == null) {
+                context.respondCode(403, "This plugin doesn't support captcha");
+                return;
+            }
+            CaptchaActivity.showCaptcha(StateApp.instance.context, config, url, html) {
+                _testPluginVariables.clear();
+                _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, it), JSHttpClient(null, null, it));
+
+            };
+            context.respondCode(200, "Captcha started");
         }
         catch(ex: Throwable) {
             context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
