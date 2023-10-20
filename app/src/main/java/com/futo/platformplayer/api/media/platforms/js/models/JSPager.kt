@@ -7,6 +7,7 @@ import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.warnIfMainThread
 
@@ -27,7 +28,7 @@ abstract class JSPager<T> : IPager<T> {
         this.pager = pager;
         this.config = config;
 
-        _hasMorePages = pager.getOrThrow(config, "hasMore", "Pager");
+        _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
         getResults();
     }
 
@@ -45,7 +46,7 @@ abstract class JSPager<T> : IPager<T> {
         pager = plugin.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
             pager.invoke("nextPage", arrayOf<Any>());
         };
-        _hasMorePages = pager.getOrThrow(config, "hasMore", "Pager");
+        _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
         _resultChanged = true;
         /*
         try {
