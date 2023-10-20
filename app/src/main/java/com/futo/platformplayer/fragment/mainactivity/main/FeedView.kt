@@ -39,6 +39,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private val _spinnerSortBy: Spinner;
     private val _containerSortBy: LinearLayout;
     private val _tagsView: TagsView;
+    private val _textCentered: TextView;
 
     protected val _toolbarContentView: LinearLayout;
 
@@ -68,6 +69,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         this.fragment = fragment;
         inflater.inflate(R.layout.fragment_feed, this);
 
+        _textCentered = findViewById(R.id.text_centered);
         _progress_bar = findViewById(R.id.progress_bar);
         _progress_bar.inactiveColor = Color.TRANSPARENT;
 
@@ -167,6 +169,10 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         };
 
         _recyclerResults.addOnScrollListener(_scrollListener);
+    }
+
+    protected fun setTextCentered(text: String?) {
+        _textCentered.text = text;
     }
 
     fun onResume() {

@@ -69,6 +69,8 @@ class ImportSubscriptionsFragment : MainFragment() {
         private var _currentLoadIndex = 0;
 
         private var _taskLoadChannel: TaskHandler<String, IPlatformChannel>;
+        private var _counter: Int = 0;
+        private var _limitToastShown = false;
 
         constructor(fragment: ImportSubscriptionsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -104,6 +106,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             setLoading(false);
 
             _taskLoadChannel = TaskHandler<String, IPlatformChannel>({_fragment.lifecycleScope}, { link ->
+                _counter++;
                 val channel: IPlatformChannel = StatePlatform.instance.getChannelLive(link, false);
                 return@TaskHandler channel;
             }).success {
@@ -124,6 +127,8 @@ class ImportSubscriptionsFragment : MainFragment() {
         }
 
         fun onShown(parameter: Any ?, isBack: Boolean) {
+            _counter = 0;
+            _limitToastShown = false;
             updateSelected();
 
             val itemsRemoved = _items.size;
@@ -157,6 +162,15 @@ class ImportSubscriptionsFragment : MainFragment() {
 
         private fun load() {
             setLoading(true);
+            if (_counter >= MAXIMUM_BATCH_SIZE) {
+                if (!_limitToastShown) {
+                    _limitToastShown = true;
+                    UIDialogs.toast(context, "Stopped after $MAXIMUM_BATCH_SIZE to avoid rate limit, re-enter to import rest");
+                }
+
+                setLoading(false);
+                return;
+            }
             _taskLoadChannel.run(_links[_currentLoadIndex]);
         }
 
@@ -196,6 +210,7 @@ class ImportSubscriptionsFragment : MainFragment() {
 
     companion object {
         val TAG = "ImportSubscriptionsFragment";
+        private const val MAXIMUM_BATCH_SIZE = 75;
         fun newInstance() = ImportSubscriptionsFragment().apply {}
     }
 }

@@ -76,22 +76,37 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
-            <LinearLayout
-                android:orientation="vertical"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <com.futo.platformplayer.views.others.ProgressBar
-                    android:id="@+id/progress_bar"
+                android:layout_height="match_parent">
+                <LinearLayout
+                    android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp" />
+                    android:layout_height="wrap_content">
+                    <com.futo.platformplayer.views.others.ProgressBar
+                        android:id="@+id/progress_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp" />
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/list_results"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical" />
-            </LinearLayout>
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/list_results"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical" />
+                </LinearLayout>
 
+                <TextView
+                    android:id="@+id/text_centered"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:gravity="center"
+                    android:textColor="@color/gray_ac"
+                    android:textSize="12dp" />
+            </FrameLayout>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
