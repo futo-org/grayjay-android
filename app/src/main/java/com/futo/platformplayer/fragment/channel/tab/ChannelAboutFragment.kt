@@ -77,7 +77,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
         };
         _textName?.text = channel.name;
 
-        val metadata = "${channel.subscribers.toHumanNumber()} subscribers";
+        val metadata = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} subscribers" else "";
         _textMetadata?.text = metadata;
         _lastChannel = channel;
         setLinks(channel.links, channel.name);

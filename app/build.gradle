@@ -95,7 +95,7 @@ android {
     }
 
     defaultConfig {
-        minSdk 29
+        minSdk 28
         targetSdk 33
         versionCode gitVersionCode
         versionName gitVersionName

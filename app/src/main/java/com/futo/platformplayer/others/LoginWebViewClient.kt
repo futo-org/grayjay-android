@@ -12,6 +12,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.matchesDomain
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class LoginWebViewClient : WebViewClient {
     private val LOG_VERBOSE = false;

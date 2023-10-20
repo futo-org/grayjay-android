@@ -12,13 +12,16 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.exceptions.ChannelException
+import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
@@ -31,6 +34,7 @@ import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -160,8 +164,17 @@ class SubscriptionsFeedFragment : MainFragment() {
         private val _filterLock = Object();
         private val _filterSettings = FragmentedStorage.get<FeedFilterSettings>("subFeedFilter");
 
+        private var _bypassRateLimit = false;
         private val _lastExceptions: List<Throwable>? = null;
         private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({StateApp.instance.scope}, { withRefresh ->
+            if(!_bypassRateLimit) {
+                val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
+                val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.config.subscriptionRateLimit}" }.joinToString("\n");
+                val rateLimitPlugins = subRequestCounts.filter { clientCount -> clientCount.key.config.subscriptionRateLimit?.let { rateLimit -> clientCount.value > rateLimit } == true }
+                Logger.w(TAG, "Refreshing subscriptions with requests:\n" + reqCountStr);
+                if(rateLimitPlugins.any())
+                    throw RateLimitException(rateLimitPlugins.map { it.key.id });
+            }
             val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh);
 
             val currentExs = StateSubscriptions.instance.globalSubscriptionExceptions;
@@ -171,6 +184,29 @@ class SubscriptionsFeedFragment : MainFragment() {
             return@TaskHandler resp;
         })
             .success { loadedResult(it); }
+            .exception<RateLimitException> {
+                fragment.lifecycleScope.launch(Dispatchers.IO) {
+                    val subs = StateSubscriptions.instance.getSubscriptions();
+                    val subsByLimited = it.pluginIds.map{ StatePlatform.instance.getClientOrNull(it) }
+                        .filterIsInstance<JSClient>()
+                        .associateWith { client -> subs.filter { it.getClient() == client } }
+                        .map { Pair(it.key, it.value) }
+
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.showDialog(context, R.drawable.ic_security_pred,
+                            "Rate Limit Warning",  "This is a temporary measure to prevent people from hitting rate limit until we have better support for lots of subscriptions." +
+                                    "\n\nYou have too many subscriptions for the following plugins:\n",
+                            subsByLimited.map { "${it.first.config.name}: ${it.second.size} Subscriptions" } .joinToString("\n"), 0, UIDialogs.Action("Refresh Anyway", {
+                                _bypassRateLimit = true;
+                                loadResults();
+                            }, UIDialogs.ActionStyle.DANGEROUS_TEXT),
+                            UIDialogs.Action("OK", {
+                                finishRefreshLayoutLoader();
+                                setLoading(false);
+                            }, UIDialogs.ActionStyle.PRIMARY));
+                    }
+                }
+            }
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
                 if(it !is CancellationException)

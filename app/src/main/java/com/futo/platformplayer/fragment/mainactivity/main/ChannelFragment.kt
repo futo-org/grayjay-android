@@ -361,7 +361,7 @@ class ChannelFragment : MainFragment() {
 
             _buttonSubscribe.setSubscribeChannel(channel);
             _textChannel.text = channel.name;
-            _textChannelSub.text = "${channel.subscribers.toHumanNumber()} subscribers";
+            _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} subscribers" else "";
 
             _creatorThumbnail.setThumbnail(channel.thumbnail, true);
             Glide.with(_imageBanner)

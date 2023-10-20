@@ -873,7 +873,7 @@ class VideoDetailView : ConstraintLayout {
         _channelName.text = video.author.name;
         _playWhenReady = true;
         if(video.author.subscribers != null) {
-            _channelMeta.text = video.author.subscribers!!.toHumanNumber() + " subscribers";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
@@ -982,7 +982,7 @@ class VideoDetailView : ConstraintLayout {
         _title.text = video.name;
         _channelName.text = video.author.name;
         if(video.author.subscribers != null) {
-            _channelMeta.text = video.author.subscribers!!.toHumanNumber() + " subscribers";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
@@ -1610,10 +1610,10 @@ class VideoDetailView : ConstraintLayout {
         _lastSubtitleSource = toSet;
     }
 
-    private fun handleUnavailableVideo() {
+    private fun handleUnavailableVideo(msg: String? = null) {
         if (!nextVideo()) {
             if(video?.datetime == null || video?.datetime!! < OffsetDateTime.now().minusHours(1))
-                UIDialogs.showDialog(context, R.drawable.ic_lock, "Unavailable video", "This video is unavailable.", null, 0,
+                UIDialogs.showDialog(context, R.drawable.ic_lock, "Unavailable video", msg ?: "This video is unavailable.", null, 0,
                     UIDialogs.Action("Back", {
                         this@VideoDetailView.onClose.emit();
                     }, UIDialogs.ActionStyle.PRIMARY));
@@ -2092,7 +2092,7 @@ class VideoDetailView : ConstraintLayout {
         }
         .exception<ScriptUnavailableException> {
             Logger.w(TAG, "exception<ScriptUnavailableException>", it);
-            handleUnavailableVideo();
+            handleUnavailableVideo(it.message);
         }
         .exception<ScriptException> {
             Logger.w(TAG, "exception<ScriptException>", it)

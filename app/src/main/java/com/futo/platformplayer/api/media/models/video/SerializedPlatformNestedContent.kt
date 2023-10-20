@@ -30,7 +30,7 @@ open class SerializedPlatformNestedContent(
     override val contentProvider: String?,
     override val contentThumbnails: Thumbnails
 ) : IPlatformNestedContent, SerializedPlatformContent {
-    final override val contentType: ContentType get() = ContentType.MEDIA;
+    final override val contentType: ContentType get() = ContentType.NESTED_VIDEO;
 
     override val contentPlugin: String? = StatePlatform.instance.getContentClientOrNull(contentUrl)?.id;
     override val contentSupported: Boolean get() = contentPlugin != null;
