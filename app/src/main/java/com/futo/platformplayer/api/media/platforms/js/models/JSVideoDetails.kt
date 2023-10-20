@@ -1,6 +1,7 @@
 package com.futo.platformplayer.api.media.platforms.js.models
 
 import com.caoccao.javet.values.V8Value
+import com.caoccao.javet.values.primitive.V8ValueNull
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.IPlatformClient
@@ -99,8 +100,11 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             return getCommentsJS(client);
     }
 
-    private fun getCommentsJS(client: JSClient): JSCommentPager {
-        val commentPager = _content.invoke<V8ValueObject>("getComments", arrayOf<Any>());
+    private fun getCommentsJS(client: JSClient): IPager<IPlatformComment>? {
+        val commentPager = _content.invoke<V8Value>("getComments", arrayOf<Any>());
+        if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
+            return null;
+
         return JSCommentPager(_pluginConfig, client.getUnderlyingPlugin(), commentPager);
     }
 }
