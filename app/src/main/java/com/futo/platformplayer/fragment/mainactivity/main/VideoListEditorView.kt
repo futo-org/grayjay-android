@@ -57,10 +57,8 @@ abstract class VideoListEditorView : LinearLayout {
         buttonPlayAll.setOnClickListener { onPlayAllClick(); };
         buttonShuffle.setOnClickListener { onShuffleClick(); };
 
-        if (canEdit())
-            _buttonEdit.setOnClickListener { onEditClick(); };
-        else
-            _buttonEdit.visibility = View.GONE;
+        _buttonEdit.setOnClickListener { onEditClick(); };
+        setButtonDownloadVisible(canEdit());
 
         videoListEditorView.onVideoOrderChanged.subscribe(::onVideoOrderChanged);
         videoListEditorView.onVideoRemoved.subscribe(::onVideoRemoved);
