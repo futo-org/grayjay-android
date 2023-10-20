@@ -69,9 +69,17 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
         if(pagerToAdd == null) {
             if(toReplacePager != null && toReplacePager is PlaceholderPager && error != null) {
                 val pluginId = toReplacePager.placeholderFactory.invoke().id?.pluginId ?: "";
-                _currentPager = PlaceholderPager(5) {
+
+                _pagersReusable.add((PlaceholderPager(5) {
                     return@PlaceholderPager PlatformContentPlaceholder(pluginId, error)
-                } as IPager<T>;
+                } as IPager<T>).asReusable());
+                _currentPager = recreatePager(getCurrentSubPagers());
+
+                if(_currentPager is MultiParallelPager<*>)
+                    runBlocking { (_currentPager as MultiParallelPager).initialize(); };
+                else if(_currentPager is MultiPager<*>)
+                    (_currentPager as MultiPager).initialize()
+
                 onPagerChanged.emit(_currentPager);
             }
             return;

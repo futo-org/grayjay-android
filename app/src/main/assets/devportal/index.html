@@ -681,6 +681,9 @@
 					});
 				}, 1000);
 			},
+			captchaTestPlugin() {
+				captchaLoginTestPlugin();
+			},
 			logoutTestPlugin() {
 				pluginLogoutTestPlugin();
 			},
@@ -838,6 +841,12 @@
 					this.Testing.lastResultError = "";
 				}
 				catch(ex) {
+					if(ex.plugin_type == "CaptchaRequiredException") {
+						let shouldCaptcha = confirm("Do you want to request captcha?");
+						if(shouldCaptcha) {
+							pluginCaptchaTestPlugin(ex.url, ex.body);
+						}
+					}
 					console.error("Failed to run test for " + req.title, ex);
 					this.Testing.lastResult = ""
 					if(ex.message)

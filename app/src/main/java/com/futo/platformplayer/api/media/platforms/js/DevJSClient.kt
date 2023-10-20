@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.states.StateApp
 import java.util.*
 
 class DevJSClient : JSClient {
@@ -24,6 +25,10 @@ class DevJSClient : JSClient {
         _auth = auth;
         _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
+
+        onCaptchaException.subscribe { client, captcha ->
+            StateApp.instance.handleCaptchaException(client, captcha);
+        }
     }
     //TODO: Misisng auth/captcha pass on purpose?
     constructor(context: Context, descriptor: SourcePluginDescriptor, script: String, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, savedState: String? = null, devID: String? = null): super(context, descriptor, savedState, script) {
@@ -31,6 +36,10 @@ class DevJSClient : JSClient {
         _auth = auth;
         _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
+
+        onCaptchaException.subscribe { client, captcha ->
+            StateApp.instance.handleCaptchaException(client, captcha);
+        }
     }
 
     fun setCaptcha(captcha: SourceCaptchaData? = null) {

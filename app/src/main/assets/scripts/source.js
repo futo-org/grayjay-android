@@ -72,6 +72,11 @@ class CaptchaRequiredException extends Error {
         this.body = body;
     }
 }
+class CriticalException extends ScriptException {
+    constructor(msg) {
+        super("CriticalException", msg);
+    }
+}
 class UnavailableException extends ScriptException {
     constructor(msg) {
         super("UnavailableException", msg);

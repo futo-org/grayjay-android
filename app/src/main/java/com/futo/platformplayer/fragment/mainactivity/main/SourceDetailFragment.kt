@@ -258,11 +258,17 @@ class SourceDetailFragment : MainFragment() {
                 }
             }
 
+            val clientIfExists = StatePlugins.instance.getPlugin(config.id);
             groups.add(
                 BigButtonGroup(c, "Management",
                     BigButton(c, "Uninstall", "Removes the plugin from the app", R.drawable.ic_block) {
                         uninstallSource();
-                    }.withBackground(R.drawable.background_big_button_red)
+                    }.withBackground(R.drawable.background_big_button_red),
+                    if(clientIfExists?.captchaEncrypted != null)
+                        BigButton(c, "Delete Captcha", "Deletes captcha for this plugin", R.drawable.ic_block) {
+                            clientIfExists?.updateCaptcha(null);
+                        }.withBackground(R.drawable.background_big_button_red)
+                    else null
                 )
             )
 
