@@ -70,7 +70,7 @@ class CommentViewHolder : ViewHolder {
                 args.processHandle.opinion(c.reference, Opinion.neutral);
             }
 
-            _layoutComment.alpha = if (args.dislikes > 2 && args.dislikes / (args.likes + args.dislikes) >= 0.7) 0.5f else 1.0f;
+            _layoutComment.alpha = if (args.dislikes > 2 && args.dislikes.toFloat() / (args.likes + args.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
@@ -105,7 +105,7 @@ class CommentViewHolder : ViewHolder {
 
         val rating = comment.rating;
         if (rating is RatingLikeDislikes) {
-            _layoutComment.alpha = if (rating.dislikes > 0 && rating.dislikes / (rating.likes + rating.dislikes) >= 0.7) 0.5f else 1.0f;
+            _layoutComment.alpha = if (rating.dislikes > 2 && rating.dislikes.toFloat() / (rating.likes + rating.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
         } else {
             _layoutComment.alpha = 1.0f;
         }
