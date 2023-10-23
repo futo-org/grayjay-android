@@ -72,22 +72,27 @@ class SubscriptionViewHolder : ViewHolder {
         } else {
             _creatorThumbnail.setThumbnail(sub.channel.thumbnail, false);
             _taskLoadProfile.run(sub.channel.id);
+            _textName.text = sub.channel.name;
         }
 
-        _textName.text = sub.channel.name;
         _platformIndicator.setPlatformFromClientID(sub.channel.id.pluginId);
     }
 
     private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
         val dp_46 = 46.dp(itemView.context.resources);
-        val avatar = cachedPolycentricProfile?.profile?.systemState?.avatar?.selectBestImage(dp_46 * dp_46)
-            ?.let { it.toURLInfoSystemLinkUrl(cachedPolycentricProfile.profile.system.toProto(), it.process, cachedPolycentricProfile.profile.systemState.servers.toList()) };
+        val profile = cachedPolycentricProfile?.profile;
+        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_46 * dp_46)
+            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
 
         if (avatar != null) {
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(this.subscription?.channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(cachedPolycentricProfile?.profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+        }
+
+        if (profile != null) {
+            _textName.text = profile.systemState.username;
         }
     }
 

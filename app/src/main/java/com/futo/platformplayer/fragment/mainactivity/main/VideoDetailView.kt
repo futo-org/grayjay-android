@@ -870,7 +870,6 @@ class VideoDetailView : ConstraintLayout {
         _commentsList.clear();
         _platform.setPlatformFromClientID(video.id.pluginId);
         _subTitle.text = subTitleSegments.joinToString(" • ");
-        _channelName.text = video.author.name;
         _playWhenReady = true;
         if(video.author.subscribers != null) {
             _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
@@ -897,6 +896,7 @@ class VideoDetailView : ConstraintLayout {
         } else {
             setPolycentricProfile(null, animate = false);
             _taskLoadPolycentricProfile.run(video.author.id);
+            _channelName.text = video.author.name;
         }
 
         _player.clear();
@@ -1971,14 +1971,24 @@ class VideoDetailView : ConstraintLayout {
     private fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
         _polycentricProfile = cachedPolycentricProfile;
 
-        if (cachedPolycentricProfile?.profile == null) {
-            _layoutMonetization.visibility = View.GONE;
-            _creatorThumbnail.setHarborAvailable(false, animate);
-            return;
+        val dp_35 = 35.dp(context.resources)
+        val profile = cachedPolycentricProfile?.profile;
+        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
+            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
+
+        if (avatar != null) {
+            _creatorThumbnail.setThumbnail(avatar, animate);
+        } else {
+            _creatorThumbnail.setThumbnail(video?.author?.thumbnail, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate);
         }
 
-        _layoutMonetization.visibility = View.VISIBLE;
-        _creatorThumbnail.setHarborAvailable(true, animate);
+        if (profile != null) {
+            _channelName.text = cachedPolycentricProfile.profile.systemState.username;
+            _layoutMonetization.visibility = View.VISIBLE;
+        } else {
+            _layoutMonetization.visibility = View.GONE;
+        }
     }
 
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {

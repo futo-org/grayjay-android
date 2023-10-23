@@ -8,6 +8,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.resolveChannelUrl
+import com.futo.platformplayer.resolveChannelUrls
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.stores.CachedPolycentricProfileStorage
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -37,7 +38,8 @@ class PolycentricCache {
                     ContentType.AVATAR.value,
                     ContentType.USERNAME.value,
                     ContentType.DESCRIPTION.value,
-                    ContentType.STORE.value
+                    ContentType.STORE.value,
+                    ContentType.SERVER.value
                 )
             ).eventsList.map { e -> SignedEvent.fromProto(e) };
 
@@ -88,8 +90,9 @@ class PolycentricCache {
 
                 if (result.profile != null) {
                     for (claim in result.profile.ownedClaims) {
-                        val url = claim.claim.resolveChannelUrl() ?: continue;
-                        _profileUrlCache.map[url] = result;
+                        val urls = claim.claim.resolveChannelUrls();
+                        for (url in urls)
+                            _profileUrlCache.map[url] = result;
                     }
                 }
 

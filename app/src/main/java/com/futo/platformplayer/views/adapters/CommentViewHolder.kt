@@ -93,6 +93,7 @@ class CommentViewHolder : ViewHolder {
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
+        _creatorThumbnail.setHarborAvailable(comment is PolycentricPlatformComment,false);
         _textAuthor.text = comment.author.name;
 
         val date = comment.date;

@@ -32,6 +32,7 @@ import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.video.FutoThumbnailPlayer
+import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 
 open class PreviewVideoView : LinearLayout {
@@ -58,11 +59,12 @@ open class PreviewVideoView : LinearLayout {
 
     protected val _exoPlayer: PlayerManager?;
 
-    private val _taskLoadValidClaims = TaskHandler<PlatformID, PolycentricCache.CachedOwnedClaims>(StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getValidClaimsAsync(it).await() })
-        .success { it -> updateClaimsLayout(it, animate = true) }
+    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
+        StateApp.instance.scopeGetter,
+        { PolycentricCache.instance.getProfileAsync(it) })
+        .success { it -> onProfileLoaded(it, true) }
         .exception<Throwable> {
-            Logger.w(TAG, "Failed to load claims.", it);
+            Logger.w(TAG, "Failed to load profile.", it);
         };
 
     val onVideoClicked = Event2<IPlatformVideo, Long>();
@@ -145,15 +147,7 @@ open class PreviewVideoView : LinearLayout {
 
 
     open fun bind(content: IPlatformContent) {
-        _taskLoadValidClaims.cancel();
-
-        val cachedClaims = PolycentricCache.instance.getCachedValidClaims(content.author.id);
-        if (cachedClaims != null) {
-            updateClaimsLayout(cachedClaims, animate = false);
-        } else {
-            updateClaimsLayout(null, animate = false);
-            _taskLoadValidClaims.run(content.author.id);
-        }
+        _taskLoadProfile.cancel();
 
         isClickable = true;
 
@@ -161,16 +155,25 @@ open class PreviewVideoView : LinearLayout {
 
         stopPreview();
 
-        if(_imageChannel != null)
-            Glide.with(_imageChannel)
-                .load(content.author.thumbnail)
-                .placeholder(R.drawable.placeholder_channel_thumbnail)
-                .into(_imageChannel);
+        val cachedProfile = PolycentricCache.instance.getCachedProfile(content.author.url, true);
+        if (cachedProfile != null) {
+            onProfileLoaded(cachedProfile, false);
+        } else {
+            _imageNeopassChannel?.visibility = View.GONE;
+            _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
+            _imageChannel?.let {
+                Glide.with(_imageChannel)
+                    .load(content.author.thumbnail)
+                    .placeholder(R.drawable.placeholder_channel_thumbnail)
+                    .into(_imageChannel);
+            }
+            _taskLoadProfile.run(content.author.id);
+            _textChannelName.text = content.author.name
+        }
 
         _imageChannel?.clipToOutline = true;
 
         _textVideoName.text = content.name;
-        _textChannelName.text = content.author.name
         _layoutDownloaded.visibility = if (StateDownloads.instance.isDownloaded(content.id)) VISIBLE else GONE;
 
         _platformIndicator.setPlatformFromClientID(content.id.pluginId);
@@ -296,22 +299,50 @@ open class PreviewVideoView : LinearLayout {
         _playerVideoThumbnail?.setMuteChangedListener(callback);
     }
 
-    private fun updateClaimsLayout(claims: PolycentricCache.CachedOwnedClaims?, animate: Boolean) {
+    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
         _neopassAnimator?.cancel();
         _neopassAnimator = null;
 
-        val harborAvailable = claims != null && !claims.ownedClaims.isNullOrEmpty();
-        if (harborAvailable) {
-            _imageNeopassChannel?.visibility = View.VISIBLE
-            if (animate) {
-                _neopassAnimator = ObjectAnimator.ofFloat(_imageNeopassChannel, "alpha", 0.0f, 1.0f).setDuration(500)
-                _neopassAnimator?.start()
+        val profile = cachedPolycentricProfile?.profile;
+        if (_creatorThumbnail != null) {
+            val dp_32 = 32.dp(context.resources);
+            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_32 * dp_32)
+                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
+
+            if (avatar != null) {
+                _creatorThumbnail.setThumbnail(avatar, animate);
+            } else {
+                _creatorThumbnail.setThumbnail(content?.author?.thumbnail, animate);
+                _creatorThumbnail.setHarborAvailable(profile != null, animate);
             }
-        } else {
-            _imageNeopassChannel?.visibility = View.GONE
+        } else if (_imageChannel != null) {
+            val dp_28 = 28.dp(context.resources);
+            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_28 * dp_28)
+                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
+
+            if (avatar != null) {
+                _imageChannel.let {
+                    Glide.with(_imageChannel)
+                        .load(avatar)
+                        .placeholder(R.drawable.placeholder_channel_thumbnail)
+                        .into(_imageChannel);
+                }
+
+                _imageNeopassChannel?.visibility = View.VISIBLE
+                if (animate) {
+                    _neopassAnimator = ObjectAnimator.ofFloat(_imageNeopassChannel, "alpha", 0.0f, 1.0f).setDuration(500)
+                    _neopassAnimator?.start()
+                } else {
+                    _imageNeopassChannel?.alpha = 1.0f;
+                }
+            } else {
+                _imageNeopassChannel?.visibility = View.GONE
+            }
         }
 
-        _creatorThumbnail?.setHarborAvailable(harborAvailable, animate)
+        if (profile != null) {
+            _textChannelName.text = profile.systemState.username
+        }
     }
 
     companion object {

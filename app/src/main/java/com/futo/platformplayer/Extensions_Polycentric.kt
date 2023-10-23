@@ -36,3 +36,7 @@ fun Protocol.ImageBundle?.selectHighestResolutionImage(): Protocol.ImageManifest
 fun Protocol.Claim.resolveChannelUrl(): String? {
     return StatePlatform.instance.resolveChannelUrlByClaimTemplates(this.claimType.toInt(), this.claimFieldsList.associate { Pair(it.key.toInt(), it.value) })
 }
+
+fun Protocol.Claim.resolveChannelUrls(): List<String> {
+    return StatePlatform.instance.resolveChannelUrlsByClaimTemplates(this.claimType.toInt(), this.claimFieldsList.associate { Pair(it.key.toInt(), it.value) })
+}

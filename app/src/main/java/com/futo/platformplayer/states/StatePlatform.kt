@@ -784,6 +784,15 @@ class StatePlatform {
         return null;
     }
 
+    fun resolveChannelUrlsByClaimTemplates(claimType: Int, claimValues: Map<Int, String>): List<String> {
+        val urls = arrayListOf<String>();
+        for(client in getClientsByClaimType(claimType).filter { it is JSClient }) {
+            val res = (client as JSClient).resolveChannelUrlsByClaimTemplates(claimType, claimValues);
+            urls.addAll(res);
+        }
+        return urls;
+    }
+
     fun getPlaylistClientOrNull(url: String): IPlatformClient? = getEnabledClients().find { it.isPlaylistUrl(url) }
     fun getPlaylistClient(url: String): IPlatformClient = getEnabledClients().find { it.isPlaylistUrl(url) }
         ?: throw NoPlatformClientException("No client enabled that supports this playlist url (${url})");

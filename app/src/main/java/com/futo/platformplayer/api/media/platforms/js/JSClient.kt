@@ -568,6 +568,23 @@ open class JSClient : IPlatformClient {
         };
     }
 
+    fun resolveChannelUrlsByClaimTemplates(claimType: Int, values: Map<Int, String>): List<String> {
+        val urls = arrayListOf<String>();
+        channelClaimTemplates?.let {
+            if(it.containsKey(claimType)) {
+                val templates = it[claimType];
+                if(templates != null)
+                    for(value in values.keys.sortedBy { it }) {
+                        if(templates.containsKey(value)) {
+                            urls.add(templates[value]!!.replace("{{CLAIMVALUE}}", values[value]!!));
+                        }
+                    }
+            }
+        };
+
+        return urls;
+    }
+
 
     private fun <T> isBusyWith(handle: ()->T): T {
         try {

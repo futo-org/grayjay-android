@@ -57,22 +57,27 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
         } else {
             _creatorThumbnail.setThumbnail(subscription.channel.thumbnail, false);
             _taskLoadProfile.run(subscription.channel.id);
+            _name.text = subscription.channel.name;
         }
 
-        _name.text = subscription.channel.name;
         _subscription = subscription;
     }
 
     private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
         val dp_55 = 55.dp(itemView.context.resources)
-        val avatar = cachedPolycentricProfile?.profile?.systemState?.avatar?.selectBestImage(dp_55 * dp_55)
-            ?.let { it.toURLInfoSystemLinkUrl(cachedPolycentricProfile.profile.system.toProto(), it.process, cachedPolycentricProfile.profile.systemState.servers.toList()) };
+        val profile = cachedPolycentricProfile?.profile;
+        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_55 * dp_55)
+            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
 
         if (avatar != null) {
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(_channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(cachedPolycentricProfile?.profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+        }
+
+        if (profile != null) {
+            _name.text = profile.systemState.username;
         }
     }
 

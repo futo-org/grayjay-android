@@ -71,16 +71,14 @@ class CreatorSearchResultsFragment : MainFragment() {
 
         fun onShown(parameter: Any?, isBack: Boolean) {
             if(parameter is String) {
-                if(!isBack) {
-                    setQuery(parameter);
+                setQuery(parameter);
 
-                    fragment.topBar?.apply {
-                        if (this is SearchTopBarFragment) {
-                            setText(parameter);
-                            onSearch.subscribe(this) {
-                                setQuery(it);
-                            };
-                        }
+                fragment.topBar?.apply {
+                    if (this is SearchTopBarFragment) {
+                        setText(parameter);
+                        onSearch.subscribe(this) {
+                            setQuery(it);
+                        };
                     }
                 }
             }

@@ -101,14 +101,12 @@ class ContentSearchResultsFragment : MainFragment() {
 
         fun onShown(parameter: Any?, isBack: Boolean) {
             if(parameter is SuggestionsFragmentData) {
-                if(!isBack) {
-                    setQuery(parameter.query, false);
-                    setChannelUrl(parameter.channelUrl, false);
+                setQuery(parameter.query, false);
+                setChannelUrl(parameter.channelUrl, false);
 
-                    fragment.topBar?.apply {
-                        if (this is SearchTopBarFragment) {
-                            this.setText(parameter.query);
-                        }
+                fragment.topBar?.apply {
+                    if (this is SearchTopBarFragment) {
+                        this.setText(parameter.query);
                     }
                 }
             }

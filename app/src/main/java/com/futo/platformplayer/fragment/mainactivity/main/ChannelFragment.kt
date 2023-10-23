@@ -246,28 +246,45 @@ class ChannelFragment : MainFragment() {
 
                 if (parameter is String) {
                     _buttonSubscribe.setSubscribeChannel(parameter);
-                    _textChannel.text = "";
-                    _textChannelSub.text = "";
+                    setPolycentricProfileOr(parameter) {
+                        _textChannel.text = "";
+                        _textChannelSub.text = "";
+                        _creatorThumbnail.setThumbnail(null, true);
+                        Glide.with(_imageBanner)
+                            .clear(_imageBanner);
+                    };
 
                     _url = parameter;
                     loadChannel();
                 } else if (parameter is SerializedChannel) {
                     showChannel(parameter);
                     _url = parameter.url;
-                    _creatorThumbnail.setThumbnail(parameter.url, false);
                     loadChannel();
                 } else if (parameter is IPlatformChannel)
                     showChannel(parameter);
                 else if (parameter is PlatformAuthorLink) {
-                    _textChannel.text = parameter.name;
-                    _textChannelSub.text = "";
-                    _creatorThumbnail.setThumbnail(parameter.url, false);
+                    setPolycentricProfileOr(parameter.url) {
+                        _textChannel.text = parameter.name;
+                        _textChannelSub.text = "";
+                        _creatorThumbnail.setThumbnail(parameter.thumbnail, true);
+                        Glide.with(_imageBanner)
+                            .clear(_imageBanner);
+
+                        _taskLoadPolycentricProfile.run(parameter.id);
+                    };
+
                     _url = parameter.url;
                     loadChannel();
                 } else if (parameter is Subscription) {
-                    _textChannel.text = parameter.channel.name;
-                    _textChannelSub.text = "";
-                    _creatorThumbnail.setThumbnail(parameter.channel.thumbnail, false);
+                    setPolycentricProfileOr(parameter.channel.url) {
+                        _textChannel.text = parameter.channel.name;
+                        _textChannelSub.text = "";
+                        _creatorThumbnail.setThumbnail(parameter.channel.thumbnail, true);
+                        Glide.with(_imageBanner)
+                            .clear(_imageBanner);
+
+                        _taskLoadPolycentricProfile.run(parameter.channel.id);
+                    };
 
                     _url = parameter.channel.url;
                     loadChannel();
@@ -360,14 +377,7 @@ class ChannelFragment : MainFragment() {
             _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons);
 
             _buttonSubscribe.setSubscribeChannel(channel);
-            _textChannel.text = channel.name;
             _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} subscribers" else "";
-
-            _creatorThumbnail.setThumbnail(channel.thumbnail, true);
-            Glide.with(_imageBanner)
-                .load(channel.banner)
-                .crossfade()
-                .into(_imageBanner)
 
             //TODO: Find a better way to access the adapter fragments..
 
@@ -381,51 +391,68 @@ class ChannelFragment : MainFragment() {
 
             this.channel = channel;
 
-            val cachedProfile = PolycentricCache.instance.getCachedProfile(channel.url);
+            setPolycentricProfileOr(channel.url) {
+                _textChannel.text = channel.name;
+                _creatorThumbnail.setThumbnail(channel.thumbnail, true);
+                Glide.with(_imageBanner)
+                    .load(channel.banner)
+                    .crossfade()
+                    .into(_imageBanner);
+
+                _taskLoadPolycentricProfile.run(channel.id);
+            };
+        }
+
+        private fun setPolycentricProfileOr(url: String, or: () -> Unit) {
+            val cachedProfile = channel?.let { PolycentricCache.instance.getCachedProfile(it.url) };
             if (cachedProfile != null) {
                 setPolycentricProfile(cachedProfile, animate = false);
             } else {
                 setPolycentricProfile(null, animate = false);
-                _taskLoadPolycentricProfile.run(channel.id);
+                or();
             }
         }
 
         private fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
             Log.i(TAG, "setPolycentricProfile(cachedPolycentricProfile = $cachedPolycentricProfile, animate = $animate)")
 
-            val polycentricProfile = cachedPolycentricProfile?.profile;
-            if (polycentricProfile != null) {
-                _fragment.topBar?.onShown(polycentricProfile);
+            val dp_35 = 35.dp(resources)
+            val profile = cachedPolycentricProfile?.profile;
+            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
+                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
 
-                if (polycentricProfile.systemState.username.isNotBlank())
-                    _textChannel.text = polycentricProfile.systemState.username;
+            if (avatar != null) {
+                _creatorThumbnail.setThumbnail(avatar, animate);
+            } else {
+                _creatorThumbnail.setThumbnail(channel?.thumbnail, animate);
+                _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            }
 
-                val dp_35 = 35.dp(resources)
-                val avatar = polycentricProfile.systemState.avatar?.selectBestImage(dp_35 * dp_35)
-                    ?.let { it.toURLInfoSystemLinkUrl(polycentricProfile.system.toProto(), it.process, polycentricProfile.systemState.servers.toList()) };
+            val banner = profile?.systemState?.banner?.selectHighestResolutionImage()
+                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
 
-                if (avatar != null) {
-                    _creatorThumbnail.setThumbnail(avatar, true);
-                } else {
-                    _creatorThumbnail.setHarborAvailable(true, true);
-                }
+            if (banner != null) {
+                Glide.with(_imageBanner)
+                    .load(banner)
+                    .crossfade()
+                    .into(_imageBanner);
+            } else {
+                Glide.with(_imageBanner)
+                    .load(channel?.banner)
+                    .crossfade()
+                    .into(_imageBanner);
+            }
 
-                val banner = polycentricProfile.systemState.banner?.selectHighestResolutionImage()
-                    ?.let { it.toURLInfoSystemLinkUrl(polycentricProfile.system.toProto(), it.process, polycentricProfile.systemState.servers.toList()) };
-
-                if (banner != null) {
-                    Glide.with(_imageBanner)
-                        .load(banner)
-                        .crossfade()
-                        .into(_imageBanner);
-                }
+            if (profile != null) {
+                _fragment.topBar?.onShown(profile);
+                _textChannel.text = profile.systemState.username;
             }
 
             (_viewPager.adapter as ChannelViewPagerAdapter?)?.let {
-                it.getFragment<ChannelAboutFragment>().setPolycentricProfile(polycentricProfile, animate);
-                it.getFragment<ChannelMonetizationFragment>().setPolycentricProfile(polycentricProfile, animate);
-                it.getFragment<ChannelListFragment>().setPolycentricProfile(polycentricProfile, animate);
-                it.getFragment<ChannelContentsFragment>().setPolycentricProfile(polycentricProfile, animate);
+                it.getFragment<ChannelAboutFragment>().setPolycentricProfile(profile, animate);
+                it.getFragment<ChannelMonetizationFragment>().setPolycentricProfile(profile, animate);
+                it.getFragment<ChannelListFragment>().setPolycentricProfile(profile, animate);
+                it.getFragment<ChannelContentsFragment>().setPolycentricProfile(profile, animate);
                 //TODO: Call on other tabs as needed
             }
         }
