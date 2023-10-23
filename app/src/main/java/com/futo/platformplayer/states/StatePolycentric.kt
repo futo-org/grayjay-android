@@ -130,10 +130,7 @@ class StatePolycentric {
         //TODO: Currently abusing subscription concurrency for parallelism
         val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
         val pagers = profile.ownedClaims.groupBy { it.claim.claimType }.mapNotNull {
-            //TODO: Deduplicate once multiple urls in single claim is supported
-            return@mapNotNull it.value.firstOrNull();
-        }.mapNotNull {
-            val url = it.claim.resolveChannelUrl() ?: return@mapNotNull null;
+            val url = it.value.firstOrNull()?.claim?.resolveChannelUrl() ?: return@mapNotNull null;
             if (!StatePlatform.instance.hasEnabledChannelClient(url)) {
                 return@mapNotNull null;
             }
@@ -151,10 +148,7 @@ class StatePolycentric {
         val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
         val deferred = profile.ownedClaims.groupBy { it.claim.claimType }
             .mapNotNull {
-                //TODO: Deduplicate once multiple urls in single claim is supported
-                return@mapNotNull it.value.firstOrNull();
-            }.mapNotNull {
-                val url = it.claim.resolveChannelUrl() ?: return@mapNotNull null;
+                val url = it.value.firstOrNull()?.claim?.resolveChannelUrl() ?: return@mapNotNull null;
                 val client = StatePlatform.instance.getChannelClientOrNull(url) ?: return@mapNotNull null;
 
                 return@mapNotNull Pair(client, scope.async(Dispatchers.IO) {
