@@ -39,7 +39,8 @@ class StateTelemetry {
                     BuildConfig.IS_UNSTABLE_BUILD,
                     Build.BRAND,
                     Build.MANUFACTURER,
-                    Build.MODEL
+                    Build.MODEL,
+                    Build.VERSION.SDK_INT
                 );
 
                 val headers = hashMapOf(

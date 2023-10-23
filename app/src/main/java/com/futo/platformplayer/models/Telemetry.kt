@@ -11,5 +11,6 @@ data class Telemetry(
     val isUnstableBuild: Boolean,
     val brand: String,
     val manufacturer: String,
-    val model: String
+    val model: String,
+    val sdkVersion: Int
 ) { }
