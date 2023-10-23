@@ -75,7 +75,9 @@ class DedupContentPager : IPager<IPlatformContent>, IAsyncPager<IPlatformContent
         return toReturn;
     }
     private fun isSameItem(item: IPlatformContent, item2: IPlatformContent): Boolean {
-        return item.name == item2.name && (item.datetime == null || item2.datetime == null || abs(item.datetime!!.getDiffDays(item2.datetime!!)) < 2);
+        val daysAgo = Math.abs(item.datetime?.getNowDiffDays() ?: return false);
+        val maxDelta = Math.max(2, (daysAgo / 1.5).toInt()); //TODO: Better scaling delta
+        return item.name.equals(item2.name, true) && (item.datetime == null || item2.datetime == null || abs(item.datetime!!.getDiffDays(item2.datetime!!)) < maxDelta);
     }
     private fun calculateHash(item: IPlatformContent): Int {
         return combineHashCodes(listOf(item.name.hashCode(), item.datetime?.hashCode()));

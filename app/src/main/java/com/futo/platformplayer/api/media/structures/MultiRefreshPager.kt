@@ -66,25 +66,25 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
     override fun getResults(): List<T> = synchronized(_pagersReusable){ _currentPager.getResults() };
 
     private fun updatePager(pagerToAdd: IPager<T>?, toReplacePager: IPager<T>? = null, error: Throwable? = null) {
-        if(pagerToAdd == null) {
-            if(toReplacePager != null && toReplacePager is PlaceholderPager && error != null) {
-                val pluginId = toReplacePager.placeholderFactory.invoke().id?.pluginId ?: "";
-
-                _pagersReusable.add((PlaceholderPager(5) {
-                    return@PlaceholderPager PlatformContentPlaceholder(pluginId, error)
-                } as IPager<T>).asReusable());
-                _currentPager = recreatePager(getCurrentSubPagers());
-
-                if(_currentPager is MultiParallelPager<*>)
-                    runBlocking { (_currentPager as MultiParallelPager).initialize(); };
-                else if(_currentPager is MultiPager<*>)
-                    (_currentPager as MultiPager).initialize()
-
-                onPagerChanged.emit(_currentPager);
-            }
-            return;
-        }
         synchronized(_pagersReusable) {
+            if(pagerToAdd == null) {
+                if(toReplacePager != null && toReplacePager is PlaceholderPager && error != null) {
+                    val pluginId = toReplacePager.placeholderFactory.invoke().id?.pluginId ?: "";
+
+                    _pagersReusable.add((PlaceholderPager(5) {
+                        return@PlaceholderPager PlatformContentPlaceholder(pluginId, error)
+                    } as IPager<T>).asReusable());
+                    _currentPager = recreatePager(getCurrentSubPagers());
+
+                    if(_currentPager is MultiParallelPager<*>)
+                        runBlocking { (_currentPager as MultiParallelPager).initialize(); };
+                    else if(_currentPager is MultiPager<*>)
+                        (_currentPager as MultiPager).initialize()
+
+                    onPagerChanged.emit(_currentPager);
+                }
+                return;
+            }
             Logger.i("RefreshMultiDistributionContentPager", "Received new pager for RefreshPager")
             _pagersReusable.add(pagerToAdd.asReusable());
 

@@ -17,6 +17,7 @@ import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.fields.FieldForm
@@ -272,6 +273,15 @@ class SettingsDev : FragmentedStorageFileJson() {
     @FormField("Other", FieldForm.GROUP, "Others...", 5)
     val otherTests: OtherTests = OtherTests();
     class OtherTests {
+        @FormField("Unsubscribe all", FieldForm.BUTTON, "Removes all subscriptions", -1)
+        fun unsubscribeAll() {
+            val toUnsub = StateSubscriptions.instance.getSubscriptions();
+            UIDialogs.toast("Started unsubbing.. (${toUnsub.size})")
+            toUnsub.forEach {
+                StateSubscriptions.instance.removeSubscription(it.channel.url);
+            };
+            UIDialogs.toast("Finished unsubbing.. (${toUnsub.size})")
+        }
         @FormField("Clear Downloads", FieldForm.BUTTON, "Deletes all ongoing downloads", 1)
         fun clearDownloads() {
             StateDownloads.instance.getDownloading().forEach {
