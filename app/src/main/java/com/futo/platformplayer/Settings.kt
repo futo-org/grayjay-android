@@ -22,6 +22,7 @@ import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FieldForm
+import com.futo.platformplayer.views.fields.FormFieldButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,8 +46,9 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(
         "Manage Polycentric identity", FieldForm.BUTTON,
-        "Manage your Polycentric identity", -3
+        "Manage your Polycentric identity", -4
     )
+    @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
             if (StatePolycentric.instance.processHandle != null) {
@@ -58,12 +60,26 @@ class Settings : FragmentedStorageFileJson() {
     }
 
     @FormField(
-        "Open FAQ", FieldForm.BUTTON,
-        "Get answers to common questions", -2
+        "Show FAQ", FieldForm.BUTTON,
+        "Get answers to common questions", -3
     )
+    @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
         try {
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://grayjay.app/faq.html"))
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(Settings.URL_FAQ))
+            SettingsActivity.getActivity()?.startActivity(browserIntent);
+        } catch (e: Throwable) {
+            //Ignored
+        }
+    }
+    @FormField(
+        "Show Issues", FieldForm.BUTTON,
+        "A list of user-reported and self-reported issues", -2
+    )
+    @FormFieldButton(R.drawable.ic_data_alert)
+    fun openIssues() {
+        try {
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/futo-org/grayjay-android/issues"))
             SettingsActivity.getActivity()?.startActivity(browserIntent);
         } catch (e: Throwable) {
             //Ignored
@@ -74,6 +90,7 @@ class Settings : FragmentedStorageFileJson() {
         "Submit feedback", FieldForm.BUTTON,
         "Give feedback on the application", -1
     )
+    @FormFieldButton(R.drawable.ic_bug)
     fun submitFeedback() {
         try {
             val i = Intent(Intent.ACTION_VIEW);
@@ -93,6 +110,7 @@ class Settings : FragmentedStorageFileJson() {
         "Manage Tabs", FieldForm.BUTTON,
         "Change tabs visible on the home screen", -1
     )
+    @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
         try {
             SettingsActivity.getActivity()?.let {
@@ -615,6 +633,7 @@ class Settings : FragmentedStorageFileJson() {
 
     companion object {
         private const val TAG = "Settings";
+        const val URL_FAQ = "https://grayjay.app/faq.html";
 
         private var _isFirst = true;
 

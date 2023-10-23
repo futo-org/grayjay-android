@@ -13,7 +13,7 @@ import com.futo.platformplayer.constructs.Event0
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.ShapeAppearanceModel
 
-class BigButton : LinearLayout {
+open class BigButton : LinearLayout {
     private val _root: LinearLayout;
     private val _icon: ShapeableImageView;
     private val _textPrimary: TextView;
@@ -76,6 +76,10 @@ class BigButton : LinearLayout {
 
     fun withSecondaryText(text: String): BigButton {
         _textSecondary.text = text;
+        return this;
+    }
+    fun withSecondaryTextMaxLines(lines: Int): BigButton {
+        _textSecondary.maxLines = lines;
         return this;
     }
 

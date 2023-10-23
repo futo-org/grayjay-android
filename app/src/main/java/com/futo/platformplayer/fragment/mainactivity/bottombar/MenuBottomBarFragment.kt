@@ -220,6 +220,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 buttons.removeAt(buyIndex)
                 buttons.add(0, button)
             }
+            //Force faq to be second
+            val faqIndex = buttons.indexOfFirst { b -> b.id == 97 };
+            if (faqIndex != -1) {
+                val button = buttons[faqIndex]
+                buttons.removeAt(faqIndex)
+                buttons.add(1, button)
+            }
 
             for (data in buttons) {
                 val button = MenuButton(context, data, _fragment, true);
@@ -289,6 +296,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
             if (!StatePayment.instance.hasPaid) {
                 newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
             }
+            newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz, R.string.faq, canToggle = false, { false }, {
+                it.navigate<BrowserFragment>(Settings.URL_FAQ);
+            }))
 
             //Add conditional buttons here, when you add a conditional button, be sure to add the register and unregister events for when the button needs to be updated
 

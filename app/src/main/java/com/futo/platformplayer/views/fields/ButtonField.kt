@@ -4,13 +4,21 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.dp
+import com.futo.platformplayer.views.buttons.BigButton
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
-class ButtonField : LinearLayout, IField {
+
+@Target(AnnotationTarget.FIELD, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class FormFieldButton(val drawable: Int = 0)
+
+class ButtonField : BigButton, IField {
     override var descriptor: FormField? = null;
     private var _obj : Any? = null;
     private var _method : Method? = null;
@@ -26,17 +34,22 @@ class ButtonField : LinearLayout, IField {
         return null;
     };
 
-    private val _title : TextView;
-    private val _subtitle : TextView;
+    //private val _title : TextView;
+    //private val _subtitle : TextView;
 
     override val onChanged = Event2<IField, Any>();
 
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
-        inflate(context, R.layout.field_button, this);
-        _title = findViewById(R.id.field_title);
-        _subtitle = findViewById(R.id.field_subtitle);
+        //inflate(context, R.layout.field_button, this);
+        //_title = findViewById(R.id.field_title);
+        //_subtitle = findViewById(R.id.field_subtitle);
 
-        setOnClickListener {
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            val dp5 = 5.dp(context.resources);
+            setMargins(0, dp5, 0, dp5)
+        };
+
+        super.onClick.subscribe {
             if(_method?.parameterCount == 1)
                 _method?.invoke(_obj, context);
             else if(_method?.parameterCount == 2)
@@ -51,13 +64,17 @@ class ButtonField : LinearLayout, IField {
         this._obj = obj;
 
         val attrField = method.getAnnotation(FormField::class.java);
+        val attrButtonField = method.getAnnotation(FormFieldButton::class.java);
         if(attrField != null) {
-            _title.text = attrField.title;
-            _subtitle.text = attrField.subtitle;
+            super.withPrimaryText(attrField.title)
+                .withSecondaryText(attrField.subtitle)
+                .withSecondaryTextMaxLines(2);
             descriptor = attrField;
         }
         else
-            _title.text = method.name;
+            super.withPrimaryText(method.name);
+        if(attrButtonField != null)
+            super.withIcon(attrButtonField.drawable, false);
 
         return this;
     }
