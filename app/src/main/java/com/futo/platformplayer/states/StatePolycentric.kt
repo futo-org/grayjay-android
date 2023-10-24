@@ -19,6 +19,7 @@ import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.api.media.structures.PlaceholderPager
+import com.futo.platformplayer.api.media.structures.RefreshChronoContentPager
 import com.futo.platformplayer.api.media.structures.RefreshDedupContentPager
 import com.futo.platformplayer.api.media.structures.RefreshDistributionContentPager
 import com.futo.platformplayer.awaitFirstDeferred
@@ -167,12 +168,21 @@ class StatePolycentric {
             }) ?: return null;
 
         val toAwait = deferred.filter { it.second != finishedPager.first };
+
+        //TODO: Get a Parallel pager to work here.
+        val innerPager = MultiChronoContentPager(listOf(finishedPager.second!!) + toAwait.mapNotNull { runBlocking { it.second.await(); } });
+        innerPager.initialize();
+        //return RefreshChronoContentPager(listOf(finishedPager.second!!), toAwait.map { it.second }, listOf());
+        //return RefreshDedupContentPager(RefreshChronoContentPager(listOf(finishedPager.second!!), toAwait.map { it.second }, listOf()), StatePlatform.instance.getEnabledClients().map { it.id });
+        return DedupContentPager(innerPager, StatePlatform.instance.getEnabledClients().map { it.id });
+
+    /* //Gives out-of-order results
         return RefreshDedupContentPager(RefreshDistributionContentPager(
             listOf(finishedPager.second!!),
             toAwait.map { it.second },
             toAwait.map { PlaceholderPager(5) { PlatformContentPlaceholder(it.first.id) } }),
             StatePlatform.instance.getEnabledClients().map { it.id }
-        );
+        );*/
     }
     suspend fun getChannelContent(profile: PolycentricProfile): IPager<IPlatformContent> {
         return withContext(Dispatchers.IO) {

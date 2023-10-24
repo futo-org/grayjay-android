@@ -8,6 +8,7 @@ import java.util.stream.IntStream
  */
 class MultiChronoContentPager : MultiPager<IPlatformContent> {
     constructor(pagers : Array<IPager<IPlatformContent>>, allowFailure: Boolean = false, pageSize: Int = 9) : super(pagers.map { it }.toList(), allowFailure, pageSize) {}
+    constructor(pagers : List<IPager<IPlatformContent>>, allowFailure: Boolean = false, pageSize: Int = 9) : super(pagers, allowFailure, pageSize) {}
 
     @Synchronized
     override fun selectItemIndex(options: Array<SelectionOption<IPlatformContent>>): Int {

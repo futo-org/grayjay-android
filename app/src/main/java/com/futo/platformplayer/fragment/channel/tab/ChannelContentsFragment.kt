@@ -248,7 +248,6 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
         if(_pager is IReplacerPager<*>)
             (_pager as IReplacerPager<*>).onReplaced.remove(this);
-
         if(pager is IReplacerPager<*>) {
             pager.onReplaced.subscribe(this) { oldItem, newItem ->
                 if(_pager != pager)
@@ -257,11 +256,14 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
                 if(_pager !is IPager<IPlatformContent>)
                     return@subscribe;
 
-                val toReplaceIndex = _results.indexOfFirst { it == newItem };
-                if(toReplaceIndex >= 0) {
-                    _results[toReplaceIndex] = newItem as IPlatformContent;
-                    _adapterResults?.let {
-                        it.notifyItemChanged(it.childToParentPosition(toReplaceIndex));
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    val toReplaceIndex = _results.indexOfFirst { it == oldItem };
+                    if (toReplaceIndex >= 0) {
+                        _results[toReplaceIndex] = newItem as IPlatformContent;
+                        _adapterResults?.let {
+                            it.notifyItemChanged(it.childToParentPosition(toReplaceIndex));
+                        }
                     }
                 }
             }

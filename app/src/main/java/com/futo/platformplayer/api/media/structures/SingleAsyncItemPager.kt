@@ -43,6 +43,7 @@ class SingleAsyncItemPager<T> {
             if (_currentResultPos >= _requestedPageItems.size) {
                 val startPos = fillDeferredUntil(_currentResultPos);
                 if(!_pager.hasMorePages()) {
+                    Logger.i("SingleAsyncItemPager", "end of async page reached");
                     completeRemainder { it?.complete(null) };
                 }
                 if(_isRequesting)
