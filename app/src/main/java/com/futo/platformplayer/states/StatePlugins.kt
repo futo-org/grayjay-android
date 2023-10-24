@@ -116,8 +116,9 @@ class StatePlugins {
             else if(embeddedConfig != null) {
                 val existing = getPlugin(embedded.key);
                 if(existing != null && existing.config.version < embeddedConfig.version ) {
-                    Logger.i(TAG, "Found outdated embedded plugin [${existing.config.id}] ${existing.config.name}, deleting and reinstalling");
-                    deletePlugin(embedded.key);
+                    Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig?.version}), reinstalling");
+                    //deletePlugin(embedded.key);
+                    installEmbeddedPlugin(context, embedded.value)
                 }
                 else if(existing != null && _isFirstEmbedUpdate)
                     Logger.i(TAG, "Embedded plugin [${existing.config.id}] ${existing.config.name}, up to date (${existing.config.version} >= ${embeddedConfig?.version})");
@@ -360,6 +361,8 @@ class StatePlugins {
             }
 
             val existing = getPlugin(config.id)
+            val existingAuth = existing?.getAuth();
+            val existingCaptcha = existing?.getCaptchaData();
             if (existing != null) {
                 if(!reinstall)
                     throw IllegalStateException("Plugin with id ${config.id} already exists");
@@ -373,7 +376,7 @@ class StatePlugins {
             if(icon != null)
                 iconsDir.saveIconBinary(config.id, icon);
 
-            _plugins.save(SourcePluginDescriptor(config, null, null, flags));
+            _plugins.save(SourcePluginDescriptor(config, existingAuth?.toEncrypted(), existingCaptcha?.toEncrypted(), flags));
             return null;
         }
         catch(ex: Throwable) {

@@ -15,7 +15,9 @@ import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.PreviewContentListAdapter
@@ -24,6 +26,7 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.adapters.PreviewNestedVideoViewHolder
 import com.futo.platformplayer.views.adapters.PreviewVideoViewHolder
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import kotlin.math.floor
 
 abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent, IPlatformContent, IPager<IPlatformContent>, ContentPreviewViewHolder> where TFragment : MainFragment {
@@ -69,15 +72,24 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             //TODO: Reconstruct search video from detail if search is null
             _overlayContainer.let {
                 if(content is IPlatformVideo)
-                    UISlideOverlays.showVideoOptionsOverlay(content, it) {
-                        if (fragment is HomeFragment) {
-                            val removeIndex = recyclerData.results.indexOf(content);
-                            if (removeIndex >= 0) {
-                                recyclerData.results.removeAt(removeIndex);
-                                recyclerData.adapter.notifyItemRemoved(recyclerData.adapter.childToParentPosition(removeIndex));
+                    UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, "Hide", "Hide from Home", "hide",
+                        { StateMeta.instance.addHiddenVideo(content.url);
+                            if (fragment is HomeFragment) {
+                                val removeIndex = recyclerData.results.indexOf(content);
+                                if (removeIndex >= 0) {
+                                    recyclerData.results.removeAt(removeIndex);
+                                    recyclerData.adapter.notifyItemRemoved(recyclerData.adapter.childToParentPosition(removeIndex));
+                                }
                             }
-                        }
-                    };
+                        }),
+                        SlideUpMenuItem(context, R.drawable.ic_playlist, "Play Feed as Queue", "Play entire feed", "playFeed",
+                            {
+                                val newQueue = listOf(content) + recyclerData.results
+                                    .filterIsInstance<IPlatformVideo>()
+                                    .filter { it != content };
+                                StatePlayer.instance.setQueue(newQueue, StatePlayer.TYPE_QUEUE, "Feed Queue", true, false);
+                            })
+                    );
             }
         };
         adapter.onAddToQueueClicked.subscribe(this) {

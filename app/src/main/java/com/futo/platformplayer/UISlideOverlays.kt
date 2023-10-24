@@ -304,7 +304,7 @@ class UISlideOverlays {
             return overlay;
         }
 
-        fun showVideoOptionsOverlay(video: IPlatformVideo, container: ViewGroup, onVideoHidden: (()->Unit)? = null): SlideUpMenuOverlay {
+        fun showVideoOptionsOverlay(video: IPlatformVideo, container: ViewGroup, vararg actions: SlideUpMenuItem): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
             val lastUpdated = StatePlaylists.instance.getLastUpdatedPlaylist();
 
@@ -323,11 +323,11 @@ class UISlideOverlays {
             val queue = StatePlayer.instance.getQueue();
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, "Actions", "actions",
-                SlideUpMenuItem(container.context, R.drawable.ic_visibility_off, "Hide", "Hide from Home", "hide",
-                    { StateMeta.instance.addHiddenVideo(video.url); onVideoHidden?.invoke() }),
-                SlideUpMenuItem(container.context, R.drawable.ic_download, "Download", "Download the video", "download",
-                    { showDownloadVideoOverlay(video, container, true); }, false)
-            ))
+                (listOf(
+                    SlideUpMenuItem(container.context, R.drawable.ic_download, "Download", "Download the video", "download",
+                        { showDownloadVideoOverlay(video, container, true); }, false))
+                        + actions)
+            ));
             items.add(
                 SlideUpMenuGroup(container.context, "Add To", "addto",
                     SlideUpMenuItem(container.context, R.drawable.ic_queue_add, "Add to Queue", "${queue.size} videos", "queue",
