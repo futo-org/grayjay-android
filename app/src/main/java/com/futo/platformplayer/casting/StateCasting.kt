@@ -12,6 +12,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.states.StateApp
@@ -352,16 +353,25 @@ class StateCasting {
                 }
             }
         } else {
-            if (videoSource is IVideoUrlSource) {
+            if (videoSource is IVideoUrlSource)
                 ad.loadVideo("BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble());
-            } else if (audioSource is IAudioUrlSource) {
+            else if(videoSource is IHLSManifestSource)
+                ad.loadVideo("BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble());
+            else if (audioSource is IAudioUrlSource)
                 ad.loadVideo("BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble());
-            } else if (videoSource is LocalVideoSource) {
+            else if(audioSource is IHLSManifestAudioSource)
+                ad.loadVideo("BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble());
+            else if (videoSource is LocalVideoSource)
                 castLocalVideo(video, videoSource, resumePosition);
-            } else if (audioSource is LocalAudioSource) {
+            else if (audioSource is LocalAudioSource)
                 castLocalAudio(video, audioSource, resumePosition);
-            } else {
-                throw Exception("Unhandled source type videoSource=$videoSource audioSource=$audioSource subtitleSource=$subtitleSource");
+            else {
+                var str = listOf(
+                    if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
+                    if(audioSource != null) "Audio: ${audioSource::class.java.simpleName}" else null,
+                    if(subtitleSource != null) "Subtitles: ${subtitleSource::class.java.simpleName}" else null
+                ).filterNotNull().joinToString(", ");
+                throw UnsupportedCastException(str);
             }
         }
 

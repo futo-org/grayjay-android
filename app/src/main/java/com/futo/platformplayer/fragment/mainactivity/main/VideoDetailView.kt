@@ -62,6 +62,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
+import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
@@ -1253,6 +1254,10 @@ class VideoDetailView : ConstraintLayout {
 
             _lastVideoSource = videoSource;
             _lastAudioSource = audioSource;
+        }
+        catch(ex: UnsupportedCastException) {
+            Logger.e(TAG, "Failed to load cast media", ex);
+            UIDialogs.showGeneralErrorDialog(context, "Unsupported Cast format", ex);
         }
         catch(ex: Throwable) {
             Logger.e(TAG, "Failed to load media", ex);
