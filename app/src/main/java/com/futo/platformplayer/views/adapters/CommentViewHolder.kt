@@ -160,7 +160,7 @@ class CommentViewHolder : ViewHolder {
         val replies = comment.replyCount ?: 0;
         if (!readonly || replies > 0) {
             _buttonReplies.visibility = View.VISIBLE;
-            _buttonReplies.text.text = "$replies replies";
+            _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
         } else {
             _buttonReplies.visibility = View.GONE;
         }

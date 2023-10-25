@@ -586,7 +586,7 @@ class Settings : FragmentedStorageFileJson() {
             val activity = SettingsActivity.getActivity()!!
 
             if(!StateBackup.hasAutomaticBackup())
-                UIDialogs.toast(activity, "You don't have any automatic backups", false);
+                UIDialogs.toast(activity, activity.getString(R.string.you_don_t_have_any_automatic_backups), false);
             else
                 UIDialogs.showAutomaticRestoreDialog(activity, activity.lifecycleScope);
         }

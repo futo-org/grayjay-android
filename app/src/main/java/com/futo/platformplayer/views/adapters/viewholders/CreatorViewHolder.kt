@@ -77,7 +77,7 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
         if(authorLink.subscribers == null || (authorLink.subscribers ?: 0) <= 0L)
             _textMetadata.visibility = View.GONE;
         else {
-            _textMetadata.text = if((authorLink.subscribers ?: 0) > 0) authorLink.subscribers!!.toHumanNumber() + " subscribers" else "";
+            _textMetadata.text = if((authorLink.subscribers ?: 0) > 0) authorLink.subscribers!!.toHumanNumber() + " " + _view.context.getString(R.string.subscribers) else "";
             _textMetadata.visibility = View.VISIBLE;
         }
         _buttonSubscribe.setSubscribeChannel(authorLink.url);

@@ -129,10 +129,10 @@ class AnnouncementView : LinearLayout {
                 _textClose.text = announcement.cancelName;
             }
             else
-                _textClose.text = "Dismiss";
+                _textClose.text = context.getString(R.string.dismiss);
         }
         else
-            _textClose.text = "Dismiss";
+            _textClose.text = context.getString(R.string.dismiss);
 
         when (announcement.announceType) {
             AnnouncementType.DELETABLE -> {

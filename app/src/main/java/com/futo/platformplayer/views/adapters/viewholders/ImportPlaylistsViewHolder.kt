@@ -45,7 +45,7 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
 
     override fun bind(playlist: SelectablePlaylist) {
         _textName.text = playlist.playlist.name;
-        _textMetadata.text = "${playlist.playlist.videos.size} videos";
+        _textMetadata.text = "${playlist.playlist.videos.size} " + _view.context.getString(R.string.videos);
         _checkbox.value = playlist.selected;
 
         val thumbnail = playlist.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail();

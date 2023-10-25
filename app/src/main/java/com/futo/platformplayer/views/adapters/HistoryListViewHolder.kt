@@ -89,7 +89,7 @@ class HistoryListViewHolder : ViewHolder {
 
         var metadata = "";
         if (v.video.viewCount > 0)
-            metadata += "${v.video.viewCount.toHumanNumber()} views";
+            metadata += "${v.video.viewCount.toHumanNumber()} " + itemView.context.getString(R.string.views);
 
         _textMetadata.text = metadata;
 

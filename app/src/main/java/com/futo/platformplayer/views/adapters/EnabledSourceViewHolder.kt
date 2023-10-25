@@ -57,7 +57,7 @@ class EnabledSourceViewHolder : ViewHolder {
         client.icon?.setImageView(_imageSource);
 
         _textSource.text = client.name;
-        _textSourceSubtitle.text = "Tap to open";
+        _textSourceSubtitle.text = itemView.context.getString(R.string.tap_to_open);
         source = client
     }
 }

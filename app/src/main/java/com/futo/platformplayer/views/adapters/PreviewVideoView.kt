@@ -181,15 +181,15 @@ open class PreviewVideoView : LinearLayout {
         var metadata = ""
         if (content is IPlatformVideo && content.viewCount > 0) {
             if(content.isLive)
-                metadata += "${content.viewCount.toHumanNumber()} watching • ";
+                metadata += "${content.viewCount.toHumanNumber()} ${context.getString(R.string.watching)} • ";
             else
-                metadata += "${content.viewCount.toHumanNumber()} views • ";
+                metadata += "${content.viewCount.toHumanNumber()} ${context.getString(R.string.views)} • ";
         }
 
         var timeMeta = "";
         if(isPlanned) {
             val ago = content.datetime?.toHumanNowDiffString(true) ?: ""
-            timeMeta = "available in " + ago;
+            timeMeta = context.getString(R.string.available_in) + " ${ago}";
         }
         else {
             val ago = content.datetime?.toHumanNowDiffString() ?: ""
@@ -210,13 +210,13 @@ open class PreviewVideoView : LinearLayout {
             if(!isPlanned)
                 _textVideoDuration.text = video.duration.toHumanTime(false);
             else
-                _textVideoDuration.text = "Planned";
+                _textVideoDuration.text = context.getString(R.string.planned);
 
             _playerVideoThumbnail?.setLive(video.isLive);
             if(!isPlanned && video.isLive) {
                 _containerDuration.visibility = GONE;
                 _containerLive.visibility = VISIBLE;
-                timeMeta = "LIVE"
+                timeMeta = context.getString(R.string.live_capitalized)
             }
             else {
                 _containerLive.visibility = GONE;

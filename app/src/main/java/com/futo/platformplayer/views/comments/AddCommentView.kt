@@ -31,12 +31,12 @@ class AddCommentView : LinearLayout {
 
             val now = System.currentTimeMillis()
             if (now - _lastClickTime > 3000) {
-                StatePolycentric.instance.requireLogin(context, "Please login to post a comment") {
+                StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_post_a_comment)) {
                     try {
                         UIDialogs.showCommentDialog(context, cu, ref) { onCommentAdded.emit(it) };
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to post comment", e);
-                        UIDialogs.toast(context, "Failed to post comment: " + e.message);
+                        UIDialogs.toast(context, context.getString(R.string.failed_to_post_comment) + " ${e.message}");
                     }
                 };
 

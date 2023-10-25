@@ -103,7 +103,7 @@ class VideoListEditorViewHolder : ViewHolder {
 
         var metadata = "";
         if (v.viewCount > 0)
-            metadata += "${v.viewCount.toHumanNumber()} views • ";
+            metadata += "${v.viewCount.toHumanNumber()} ${itemView.context.getString(R.string.views)} • ";
         metadata += v.datetime?.toHumanNowDiffString() ?: "";
 
         _platformIndicator.setPlatformFromClientID(v.id.pluginId);

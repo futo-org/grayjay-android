@@ -3,6 +3,7 @@ package com.futo.platformplayer.views.overlays.slideup
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
+import com.futo.platformplayer.R
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.FilterGroup
@@ -34,7 +35,7 @@ class SlideUpMenuFilters {
         _container = container;
         _enabledClientsIds = enabledClientsIds;
         _filterValues = filterValues;
-        _slideUpMenuOverlay = SlideUpMenuOverlay(_container.context, _container, "Filters", "Done", true, listOf());
+        _slideUpMenuOverlay = SlideUpMenuOverlay(_container.context, _container, container.context.getString(R.string.filters), container.context.getString(R.string.done), true, listOf());
         _slideUpMenuOverlay.onOK.subscribe {
             onOK.emit(_enabledClientsIds, _changed);
             _slideUpMenuOverlay.hide();
@@ -84,7 +85,7 @@ class SlideUpMenuFilters {
         val caps = commonCapabilities;
         val items = arrayListOf<View>();
 
-        val group = SlideUpMenuRadioGroup(_container.context, "Sources", StatePlatform.instance.getSortedEnabledClient().map { Pair(it.name, it.id) },
+        val group = SlideUpMenuRadioGroup(_container.context, _container.context.getString(R.string.sources), StatePlatform.instance.getSortedEnabledClient().map { Pair(it.name, it.id) },
             _enabledClientsIds, true, true);
 
         group.onSelectedChange.subscribe {

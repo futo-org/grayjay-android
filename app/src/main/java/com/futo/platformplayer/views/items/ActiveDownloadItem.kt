@@ -110,9 +110,9 @@ class ActiveDownloadItem: LinearLayout {
         _videoSpeed.text = "${_download.downloadSpeed.toHumanBytesSpeed()} ${(_download.progress * 100).toInt()}%";
 
         _videoState.text = if(!Settings.instance.downloads.shouldDownload())
-            "Waiting for unmetered" + (if(!_download.error.isNullOrEmpty()) "\n(Last error: " + _download.error + ")" else "");
+            context.getString(R.string.waiting_for_unmetered) + (if(!_download.error.isNullOrEmpty()) "\n(" + context.getString(R.string.last_error) + ": " + _download.error + ")" else "");
         else if(_download.state == VideoDownload.State.QUEUED && !_download.error.isNullOrEmpty())
-            _download.state.toString() + "\n(Last error: " + _download.error + ")";
+            _download.state.toString() + "\n(" + context.getString(R.string.last_error) + ": " + _download.error + ")";
         else
             _download.state.toString();
         _videoState.setTextColor(Color.GRAY);
@@ -123,7 +123,7 @@ class ActiveDownloadItem: LinearLayout {
             };
             VideoDownload.State.ERROR -> {
                 _videoState.setTextColor(Color.RED);
-                _videoState.text = _download.error ?: "Error";
+                _videoState.text = _download.error ?: context.getString(R.string.error);
                 _videoBar.visibility = GONE;
                 _videoSpeed.visibility = GONE;
             }

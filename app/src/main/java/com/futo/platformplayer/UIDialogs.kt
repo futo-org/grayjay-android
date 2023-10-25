@@ -100,12 +100,12 @@ class UIDialogs {
                 dialog.show();
             };
             if(StateBackup.hasAutomaticBackup() && !skipRestoreCheck)
-                UIDialogs.showDialog(context, R.drawable.ic_move_up, "An old backup is available", "Would you like to restore this backup?", null, 0,
-                    UIDialogs.Action("Cancel", {}), //To nothing
-                    UIDialogs.Action("Override", {
+                UIDialogs.showDialog(context, R.drawable.ic_move_up, context.getString(R.string.an_old_backup_is_available), context.getString(R.string.would_you_like_to_restore_this_backup), null, 0,
+                    UIDialogs.Action(context.getString(R.string.cancel), {}), //To nothing
+                    UIDialogs.Action(context.getString(R.string.override), {
                         dialogAction();
                     }, UIDialogs.ActionStyle.DANGEROUS),
-                    UIDialogs.Action("Restore", {
+                    UIDialogs.Action(context.getString(R.string.restore), {
                         UIDialogs.showAutomaticRestoreDialog(context, StateApp.instance.scope);
                     }, UIDialogs.ActionStyle.PRIMARY));
             else {
@@ -211,10 +211,10 @@ class UIDialogs {
                 (if(ex != null ) "${ex.message}" else ""),
                 if(ex is PluginException) ex.code else null,
                 0,
-                UIDialogs.Action("Retry", {
+                UIDialogs.Action(context.getString(R.string.retry), {
                     retryAction?.invoke();
                 }, UIDialogs.ActionStyle.PRIMARY),
-                UIDialogs.Action("Close", {
+                UIDialogs.Action(context.getString(R.string.close), {
                     closeAction?.invoke()
                 }, UIDialogs.ActionStyle.NONE)
             );
@@ -226,15 +226,15 @@ class UIDialogs {
         }
 
         fun showDataRetryDialog(context: Context, reason: String? = null, retryAction: (() -> Unit)? = null, closeAction: (() -> Unit)? = null) {
-            val retryButtonAction = Action("Retry", retryAction ?: {}, ActionStyle.PRIMARY)
-            val closeButtonAction = Action("Close", closeAction ?: {}, ActionStyle.ACCENT)
-            showDialog(context, R.drawable.ic_no_internet_86dp, "Data Retry", reason, null, 0, closeButtonAction, retryButtonAction)
+            val retryButtonAction = Action(context.getString(R.string.retry), retryAction ?: {}, ActionStyle.PRIMARY)
+            val closeButtonAction = Action(context.getString(R.string.close), closeAction ?: {}, ActionStyle.ACCENT)
+            showDialog(context, R.drawable.ic_no_internet_86dp, context.getString(R.string.data_retry), reason, null, 0, closeButtonAction, retryButtonAction)
         }
 
 
         fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null) {
-            val confirmButtonAction = Action("Confirm", action, ActionStyle.PRIMARY)
-            val cancelButtonAction = Action("Cancel", cancelAction ?: {}, ActionStyle.ACCENT)
+            val confirmButtonAction = Action(context.getString(R.string.confirm), action, ActionStyle.PRIMARY)
+            val cancelButtonAction = Action(context.getString(R.string.cancel), cancelAction ?: {}, ActionStyle.ACCENT)
             showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction)
         }
 

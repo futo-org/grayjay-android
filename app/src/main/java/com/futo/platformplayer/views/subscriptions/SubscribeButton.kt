@@ -70,14 +70,14 @@ class SubscribeButton : LinearLayout {
     private fun handleSubscribe(channel: IPlatformChannel) {
         setIsLoading(false);
         StateSubscriptions.instance.addSubscription(channel);
-        UIDialogs.toast(context, "Subscribed to ${channel.name}");
+        UIDialogs.toast(context, context.getString(R.string.subscribed_to) + channel.name);
         setIsSubscribed(true);
     }
     private fun handleUnSubscribe(url: String) {
         setIsLoading(false);
         val removed = StateSubscriptions.instance.removeSubscription(url);
         if (removed != null)
-            UIDialogs.toast(context, "Unsubscribed from ${removed!!.channel.name}");
+            UIDialogs.toast(context, context.getString(R.string.unsubscribed_from) + removed.channel.name);
         setIsSubscribed(false);
     }
 

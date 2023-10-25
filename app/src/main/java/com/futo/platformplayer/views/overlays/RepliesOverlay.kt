@@ -38,7 +38,7 @@ class RepliesOverlay : LinearLayout {
 
         _commentsList.onCommentsLoaded.subscribe { count ->
             if (_readonly && count == 0) {
-                UIDialogs.toast(context, "Expected at least one reply but no replies were returned by the server");
+                UIDialogs.toast(context, context.getString(R.string.expected_at_least_one_reply_but_no_replies_were_returned_by_the_server));
             }
         }
 
@@ -46,7 +46,7 @@ class RepliesOverlay : LinearLayout {
             val replyCount = c.replyCount;
             var metadata = "";
             if (replyCount != null && replyCount > 0) {
-                metadata += "$replyCount replies";
+                metadata += "$replyCount " + context.getString(R.string.replies);
             }
 
             if (c is PolycentricPlatformComment) {
@@ -57,7 +57,7 @@ class RepliesOverlay : LinearLayout {
         };
 
         _topbar.onClose.subscribe(this, onClose::emit);
-        _topbar.setInfo("Replies", "");
+        _topbar.setInfo(context.getString(R.string.Replies), "");
     }
 
     fun load(readonly: Boolean, metadata: String, contextUrl: String?, ref: Protocol.Reference?, loader: suspend () -> IPager<IPlatformComment>, onCommentAdded: ((comment: IPlatformComment) -> Unit)? = null) {
@@ -69,7 +69,7 @@ class RepliesOverlay : LinearLayout {
             _addCommentView.setContext(contextUrl, ref);
         }
 
-        _topbar.setInfo("Replies", metadata);
+        _topbar.setInfo(context.getString(R.string.Replies), metadata);
         _commentsList.load(readonly, loader);
         _onCommentAdded = onCommentAdded;
     }

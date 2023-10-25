@@ -408,10 +408,10 @@ class GestureControlView : LinearLayout {
 
         val seekOffset: Long = 10000;
         if (_rewinding) {
-            _textRewind.text = "${_fastForwardCounter * 10} seconds";
+            _textRewind.text = "${_fastForwardCounter * 10} " + context.getString(R.string.seconds);
             onSeek.emit(-seekOffset);
         } else {
-            _textFastForward.text = "${_fastForwardCounter * 10} seconds";
+            _textFastForward.text = "${_fastForwardCounter * 10} " + context.getString(R.string.seconds);
             onSeek.emit(seekOffset);
         }
     }

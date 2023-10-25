@@ -48,10 +48,10 @@ class PillRatingLikesDislikes : LinearLayout {
         _iconDislikes = findViewById(R.id.pill_dislike_icon);
         _iconLikes = findViewById(R.id.pill_like_icon);
 
-        _iconLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, "Please login to like") { like(it) }; };
-        _textLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, "Please login to like") { like(it) }; };
-        _iconDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, "Please login to dislike") { dislike(it) }; };
-        _textDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, "Please login to dislike") { dislike(it) }; };
+        _iconLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
+        _textLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
+        _iconDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+        _textDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
     }
 
     fun setRating(rating: IRating, hasLiked: Boolean = false, hasDisliked: Boolean = false) {

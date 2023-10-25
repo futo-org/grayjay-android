@@ -149,7 +149,7 @@ class UpNextView : LinearLayout {
 
             val metadataTokens = mutableListOf<String>();
             if (nextItem.viewCount > 0) {
-                metadataTokens.add("${nextItem.viewCount.toHumanNumber()} views");
+                metadataTokens.add("${nextItem.viewCount.toHumanNumber()} " + context.getString(R.string.views));
             }
 
             if (nextItem.datetime != null) {

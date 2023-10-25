@@ -25,13 +25,13 @@ class QueueEditorOverlay : LinearLayout {
         _editor.onVideoRemoved.subscribe { v -> StatePlayer.instance.removeFromQueue(v) }
         _editor.onVideoClicked.subscribe { v -> StatePlayer.instance.setQueuePosition(v) }
 
-        _topbar.setInfo("Queue", "");
+        _topbar.setInfo(context.getString(R.string.queue), "");
     }
 
     fun updateQueue() {
         val queue = StatePlayer.instance.getQueue();
         _editor.setVideos(queue, true);
-        _topbar.setInfo("Queue", "${queue.size} videos");
+        _topbar.setInfo(context.getString(R.string.queue), "${queue.size} " + context.getString(R.string.videos));
     }
 
     fun cleanup() {

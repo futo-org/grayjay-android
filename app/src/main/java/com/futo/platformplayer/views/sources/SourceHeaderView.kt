@@ -82,17 +82,17 @@ class SourceHeaderView : LinearLayout {
         if (!config.scriptPublicKey.isNullOrEmpty() && !config.scriptSignature.isNullOrEmpty()) {
             if (script == null) {
                 _sourceSignature.setTextColor(Color.rgb(0xAC, 0xAC, 0xAC));
-                _sourceSignature.text = "Script is not available";
+                _sourceSignature.text = context.getString(R.string.script_is_not_available);
             } else  if (config.validate(script)) {
                 _sourceSignature.setTextColor(Color.rgb(0, 255, 0));
-                _sourceSignature.text = "Signature is valid";
+                _sourceSignature.text = context.getString(R.string.signature_is_valid);
             } else {
                 _sourceSignature.setTextColor(Color.rgb(255, 0, 0));
-                _sourceSignature.text = "Signature is invalid";
+                _sourceSignature.text = context.getString(R.string.signature_is_invalid);
             }
         } else {
             _sourceSignature.setTextColor(Color.rgb(255, 0, 0));
-            _sourceSignature.text = "No signature available";
+            _sourceSignature.text = context.getString(R.string.no_signature_available);
         }
     }
 

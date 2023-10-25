@@ -204,9 +204,9 @@ class LiveChatOverlay : LinearLayout {
         _window = window;
 
         if(viewerCount != null)
-            _textViewers.text = viewerCount.toHumanNumber() + " viewers";
+            _textViewers.text = viewerCount.toHumanNumber() + " " + context.getString(R.string.viewers);
         else if(manager != null)
-            _textViewers.text = manager.viewCount.toHumanNumber() + " viewers";
+            _textViewers.text = manager.viewCount.toHumanNumber() + " " + context.getString(R.string.viewers);
         else
             _textViewers.text = "";
 
@@ -239,7 +239,7 @@ class LiveChatOverlay : LinearLayout {
                 }
                 else if(event is LiveEventViewCount)
                     scope.launch(Dispatchers.Main) {
-                        _textViewers.text = "${event.viewCount.toLong().toHumanNumber()} viewers";
+                        _textViewers.text = "${event.viewCount.toLong().toHumanNumber()} " + context.getString(R.string.viewers);
                     }
                 else
                     handleLiveEvent(event);

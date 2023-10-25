@@ -37,7 +37,7 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
         };
         _videoDelete.setOnClickListener {
             val id = _video?.id ?: return@setOnClickListener;
-            UIDialogs.showConfirmationDialog(_view.context, "Are you sure you want to delete this video?", {
+            UIDialogs.showConfirmationDialog(_view.context, _view.context.getString(R.string.are_you_sure_you_want_to_delete_this_video), {
                 StateDownloads.instance.deleteCachedVideo(id);
             });
         }

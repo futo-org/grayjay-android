@@ -38,7 +38,7 @@ class DisabledSourceView : LinearLayout {
         client.icon?.setImageView(_imageSource);
 
         _textSource.text = client.name;
-        _textSourceSubtitle.text = "Tap to open";
+        _textSourceSubtitle.text = context.getString(R.string.tap_to_open);
 
         _buttonAdd.setOnClickListener { onAdd.emit(source) }
         _root.setOnClickListener { onClick.emit(); };
