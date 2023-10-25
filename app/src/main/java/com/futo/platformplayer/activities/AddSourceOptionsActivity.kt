@@ -22,7 +22,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         scanResult?.let {
             val content = it.contents
             if (content == null) {
-                UIDialogs.toast(this, "Failed to scan QR code")
+                UIDialogs.toast(this, getString(R.string.failed_to_scan_qr_code))
                 return@let
             }
 
@@ -31,7 +31,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
             } else if (content.startsWith("grayjay://plugin/")) {
                 content.substring("grayjay://plugin/".length)
             } else {
-                UIDialogs.toast(this, "Not a plugin URL")
+                UIDialogs.toast(this, getString(R.string.not_a_plugin_url))
                 return@let;
             }
 
@@ -59,7 +59,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         _buttonQR.onClick.subscribe {
             val integrator = IntentIntegrator(this);
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            integrator.setPrompt("Scan a QR Code")
+            integrator.setPrompt(getString(R.string.scan_a_qr_code))
             integrator.setOrientationLocked(true);
             integrator.setCameraId(0)
             integrator.setBeepEnabled(false)
@@ -69,7 +69,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         }
 
         _buttonURL.onClick.subscribe {
-            UIDialogs.toast(this, "Not implemented yet..");
+            UIDialogs.toast(this, getString(R.string.not_implemented_yet));
         }
     }
 

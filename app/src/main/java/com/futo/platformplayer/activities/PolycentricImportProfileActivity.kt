@@ -59,7 +59,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
         _buttonScanProfile.setOnClickListener {
             val integrator = IntentIntegrator(this)
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            integrator.setPrompt("Scan a QR code")
+            integrator.setPrompt(getString(R.string.scan_a_qr_code))
             integrator.setOrientationLocked(true);
             integrator.setCameraId(0)
             integrator.setBeepEnabled(false)
@@ -70,7 +70,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
 
         _buttonImportProfile.setOnClickListener {
             if (_editProfile.text.isEmpty()) {
-                UIDialogs.toast(this, "Text field does not contain any data");
+                UIDialogs.toast(this, getString(R.string.text_field_does_not_contain_any_data));
                 return@setOnClickListener;
             }
 
@@ -85,7 +85,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
 
     private fun import(url: String) {
         if (!url.startsWith("polycentric://")) {
-            UIDialogs.toast(this, "Not a valid URL");
+            UIDialogs.toast(this, getString(R.string.not_a_valid_url));
             return;
         }
 
@@ -101,7 +101,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
 
             val existingProcessSecret = Store.instance.getProcessSecret(keyPair.publicKey);
             if (existingProcessSecret != null) {
-                UIDialogs.toast(this, "This profile is already imported");
+                UIDialogs.toast(this, getString(R.string.this_profile_is_already_imported));
                 return;
             }
 
@@ -124,7 +124,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
             finish();
         } catch (e: Throwable) {
             Logger.w(TAG, "Failed to import profile", e);
-            UIDialogs.toast(this, "Failed to import profile: '${e.message}'");
+            UIDialogs.toast(this, getString(R.string.failed_to_import_profile) + " '${e.message}'");
         }
     }
 

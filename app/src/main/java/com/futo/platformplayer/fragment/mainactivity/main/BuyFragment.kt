@@ -60,12 +60,12 @@ class BuyFragment : MainFragment() {
 
             _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, purchaseId, exception ->
                 if(success) {
-                    UIDialogs.showDialog(context, R.drawable.ic_check, "Payment succeeded", "Thanks for your purchase, a key will be sent to your email after your payment has been received!", null, 0,
+                    UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0,
                         UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY));
                     _fragment.close(true);
                 }
                 else {
-                    UIDialogs.showGeneralErrorDialog(context, "Payment failed", exception);
+                    UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.payment_failed), exception);
                 }
             }
 
@@ -107,12 +107,12 @@ class BuyFragment : MainFragment() {
         }
 
         private fun paid() {
-            val licenseInput = SlideUpMenuTextInput(context, "License");
-            val productLicenseDialog = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_paid), "Enter license key", "Ok", true, licenseInput);
+            val licenseInput = SlideUpMenuTextInput(context, context.getString(R.string.license));
+            val productLicenseDialog = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_paid), context.getString(R.string.enter_license_key), context.getString(R.string.ok), true, licenseInput);
             productLicenseDialog.onOK.subscribe {
                 val licenseText = licenseInput.text;
                 if (licenseText.isNullOrEmpty()) {
-                    UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Invalid license key");
+                    UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.invalid_license_key));
                     return@subscribe;
                 }
 
@@ -127,19 +127,19 @@ class BuyFragment : MainFragment() {
                                 licenseInput.clear();
                                 productLicenseDialog.hide(true);
 
-                                UIDialogs.showDialogOk(context, R.drawable.ic_check, "Your license key has been set!\nAn app restart might be required.");
+                                UIDialogs.showDialogOk(context, R.drawable.ic_check, context.getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required));
                                 _fragment.close(true);
                             }
                             else
                             {
-                                UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Invalid license key");
+                                UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.invalid_license_key));
                             }
                         }
                     }
                     catch(ex: Throwable) {
                         Logger.e("BuyFragment", "Failed to activate key", ex);
                         withContext(Dispatchers.Main) {
-                            UIDialogs.showGeneralErrorDialog(context, "Failed to activate key", ex);
+                            UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_activate_key), ex);
                         }
                     }
                 }

@@ -72,7 +72,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             //TODO: Reconstruct search video from detail if search is null
             _overlayContainer.let {
                 if(content is IPlatformVideo)
-                    UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, "Hide", "Hide from Home", "hide",
+                    UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, context.getString(R.string.hide), context.getString(R.string.hide_from_home), "hide",
                         { StateMeta.instance.addHiddenVideo(content.url);
                             if (fragment is HomeFragment) {
                                 val removeIndex = recyclerData.results.indexOf(content);
@@ -82,13 +82,13 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                                 }
                             }
                         }),
-                        SlideUpMenuItem(context, R.drawable.ic_playlist, "Play Feed as Queue", "Play entire feed", "playFeed",
-                            {
-                                val newQueue = listOf(content) + recyclerData.results
-                                    .filterIsInstance<IPlatformVideo>()
-                                    .filter { it != content };
-                                StatePlayer.instance.setQueue(newQueue, StatePlayer.TYPE_QUEUE, "Feed Queue", true, false);
-                            })
+                        SlideUpMenuItem(context, R.drawable.ic_playlist, context.getString(R.string.play_feed_as_queue), context.getString(R.string.play_entire_feed), "playFeed",
+                        {
+                            val newQueue = listOf(content) + recyclerData.results
+                                .filterIsInstance<IPlatformVideo>()
+                                .filter { it != content };
+                            StatePlayer.instance.setQueue(newQueue, StatePlayer.TYPE_QUEUE, "Feed Queue", true, false);
+                        })
                     );
             }
         };
@@ -96,7 +96,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             if(it is IPlatformVideo) {
                 StatePlayer.instance.addToQueue(it);
                 val name = if (it.name.length > 20) (it.name.subSequence(0, 20).toString() + "...") else it.name;
-                UIDialogs.toast(context, "Queued [$name]", false);
+                UIDialogs.toast(context, context.getString(R.string.queued) + " [$name]", false);
             }
         };
     }

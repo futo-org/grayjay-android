@@ -47,7 +47,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
                 this.setMargins(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics).toInt());
             };
             profileButton.withPrimaryText(systemState.username);
-            profileButton.withSecondaryText("Sign in to this identity");
+            profileButton.withSecondaryText(getString(R.string.sign_in_to_this_identity));
             profileButton.onClick.subscribe {
                 StatePolycentric.instance.setProcessHandle(processHandle);
                 startActivity(Intent(this@PolycentricHomeActivity, PolycentricProfileActivity::class.java));

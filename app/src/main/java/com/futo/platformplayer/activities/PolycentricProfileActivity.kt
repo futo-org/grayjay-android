@@ -72,7 +72,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, "Failed to backfill client");
+                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_backfill_client));
                 }
             }
         }
@@ -101,10 +101,10 @@ class PolycentricProfileActivity : AppCompatActivity() {
         }
 
         _buttonDelete.onClick.subscribe {
-            UIDialogs.showConfirmationDialog(this, "Are you sure you want to remove this profile?", {
+            UIDialogs.showConfirmationDialog(this, getString(R.string.are_you_sure_you_want_to_remove_this_profile), {
                 val processHandle = StatePolycentric.instance.processHandle;
                 if (processHandle == null) {
-                    UIDialogs.toast(this, "No process handle set");
+                    UIDialogs.toast(this, getString(R.string.no_process_handle_set));
                     return@showConfirmationDialog;
                 }
 
@@ -122,13 +122,13 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 var hasChanges = false;
                 val username = _editName.text.toString();
                 if (username.length < 3) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, "Name must be at least 3 characters long");
+                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.name_must_be_at_least_3_characters_long));
                     return@launch;
                 }
 
                 val processHandle = StatePolycentric.instance.processHandle;
                 if (processHandle == null) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, "Process handle unset");
+                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.process_handle_unset));
                     return@launch;
                 }
 
@@ -143,7 +143,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
                     val bytes = readBytesFromUri(applicationContext.contentResolver, avatarUri);
                     if (bytes == null) {
                         withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, "Failed to read image");
+                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_read_image));
                         }
 
                         return@launch;
@@ -188,12 +188,12 @@ class PolycentricProfileActivity : AppCompatActivity() {
                     try {
                         processHandle.fullyBackfillServers();
                         withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, "Changes have been saved");
+                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.changes_have_been_saved));
                         }
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to synchronize changes", e);
                         withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, "Failed to synchronize changes");
+                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_synchronize_changes));
                         }
                     }
                 }
@@ -235,7 +235,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
         } else if (resultCode == ImagePicker.RESULT_ERROR) {
             UIDialogs.toast(this, ImagePicker.getError(data));
         } else {
-            UIDialogs.toast(this, "Image picker cancelled");
+            UIDialogs.toast(this, getString(R.string.image_picker_cancelled));
         }
     }
 

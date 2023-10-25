@@ -92,8 +92,8 @@ class PlaylistsFragment : MainFragment() {
             recyclerPlaylists.adapter = _adapterPlaylist;
             recyclerPlaylists.layoutManager = LinearLayoutManager(context);
 
-            val nameInput = SlideUpMenuTextInput(context, "Name");
-            val addPlaylistOverlay = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_create_playlist), "Create new playlist", "Ok", false, nameInput);
+            val nameInput = SlideUpMenuTextInput(context, context.getString(R.string.name));
+            val addPlaylistOverlay = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_create_playlist), context.getString(R.string.create_new_playlist), context.getString(R.string.ok), false, nameInput);
 
             _adapterPlaylist.onClick.subscribe { p -> _fragment.navigate<PlaylistFragment>(p); };
             _adapterPlaylist.onPlay.subscribe { p ->
@@ -130,7 +130,7 @@ class PlaylistsFragment : MainFragment() {
             _appBar = findViewById(R.id.app_bar);
             _layoutWatchlist = findViewById(R.id.layout_watchlist);
 
-            findViewById<TextView>(R.id.text_view_all).setOnClickListener { _fragment.navigate<WatchLaterFragment>("Watch Later"); };
+            findViewById<TextView>(R.id.text_view_all).setOnClickListener { _fragment.navigate<WatchLaterFragment>(context.getString(R.string.watch_later)); };
             StatePlaylists.instance.onWatchLaterChanged.subscribe(this) {
                 updateWatchLater();
             };

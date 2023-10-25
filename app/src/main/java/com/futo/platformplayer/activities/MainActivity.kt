@@ -478,13 +478,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                         if(targetData.startsWith("grayjay://license/")) {
                             if(StatePayment.instance.setPaymentLicenseUrl(targetData))
                             {
-                                UIDialogs.showDialogOk(this, R.drawable.ic_check, "Your license key has been set!\nAn app restart might be required.");
+                                UIDialogs.showDialogOk(this, R.drawable.ic_check, getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required));
 
                                 if(fragCurrent is BuyFragment)
                                     closeSegment(fragCurrent);
                             }
                             else
-                                UIDialogs.toast("Invalid license format");
+                                UIDialogs.toast(getString(R.string.invalid_license_format));
 
                         }
                         else if(targetData.startsWith("grayjay://plugin/")) {
@@ -499,7 +499,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             UIDialogs.showSingleButtonDialog(
                                 this,
                                 R.drawable.ic_play,
-                                "Unknown content format [${targetData}]",
+                                getString(R.string.unknown_content_format) + " [${targetData}]",
                                 "Ok",
                                 { });
                         }
@@ -509,7 +509,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             UIDialogs.showSingleButtonDialog(
                                 this,
                                 R.drawable.ic_play,
-                                "Unknown file format [${targetData}]",
+                                getString(R.string.unknown_file_format) + " [${targetData}]",
                                 "Ok",
                                 { });
                         }
@@ -519,7 +519,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             UIDialogs.showSingleButtonDialog(
                                 this,
                                 R.drawable.ic_play,
-                                "Unknown Polycentric format [${targetData}]",
+                                getString(R.string.unknown_polycentric_format) + " [${targetData}]",
                                 "Ok",
                                 { });
                         }
@@ -529,7 +529,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             UIDialogs.showSingleButtonDialog(
                                 this,
                                 R.drawable.ic_play,
-                                "Unknown url format [${targetData}]",
+                                getString(R.string.unknown_url_format) + " [${targetData}]",
                                 "Ok",
                                 { });
                         }
@@ -538,7 +538,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
         }
         catch(ex: Throwable) {
-            UIDialogs.showGeneralErrorDialog(this, "Failed to handle file", ex);
+            UIDialogs.showGeneralErrorDialog(this, getString(R.string.failed_to_handle_file), ex);
         }
     }
 
@@ -603,7 +603,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         val store: ManagedStore<*> = when(type) {
             "Playlist" -> StatePlaylists.instance.playlistStore
             else -> {
-                UIDialogs.toast("Unknown reconstruction type ${type}", false);
+                UIDialogs.toast(getString(R.string.unknown_reconstruction_type) + " ${type}", false);
                 return;
             };
         };
@@ -646,7 +646,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
         catch(ex: Exception) {
             Logger.e(TAG, ex.message, ex);
-            UIDialogs.showGeneralErrorDialog(context, "Failed to parse NewPipe Subscriptions", ex);
+            UIDialogs.showGeneralErrorDialog(context, getString(R.string.failed_to_parse_newpipe_subscriptions), ex);
         }
 
         /*

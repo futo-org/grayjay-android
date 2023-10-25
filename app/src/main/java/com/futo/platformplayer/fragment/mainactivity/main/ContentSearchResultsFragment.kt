@@ -89,7 +89,7 @@ class ContentSearchResultsFragment : MainFragment() {
             })
             .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
             .exception<Throwable> {
-                Logger.w(ChannelFragment.TAG, "Failed to load results.", it);
+                Logger.w(TAG, "Failed to load results.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
             }
         }

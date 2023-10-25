@@ -195,9 +195,8 @@ class SubscriptionsFeedFragment : MainFragment() {
 
                     withContext(Dispatchers.Main) {
                         UIDialogs.showDialog(context, R.drawable.ic_security_pred,
-                            "Rate Limit Warning",  "This is a temporary measure to prevent people from hitting rate limit until we have better support for lots of subscriptions." +
-                                    "\n\nYou have too many subscriptions for the following plugins:\n",
-                            subsByLimited.map { "${it.first.config.name}: ${it.second.size} Subscriptions" } .joinToString("\n"), 0, UIDialogs.Action("Refresh Anyway", {
+                            context.getString(R.string.rate_limit_warning),  context.getString(R.string.this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions) + context.getString(R.string.you_have_too_many_subscriptions_for_the_following_plugins),
+                            subsByLimited.map { it.first.config.name + ": " + it.second.size + " " + context.getString(R.string.subscriptions) } .joinToString("\n"), 0, UIDialogs.Action("Refresh Anyway", {
                                 _bypassRateLimit = true;
                                 loadResults();
                             }, UIDialogs.ActionStyle.DANGEROUS_TEXT),
@@ -226,10 +225,10 @@ class SubscriptionsFeedFragment : MainFragment() {
 
             synchronized(_filterLock) {
                 _subscriptionBar?.setToggles(
-                    SubscriptionBar.Toggle("Videos", _filterSettings.allowContentTypes.contains(ContentType.MEDIA)) { toggleFilterContentTypes(listOf(ContentType.MEDIA, ContentType.NESTED_VIDEO), it);  },
-                    SubscriptionBar.Toggle("Posts",  _filterSettings.allowContentTypes.contains(ContentType.POST)) { toggleFilterContentType(ContentType.POST, it); },
-                    SubscriptionBar.Toggle("Live", _filterSettings.allowLive) { _filterSettings.allowLive = it; _filterSettings.save(); loadResults(false); },
-                    SubscriptionBar.Toggle("Planned", _filterSettings.allowPlanned) { _filterSettings.allowPlanned = it; _filterSettings.save(); loadResults(false); }
+                    SubscriptionBar.Toggle(context.getString(R.string.videos), _filterSettings.allowContentTypes.contains(ContentType.MEDIA)) { toggleFilterContentTypes(listOf(ContentType.MEDIA, ContentType.NESTED_VIDEO), it);  },
+                    SubscriptionBar.Toggle(context.getString(R.string.posts),  _filterSettings.allowContentTypes.contains(ContentType.POST)) { toggleFilterContentType(ContentType.POST, it); },
+                    SubscriptionBar.Toggle(context.getString(R.string.live), _filterSettings.allowLive) { _filterSettings.allowLive = it; _filterSettings.save(); loadResults(false); },
+                    SubscriptionBar.Toggle(context.getString(R.string.planned), _filterSettings.allowPlanned) { _filterSettings.allowPlanned = it; _filterSettings.save(); loadResults(false); }
                 );
             }
 
@@ -283,7 +282,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
                 val results = cachePager.getResults();
                 Logger.i(TAG, "Subscription show cache (${results.size})");
-                setTextCentered(if (results.isEmpty()) "No results found\nSwipe down to refresh" else null);
+                setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
                 setPager(cachePager);
             } else {
                 setTextCentered(null);
@@ -299,7 +298,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                     finishRefreshLayoutLoader();
                     setLoading(false);
                     setPager(pager);
-                    setTextCentered(if (pager.getResults().isEmpty()) "No results found\nSwipe down to refresh" else null);
+                    setTextCentered(if (pager.getResults().isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to finish loading", e)
                 }
@@ -326,7 +325,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 if (toShow is PluginException)
                                     UIDialogs.toast(
                                         it,
-                                        "Plugin [${toShow.config.name}] (${channel}) failed:\n${toShow.message}"
+                                        context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", toShow.config.name).replace("{message}", toShow.message ?: "")
                                     );
                                 else
                                     UIDialogs.toast(it, ex.message ?: "");
@@ -340,7 +339,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 .map { it!! }
                                 .toList();
                             for(distinctPluginFail in failedPlugins)
-                                UIDialogs.toast(it, "Plugin [${distinctPluginFail.config.name}] failed:\n${distinctPluginFail.message}");
+                                UIDialogs.toast(it, context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", distinctPluginFail.config.name).replace("{message}", distinctPluginFail.message ?: ""));
                         }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to handle exceptions", e)

@@ -154,13 +154,13 @@ class PostDetailFragment : MainFragment {
             {
                 val result = StatePlatform.instance.getContentDetails(it).await();
                 if(result !is IPlatformPostDetails)
-                    throw IllegalStateException("Expected media content, found ${result.contentType}");
+                    throw IllegalStateException(context.getString(R.string.expected_media_content_found) + " ${result.contentType}");
                 return@TaskHandler result;
             })
             .success { setPostDetails(it) }
             .exception<Throwable> {
-                Logger.w(ChannelFragment.TAG, "Failed to load post.", it);
-                UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load post", it, ::fetchPost);
+                Logger.w(ChannelFragment.TAG, context.getString(R.string.failed_to_load_post), it);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost);
             } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
         private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(StateApp.instance.scopeGetter, { PolycentricCache.instance.getProfileAsync(it) })
@@ -222,7 +222,7 @@ class PostDetailFragment : MainFragment {
                 val replyCount = c.replyCount ?: 0;
                 var metadata = "";
                 if (replyCount > 0) {
-                    metadata += "$replyCount replies";
+                    metadata += "$replyCount " + context.getString(R.string.replies);
                 }
 
                 if (c is PolycentricPlatformComment) {
@@ -601,7 +601,7 @@ class PostDetailFragment : MainFragment {
             val subscribers = value?.author?.subscribers;
             if(subscribers != null && subscribers > 0) {
                 _channelMeta.visibility = View.VISIBLE;
-                _channelMeta.text = if((value.author?.subscribers ?: 0) > 0) value.author.subscribers!!.toHumanNumber() + " subscribers" else "";
+                _channelMeta.text = if((value.author.subscribers ?: 0) > 0) value.author.subscribers!!.toHumanNumber() + " " + context.getString(R.string.subscribers) else "";
             } else {
                 _channelMeta.visibility = View.GONE;
                 _channelMeta.text = "";

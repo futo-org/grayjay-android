@@ -116,7 +116,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             }.exceptionWithParameter<Throwable> { ex, para ->
                 //setLoading(false);
                 Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
-                UIDialogs.toast(context, "Failed to fetch\n${para}", false)
+                UIDialogs.toast(context, context.getString(R.string.failed_to_fetch) + "\n${para}", false)
                 //UIDialogs.showDataRetryDialog(layoutInflater, { load(); });
                 loadNext();
             };
@@ -147,14 +147,14 @@ class ImportSubscriptionsFragment : MainFragment() {
 
             val tb = _fragment.topBar as ImportTopBarFragment?;
             tb?.let {
-                it.title = "Import Subscriptions";
+                it.title = context.getString(R.string.import_subscriptions);
                 it.onImport.subscribe(this) {
                     val subscriptionsToImport = _items.filter { i -> i.selected }.toList();
                     for (subscriptionToImport in subscriptionsToImport) {
                         StateSubscriptions.instance.addSubscription(subscriptionToImport.channel);
                     }
 
-                    UIDialogs.toast("${subscriptionsToImport.size} subscriptions imported.");
+                    UIDialogs.toast("${subscriptionsToImport.size} " + context.getString(R.string.subscriptions_imported));
                     _fragment.closeSegment();
                 };
             }
@@ -165,7 +165,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             if (_counter >= MAXIMUM_BATCH_SIZE) {
                 if (!_limitToastShown) {
                     _limitToastShown = true;
-                    UIDialogs.toast(context, "Stopped after $MAXIMUM_BATCH_SIZE to avoid rate limit, re-enter to import rest");
+                    UIDialogs.toast(context, "Stopped after {requestCount} to avoid rate limit, re-enter to import rest".replace("{requestCount}", MAXIMUM_BATCH_SIZE.toString()));
                 }
 
                 setLoading(false);
@@ -187,7 +187,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             val itemsSelected = _items.count { i -> i.selected };
             if (itemsSelected > 0) {
                 _textSelectDeselectAll.text = context.getString(R.string.deselect_all);
-                _textCounter.text = "$itemsSelected out of ${_items.size} selected";
+                _textCounter.text = context.getString(R.string.index_out_of_size_selected).replace("{index}", itemsSelected.toString()).replace("{size}", _items.size.toString());
                 (_fragment.topBar as ImportTopBarFragment?)?.setImportEnabled(true);
             } else {
                 _textSelectDeselectAll.text = context.getString(R.string.select_all);

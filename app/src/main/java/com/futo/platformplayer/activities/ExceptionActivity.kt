@@ -38,8 +38,8 @@ class ExceptionActivity : AppCompatActivity() {
         _buttonRestart = findViewById(R.id.button_restart);
         _buttonClose = findViewById(R.id.button_close);
 
-        val context = intent.getStringExtra(EXTRA_CONTEXT) ?: "Unknown Context";
-        val stack = intent.getStringExtra(EXTRA_STACK) ?: "Something went wrong... missing stack trace?";
+        val context = intent.getStringExtra(EXTRA_CONTEXT) ?: getString(R.string.unknown_context);
+        val stack = intent.getStringExtra(EXTRA_STACK) ?: getString(R.string.something_went_wrong_missing_stack_trace);
 
         val exceptionString = "Version information (version_name = ${BuildConfig.VERSION_NAME}, version_code = ${BuildConfig.VERSION_CODE}, flavor = ${BuildConfig.FLAVOR}, build_type = ${BuildConfig.BUILD_TYPE})\n" +
                 "Device information (brand= ${Build.BRAND}, manufacturer = ${Build.MANUFACTURER}, device = ${Build.DEVICE}, version-sdk = ${Build.VERSION.SDK_INT}, version-os = ${Build.VERSION.BASE_OS})\n\n" +
@@ -79,13 +79,13 @@ class ExceptionActivity : AppCompatActivity() {
 
     private fun submitFile() {
         if (_submitted) {
-            Toast.makeText(this, "Logs already submitted.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.logs_already_submitted), Toast.LENGTH_LONG).show();
             return;
         }
 
         val file = _file;
         if (file == null) {
-            Toast.makeText(this, "No logs found.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.no_logs_found), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -101,14 +101,14 @@ class ExceptionActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 if (id == null) {
                     try {
-                        Toast.makeText(this@ExceptionActivity, "Failed automated share, share manually?", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this@ExceptionActivity, getString(R.string.failed_automated_share_share_manually), Toast.LENGTH_LONG).show();
                     } catch (e: Throwable) {
                         //Ignored
                     }
                 } else {
                     _submitted = true;
                     file.delete();
-                    Toast.makeText(this@ExceptionActivity, "Shared $id", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this@ExceptionActivity, getString(R.string.shared_id).replace("{id}", id), Toast.LENGTH_LONG).show();
                 }
             }
         }
@@ -119,10 +119,10 @@ class ExceptionActivity : AppCompatActivity() {
             val i = Intent(Intent.ACTION_SEND);
             i.type = "text/plain";
             i.putExtra(Intent.EXTRA_EMAIL, arrayOf("grayjay@futo.org"));
-            i.putExtra(Intent.EXTRA_SUBJECT, "Unhandled exception in VS");
+            i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.unhandled_exception_in_vs));
             i.putExtra(Intent.EXTRA_TEXT, exceptionString);
 
-            startActivity(Intent.createChooser(i, "Send exception to developers..."));
+            startActivity(Intent.createChooser(i, getString(R.string.send_exception_to_developers)));
         } catch (e: Throwable) {
             //Ignored
 

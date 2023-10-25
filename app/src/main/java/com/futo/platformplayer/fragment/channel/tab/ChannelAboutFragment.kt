@@ -77,7 +77,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
         };
         _textName?.text = channel.name;
 
-        val metadata = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} subscribers" else "";
+        val metadata = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} " + getString(R.string.subscribers).lowercase() else "";
         _textMetadata?.text = metadata;
         _lastChannel = channel;
         setLinks(channel.links, channel.name);
@@ -91,7 +91,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
             l.removeAllViews();
 
             if (links.isNotEmpty()) {
-                _textFindOn?.text = "Find $name on";
+                _textFindOn?.text = getString(R.string.find_name_on).replace("{name}", name);
                 _textFindOn?.visibility = View.VISIBLE;
 
                 for (pair in links) {

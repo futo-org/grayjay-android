@@ -541,7 +541,7 @@ class VideoDetailView : ConstraintLayout {
             val replyCount = c.replyCount ?: 0;
             var metadata = "";
             if (replyCount > 0) {
-                metadata += "$replyCount replies";
+                metadata += "$replyCount " + context.getString(R.string.replies);
             }
 
             if (c is PolycentricPlatformComment) {
@@ -579,13 +579,13 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun updateMoreButtons() {
-        val buttons = listOf(RoundButton(context, R.drawable.ic_add, "Add", TAG_ADD) {
+        val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer);
             }
         },
             if(video?.isLive ?: false)
-                RoundButton(context, R.drawable.ic_chat, "Live Chat", TAG_LIVECHAT) {
+                RoundButton(context, R.drawable.ic_chat, context.getString(R.string.live_chat), TAG_LIVECHAT) {
                     video?.let {
                         try {
                             loadLiveChat(it);
@@ -595,7 +595,7 @@ class VideoDetailView : ConstraintLayout {
                         }
                     }
                 } else null,
-            RoundButton(context, R.drawable.ic_screen_share, "Background", TAG_BACKGROUND) {
+            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
                 if(!allowBackground) {
                     _player.switchToAudioMode();
                     allowBackground = true;
@@ -607,31 +607,31 @@ class VideoDetailView : ConstraintLayout {
                     it.text.text = resources.getString(R.string.background);
                 }
             },
-            RoundButton(context, R.drawable.ic_download, "Download", TAG_DOWNLOAD) {
+            RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
                 video?.let {
                     _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
                 };
             },
-            RoundButton(context, R.drawable.ic_share, "Share", TAG_SHARE) {
+            RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
                 video?.let {
                     Logger.i(TAG, "Share preventPictureInPicture = true");
                     preventPictureInPicture = true;
                     shareVideo();
                 };
             },
-            RoundButton(context, R.drawable.ic_screen_share, "Overlay", TAG_OVERLAY) {
+            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
                 this.startPictureInPicture();
                 fragment.forcePictureInPicture();
                 //PiPActivity.startPiP(context);
             },
-            RoundButton(context, R.drawable.ic_export, "Page", TAG_OPEN) {
+            RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
                 video?.let {
                     val url = video?.shareUrl ?: _searchVideo?.shareUrl ?: _url;
                     fragment.navigate<BrowserFragment>(url);
                     fragment.minimizeVideoDetail();
                 };
             },
-            RoundButton(context, R.drawable.ic_refresh, "Reload", "Reload") {
+            RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
                 reloadVideo();
             }).filterNotNull();
         if(!_buttonPinStore.getAllValues().any())
@@ -857,7 +857,7 @@ class VideoDetailView : ConstraintLayout {
 
         val subTitleSegments : ArrayList<String> = ArrayList();
         if(video.viewCount > 0)
-            subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if(video.isLive)  "watching now" else "views"}");
+            subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if(video.isLive)  context.getString(R.string.watching_now) else context.getString(R.string.views)}");
         if(video.datetime != null) {
             val diff = video.datetime?.getNowDiffSeconds() ?: 0;
             val ago = video.datetime?.toHumanNowDiffString(true)
@@ -873,7 +873,7 @@ class VideoDetailView : ConstraintLayout {
         _subTitle.text = subTitleSegments.joinToString(" • ");
         _playWhenReady = true;
         if(video.author.subscribers != null) {
-            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " " + context.getString(R.string.subscribers)else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
@@ -933,7 +933,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         if(videoDetail.datetime != null && videoDetail.datetime!! > OffsetDateTime.now())
-            UIDialogs.toast(context, "Planned in ${videoDetail.datetime?.toHumanNowDiffString(true)}")
+            UIDialogs.toast(context, context.getString(R.string.planned_in) + " ${videoDetail.datetime?.toHumanNowDiffString(true)}")
 
         if (!videoDetail.isLive) {
             _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
@@ -965,7 +965,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 catch(ex: Throwable) {
                     withContext(Dispatchers.Main) {
-                        UIDialogs.showGeneralErrorDialog(context, "Failed to get Playback Tracker", ex);
+                        UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_get_playback_tracker), ex);
                     };
                 }
             };
@@ -983,7 +983,7 @@ class VideoDetailView : ConstraintLayout {
         _title.text = video.name;
         _channelName.text = video.author.name;
         if(video.author.subscribers != null) {
-            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " subscribers" else "";
+            _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " " + context.getString(R.string.subscribers) else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);
         } else {
             _channelMeta.text = "";
@@ -1008,7 +1008,7 @@ class VideoDetailView : ConstraintLayout {
         _platform.setPlatformFromClientID(video.id.pluginId);
         val subTitleSegments : ArrayList<String> = ArrayList();
         if(video.viewCount > 0)
-            subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if(video.isLive) "watching now" else "views"}");
+            subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if(video.isLive) context.getString(R.string.watching_now) else context.getString(R.string.views)}");
         if(video.datetime != null) {
             val diff = video.datetime?.getNowDiffSeconds() ?: 0;
             val ago = video.datetime?.toHumanNowDiffString(true)
@@ -1167,7 +1167,7 @@ class VideoDetailView : ConstraintLayout {
                     livePager = StatePlatform.instance.getLiveEvents(video.url);
                 } catch (ex: Throwable) {
                     livePager = null;
-                    UIDialogs.toast("Exception retrieving live events:\n" + ex.message);
+                    UIDialogs.toast(context.getString(R.string.exception_retrieving_live_events) + "\n" + ex.message);
                     Logger.e(TAG, "Failed to retrieve live chat events", ex);
                 }
                 try {
@@ -1178,7 +1178,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 catch(ex: Throwable) {
                     liveChatWindow = null;
-                    UIDialogs.toast("Exception retrieving live chat window:\n" + ex.message);
+                    UIDialogs.toast(context.getString(R.string.exception_retrieving_live_chat_window) + "\n" + ex.message);
                     Logger.e(TAG, "Failed to retrieve live chat window", ex);
                 }
                 val liveChat = livePager?.let {
@@ -1200,7 +1200,7 @@ class VideoDetailView : ConstraintLayout {
             catch(ex: Throwable) {
                 Logger.e(TAG, "Failed to load live chat", ex);
 
-                UIDialogs.toast("Live chat failed to load\n" + ex.message);
+                UIDialogs.toast(context.getString(R.string.live_chat_failed_to_load) + "\n" + ex.message);
                 //_liveChat?.handleEvents(listOf(LiveEventComment("SYSTEM", null, "Failed to load live chat:\n" + ex.message, "#FF0000")))
                 /*
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
@@ -1257,11 +1257,11 @@ class VideoDetailView : ConstraintLayout {
         }
         catch(ex: UnsupportedCastException) {
             Logger.e(TAG, "Failed to load cast media", ex);
-            UIDialogs.showGeneralErrorDialog(context, "Unsupported Cast format", ex);
+            UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.unsupported_cast_format), ex);
         }
         catch(ex: Throwable) {
             Logger.e(TAG, "Failed to load media", ex);
-            UIDialogs.showGeneralErrorDialog(context, "Failed to load media", ex);
+            UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_load_media), ex);
         }
     }
     private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long) {
@@ -1279,7 +1279,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "onSourceChanged(videoSource=$videoSource, audioSource=$audioSource, resume=$resume)")
 
         if((videoSource == null || videoSource is LocalVideoSource) && (audioSource == null || audioSource is LocalAudioSource))
-            UIDialogs.toast(context, "Offline Playback", false);
+            UIDialogs.toast(context, context.getString(R.string.offline_playback), false);
         //If LiveStream, set to end
         if(videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
             if (video?.isLive == true) {
@@ -1320,12 +1320,12 @@ class VideoDetailView : ConstraintLayout {
                 _didTriggerDatasourceError = true;
 
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
-                    "Media Error",
-                    "The media source encountered an unauthorized error.\nThis might be solved by a plugin reload.\nWould you like to reload?\n(Experimental)",
+                    context.getString(R.string.media_error),
+                    context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
                     null,
                     0,
-                        UIDialogs.Action("No", { _didTriggerDatasourceError = false }),
-                        UIDialogs.Action("Yes", {
+                        UIDialogs.Action(context.getString(R.string.no), { _didTriggerDatasourceError = false }),
+                        UIDialogs.Action(context.getString(R.string.yes), {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
                                     StatePlatform.instance.reloadClient(context, config.id);
@@ -1423,8 +1423,9 @@ class VideoDetailView : ConstraintLayout {
             ?.filter { it.container == bestAudioContainer }
             ?.toList() ?: listOf();
 
-        _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, "Quality", null, true,
-            if (!_isCasting) SlideUpMenuTitle(this.context).apply { setTitle("Playback Rate") } else null,
+        _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, context.getString(
+                    R.string.quality), null, true,
+            if (!_isCasting) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
             if (!_isCasting) SlideUpMenuButtonList(this.context).apply {
                 setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), _player.getPlaybackRate().toString());
                 onClick.subscribe { v ->
@@ -1438,7 +1439,7 @@ class VideoDetailView : ConstraintLayout {
             } else null,
 
             if(localVideoSources?.isNotEmpty() == true)
-                SlideUpMenuGroup(this.context, "Offline Video", "video",
+                SlideUpMenuGroup(this.context, context.getString(R.string.offline_video), "video",
                     *localVideoSources.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_movie, it!!.name, "${it.width}x${it.height}", it,
@@ -1446,7 +1447,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(localAudioSource?.isNotEmpty() == true)
-                SlideUpMenuGroup(this.context, "Offline Audio", "audio",
+                SlideUpMenuGroup(this.context, context.getString(R.string.offline_audio), "audio",
                     *localAudioSource.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), it,
@@ -1454,7 +1455,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(localSubtitleSources?.isNotEmpty() == true)
-                SlideUpMenuGroup(this.context, "Offline Subtitles", "subtitles",
+                SlideUpMenuGroup(this.context, context.getString(R.string.offline_subtitles), "subtitles",
                     *localSubtitleSources
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", it,
@@ -1462,7 +1463,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(liveStreamVideoFormats?.isEmpty() == false)
-                SlideUpMenuGroup(this.context, "Stream Video", "video",
+                SlideUpMenuGroup(this.context, context.getString(R.string.stream_video), "video",
                     *liveStreamVideoFormats.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_movie, it?.label ?: it.containerMimeType ?: it.bitrate.toString(), "${it.width}x${it.height}", it,
@@ -1470,7 +1471,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(liveStreamAudioFormats?.isEmpty() == false)
-                SlideUpMenuGroup(this.context, "Stream Audio", "audio",
+                SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio",
                     *liveStreamAudioFormats.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_music, "${it?.label ?: it.containerMimeType} ${it.bitrate}", "", it,
@@ -1479,7 +1480,7 @@ class VideoDetailView : ConstraintLayout {
             else null,
 
             if(bestVideoSources.isNotEmpty())
-                SlideUpMenuGroup(this.context, "Video", "video",
+                SlideUpMenuGroup(this.context, context.getString(R.string.video), "video",
                     *bestVideoSources.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_movie, it!!.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", it,
@@ -1487,7 +1488,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(bestAudioSources.isNotEmpty())
-                SlideUpMenuGroup(this.context, "Audio", "audio",
+                SlideUpMenuGroup(this.context, context.getString(R.string.audio), "audio",
                     *bestAudioSources.stream()
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), it,
@@ -1495,7 +1496,7 @@ class VideoDetailView : ConstraintLayout {
                         }.toList().toTypedArray())
             else null,
             if(video?.subtitles?.isNotEmpty() ?: false && video != null)
-                SlideUpMenuGroup(this.context, "Subtitles", "subtitles",
+                SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",
                     *video.subtitles
                         .map {
                             SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", it,
@@ -1618,12 +1619,13 @@ class VideoDetailView : ConstraintLayout {
     private fun handleUnavailableVideo(msg: String? = null) {
         if (!nextVideo()) {
             if(video?.datetime == null || video?.datetime!! < OffsetDateTime.now().minusHours(1))
-                UIDialogs.showDialog(context, R.drawable.ic_lock, "Unavailable video", msg ?: "This video is unavailable.", null, 0,
-                    UIDialogs.Action("Back", {
+                UIDialogs.showDialog(context, R.drawable.ic_lock, context.getString(R.string.unavailable_video), msg ?: context.getString(R.string.this_video_is_unavailable), null, 0,
+                    UIDialogs.Action(context.getString(R.string.back), {
                         this@VideoDetailView.onClose.emit();
-                    }, UIDialogs.ActionStyle.PRIMARY));
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
         } else {
-            StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_UNAVAILABLE", "Unavailable video", "There was an unavailable video in your queue [${video?.name}] by [${video?.author?.name}].", AnnouncementType.SESSION)
+            StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_UNAVAILABLE", context.getString(R.string.unavailable_video), context.getString(R.string.there_was_an_unavailable_video_in_your_queue_videoname_by_authorname).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
         }
 
         video?.let { StatePlatform.instance.clearContentDetailCache(it.url) };
@@ -1875,9 +1877,9 @@ class VideoDetailView : ConstraintLayout {
         _player.getGlobalVisibleRect(r);
         r.right = r.right - _player.paddingEnd;
         val playpauseAction = if(_player.playing)
-            RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), "Pause", "Pauses the video", MediaControlReceiver.getPauseIntent(context, 5));
+            RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 5));
         else
-            RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), "Play", "Resumes the video", MediaControlReceiver.getPlayIntent(context, 6));
+            RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
@@ -2066,7 +2068,7 @@ class VideoDetailView : ConstraintLayout {
                     }, UIDialogs.ActionStyle.PRIMARY)
                 );
             } else {
-                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_NOSOURCES", "Video without source", "There was a in your queue [${video?.name}] by [${video?.author?.name}] without the required source being enabled, playback was skipped.", AnnouncementType.SESSION)
+                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_NOSOURCES", context.getString(R.string.video_without_source), context.getString(R.string.there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
             }
         }
         .exception<ContentNotAvailableYetException> {
@@ -2085,9 +2087,10 @@ class VideoDetailView : ConstraintLayout {
             Logger.w(TAG, "exception<ScriptImplementationException>", it)
 
             if (!nextVideo()) {
-                UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load video (ScriptImplementationException)", it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, ::fetchVideo);
             } else {
-                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_INVALIDVIDEO", "Invalid video", "There was an invalid video in your queue [${video?.name}] by [${video?.author?.name}], playback was skipped.", AnnouncementType.SESSION)
+                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_INVALIDVIDEO", context.getString(R.string.invalid_video), context.getString(
+                                    R.string.there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
             }
         }
         .exception<ScriptAgeException> {
@@ -2102,7 +2105,9 @@ class VideoDetailView : ConstraintLayout {
                         this@VideoDetailView.onClose.emit();
                     }, UIDialogs.ActionStyle.PRIMARY));
             } else {
-                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_AGERESTRICT", "Age restricted video", "There was an age restricted video in your queue [${video?.name}] by [${video?.author?.name}], this video was not accessible and playback was skipped.", AnnouncementType.SESSION)
+                StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_AGERESTRICT", context.getString(R.string.age_restricted_video),
+                    context.getString(R.string.there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""),
+                    AnnouncementType.SESSION)
             }
         }
         .exception<ScriptUnavailableException> {
@@ -2118,7 +2123,7 @@ class VideoDetailView : ConstraintLayout {
                 _retryJob = null;
                 _liveTryJob?.cancel();
                 _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load video (ScriptException)", it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, ::fetchVideo);
             }
         }
         .exception<Throwable> {
@@ -2130,7 +2135,7 @@ class VideoDetailView : ConstraintLayout {
                 _retryJob = null;
                 _liveTryJob?.cancel();
                 _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load video", it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo);
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 
@@ -2171,7 +2176,7 @@ class VideoDetailView : ConstraintLayout {
         val toWait = _liveStreamCheckInterval.toList().sortedBy { abs(diffSeconds - it.first) }.firstOrNull()?.second?.toLong() ?: return;
 
         fragment.lifecycleScope.launch(Dispatchers.Main){
-            UIDialogs.toast(context, "Not yet available, retrying in ${toWait}s");
+            UIDialogs.toast(context, context.getString(R.string.not_yet_available_retrying_in_time_s).replace("{time}", toWait.toString()));
         }
 
         _liveTryJob?.cancel();
@@ -2185,7 +2190,7 @@ class VideoDetailView : ConstraintLayout {
                 if(videoDetail.datetime != null && videoDetail.live == null && !videoDetail.video.videoSources.any()) {
                     if(videoDetail.datetime!! > OffsetDateTime.now())
                         withContext(Dispatchers.Main) {
-                            UIDialogs.toast(context, "Planned in ${videoDetail.datetime?.toHumanNowDiffString(true)}");
+                            UIDialogs.toast(context, context.getString(R.string.planned_in) + " ${videoDetail.datetime?.toHumanNowDiffString(true)}");
                         }
                     startLiveTry(liveTryVideo);
                 }
@@ -2198,7 +2203,7 @@ class VideoDetailView : ConstraintLayout {
             catch(ex: Throwable) {
                 Logger.e(TAG, "Failed to live try fetch video.", ex);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context, "Failed to retry for live stream");
+                    UIDialogs.toast(context, context.getString(R.string.failed_to_retry_for_live_stream));
                 }
             }
         }

@@ -113,7 +113,7 @@ class ImportPlaylistsFragment : MainFragment() {
                 }.exceptionWithParameter<Throwable> { ex, para ->
                     //setLoading(false);
                     Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
-                    UIDialogs.toast(context, "Failed to fetch\n${para}", false)
+                    UIDialogs.toast(context, context.getString(R.string.failed_to_fetch) + "\n${para}", false)
                     //UIDialogs.showDataRetryDialog(layoutInflater, { load(); });
                     loadNext();
                 };
@@ -144,14 +144,14 @@ class ImportPlaylistsFragment : MainFragment() {
 
             val tb = _fragment.topBar as ImportTopBarFragment?;
             tb?.let {
-                it.title = "Import Playlists";
+                it.title = context.getString(R.string.import_playlists);
                 it.onImport.subscribe(this) {
                     val playlistsToImport = _items.filter { i -> i.selected }.toList();
                     for (playlistToImport in playlistsToImport) {
                         StatePlaylists.instance.createOrUpdatePlaylist(playlistToImport.playlist);
                     }
 
-                    UIDialogs.toast("${playlistsToImport.size} playlists imported.");
+                    UIDialogs.toast("${playlistsToImport.size} " + context.getString(R.string.playlists_imported));
                     _fragment.closeSegment();
                 };
             }
@@ -175,7 +175,7 @@ class ImportPlaylistsFragment : MainFragment() {
             val itemsSelected = _items.count { i -> i.selected };
             if (itemsSelected > 0) {
                 _textSelectDeselectAll.text = context.getString(R.string.deselect_all);
-                _textCounter.text = "$itemsSelected out of ${_items.size} selected";
+                _textCounter.text = context.getString(R.string.index_out_of_size_selected).replace("{index}", itemsSelected.toString()).replace("{size}", _items.size.toString());
                 (_fragment.topBar as ImportTopBarFragment?)?.setImportEnabled(true);
             } else {
                 _textSelectDeselectAll.text = context.getString(R.string.select_all);

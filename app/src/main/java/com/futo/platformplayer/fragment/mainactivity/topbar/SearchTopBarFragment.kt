@@ -194,7 +194,7 @@ class SearchTopBarFragment : TopFragment() {
         if (editSearch != null) {
             val text = editSearch.text.toString();
             if (text.length < 3) {
-                UIDialogs.toast("Please use at least 3 characters");
+                UIDialogs.toast(getString(R.string.please_use_at_least_3_characters));
                 return;
             }
 

@@ -96,8 +96,8 @@ class AddSourceActivity : AppCompatActivity() {
         var url = intent?.dataString;
 
         if(url == null)
-            UIDialogs.showDialog(this, R.drawable.ic_error, "No valid URL provided..", null, null,
-                0, UIDialogs.Action("Ok", { finish() }, UIDialogs.ActionStyle.PRIMARY));
+            UIDialogs.showDialog(this, R.drawable.ic_error, getString(R.string.no_valid_url_provided), null, null,
+                0, UIDialogs.Action(getString(R.string.ok), { finish() }, UIDialogs.ActionStyle.PRIMARY));
         else {
             if(url.startsWith("vfuto://"))
                 url = "https://" + url.substring("vfuto://".length);
@@ -129,14 +129,14 @@ class AddSourceActivity : AppCompatActivity() {
                 Logger.e(TAG, "Failed decode config", ex);
                 withContext(Dispatchers.Main) {
                     UIDialogs.showDialog(this@AddSourceActivity, R.drawable.ic_error,
-                        "Invalid Config Format", null, null,
+                        getString(R.string.invalid_config_format), null, null,
                         0, UIDialogs.Action("Ok", { finish() }, UIDialogs.ActionStyle.PRIMARY));
                 };
                 return@launch;
             } catch(ex: Exception) {
                 Logger.e(TAG, "Failed fetch config", ex);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, "Failed to fetch configuration", ex);
+                    UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, getString(R.string.failed_to_fetch_configuration), ex);
                 };
                 return@launch;
             }
@@ -152,7 +152,7 @@ class AddSourceActivity : AppCompatActivity() {
             } catch (ex: Exception) {
                 Logger.e(TAG, "Failed fetch script", ex);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, "Failed to fetch script", ex);
+                    UIDialogs.showGeneralErrorDialog(this@AddSourceActivity, getString(R.string.failed_to_fetch_script), ex);
                 };
                 return@launch;
             }
@@ -175,8 +175,8 @@ class AddSourceActivity : AppCompatActivity() {
             _sourcePermissions.addView(
                 SourceInfoView(this,
                 R.drawable.ic_language,
-                "URL Access",
-                "The plugin will have access to the following domains",
+                getString(R.string.url_access),
+                getString(R.string.the_plugin_will_have_access_to_the_following_domains),
                 config.allowUrls, true)
             )
 
@@ -184,8 +184,8 @@ class AddSourceActivity : AppCompatActivity() {
             _sourcePermissions.addView(
                 SourceInfoView(this,
                 R.drawable.ic_code,
-                "Eval Access",
-                "The plugin will have access to eval capability (remote injection)",
+                getString(R.string.eval_access),
+                getString(R.string.the_plugin_will_have_access_to_eval_capability_remote_injection),
                 config.allowUrls, true)
             )
 

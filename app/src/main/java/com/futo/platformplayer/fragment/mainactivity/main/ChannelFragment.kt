@@ -141,7 +141,7 @@ class ChannelFragment : MainFragment() {
 
                     UIDialogs.showDialog(context,
                         R.drawable.ic_sources,
-                        "No source enabled to support this channel\n(${_url})", null, null,
+                        context.getString(R.string.no_source_enabled_to_support_this_channel) + "\n(${_url})", null, null,
                         0,
                         UIDialogs.Action("Back", {
                             fragment.close(true);
@@ -344,19 +344,19 @@ class ChannelFragment : MainFragment() {
             _fragment.topBar?.onShown(channel);
 
             val buttons = arrayListOf(Pair(R.drawable.ic_playlist_add) {
-                UIDialogs.showConfirmationDialog(context, "Do you want to convert channel ${channel.name} to a playlist?", {
+                UIDialogs.showConfirmationDialog(context, context.getString(R.string.do_you_want_to_convert_channel_channelname_to_a_playlist).replace("{channelName}", channel.name), {
                     UIDialogs.showDialogProgress(context) {
                         _fragment.lifecycleScope.launch(Dispatchers.IO) {
                             try {
                                 StatePlaylists.instance.createPlaylistFromChannel(channel) { page ->
                                     _fragment.lifecycleScope.launch(Dispatchers.Main) {
-                                        it.setText("${channel.name}\nPage ${page}");
+                                        it.setText("${channel.name}\n" + context.getString(R.string.page) + " $page");
                                     }
                                 };
                             }
                             catch(ex: Exception) {
                                 Logger.e(TAG, "Error", ex);
-                                UIDialogs.showGeneralErrorDialog(context, "Failed to convert channel", ex);
+                                UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_convert_channel), ex);
                             }
 
                             withContext(Dispatchers.Main) {
@@ -377,7 +377,7 @@ class ChannelFragment : MainFragment() {
             _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons);
 
             _buttonSubscribe.setSubscribeChannel(channel);
-            _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} subscribers" else "";
+            _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} " + context.getString(R.string.subscribers).lowercase() else "";
 
             //TODO: Find a better way to access the adapter fragments..
 

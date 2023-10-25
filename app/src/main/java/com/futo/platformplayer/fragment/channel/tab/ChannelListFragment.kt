@@ -56,7 +56,7 @@ class ChannelListFragment : Fragment, IChannelTabFragment {
     }.exception<ScriptCaptchaRequiredException> {  }
         .exceptionWithParameter<Throwable> { ex, para ->
         Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
-        UIDialogs.toast(requireContext(), "Failed to fetch\n${para}", false)
+        UIDialogs.toast(requireContext(), getString(R.string.failed_to_fetch) + "\n " + para, false)
         loadNext();
     };
 

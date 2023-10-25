@@ -35,7 +35,7 @@ class GeneralTopBarFragment : TopFragment() {
         val view = inflater.inflate(R.layout.fragment_overview_top_bar, container, false);
 
         view.findViewById<ImageView>(R.id.app_icon).setOnClickListener {
-            UIDialogs.toast("This app is in development. Please submit bug reports and understand that many features are incomplete.", true);
+            UIDialogs.toast(getString(R.string.this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete), true);
         };
 
         val buttonSearch: ImageButton = view.findViewById(R.id.button_search);

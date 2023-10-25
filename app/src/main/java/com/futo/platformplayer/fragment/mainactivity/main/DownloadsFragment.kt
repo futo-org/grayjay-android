@@ -136,8 +136,8 @@ class DownloadsFragment : MainFragment() {
 
         fun reloadUI() {
             val usage = StateDownloads.instance.getTotalUsage(true);
-            _usageUsed.text = "${usage.usage.toHumanBytesSize()} Used";
-            _usageAvailable.text = "${usage.available.toHumanBytesSize()} Available";
+            _usageUsed.text = "${usage.usage.toHumanBytesSize()} " + context.getString(R.string.used);
+            _usageAvailable.text = "${usage.available.toHumanBytesSize()} " + context.getString(R.string.available);
             _usageProgress.progress = usage.percentage.toFloat();
 
 
@@ -161,7 +161,7 @@ class DownloadsFragment : MainFragment() {
                 _listPlaylistsContainer.visibility = GONE;
             else {
                 _listPlaylistsContainer.visibility = VISIBLE;
-                _listPlaylistsMeta.text = "(${playlists.size} playlists, ${playlists.sumOf { it.playlist.videos.size }} videos)";
+                _listPlaylistsMeta.text = "(${playlists.size} ${context.getString(R.string.playlists).lowercase()}, ${playlists.sumOf { it.playlist.videos.size }} ${context.getString(R.string.videos).lowercase()})";
 
                 _listPlaylists.removeAllViews();
                 for(view in playlists.map { PlaylistDownloadItem(context, it) }) {
@@ -176,7 +176,7 @@ class DownloadsFragment : MainFragment() {
                 _listDownloadedHeader.visibility = GONE;
             } else {
                 _listDownloadedHeader.visibility = VISIBLE;
-                _listDownloadedMeta.text = "(${downloaded.size} videos)";
+                _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()})";
             }
 
             _listDownloaded.setData(downloaded);

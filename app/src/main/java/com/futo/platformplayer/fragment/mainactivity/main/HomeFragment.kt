@@ -101,21 +101,21 @@ class HomeFragment : MainFragment() {
             .exception<ScriptCaptchaRequiredException> {  }
             .exception<ScriptExecutionException> {
                 Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
-                UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,
-                    UIDialogs.Action("Ignore", {}),
-                    UIDialogs.Action("Sources", { fragment.navigate<SourcesFragment>() }, UIDialogs.ActionStyle.PRIMARY)
+                UIDialogs.showDialog(context, R.drawable.ic_error_pred, context.getString(R.string.failed_to_get_home_plugin) + " [${it.config.name}]", it.message, null, 0,
+                    UIDialogs.Action(context.getString(R.string.ignore), {}),
+                    UIDialogs.Action(context.getString(R.string.sources), { fragment.navigate<SourcesFragment>() }, UIDialogs.ActionStyle.PRIMARY)
                 );
             }
             .exception<ScriptImplementationException> {
                 Logger.w(TAG, "Plugin failure.", it);
-                UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Failed to get Home\nPlugin [${it.config.name}]", it.message, null, 0,
-                    UIDialogs.Action("Ignore", {}),
-                    UIDialogs.Action("Sources", { fragment.navigate<SourcesFragment>() }, UIDialogs.ActionStyle.PRIMARY)
+                UIDialogs.showDialog(context, R.drawable.ic_error_pred, context.getString(R.string.failed_to_get_home_plugin) + " [${it.config.name}]", it.message, null, 0,
+                    UIDialogs.Action(context.getString(R.string.ignore), {}),
+                    UIDialogs.Action(context.getString(R.string.sources), { fragment.navigate<SourcesFragment>() }, UIDialogs.ActionStyle.PRIMARY)
                 );
             }
             .exception<Throwable> {
                 Logger.w(TAG, "Failed to load channel.", it);
-                UIDialogs.showGeneralRetryErrorDialog(context, "Failed to get Home", it, {
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_get_home), it, {
                     loadResults()
                 }) {
                     finishRefreshLayoutLoader();
@@ -159,7 +159,7 @@ class HomeFragment : MainFragment() {
         }
         private fun loadedResult(pager : IPager<IPlatformContent>) {
             if (pager is EmptyPager<IPlatformContent>) {
-                StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), "No home available", "No home page is available, please check if you are connected to the internet and refresh.", AnnouncementType.SESSION);
+                StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), context.getString(R.string.no_home_available), context.getString(R.string.no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh), AnnouncementType.SESSION);
             }
 
             Logger.i(TAG, "Got new home pager ${pager}");

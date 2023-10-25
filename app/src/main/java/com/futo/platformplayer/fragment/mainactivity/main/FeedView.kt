@@ -144,7 +144,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
         }.exception<Throwable> {
             Logger.w(TAG, "Failed to load next page.", it);
-            UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load next page", it, {
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
                 loadNextPage();
             });
             //UIDialogs.showDataRetryDialog(layoutInflater, it.message, { loadNextPage() });
@@ -256,7 +256,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
                     fragment.lifecycleScope.launch(Dispatchers.Main) {
                         try {
                             if(jsVideoPager != null)
-                                UIDialogs.toast(it, "Plugin ${jsVideoPager.getPluginConfig().name} failed:\n${kv.value.message}", false);
+                                UIDialogs.toast(it, context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", jsVideoPager.getPluginConfig().name).replace("{message}", kv.value.message ?: ""), false);
                             else
                                 UIDialogs.toast(it, kv.value.message ?: "", false);
                         } catch (e: Throwable) {
@@ -333,11 +333,11 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         parentPager.onPagerError.subscribe(this) {
             Logger.e(TAG, "Search pager failed: ${it.message}", it);
             when (it) {
-                is PluginException -> UIDialogs.toast("Plugin [${it.config.name}] failed due to:\n${it.message}")
+                is PluginException -> UIDialogs.toast("Plugin [{pluginName}] failed due to:\n{exceptionMessage}".replace("{pluginName}", it.config.name).replace("{exceptionMessage}", it.message ?: ""))
                 is CancellationException -> {
                     //Hide cancelled toast
                 }
-                else -> UIDialogs.toast("Plugin failed due to:\n${it.message}")
+                else -> UIDialogs.toast(context.getString(R.string.plugin_failed_due_to) + "\n${it.message}")
             };
         };
     }

@@ -107,7 +107,7 @@ class SourceDetailFragment : MainFragment() {
                 StatePlugins.instance.setPluginSettings(id, _settings!!);
                 reloadSource(id);
 
-                UIDialogs.toast("Plugin settings saved", false);
+                UIDialogs.toast(context.getString(R.string.plugin_settings_saved), false);
             }
             if(_settingsAppChanged) {
                 _settingsAppForm.setObjectValues();
@@ -144,8 +144,8 @@ class SourceDetailFragment : MainFragment() {
                         try {
                             _settings = settingValues;
                             _settingsForm.fromPluginSettings(
-                                settings, settingValues, "Plugin settings",
-                                "These settings are defined by the plugin"
+                                settings, settingValues, context.getString(R.string.plugin_settings),
+                                context.getString(R.string.these_settings_are_defined_by_the_plugin)
                             );
                             _settingsForm.onChanged.clear();
                             _settingsForm.onChanged.subscribe { field, value ->
@@ -158,7 +158,7 @@ class SourceDetailFragment : MainFragment() {
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Failed to load source", ex);
-                    UIDialogs.toast("Failed to loast source");
+                    UIDialogs.toast(context.getString(R.string.failed_to_load_source));
                 }
             }
         }
@@ -204,8 +204,8 @@ class SourceDetailFragment : MainFragment() {
             val isEnabled = StatePlatform.instance.isClientEnabled(source);
 
             groups.add(
-                BigButtonGroup(c, "Update",
-                    BigButton(c, "Check for updates", "Checks for new versions of the source", R.drawable.ic_update) {
+                BigButtonGroup(c, context.getString(R.string.update),
+                    BigButton(c, context.getString(R.string.check_for_updates), context.getString(R.string.checks_for_new_versions_of_the_source), R.drawable.ic_update) {
                         checkForUpdatesSource();
                     }
                 )
@@ -213,8 +213,8 @@ class SourceDetailFragment : MainFragment() {
 
             if (source.isLoggedIn) {
                 groups.add(
-                    BigButtonGroup(c, "Authentication",
-                        BigButton(c, "Logout", "Sign out of the platform", R.drawable.ic_logout) {
+                    BigButtonGroup(c, context.getString(R.string.authentication),
+                        BigButton(c, context.getString(R.string.logout), context.getString(R.string.sign_out_of_the_platform), R.drawable.ic_logout) {
                             logoutSource();
                         }
                     )
@@ -223,7 +223,7 @@ class SourceDetailFragment : MainFragment() {
                 val migrationButtons = mutableListOf<BigButton>();
                 if (isEnabled && source.capabilities.hasGetUserSubscriptions) {
                     migrationButtons.add(
-                        BigButton(c, "Import Subscriptions", "Import your subscriptions from this source", R.drawable.ic_subscriptions) {
+                        BigButton(c, context.getString(R.string.import_subscriptions), context.getString(R.string.import_your_subscriptions_from_this_source), R.drawable.ic_subscriptions) {
                             Logger.i(TAG, "Import subscriptions clicked.");
                             importSubscriptionsSource();
                         }
@@ -231,7 +231,7 @@ class SourceDetailFragment : MainFragment() {
                 }
 
                 if (isEnabled && source.capabilities.hasGetUserPlaylists && source.capabilities.hasGetPlaylist) {
-                    val bigButton = BigButton(c, "Import Playlists", "Import your playlists from this source", R.drawable.ic_playlist) {
+                    val bigButton = BigButton(c, context.getString(R.string.import_playlists), context.getString(R.string.import_your_playlists_from_this_source), R.drawable.ic_playlist) {
                         Logger.i(TAG, "Import playlists clicked.");
                         importPlaylistsSource();
                     };
@@ -244,13 +244,13 @@ class SourceDetailFragment : MainFragment() {
                 }
 
                 if (migrationButtons.size > 0) {
-                    groups.add(BigButtonGroup(c, "Migration", *migrationButtons.toTypedArray()));
+                    groups.add(BigButtonGroup(c, context.getString(R.string.migration), *migrationButtons.toTypedArray()));
                 }
             } else {
                 if(config.authentication != null) {
                     groups.add(
-                        BigButtonGroup(c, "Authentication",
-                            BigButton(c, "Login", "Sign into the platform of this source", R.drawable.ic_login) {
+                        BigButtonGroup(c, context.getString(R.string.authentication),
+                            BigButton(c, context.getString(R.string.login), context.getString(R.string.sign_into_the_platform_of_this_source), R.drawable.ic_login) {
                                 loginSource();
                             }
                         )
@@ -260,8 +260,8 @@ class SourceDetailFragment : MainFragment() {
 
             val clientIfExists = StatePlugins.instance.getPlugin(config.id);
             groups.add(
-                BigButtonGroup(c, "Management",
-                    BigButton(c, "Uninstall", "Removes the plugin from the app", R.drawable.ic_block) {
+                BigButtonGroup(c, context.getString(R.string.management),
+                    BigButton(c, context.getString(R.string.uninstall), context.getString(R.string.removes_the_plugin_from_the_app), R.drawable.ic_block) {
                         uninstallSource();
                     }.withBackground(R.drawable.background_big_button_red).apply {
                         this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -269,8 +269,8 @@ class SourceDetailFragment : MainFragment() {
                         };
                     },
                     if(clientIfExists?.captchaEncrypted != null)
-                        BigButton(c, "Delete Captcha", "Deletes stored captcha answer for this plugin", R.drawable.ic_block) {
-                            clientIfExists?.updateCaptcha(null);
+                        BigButton(c, context.getString(R.string.delete_captcha), context.getString(R.string.deletes_stored_captcha_answer_for_this_plugin), R.drawable.ic_block) {
+                            clientIfExists.updateCaptcha(null);
                         }.apply {
                             this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                                 setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
@@ -329,7 +329,7 @@ class SourceDetailFragment : MainFragment() {
                         }
                     } catch (e: Throwable) {
                         withContext(Dispatchers.Main) {
-                            context?.let { UIDialogs.showGeneralErrorDialog(it, "Failed to retrieve playlists.", e) }
+                            context?.let { UIDialogs.showGeneralErrorDialog(it, it.getString(R.string.failed_to_retrieve_playlists), e) }
                         }
                     } finally {
                         setLoading(false);
@@ -354,14 +354,14 @@ class SourceDetailFragment : MainFragment() {
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         val subscriptions = source.getUserSubscriptions().distinct();
-                        Logger.i(TAG, "${subscriptions.size} user subscriptions retrieved.");
+                        Logger.i(TAG, context.getString(R.string.subscriptioncount_user_subscriptions_retrieved).replace("{subscriptionCount}", subscriptions.size.toString()));
 
                         withContext(Dispatchers.Main) {
                             fragment.navigate<ImportSubscriptionsFragment>(subscriptions);
                         }
                     } catch(e: Throwable) {
                         withContext(Dispatchers.Main) {
-                            context?.let { UIDialogs.showGeneralErrorDialog(it, "Failed to retrieve subscriptions.", e) }
+                            context?.let { UIDialogs.showGeneralErrorDialog(it, context.getString(R.string.failed_to_retrieve_subscriptions), e) }
                         }
                     } finally {
                         setLoading(false);
@@ -375,7 +375,7 @@ class SourceDetailFragment : MainFragment() {
             val config = _config ?: return;
             val source = StatePlatform.instance.getClient(config.id);
 
-            UIDialogs.showConfirmationDialog(context, "Are you sure you want to uninstall ${source.name}", {
+            UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_uninstall) + " ${source.name}", {
                 StatePlugins.instance.deletePlugin(source.id);
 
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
@@ -386,7 +386,7 @@ class SourceDetailFragment : MainFragment() {
                     }
 
                     withContext(Dispatchers.Main) {
-                        UIDialogs.toast(context, "Uninstalled ${source.name}");
+                        UIDialogs.toast(context, context.getString(R.string.uninstalled) + " ${source.name}");
                         fragment.closeSegment();
                     }
                 }
@@ -405,7 +405,7 @@ class SourceDetailFragment : MainFragment() {
 
                     if (!response.isOk || response.body == null) {
                         Logger.w(TAG, "Failed to check for updates (sourceUrl=${sourceUrl}, response.isOk=${response.isOk}, response.body=${response.body}).");
-                        withContext(Dispatchers.Main) { UIDialogs.toast("Failed to check for updates"); };
+                        withContext(Dispatchers.Main) { UIDialogs.toast(context.getString(R.string.failed_to_check_for_updates)); };
                         return@launch;
                     }
 
@@ -415,7 +415,7 @@ class SourceDetailFragment : MainFragment() {
                     val config = SourcePluginConfig.fromJson(configJson);
                     if (config.version <= c.version) {
                         Logger.i(TAG, "Plugin is up to date.");
-                        withContext(Dispatchers.Main) { UIDialogs.toast("Plugin is fully up to date"); };
+                        withContext(Dispatchers.Main) { UIDialogs.toast(context.getString(R.string.plugin_is_fully_up_to_date)); };
                         return@launch;
                     }
 
@@ -430,7 +430,7 @@ class SourceDetailFragment : MainFragment() {
                     Logger.i(TAG, "Started add source activity.");
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to check for updates.", e);
-                    withContext(Dispatchers.Main) { UIDialogs.toast("Failed to check for updates"); };
+                    withContext(Dispatchers.Main) { UIDialogs.toast(context.getString(R.string.failed_to_check_for_updates)); };
                 }
             }
         }

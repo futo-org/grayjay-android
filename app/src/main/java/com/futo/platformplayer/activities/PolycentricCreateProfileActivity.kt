@@ -54,7 +54,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
             try {
                 val username = _profileName.text.toString();
                 if (username.length < 3) {
-                    UIDialogs.toast(this@PolycentricCreateProfileActivity, "Must be at least 3 characters long.");
+                    UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
                     return@setOnClickListener;
                 }
 
@@ -68,7 +68,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                         processHandle.setUsername(username);
                         StatePolycentric.instance.setProcessHandle(processHandle);
                     } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to create profile .", e);
+                        Logger.e(TAG, getString(R.string.failed_to_create_profile), e);
                         return@launch;
                     } finally {
                         _creating = false;
@@ -77,7 +77,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                     try {
                         processHandle.fullyBackfillServers();
                     } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to fully backfill servers.");
+                        Logger.e(TAG, getString(R.string.failed_to_fully_backfill_servers));
                     }
 
                     withContext(Dispatchers.Main) {

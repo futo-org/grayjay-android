@@ -53,7 +53,7 @@ class PolycentricBackupActivity : AppCompatActivity() {
             val qrCodeBitmap = generateQRCode(_exportBundle, dimension, dimension);
             _imageQR.setImageBitmap(qrCodeBitmap);
         } catch (e: Exception) {
-            Logger.e(TAG, "Failed to generate QR code", e);
+            Logger.e(TAG, getString(R.string.failed_to_generate_qr_code), e);
             _imageQR.visibility = View.INVISIBLE;
             _textQR.visibility = View.INVISIBLE;
         }
@@ -63,12 +63,12 @@ class PolycentricBackupActivity : AppCompatActivity() {
                 type = "text/plain";
                 putExtra(Intent.EXTRA_TEXT, _exportBundle);
             }
-            startActivity(Intent.createChooser(shareIntent, "Share Text"));
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_text)));
         };
 
         _buttonCopy.onClick.subscribe {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager;
-            val clip = ClipData.newPlainText("Copied Text", _exportBundle);
+            val clip = ClipData.newPlainText(getString(R.string.copied_text), _exportBundle);
             clipboard.setPrimaryClip(clip);
         };
     }

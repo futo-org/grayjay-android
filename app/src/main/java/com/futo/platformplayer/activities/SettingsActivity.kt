@@ -70,7 +70,7 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
                     SettingsDev.instance.developerMode = true;
                     SettingsDev.instance.save();
                     updateDevMode();
-                    UIDialogs.toast(this, "You are now in developer mode");
+                    UIDialogs.toast(this, getString(R.string.you_are_now_in_developer_mode));
                 }
             };
         };

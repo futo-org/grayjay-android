@@ -91,7 +91,7 @@ abstract class VideoListEditorView : LinearLayout {
     }
 
     protected fun setVideoCount(videoCount: Int = -1) {
-        _textMetadata.text = if (videoCount == -1) "" else "${videoCount} videos";
+        _textMetadata.text = if (videoCount == -1) "" else "${videoCount} " + context.getString(R.string.videos);
     }
 
     protected fun setVideos(videos: List<IPlatformVideo>?, canEdit: Boolean) {
@@ -105,7 +105,7 @@ abstract class VideoListEditorView : LinearLayout {
                     .into(it);
             };
         } else {
-            _textMetadata.text = "0 videos";
+            _textMetadata.text = "0 " + context.getString(R.string.videos);
             if(_imagePlaylistThumbnail != null) {
                 Glide.with(_imagePlaylistThumbnail)
                     .load(R.drawable.placeholder_video_thumbnail)

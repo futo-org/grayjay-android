@@ -80,8 +80,8 @@ class PlaylistFragment : MainFragment() {
         constructor(fragment: PlaylistFragment, inflater: LayoutInflater) : super(inflater) {
             _fragment = fragment;
 
-            val nameInput = SlideUpMenuTextInput(context, "Name");
-            val editPlaylistOverlay = SlideUpMenuOverlay(context, overlayContainer, "Edit playlist", "Ok", false, nameInput);
+            val nameInput = SlideUpMenuTextInput(context, context.getString(R.string.name));
+            val editPlaylistOverlay = SlideUpMenuOverlay(context, overlayContainer, context.getString(R.string.edit_playlist), context.getString(R.string.ok), false, nameInput);
 
             _buttonDownload.visibility = View.VISIBLE;
             editPlaylistOverlay.onOK.subscribe {
@@ -113,14 +113,14 @@ class PlaylistFragment : MainFragment() {
                 val playlist = _playlist ?: return@setOnShare;
                 val reconstruction = StatePlaylists.instance.playlistStore.getReconstructionString(playlist);
 
-                UISlideOverlays.showOverlay(overlayContainer, "Playlist [${playlist.name}]", null, {},
-                    SlideUpMenuItem(context, R.drawable.ic_list, "Share as Text", "Share as a list of video urls", 1, {
+                UISlideOverlays.showOverlay(overlayContainer, context.getString(R.string.playlist) + " [${playlist.name}]", null, {},
+                    SlideUpMenuItem(context, R.drawable.ic_list, context.getString(R.string.share_as_text), context.getString(R.string.share_as_a_list_of_video_urls), 1, {
                         _fragment.startActivity(ShareCompat.IntentBuilder(context)
                             .setType("text/plain")
                             .setText(reconstruction)
                             .intent);
                     }),
-                    SlideUpMenuItem(context, R.drawable.ic_move_up, "Share as Import", "Share as a import file for Grayjay", 2, {
+                    SlideUpMenuItem(context, R.drawable.ic_move_up, context.getString(R.string.share_as_import), context.getString(R.string.share_as_a_import_file_for_grayjay), 2, {
                         val shareUri = StatePlaylists.instance.createPlaylistShareJsonUri(context, playlist);
                         _fragment.startActivity(ShareCompat.IntentBuilder(context)
                             .setType("application/json")
@@ -146,7 +146,7 @@ class PlaylistFragment : MainFragment() {
                 .exception<Throwable> {
                     Logger.w(TAG, "Failed to load playlist.", it);
                     val c = context ?: return@exception;
-                    UIDialogs.showGeneralRetryErrorDialog(c, "Failed to load playlist", it, ::fetchPlaylist);
+                    UIDialogs.showGeneralRetryErrorDialog(c, context.getString(R.string.failed_to_load_playlist), it, ::fetchPlaylist);
                 };
         }
 
@@ -234,7 +234,7 @@ class PlaylistFragment : MainFragment() {
             _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
                 val remotePlaylist = _remotePlaylist;
                 if (remotePlaylist == null) {
-                    UIDialogs.toast("Please wait for playlist to finish loading");
+                    UIDialogs.toast(context.getString(R.string.please_wait_for_playlist_to_finish_loading));
                     return@Pair;
                 }
 
@@ -245,7 +245,7 @@ class PlaylistFragment : MainFragment() {
 
                         withContext(Dispatchers.Main) {
                             setLoading(false);
-                            UIDialogs.toast("Playlist copied as local playlist");
+                            UIDialogs.toast(context.getString(R.string.playlist_copied_as_local_playlist));
                         }
                     } catch (e: Throwable) {
                         withContext(Dispatchers.Main) {
@@ -284,7 +284,7 @@ class PlaylistFragment : MainFragment() {
                 _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
                 _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
                 _buttonDownload.setOnClickListener {
-                    UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete the downloaded videos?", {
+                    UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
                         StateDownloads.instance.deleteCachedPlaylist(playlist.id);
                     });
                 }
@@ -292,7 +292,7 @@ class PlaylistFragment : MainFragment() {
             else if(isDownloaded) {
                 _buttonDownload.setImageResource(R.drawable.ic_download_off);
                 _buttonDownload.setOnClickListener {
-                    UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete the downloaded videos?", {
+                    UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
                         StateDownloads.instance.deleteCachedPlaylist(playlist.id);
                     });
                 }
