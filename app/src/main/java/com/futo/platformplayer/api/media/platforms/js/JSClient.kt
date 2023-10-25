@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.PlatformClientCapabilities
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
@@ -181,6 +182,7 @@ open class JSClient : IPlatformClient {
             hasGetChannelCapabilities = plugin.executeBoolean("!!source.getChannelCapabilities") ?: false,
             hasGetLiveEvents = plugin.executeBoolean("!!source.getLiveEvents") ?: false,
             hasGetLiveChatWindow = plugin.executeBoolean("!!source.getLiveChatWindow") ?: false,
+            hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
         );
 
         try {
@@ -412,6 +414,17 @@ open class JSClient : IPlatformClient {
         ensureEnabled();
         return@isBusyWith IJSContentDetails.fromV8(config,
             plugin.executeTyped("source.getContentDetails(${Json.encodeToString(url)})"));
+    }
+
+    @JSOptional //getContentChapters = function(url, initialData)
+    @JSDocs(15, "source.getContentChapters(url)", "Gets chapters for content details")
+    @JSDocsParameter("url", "A content url (this platform)")
+    override fun getContentChapters(url: String): List<IChapter> = isBusyWith {
+        if(!capabilities.hasGetContentChapters)
+            return@isBusyWith listOf();
+        ensureEnabled();
+        return@isBusyWith JSChapter.fromV8(config,
+            plugin.executeTyped("source.getContentChapters(${Json.encodeToString(url)})"));
     }
 
     @JSOptional

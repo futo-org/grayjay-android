@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media
 import androidx.collection.LruCache
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
@@ -49,6 +50,7 @@ class CachedPlatformClient : IPlatformClient {
         return result;
     }
 
+    override fun getContentChapters(url: String): List<IChapter> = _client.getContentChapters(url);
     override fun getPlaybackTracker(url: String): IPlaybackTracker? = _client.getPlaybackTracker(url);
 
     override fun isChannelUrl(url: String): Boolean = _client.isChannelUrl(url);

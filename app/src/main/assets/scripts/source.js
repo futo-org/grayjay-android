@@ -31,6 +31,12 @@ let Type = {
         RAW: 0,
         HTML: 1,
         MARKUP: 2
+    },
+    Chapter: {
+        NORMAL: 0,
+
+        SKIPPABLE: 5,
+        SKIP: 6
     }
 };
 

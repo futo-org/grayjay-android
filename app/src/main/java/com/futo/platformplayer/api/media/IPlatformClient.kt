@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
@@ -99,6 +100,8 @@ interface IPlatformClient {
      * Gets the video details for a given url, including video/audio streams
      */
     fun getContentDetails(url: String): IPlatformContentDetails;
+
+    fun getContentChapters(url: String): List<IChapter>;
 
     /**
      * Gets the playback tracker for a piece of content

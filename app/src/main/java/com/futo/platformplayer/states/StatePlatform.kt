@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.models.FilterGroup
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
@@ -615,6 +616,14 @@ class StatePlatform {
         }
     }
 
+    fun getContentChapters(url: String): List<IChapter>? {
+        val baseClient = getContentClientOrNull(url) ?: return null;
+        if (baseClient !is JSClient) {
+            return baseClient.getContentChapters(url);
+        }
+        val client = _trackerClientPool.getClientPooled(baseClient, 1);
+        return client.getContentChapters(url);
+    }
     fun getPlaybackTracker(url: String): IPlaybackTracker? {
         val baseClient = getContentClientOrNull(url) ?: return null;
         if (baseClient !is JSClient) {

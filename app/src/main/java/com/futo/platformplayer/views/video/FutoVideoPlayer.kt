@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
 import com.futo.platformplayer.*
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.constructs.Event0
@@ -63,6 +64,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_rotate_lock: ImageButton;
     private val _control_cast: ImageButton;
     private val _control_play: ImageButton;
+    private val _control_chapter: TextView;
     private val _time_bar: TimeBar;
 
     private val _control_fullscreen_fullscreen: ImageButton;
@@ -72,6 +74,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_play_fullscreen: ImageButton;
     private val _time_bar_fullscreen: TimeBar;
     private val _overlay_brightness: FrameLayout;
+    private val _control_chapter_fullscreen: TextView;
 
     private val _title_fullscreen: TextView;
     private val _author_fullscreen: TextView;
@@ -86,6 +89,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     var isFitMode : Boolean = false
         private set;
+
+    private var _currentChapter: IChapter? = null;
+
 
     //Events
     val onMinimize = Event1<FutoVideoPlayer>();
@@ -112,6 +118,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_cast = videoControls.findViewById(R.id.exo_cast);
         _control_play = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
         _time_bar = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        _control_chapter = videoControls.findViewById(R.id.text_chapter_current);
 
         _videoControls_fullscreen = findViewById(R.id.video_player_controller_fullscreen);
         _control_fullscreen_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_fullscreen);
@@ -119,6 +126,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_settings);
         _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_rotate_lock);
         _control_play_fullscreen = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
+        _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
         _time_bar_fullscreen = _videoControls_fullscreen.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
 
         _overlay_brightness = findViewById(R.id.overlay_brightness);
@@ -218,8 +226,25 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             updateRotateLock();
         };
 
+        var lastPos = 0L;
         videoControls.setProgressUpdateListener { position, bufferedPosition ->
             onTimeBarChanged.emit(position, bufferedPosition);
+
+            val delta = position - lastPos;
+            if(delta > 1000 || delta < 0) {
+                lastPos = position;
+                val currentChapter = getCurrentChapter(position)
+                if(_currentChapter != currentChapter) {
+                    _currentChapter = currentChapter;
+                    if (currentChapter != null) {
+                        _control_chapter.text = " • " + currentChapter.name;
+                        _control_chapter_fullscreen.text = " • " + currentChapter.name;
+                    } else {
+                        _control_chapter.text = "";
+                        _control_chapter_fullscreen.text = "";
+                    }
+                }
+            }
         }
 
         if(!isInEditMode) {

@@ -137,6 +137,27 @@
         app:layout_constraintLeft_toRightOf="@id/text_divider"
         app:layout_constraintTop_toTopOf="@id/exo_position"
         app:layout_constraintBottom_toBottomOf="@id/exo_position"/>
+
+    <TextView
+        android:id="@+id/text_chapter_current"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="-2dp"
+        android:paddingRight="10dp"
+        android:textSize="11sp"
+        android:gravity="left"
+        app:layout_constraintLeft_toRightOf="@id/exo_duration"
+        app:layout_constraintTop_toTopOf="@id/exo_duration"
+        app:layout_constraintBottom_toBottomOf="@id/exo_duration"
+        app:layout_constraintRight_toLeftOf="@id/exo_fullscreen"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="">
+
+    </TextView>
+
+
     <com.google.android.exoplayer2.ui.SubtitleView
         android:id="@id/exo_subtitles"
         android:layout_width="match_parent"

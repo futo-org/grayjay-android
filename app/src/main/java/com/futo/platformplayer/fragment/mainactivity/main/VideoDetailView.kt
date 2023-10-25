@@ -950,6 +950,17 @@ class VideoDetailView : ConstraintLayout {
             val me = this;
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
+                    //TODO: Implement video.getContentChapters()
+                    val chapters = null ?: StatePlatform.instance.getContentChapters(video.url);
+                    _player.setChapters(chapters);
+                }
+                catch(ex: Throwable) {
+                    Logger.e(TAG, "Failed to get chapters", ex);
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);
+                    }
+                }
+                try {
                     val stopwatch = com.futo.platformplayer.debug.Stopwatch()
                     var tracker = video.getPlaybackTracker()
                     Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")

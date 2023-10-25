@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.AttributeSet
 import android.widget.RelativeLayout
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
 import com.futo.platformplayer.helpers.VideoHelper
@@ -52,6 +53,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _lastSubtitleMediaSource: MediaSource? = null;
     private var _shouldPlaybackRestartOnConnectivity: Boolean = false;
     private val _referenceObject = Object();
+
+    private var _chapters: List<IChapter>? = null;
 
     var exoPlayer: PlayerManager? = null
         private set;
@@ -206,6 +209,16 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         if(trackSelector != null) {
             trackSelector.parameters = builder.build();
         }
+    }
+
+    fun setChapters(chapters: List<IChapter>?) {
+        _chapters = chapters;
+    }
+    fun getChapters(): List<IChapter> {
+        return _chapters?.let { it.toList() } ?: listOf();
+    }
+    fun getCurrentChapter(pos: Long): IChapter? {
+        return _chapters?.let { chaps -> chaps.find { pos / 1000 > it.timeStart && pos / 1000 < it.timeEnd } };
     }
 
     fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false) {
