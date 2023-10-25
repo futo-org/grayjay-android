@@ -87,7 +87,7 @@
                         android:paddingRight="2dp"
                         android:textColor="#FFFFFF"
                         android:textSize="12dp"
-                        android:text="0:00"
+                        tools:text="0:00"
                         android:layout_gravity="center"
                         android:textStyle="normal" />
                 </LinearLayout>
@@ -140,7 +140,7 @@
                     android:layout_weight="1"
                     android:layout_marginTop="10dp"
                     android:textSize="10dp"
-                    android:text="Missing Plugin"
+                    android:text="@string/missing_plugin"
                     android:textAlignment="center" />
                 <TextView
                     android:id="@+id/text_nested_url"
@@ -149,7 +149,7 @@
                     android:textColor="#828EFF"
                     android:layout_weight="1"
                     android:textSize="10dp"
-                    android:text="Unknown"
+                    android:text="@string/unknown"
                     android:textAlignment="center" />
                 <TextView
                     android:layout_width="match_parent"
@@ -157,7 +157,7 @@
                     android:layout_marginBottom="10dp"
                     android:textSize="10dp"
                     android:layout_weight="1"
-                    android:text="Tap to open in browser"
+                    android:text="@string/tap_to_open_in_browser"
                     android:textAlignment="center" />
             </LinearLayout>
         </FrameLayout>
@@ -264,7 +264,7 @@
                 android:id="@+id/image_neopass_channel"
                 android:layout_width="10dp"
                 android:layout_height="10dp"
-                android:contentDescription="NeoPass channel"
+                android:contentDescription="@string/neopass_channel"
                 app:srcCompat="@drawable/neopass"
                 app:layout_constraintLeft_toRightOf="@id/text_channel_name"
                 app:layout_constraintRight_toRightOf="parent"

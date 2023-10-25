@@ -64,16 +64,16 @@ class ToggleField : TableRow, IField {
 
         val attrField = formField ?: field.getAnnotation(FormField::class.java);
         if(attrField != null) {
-            _title.text = attrField.title;
+            _title.text = context.getString(attrField.title);
             descriptor = attrField;
         }
         else
             _title.text = field.name;
 
-        if(attrField?.subtitle?.isEmpty() != false)
+        if(attrField == null || attrField.subtitle == -1)
             _description.visibility = View.GONE;
         else {
-            _description.text = attrField.subtitle;
+            _description.text = context.getString(attrField.subtitle);
             _description.visibility = View.VISIBLE;
         }
 

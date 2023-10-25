@@ -67,8 +67,8 @@
             android:id="@+id/button_export"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Export"
-            app:buttonSubText="Make a backup of your identity"
+            app:buttonText="@string/export"
+            app:buttonSubText="@string/make_a_backup_of_your_identity"
             app:buttonIcon="@drawable/ic_export"
             android:layout_marginTop="8dp" />
 
@@ -76,8 +76,8 @@
             android:id="@+id/button_logout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Logout"
-            app:buttonSubText="Sign out of this identity"
+            app:buttonText="@string/logout"
+            app:buttonSubText="@string/sign_out_of_this_identity"
             app:buttonIcon="@drawable/ic_logout"
             android:layout_marginTop="8dp" />
 
@@ -85,8 +85,8 @@
             android:id="@+id/button_delete"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Delete"
-            app:buttonSubText="Delete this profile"
+            app:buttonText="@string/delete"
+            app:buttonSubText="@string/delete_this_profile"
             app:buttonIcon="@drawable/ic_trash"
             android:layout_marginTop="8dp"
             app:buttonBackground="@drawable/background_big_button_red"/>

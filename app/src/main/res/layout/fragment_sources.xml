@@ -107,7 +107,7 @@
                     android:textColor="#939393"
                     android:textSize="12dp"
                     android:fontFamily="@font/inter_light"
-                    android:text="Enabling lots of sources can reduce the loading speed of your application."
+                    android:text="@string/enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application"
                     android:layout_gravity="center"
                     android:layout_marginStart="8dp"/>
 

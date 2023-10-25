@@ -50,7 +50,7 @@
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:textSize="17dp"
-            android:text="An uncaught exception was thrown, we're sorry for the inconvenience." />
+            android:text="@string/an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
             android:layout_marginTop="2dp"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
-            android:text="To help us solve this, please share the below crash report with us, and perhaps adds some context on what you were doing." />
+            android:text="@string/to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing" />
     </LinearLayout>
     <ScrollView
         android:layout_width="match_parent"
@@ -98,7 +98,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Share"/>
+                android:text="@string/share"/>
         </LinearLayout>
 
         <LinearLayout
@@ -113,7 +113,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Submit"/>
+                android:text="@string/submit"/>
         </LinearLayout>
 
         <LinearLayout
@@ -128,7 +128,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Restart"/>
+                android:text="@string/restart"/>
         </LinearLayout>
 
         <LinearLayout
@@ -143,7 +143,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Close"/>
+                android:text="@string/close"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

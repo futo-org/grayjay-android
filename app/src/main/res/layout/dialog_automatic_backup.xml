@@ -40,7 +40,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Set a password for your daily backup"
+            android:text="@string/set_a_password_for_your_daily_backup"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -53,7 +53,7 @@
             android:layout_width="match_parent"
             android:textColor="#AAAAAA"
             android:fontFamily="@font/inter_regular"
-            android:text="Set a password used to encrypt your daily backup that is written to external storage."
+            android:text="@string/set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage"
             android:textAlignment="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
@@ -70,7 +70,7 @@
             android:layout_height="wrap_content"
             android:singleLine="true"
             android:inputType="textPassword"
-            android:hint="Backup Password" />
+            android:hint="@string/backup_password" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -96,7 +96,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Stop"
+                    android:text="@string/stop"
                     android:textSize="14dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_regular"
@@ -117,7 +117,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Start"
+                    android:text="@string/start"
                     android:textSize="14dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_regular"

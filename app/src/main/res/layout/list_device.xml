@@ -92,7 +92,7 @@
                     android:textSize="12dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_light"
-                    android:text="Remove" />
+                    android:text="@string/remove" />
             </LinearLayout>
 
             <LinearLayout

@@ -146,7 +146,7 @@
             android:id="@+id/text_resume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Resume at 00:00"
+            tools:text="Resume at 00:00"
             android:textSize="12dp"
             android:fontFamily="@font/inter_light" />
     </LinearLayout>
@@ -198,7 +198,7 @@
                             android:fontFamily="@font/inter_medium"
                             android:textColor="@color/white"
                             android:textSize="17dp"
-                            android:text="Some Text"
+                            tools:text="Some Text"
                             app:layout_constraintLeft_toLeftOf="parent"
                             app:layout_constraintRight_toLeftOf="@id/layout_title_right"
                             app:layout_constraintTop_toTopOf="parent" />
@@ -211,7 +211,7 @@
                             android:fontFamily="@font/inter_regular"
                             android:textColor="#ACACAC"
                             android:textSize="10dp"
-                            android:text="51K views - 3 years ago"
+                            tools:text="51K views - 3 years ago"
                             app:layout_constraintLeft_toLeftOf="@id/videodetail_title"
                             app:layout_constraintTop_toBottomOf="@id/videodetail_title"
                             app:layout_constraintRight_toLeftOf="@id/layout_title_right"/>
@@ -258,7 +258,7 @@
                                         android:layout_height="18dp"
                                         android:gravity="center_vertical"
                                         android:layout_marginStart="4dp"
-                                        android:text="500K"
+                                        tools:text="500K"
                                         android:textColor="#ACACAC"
                                         android:textSize="10dp" />
                                 </LinearLayout>
@@ -281,7 +281,7 @@
                                         android:layout_height="18dp"
                                         android:gravity="center_vertical"
                                         android:layout_marginStart="4dp"
-                                        android:text="500K"
+                                        tools:text="500K"
                                         android:textColor="#ACACAC"
                                         android:textSize="10dp" />
                                 </LinearLayout>
@@ -447,7 +447,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="@color/white"
                             android:fontFamily="@font/inter_light"
-                            android:text="Support"
+                            android:text="@string/support"
                             android:textSize="14dp"
                             android:includeFontPadding="false"
                             android:layout_marginStart="6dp" />
@@ -473,7 +473,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="@color/white"
                             android:fontFamily="@font/inter_light"
-                            android:text="Store"
+                            tools:text="Store"
                             android:textSize="14dp"
                             android:includeFontPadding="false"
                             android:layout_marginStart="6dp" />
@@ -494,7 +494,7 @@
                         android:layout_margin="15dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Live Chat" />
+                        android:text="@string/live_chat" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -526,7 +526,7 @@
                         android:fontFamily="@font/inter_extra_light"
                         android:textSize="14dp"
                         android:textColor="@color/white"
-                        android:text="Polycentric"
+                        android:text="@string/polycentric"
                         android:layout_marginEnd="8dp" />
 
                     <com.futo.platformplayer.views.others.Toggle

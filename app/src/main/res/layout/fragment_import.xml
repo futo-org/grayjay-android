@@ -62,7 +62,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/inter_light"
             android:textSize="15dp"
-            android:text="Nothing to import"
+            android:text="@string/nothing_to_import"
             android:textColor="@color/white"
             android:layout_gravity="center"/>
 

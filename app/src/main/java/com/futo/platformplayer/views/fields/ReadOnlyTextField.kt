@@ -42,7 +42,7 @@ class ReadOnlyTextField : TableRow, IField {
 
         val attrField = formField ?: field.getAnnotation(FormField::class.java);
         if(attrField != null) {
-            _title.text = attrField.title;
+            _title.text = context.getString(attrField.title);
             descriptor = attrField;
         }
         else
@@ -60,7 +60,7 @@ class ReadOnlyTextField : TableRow, IField {
 
         val attrField = formField ?: field.getAnnotation(FormField::class.java);
         if(attrField != null) {
-            _title.text = attrField.title;
+            _title.text = context.getString(attrField.title);
             descriptor = attrField;
         }
         else

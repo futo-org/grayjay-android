@@ -23,7 +23,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Restore from Automatic Backup"
+            android:text="@string/restore_from_automatic_backup"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -36,7 +36,7 @@
             android:layout_width="match_parent"
             android:textColor="#AAAAAA"
             android:fontFamily="@font/inter_regular"
-            android:text="It appears an automatic backup exists on your device, if you would like to restore, enter your backup password."
+            android:text="@string/it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password"
             android:textAlignment="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
@@ -53,7 +53,7 @@
             android:layout_height="wrap_content"
             android:inputType="textPassword"
             android:singleLine="true"
-            android:hint="Backup Password" />
+            android:hint="@string/backup_password" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -71,7 +71,7 @@
                 android:id="@+id/button_cancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancel"
+                android:text="@string/cancel"
                 android:layout_marginEnd="15dp"
                 android:textSize="14dp"
                 android:fontFamily="@font/inter_regular"
@@ -88,7 +88,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Restore"
+                    android:text="@string/restore"
                     android:textSize="14dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_regular"

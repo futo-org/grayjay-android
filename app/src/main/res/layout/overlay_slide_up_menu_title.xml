@@ -10,7 +10,7 @@
         android:id="@+id/slide_up_menu_group_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Recently Used Playlist"
+        android:text="@string/recently_used_playlist"
         android:textColor="@color/white"
         android:fontFamily="@font/inter_semibold"
         android:textSize="11dp" />

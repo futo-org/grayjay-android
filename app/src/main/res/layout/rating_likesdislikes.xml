@@ -3,6 +3,7 @@
     android:layout_width="wrap_content"
     android:layout_height="32dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:paddingTop="6dp"
     android:paddingBottom="7dp"
     android:paddingLeft="7dp"
@@ -20,7 +21,7 @@
         android:textColor="@color/white"
         android:textSize="13dp"
         android:gravity="center_vertical"
-        android:text="500K" />
+        tools:text="500K" />
 
     <View
         android:id="@+id/pill_seperator"
@@ -42,6 +43,6 @@
         android:textColor="@color/white"
         android:gravity="center_vertical"
         android:textSize="13dp"
-        android:text="500K" />
+        tools:text="500K" />
 
 </LinearLayout>

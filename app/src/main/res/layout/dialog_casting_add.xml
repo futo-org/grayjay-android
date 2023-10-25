@@ -29,13 +29,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:hint="Name" />
+        android:hint="@string/name" />
 
     <EditText
         android:id="@+id/edit_ip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="IP"
+        android:hint="@string/ip"
         android:singleLine="true"
         android:layout_marginTop="5dp"/>
 
@@ -43,7 +43,7 @@
         android:id="@+id/edit_port"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Port"
+        android:hint="@string/port"
         android:singleLine="true"
         android:layout_marginTop="5dp"/>
 
@@ -55,7 +55,7 @@
         android:textSize="14dp"
         android:textColor="@color/pastel_red"
         android:layout_marginTop="5dp"
-        android:text="Error message here"/>
+        android:text="@string/error_message_here"/>
 
     <LinearLayout
         android:layout_width="match_parent"

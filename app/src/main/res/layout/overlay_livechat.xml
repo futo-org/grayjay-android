@@ -28,7 +28,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             android:layout_margin="10dp"
-            android:text="Live Chat" />
+            android:text="@string/live_chat" />
 
         <ImageView
             android:id="@+id/ic_viewers"
@@ -44,7 +44,7 @@
             android:textSize="10dp"
             app:layout_constraintTop_toBottomOf="@id/text_name"
             app:layout_constraintLeft_toRightOf="@id/ic_viewers"
-            android:text="1536 viewers"/>
+            tools:text="1536 viewers"/>
 
         <ScrollView
             android:layout_width="match_parent"
@@ -141,7 +141,7 @@
                 android:layout_marginStart="15dp"
                 android:layout_marginTop="20dp"
                 android:textSize="15sp"
-                android:text="Louis Rossmann" />
+                tools:text="Louis Rossmann" />
 
             <LinearLayout
                 android:id="@+id/donation_amount_container"
@@ -161,7 +161,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="$100" />
+                    tools:text="$100" />
             </LinearLayout>
 
             <TextView
@@ -173,7 +173,7 @@
                 app:layout_constraintRight_toRightOf="@id/donation_amount_container"
                 android:layout_margin="10dp"
                 android:textColor="#838383"
-                android:text="@string/lorem_ipsum"/>
+                tools:text="@string/lorem_ipsum"/>
 
             <TextView
                 android:id="@+id/donation_source"
@@ -182,7 +182,7 @@
                 app:layout_constraintTop_toBottomOf="@id/donation_text"
                 app:layout_constraintLeft_toLeftOf="@id/donation_author_image"
                 app:layout_constraintRight_toRightOf="parent"
-                android:text="Source: Somesite"
+                tools:text="Source: Somesite"
                 android:paddingBottom="10dp"
                 android:textSize="12sp"
                 android:textColor="#4F4B4B"
@@ -211,7 +211,7 @@
             android:layout_height="wrap_content"
             android:textColor="#737070"
             app:layout_constraintTop_toTopOf="parent"
-            android:text="Viewers are raiding"
+            android:text="@string/viewers_are_raiding"
             android:gravity="center"
             android:paddingTop="20dp"
             android:paddingBottom="10dp"/>
@@ -241,7 +241,7 @@
                 app:layout_constraintLeft_toRightOf="@id/raid_thumbnail"
                 app:layout_constraintTop_toBottomOf="@id/textRaidMessage"
                 android:textSize="15sp"
-                android:text="Louis Rossmann" />
+                tools:text="Louis Rossmann" />
         </LinearLayout>
 
         <LinearLayout
@@ -263,7 +263,7 @@
                 android:layout_marginStart="20dp"
                 android:backgroundTint="#2F2F2F"
                 android:layout_marginEnd="5dp"
-                android:text="Go now"/>
+                android:text="@string/go_now"/>
             <Button
                 android:id="@+id/raid_button_prevent"
                 android:layout_width="0dp"
@@ -276,7 +276,7 @@
                 android:layout_marginStart="5dp"
                 android:layout_marginEnd="20dp"
                 android:backgroundTint="#481414"
-                android:text="Prevent"/>
+                android:text="@string/prevent"/>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

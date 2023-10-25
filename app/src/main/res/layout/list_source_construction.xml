@@ -50,7 +50,7 @@
                 android:id="@+id/text_source_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Under Construction"
+                android:text="@string/under_construction"
                 android:textSize="12dp"
                 android:textColor="@color/gray_ac"
                 android:fontFamily="@font/inter_extra_light"
@@ -77,7 +77,7 @@
                 android:textSize="12dp"
                 android:textColor="#AAAAAA"
                 android:fontFamily="@font/inter_light"
-                android:text="Enable" />
+                android:text="@string/enable" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

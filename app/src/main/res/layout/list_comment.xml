@@ -107,7 +107,7 @@
                 android:layout_height="18dp"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="500K"
+                tools:text="500K"
                 android:textColor="@color/white"
                 android:textSize="13dp" />
 
@@ -125,7 +125,7 @@
                 android:layout_height="18dp"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="500K"
+                tools:text="500K"
                 android:textColor="@color/white"
                 android:textSize="13dp" />
         </LinearLayout>

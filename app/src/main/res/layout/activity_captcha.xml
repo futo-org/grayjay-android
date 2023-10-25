@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
             android:layout_gravity="center_vertical"
-            android:text="Please enter the captcha and close when finished" />
+            android:text="@string/please_enter_the_captcha_and_close_when_finished" />
 
         <Button
             android:id="@+id/button_close"
@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:layout_marginEnd="6dp"
-            android:text="CLOSE" />
+            android:text="@string/close_capitalized" />
     </LinearLayout>
 
 

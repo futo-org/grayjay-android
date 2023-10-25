@@ -61,7 +61,7 @@
             android:layout_height="10dp"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="8dp"
-            android:contentDescription="NeoPass channel"
+            android:contentDescription="@string/neopass_channel"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@id/text_author_name"
             app:layout_constraintLeft_toRightOf="@id/text_author_name"
@@ -165,7 +165,7 @@
                 android:layout_height="18dp"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="500K"
+                tools:text="500K"
                 android:textColor="@color/white"
                 android:textSize="13dp" />
 
@@ -183,7 +183,7 @@
                 android:layout_height="18dp"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="500K"
+                tools:text="500K"
                 android:textColor="@color/white"
                 android:textSize="13dp" />
         </LinearLayout>
@@ -212,7 +212,7 @@
                 android:layout_height="18dp"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="55"
+                tools:text="55"
                 android:textColor="@color/white"
                 android:textSize="13dp" />
         </LinearLayout>

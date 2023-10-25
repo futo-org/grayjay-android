@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_gravity="bottom"
     android:layoutDirection="ltr"
     android:orientation="vertical">
@@ -29,7 +29,7 @@
             android:id="@+id/text_rewind"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0 Seconds"
+            tools:text="0 Seconds"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -57,7 +57,7 @@
             android:id="@+id/text_fastforward"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0 Seconds"
+            tools:text="0 Seconds"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -94,7 +94,7 @@
             android:layout_gravity="center"
             android:scaleType="centerInside"
             app:srcCompat="@drawable/ic_volume_up_1"
-            android:contentDescription="volume" />
+            android:contentDescription="@string/volume" />
     </FrameLayout>
 
     <FrameLayout
@@ -125,7 +125,7 @@
             android:layout_gravity="center"
             android:scaleType="centerInside"
             app:srcCompat="@drawable/ic_brightness_1"
-            android:contentDescription="volume" />
+            android:contentDescription="@string/volume" />
     </FrameLayout>
 
     <FrameLayout
@@ -147,7 +147,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/inter_regular"
-            android:text="Toggle fullscreen"
+            android:text="@string/toggle_fullscreen"
             android:textColor="@color/white"
             android:textSize="16dp"/>
     </FrameLayout>

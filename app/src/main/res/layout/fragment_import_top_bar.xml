@@ -34,7 +34,7 @@
         android:textSize="20dp"
         android:textColor="@color/gray_67"
         android:fontFamily="@font/inter_extra_light"
-        android:text="Import"
+        android:text="@string/str_import"
         android:paddingRight="16dp" />
 
 </LinearLayout>

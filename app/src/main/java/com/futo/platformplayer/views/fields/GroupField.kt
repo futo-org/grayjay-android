@@ -101,8 +101,8 @@ class GroupField : LinearLayout, IField {
 
         val attrField = formField ?: field.getAnnotation(FormField::class.java); //TODO: Get this to work as default
         if(attrField != null) {
-            _title.text = attrField.title;
-            _subtitle.text = attrField.subtitle;
+            _title.text = context.getString(attrField.title);
+            _subtitle.text = if (attrField.subtitle != -1) context.getString(attrField.subtitle) else "";
             descriptor = attrField;
         }
         else

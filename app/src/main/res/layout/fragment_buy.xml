@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
 
     <ScrollView
@@ -76,7 +76,7 @@
                         android:id="@+id/button_buy_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="$9.99"
+                        tools:text="$9.99"
                         android:textSize="14dp"
                         android:textColor="@color/white"
                         android:fontFamily="@font/inter_regular"
@@ -98,7 +98,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="I Already Paid"
+                        android:text="@string/i_already_paid"
                         android:textSize="14dp"
                         android:textColor="@color/white"
                         android:fontFamily="@font/inter_regular"

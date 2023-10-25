@@ -37,7 +37,7 @@
         android:id="@+id/text_polycentric"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Polycentric"
+        android:text="@string/polycentric"
         android:fontFamily="@font/inter_light"
         android:textSize="32dp"
         android:layout_marginTop="12dp"
@@ -61,16 +61,16 @@
             android:id="@+id/button_new_profile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="New Profile"
-            app:buttonSubText="Generate a new identity"
+            app:buttonText="@string/new_profile"
+            app:buttonSubText="@string/generate_a_new_identity"
             app:buttonIcon="@drawable/ic_person_add" />
 
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_import_profile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Import Existing Profile"
-            app:buttonSubText="Use an existing identity"
+            app:buttonText="@string/import_existing_profile"
+            app:buttonSubText="@string/use_an_existing_identity"
             app:buttonIcon="@drawable/ic_arrow_downward"
             android:layout_marginTop="8dp" />
     </LinearLayout>

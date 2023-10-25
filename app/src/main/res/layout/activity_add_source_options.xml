@@ -52,8 +52,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="5dp"
-        app:buttonText="Install by QR"
-        app:buttonSubText="Install a plugin by scanning a QR code"
+        app:buttonText="@string/install_by_qr"
+        app:buttonSubText="@string/install_a_plugin_by_scanning_a_qr_code"
         app:buttonIcon="@drawable/ic_qr" />
     <com.futo.platformplayer.views.buttons.BigButton
         android:id="@+id/option_url"
@@ -62,7 +62,7 @@
         android:alpha="0.5"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="20dp"
-        app:buttonText="Install by URL"
+        app:buttonText="@string/install_by_url"
         app:buttonSubText="@string/enter_url_explain"
         app:buttonIcon="@drawable/ic_link" />
 </LinearLayout>

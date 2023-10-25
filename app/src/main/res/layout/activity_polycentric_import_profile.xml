@@ -42,14 +42,14 @@
             android:fontFamily="@font/inter_light"
             android:textColor="@color/white"
             android:textSize="16dp"
-            android:text="Scan QR" />
+            android:text="@string/scan_qr" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/text_or"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="OR"
+        android:text="@string/or_capitalized"
         android:fontFamily="@font/inter_light"
         android:textSize="28dp"
         android:layout_marginTop="30dp"
@@ -61,7 +61,7 @@
         android:id="@+id/edit_profile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Paste profile here polycentric://..."
+        android:hint="@string/paste_profile_here_polycentric"
         android:layout_marginStart="40dp"
         android:layout_marginEnd="40dp"
         android:layout_marginTop="30dp"
@@ -91,7 +91,7 @@
             android:fontFamily="@font/inter_light"
             android:textColor="@color/white"
             android:textSize="16dp"
-            android:text="Import Profile" />
+            android:text="@string/import_profile" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

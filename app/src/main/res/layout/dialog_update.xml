@@ -53,7 +53,7 @@
             android:id="@+id/button_show_changelog"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="View changelog"
+            android:text="@string/view_changelog"
             android:textSize="14dp"
             android:fontFamily="@font/inter_regular"
             android:textColor="@color/colorPrimary"

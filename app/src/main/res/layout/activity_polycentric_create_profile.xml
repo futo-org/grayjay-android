@@ -37,7 +37,7 @@
         android:id="@+id/text_polycentric"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Polycentric"
+        android:text="@string/polycentric"
         android:fontFamily="@font/inter_light"
         android:textSize="32dp"
         android:layout_marginTop="12dp"
@@ -49,7 +49,7 @@
         android:id="@+id/text_profile_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Profile Name"
+        android:text="@string/profile_name"
         android:fontFamily="@font/inter_light"
         android:textSize="16dp"
         android:layout_marginBottom="8dp"
@@ -60,7 +60,7 @@
         android:id="@+id/edit_profile_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="This will be visible to other users"
+        android:hint="@string/this_will_be_visible_to_other_users"
         android:layout_marginStart="40dp"
         android:layout_marginEnd="40dp"
         android:layout_marginTop="60dp"
@@ -90,7 +90,7 @@
             android:fontFamily="@font/inter_light"
             android:textColor="@color/white"
             android:textSize="16dp"
-            android:text="Create Profile" />
+            android:text="@string/create_profile" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

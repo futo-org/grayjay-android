@@ -8,7 +8,7 @@
         android:id="@+id/header_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Migration"
+        android:text="@string/migration"
         android:fontFamily="@font/inter_light"
         android:textSize="18dp"
         android:layout_marginTop="12dp"

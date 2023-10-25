@@ -1,5 +1,6 @@
 package com.futo.platformplayer.api.media.platforms.js
 
+import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.views.fields.FieldForm
@@ -66,15 +67,15 @@ class SourcePluginDescriptor {
     @Serializable
     class AppPluginSettings {
 
-        @FormField("Visibility", "group", "Enable where this plugin's content are visible.", 2)
+        @FormField(R.string.visibility, "group", R.string.enable_where_this_plugins_content_are_visible, 2)
         var tabEnabled = TabEnabled();
         @Serializable
         class TabEnabled {
-            @FormField("Home", FieldForm.TOGGLE, "Show content in home tab", 1)
+            @FormField(R.string.home, FieldForm.TOGGLE, R.string.show_content_in_home_tab, 1)
             var enableHome: Boolean? = null;
 
 
-            @FormField("Search", FieldForm.TOGGLE, "Show content in search results", 2)
+            @FormField(R.string.search, FieldForm.TOGGLE, R.string.show_content_in_search_results, 2)
             var enableSearch: Boolean? = null;
         }
 

@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="bottom"
@@ -92,7 +93,7 @@
         android:paddingEnd="4dp"
         android:textColor="#FFFFFF"
         android:textSize="12sp"
-        android:text="00:00"
+        tools:text="00:00"
         android:layout_gravity="bottom"
         android:textStyle="normal"
         android:layout_marginBottom="3dp"
@@ -109,7 +110,8 @@
         android:text="/"
         app:layout_constraintLeft_toRightOf="@id/text_position"
         app:layout_constraintTop_toTopOf="@id/text_position"
-        app:layout_constraintBottom_toBottomOf="@id/text_position" />
+        app:layout_constraintBottom_toBottomOf="@id/text_position"
+        tools:ignore="HardcodedText" />
 
     <TextView
         android:id="@+id/text_duration"
@@ -120,7 +122,7 @@
         android:paddingRight="4dp"
         android:textColor="#AAAAAA"
         android:textSize="12sp"
-        android:text="00:00"
+        tools:text="00:00"
         android:layout_gravity="bottom"
         android:textStyle="normal"
         app:layout_constraintLeft_toRightOf="@id/text_divider"

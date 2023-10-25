@@ -30,7 +30,7 @@
                 android:fontFamily="@font/inter_light"
                 android:textColor="@color/white"
                 android:layout_marginTop="5dp"
-                android:text="Scan QR" />
+                android:text="@string/scan_qr" />
             <TextView
                 android:id="@+id/text_description"
                 android:layout_width="match_parent"
@@ -38,7 +38,7 @@
                 android:textSize="12dp"
                 android:fontFamily="@font/inter_extra_light"
                 android:textColor="#ACACAC"
-                android:text="Scan a QR code to install" />
+                android:text="@string/scan_a_qr_code_to_install" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -136,7 +136,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:text="500K"
+                        tools:text="500K"
                         android:textColor="@color/white"
                         android:textSize="10dp" />
 
@@ -154,7 +154,7 @@
                         android:layout_height="18dp"
                         android:gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:text="500K"
+                        tools:text="500K"
                         android:textColor="@color/white"
                         android:textSize="10dp" />
                 </LinearLayout>
@@ -230,7 +230,7 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="@color/white"
                     android:fontFamily="@font/inter_light"
-                    android:text="Support"
+                    android:text="@string/support"
                     android:textSize="14dp"
                     android:includeFontPadding="false"
                     android:layout_marginStart="6dp" />
@@ -256,7 +256,7 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="@color/white"
                     android:fontFamily="@font/inter_light"
-                    android:text="Store"
+                    android:text="@string/store"
                     android:textSize="14dp"
                     android:includeFontPadding="false"
                     android:layout_marginStart="6dp" />
@@ -327,7 +327,7 @@
                 android:fontFamily="@font/inter_extra_light"
                 android:textSize="14dp"
                 android:textColor="@color/white"
-                android:text="Polycentric"
+                android:text="@string/polycentric"
                 android:layout_marginEnd="8dp" />
 
             <com.futo.platformplayer.views.others.Toggle

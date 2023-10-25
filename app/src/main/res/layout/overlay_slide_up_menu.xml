@@ -36,7 +36,7 @@
                 android:layout_weight="1"
                 android:fontFamily="@font/inter_extra_light"
                 android:textSize="16dp"
-                android:text="Add to"
+                android:text="@string/add_to"
                 android:textColor="@color/white"/>
 
             <TextView

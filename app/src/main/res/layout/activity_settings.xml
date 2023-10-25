@@ -76,12 +76,12 @@
                     android:textSize="14dp"
                     android:textAlignment="center"
                     android:layout_margin="5dp"
-                    android:text="You're apparantly a developer" />
+                    android:text="@string/you_re_apparantly_a_developer" />
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_dev"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Developer Settings" />
+                    android:text="@string/developer_settings" />
             </LinearLayout>
         </LinearLayout>
 

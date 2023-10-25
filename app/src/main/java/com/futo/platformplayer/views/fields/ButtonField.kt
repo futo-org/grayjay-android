@@ -66,8 +66,8 @@ class ButtonField : BigButton, IField {
         val attrField = method.getAnnotation(FormField::class.java);
         val attrButtonField = method.getAnnotation(FormFieldButton::class.java);
         if(attrField != null) {
-            super.withPrimaryText(attrField.title)
-                .withSecondaryText(attrField.subtitle)
+            super.withPrimaryText(context.getString(attrField.title))
+                .withSecondaryText(if (attrField.subtitle != -1) context.getString(attrField.subtitle) else "")
                 .withSecondaryTextMaxLines(2);
             descriptor = attrField;
         }

@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:textSize="15dp"
             android:fontFamily="@font/inter_bold"
-            android:text="UNDER"
+            android:text="@string/under"
             android:textColor="@color/white"
             android:layout_marginTop="3dp" />
         <TextView
@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:textSize="20dp"
             android:fontFamily="@font/inter_bold"
-            android:text="CONSTRUCTION"
+            android:text="@string/construction"
             android:textColor="@color/white"
             android:layout_marginTop="-8dp"/>
     </LinearLayout>

@@ -6,7 +6,7 @@ import java.lang.reflect.Field
 
 @Target(AnnotationTarget.FIELD, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class FormField(val title : String, val type : String, val subtitle : String = "", val order : Int = 0, val id : String = "")
+annotation class FormField(val title: Int, val type: String, val subtitle: Int = -1, val order: Int = 0, val id: String = "")
 
 interface IField {
     var descriptor: FormField?;

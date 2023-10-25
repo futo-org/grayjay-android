@@ -227,7 +227,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Clear"
+                    android:text="@string/clear"
                     android:includeFontPadding="false"
                     android:fontFamily="@font/inter_light"
                     android:textSize="14dp"
@@ -258,7 +258,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Shuffle"
+                    android:text="@string/shuffle"
                     android:includeFontPadding="false"
                     android:fontFamily="@font/inter_light"
                     android:textSize="14dp"
@@ -295,7 +295,7 @@
                     android:layout_marginStart="6dp"
                     android:fontFamily="@font/inter_light"
                     android:includeFontPadding="false"
-                    android:text="Repeat"
+                    android:text="@string/repeat"
                     android:textColor="@color/gray_8f"
                     android:textSize="14dp" />
             </LinearLayout>
@@ -324,7 +324,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View"
+                    android:text="@string/view"
                     android:includeFontPadding="false"
                     android:fontFamily="@font/inter_light"
                     android:textSize="14dp"

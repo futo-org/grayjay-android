@@ -10,7 +10,7 @@
         android:id="@+id/edit_comment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add a comment..."
+        android:text="@string/add_a_comment"
         android:textColor="@color/gray_ae"
         android:gravity="top|start"
         android:textSize="14sp"

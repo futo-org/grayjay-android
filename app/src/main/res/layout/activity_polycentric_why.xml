@@ -35,7 +35,7 @@
             android:id="@+id/text_polycentric"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Polycentric"
+            android:text="@string/polycentric"
             android:fontFamily="@font/inter_light"
             android:textSize="32dp"
             android:layout_marginLeft="16dp"/>
@@ -96,16 +96,16 @@
             android:id="@+id/button_video"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Video"
-            app:buttonSubText="View a more in-depth video"
+            app:buttonText="@string/video"
+            app:buttonSubText="@string/view_a_more_in_depth_video"
             app:buttonIcon="@drawable/ic_smart_display" />
 
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_technical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Technical Documentation"
-            app:buttonSubText="View the technical documentation"
+            app:buttonText="@string/technical_documentation"
+            app:buttonSubText="@string/view_the_technical_documentation"
             app:buttonIcon="@drawable/ic_wrench"
             android:layout_marginTop="8dp" />
     </LinearLayout>

@@ -123,7 +123,7 @@
         android:paddingEnd="4dp"
         android:textColor="#FFFFFF"
         android:textSize="12sp"
-        android:text="00:00"
+        tools:text="00:00"
         android:layout_gravity="bottom"
         android:textStyle="normal"
         android:layout_marginBottom="3dp"
@@ -140,7 +140,8 @@
         android:text="/"
         app:layout_constraintLeft_toRightOf="@id/exo_position"
         app:layout_constraintTop_toTopOf="@id/exo_position"
-        app:layout_constraintBottom_toBottomOf="@id/exo_position" />
+        app:layout_constraintBottom_toBottomOf="@id/exo_position"
+        tools:ignore="HardcodedText" />
 
     <TextView
         android:id="@id/exo_duration"
@@ -151,7 +152,7 @@
         android:paddingRight="4dp"
         android:textColor="#AAAAAA"
         android:textSize="12sp"
-        android:text="00:00"
+        tools:text="00:00"
         android:layout_gravity="bottom"
         android:textStyle="normal"
         app:layout_constraintLeft_toRightOf="@id/text_divider"

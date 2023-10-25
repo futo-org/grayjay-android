@@ -43,7 +43,7 @@
                 android:textColor="#E0E0E0"
                 android:fontFamily="@font/inter_extra_light"
                 android:textSize="11dp"
-                android:text="5.64GB Used" />
+                tools:text="5.64GB Used" />
             <TextView
                 android:id="@+id/downloads_usage_available"
                 android:layout_width="match_parent"
@@ -53,7 +53,7 @@
                 android:layout_gravity="end"
                 android:fontFamily="@font/inter_extra_light"
                 android:textSize="11dp"
-                android:text="13.32GB Available" />
+                tools:text="13.32GB Available" />
         </LinearLayout>
 
         <com.futo.platformplayer.views.announcements.AnnouncementView
@@ -77,7 +77,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="18dp"
                     android:textColor="@color/white"
-                    android:text="Downloading"
+                    android:text="@string/downloading"
                     />
                 <TextView
                     android:id="@+id/downloads_active_downloads_meta"
@@ -87,7 +87,7 @@
                     android:fontFamily="@font/inter_extra_light"
                     android:textColor="#ACACAC"
                     android:textSize="15dp"
-                    android:text="(5)"
+                    tools:text="(5)"
                     />
             </LinearLayout>
             <LinearLayout
@@ -115,7 +115,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="18dp"
                     android:textColor="@color/white"
-                    android:text="Playlists"
+                    android:text="@string/playlists"
                     />
                 <TextView
                     android:id="@+id/downloads_playlist_meta"
@@ -125,7 +125,7 @@
                     android:textSize="15dp"
                     android:fontFamily="@font/inter_extra_light"
                     android:textColor="#ACACAC"
-                    android:text="(7 playlists, 85 videos)"
+                    tools:text="(7 playlists, 85 videos)"
                     />
             </LinearLayout>
             <LinearLayout
@@ -148,7 +148,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="18dp"
                 android:textColor="@color/white"
-                android:text="Videos" />
+                android:text="@string/videos" />
             <TextView
                 android:id="@+id/downloads_videos_meta"
                 android:layout_width="match_parent"
@@ -157,7 +157,7 @@
                 android:textSize="15dp"
                 android:fontFamily="@font/inter_extra_light"
                 android:textColor="#ACACAC"
-                android:text="(12 videos)" />
+                tools:text="(12 videos)" />
         </LinearLayout>
     </LinearLayout>
 

@@ -2,6 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -27,7 +28,7 @@
             android:layout_marginTop="13dp"
             android:textColor="@color/white"
             android:textSize="18dp"
-            android:text="Some Plugin" />
+            tools:text="Some Plugin" />
 
         <LinearLayout
             android:id="@+id/byContainer"
@@ -42,7 +43,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="By"
+                android:text="@string/by"
                 android:fontFamily="@font/inter_extra_light"
                 android:textSize="15dp"
                 android:textColor="@color/text_color_tinted" />
@@ -50,7 +51,7 @@
                 android:id="@+id/source_by"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="FUTO"
+                tools:text="FUTO"
                 android:fontFamily="@font/inter_extra_light"
                 android:layout_marginLeft="5dp"
                 android:textSize="15dp"
@@ -59,7 +60,7 @@
                 android:id="@+id/source_author_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="(a5f64b3)"
+                tools:text="(a5f64b3)"
                 android:fontFamily="@font/inter_extra_light"
                 android:layout_marginLeft="7dp"
                 android:textSize="15dp"
@@ -74,7 +75,7 @@
         android:layout_marginTop="8dp"
         android:textColor="@color/text_color_tinted"
         android:fontFamily="@font/inter_extra_light"
-        android:text="A plugin that adds Youtube as a source" />
+        tools:text="A plugin that adds Youtube as a source" />
 
     <!--Version-->
     <LinearLayout
@@ -88,7 +89,7 @@
             android:textColor="@color/white"
             android:layout_marginTop="10dp"
             android:fontFamily="@font/inter_light"
-            android:text="Version" />
+            android:text="@string/version" />
         <TextView
             android:id="@+id/source_version"
             android:layout_width="match_parent"
@@ -96,7 +97,7 @@
             android:textSize="14dp"
             android:textColor="@color/text_color_tinted"
             android:fontFamily="@font/inter_extra_light"
-            android:text="3" />
+            tools:text="3" />
     </LinearLayout>
 
     <!--Repo Url-->
@@ -119,7 +120,7 @@
             android:textSize="14dp"
             android:textColor="@color/colorPrimary"
             android:fontFamily="@font/inter_extra_light"
-            android:text="https://some.repository.url/whatever/something" />
+            tools:text="https://some.repository.url/whatever/something" />
     </LinearLayout>
 
     <!--Script Url-->
@@ -142,7 +143,7 @@
             android:textSize="14dp"
             android:textColor="@color/colorPrimary"
             android:fontFamily="@font/inter_extra_light"
-            android:text="https://some.repository.url/whatever/someScript.js" />
+            tools:text="https://some.repository.url/whatever/someScript.js" />
     </LinearLayout>
 
     <!--Script Url-->
@@ -157,7 +158,7 @@
             android:textColor="@color/white"
             android:layout_marginTop="10dp"
             android:fontFamily="@font/inter_light"
-            android:text="Signature" />
+            android:text="@string/signature" />
         <TextView
             android:id="@+id/source_signature"
             android:layout_width="match_parent"
@@ -165,6 +166,6 @@
             android:textSize="14dp"
             android:textColor="@color/colorPrimary"
             android:fontFamily="@font/inter_extra_light"
-            android:text="Valid" />
+            android:text="@string/valid" />
     </LinearLayout>
 </LinearLayout>

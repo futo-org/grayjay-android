@@ -37,7 +37,7 @@ class DropdownField : TableRow, IField {
 
     override val onChanged = Event2<IField, Any>();
 
-    constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
+    constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_dropdown, this);
         _spinner = findViewById(R.id.field_spinner);
         _title = findViewById(R.id.field_title);
@@ -77,17 +77,17 @@ class DropdownField : TableRow, IField {
         return this;
     }
 
-    override fun fromField(obj : Any, field : Field, formField: FormField?) : DropdownField {
+    override fun fromField(obj: Any, field: Field, formField: FormField?) : DropdownField {
         this._field = field;
         this._obj = obj;
 
         val attrField = formField ?: field.getAnnotation(FormField::class.java);
         if(attrField != null) {
-            _title.text = attrField.title;
+            _title.text = context.getString(attrField.title);
             descriptor = attrField;
 
-            if(attrField.subtitle.isNotBlank()) {
-                _description.text = attrField.subtitle;
+            if(attrField.subtitle != -1) {
+                _description.text = context.getString(attrField.subtitle);
                 _description.visibility = View.VISIBLE;
             }
             else

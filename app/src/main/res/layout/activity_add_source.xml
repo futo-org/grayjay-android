@@ -83,7 +83,7 @@
                     android:textColor="@color/white"
                     android:layout_marginTop="20dp"
                     android:fontFamily="@font/inter_light"
-                    android:text="Permissions" />
+                    android:text="@string/permissions" />
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -120,14 +120,14 @@
                     android:textColor="@color/white"
                     android:layout_marginTop="20dp"
                     android:fontFamily="@font/inter_light"
-                    android:text="Security Warnings" />
+                    android:text="@string/security_warnings" />
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="12dp"
                     android:textColor="@color/text_color_tinted"
                     android:fontFamily="@font/inter_extra_light"
-                    android:text="These are warnings of plugin behavior and implementation" />
+                    android:text="@string/these_are_warnings_of_plugin_behavior_and_implementation" />
 
                 <LinearLayout
                     android:id="@+id/source_warnings"
@@ -140,8 +140,6 @@
                 </LinearLayout>
 
             </LinearLayout>
-
-
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -187,9 +185,6 @@
                         android:paddingEnd="28dp"/>
                 </LinearLayout>
             </LinearLayout>
-
-
-
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

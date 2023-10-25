@@ -72,7 +72,7 @@
                 android:paddingRight="2dp"
                 android:textColor="#FFFFFF"
                 android:textSize="12dp"
-                android:text="LIVE"
+                android:text="@string/live_capitalized"
                 android:layout_gravity="center"
                 android:textStyle="normal" />
         </LinearLayout>
@@ -98,7 +98,7 @@
                 android:paddingRight="2dp"
                 android:textColor="#FFFFFF"
                 android:textSize="12dp"
-                android:text="00:00"
+                tools:text="00:00"
                 android:layout_gravity="center"
                 android:textStyle="normal" />
         </LinearLayout>

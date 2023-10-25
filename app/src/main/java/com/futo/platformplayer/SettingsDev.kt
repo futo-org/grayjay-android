@@ -34,22 +34,22 @@ import kotlin.system.measureTimeMillis
 @Serializable()
 class SettingsDev : FragmentedStorageFileJson() {
 
-    @FormField("Developer Mode", FieldForm.TOGGLE, "", 0)
+    @FormField(R.string.developer_mode, FieldForm.TOGGLE, -1, 0)
     @Serializable(with = FlexibleBooleanSerializer::class)
     var developerMode: Boolean = false;
 
-    @FormField("Development Server", FieldForm.GROUP,
-        "Settings related to development server, be careful as it may open your phone to security vulnerabilities", 1)
+    @FormField(R.string.development_server, FieldForm.GROUP,
+        R.string.settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities, 1)
     val devServerSettings: DeveloperServerFields = DeveloperServerFields();
     @Serializable
     class DeveloperServerFields {
 
-        @FormField("Start Server on boot", FieldForm.TOGGLE, "", 0)
+        @FormField(R.string.start_server_on_boot, FieldForm.TOGGLE, -1, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var devServerOnBoot: Boolean = false;
 
-        @FormField("Start Server", FieldForm.BUTTON,
-            "Starts a DevServer on port 11337, may expose vulnerabilities.", 1)
+        @FormField(R.string.start_server, FieldForm.BUTTON,
+            R.string.starts_a_devServer_on_port_11337_may_expose_vulnerabilities, 1)
         fun startServer() {
             StateDeveloper.instance.runServer();
             StateApp.instance.contextOrNull?.let {
@@ -58,31 +58,31 @@ class SettingsDev : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Experimental", FieldForm.GROUP,
-        "Settings related to development server, be careful as it may open your phone to security vulnerabilities", 2)
+    @FormField(R.string.experimental, FieldForm.GROUP,
+        R.string.settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities, 2)
     val experimentalSettings: ExperimentalFields = ExperimentalFields();
     @Serializable
     class ExperimentalFields {
 
-        @FormField("Background Subscription Testing", FieldForm.TOGGLE, "", 0)
+        @FormField(R.string.background_subscription_testing, FieldForm.TOGGLE, -1, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var backgroundSubscriptionFetching: Boolean = false;
     }
 
-    @FormField("Crash Me", FieldForm.BUTTON,
-        "Crashes the application on purpose", 2)
+    @FormField(R.string.crash_me, FieldForm.BUTTON,
+        R.string.crashes_the_application_on_purpose, 2)
     fun crashMe() {
         throw java.lang.IllegalStateException("This is an uncaught exception triggered on purpose!");
     }
 
-    @FormField("Delete Announcements", FieldForm.BUTTON,
-        "Delete all announcements", 2)
+    @FormField(R.string.delete_announcements, FieldForm.BUTTON,
+        R.string.delete_all_announcements, 2)
     fun deleteAnnouncements() {
         StateAnnouncement.instance.deleteAllAnnouncements();
     }
 
-    @FormField("Clear Cookies", FieldForm.BUTTON,
-        "Clear all cook from the CookieManager", 2)
+    @FormField(R.string.clear_cookies, FieldForm.BUTTON,
+        R.string.clear_all_cookies_from_the_cookieManager, 2)
     fun clearCookies() {
         val cookieManager: CookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null);
@@ -90,13 +90,13 @@ class SettingsDev : FragmentedStorageFileJson() {
 
     @Contextual
     @Transient
-    @FormField("V8 Benchmarks", FieldForm.GROUP,
-        "Various benchmarks using the integrated V8 engine", 3)
+    @FormField(R.string.v8_benchmarks, FieldForm.GROUP,
+        R.string.various_benchmarks_using_the_integrated_v8_engine, 3)
     val v8Benchmarks: V8Benchmarks = V8Benchmarks();
     class V8Benchmarks {
         @FormField(
-            "Test V8 Creation speed", FieldForm.BUTTON,
-            "Tests V8 creation times and running", 1
+            R.string.test_v8_creation_speed, FieldForm.BUTTON,
+            R.string.tests_v8_creation_times_and_running, 1
         )
         fun testV8Creation() {
             var plugin: V8Plugin? = null;
@@ -138,8 +138,8 @@ class SettingsDev : FragmentedStorageFileJson() {
         }
 
         @FormField(
-            "Test V8 Communication speed", FieldForm.BUTTON,
-            "Tests V8 communication speeds", 2
+            R.string.test_v8_communication_speed, FieldForm.BUTTON,
+            R.string.tests_v8_communication_speeds, 2
         )
         fun testV8RunSpeeds() {
             var plugin: V8Plugin? = null;
@@ -183,12 +183,12 @@ class SettingsDev : FragmentedStorageFileJson() {
 
     @Contextual
     @Transient
-    @FormField("V8 Script Testing", FieldForm.GROUP, "Various tests against a custom source", 4)
+    @FormField(R.string.v8_script_testing, FieldForm.GROUP, R.string.various_tests_against_a_custom_source, 4)
     val v8ScriptTests: V8ScriptTests = V8ScriptTests();
     class V8ScriptTests {
         @Contextual
         private var _currentPlugin : JSClient? = null;
-        @FormField("Inject", FieldForm.BUTTON, "Injects a test source config (local) into V8", 1)
+        @FormField(R.string.inject, FieldForm.BUTTON, R.string.injects_a_test_source_config_local_into_v8, 1)
         fun testV8Init() {
             StateApp.instance.scope.launch(Dispatchers.IO) {
                 try {
@@ -204,7 +204,7 @@ class SettingsDev : FragmentedStorageFileJson() {
                 }
             }
         }
-        @FormField("getHome", FieldForm.BUTTON, "Attempts to fetch 2 pages from getHome", 2)
+        @FormField(R.string.getHome, FieldForm.BUTTON, R.string.attempts_to_fetch_2_pages_from_getHome, 2)
         fun testV8Home() {
             runTestPlugin(_currentPlugin) {
                 var home: IPager<IPlatformContent>? = null;
@@ -270,10 +270,10 @@ class SettingsDev : FragmentedStorageFileJson() {
 
     @Contextual
     @Transient
-    @FormField("Other", FieldForm.GROUP, "Others...", 5)
+    @FormField(R.string.other, FieldForm.GROUP, R.string.others_ellipsis, 5)
     val otherTests: OtherTests = OtherTests();
     class OtherTests {
-        @FormField("Unsubscribe all", FieldForm.BUTTON, "Removes all subscriptions", -1)
+        @FormField(R.string.unsubscribe_all, FieldForm.BUTTON, R.string.removes_all_subscriptions, -1)
         fun unsubscribeAll() {
             val toUnsub = StateSubscriptions.instance.getSubscriptions();
             UIDialogs.toast("Started unsubbing.. (${toUnsub.size})")
@@ -282,24 +282,24 @@ class SettingsDev : FragmentedStorageFileJson() {
             };
             UIDialogs.toast("Finished unsubbing.. (${toUnsub.size})")
         }
-        @FormField("Clear Downloads", FieldForm.BUTTON, "Deletes all ongoing downloads", 1)
+        @FormField(R.string.clear_downloads, FieldForm.BUTTON, R.string.deletes_all_ongoing_downloads, 1)
         fun clearDownloads() {
             StateDownloads.instance.getDownloading().forEach {
                 StateDownloads.instance.removeDownload(it);
             };
         }
-        @FormField("Clear All Downloaded", FieldForm.BUTTON, "Deletes all downloaded videos and related files", 2)
+        @FormField(R.string.clear_all_downloaded, FieldForm.BUTTON, R.string.deletes_all_downloaded_videos_and_related_files, 2)
         fun clearDownloaded() {
             StateDownloads.instance.getDownloadedVideos().forEach {
                 StateDownloads.instance.deleteCachedVideo(it.id);
             };
         }
-        @FormField("Delete Unresolved", FieldForm.BUTTON, "Deletes all unresolved source files", 3)
+        @FormField(R.string.delete_unresolved, FieldForm.BUTTON, R.string.deletes_all_unresolved_source_files, 3)
         fun cleanupDownloads() {
             StateDownloads.instance.cleanupDownloads();
         }
 
-        @FormField("Fill storage till error", FieldForm.BUTTON, "Writes to disk till no space is left", 4)
+        @FormField(R.string.fill_storage_till_error, FieldForm.BUTTON, R.string.writes_to_disk_till_no_space_is_left, 4)
         fun fillStorage(context: Context, scope: CoroutineScope?) {
             val gigabuffer = ByteArray(1024 * 1024 * 128);
             var count: Long = 0;

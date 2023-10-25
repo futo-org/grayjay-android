@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="8dp"
                     android:fontFamily="@font/inter_regular"
-                    android:text="Playlist"
+                    android:text="@string/playlist"
                     android:layout_marginStart="8dp"/>
 
                 <Space android:layout_width="0dp"
@@ -72,7 +72,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="8dp"
                     android:fontFamily="@font/inter_regular"
-                    android:text=" Videos"
+                    android:text="@string/space_videos"
                     android:layout_marginRight="10dp"
                     android:textColor="@color/gray_7f" />
             </LinearLayout>
@@ -122,7 +122,7 @@
                 android:id="@+id/image_neopass_channel"
                 android:layout_width="10dp"
                 android:layout_height="10dp"
-                android:contentDescription="NeoPass channel"
+                android:contentDescription="@string/neopass_channel"
                 app:srcCompat="@drawable/neopass"
                 app:layout_constraintLeft_toRightOf="@id/text_channel_name"
                 app:layout_constraintRight_toRightOf="parent"

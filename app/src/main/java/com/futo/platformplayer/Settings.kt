@@ -45,8 +45,8 @@ class Settings : FragmentedStorageFileJson() {
     val onTabsChanged = Event0();
 
     @FormField(
-        "Manage Polycentric identity", FieldForm.BUTTON,
-        "Manage your Polycentric identity", -4
+        R.string.manage_polycentric_identity, FieldForm.BUTTON,
+        R.string.manage_your_polycentric_identity, -4
     )
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
@@ -60,8 +60,8 @@ class Settings : FragmentedStorageFileJson() {
     }
 
     @FormField(
-        "Show FAQ", FieldForm.BUTTON,
-        "Get answers to common questions", -3
+        R.string.show_faq, FieldForm.BUTTON,
+        R.string.get_answers_to_common_questions, -3
     )
     @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
@@ -73,8 +73,8 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
     @FormField(
-        "Show Issues", FieldForm.BUTTON,
-        "A list of user-reported and self-reported issues", -2
+        R.string.show_issues, FieldForm.BUTTON,
+        R.string.a_list_of_user_reported_and_self_reported_issues, -2
     )
     @FormFieldButton(R.drawable.ic_data_alert)
     fun openIssues() {
@@ -87,8 +87,8 @@ class Settings : FragmentedStorageFileJson() {
     }
 
     @FormField(
-        "Submit feedback", FieldForm.BUTTON,
-        "Give feedback on the application", -1
+        R.string.submit_feedback, FieldForm.BUTTON,
+        R.string.give_feedback_on_the_application, -1
     )
     @FormFieldButton(R.drawable.ic_bug)
     fun submitFeedback() {
@@ -107,8 +107,8 @@ class Settings : FragmentedStorageFileJson() {
     }
 
     @FormField(
-        "Manage Tabs", FieldForm.BUTTON,
-        "Change tabs visible on the home screen", -1
+        R.string.manage_tabs, FieldForm.BUTTON,
+        R.string.change_tabs_visible_on_the_home_screen, -1
     )
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
@@ -121,11 +121,11 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Home", "group", "Configure how your Home tab works and feels", 1)
+    @FormField(R.string.home, "group", R.string.configure_how_your_home_tab_works_and_feels, 1)
     var home = HomeSettings();
     @Serializable
     class HomeSettings {
-        @FormField("Feed Style", FieldForm.DROPDOWN, "", 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.feed_style)
         var homeFeedStyle: Int = 1;
 
@@ -137,16 +137,16 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Search", "group", "", 2)
+    @FormField(R.string.search, "group", -1, 2)
     var search = SearchSettings();
     @Serializable
     class SearchSettings {
-        @FormField("Search History", FieldForm.TOGGLE, "", 4)
+        @FormField(R.string.search_history, FieldForm.TOGGLE, -1, 4)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var searchHistory: Boolean = true;
 
 
-        @FormField("Feed Style", FieldForm.DROPDOWN, "", 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.feed_style)
         var searchFeedStyle: Int = 1;
 
@@ -159,11 +159,11 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Subscriptions", "group", "Configure how your Subscriptions works and feels", 3)
+    @FormField(R.string.subscriptions, "group", R.string.configure_how_your_subscriptions_works_and_feels, 3)
     var subscriptions = SubscriptionsSettings();
     @Serializable
     class SubscriptionsSettings {
-        @FormField("Feed Style", FieldForm.DROPDOWN, "", 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.feed_style)
         var subscriptionsFeedStyle: Int = 1;
 
@@ -174,11 +174,11 @@ class Settings : FragmentedStorageFileJson() {
                 return FeedStyle.THUMBNAIL;
         }
 
-        @FormField("Fetch on app boot", FieldForm.TOGGLE, "Shortly after opening the app, start fetching subscriptions.", 6)
+        @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 6)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var fetchOnAppBoot: Boolean = true;
 
-        @FormField("Background Update", FieldForm.DROPDOWN, "Experimental background update for subscriptions cache (requires restart)", 7)
+        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 7)
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
 
@@ -194,7 +194,7 @@ class Settings : FragmentedStorageFileJson() {
         };
 
 
-        @FormField("Subscription Concurrency", FieldForm.DROPDOWN, "Specify how many threads are used to fetch channels (requires restart)", 8)
+        @FormField(R.string.subscription_concurrency, FieldForm.DROPDOWN, R.string.specify_how_many_threads_are_used_to_fetch_channels, 8)
         @DropdownFieldOptionsId(R.array.thread_count)
         var subscriptionConcurrency: Int = 3;
 
@@ -203,17 +203,17 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Player", "group", "Change behavior of the player", 4)
+    @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
-        @FormField("Primary Language", FieldForm.DROPDOWN, "", 0)
+        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.languages)
         var primaryLanguage: Int = 0;
 
         fun getPrimaryLanguage(context: Context) = context.resources.getStringArray(R.array.languages)[primaryLanguage];
 
-        @FormField("Default Playback Speed", FieldForm.DROPDOWN, "", 1)
+        @FormField(R.string.default_playback_speed, FieldForm.DROPDOWN, -1, 1)
         @DropdownFieldOptionsId(R.array.playback_speeds)
         var defaultPlaybackSpeed: Int = 3;
         fun getDefaultPlaybackSpeed(): Float = when(defaultPlaybackSpeed) {
@@ -229,29 +229,29 @@ class Settings : FragmentedStorageFileJson() {
             else -> 1.0f;
         };
 
-        @FormField("Preferred Quality", FieldForm.DROPDOWN, "", 2)
+        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, -1, 2)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredQuality: Int = 0;
 
-        @FormField("Preferred Metered Quality", FieldForm.DROPDOWN, "", 2)
+        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, -1, 2)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredMeteredQuality: Int = 0;
         fun getPreferredQualityPixelCount(): Int = preferedQualityToPixels(preferredQuality);
         fun getPreferredMeteredQualityPixelCount(): Int = preferedQualityToPixels(preferredMeteredQuality);
         fun getCurrentPreferredQualityPixelCount(): Int = if(!StateApp.instance.isCurrentMetered()) getPreferredQualityPixelCount() else getPreferredMeteredQualityPixelCount();
 
-        @FormField("Preferred Preview Quality", FieldForm.DROPDOWN, "", 3)
+        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, -1, 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
 
-        @FormField("Auto-Rotate", FieldForm.DROPDOWN, "", 4)
+        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 4)
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
         fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
 
-        @FormField("Auto-Rotate Dead Zone", FieldForm.DROPDOWN, "This prevents the device from rotating within the given amount of degrees.", 5)
+        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 5)
         @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
         var autoRotateDeadZone: Int = 0;
 
@@ -259,19 +259,19 @@ class Settings : FragmentedStorageFileJson() {
             return autoRotateDeadZone * 5;
         }
 
-        @FormField("Background Behavior", FieldForm.DROPDOWN, "", 6)
+        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 
         fun isBackgroundContinue() = backgroundPlay == 1;
         fun isBackgroundPictureInPicture() = backgroundPlay == 2;
 
-        @FormField("Resume After Preview", FieldForm.DROPDOWN, "When watching a video in preview mode, resume at the position when opening the video", 7)
+        @FormField(R.string.resume_after_preview, FieldForm.DROPDOWN, R.string.when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code, 7)
         @DropdownFieldOptionsId(R.array.resume_after_preview)
         var resumeAfterPreview: Int = 1;
 
 
-        @FormField("Live Chat Webview", FieldForm.TOGGLE, "Use the live chat web window when available over native implementation.", 8)
+        @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 8)
         var useLiveChatWindow: Boolean = true;
 
         fun shouldResumePreview(previewedPosition: Long): Boolean{
@@ -283,12 +283,12 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Downloads", "group", "Configure downloading of videos", 5)
+    @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 5)
     var downloads = Downloads();
     @Serializable
     class Downloads {
 
-        @FormField("Download when", FieldForm.DROPDOWN, "Configure when videos should be downloaded", 0)
+        @FormField(R.string.download_when, FieldForm.DROPDOWN, R.string.configure_when_videos_should_be_downloaded, 0)
         @DropdownFieldOptionsId(R.array.when_download)
         var whenDownload: Int = 0;
 
@@ -301,21 +301,21 @@ class Settings : FragmentedStorageFileJson() {
             }
         }
 
-        @FormField("Default Video Quality", FieldForm.DROPDOWN, "", 2)
+        @FormField(R.string.default_video_quality, FieldForm.DROPDOWN, -1, 2)
         @DropdownFieldOptionsId(R.array.preferred_video_download)
         var preferredVideoQuality: Int = 4;
         fun getDefaultVideoQualityPixels(): Int = preferedQualityToPixels(preferredVideoQuality);
 
-        @FormField("Default Audio Quality", FieldForm.DROPDOWN, "", 3)
+        @FormField(R.string.default_audio_quality, FieldForm.DROPDOWN, -1, 3)
         @DropdownFieldOptionsId(R.array.preferred_audio_download)
         var preferredAudioQuality: Int = 1;
         fun isHighBitrateDefault(): Boolean = preferredAudioQuality > 0;
 
-        @FormField("ByteRange Download", FieldForm.TOGGLE, "Attempt to utilize byte ranges, this can be combined with concurrency to bypass throttling", 4)
+        @FormField(R.string.byte_range_download, FieldForm.TOGGLE, R.string.attempt_to_utilize_byte_ranges, 4)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var byteRangeDownload: Boolean = true;
 
-        @FormField("ByteRange Concurrency", FieldForm.DROPDOWN, "Number of concurrent threads to multiply download speeds from throttled sources", 5)
+        @FormField(R.string.byte_range_concurrency, FieldForm.DROPDOWN, R.string.number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources, 5)
         @DropdownFieldOptionsId(R.array.thread_count)
         var byteRangeConcurrency: Int = 3;
         fun getByteRangeThreadCount(): Int {
@@ -323,20 +323,20 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Browsing", "group", "Configure browsing behavior", 6)
+    @FormField(R.string.browsing, "group", R.string.configure_browsing_behavior, 6)
     var browsing = Browsing();
     @Serializable
     class Browsing {
-        @FormField("Enable Video Cache", FieldForm.TOGGLE, "A cache to quickly load previously fetched videos", 0)
+        @FormField(R.string.enable_video_cache, FieldForm.TOGGLE, R.string.cache_to_quickly_load_previously_fetched_videos, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var videoCache: Boolean = true;
     }
 
-    @FormField("Casting", "group", "Configure casting", 7)
+    @FormField(R.string.casting, "group", R.string.configure_casting, 7)
     var casting = Casting();
     @Serializable
     class Casting {
-        @FormField("Enabled", FieldForm.TOGGLE, "Enable casting", 0)
+        @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enable_casting, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var enabled: Boolean = true;
 
@@ -358,24 +358,24 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField("Logging", FieldForm.GROUP, "", 8)
+    @FormField(R.string.logging, FieldForm.GROUP, -1, 8)
     var logging = Logging();
     @Serializable
     class Logging {
-        @FormField("Log Level", FieldForm.DROPDOWN, "", 0)
+        @FormField(R.string.log_level, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.log_levels)
         var logLevel: Int = 0;
 
         @FormField(
-            "Submit logs", FieldForm.BUTTON,
-            "Submit logs to help us narrow down issues", 1
+            R.string.submit_logs, FieldForm.BUTTON,
+            R.string.submit_logs_to_help_us_narrow_down_issues, 1
         )
         fun submitLogs() {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
                     if (!Logger.submitLogs()) {
                         withContext(Dispatchers.Main) {
-                            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, "Please enable logging to submit logs") }
+                            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, it.getString(R.string.please_enable_logging_to_submit_logs)) }
                         }
                     }
                 } catch (e: Throwable) {
@@ -387,40 +387,40 @@ class Settings : FragmentedStorageFileJson() {
 
 
 
-    @FormField("Announcement", FieldForm.GROUP, "", 10)
+    @FormField(R.string.announcement, FieldForm.GROUP, -1, 10)
     var announcementSettings = AnnouncementSettings();
     @Serializable
     class AnnouncementSettings {
         @FormField(
-            "Reset announcements", FieldForm.BUTTON,
-            "Reset hidden announcements", 1
+            R.string.reset_announcements, FieldForm.BUTTON,
+            R.string.reset_hidden_announcements, 1
         )
         fun resetAnnouncements() {
             StateAnnouncement.instance.resetAnnouncements();
-            UIDialogs.toast("Announcements reset.");
+            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, it.getString(R.string.announcements_reset)); };
         }
     }
 
-    @FormField("Plugins", FieldForm.GROUP, "", 11)
+    @FormField(R.string.plugins, FieldForm.GROUP, -1, 11)
     @Transient
     var plugins = Plugins();
     @Serializable
     class Plugins {
 
-        @FormField("Clear Cookies on Logout", FieldForm.TOGGLE, "Clears cookies when you log out, allowing you to change account.", 0)
+        @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
 
         @FormField(
-            "Clear Cookies", FieldForm.BUTTON,
-            "Clears in-app browser cookies, especially useful for fully logging out of plugins.", 1
+            R.string.clear_cookies, FieldForm.BUTTON,
+            R.string.clears_in_app_browser_cookies, 1
         )
         fun clearCookies() {
             val cookieManager: CookieManager = CookieManager.getInstance();
             cookieManager.removeAllCookies(null);
         }
         @FormField(
-            "Reinstall Embedded Plugins", FieldForm.BUTTON,
-            "Also removes any data related plugin like login or settings (may not clear browser cache)", 1
+            R.string.reinstall_embedded_plugins, FieldForm.BUTTON,
+            R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1
         )
         fun reinstallEmbedded() {
             StateApp.instance.scopeOrNull!!.launch(Dispatchers.IO) {
@@ -429,7 +429,7 @@ class Settings : FragmentedStorageFileJson() {
 
                     withContext(Dispatchers.Main) {
                         StateApp.instance.contextOrNull?.let {
-                            UIDialogs.toast(it, "Embedded plugins reinstalled, a reboot is recommended");
+                            UIDialogs.toast(it, it.getString(R.string.embedded_plugins_reinstalled_a_reboot_is_recommended));
                         };
                     }
                 } catch (ex: Exception) {
@@ -444,7 +444,7 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField("External Storage", FieldForm.GROUP, "", 12)
+    @FormField(R.string.external_storage, FieldForm.GROUP, -1, 12)
     var storage = Storage();
     @Serializable
     class Storage {
@@ -456,13 +456,13 @@ class Settings : FragmentedStorageFileJson() {
         fun isStorageMainValid(context: Context): Boolean = StateApp.instance.isValidStorageUri(context, getStorageGeneralUri());
         fun isStorageDownloadValid(context: Context): Boolean = StateApp.instance.isValidStorageUri(context, getStorageDownloadUri());
 
-        @FormField("Change external General directory", FieldForm.BUTTON, "Change the external directory for general files, used for persistent files like auto-backup", 3)
+        @FormField(R.string.change_external_general_directory, FieldForm.BUTTON, R.string.change_the_external_directory_for_general_files, 3)
         fun changeStorageGeneral() {
             SettingsActivity.getActivity()?.let {
                 StateApp.instance.changeExternalGeneralDirectory(it);
             }
         }
-        @FormField("Change external Downloads directory", FieldForm.BUTTON, "Change the external storage for download files, used for exported download files", 4)
+        @FormField(R.string.change_external_downloads_directory, FieldForm.BUTTON, R.string.change_the_external_storage_for_download_files, 4)
         fun changeStorageDownload() {
             SettingsActivity.getActivity()?.let {
                 StateApp.instance.changeExternalDownloadDirectory(it);
@@ -471,19 +471,19 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField("Auto Update", "group", "Configure the auto updater", 12)
+    @FormField(R.string.auto_update, "group", R.string.configure_the_auto_updater, 12)
     var autoUpdate = AutoUpdate();
     @Serializable
     class AutoUpdate {
-        @FormField("Check", FieldForm.DROPDOWN, "", 0)
+        @FormField(R.string.check, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.auto_update_when_array)
         var check: Int = 0;
 
-        @FormField("Background download", FieldForm.DROPDOWN, "Configure if background download should be used", 1)
+        @FormField(R.string.background_download, FieldForm.DROPDOWN, R.string.configure_if_background_download_should_be_used, 1)
         @DropdownFieldOptionsId(R.array.background_download)
         var backgroundDownload: Int = 0;
 
-        @FormField("Download when", FieldForm.DROPDOWN, "Configure when updates should be downloaded", 2)
+        @FormField(R.string.download_when, FieldForm.DROPDOWN, R.string.configure_when_updates_should_be_downloaded, 2)
         @DropdownFieldOptionsId(R.array.when_download)
         var whenDownload: Int = 0;
 
@@ -501,8 +501,8 @@ class Settings : FragmentedStorageFileJson() {
         }
 
         @FormField(
-            "Manual check", FieldForm.BUTTON,
-            "Manually check for updates", 3
+            R.string.manual_check, FieldForm.BUTTON,
+            R.string.manually_check_for_updates, 3
         )
         fun manualCheck() {
             if (!BuildConfig.IS_PLAYSTORE_BUILD) {
@@ -514,19 +514,20 @@ class Settings : FragmentedStorageFileJson() {
                     try {
                         it.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${it.packageName}")))
                     } catch (e: ActivityNotFoundException) {
-                        UIDialogs.toast(it, "Failed to show store.");
+                        UIDialogs.toast(it, it.getString(R.string.failed_to_show_store));
                     }
                 }
             }
         }
 
         @FormField(
-            "View changelog", FieldForm.BUTTON,
-            "Review the current and past changelogs", 4
+            R.string.view_changelog, FieldForm.BUTTON,
+            R.string.review_the_current_and_past_changelogs, 4
         )
         fun viewChangelog() {
-            UIDialogs.toast("Retrieving changelog");
             SettingsActivity.getActivity()?.let {
+                UIDialogs.toast(it.getString(R.string.retrieving_changelog));
+
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
                         val version = StateUpdate.instance.downloadVersionCode(ManagedHttpClient()) ?: return@launch;
@@ -543,8 +544,8 @@ class Settings : FragmentedStorageFileJson() {
         }
 
         @FormField(
-            "Remove Cached Version", FieldForm.BUTTON,
-            "Remove the last downloaded version", 5
+            R.string.remove_cached_version, FieldForm.BUTTON,
+            R.string.remove_the_last_downloaded_version, 5
         )
         fun removeCachedVersion() {
             StateApp.withContext {
@@ -561,7 +562,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField("Backup", FieldForm.GROUP, "", 13)
+    @FormField(R.string.backup, FieldForm.GROUP, -1, 13)
     var backup = Backup();
     @Serializable
     class Backup {
@@ -571,16 +572,16 @@ class Settings : FragmentedStorageFileJson() {
         var autoBackupPassword: String? = null;
         fun shouldAutomaticBackup() = autoBackupPassword != null;
 
-        @FormField("Automatic Backup", FieldForm.READONLYTEXT, "", 0)
+        @FormField(R.string.automatic_backup, FieldForm.READONLYTEXT, -1, 0)
         val automaticBackupText get() = if(!shouldAutomaticBackup()) "None" else "Every Day";
 
-        @FormField("Set Automatic Backup", FieldForm.BUTTON, "Configure daily backup in case of catastrophic failure. (Written to the external Grayjay directory)", 1)
+        @FormField(R.string.set_automatic_backup, FieldForm.BUTTON, R.string.configure_daily_backup_in_case_of_catastrophic_failure, 1)
         fun configureAutomaticBackup() {
             UIDialogs.showAutomaticBackupDialog(SettingsActivity.getActivity()!!, autoBackupPassword != null) {
                 SettingsActivity.getActivity()?.reloadSettings();
             };
         }
-        @FormField("Restore Automatic Backup", FieldForm.BUTTON, "Restore a previous automatic backup", 2)
+        @FormField(R.string.restore_automatic_backup, FieldForm.BUTTON, R.string.restore_a_previous_automatic_backup, 2)
         fun restoreAutomaticBackup() {
             val activity = SettingsActivity.getActivity()!!
 
@@ -591,38 +592,38 @@ class Settings : FragmentedStorageFileJson() {
         }
 
 
-        @FormField("Export Data", FieldForm.BUTTON, "Creates a zip file with your data which can be imported by opening it with Grayjay", 3)
+        @FormField(R.string.export_data, FieldForm.BUTTON, R.string.creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay, 3)
         fun export() {
             StateBackup.startExternalBackup();
         }
     }
 
-    @FormField("Payment", FieldForm.GROUP, "", 14)
+    @FormField(R.string.payment, FieldForm.GROUP, -1, 14)
     var payment = Payment();
     @Serializable
     class Payment {
-        @FormField("Payment Status", FieldForm.READONLYTEXT, "", 1)
-        val paymentStatus: String get() = if (StatePayment.instance.hasPaid) "Paid" else "Not Paid";
+        @FormField(R.string.payment_status, FieldForm.READONLYTEXT, -1, 1)
+        val paymentStatus: String get() = SettingsActivity.getActivity()?.let { if (StatePayment.instance.hasPaid) it.getString(R.string.paid) else it.getString(R.string.not_paid); } ?: "Unknown";
 
-        @FormField("Clear Payment", FieldForm.BUTTON, "Deletes license keys from app", 2)
+        @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 2)
         fun clearPayment() {
             StatePayment.instance.clearLicenses();
             SettingsActivity.getActivity()?.let {
-                UIDialogs.toast(it, "Licenses cleared, might require app restart");
+                UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
                 it.reloadSettings();
             }
         }
     }
 
-    @FormField("Info", FieldForm.GROUP, "", 15)
+    @FormField(R.string.info, FieldForm.GROUP, -1, 15)
     var info = Info();
     @Serializable
     class Info {
-        @FormField("Version Code", FieldForm.READONLYTEXT, "", 1, "code")
+        @FormField(R.string.version_code, FieldForm.READONLYTEXT, -1, 1, "code")
         var versionCode = BuildConfig.VERSION_CODE;
-        @FormField("Version Name", FieldForm.READONLYTEXT, "", 2)
+        @FormField(R.string.version_name, FieldForm.READONLYTEXT, -1, 2)
         var versionName = BuildConfig.VERSION_NAME;
-        @FormField("Version Type", FieldForm.READONLYTEXT, "", 3)
+        @FormField(R.string.version_type, FieldForm.READONLYTEXT, -1, 3)
         var versionType = BuildConfig.BUILD_TYPE;
     }
 

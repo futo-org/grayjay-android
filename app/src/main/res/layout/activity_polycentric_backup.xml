@@ -37,7 +37,7 @@
         android:id="@+id/text_qr"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan to import"
+        android:text="@string/scan_to_import"
         android:fontFamily="@font/inter_light"
         android:textSize="32dp"
         android:layout_marginTop="12dp"
@@ -61,16 +61,16 @@
             android:id="@+id/button_share"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Share"
-            app:buttonSubText="Send your identity to another app"
+            app:buttonText="@string/share"
+            app:buttonSubText="@string/send_your_identity_to_another_app"
             app:buttonIcon="@drawable/ic_share" />
 
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_copy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonText="Copy"
-            app:buttonSubText="Copy your identity to clipboard"
+            app:buttonText="@string/copy"
+            app:buttonSubText="@string/copy_your_identity_to_clipboard"
             app:buttonIcon="@drawable/ic_copy"
             android:layout_marginTop="8dp" />
     </LinearLayout>

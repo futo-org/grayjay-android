@@ -49,7 +49,7 @@
                 android:paddingRight="2dp"
                 android:textColor="#FFFFFF"
                 android:textSize="10dp"
-                android:text="\?"
+                tools:text="\?"
                 android:layout_gravity="center"
                 android:textStyle="normal" />
         </LinearLayout>
@@ -76,7 +76,7 @@
                 android:paddingRight="2dp"
                 android:textColor="#FFFFFF"
                 android:textSize="10dp"
-                android:text="0:00"
+                tools:text="0:00"
                 android:layout_gravity="center"
                 android:textStyle="normal" />
         </LinearLayout>
