@@ -104,7 +104,7 @@
     <string name="source_explain_script_url">Das Plugin hat Zugriff auf die folgenden Domains</string>
     <string name="scan_qr">QR-Code scannen</string>
     <string name="scan_qr_explain">Scannen Sie einen QR-Code, um zu installieren</string>
-    <string name="enter_url_explain">Geben Sie eine URL ein, um die Plugin-Konfiguration von dort zu laden.</string>
+    <string name="enter_url_explain">Geben Sie eine URL ein, um die Plugin-Konfiguration von dieser zu laden.</string>
     <string name="enter_url">URL eingeben</string>
     <string name="install">Installieren</string>
     <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">Keine Geräte gefunden. Es kann eine Weile dauern, bis Ihr Gerät angezeigt wird. Bitte haben Sie Geduld</string>
@@ -129,8 +129,8 @@
     <string name="enable_in_home">Zu Hause aktivieren</string>
     <string name="enable_in_search">In der Suche aktivieren</string>
     <string name="check">Überprüfen</string>
-    <string name="buy_text">Grayjay ist weder eine einfache noch eine günstige App zum Aufbauen und Warten. Wir haben Vollzeit-Ingenieure, die an der App und den umliegenden Systemen arbeiten. Und wird wahrscheinlich nicht so bald, wenn überhaupt, sein Geld zurückverdienen.\n\nDie Mission von FUTO besteht darin, dass Open-Source-Software und nicht böswillige Geschäftspraktiken für Projekte und ihre Entwickler eine nachhaltige Einnahmequelle werden. Aus diesem Grund sind wir dafür, dass die Benutzer tatsächlich für die Software bezahlen.\n\nAus diesem Grund möchte Grayjay, dass Sie für die Software bezahlen.</string>
-    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Ein ungefangene Ausnahme wurde ausgelöst, es tut uns leid für die Unannehmlichkeiten.</string>
+    <string name="buy_text">Es ist weder einfache noch günstige, eine App wie Grayjay, zu Entwikeln und zu Warten. Wir beschäftigen Vollzeit-Ingenieure, die an der App und den umliegenden Systemen arbeiten. Grayjay wird wahrscheinlich erst spät, wenn überhaupt, Geld zurückverdienen.\n\nDie Mission von FUTO besteht darin, dass Open-Source-Software und nicht böswillige Geschäftspraktiken für Projekte und ihre Entwickler eine nachhaltige Einnahmequelle werden. Aus diesem Grund sind wir dafür, dass die Benutzer tatsächlich für eine solche Software bezahlen.\n\nAus diesem Grund möchte Grayjay, dass Sie für die Software bezahlen.</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Ein unabgefangene Ausnahme wurde ausgelöst, es tut uns leid für die Unannehmlichkeiten.</string>
     <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Um uns bei der Lösung zu helfen, teilen Sie bitte den unten stehenden Absturzbericht mit uns und geben Sie vielleicht einige Informationen darüber, was Sie getan haben.</string>
     <string name="new_profile">Neues Profil</string>
     <string name="import_existing_profile">Bestehendes Profil importieren</string>
