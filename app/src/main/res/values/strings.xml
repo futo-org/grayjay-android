@@ -5,7 +5,7 @@
     <string name="thumbnail">Thumbnail</string>
     <string name="channel_image">Channel image</string>
     <string name="add_to">Add to</string>
-    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
+    <string name="lorem_ipsum" translatable="false">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
     <string name="add_to_queue">Add to queue</string>
     <string name="home">Home</string>
     <string name="recommendations">Recommendations</string>
@@ -32,126 +32,7 @@
     <string name="downloading_update">Downloading update…</string>
     <string name="installing_update">Installing update…</string>
     <string name="done">Done</string>
-    <string name="getHome">getHome</string>
-    <string-array name="home_screen_array">
-        <item>Recommendations</item>
-        <item>Subscriptions</item>
-    </string-array>
-    <string-array name="playback_speeds">
-        <item>0.25</item>
-        <item>0.5</item>
-        <item>0.75</item>
-        <item>1.0</item>
-        <item>1.25</item>
-        <item>1.5</item>
-        <item>1.75</item>
-        <item>2.0</item>
-        <item>2.25</item>
-    </string-array>
-    <string-array name="preferred_quality_array">
-        <item>Automatic (720p)</item>
-        <item>2160p</item>
-        <item>1440p</item>
-        <item>1080p</item>
-        <item>720p</item>
-        <item>480p</item>
-        <item>360p</item>
-        <item>240p</item>
-        <item>144p</item>
-    </string-array>
-    <string-array name="preferred_video_download">
-        <item>None (Audio Only)</item>
-        <item>2160p</item>
-        <item>1440p</item>
-        <item>1080p</item>
-        <item>720p</item>
-        <item>480p</item>
-        <item>360p</item>
-        <item>240p</item>
-        <item>144p</item>
-    </string-array>
-    <string-array name="thread_count">
-        <item>1 Threads</item>
-        <item>2 Threads</item>
-        <item>4 Threads</item>
-        <item>6 Threads</item>
-        <item>8 Threads</item>
-        <item>10 Threads</item>
-        <item>15 Threads</item>
-    </string-array>
-    <string-array name="background_interval">
-        <item>Never</item>
-        <item>Every 15 Minutes</item>
-        <item>Every Hour</item>
-        <item>Every 3 Hours</item>
-        <item>Every 6 Hours</item>
-        <item>Every 12 Hours</item>
-        <item>Every Day</item>
-    </string-array>
-    <string-array name="preferred_audio_download">
-        <item>Low Bitrate</item>
-        <item>High Bitrate</item>
-    </string-array>
-    <string-array name="auto_update_when_array">
-        <item>On Startup</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>Disabled</item>
-        <item>Enabled</item>
-        <item>Same as System</item>
-    </string-array>
-    <string-array name="auto_rotate_dead_zone">
-        <item>0</item>
-        <item>5</item>
-        <item>10</item>
-        <item>20</item>
-    </string-array>
-    <string-array name="enabled_disabled_array">
-        <item>Disabled</item>
-        <item>Enabled</item>
-    </string-array>
-    <string-array name="when_download">
-        <item>On Unmetered</item>
-        <item>On Wifi &amp; Ethernet</item>
-        <item>Always</item>
-    </string-array>
-    <string-array name="background_download">
-        <item>Disabled</item>
-        <item>Enabled</item>
-    </string-array>
-    <string-array name="subscriptions_sortby_array">
-        <item>Name Ascending</item>
-        <item>Name Descending</item>
-    </string-array>
-    <string-array name="feed_style">
-        <item>Preview</item>
-        <item>List</item>
-    </string-array>
-    <string-array name="player_background_behavior">
-        <item>None</item>
-        <item>Keep Playing</item>
-        <item>Player Overlay</item>
-    </string-array>
-    <string-array name="resume_after_preview">
-        <item>Start At Beginning</item>
-        <item>Resume After 10s</item>
-        <item>Always Resume</item>
-    </string-array>
-    <string-array name="languages">
-        <item>English</item>
-        <item>Spanish</item>
-        <item>French</item>
-        <item>French</item>
-        <item>Korean</item>
-        <item>Thai</item>
-        <item>Vietnamese</item>
-        <item>Indonesian</item>
-        <item>Hindi</item>
-        <item>Arabic</item>
-        <item>Turkish</item>
-        <item>Russian</item>
-    </string-array>
+    <string name="getHome" translatable="false">getHome</string>
     <string name="success">Success</string>
     <string name="failed_to_update_with_error">Failed to update package with error</string>
     <string name="general_failure">The operation failed in a generic way</string>
@@ -192,7 +73,6 @@
     <string name="confirm_remove_source">Removing this source will result in some of your subscriptions not being resolved.</string>
     <string name="shuffle">Shuffle</string>
     <string name="play_all">Play all</string>
-    <string name="pic2pic">Picture2Picture</string>
     <string name="search_history">Search history</string>
     <string name="app_error">App Error</string>
     <string name="developer">Developer</string>
@@ -730,7 +610,126 @@
     <string name="select_your_pins_in_order">Select your pins in order</string>
     <string name="more_options">More Options</string>
     <string name="save">Save</string>
-    <string-array name="casting_device_type_array">
+    <string-array name="home_screen_array">
+        <item>Recommendations</item>
+        <item>Subscriptions</item>
+    </string-array>
+    <string-array name="playback_speeds" translatable="false">
+        <item>0.25</item>
+        <item>0.5</item>
+        <item>0.75</item>
+        <item>1.0</item>
+        <item>1.25</item>
+        <item>1.5</item>
+        <item>1.75</item>
+        <item>2.0</item>
+        <item>2.25</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>Automatic (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>None (Audio Only)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 Threads</item>
+        <item>2 Threads</item>
+        <item>4 Threads</item>
+        <item>6 Threads</item>
+        <item>8 Threads</item>
+        <item>10 Threads</item>
+        <item>15 Threads</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>Never</item>
+        <item>Every 15 Minutes</item>
+        <item>Every Hour</item>
+        <item>Every 3 Hours</item>
+        <item>Every 6 Hours</item>
+        <item>Every 12 Hours</item>
+        <item>Every Day</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>Low Bitrate</item>
+        <item>High Bitrate</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>On Startup</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>Disabled</item>
+        <item>Enabled</item>
+        <item>Same as System</item>
+    </string-array>
+    <string-array name="auto_rotate_dead_zone" translatable="false">
+        <item>0</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>Disabled</item>
+        <item>Enabled</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>On Unmetered</item>
+        <item>On Wifi &amp; Ethernet</item>
+        <item>Always</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>Disabled</item>
+        <item>Enabled</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>Name Ascending</item>
+        <item>Name Descending</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>Preview</item>
+        <item>List</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>None</item>
+        <item>Keep Playing</item>
+        <item>Player Overlay</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>Start At Beginning</item>
+        <item>Resume After 10s</item>
+        <item>Always Resume</item>
+    </string-array>
+    <string-array name="languages">
+        <item>English</item>
+        <item>Spanish</item>
+        <item>French</item>
+        <item>French</item>
+        <item>Korean</item>
+        <item>Thai</item>
+        <item>Vietnamese</item>
+        <item>Indonesian</item>
+        <item>Hindi</item>
+        <item>Arabic</item>
+        <item>Turkish</item>
+        <item>Russian</item>
+    </string-array>
+    <string-array name="casting_device_type_array" translatable="false">
         <item>FastCast</item>
         <item>ChromeCast</item>
         <item>AirPlay</item>

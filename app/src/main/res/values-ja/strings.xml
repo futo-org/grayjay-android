@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">キャスト</string>
+    <string name="search">検索</string>
+    <string name="add_to_query">クエリに追加</string>
+    <string name="thumbnail">サムネイル</string>
+    <string name="channel_image">チャンネル画像</string>
+    <string name="add_to">追加</string>
+    <string name="add_to_queue">キューに追加</string>
+    <string name="home">ホーム</string>
+    <string name="recommendations">おすすめ</string>
+    <string name="more">もっと見る</string>
+    <string name="playlists">プレイリスト</string>
+    <string name="subscriptions">登録</string>
+    <string name="loading">読み込み中</string>
+    <string name="retry">再試行</string>
+    <string name="cancel">キャンセル</string>
+    <string name="failed_to_retrieve_data_are_you_connected">データの取得に失敗しました、接続されていますか？</string>
+    <string name="settings">設定</string>
+    <string name="history">履歴</string>
+    <string name="sources">ソース</string>
+    <string name="buy">購入</string>
+    <string name="faq">FAQ</string>
+    <string name="the_top_source_will_be_considered_primary">上位のソースが主要とみなされます</string>
+    <string name="defaults">デフォルト</string>
+    <string name="home_screen">ホーム画面</string>
+    <string name="preferred_quality">優先品質</string>
+    <string name="update">更新</string>
+    <string name="close">閉じる</string>
+    <string name="never">決して</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">更新があります、更新しますか？</string>
+    <string name="downloading_update">更新をダウンロード中…</string>
+    <string name="installing_update">更新をインストール中…</string>
+    <string name="done">完了</string>
+    <string name="success">成功</string>
+    <string name="failed_to_update_with_error">エラーでパッケージの更新に失敗しました</string>
+    <string name="general_failure">一般的な失敗</string>
+    <string name="aborted">中断されました</string>
+    <string name="blocked">ブロックされました</string>
+    <string name="conflict">競合しています</string>
+    <string name="incompatible">互換性がありません</string>
+    <string name="invalid">無効です</string>
+    <string name="not_enough_storage">ストレージが不足しています</string>
+    <string name="live_capitalized">生放送</string>
+    <string name="live">ライブ</string>
+    <string name="click_to_read_more">もっと読む</string>
+    <string name="click_to_hide">非表示</string>
+    <string name="version">バージョン</string>
+    <string name="sort_by">並び替え</string>
+    <string name="subscribe">登録</string>
+    <string name="unsubscribe">登録解除</string>
+    <string name="background">背景</string>
+    <string name="background_revert">ビデオ</string>
+    <string name="add">追加</string>
+    <string name="download">ダウンロード</string>
+    <string name="share">共有</string>
+    <string name="view_all">すべて見る</string>
+    <string name="creators">クリエイター</string>
+    <string name="enabled">有効</string>
+    <string name="discover">発見</string>
+    <string name="find_new_video_sources_to_add">新しいビデオソースを追加する</string>
+    <string name="these_sources_have_been_disabled">これらのソースは無効にされています</string>
+    <string name="disabled">無効</string>
+    <string name="watch_later">後で見る</string>
+    <string name="create">作成</string>
+    <string name="ok">OK</string>
+    <string name="yes">はい</string>
+    <string name="no">いいえ</string>
+    <string name="confirm">確認</string>
+    <string name="confirm_delete_playlist">このプレイリストを削除してもよろしいですか？</string>
+    <string name="confirm_delete_subscription">この登録を削除してもよろしいですか？</string>
+    <string name="confirm_remove_source">このソースを削除すると、一部の登録が解決されなくなります。</string>
+    <string name="shuffle">シャッフル</string>
+    <string name="play_all">すべて再生</string>
+    <string name="search_history">検索履歴</string>
+    <string name="app_error">アプリエラー</string>
+    <string name="developer">開発者</string>
+    <string name="remove_historical_suggestion">履歴の提案を削除</string>
+    <string name="comments">コメント</string>
+    <string name="reached_the_end_of_the_playlist">プレイリストの最後に到達しました</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">ビデオが終了した後、プレイリストが再開されます</string>
+    <string name="restart_now">今すぐ再開</string>
+    <string name="end_of_queue_reached">キューの最後に到達しました</string>
+    <string name="end_of_playlist_reached">プレイリストの最後に到達しました</string>
+    <string name="end_of_watch_later_reached">後で見るの最後に到達しました</string>
+    <string name="reached_the_end_of_the_queue">キューの最後に到達しました</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">ビデオが終了した後、キューが再開されます</string>
+    <string name="up_next">次に再生</string>
+    <string name="queue">キュー</string>
+    <string name="clear">クリア</string>
+    <string name="last_hour">過去1時間</string>
+    <string name="last_24_hours">過去24時間</string>
+    <string name="last_week">先週</string>
+    <string name="last_30_days">過去30日間</string>
+    <string name="last_year">去年</string>
+    <string name="all_time">すべての時間</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">未処理の例外がスローされました、ご不便をおかけして申し訳ありません。</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">これを解決するために、以下のクラッシュレポートを共有していただき、何をしていたのかについて少しの文脈を追加していただけると幸いです。</string>
+    <string name="new_profile">新しいプロファイル</string>
+    <string name="import_existing_profile">既存のプロファイルをインポート</string>
+    <string name="generate_a_new_identity">新しいIDを生成</string>
+    <string name="use_an_existing_identity">既存のIDを使用</string>
+    <string name="permissions">権限</string>
+    <string name="security_warnings">セキュリティ警告</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">これらはプラグインの動作と実装に関する警告です</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">キャプチャを入力して完了したら閉じてください</string>
+    <string name="close_capitalized">閉じる</string>
+    <string name="submit">送信</string>
+    <string name="restart">再起動</string>
+    <string name="manage_tabs">タブを管理する</string>
+    <string name="scan_to_import">インポートするためにスキャン</string>
+    <string name="send_your_identity_to_another_app">IDを別のアプリに送信</string>
+    <string name="copy">コピー</string>
+    <string name="copy_your_identity_to_clipboard">IDをクリップボードにコピー</string>
+    <string name="polycentric">多心的</string>
+    <string name="profile_name">プロファイル名</string>
+    <string name="this_will_be_visible_to_other_users">これは他のユーザーに表示されます</string>
+    <string name="create_profile">プロファイルを作成</string>
+    <string name="or_capitalized">または</string>
+    <string name="paste_profile_here_polycentric">ここにプロファイルを貼り付け polycentric://…</string>
+    <string name="import_profile">プロファイルをインポート</string>
+    <string name="you_re_apparantly_a_developer">あなたは明らかに開発者です</string>
+    <string name="developer_settings">開発者設定</string>
+    <string name="migration">移行</string>
+    <string name="set_a_password_for_your_daily_backup">毎日のバックアップ用のパスワードを設定</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">外部ストレージに書き込まれる毎日のバックアップを暗号化するためのパスワードを設定します。</string>
+    <string name="backup_password">バックアップパスワード</string>
+    <string name="restore_from_automatic_backup">自動バックアップから復元</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">お使いのデバイスに自動バックアップが存在するようです、復元したい場合はバックアップパスワードを入力してください。</string>
+    <string name="restore">復元</string>
+    <string name="error_message_here">ここにエラーメッセージ</string>
+    <string name="name">名前</string>
+    <string name="ip">IP</string>
+    <string name="port">ポート</string>
+    <string name="discovered_devices">検出されたデバイス</string>
+    <string name="remembered_devices">記憶されたデバイス</string>
+    <string name="there_are_no_remembered_devices">記憶されたデバイスはありません</string>
+    <string name="connected_to">接続先：</string>
+    <string name="volume">ボリューム</string>
+    <string name="changelog">変更履歴</string>
+    <string name="some_example_changelog">いくつかの例の変更履歴。</string>
+    <string name="previous">前</string>
+    <string name="next">次</string>
+    <string name="comment">コメント</string>
+    <string name="str_import">インポート</string>
+    <string name="my_playlist_name">マイプレイリスト名</string>
+    <string name="do_you_want_to_import_this_store">このストアをインポートしますか？</string>
+    <string name="sources_required_need_to_be_enabled">有効にする必要があるソースが必要です</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">項目が移行が必要であるか破損しています、今すぐバックアップから復元しますか？</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">無視すると次回の起動時に再度尋ねられます。</string>
+    <string name="ignore">無視</string>
+    <string name="view_changelog">変更履歴を表示</string>
+    <string name="i_already_paid">すでに支払いました</string>
+    <string name="memberships">メンバーシップ</string>
+    <string name="a_monthly_recurring_payment_with_often">よくある月額定額制の支払い</string>
+    <string name="additional_perks">追加の特典。</string>
+    <string name="a_one_time_payment_to_support_the_creator">クリエーターを支援するための一回限りの支払い</string>
+    <string name="donation">寄付</string>
+    <string name="downloading">ダウンロード中</string>
+    <string name="videos">動画</string>
+    <string name="clear_history">履歴をクリア</string>
+    <string name="nothing_to_import">インポートするものがありません</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">多くのソースを有効にすると、アプリケーションの読み込み速度が低下する可能性があります。</string>
+    <string name="support">サポート</string>
+    <string name="store">ストア</string>
+    <string name="live_chat">ライブチャット</string>
+    <string name="remove">削除</string>
+    <string name="space_videos">動画</string>
+    <string name="playlist">プレイリスト</string>
+    <string name="neopass_channel">ポリセントリックチャンネル</string>
+    <string name="enable">有効にする</string>
+    <string name="under_construction">工事中</string>
+    <string name="under">工事</string>
+    <string name="construction">中</string>
+    <string name="disable">無効にする</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">次のコンテンツは、不足しているプラグインのため、Grayjayで開けません。</string>
+    <string name="unknown">不明</string>
+    <string name="tap_to_open_in_browser">ブラウザで開くためにタップ</string>
+    <string name="missing_plugin">不足しているプラグイン</string>
+    <string name="viewers_are_raiding">視聴者が急襲中</string>
+    <string name="go_now">今すぐ行く</string>
+    <string name="prevent">防ぐ</string>
+    <string name="recently_used_playlist">最近使用したプレイリスト</string>
+    <string name="license_email">ライセンスメール</string>
+    <string name="required_to_send_the_license_key">ライセンスキーを送信するために必要</string>
+    <string name="receipt_email_user_domain_com">領収書メール（user@domain.com）</string>
+    <string name="payment_using">支払い方法</string>
+    <string name="country">国</string>
+    <string name="postal_code">郵便番号</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">消費税 (</string>
+    <string name="total">合計</string>
+    <string name="pay">支払う</string>
+    <string name="standard_payment_methods">標準的な支払い方法</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripeは、主要なクレジットカード、デビットカード、さまざまな地域化された支払い方法を受け付ける安全なオンライン決済サービスです。</string>
+    <string name="add_a_comment">コメントを追加…</string>
+    <string name="dismiss">閉じる</string>
+    <string name="scan_a_qr_code_to_install">QRコードをスキャンしてインストール</string>
+    <string name="toggle_fullscreen">全画面表示を切り替え</string>
+    <string name="by">によって</string>
+    <string name="signature">署名</string>
+    <string name="valid">有効</string>
+    <string name="repeat">繰り返し</string>
+    <string name="view">表示</string>
+    <string name="install_by_qr">QRでインストール</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">QRコードをスキャンしてプラグインをインストール</string>
+    <string name="logout">ログアウト</string>
+    <string name="video">ビデオ</string>
+    <string name="view_a_more_in_depth_video">より詳細なビデオを見る</string>
+    <string name="technical_documentation">技術文書</string>
+    <string name="view_the_technical_documentation">技術文書を表示</string>
+    <string name="visit_my_store">私のストアを訪れる</string>
+    <string name="make_a_backup_of_your_identity">あなたのアイデンティティのバックアップを作成</string>
+    <string name="sign_out_of_this_identity">このアイデンティティからサインアウト</string>
+    <string name="delete_this_profile">このプロフィールを削除</string>
+    <string name="install_by_url">URLでインストール</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">以前に取得した動画を素早く読み込むためのキャッシュ</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">ユーザーから報告され、自己報告された問題のリスト</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">ログインや設定など、関連するプラグインの任意のデータも削除します</string>
+    <string name="announcement">お知らせ</string>
+    <string name="attempt_to_utilize_byte_ranges">バイト範囲を使用する試み</string>
+    <string name="auto_update">自動更新</string>
+    <string name="auto_rotate">自動回転</string>
+    <string name="auto_rotate_dead_zone">自動回転デッドゾーン</string>
+    <string name="automatic_backup">自動バックアップ</string>
+    <string name="background_behavior">バックグラウンドの動作</string>
+    <string name="background_update">バックグラウンド更新</string>
+    <string name="background_download">バックグラウンドダウンロード</string>
+    <string name="backup">バックアップ</string>
+    <string name="browsing">ブラウジング</string>
+    <string name="byte_range_concurrency">バイト範囲の同時実行</string>
+    <string name="byte_range_download">バイト範囲ダウンロード</string>
+    <string name="casting">キャスティング</string>
+    <string name="change_behavior_of_the_player">プレーヤーの動作を変更</string>
+    <string name="change_external_downloads_directory">外部ダウンロードディレクトリを変更</string>
+    <string name="change_external_general_directory">外部一般ディレクトリを変更</string>
+    <string name="change_tabs_visible_on_the_home_screen">ホーム画面で表示されるタブを変更</string>
+    <string name="change_the_external_directory_for_general_files">一般ファイルの外部ディレクトリを変更</string>
+    <string name="change_the_external_storage_for_download_files">ダウンロードファイルの外部ストレージを変更</string>
+    <string name="clear_cookies">クッキーをクリア</string>
+    <string name="clear_cookies_on_logout">ログアウト時にクッキーをクリア</string>
+    <string name="clear_payment">支払いをクリア</string>
+    <string name="clears_cookies_when_you_log_out">ログアウト時にクッキーをクリアします</string>
+    <string name="clears_in_app_browser_cookies">アプリ内ブラウザのクッキーをクリア</string>
+    <string name="configure_browsing_behavior">ブラウジング動作を設定</string>
+    <string name="configure_casting">キャスティングを設定</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">壊滅的な障害の場合に毎日のバックアップを設定</string>
+    <string name="configure_downloading_of_videos">動画のダウンロードを設定</string>
+    <string name="configure_how_your_home_tab_works_and_feels">ホームタブの動作と感じ方を設定</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">定期購読の動作と感じ方を設定</string>
+    <string name="configure_if_background_download_should_be_used">バックグラウンドダウンロードを使用するか設定</string>
+    <string name="configure_the_auto_updater">自動更新を設定</string>
+    <string name="configure_when_updates_should_be_downloaded">更新がダウンロードされるタイミングを設定</string>
+    <string name="configure_when_videos_should_be_downloaded">動画がダウンロードされるタイミングを設定</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Grayjayで開いてインポートできるデータのZIPファイルを作成します</string>
+    <string name="default_audio_quality">デフォルトのオーディオ品質</string>
+    <string name="default_playback_speed">デフォルトの再生速度</string>
+    <string name="default_video_quality">デフォルトの動画品質</string>
+    <string name="deletes_license_keys_from_app">アプリからライセンスキーを削除</string>
+    <string name="download_when">いつダウンロード</string>
+    <string name="enable_video_cache">ビデオキャッシュを有効にする</string>
+    <string name="enable_casting">キャスティングを有効にする</string>
+    <string name="experimental_background_update_for_subscriptions_cache">定期購読キャッシュのための実験的なバックグラウンド更新</string>
+    <string name="export_data">データをエクスポート</string>
+    <string name="external_storage">外部ストレージ</string>
+    <string name="feed_style">フィードスタイル</string>
+    <string name="fetch_on_app_boot">アプリ起動時に取得</string>
+    <string name="get_answers_to_common_questions">よくある質問の答えを得る</string>
+    <string name="give_feedback_on_the_application">アプリにフィードバックを与える</string>
+    <string name="info">情報</string>
+    <string name="live_chat_webview">ライブチャットWebビュー</string>
+    <string name="log_level">ログレベル</string>
+    <string name="logging">ロギング</string>
+    <string name="manage_polycentric_identity">ポリセントリックアイデンティティを管理</string>
+    <string name="manage_your_polycentric_identity">あなたのポリセントリックアイデンティティを管理</string>
+    <string name="manual_check">手動チェック</string>
+    <string name="manually_check_for_updates">手動で更新を確認</string>
+    <string name="payment">支払い</string>
+    <string name="payment_status">支払い状況</string>
+    <string name="player">プレイヤー</string>
+    <string name="plugins">プラグイン</string>
+    <string name="preferred_casting_quality">優先キャスティング品質</string>
+    <string name="preferred_metered_quality">優先計量品質</string>
+    <string name="preferred_preview_quality">優先プレビュー品質</string>
+    <string name="primary_language">主要言語</string>
+    <string name="reinstall_embedded_plugins">組み込みプラグインを再インストール</string>
+    <string name="remove_cached_version">キャッシュされたバージョンを削除</string>
+    <string name="remove_the_last_downloaded_version">最後にダウンロードしたバージョンを削除</string>
+    <string name="reset_announcements">アナウンスをリセット</string>
+    <string name="reset_hidden_announcements">非表示のアナウンスをリセット</string>
+    <string name="restore_automatic_backup">自動バックアップを復元</string>
+    <string name="restore_a_previous_automatic_backup">以前の自動バックアップを復元</string>
+    <string name="resume_after_preview">プレビュー後に再開</string>
+    <string name="review_the_current_and_past_changelogs">現在および過去の変更履歴を確認</string>
+    <string name="set_automatic_backup">自動バックアップを設定</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">アプリを開いた直後に、サブスクリプションの取得を開始</string>
+    <string name="show_faq">FAQを表示</string>
+    <string name="show_issues">問題を表示</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">チャンネルを取得するために使用するスレッド数を指定</string>
+    <string name="submit_feedback">フィードバックを送信</string>
+    <string name="submit_logs">ログを送信</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">問題を特定するためにログを送信</string>
+    <string name="subscription_concurrency">サブスクリプションの同時実行性</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">これにより、デバイスが指定された角度内で回転するのを防ぎます</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">可能な場合はネイティブ実装よりもライブチャットのウェブウィンドウを使用</string>
+    <string name="version_code">バージョンコード</string>
+    <string name="version_name">バージョン名</string>
+    <string name="version_type">バージョンタイプ</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">プレビューモードでビデオを視聴している場合、ビデオコードを開いたときの位置で再開</string>
+    <string name="please_enable_logging_to_submit_logs">ログを送信するにはロギングを有効にしてください</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">埋め込みプラグインが再インストールされました、再起動が推奨されます</string>
+    <string name="announcements_reset">お知らせがリセットされました。</string>
+    <string name="failed_to_show_store">ストアの表示に失敗しました。</string>
+    <string name="retrieving_changelog">変更履歴を取得中</string>
+    <string name="paid">有料</string>
+    <string name="not_paid">無料</string>
+    <string name="licenses_cleared_might_require_app_restart">ライセンスがクリアされました、アプリの再起動が必要かもしれません</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">getHomeから2ページを取得する試み</string>
+    <string name="background_subscription_testing">バックグラウンド定期購読テスト</string>
+    <string name="clear_all_downloaded">すべてのダウンロードをクリア</string>
+    <string name="clear_downloads">ダウンロードをクリア</string>
+    <string name="clear_all_cookies_from_the_cookieManager">CookieManagerからすべてのクッキーをクリア</string>
+    <string name="crash_me">私をクラッシュさせる</string>
+    <string name="crashes_the_application_on_purpose">意図的にアプリケーションをクラッシュさせる</string>
+    <string name="delete_announcements">アナウンスを削除</string>
+    <string name="delete_unresolved">未解決を削除</string>
+    <string name="delete_all_announcements">すべてのアナウンスを削除</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">すべてのダウンロードされたビデオと関連ファイルを削除</string>
+    <string name="deletes_all_ongoing_downloads">すべての進行中のダウンロードを削除</string>
+    <string name="deletes_all_unresolved_source_files">すべての未解決のソースファイルを削除</string>
+    <string name="developer_mode">開発者モード</string>
+    <string name="development_server">開発サーバー</string>
+    <string name="experimental">実験的</string>
+    <string name="fill_storage_till_error">エラーが出るまでストレージを埋める</string>
+    <string name="inject">注入</string>
+    <string name="injects_a_test_source_config_local_into_v8">V8にテストソース設定（ローカル）を注入</string>
+    <string name="other">その他</string>
+    <string name="others_ellipsis">その他…</string>
+    <string name="removes_all_subscriptions">すべての定期購読を削除</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">開発サーバーに関連する設定、セキュリティ脆弱性が発生する可能性があるので注意</string>
+    <string name="start_server">サーバーを起動</string>
+    <string name="start_server_on_boot">ブート時にサーバーを起動</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">ポート11337でDevServerを起動、脆弱性が露呈する可能性あり</string>
+    <string name="test_v8_communication_speed">V8通信速度をテスト</string>
+    <string name="test_v8_creation_speed">V8作成速度をテスト</string>
+    <string name="tests_v8_communication_speeds">V8通信速度をテストする</string>
+    <string name="tests_v8_creation_times_and_running">V8作成時間と実行をテストする</string>
+    <string name="unsubscribe_all">すべての購読を解除</string>
+    <string name="v8_benchmarks">V8ベンチマーク</string>
+    <string name="v8_script_testing">V8スクリプトテスト</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">統合されたV8エンジンを使用したさまざまなベンチマーク</string>
+    <string name="various_tests_against_a_custom_source">カスタムソースに対するさまざまなテスト</string>
+    <string name="writes_to_disk_till_no_space_is_left">ディスクにスペースがなくなるまで書き込む</string>
+    <string name="visibility">可視性</string>
+    <string name="enable_where_this_plugins_content_are_visible">このプラグインのコンテンツが表示される場所を有効にする</string>
+    <string name="show_content_in_home_tab">ホームタブでコンテンツを表示</string>
+    <string name="show_content_in_search_results">検索結果でコンテンツを表示</string>
+    <string name="no_valid_url_provided">有効なURLが提供されていません..</string>
+    <string name="invalid_config_format">無効な設定形式</string>
+    <string name="failed_to_fetch_configuration">設定の取得に失敗</string>
+    <string name="failed_to_fetch_script">スクリプトの取得に失敗</string>
+    <string name="url_access">URLアクセス</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">このプラグインは次のドメインにアクセスできます</string>
+    <string name="eval_access">Evalアクセス</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">このプラグインはeval機能（リモートインジェクション）にアクセスできます</string>
+    <string name="failed_to_scan_qr_code">QRコードのスキャンに失敗しました</string>
+    <string name="not_a_plugin_url">プラグインのURLではありません</string>
+    <string name="scan_a_qr_code">QRコードをスキャン</string>
+    <string name="not_implemented_yet">まだ実装されていません..</string>
+    <string name="unknown_context">不明なコンテキスト</string>
+    <string name="something_went_wrong_missing_stack_trace">何かがおかしい…スタックトレースが見つかりませんか？</string>
+    <string name="logs_already_submitted">ログは既に送信されています。</string>
+    <string name="no_logs_found">ログが見つかりません。</string>
+    <string name="failed_automated_share_share_manually">自動共有に失敗しました。手動で共有しますか？</string>
+    <string name="shared_id">共有された{id}</string>
+    <string name="unhandled_exception_in_vs">VSで未処理の例外</string>
+    <string name="send_exception_to_developers">開発者に例外を送信…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">ライセンスキーが設定されました！\nアプリを再起動する可能性があります。</string>
+    <string name="invalid_license_format">無効なライセンス形式</string>
+    <string name="unknown_content_format">不明なコンテンツ形式</string>
+    <string name="unknown_file_format">不明なファイル形式</string>
+    <string name="unknown_polycentric_format">不明なポリセントリック形式</string>
+    <string name="unknown_url_format">不明なURL形式</string>
+    <string name="failed_to_handle_file">ファイルの処理に失敗しました</string>
+    <string name="unknown_reconstruction_type">不明な再構築タイプ</string>
+    <string name="failed_to_parse_newpipe_subscriptions">NewPipeの購読の解析に失敗しました</string>
+    <string name="failed_to_generate_qr_code">QRコードの生成に失敗しました</string>
+    <string name="share_text">テキストを共有</string>
+    <string name="copied_text">テキストをコピーしました</string>
+    <string name="must_be_at_least_3_characters_long">少なくとも3文字でなければなりません。</string>
+    <string name="failed_to_create_profile">プロファイルの作成に失敗しました。</string>
+    <string name="failed_to_fully_backfill_servers">サーバーの完全なバックフィルに失敗しました。</string>
+    <string name="sign_in_to_this_identity">このIDにサインイン</string>
+    <string name="text_field_does_not_contain_any_data">テキストフィールドにデータが含まれていません</string>
+    <string name="not_a_valid_url">有効なURLではありません</string>
+    <string name="this_profile_is_already_imported">このプロファイルは既にインポートされています</string>
+    <string name="failed_to_import_profile">プロファイルのインポートに失敗しました:</string>
+    <string name="failed_to_backfill_client">クライアントのバックフィルに失敗しました</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">このプロファイルを削除してもよろしいですか？</string>
+    <string name="no_process_handle_set">プロセスハンドルが設定されていません</string>
+    <string name="name_must_be_at_least_3_characters_long">名前は少なくとも3文字でなければなりません</string>
+    <string name="process_handle_unset">プロセスハンドルが設定されていません</string>
+    <string name="failed_to_read_image">画像の読み取りに失敗しました</string>
+    <string name="changes_have_been_saved">変更が保存されました</string>
+    <string name="failed_to_synchronize_changes">変更の同期に失敗しました</string>
+    <string name="image_picker_cancelled">画像ピッカーがキャンセルされました</string>
+    <string name="you_are_now_in_developer_mode">開発者モードになりました</string>
+    <string name="subscribers">購読者</string>
+    <string name="find_name_on">{name}を検索</string>
+    <string name="failed_to_fetch">取得に失敗しました</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">ご購入ありがとうございます。お支払いが確認され次第、キーがメールで送信されます。</string>
+    <string name="payment_failed">支払いに失敗しました</string>
+    <string name="payment_succeeded">支払いが成功しました</string>
+    <string name="enter_license_key">ライセンスキーを入力</string>
+    <string name="invalid_license_key">無効なライセンスキー</string>
+    <string name="license">ライセンス</string>
+    <string name="failed_to_activate_key">キーの有効化に失敗しました</string>
+    <string name="no_source_enabled_to_support_this_channel">このチャンネルをサポートするソースが有効になっていません</string>
+    <string name="failed_to_convert_channel">チャンネルの変換に失敗しました</string>
+    <string name="page">ページ</string>
+    <string name="hide">非表示</string>
+    <string name="hide_from_home">ホームから非表示</string>
+    <string name="play_feed_as_queue">フィードをキューとして再生</string>
+    <string name="play_entire_feed">フィード全体を再生</string>
+    <string name="queued">キューに追加されました</string>
+    <string name="used">使用済み</string>
+    <string name="available">利用可能</string>
+    <string name="failed_to_load_next_page">次のページの読み込みに失敗しました</string>
+    <string name="plugin_pluginname_failed_message">プラグイン {pluginName} が失敗しました:\n{message}</string>
+    <string name="plugin_failed_due_to">プラグインは次の理由で失敗しました:</string>
+    <string name="failed_to_get_home_plugin">ホームプラグインの取得に失敗しました</string>
+    <string name="failed_to_get_home">ホームの取得に失敗しました</string>
+    <string name="no_home_available">利用可能なホームがありません</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">利用可能なホームページがありません、インターネットに接続しているか確認してリフレッシュしてください。</string>
+    <string name="import_playlists">プレイリストをインポート</string>
+    <string name="playlists_imported">プレイリストがインポートされました。</string>
+    <string name="index_out_of_size_selected">{index} / {size} が選択されました</string>
+    <string name="import_subscriptions">サブスクリプションをインポート</string>
+    <string name="subscriptions_imported">サブスクリプションがインポートされました。</string>
+    <string name="edit_playlist">プレイリストを編集</string>
+    <string name="share_as_text">テキストとして共有</string>
+    <string name="share_as_a_list_of_video_urls">ビデオのURLのリストとして共有</string>
+    <string name="share_as_import">インポートとして共有</string>
+    <string name="share_as_a_import_file_for_grayjay">Grayjayのインポートファイルとして共有</string>
+    <string name="failed_to_load_playlist">プレイリストの読み込みに失敗しました</string>
+    <string name="please_wait_for_playlist_to_finish_loading">プレイリストの読み込みが完了するまでお待ちください</string>
+    <string name="playlist_copied_as_local_playlist">プレイリストをローカルプレイリストとしてコピーしました</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">ダウンロードしたビデオを削除してもよろしいですか？</string>
+    <string name="create_new_playlist">新しいプレイリストを作成</string>
+    <string name="expected_media_content_found">予期されるメディアコンテンツが見つかりました</string>
+    <string name="failed_to_load_post">ポストの読み込みに失敗しました。</string>
+    <string name="replies">返信</string>
+    <string name="Replies">返信</string>
+    <string name="plugin_settings_saved">プラグイン設定が保存されました</string>
+    <string name="plugin_settings">プラグイン設定</string>
+    <string name="these_settings_are_defined_by_the_plugin">これらの設定はプラグインによって定義されています</string>
+    <string name="failed_to_load_source">ソースの読み込みに失敗しました</string>
+    <string name="check_for_updates">アップデートを確認</string>
+    <string name="checks_for_new_versions_of_the_source">ソースの新しいバージョンを確認</string>
+    <string name="authentication">認証</string>
+    <string name="sign_out_of_the_platform">プラットフォームからサインアウト</string>
+    <string name="import_your_subscriptions_from_this_source">このソースからあなたのサブスクリプションをインポート</string>
+    <string name="import_your_playlists_from_this_source">このソースからあなたのプレイリストをインポート</string>
+    <string name="login">ログイン</string>
+    <string name="sign_into_the_platform_of_this_source">このソースのプラットフォームにサインイン</string>
+    <string name="management">管理</string>
+    <string name="uninstall">アンインストール</string>
+    <string name="removes_the_plugin_from_the_app">アプリからプラグインを削除します</string>
+    <string name="delete_captcha">キャプチャを削除</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">このプラグインの保存されたキャプチャ答えを削除します</string>
+    <string name="failed_to_retrieve_playlists">プレイリストの取得に失敗しました。</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} ユーザーサブスクリプションが取得されました。</string>
+    <string name="failed_to_retrieve_subscriptions">サブスクリプションの取得に失敗しました。</string>
+    <string name="are_you_sure_you_want_to_uninstall">アンインストールしてもよろしいですか</string>
+    <string name="uninstalled">アンインストール済み </string>
+    <string name="failed_to_check_for_updates">更新の確認に失敗しました</string>
+    <string name="plugin_is_fully_up_to_date">プラグインは完全に最新です</string>
+    <string name="rate_limit_warning">レート制限警告</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">これは多くのサブスクリプションに対応するまでの暫定的な措置です。</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\n以下のプラグインに対して多すぎるサブスクリプションがあります:\n</string>
+    <string name="posts">投稿</string>
+    <string name="planned">予定</string>
+    <string name="no_results_found_swipe_down_to_refresh">結果が見つかりません\n下にスワイプして更新</string>
+    <string name="overlay">オーバーレイ</string>
+    <string name="reload">リロード</string>
+    <string name="watching_now">現在視聴中</string>
+    <string name="views">ビュー</string>
+    <string name="planned_in">予定場所</string>
+    <string name="failed_to_get_playback_tracker">再生トラッカーの取得に失敗しました</string>
+    <string name="exception_retrieving_live_events">ライブイベントの取得例外:</string>
+    <string name="exception_retrieving_live_chat_window">ライブチャットウィンドウの取得例外:</string>
+    <string name="live_chat_failed_to_load">ライブチャットの読み込みに失敗しました</string>
+    <string name="unsupported_cast_format">サポートされていないキャスト形式</string>
+    <string name="failed_to_load_media">メディアの読み込みに失敗しました</string>
+    <string name="offline_playback">オフライン再生</string>
+    <string name="media_error">メディアエラー</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">メディアソースは認証されていないエラーが発生しました。\nプラグインのリロードで解決するかもしれません。\nリロードしますか？\n（実験的）</string>
+    <string name="playback_rate">再生速度</string>
+    <string name="quality">品質</string>
+    <string name="offline_video">オフラインビデオ</string>
+    <string name="offline_audio">オフラインオーディオ</string>
+    <string name="offline_subtitles">オフライン字幕</string>
+    <string name="stream_video">ストリームビデオ</string>
+    <string name="stream_audio">ストリームオーディオ</string>
+    <string name="audio">オーディオ</string>
+    <string name="subtitles">字幕</string>
+    <string name="unavailable_video">利用できないビデオ</string>
+    <string name="this_video_is_unavailable">このビデオは利用できません。</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">あなたのキューには利用できないビデオがありました [{videoName}] by [{authorName}]。</string>
+    <string name="back">戻る</string>
+    <string name="pause">一時停止</string>
+    <string name="play">再生</string>
+    <string name="pauses_the_video">ビデオを一時停止します</string>
+    <string name="resumes_the_video">ビデオを再開します</string>
+    <string name="video_without_source">ソースなしのビデオ</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">再生キューに必要なソースが有効でないビデオがありました。[{videoName}] by [{authorName}]、再生はスキップされました。</string>
+    <string name="failed_to_load_video_scriptimplementationexception">ビデオの読み込みに失敗しました（ScriptImplementationException）</string>
+    <string name="invalid_video">無効なビデオ</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">再生キューに無効なビデオがありました。[{videoName}] by [{authorName}]、再生はスキップされました。</string>
+    <string name="age_restricted_video">年齢制限があるビデオ</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">再生キューに年齢制限のあるビデオがありました。[{videoName}] by [{authorName}]、このビデオはアクセスできず、再生はスキップされました。</string>
+    <string name="failed_to_load_video_scriptexception">ビデオの読み込みに失敗しました（ScriptException）</string>
+    <string name="failed_to_load_video">ビデオの読み込みに失敗しました</string>
+    <string name="not_yet_available_retrying_in_time_s">{time}秒後に再試行、まだ利用できません</string>
+    <string name="failed_to_retry_for_live_stream">ライブストリームの再試行に失敗しました</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">このアプリは開発中です。バグレポートを提出し、多くの機能が未完成であることを理解してください。</string>
+    <string name="please_use_at_least_3_characters">少なくとも3文字を使用してください</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">このビデオを削除してもよろしいですか？</string>
+    <string name="tap_to_open">タップして開く</string>
+    <string name="watching">視聴中</string>
+    <string name="available_in">で利用可能</string>
+    <string name="seconds">秒</string>
+    <string name="please_login_to_post_a_comment">コメントを投稿するにはログインしてください</string>
+    <string name="failed_to_post_comment">コメントの投稿に失敗しました：</string>
+    <string name="waiting_for_unmetered">無制限で待っています</string>
+    <string name="last_error">最後のエラー</string>
+    <string name="error">エラー</string>
+    <string name="filters">フィルター</string>
+    <string name="viewers">視聴者</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">サーバーからの返信が1つもありませんでしたが、少なくとも1つの返信が期待されました</string>
+    <string name="please_login_to_like">いいねするにはログインしてください</string>
+    <string name="please_login_to_dislike">嫌いな場合はログインしてください</string>
+    <string name="failed_to_load_comments">コメントの読み込みに失敗しました。</string>
+    <string name="script_is_not_available">スクリプトは利用できません</string>
+    <string name="signature_is_valid">署名は有効です</string>
+    <string name="signature_is_invalid">署名は無効です</string>
+    <string name="no_signature_available">署名はありません</string>
+    <string name="subscribed_to">購読しました</string>
+    <string name="unsubscribed_from">購読を解除しました</string>
+    <string name="you_don_t_have_any_automatic_backups">自動バックアップはありません</string>
+    <string name="an_old_backup_is_available">古いバックアップがあります</string>
+    <string name="would_you_like_to_restore_this_backup">このバックアップを復元しますか？</string>
+    <string name="override">オーバーライド</string>
+    <string name="data_retry">データ再試行</string>
+    <string name="no_downloads_available">ダウンロードはありません</string>
+    <string name="no_downloadable_sources_yet">まだダウンロード可能なソースはありません</string>
+    <string name="none">なし</string>
+    <string name="audio_only">オーディオのみ</string>
+    <string name="download_video">ビデオをダウンロード</string>
+    <string name="fetching_video_details">ビデオの詳細を取得中</string>
+    <string name="failed_to_fetch_details_for_download">ダウンロードの詳細の取得に失敗しました</string>
+    <string name="target_resolution">目標解像度</string>
+    <string name="target_bitrate">目標ビットレート</string>
+    <string name="low_bitrate">低ビットレート</string>
+    <string name="high_bitrate">高ビットレート</string>
+    <string name="actions">アクション</string>
+    <string name="download_the_video">ビデオをダウンロード</string>
+    <string name="video_options">ビデオオプション</string>
+    <string name="change_pins">ピンを変更</string>
+    <string name="decide_which_buttons_should_be_pinned">固定するボタンを決定</string>
+    <string name="select_your_pins_in_order">ピンを順番に選択</string>
+    <string name="more_options">その他のオプション</string>
+    <string name="save">保存</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">チャンネル {channelName} をプレイリストに変換しますか？</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">速度制限されたソースからのダウンロード速度を増加させるための同時スレッド数</string>
+    <string name="are_you_sure_delete_historical">これらの履歴エントリを削除してもよろしいですか？</string>
+    <string name="removed">削除済み</string>
+    <string name="add_source">ソースを追加</string>
+    <string name="repository_url">リポジトリURL</string>
+    <string name="script_url">スクリプトURL</string>
+    <string name="source_permissions_explanation">これはプラグインが機能するために必要な権限です</string>
+    <string name="source_explain_eval_access">プラグインはeval容量にアクセスできます</string>
+    <string name="source_explain_script_url">プラグインは次のドメインにアクセスできます</string>
+    <string name="scan_qr">QRをスキャン</string>
+    <string name="scan_qr_explain">QRコードをスキャンしてインストール</string>
+    <string name="enter_url_explain">URLを入力してプラグインの設定をロード</string>
+    <string name="enter_url">URLを入力</string>
+    <string name="install">インストール</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">デバイスが見つかりません。表示されるまでに時間がかかる場合がありますので、お待ちください</string>
+    <string name="not_ready">準備ができていません</string>
+    <string name="connect">接続</string>
+    <string name="stop">停止</string>
+    <string name="start">開始</string>
+    <string name="storage_space">ストレージ容量</string>
+    <string name="downloads">ダウンロード</string>
+    <string name="deselect_all">すべて選択解除</string>
+    <string name="select_all">すべて選択</string>
+    <string name="add_casting_device">キャスティングデバイスを追加</string>
+    <string name="new_activity">新しいアクティビティ</string>
+    <string name="creator_is_on_neopass">クリエーターはNeoPassにいます</string>
+    <string name="options">オプション</string>
+    <string name="export">エクスポート</string>
+    <string name="delete">削除</string>
+    <string name="loading_update">アップデートを読み込み中…</string>
+    <string name="polycentric_explanation">オンラインビデオを閲覧し、コメントを残したいと考える際に、Polycentricという新しい方法を試してみてください。以下に、Polycentricプロファイルを作成する素晴らしい理由をいくつか挙げます：\n\n1. コントロールが可能: Polycentricでは、データは一カ所に格納されるのではなく、複数の場所に分散されています。よって、オンラインプレゼンスに対するコントロールが高まります。データをどこに保存するか決定でき、プロバイダーを簡単に切り替えたり新しいものを追加したりできます。\n\n2. プライバシーとセキュリティ: Polycentricは高度なセキュリティ手法を用いており、個人情報がしっかりと保護されています。\n\n3. シームレスなネットワーキング: Polycentricを使用すると、特定のプラットフォームに縛られることなく、他の人々と接続し、そのコンテンツと対話できます。\n\n4. スマートな検索と推薦: Polycentricは検索と推薦に複数のソースを使用しており、高いパフォーマンスを実現しながらも、単一のプロバイダーが結果に過度な影響を与えることがありません。\n\n5. 適応性とオープン性: Polycentricは、柔軟で新しい開発に対応できるように設計されています。\n\n6. Polycentricプロファイルを作成することで、オンラインビデオにコメントを残し、よりパーソナライズされたオンライン体験を楽しむことができます。</string>
+    <string name="publish">公開</string>
+    <string name="usage">使用状況</string>
+    <string name="enable_in_home">ホームで有効にする</string>
+    <string name="enable_in_search">検索で有効にする</string>
+    <string name="check">確認</string>
+    <string name="buy_text">Grayjayは簡単でも安くもないアプリであり、維持するためにはフルタイムのエンジニアが常に作業しています。そして、すぐに利益を上げることはありませんし、もしかすると一度もないかもしれません。\n\nFUTOのミッションは、オープンソースソフトウェアと非悪意のあるソフトウェアビジネスの実践がプロジェクトとその開発者にとって持続可能な収益源となることです。そのため、実際にユーザーがソフトウェアに対価を支払うことを支持しています。\n\nだからGrayjayは、ソフトウェアに対価を支払うようにと望んでいます。</string>
+    <string-array name="home_screen_array">
+        <item>おすすめ</item>
+        <item>定期購読</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>自動（720p）</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>なし（音声のみ）</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1スレッド</item>
+        <item>2スレッド</item>
+        <item>4スレッド</item>
+        <item>6スレッド</item>
+        <item>8スレッド</item>
+        <item>10スレッド</item>
+        <item>15スレッド</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>なし</item>
+        <item>15分ごと</item>
+        <item>1時間ごと</item>
+        <item>3時間ごと</item>
+        <item>6時間ごと</item>
+        <item>12時間ごと</item>
+        <item>1日ごと</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>低ビットレート</item>
+        <item>高ビットレート</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>起動時</item>
+        <item>なし</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>無効</item>
+        <item>有効</item>
+        <item>システムと同じ</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>無効</item>
+        <item>有効</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>無制限時</item>
+        <item>Wifi &amp; Ethernet時</item>
+        <item>常に</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>無効</item>
+        <item>有効</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>名前昇順</item>
+        <item>名前降順</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>プレビュー</item>
+        <item>リスト</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>なし</item>
+        <item>再生続行</item>
+        <item>プレーヤーオーバーレイ</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>最初から</item>
+        <item>10秒後から再開</item>
+        <item>常に再開</item>
+    </string-array>
+    <string-array name="languages">
+        <item>英語</item>
+        <item>スペイン語</item>
+        <item>フランス語</item>
+        <item>フランス語</item>
+        <item>韓国語</item>
+        <item>タイ語</item>
+        <item>ベトナム語</item>
+        <item>インドネシア語</item>
+        <item>ヒンディー語</item>
+        <item>アラビア語</item>
+        <item>トルコ語</item>
+        <item>ロシア語</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>なし</item>
+        <item>エラー</item>
+        <item>警告</item>
+        <item>情報</item>
+        <item>詳細</item>
+    </string-array>
+</resources>

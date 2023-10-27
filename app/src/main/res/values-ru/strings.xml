@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">Вещание</string>
+    <string name="search">Поиск</string>
+    <string name="add_to_query">Добавить в запрос</string>
+    <string name="thumbnail">Миниатюра</string>
+    <string name="channel_image">Изображение канала</string>
+    <string name="add_to">Добавить в</string>
+    <string name="add_to_queue">Добавить в очередь</string>
+    <string name="home">Главная</string>
+    <string name="recommendations">Рекомендации</string>
+    <string name="more">Ещё</string>
+    <string name="playlists">Плейлисты</string>
+    <string name="subscriptions">Подписки</string>
+    <string name="loading">Загрузка</string>
+    <string name="retry">Повторить</string>
+    <string name="cancel">Отмена</string>
+    <string name="failed_to_retrieve_data_are_you_connected">Не удалось получить данные, у вас есть подключение?</string>
+    <string name="settings">Настройки</string>
+    <string name="history">История</string>
+    <string name="sources">Источники</string>
+    <string name="buy">Купить</string>
+    <string name="faq">ЧАВО</string>
+    <string name="the_top_source_will_be_considered_primary">Верхний источник будет считаться основным</string>
+    <string name="defaults">По умолчанию</string>
+    <string name="home_screen">Главный экран</string>
+    <string name="preferred_quality">Предпочтительное качество</string>
+    <string name="update">Обновить</string>
+    <string name="close">Закрыть</string>
+    <string name="never">Никогда</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">Доступно обновление, желаете обновить?</string>
+    <string name="downloading_update">Загрузка обновления…</string>
+    <string name="installing_update">Установка обновления…</string>
+    <string name="done">Готово</string>
+    <string name="success">Успех</string>
+    <string name="failed_to_update_with_error">Ошибка обновления пакета</string>
+    <string name="general_failure">Общая ошибка операции</string>
+    <string name="aborted">Операция прервана</string>
+    <string name="blocked">Операция заблокирована</string>
+    <string name="conflict">Конфликт с другим установленным пакетом</string>
+    <string name="incompatible">Несовместимо с этим устройством</string>
+    <string name="invalid">Один или несколько APK недействительны</string>
+    <string name="not_enough_storage">Недостаточно места для хранения</string>
+    <string name="live_capitalized">В ЭФИРЕ</string>
+    <string name="live">В эфире</string>
+    <string name="click_to_read_more">Нажмите, чтобы прочитать больше</string>
+    <string name="click_to_hide">Нажмите, чтобы скрыть</string>
+    <string name="version">Версия</string>
+    <string name="sort_by">Сортировать по</string>
+    <string name="subscribe">Подписаться</string>
+    <string name="unsubscribe">Отписаться</string>
+    <string name="background">Фон</string>
+    <string name="background_revert">Видео</string>
+    <string name="add">Добавить</string>
+    <string name="download">Скачать</string>
+    <string name="share">Поделиться</string>
+    <string name="view_all">Посмотреть все</string>
+    <string name="creators">Создатели</string>
+    <string name="enabled">Включено</string>
+    <string name="discover">Искать</string>
+    <string name="find_new_video_sources_to_add">Найти новые видеоисточники для добавления</string>
+    <string name="these_sources_have_been_disabled">Эти источники были отключены</string>
+    <string name="disabled">Отключено</string>
+    <string name="watch_later">Посмотреть позже</string>
+    <string name="create">Создать</string>
+    <string name="ok">ОК</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="confirm_delete_playlist">Вы уверены, что хотите удалить этот плейлист?</string>
+    <string name="confirm_delete_subscription">Вы уверены, что хотите отписаться?</string>
+    <string name="confirm_remove_source">Удаление этого источника приведет к неразрешимым подпискам.</string>
+    <string name="shuffle">Перемешать</string>
+    <string name="play_all">Воспроизвести все</string>
+    <string name="search_history">История поиска</string>
+    <string name="app_error">Ошибка приложения</string>
+    <string name="developer">Разработчик</string>
+    <string name="remove_historical_suggestion">Удалить историческую подсказку</string>
+    <string name="comments">Комментарии</string>
+    <string name="reached_the_end_of_the_playlist">Достигнут конец плейлиста</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">Плейлист будет перезапущен после завершения видео</string>
+    <string name="restart_now">Перезапустить сейчас</string>
+    <string name="end_of_queue_reached">Конец очереди достигнут</string>
+    <string name="end_of_playlist_reached">Конец плейлиста достигнут</string>
+    <string name="end_of_watch_later_reached">Конец списка "Посмотреть позже" достигнут</string>
+    <string name="reached_the_end_of_the_queue">Достигнут конец очереди</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">Очередь будет перезапущена после завершения видео</string>
+    <string name="up_next">Далее</string>
+    <string name="queue">Очередь</string>
+    <string name="clear">Очистить</string>
+    <string name="last_hour">Последний час</string>
+    <string name="last_24_hours">Последние 24 часа</string>
+    <string name="last_30_days">Последние 30 дней</string>
+    <string name="are_you_sure_delete_historical">Вы уверены, что хотите удалить эти исторические записи?</string>
+    <string name="removed">удалено</string>
+    <string name="add_source">Добавить источник</string>
+    <string name="repository_url">URL репозитория</string>
+    <string name="script_url">URL скрипта</string>
+    <string name="source_permissions_explanation">Это разрешения, необходимые плагину для функционирования</string>
+    <string name="source_explain_eval_access">Плагин будет иметь доступ к функции eval</string>
+    <string name="source_explain_script_url">Плагин будет иметь доступ к следующим доменам</string>
+    <string name="scan_qr">Сканировать QR</string>
+    <string name="scan_qr_explain">Сканируйте QR-код для установки</string>
+    <string name="enter_url_explain">Введите URL для загрузки конфигурации плагина.</string>
+    <string name="enter_url">Введите URL</string>
+    <string name="install">Установить</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">Устройства не найдены. Возможно, потребуется время, чтобы ваше устройство появилось, пожалуйста, будьте терпеливы</string>
+    <string name="not_ready">Не готово</string>
+    <string name="connect">Подключиться</string>
+    <string name="stop">Остановить</string>
+    <string name="start">Начать</string>
+    <string name="storage_space">Место для хранения</string>
+    <string name="downloads">Загрузки</string>
+    <string name="deselect_all">Снять все</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="add_casting_device">Добавить устройство для трансляции</string>
+    <string name="new_activity">Новая активность</string>
+    <string name="creator_is_on_neopass">Создатель на NeoPass</string>
+    <string name="options">Настройки</string>
+    <string name="export">Экспорт</string>
+    <string name="delete">Удалить</string>
+    <string name="loading_update">Загрузка обновления…</string>
+    <string name="polycentric_explanation">Когда вы просматриваете видео в интернете и хотите оставить комментарий, попробуйте Polycentric — новый способ управления вашим онлайн-присутствием, который легок в использовании и ориентирован на ваши потребности. Вот почему создание профиля в Polycentric — отличный выбор:\n\n 1. Вы в контроле: В Polycentric ваши данные не хранятся в одном месте, контролируемом одной компанией. Вместо этого они распределены по нескольким местам, что дает вам больше контроля над вашим онлайн-присутствием. Вы решаете, где хранить ваши данные, и можете легко переключаться между поставщиками или добавлять новые.\n\n 2. Конфиденциальность и безопасность: Polycentric обеспечивает безопасность вашей информации с помощью передовых методов безопасности. Вы можете доверять, что ваши личные данные хорошо защищены и доступны только тем, с кем вы выбрали поделиться ими.\n\n 3. Бесшовное взаимодействие: Polycentric позволяет вам соединяться с другими и взаимодействовать с их контентом, не привязываясь к одной платформе. Если поставщик становится ненадежным или пытается заблокировать доступ, ваш клиент Polycentric автоматически найдет информацию из других источников, поддерживая вас в сети.\n\n 4. Умный поиск и рекомендации: Polycentric использует несколько источников для поиска и рекомендаций, предлагая вам высокопроизводительное решение и обеспечивая, чтобы у одного поставщика не было слишком большого влияния на результаты, которые вы видите.\n\n 5. Адаптивность и открытость: Polycentric разработан так, чтобы быть гибким и открытым для новых разработок, что позволяет постоянно улучшать его и добавлять новые функции, адаптирующиеся к потребностям его пользователей.\n\n 6. Создав профиль в Polycentric, вы можете оставлять комментарии к онлайн-видео и наслаждаться более персонализированным онлайн-опытом. Убедитесь сами, как это удобное решение ставит вас в контроль над вашей цифровой жизнью. Зарегистрируйтесь в Polycentric сегодня!</string>
+    <string name="publish">Опубликовать</string>
+    <string name="usage">Использование</string>
+    <string name="enable_in_home">Включить в доме</string>
+    <string name="enable_in_search">Включить в поиске</string>
+    <string name="check">Проверить</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Произошло неперехваченное исключение, мы приносим свои извинения за неудобства.</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Чтобы помочь нам решить эту проблему, пожалуйста, поделитесь с нами отчетом об ошибке ниже и, возможно, добавьте некоторый контекст о том, что вы делали.</string>
+    <string name="new_profile">Новый профиль</string>
+    <string name="import_existing_profile">Импортировать существующий профиль</string>
+    <string name="generate_a_new_identity">Создать новую идентификацию</string>
+    <string name="use_an_existing_identity">Использовать существующую идентификацию</string>
+    <string name="permissions">Разрешения</string>
+    <string name="security_warnings">Предупреждения безопасности</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">Это предупреждения о поведении и реализации плагина</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">Пожалуйста, введите капчу и закройте окно по завершении</string>
+    <string name="close_capitalized">ЗАКРЫТЬ</string>
+    <string name="submit">Отправить</string>
+    <string name="restart">Перезапустить</string>
+    <string name="manage_tabs">Управление вкладками</string>
+    <string name="scan_to_import">Сканировать для импорта</string>
+    <string name="send_your_identity_to_another_app">Отправить вашу идентификацию в другое приложение</string>
+    <string name="copy">Копировать</string>
+    <string name="copy_your_identity_to_clipboard">Скопировать вашу идентификацию в буфер обмена</string>
+    <string name="polycentric">Полицентричный</string>
+    <string name="profile_name">Имя профиля</string>
+    <string name="this_will_be_visible_to_other_users">Это будет видно другим пользователям</string>
+    <string name="create_profile">Создать профиль</string>
+    <string name="or_capitalized">ИЛИ</string>
+    <string name="paste_profile_here_polycentric">Вставьте профиль здесь polycentric://…</string>
+    <string name="import_profile">Импортировать профиль</string>
+    <string name="you_re_apparantly_a_developer">Вы, по всей видимости, разработчик</string>
+    <string name="developer_settings">Настройки разработчика</string>
+    <string name="migration">Миграция</string>
+    <string name="set_a_password_for_your_daily_backup">Установите пароль для вашей ежедневной резервной копии</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Установите пароль, используемый для шифрования вашей ежедневной резервной копии, которая записывается на внешнее хранилище.</string>
+    <string name="backup_password">Пароль для резервной копии</string>
+    <string name="restore_from_automatic_backup">Восстановить из автоматической резервной копии</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">Похоже, на вашем устройстве есть автоматическая резервная копия. Если вы хотите восстановиться, введите ваш пароль от резервной копии.</string>
+    <string name="restore">Восстановить</string>
+    <string name="error_message_here">Сообщение об ошибке здесь</string>
+    <string name="name">Имя</string>
+    <string name="ip">IP</string>
+    <string name="port">Порт</string>
+    <string name="discovered_devices">Обнаруженные устройства</string>
+    <string name="remembered_devices">Запомненные устройства</string>
+    <string name="there_are_no_remembered_devices">Запомненных устройств нет</string>
+    <string name="connected_to">Подключено к</string>
+    <string name="volume">Громкость</string>
+    <string name="changelog">Список изменений</string>
+    <string name="some_example_changelog">Пример списка изменений.</string>
+    <string name="previous">Предыдущий</string>
+    <string name="next">Следующий</string>
+    <string name="comment">Комментарий</string>
+    <string name="str_import">Импорт</string>
+    <string name="my_playlist_name">Имя моего плейлиста</string>
+    <string name="do_you_want_to_import_this_store">Хотите импортировать этот магазин?</string>
+    <string name="sources_required_need_to_be_enabled">Необходимо включить требуемые источники</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Элементы требуют миграции или повреждены, хотите восстановить их из резервной копии сейчас?</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">Если проигнорировать, вам зададут этот вопрос снова при следующем запуске.</string>
+    <string name="ignore">Игнорировать</string>
+    <string name="view_changelog">Просмотр истории изменений</string>
+    <string name="i_already_paid">Я уже оплатил</string>
+    <string name="memberships">Членства</string>
+    <string name="a_monthly_recurring_payment_with_often">Ежемесячный повторяющийся платеж с частыми</string>
+    <string name="additional_perks">дополнительными привилегиями.</string>
+    <string name="a_one_time_payment_to_support_the_creator">Одноразовый платеж для поддержки создателя</string>
+    <string name="donation">Пожертвование</string>
+    <string name="downloading">Загрузка</string>
+    <string name="videos">Видео</string>
+    <string name="clear_history">Очистить историю</string>
+    <string name="nothing_to_import">Нечего импортировать</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Включение большого количества источников может уменьшить скорость загрузки вашего приложения.</string>
+    <string name="support">Поддержка</string>
+    <string name="store">Магазин</string>
+    <string name="live_chat">Онлайн чат</string>
+    <string name="remove">Удалить</string>
+    <string name="space_videos">Видео</string>
+    <string name="playlist">Плейлист</string>
+    <string name="neopass_channel">Полицентричный канал</string>
+    <string name="enable">Включить</string>
+    <string name="under_construction">В разработке</string>
+    <string name="under">В</string>
+    <string name="construction">разработке</string>
+    <string name="disable">Отключить</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">Следующий контент не может быть открыт в Grayjay из-за отсутствующего плагина.</string>
+    <string name="unknown">Неизвестно</string>
+    <string name="tap_to_open_in_browser">Нажмите, чтобы открыть в браузере</string>
+    <string name="missing_plugin">Отсутствует плагин</string>
+    <string name="viewers_are_raiding">Зрители атакуют</string>
+    <string name="go_now">Пойти сейчас</string>
+    <string name="prevent">Предотвратить</string>
+    <string name="recently_used_playlist">Недавно использованный плейлист</string>
+    <string name="license_email">Лицензионный email</string>
+    <string name="required_to_send_the_license_key">Требуется для отправки лицензионного ключа</string>
+    <string name="receipt_email_user_domain_com">Email для квитанции (user@domain.com)</string>
+    <string name="payment_using">Оплата с использованием</string>
+    <string name="country">Страна</string>
+    <string name="postal_code">Почтовый индекс</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">Налог с продаж (</string>
+    <string name="total">Итого</string>
+    <string name="pay">Оплатить</string>
+    <string name="standard_payment_methods">Стандартные методы оплаты</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe — это безопасный онлайн-сервис оплаты, который принимает основные кредитные карты, дебетовые карты и различные локализованные методы оплаты.</string>
+    <string name="add_a_comment">Добавить комментарий…</string>
+    <string name="dismiss">Отклонить</string>
+    <string name="scan_a_qr_code_to_install">Сканировать QR-код для установки</string>
+    <string name="toggle_fullscreen">Переключить полноэкранный режим</string>
+    <string name="by">От</string>
+    <string name="signature">Подпись</string>
+    <string name="valid">Действительный</string>
+    <string name="repeat">Повторить</string>
+    <string name="view">Просмотр</string>
+    <string name="install_by_qr">Установить по QR-коду</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">Установите плагин, отсканировав QR-код</string>
+    <string name="logout">Выйти</string>
+    <string name="video">Видео</string>
+    <string name="view_a_more_in_depth_video">Посмотреть более подробное видео</string>
+    <string name="technical_documentation">Техническая документация</string>
+    <string name="view_the_technical_documentation">Просмотреть техническую документацию</string>
+    <string name="visit_my_store">Посетить мой магазин</string>
+    <string name="make_a_backup_of_your_identity">Создать резервную копию вашей учетной записи</string>
+    <string name="sign_out_of_this_identity">Выйти из этой учетной записи</string>
+    <string name="delete_this_profile">Удалить этот профиль</string>
+    <string name="install_by_url">Установить по URL</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">Кэш для быстрой загрузки ранее полученных видео</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">Список сообщенных пользователями и самостоятельно выявленных проблем</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">Также удаляет все данные, связанные с плагином, например, логин или настройки</string>
+    <string name="announcement">Объявление</string>
+    <string name="attempt_to_utilize_byte_ranges">Попытка использовать диапазоны байт</string>
+    <string name="auto_update">Автообновление</string>
+    <string name="auto_rotate">Автоповорот</string>
+    <string name="auto_rotate_dead_zone">Мертвая зона автоповорота</string>
+    <string name="automatic_backup">Автоматическое резервное копирование</string>
+    <string name="background_behavior">Поведение в фоновом режиме</string>
+    <string name="background_update">Фоновое обновление</string>
+    <string name="background_download">Фоновая загрузка</string>
+    <string name="backup">Резервное копирование</string>
+    <string name="browsing">Просмотр</string>
+    <string name="byte_range_concurrency">Конкуренция диапазонов байт</string>
+    <string name="byte_range_download">Загрузка по диапазонам байт</string>
+    <string name="casting">Трансляция</string>
+    <string name="change_behavior_of_the_player">Изменение поведения плеера</string>
+    <string name="change_external_downloads_directory">Изменить внешнюю папку загрузок</string>
+    <string name="change_external_general_directory">Изменить внешнюю общую папку</string>
+    <string name="change_tabs_visible_on_the_home_screen">Изменить видимые вкладки на главном экране</string>
+    <string name="change_the_external_directory_for_general_files">Изменить внешнюю папку для общих файлов</string>
+    <string name="change_the_external_storage_for_download_files">Изменить внешнее хранилище для загруженных файлов</string>
+    <string name="clear_cookies">Очистить куки</string>
+    <string name="clear_cookies_on_logout">Очистить куки при выходе</string>
+    <string name="clear_payment">Очистить платежи</string>
+    <string name="clears_cookies_when_you_log_out">Очищает куки при выходе</string>
+    <string name="clears_in_app_browser_cookies">Очищает куки внутреннего браузера</string>
+    <string name="configure_browsing_behavior">Настроить поведение при просмотре</string>
+    <string name="configure_casting">Настроить трансляцию</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">Настроить ежедневное резервное копирование в случае катастрофического сбоя</string>
+    <string name="configure_downloading_of_videos">Настроить загрузку видео</string>
+    <string name="configure_how_your_home_tab_works_and_feels">Настроить работу и внешний вид домашней вкладки</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">Настроить работу и внешний вид вкладки подписок</string>
+    <string name="configure_if_background_download_should_be_used">Настроить использование фоновой загрузки</string>
+    <string name="configure_the_auto_updater">Настроить автообновление</string>
+    <string name="configure_when_updates_should_be_downloaded">Настроить время загрузки обновлений</string>
+    <string name="configure_when_videos_should_be_downloaded">Настроить время загрузки видео</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Создает ZIP-файл с вашими данными, который можно импортировать, открыв его с помощью Grayjay</string>
+    <string name="default_audio_quality">Качество аудио по умолчанию</string>
+    <string name="default_playback_speed">Скорость воспроизведения по умолчанию</string>
+    <string name="default_video_quality">Качество видео по умолчанию</string>
+    <string name="deletes_license_keys_from_app">Удаляет лицензионные ключи из приложения</string>
+    <string name="download_when">Загружать когда</string>
+    <string name="enable_video_cache">Включить кэширование видео</string>
+    <string name="enable_casting">Включить трансляцию</string>
+    <string name="experimental_background_update_for_subscriptions_cache">Экспериментальное фоновое обновление кэша подписок</string>
+    <string name="export_data">Экспорт данных</string>
+    <string name="external_storage">Внешнее хранилище</string>
+    <string name="feed_style">Стиль ленты</string>
+    <string name="fetch_on_app_boot">Загрузка при запуске приложения</string>
+    <string name="get_answers_to_common_questions">Получить ответы на частые вопросы</string>
+    <string name="give_feedback_on_the_application">Оставить отзыв о приложении</string>
+    <string name="info">Информация</string>
+    <string name="live_chat_webview">Веб-виджет для живого чата</string>
+    <string name="log_level">Уровень журнала</string>
+    <string name="logging">Ведение журнала</string>
+    <string name="manage_polycentric_identity">Управление полицентрической идентичностью</string>
+    <string name="manage_your_polycentric_identity">Управляйте своей полицентрической идентичностью</string>
+    <string name="manual_check">Ручная проверка</string>
+    <string name="manually_check_for_updates">Проверить обновления вручную</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Количество одновременных потоков для увеличения скорости загрузки с ограниченных источников</string>
+    <string name="payment">Платеж</string>
+    <string name="payment_status">Статус платежа</string>
+    <string name="player">Плеер</string>
+    <string name="plugins">Плагины</string>
+    <string name="preferred_casting_quality">Предпочтительное качество трансляции</string>
+    <string name="preferred_metered_quality">Предпочтительное качество для платного трафика</string>
+    <string name="preferred_preview_quality">Предпочтительное качество превью</string>
+    <string name="primary_language">Основной язык</string>
+    <string name="reinstall_embedded_plugins">Переустановить встроенные плагины</string>
+    <string name="remove_cached_version">Удалить кешированную версию</string>
+    <string name="remove_the_last_downloaded_version">Удалить последнюю загруженную версию</string>
+    <string name="reset_announcements">Сбросить объявления</string>
+    <string name="reset_hidden_announcements">Сбросить скрытые объявления</string>
+    <string name="restore_automatic_backup">Восстановить автоматическую резервную копию</string>
+    <string name="restore_a_previous_automatic_backup">Восстановить предыдущую автоматическую резервную копию</string>
+    <string name="resume_after_preview">Продолжить после превью</string>
+    <string name="review_the_current_and_past_changelogs">Просмотреть текущие и прошлые списки изменений</string>
+    <string name="set_automatic_backup">Установить автоматическое резервное копирование</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">Незадолго после открытия приложения начните загрузку подписок</string>
+    <string name="show_faq">Показать ЧаВо</string>
+    <string name="show_issues">Показать проблемы</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">Укажите, сколько потоков используется для загрузки каналов</string>
+    <string name="submit_feedback">Отправить отзыв</string>
+    <string name="submit_logs">Отправить журналы</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">Отправьте журналы, чтобы помочь нам уточнить проблемы</string>
+    <string name="subscription_concurrency">Конкуренция подписок</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">Это предотвращает вращение устройства в пределах заданного количества градусов</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">Использовать веб-окно живого чата, когда это возможно, вместо нативной реализации</string>
+    <string name="version_code">Код версии</string>
+    <string name="version_name">Имя версии</string>
+    <string name="version_type">Тип версии</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">При просмотре видео в режиме предварительного просмотра продолжить с момента, на котором остановились, при открытии кода видео</string>
+    <string name="please_enable_logging_to_submit_logs">Пожалуйста, включите журналирование для отправки журналов</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Встроенные плагины переустановлены, рекомендуется перезагрузка</string>
+    <string name="announcements_reset">Объявления сброшены.</string>
+    <string name="failed_to_show_store">Не удалось открыть магазин.</string>
+    <string name="retrieving_changelog">Получение списка изменений</string>
+    <string name="paid">Оплачено</string>
+    <string name="not_paid">Не оплачено</string>
+    <string name="licenses_cleared_might_require_app_restart">Лицензии очищены, возможно потребуется перезагрузка приложения</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">Попытки получить 2 страницы из getHome</string>
+    <string name="background_subscription_testing">Тестирование подписок в фоновом режиме</string>
+    <string name="clear_all_downloaded">Очистить все загруженные</string>
+    <string name="clear_downloads">Очистить загрузки</string>
+    <string name="clear_all_cookies_from_the_cookieManager">Удалить все куки из CookieManager</string>
+    <string name="crash_me">Сломать меня</string>
+    <string name="crashes_the_application_on_purpose">Сломать приложение намеренно</string>
+    <string name="delete_announcements">Удалить объявления</string>
+    <string name="delete_unresolved">Удалить нерешенные</string>
+    <string name="delete_all_announcements">Удалить все объявления</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">Удаляет все загруженные видео и связанные файлы</string>
+    <string name="deletes_all_ongoing_downloads">Удаляет все текущие загрузки</string>
+    <string name="deletes_all_unresolved_source_files">Удаляет все нерешенные исходные файлы</string>
+    <string name="developer_mode">Режим разработчика</string>
+    <string name="development_server">Сервер разработки</string>
+    <string name="experimental">Экспериментальный</string>
+    <string name="fill_storage_till_error">Заполнить хранилище до ошибки</string>
+    <string name="inject">Инъекция</string>
+    <string name="injects_a_test_source_config_local_into_v8">Внедряет тестовую конфигурацию источника (локально) в V8</string>
+    <string name="other">Другое</string>
+    <string name="others_ellipsis">Другие…</string>
+    <string name="removes_all_subscriptions">Удалить все подписки</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Настройки, связанные с сервером разработки. Будьте осторожны, это может создать уязвимости в безопасности вашего телефона</string>
+    <string name="start_server">Запустить сервер</string>
+    <string name="start_server_on_boot">Запустить сервер при загрузке</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Запускает DevServer на порту 11337, может создать уязвимости</string>
+    <string name="test_v8_communication_speed">Тестировать скорость коммуникации V8</string>
+    <string name="test_v8_creation_speed">Тестировать скорость создания V8</string>
+    <string name="tests_v8_communication_speeds">Тесты скорости коммуникации V8</string>
+    <string name="tests_v8_creation_times_and_running">Тесты времени создания и работы V8</string>
+    <string name="unsubscribe_all">Отписаться от всех</string>
+    <string name="v8_benchmarks">Бенчмарки V8</string>
+    <string name="v8_script_testing">Тестирование скриптов V8</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">Различные бенчмарки с использованием интегрированного движка V8</string>
+    <string name="various_tests_against_a_custom_source">Различные тесты против пользовательского источника</string>
+    <string name="writes_to_disk_till_no_space_is_left">Записывает на диск до тех пор, пока не закончится место</string>
+    <string name="visibility">Видимость</string>
+    <string name="enable_where_this_plugins_content_are_visible">Включить места, где содержимое этого плагина видимо</string>
+    <string name="show_content_in_home_tab">Показать содержимое на главной вкладке</string>
+    <string name="show_content_in_search_results">Показать содержимое в результатах поиска</string>
+    <string name="no_valid_url_provided">Недействительный URL..</string>
+    <string name="invalid_config_format">Неверный формат конфигурации</string>
+    <string name="failed_to_fetch_configuration">Не удалось получить конфигурацию</string>
+    <string name="failed_to_fetch_script">Не удалось получить скрипт</string>
+    <string name="url_access">Доступ по URL</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">Плагин будет иметь доступ к следующим доменам</string>
+    <string name="eval_access">Доступ к Eval</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">Плагин будет иметь возможность выполнять eval (удаленное внедрение)</string>
+    <string name="failed_to_scan_qr_code">Не удалось сканировать QR-код</string>
+    <string name="not_a_plugin_url">Это не URL плагина</string>
+    <string name="scan_a_qr_code">Сканировать QR-код</string>
+    <string name="not_implemented_yet">Еще не реализовано..</string>
+    <string name="unknown_context">Неизвестный контекст</string>
+    <string name="something_went_wrong_missing_stack_trace">Что-то пошло не так… отсутствует трассировка стека?</string>
+    <string name="logs_already_submitted">Журналы уже отправлены.</string>
+    <string name="no_logs_found">Журналы не найдены.</string>
+    <string name="failed_automated_share_share_manually">Не удалось автоматически поделиться, поделиться вручную?</string>
+    <string name="shared_id">Поделиться {id}</string>
+    <string name="unhandled_exception_in_vs">Необработанное исключение в VS</string>
+    <string name="send_exception_to_developers">Отправить исключение разработчикам…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Ваш лицензионный ключ установлен!\nМожет потребоваться перезагрузка приложения.</string>
+    <string name="invalid_license_format">Неверный формат лицензии</string>
+    <string name="unknown_content_format">Неизвестный формат содержимого</string>
+    <string name="unknown_file_format">Неизвестный формат файла</string>
+    <string name="unknown_polycentric_format">Неизвестный полицентрический формат</string>
+    <string name="unknown_url_format">Неизвестный формат URL</string>
+    <string name="failed_to_handle_file">Не удалось обработать файл</string>
+    <string name="unknown_reconstruction_type">Неизвестный тип реконструкции</string>
+    <string name="failed_to_parse_newpipe_subscriptions">Не удалось разобрать подписки NewPipe</string>
+    <string name="failed_to_generate_qr_code">Не удалось создать QR-код</string>
+    <string name="share_text">Поделиться текстом</string>
+    <string name="copied_text">Текст скопирован</string>
+    <string name="must_be_at_least_3_characters_long">Должно быть не менее 3 символов</string>
+    <string name="failed_to_create_profile">Не удалось создать профиль.</string>
+    <string name="failed_to_fully_backfill_servers">Не удалось полностью заполнить серверы.</string>
+    <string name="sign_in_to_this_identity">Войти в эту учётную запись</string>
+    <string name="text_field_does_not_contain_any_data">Текстовое поле не содержит данных</string>
+    <string name="not_a_valid_url">Недействительный URL</string>
+    <string name="this_profile_is_already_imported">Этот профиль уже импортирован</string>
+    <string name="failed_to_import_profile">Не удалось импортировать профиль:</string>
+    <string name="failed_to_backfill_client">Не удалось заполнить клиента</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">Вы уверены, что хотите удалить этот профиль?</string>
+    <string name="no_process_handle_set">Отсутствует дескриптор процесса</string>
+    <string name="name_must_be_at_least_3_characters_long">Имя должно состоять минимум из 3 символов</string>
+    <string name="process_handle_unset">Дескриптор процесса не установлен</string>
+    <string name="failed_to_read_image">Не удалось прочитать изображение</string>
+    <string name="changes_have_been_saved">Изменения сохранены</string>
+    <string name="failed_to_synchronize_changes">Не удалось синхронизировать изменения</string>
+    <string name="image_picker_cancelled">Выбор изображения отменен</string>
+    <string name="you_are_now_in_developer_mode">Теперь вы в режиме разработчика</string>
+    <string name="subscribers">Подписчики</string>
+    <string name="find_name_on">Найти {name} на</string>
+    <string name="failed_to_fetch">Не удалось загрузить</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">Спасибо за вашу покупку, ключ будет отправлен на вашу электронную почту после получения оплаты!</string>
+    <string name="payment_failed">Оплата не прошла</string>
+    <string name="payment_succeeded">Оплата прошла успешно</string>
+    <string name="enter_license_key">Введите лицензионный ключ</string>
+    <string name="invalid_license_key">Недействительный лицензионный ключ</string>
+    <string name="license">Лицензия</string>
+    <string name="failed_to_activate_key">Не удалось активировать ключ</string>
+    <string name="no_source_enabled_to_support_this_channel">Нет источника для поддержки этого канала</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Хотите преобразовать канал {channelName} в плейлист?</string>
+    <string name="failed_to_convert_channel">Не удалось преобразовать канал</string>
+    <string name="page">Страница</string>
+    <string name="hide">Скрыть</string>
+    <string name="hide_from_home">Скрыть с главной</string>
+    <string name="play_feed_as_queue">Воспроизвести ленту как очередь</string>
+    <string name="play_entire_feed">Воспроизвести всю ленту</string>
+    <string name="queued">В очереди</string>
+    <string name="used">Использовано</string>
+    <string name="available">Доступно</string>
+    <string name="failed_to_load_next_page">Не удалось загрузить следующую страницу</string>
+    <string name="plugin_pluginname_failed_message">Плагин {pluginName} не сработал:\n{message}</string>
+    <string name="plugin_failed_due_to">Плагин не сработал из-за:</string>
+    <string name="failed_to_get_home_plugin">Не удалось получить домашний плагин</string>
+    <string name="failed_to_get_home">Не удалось получить главную страницу</string>
+    <string name="no_home_available">Главная страница недоступна</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">Главная страница недоступна, проверьте подключение к интернету и обновите страницу.</string>
+    <string name="import_playlists">Импортировать плейлисты</string>
+    <string name="playlists_imported">плейлисты импортированы.</string>
+    <string name="index_out_of_size_selected">{index} из {size} выбрано</string>
+    <string name="import_subscriptions">Импортировать подписки</string>
+    <string name="subscriptions_imported">подписки импортированы.</string>
+    <string name="edit_playlist">Редактировать плейлист</string>
+    <string name="share_as_text">Поделиться как текст</string>
+    <string name="share_as_a_list_of_video_urls">Поделиться списком URL-адресов видео</string>
+    <string name="share_as_import">Поделиться как импорт</string>
+    <string name="share_as_a_import_file_for_grayjay">Поделиться как файл импорта для Grayjay</string>
+    <string name="failed_to_load_playlist">Не удалось загрузить плейлист</string>
+    <string name="please_wait_for_playlist_to_finish_loading">Пожалуйста, дождитесь завершения загрузки плейлиста</string>
+    <string name="playlist_copied_as_local_playlist">Плейлист скопирован как локальный плейлист</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">Вы уверены, что хотите удалить загруженные видео?</string>
+    <string name="create_new_playlist">Создать новый плейлист</string>
+    <string name="expected_media_content_found">Ожидалось медиа-содержимое, найдено</string>
+    <string name="failed_to_load_post">Не удалось загрузить пост.</string>
+    <string name="replies">ответы</string>
+    <string name="Replies">Ответы</string>
+    <string name="plugin_settings_saved">Настройки плагина сохранены</string>
+    <string name="plugin_settings">Настройки плагина</string>
+    <string name="these_settings_are_defined_by_the_plugin">Эти настройки определены плагином</string>
+    <string name="failed_to_load_source">Не удалось загрузить источник</string>
+    <string name="check_for_updates">Проверить обновления</string>
+    <string name="checks_for_new_versions_of_the_source">Проверяет наличие новых версий источника</string>
+    <string name="authentication">Аутентификация</string>
+    <string name="sign_out_of_the_platform">Выйти из платформы</string>
+    <string name="import_your_subscriptions_from_this_source">Импортировать ваши подписки из этого источника</string>
+    <string name="import_your_playlists_from_this_source">Импортировать ваши плейлисты из этого источника</string>
+    <string name="login">Вход</string>
+    <string name="sign_into_the_platform_of_this_source">Войти в платформу этого источника</string>
+    <string name="management">Управление</string>
+    <string name="uninstall">Удалить</string>
+    <string name="removes_the_plugin_from_the_app">Удаляет плагин из приложения</string>
+    <string name="delete_captcha">Удалить капчу</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">Удаляет сохраненный ответ капчи для этого плагина</string>
+    <string name="failed_to_retrieve_playlists">Не удалось получить плейлисты.</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} подписок пользователя получено.</string>
+    <string name="failed_to_retrieve_subscriptions">Не удалось получить подписки.</string>
+    <string name="are_you_sure_you_want_to_uninstall">Вы уверены, что хотите удалить</string>
+    <string name="uninstalled">Удалено </string>
+    <string name="failed_to_check_for_updates">Не удалось проверить обновления</string>
+    <string name="plugin_is_fully_up_to_date">Плагин полностью обновлен</string>
+    <string name="rate_limit_warning">Предупреждение о лимите запросов</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">Это временная мера для предотвращения превышения лимита запросов, пока у нас нет лучшей поддержки большого количества подписок.</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\nУ вас слишком много подписок на следующие плагины:\n</string>
+    <string name="posts">Посты</string>
+    <string name="planned">Запланировано</string>
+    <string name="no_results_found_swipe_down_to_refresh">Ничего не найдено\nПотяните вниз, чтобы обновить</string>
+    <string name="overlay">Оверлей</string>
+    <string name="reload">Перезагрузить</string>
+    <string name="watching_now">смотрят сейчас</string>
+    <string name="views">просмотры</string>
+    <string name="planned_in">Запланировано в</string>
+    <string name="failed_to_get_playback_tracker">Не удалось получить трекер воспроизведения</string>
+    <string name="exception_retrieving_live_events">Исключение при получении текущих событий:</string>
+    <string name="exception_retrieving_live_chat_window">Исключение при получении окна живого чата:</string>
+    <string name="live_chat_failed_to_load">Не удалось загрузить живой чат</string>
+    <string name="unsupported_cast_format">Неподдерживаемый формат трансляции</string>
+    <string name="failed_to_load_media">Не удалось загрузить медиа</string>
+    <string name="offline_playback">Офлайн воспроизведение</string>
+    <string name="media_error">Ошибка медиа</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">Источник медиа столкнулся с неавторизованной ошибкой.\nЭто может быть решено перезагрузкой плагина.\nХотите перезагрузить?\n(Экспериментально)</string>
+    <string name="playback_rate">Скорость воспроизведения</string>
+    <string name="quality">Качество</string>
+    <string name="offline_video">Офлайн видео</string>
+    <string name="offline_audio">Офлайн аудио</string>
+    <string name="offline_subtitles">Офлайн субтитры</string>
+    <string name="stream_video">Трансляция видео</string>
+    <string name="stream_audio">Трансляция аудио</string>
+    <string name="audio">Аудио</string>
+    <string name="subtitles">Субтитры</string>
+    <string name="unavailable_video">Недоступное видео</string>
+    <string name="this_video_is_unavailable">Это видео недоступно.</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">В вашей очереди было недоступное видео [{videoName}] от [{authorName}].</string>
+    <string name="back">Назад</string>
+    <string name="pause">Пауза</string>
+    <string name="play">Воспроизвести</string>
+    <string name="pauses_the_video">Приостановить видео</string>
+    <string name="resumes_the_video">Продолжить видео</string>
+    <string name="video_without_source">Видео без источника</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">В вашей очереди было видео [{videoName}] от [{authorName}] без включенного необходимого источника, воспроизведение пропущено.</string>
+    <string name="failed_to_load_video_scriptimplementationexception">Не удалось загрузить видео (ScriptImplementationException)</string>
+    <string name="invalid_video">Недопустимое видео</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">В вашей очереди было недопустимое видео [{videoName}] от [{authorName}], воспроизведение пропущено.</string>
+    <string name="age_restricted_video">Видео с возрастным ограничением</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">В вашей очереди было видео с возрастным ограничением [{videoName}] от [{authorName}], это видео не было доступно и воспроизведение пропущено.</string>
+    <string name="failed_to_load_video_scriptexception">Не удалось загрузить видео (ScriptException)</string>
+    <string name="failed_to_load_video">Не удалось загрузить видео</string>
+    <string name="not_yet_available_retrying_in_time_s">Ещё недоступно, повторная попытка через {time}с</string>
+    <string name="failed_to_retry_for_live_stream">Не удалось повторить попытку для прямого эфира</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">Это приложение находится в стадии разработки. Пожалуйста, отправляйте сообщения об ошибках и поймите, что многие функции незавершены.</string>
+    <string name="please_use_at_least_3_characters">Пожалуйста, используйте хотя бы 3 символа</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">Вы уверены, что хотите удалить это видео?</string>
+    <string name="tap_to_open">Нажмите, чтобы открыть</string>
+    <string name="watching">Смотрят</string>
+    <string name="available_in">Доступно через</string>
+    <string name="seconds">секунд</string>
+    <string name="please_login_to_post_a_comment">Пожалуйста, войдите, чтобы оставить комментарий</string>
+    <string name="failed_to_post_comment">Не удалось опубликовать комментарий:</string>
+    <string name="waiting_for_unmetered">Ожидание безлимитного</string>
+    <string name="last_error">Последняя ошибка</string>
+    <string name="error">Ошибка</string>
+    <string name="filters">Фильтры</string>
+    <string name="viewers">Зрители</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">Ожидался хотя бы один ответ, но сервер не вернул ни одного</string>
+    <string name="please_login_to_like">Пожалуйста, войдите, чтобы поставить лайк</string>
+    <string name="please_login_to_dislike">Пожалуйста, войдите, чтобы поставить дизлайк</string>
+    <string name="failed_to_load_comments">Не удалось загрузить комментарии.</string>
+    <string name="script_is_not_available">Скрипт недоступен</string>
+    <string name="signature_is_valid">Подпись действительна</string>
+    <string name="signature_is_invalid">Подпись недействительна</string>
+    <string name="no_signature_available">Подпись отсутствует</string>
+    <string name="subscribed_to">Подписаны на</string>
+    <string name="unsubscribed_from">Отписаны от</string>
+    <string name="you_don_t_have_any_automatic_backups">У вас нет автоматических резервных копий</string>
+    <string name="an_old_backup_is_available">Доступна старая резервная копия</string>
+    <string name="would_you_like_to_restore_this_backup">Хотите восстановить эту резервную копию?</string>
+    <string name="override">Переопределить</string>
+    <string name="data_retry">Повтор данных</string>
+    <string name="no_downloads_available">Загрузки отсутствуют</string>
+    <string name="no_downloadable_sources_yet">Нет доступных для загрузки источников (пока)</string>
+    <string name="none">Нет</string>
+    <string name="audio_only">Только аудио</string>
+    <string name="download_video">Скачать видео</string>
+    <string name="fetching_video_details">Получение деталей видео</string>
+    <string name="failed_to_fetch_details_for_download">Не удалось получить информацию для загрузки</string>
+    <string name="target_resolution">Целевое разрешение</string>
+    <string name="target_bitrate">Целевая скорость потока</string>
+    <string name="low_bitrate">Низкая скорость потока</string>
+    <string name="high_bitrate">Высокая скорость потока</string>
+    <string name="actions">Действия</string>
+    <string name="download_the_video">Скачать видео</string>
+    <string name="video_options">Настройки видео</string>
+    <string name="change_pins">Изменить закрепленные</string>
+    <string name="decide_which_buttons_should_be_pinned">Выберите, какие кнопки должны быть закреплены</string>
+    <string name="select_your_pins_in_order">Выберите закрепленные в нужном порядке</string>
+    <string name="more_options">Дополнительные параметры</string>
+    <string name="save">Сохранить</string>
+    <string name="buy_text">Grayjay — это не простое и не дешевое приложение для разработки и поддержки. У нас работают инженеры на полную ставку над приложением и сопутствующими системами. И вряд ли оно окупится в ближайшее время, если вообще окупится.\n\nМиссия FUTO заключается в том, чтобы открытое программное обеспечение и немалициозные практики ведения бизнеса стали устойчивым источником дохода для проектов и их разработчиков. Именно по этой причине мы хотим, чтобы пользователи фактически платили за программное обеспечение.\n\nИменно поэтому Grayjay хочет, чтобы вы заплатили за программное обеспечение.</string>
+    <string name="last_week">На прошлой неделе</string>
+    <string name="last_year">В прошлом году</string>
+    <string name="all_time">За все время</string>
+    <string-array name="home_screen_array">
+        <item>Рекомендации</item>
+        <item>Подписки</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>Автоматически (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>Нет (Только аудио)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 поток</item>
+        <item>2 потока</item>
+        <item>4 потока</item>
+        <item>6 потоков</item>
+        <item>8 потоков</item>
+        <item>10 потоков</item>
+        <item>15 потоков</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>Никогда</item>
+        <item>Каждые 15 минут</item>
+        <item>Каждый час</item>
+        <item>Каждые 3 часа</item>
+        <item>Каждые 6 часов</item>
+        <item>Каждые 12 часов</item>
+        <item>Каждый день</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>Низкая скорость потока</item>
+        <item>Высокая скорость потока</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>При запуске</item>
+        <item>Никогда</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>Отключено</item>
+        <item>Включено</item>
+        <item>Как в системе</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>Отключено</item>
+        <item>Включено</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>По безлимитке</item>
+        <item>На Wi-Fi &amp; Ethernet</item>
+        <item>Всегда</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>Отключено</item>
+        <item>Включено</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>Имя по возрастанию</item>
+        <item>Имя по убыванию</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>Предпросмотр</item>
+        <item>Список</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>Нет</item>
+        <item>Продолжить воспроизведение</item>
+        <item>Оверлей плеера</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>Начать с начала</item>
+        <item>Продолжить после 10 секунд</item>
+        <item>Всегда продолжать</item>
+    </string-array>
+    <string-array name="languages">
+        <item>Английский</item>
+        <item>Испанский</item>
+        <item>Французский</item>
+        <item>Французский</item>
+        <item>Корейский</item>
+        <item>Тайский</item>
+        <item>Вьетнамский</item>
+        <item>Индонезийский</item>
+        <item>Хинди</item>
+        <item>Арабский</item>
+        <item>Турецкий</item>
+        <item>Русский</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>Нет</item>
+        <item>Ошибка</item>
+        <item>Предупреждение</item>
+        <item>Информация</item>
+        <item>Подробно</item>
+    </string-array>
+</resources>

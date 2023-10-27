@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">طاقم</string>
+    <string name="search">بحث</string>
+    <string name="add_to_query">إضافة للبحث</string>
+    <string name="thumbnail">صورة مصغرة</string>
+    <string name="channel_image">صورة القناة</string>
+    <string name="add_to">إضافة إلى</string>
+    <string name="add_to_queue">إضافة إلى قائمة الانتظار</string>
+    <string name="home">الرئيسية</string>
+    <string name="recommendations">التوصيات</string>
+    <string name="more">المزيد</string>
+    <string name="playlists">قوائم التشغيل</string>
+    <string name="subscriptions">الاشتراكات</string>
+    <string name="loading">جار التحميل</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="cancel">إلغاء</string>
+    <string name="failed_to_retrieve_data_are_you_connected">فشل في استرداد البيانات، هل أنت متصل؟</string>
+    <string name="settings">الإعدادات</string>
+    <string name="history">السجل</string>
+    <string name="sources">المصادر</string>
+    <string name="buy">شراء</string>
+    <string name="faq">الأسئلة المتكررة</string>
+    <string name="the_top_source_will_be_considered_primary">المصدر الأعلى سيعتبر أساسي</string>
+    <string name="defaults">الإعدادات الافتراضية</string>
+    <string name="home_screen">الشاشة الرئيسية</string>
+    <string name="preferred_quality">الجودة المفضلة</string>
+    <string name="update">تحديث</string>
+    <string name="close">إغلاق</string>
+    <string name="never">أبداً</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">هناك تحديث متاح، هل ترغب في التحديث؟</string>
+    <string name="downloading_update">جاري تحميل التحديث…</string>
+    <string name="installing_update">جاري تثبيت التحديث…</string>
+    <string name="done">تم</string>
+    <string name="success">نجاح</string>
+    <string name="failed_to_update_with_error">فشل في تحديث الحزمة بسبب خطأ</string>
+    <string name="general_failure">فشل عام في العملية</string>
+    <string name="aborted">تم إلغاء العملية</string>
+    <string name="blocked">تم حجب العملية</string>
+    <string name="conflict">فشلت العملية بسبب تعارض مع حزمة مثبتة مسبقًا</string>
+    <string name="incompatible">فشلت العملية لأنها غير متوافقة مع هذا الجهاز</string>
+    <string name="invalid">فشلت العملية لأن واحدة أو أكثر من ملفات APK غير صالحة</string>
+    <string name="not_enough_storage">فشلت العملية بسبب مشاكل في التخزين</string>
+    <string name="live_capitalized">مباشر</string>
+    <string name="live">مباشر</string>
+    <string name="click_to_read_more">اضغط لقراءة المزيد</string>
+    <string name="click_to_hide">اضغط لإخفاء</string>
+    <string name="version">الإصدار</string>
+    <string name="sort_by">فرز بواسطة</string>
+    <string name="subscribe">الاشتراك</string>
+    <string name="unsubscribe">إلغاء الاشتراك</string>
+    <string name="background">الخلفية</string>
+    <string name="background_revert">فيديو</string>
+    <string name="add">إضافة</string>
+    <string name="download">تحميل</string>
+    <string name="share">مشاركة</string>
+    <string name="view_all">عرض الكل</string>
+    <string name="creators">المنشئين</string>
+    <string name="enabled">مفعل</string>
+    <string name="discover">اكتشاف</string>
+    <string name="find_new_video_sources_to_add">البحث عن مصادر فيديو جديدة للإضافة</string>
+    <string name="these_sources_have_been_disabled">تم تعطيل هذه المصادر</string>
+    <string name="disabled">معطل</string>
+    <string name="watch_later">شاهد لاحقاً</string>
+    <string name="create">إنشاء</string>
+    <string name="ok">حسناً</string>
+    <string name="yes">نعم</string>
+    <string name="no">لا</string>
+    <string name="confirm">تأكيد</string>
+    <string name="confirm_delete_playlist">هل أنت متأكد من حذف هذه القائمة؟</string>
+    <string name="confirm_delete_subscription">هل أنت متأكد من حذف هذا الاشتراك؟</string>
+    <string name="confirm_remove_source">إزالة هذا المصدر ستؤدي إلى عدم حل بعض اشتراكاتك.</string>
+    <string name="shuffle">خلط</string>
+    <string name="play_all">تشغيل الكل</string>
+    <string name="search_history">سجل البحث</string>
+    <string name="app_error">خطأ في التطبيق</string>
+    <string name="developer">المطور</string>
+    <string name="remove_historical_suggestion">إزالة الاقتراح التاريخي</string>
+    <string name="comments">التعليقات</string>
+    <string name="reached_the_end_of_the_playlist">وصلت إلى نهاية القائمة</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">سيتم إعادة تشغيل قائمة الانتظار بعد انتهاء الفيديو</string>
+    <string name="up_next">التالي</string>
+    <string name="queue">قائمة الانتظار</string>
+    <string name="clear">مسح</string>
+    <string name="last_hour">الساعة الأخيرة</string>
+    <string name="last_24_hours">الـ24 ساعة الماضية</string>
+    <string name="last_week">الأسبوع الماضي</string>
+    <string name="last_30_days">الـ30 يومًا الماضية</string>
+    <string name="last_year">العام الماضي</string>
+    <string name="all_time">كل الأوقات</string>
+    <string name="are_you_sure_delete_historical">هل أنت متأكد من أنك تريد إزالة هذه الإدخالات التاريخية؟</string>
+    <string name="removed">تم الإزالة</string>
+    <string name="add_source">إضافة مصدر</string>
+    <string name="repository_url">عنوان المستودع</string>
+    <string name="script_url">عنوان السكريبت</string>
+    <string name="source_permissions_explanation">هذه هي الأذونات التي يحتاجها المكون الإضافي للعمل</string>
+    <string name="source_explain_eval_access">سيكون للمكون الإضافي القدرة على تقييم القدرة</string>
+    <string name="source_explain_script_url">سيكون للمكون الإضافي الوصول إلى النطاقات التالية</string>
+    <string name="scan_qr">مسح الرمز الشريطي</string>
+    <string name="scan_qr_explain">امسح الرمز الشريطي للتثبيت</string>
+    <string name="enter_url_explain">أدخل عنوان URL لتحميل تكوين المكون الإضافي منه.</string>
+    <string name="enter_url">أدخل عنوان URL</string>
+    <string name="install">تثبيت</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">لم يتم العثور على أجهزة. قد يستغرق الأمر بعض الوقت حتى تظهر جهازك، يرجى التحلي بالصبر</string>
+    <string name="not_ready">غير جاهز</string>
+    <string name="connect">اتصال</string>
+    <string name="stop">إيقاف</string>
+    <string name="start">بدء</string>
+    <string name="storage_space">مساحة التخزين</string>
+    <string name="downloads">التنزيلات</string>
+    <string name="deselect_all">إلغاء تحديد الكل</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="add_casting_device">إضافة جهاز البث</string>
+    <string name="new_activity">نشاط جديد</string>
+    <string name="creator_is_on_neopass">المنشئ موجود على NeoPass</string>
+    <string name="options">الخيارات</string>
+    <string name="export">تصدير</string>
+    <string name="delete">حذف</string>
+    <string name="loading_update">جاري تحميل التحديث…</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">حدث استثناء غير متوقع، نعتذر عن الإزعاج.</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">لمساعدتنا في حل هذا، يرجى مشاركة تقرير الأعطال أدناه معنا، وربما إضافة بعض السياق حول ما كنت تقوم به.</string>
+    <string name="new_profile">ملف شخصي جديد</string>
+    <string name="import_existing_profile">استيراد ملف شخصي موجود</string>
+    <string name="generate_a_new_identity">إنشاء هوية جديدة</string>
+    <string name="use_an_existing_identity">استخدام هوية موجودة</string>
+    <string name="permissions">أذونات</string>
+    <string name="security_warnings">تحذيرات الأمان</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">هذه تحذيرات لسلوك وتنفيذ المكون الإضافي</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">يرجى إدخال كود التحقق وإغلاق النافذة عند الانتهاء</string>
+    <string name="close_capitalized">إغلاق</string>
+    <string name="submit">إرسال</string>
+    <string name="restart">إعادة تشغيل</string>
+    <string name="manage_tabs">إدارة التبويبات</string>
+    <string name="scan_to_import">مسح لاستيراد</string>
+    <string name="send_your_identity_to_another_app">إرسال هويتك إلى تطبيق آخر</string>
+    <string name="copy">نسخ</string>
+    <string name="copy_your_identity_to_clipboard">نسخ هويتك إلى الحافظة</string>
+    <string name="polycentric">متعدد المراكز</string>
+    <string name="profile_name">اسم الملف الشخصي</string>
+    <string name="this_will_be_visible_to_other_users">سيكون ذلك مرئياً للمستخدمين الآخرين</string>
+    <string name="create_profile">إنشاء ملف شخصي</string>
+    <string name="or_capitalized">أو</string>
+    <string name="paste_profile_here_polycentric">الصق الملف الشخصي هنا polycentric://…</string>
+    <string name="import_profile">استيراد الملف الشخصي</string>
+    <string name="you_re_apparantly_a_developer">يبدو أنك مطور</string>
+    <string name="developer_settings">إعدادات المطور</string>
+    <string name="migration">الهجرة</string>
+    <string name="set_a_password_for_your_daily_backup">قم بتعيين كلمة مرور لنسختك الاحتياطية اليومية</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">قم بتعيين كلمة مرور تُستخدم لتشفير النسخة الاحتياطية اليومية التي يتم كتابتها على وحدة التخزين الخارجية</string>
+    <string name="backup_password">كلمة مرور النسخ الاحتياطي</string>
+    <string name="restore_from_automatic_backup">استعادة من النسخ الاحتياطي التلقائي</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">يبدو أن هناك نسخة احتياطية تلقائية موجودة على جهازك، إذا كنت ترغب في استعادتها، أدخل كلمة مرور النسخ الاحتياطي</string>
+    <string name="restore">استعادة</string>
+    <string name="error_message_here">رسالة الخطأ هنا</string>
+    <string name="name">الاسم</string>
+    <string name="ip">عنوان الـ IP</string>
+    <string name="port">المنفذ</string>
+    <string name="discovered_devices">الأجهزة التي تم اكتشافها</string>
+    <string name="remembered_devices">الأجهزة التي تم تذكيرها</string>
+    <string name="there_are_no_remembered_devices">لا توجد أجهزة تم تذكيرها</string>
+    <string name="connected_to">متصل بـ</string>
+    <string name="volume">الصوت</string>
+    <string name="changelog">سجل التغييرات</string>
+    <string name="some_example_changelog">بعض أمثلة سجل التغييرات.</string>
+    <string name="previous">السابق</string>
+    <string name="next">التالي</string>
+    <string name="comment">تعليق</string>
+    <string name="str_import">استيراد</string>
+    <string name="my_playlist_name">اسم قائمة التشغيل الخاصة بي</string>
+    <string name="do_you_want_to_import_this_store">هل ترغب في استيراد هذا المتجر؟</string>
+    <string name="sources_required_need_to_be_enabled">المصادر المطلوبة يجب تفعيلها</string>
+    <string name="view_changelog">عرض سجل التغييرات</string>
+    <string name="i_already_paid">لقد دفعت بالفعل</string>
+    <string name="memberships">عضويات</string>
+    <string name="a_monthly_recurring_payment_with_often">دفعة متكررة شهرياً مع مزايا إضافية بشكل متكرر</string>
+    <string name="additional_perks">مزايا إضافية</string>
+    <string name="a_one_time_payment_to_support_the_creator">دفعة واحدة لدعم المبدع</string>
+    <string name="donation">تبرع</string>
+    <string name="downloading">جاري التحميل</string>
+    <string name="videos">فيديوهات</string>
+    <string name="clear_history">مسح السجل</string>
+    <string name="nothing_to_import">لا شيء لاستيراده</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">تفعيل العديد من المصادر يمكن أن يقلل من سرعة تحميل التطبيق</string>
+    <string name="support">دعم</string>
+    <string name="store">متجر</string>
+    <string name="live_chat">دردشة مباشرة</string>
+    <string name="remove">إزالة</string>
+    <string name="space_videos">فيديوهات</string>
+    <string name="playlist">قائمة التشغيل</string>
+    <string name="neopass_channel">قناة متعددة المراكز</string>
+    <string name="enable">تفعيل</string>
+    <string name="under_construction">قيد الإنشاء</string>
+    <string name="under">تحت</string>
+    <string name="construction">الإنشاء</string>
+    <string name="disable">تعطيل</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">لا يمكن فتح المحتوى التالي في Grayjay بسبب عدم وجود مكون إضافي</string>
+    <string name="unknown">غير معروف</string>
+    <string name="tap_to_open_in_browser">النقر للفتح في المتصفح</string>
+    <string name="missing_plugin">مكون إضافي مفقود</string>
+    <string name="viewers_are_raiding">المشاهدين يقومون بالهجوم</string>
+    <string name="go_now">اذهب الآن</string>
+    <string name="prevent">منع</string>
+    <string name="recently_used_playlist">قائمة التشغيل المستخدمة مؤخرًا</string>
+    <string name="license_email">البريد الإلكتروني للترخيص</string>
+    <string name="required_to_send_the_license_key">مطلوب لإرسال مفتاح الترخيص</string>
+    <string name="receipt_email_user_domain_com">البريد الإلكتروني للإيصال (user@domain.com)</string>
+    <string name="payment_using">الدفع باستخدام</string>
+    <string name="country">الدولة</string>
+    <string name="postal_code">الرمز البريدي</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">ضريبة المبيعات (</string>
+    <string name="total">المجموع</string>
+    <string name="pay">دفع</string>
+    <string name="standard_payment_methods">طرق الدفع القياسية</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe هو خدمة دفع آمنة عبر الإنترنت تقبل بطاقات الائتمان الرئيسية وبطاقات الخصم وطرق الدفع المحلية المتنوعة</string>
+    <string name="add_a_comment">أضف تعليقًا…</string>
+    <string name="dismiss">تجاهل</string>
+    <string name="scan_a_qr_code_to_install">مسح الرمز الشريطي للتثبيت</string>
+    <string name="toggle_fullscreen">تبديل الشاشة الكاملة</string>
+    <string name="by">بواسطة</string>
+    <string name="signature">التوقيع</string>
+    <string name="valid">صالح</string>
+    <string name="repeat">تكرار</string>
+    <string name="view">عرض</string>
+    <string name="install_by_qr">تثبيت بواسطة الرمز الشريطي</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">تثبيت مكون إضافي عن طريق مسح الرمز الشريطي</string>
+    <string name="logout">تسجيل الخروج</string>
+    <string name="video">فيديو</string>
+    <string name="view_a_more_in_depth_video">عرض فيديو أكثر تفصيليًا</string>
+    <string name="technical_documentation">التوثيق التقني</string>
+    <string name="view_the_technical_documentation">عرض التوثيق التقني</string>
+    <string name="visit_my_store">زيارة متجري</string>
+    <string name="announcement">إعلان</string>
+    <string name="attempt_to_utilize_byte_ranges">محاولة استخدام مدى البايت</string>
+    <string name="auto_update">تحديث تلقائي</string>
+    <string name="auto_rotate">تدوير تلقائي</string>
+    <string name="auto_rotate_dead_zone">منطقة ميتة للتدوير التلقائي</string>
+    <string name="automatic_backup">نسخ احتياطي تلقائي</string>
+    <string name="background_behavior">سلوك الخلفية</string>
+    <string name="background_update">تحديث الخلفية</string>
+    <string name="background_download">تنزيل في الخلفية</string>
+    <string name="backup">نسخ احتياطي</string>
+    <string name="browsing">تصفح</string>
+    <string name="byte_range_concurrency">تزامن مدى البايت</string>
+    <string name="byte_range_download">تنزيل مدى البايت</string>
+    <string name="casting">بث</string>
+    <string name="change_behavior_of_the_player">تغيير سلوك المشغل</string>
+    <string name="change_external_downloads_directory">تغيير دليل التنزيلات الخارجي</string>
+    <string name="change_external_general_directory">تغيير الدليل العام الخارجي</string>
+    <string name="change_tabs_visible_on_the_home_screen">تغيير الألسنة المرئية على الشاشة الرئيسية</string>
+    <string name="change_the_external_directory_for_general_files">تغيير الدليل الخارجي للملفات العامة</string>
+    <string name="change_the_external_storage_for_download_files">تغيير التخزين الخارجي لملفات التنزيل</string>
+    <string name="clear_cookies">مسح ملفات تعريف الارتباط</string>
+    <string name="clear_cookies_on_logout">مسح ملفات تعريف الارتباط عند تسجيل الخروج</string>
+    <string name="clear_payment">مسح الدفع</string>
+    <string name="clears_cookies_when_you_log_out">يمسح ملفات تعريف الارتباط عند تسجيل الخروج</string>
+    <string name="clears_in_app_browser_cookies">مسح ملفات تعريف الارتباط في المتصفح داخل التطبيق</string>
+    <string name="configure_browsing_behavior">تكوين سلوك التصفح</string>
+    <string name="configure_casting">تكوين البث</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">تكوين النسخ الاحتياطي اليومي في حالة الفشل الكارثي</string>
+    <string name="configure_downloading_of_videos">تكوين تنزيل الفيديوهات</string>
+    <string name="configure_how_your_home_tab_works_and_feels">تكوين كيفية عمل وإحساس علامة التبويب الرئيسية</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">تكوين كيفية عمل وإحساس الاشتراكات</string>
+    <string name="configure_if_background_download_should_be_used">تكوين ما إذا كان يجب استخدام التنزيل في الخلفية</string>
+    <string name="configure_the_auto_updater">تكوين المحدث التلقائي</string>
+    <string name="configure_when_updates_should_be_downloaded">تكوين متى يجب تنزيل التحديثات</string>
+    <string name="configure_when_videos_should_be_downloaded">تكوين متى يجب تنزيل الفيديوهات</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">ينشئ ملف زيب يحتوي على بياناتك والتي يمكن استيرادها عن طريق فتحها مع Grayjay</string>
+    <string name="default_audio_quality">جودة الصوت الافتراضية</string>
+    <string name="default_playback_speed">سرعة التشغيل الافتراضية</string>
+    <string name="default_video_quality">جودة الفيديو الافتراضية</string>
+    <string name="deletes_license_keys_from_app">يحذف مفاتيح الترخيص من التطبيق</string>
+    <string name="download_when">تنزيل عندما</string>
+    <string name="enable_video_cache">تمكين ذاكرة التخزين المؤقت للفيديو</string>
+    <string name="enable_casting">تمكين البث</string>
+    <string name="experimental_background_update_for_subscriptions_cache">تحديث خلفي تجريبي لذاكرة التخزين المؤقت للاشتراكات</string>
+    <string name="export_data">تصدير البيانات</string>
+    <string name="external_storage">التخزين الخارجي</string>
+    <string name="feed_style">نمط التغذية</string>
+    <string name="fetch_on_app_boot">جلب عند بدء التطبيق</string>
+    <string name="get_answers_to_common_questions">احصل على إجابات للأسئلة الشائعة</string>
+    <string name="give_feedback_on_the_application">قدم ملاحظات على التطبيق</string>
+    <string name="info">معلومات</string>
+    <string name="live_chat_webview">ويب فيو للدردشة المباشرة</string>
+    <string name="log_level">مستوى السجل</string>
+    <string name="logging">التسجيل</string>
+    <string name="manage_polycentric_identity">إدارة الهوية المتعددة المراكز</string>
+    <string name="manage_your_polycentric_identity">إدارة هويتك المتعددة المراكز</string>
+    <string name="manual_check">فحص يدوي</string>
+    <string name="manually_check_for_updates">التحقق يدويًا للتحديثات</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">عدد الخيوط المتزامنة لزيادة سرعة التحميل من المصادر المقيدة</string>
+    <string name="payment">الدفع</string>
+    <string name="payment_status">حالة الدفع</string>
+    <string name="player">المشغل</string>
+    <string name="plugins">الإضافات</string>
+    <string name="preferred_casting_quality">جودة البث المفضلة</string>
+    <string name="preferred_metered_quality">جودة محسوبة المفضلة</string>
+    <string name="preferred_preview_quality">جودة المعاينة المفضلة</string>
+    <string name="primary_language">اللغة الأساسية</string>
+    <string name="reinstall_embedded_plugins">إعادة تثبيت الإضافات المدمجة</string>
+    <string name="remove_cached_version">إزالة النسخة المؤقتة</string>
+    <string name="remove_the_last_downloaded_version">إزالة آخر نسخة تم تحميلها</string>
+    <string name="reset_announcements">إعادة تعيين الإعلانات</string>
+    <string name="reset_hidden_announcements">إعادة تعيين الإعلانات المخفية</string>
+    <string name="restore_automatic_backup">استعادة النسخ الاحتياطي التلقائي</string>
+    <string name="restore_a_previous_automatic_backup">استعادة نسخة احتياطية تلقائية سابقة</string>
+    <string name="resume_after_preview">استئناف بعد المعاينة</string>
+    <string name="review_the_current_and_past_changelogs">مراجعة سجلات التغيير الحالية والسابقة</string>
+    <string name="set_automatic_backup">تعيين النسخ الاحتياطي التلقائي</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">بعد فتح التطبيق مباشرةً، ابدأ في جلب الاشتراكات</string>
+    <string name="show_faq">عرض الأسئلة المتكررة</string>
+    <string name="show_issues">عرض المشكلات</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">حدد عدد الخيوط المستخدمة لجلب القنوات</string>
+    <string name="submit_feedback">إرسال التعليقات</string>
+    <string name="submit_logs">إرسال السجلات</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">إرسال السجلات لمساعدتنا في تحديد المشكلات</string>
+    <string name="subscription_concurrency">التزامن في الاشتراك</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">يمنع الجهاز من الدوران بداخل الزاوية المحددة</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">استخدم نافذة الدردشة المباشرة على الويب عند توفرها بدلاً من التنفيذ الأصلي</string>
+    <string name="version_code">رمز الإصدار</string>
+    <string name="version_name">اسم الإصدار</string>
+    <string name="version_type">نوع الإصدار</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">عند مشاهدة الفيديو في وضع المعاينة، استأنف من الموضع عند فتح كود الفيديو</string>
+    <string name="please_enable_logging_to_submit_logs">يرجى تفعيل السجل لإرسال السجلات</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">تمت إعادة تثبيت الإضافات المدمجة، يوصى بإعادة التشغيل</string>
+    <string name="announcements_reset">تم إعادة تعيين الإعلانات.</string>
+    <string name="failed_to_show_store">فشل في عرض المتجر.</string>
+    <string name="retrieving_changelog">جاري استرجاع سجل التغييرات</string>
+    <string name="paid">مدفوع</string>
+    <string name="not_paid">غير مدفوع</string>
+    <string name="licenses_cleared_might_require_app_restart">تم مسح التراخيص، قد يكون هناك حاجة لإعادة تشغيل التطبيق</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">محاولات لجلب صفحتين من getHome</string>
+    <string name="background_subscription_testing">اختبار الاشتراك في الخلفية</string>
+    <string name="clear_all_downloaded">مسح جميع التنزيلات</string>
+    <string name="clear_downloads">مسح التنزيلات</string>
+    <string name="clear_all_cookies_from_the_cookieManager">مسح جميع ملفات تعريف الارتباط من مدير ملفات تعريف الارتباط</string>
+    <string name="crash_me">تحطيمي</string>
+    <string name="crashes_the_application_on_purpose">يحطم التطبيق عن قصد</string>
+    <string name="delete_announcements">حذف الإعلانات</string>
+    <string name="delete_unresolved">حذف غير المحلول</string>
+    <string name="delete_all_announcements">حذف جميع الإعلانات</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">يحذف جميع ملفات الفيديو المُحمّلة والملفات المرتبطة بها</string>
+    <string name="deletes_all_ongoing_downloads">يحذف جميع التنزيلات الجارية</string>
+    <string name="deletes_all_unresolved_source_files">يحذف جميع الملفات المصدرية غير المحلولة</string>
+    <string name="developer_mode">وضع المطور</string>
+    <string name="development_server">خادم التطوير</string>
+    <string name="experimental">تجريبي</string>
+    <string name="fill_storage_till_error">املأ التخزين حتى تظهر الخطأ</string>
+    <string name="inject">حقن</string>
+    <string name="injects_a_test_source_config_local_into_v8">يحقن تكوين المصدر التجريبي (محلي) في V8</string>
+    <string name="other">أخرى</string>
+    <string name="others_ellipsis">الآخرين…</string>
+    <string name="removes_all_subscriptions">يزيل جميع الاشتراكات</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">الإعدادات المتعلقة بخادم التطوير، كن حذراً فقد تعرض هاتفك للثغرات الأمنية</string>
+    <string name="start_server">بدء الخادم</string>
+    <string name="start_server_on_boot">بدء الخادم عند التشغيل</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">يبدأ خادم التطوير على المنفذ 11337، قد يعرض النظام للثغرات</string>
+    <string name="test_v8_communication_speed">اختبار سرعة اتصال V8</string>
+    <string name="test_v8_creation_speed">اختبار سرعة إنشاء V8</string>
+    <string name="tests_v8_communication_speeds">يختبر سرعات اتصال V8</string>
+    <string name="tests_v8_creation_times_and_running">يختبر أوقات إنشاء V8 والتشغيل</string>
+    <string name="unsubscribe_all">إلغاء الاشتراك في الكل</string>
+    <string name="v8_benchmarks">معايير أداء V8</string>
+    <string name="v8_script_testing">اختبار النصوص في V8</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">معايير أداء متعددة باستخدام محرك V8 المدمج</string>
+    <string name="various_tests_against_a_custom_source">اختبارات متعددة ضد مصدر مخصص</string>
+    <string name="writes_to_disk_till_no_space_is_left">يكتب على القرص حتى لا يتبقى مساحة</string>
+    <string name="visibility">الرؤية</string>
+    <string name="enable_where_this_plugins_content_are_visible">تمكين المكان الذي يكون فيه محتوى هذا الإضافة مرئياً</string>
+    <string name="show_content_in_home_tab">عرض المحتوى في علامة التبويب الرئيسية</string>
+    <string name="show_content_in_search_results">عرض المحتوى في نتائج البحث</string>
+    <string name="no_valid_url_provided">لم يتم تقديم URL صالح..</string>
+    <string name="invalid_config_format">تنسيق التكوين غير صالح</string>
+    <string name="failed_to_fetch_configuration">فشل في جلب التكوين</string>
+    <string name="failed_to_fetch_script">فشل في جلب النص البرمجي</string>
+    <string name="url_access">وصول URL</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">سيكون للإضافة وصول إلى المجالات التالية</string>
+    <string name="eval_access">وصول التقييم</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">سيكون للإضافة وصول لإمكانية التقييم (حقن عن بعد)</string>
+    <string name="failed_to_scan_qr_code">فشل في مسح الرمز الشريطي</string>
+    <string name="not_a_plugin_url">ليس رابط إضافة</string>
+    <string name="scan_a_qr_code">مسح الرمز الشريطي</string>
+    <string name="not_implemented_yet">لم يتم تنفيذه بعد..</string>
+    <string name="unknown_context">سياق غير معروف</string>
+    <string name="something_went_wrong_missing_stack_trace">حدث خطأ ما... هل نقصت تفاصيل التتبع؟</string>
+    <string name="logs_already_submitted">تم بالفعل إرسال السجلات.</string>
+    <string name="no_logs_found">لم يتم العثور على سجلات.</string>
+    <string name="failed_automated_share_share_manually">فشل في المشاركة التلقائية، هل ترغب في المشاركة يدوياً؟</string>
+    <string name="shared_id">تم مشاركة {id}</string>
+    <string name="unhandled_exception_in_vs">استثناء غير معالج في VS</string>
+    <string name="send_exception_to_developers">إرسال الاستثناء للمطورين…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">تم تعيين مفتاح الترخيص الخاص بك!\nقد يكون هناك حاجة لإعادة تشغيل التطبيق.</string>
+    <string name="invalid_license_format">تنسيق الترخيص غير صالح</string>
+    <string name="unknown_content_format">تنسيق المحتوى غير معروف</string>
+    <string name="unknown_file_format">تنسيق الملف غير معروف</string>
+    <string name="unknown_polycentric_format">تنسيق متعدد المراكز غير معروف</string>
+    <string name="unknown_url_format">تنسيق URL غير معروف</string>
+    <string name="failed_to_handle_file">فشل في التعامل مع الملف</string>
+    <string name="unknown_reconstruction_type">نوع الإعادة البناء غير معروف</string>
+    <string name="failed_to_parse_newpipe_subscriptions">فشل في تحليل اشتراكات NewPipe</string>
+    <string name="failed_to_generate_qr_code">فشل في إنشاء رمز QR</string>
+    <string name="share_text">مشاركة النص</string>
+    <string name="copied_text">تم نسخ النص</string>
+    <string name="must_be_at_least_3_characters_long">يجب أن يكون طوله 3 أحرف على الأقل</string>
+    <string name="failed_to_create_profile">فشل في إنشاء الملف الشخصي</string>
+    <string name="failed_to_fully_backfill_servers">فشل في ملء الخوادم بالكامل</string>
+    <string name="sign_in_to_this_identity">تسجيل الدخول إلى هذه الهوية</string>
+    <string name="text_field_does_not_contain_any_data">حقل النص لا يحتوي على أي بيانات</string>
+    <string name="not_a_valid_url">URL غير صالح</string>
+    <string name="this_profile_is_already_imported">تم استيراد هذا الملف الشخصي بالفعل</string>
+    <string name="failed_to_import_profile">فشل في استيراد الملف الشخصي:</string>
+    <string name="failed_to_backfill_client">فشل في ملء العميل</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">هل أنت متأكد من أنك تريد إزالة هذا الملف الشخصي؟</string>
+    <string name="no_process_handle_set">لم يتم تعيين معالج العملية</string>
+    <string name="name_must_be_at_least_3_characters_long">يجب أن يكون الاسم طويلًا 3 أحرف على الأقل</string>
+    <string name="process_handle_unset">تم إلغاء تعيين معالج العملية</string>
+    <string name="failed_to_read_image">فشل في قراءة الصورة</string>
+    <string name="changes_have_been_saved">تم حفظ التغييرات</string>
+    <string name="failed_to_synchronize_changes">فشل في مزامنة التغييرات</string>
+    <string name="image_picker_cancelled">تم إلغاء محدد الصور</string>
+    <string name="you_are_now_in_developer_mode">أنت الآن في وضع المطور</string>
+    <string name="subscribers">مشتركين</string>
+    <string name="find_name_on">ابحث عن {name} على</string>
+    <string name="failed_to_fetch">فشل في الجلب</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">شكرًا على شرائك، سيتم إرسال مفتاح إلى بريدك الإلكتروني بعد است receipt معاملتك</string>
+    <string name="payment_failed">فشلت المعاملة</string>
+    <string name="payment_succeeded">نجحت المعاملة</string>
+    <string name="enter_license_key">أدخل مفتاح الترخيص</string>
+    <string name="invalid_license_key">مفتاح الترخيص غير صالح</string>
+    <string name="license">رخصة</string>
+    <string name="failed_to_activate_key">فشل في تنشيط المفتاح</string>
+    <string name="no_source_enabled_to_support_this_channel">لا يوجد مصدر مفعل لدعم هذه القناة</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">هل تريد تحويل القناة {channelName} إلى قائمة تشغيل؟</string>
+    <string name="failed_to_convert_channel">فشل في تحويل القناة</string>
+    <string name="page">صفحة</string>
+    <string name="hide">إخفاء</string>
+    <string name="hide_from_home">إخفاء من الرئيسية</string>
+    <string name="play_feed_as_queue">تشغيل الخلاصة كقائمة انتظار</string>
+    <string name="play_entire_feed">تشغيل الخلاصة كاملة</string>
+    <string name="queued">في قائمة الانتظار</string>
+    <string name="used">مستخدم</string>
+    <string name="available">متاح</string>
+    <string name="failed_to_load_next_page">فشل في تحميل الصفحة التالية</string>
+    <string name="plugin_pluginname_failed_message">فشل الإضافة {pluginName}:\n{message}</string>
+    <string name="plugin_failed_due_to">فشل الإضافة بسبب:</string>
+    <string name="failed_to_get_home_plugin">فشل في الحصول على إضافة الرئيسية</string>
+    <string name="failed_to_get_home">فشل في الحصول على الرئيسية</string>
+    <string name="no_home_available">لا يوجد صفحة رئيسية متاحة</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">لا توجد صفحة رئيسية، يرجى التحقق من الاتصال بالإنترنت وإعادة التحميل.</string>
+    <string name="import_playlists">استيراد قوائم التشغيل</string>
+    <string name="playlists_imported">تم استيراد قوائم التشغيل.</string>
+    <string name="index_out_of_size_selected">{index} من أصل {size} تم اختياره</string>
+    <string name="import_subscriptions">استيراد الاشتراكات</string>
+    <string name="subscriptions_imported">تم استيراد الاشتراكات.</string>
+    <string name="edit_playlist">تعديل قائمة التشغيل</string>
+    <string name="share_as_text">مشاركة كنص</string>
+    <string name="share_as_a_list_of_video_urls">مشاركة كقائمة عناوين URL للفيديو</string>
+    <string name="share_as_import">مشاركة كملف استيراد</string>
+    <string name="share_as_a_import_file_for_grayjay">مشاركة كملف استيراد لـ Grayjay</string>
+    <string name="failed_to_load_playlist">فشل في تحميل قائمة التشغيل</string>
+    <string name="please_wait_for_playlist_to_finish_loading">يرجى الانتظار حتى تنتهي عملية تحميل قائمة التشغيل</string>
+    <string name="playlist_copied_as_local_playlist">تم نسخ قائمة التشغيل كقائمة محلية</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">هل أنت متأكد أنك تريد حذف الفيديوهات المحملة؟</string>
+    <string name="create_new_playlist">إنشاء قائمة تشغيل جديدة</string>
+    <string name="expected_media_content_found">تم العثور على محتوى وسائط متعددة متوقع</string>
+    <string name="failed_to_load_post">فشل في تحميل المنشور.</string>
+    <string name="replies">ردود</string>
+    <string name="Replies">الردود</string>
+    <string name="plugin_settings_saved">تم حفظ إعدادات الإضافة</string>
+    <string name="plugin_settings">إعدادات الإضافة</string>
+    <string name="these_settings_are_defined_by_the_plugin">تم تحديد هذه الإعدادات بواسطة الإضافة</string>
+    <string name="failed_to_load_source">فشل في تحميل المصدر</string>
+    <string name="check_for_updates">البحث عن تحديثات</string>
+    <string name="checks_for_new_versions_of_the_source">البحث عن نسخ جديدة للمصدر</string>
+    <string name="authentication">المصادقة</string>
+    <string name="sign_out_of_the_platform">الخروج من المنصة</string>
+    <string name="import_your_subscriptions_from_this_source">استيراد اشتراكاتك من هذا المصدر</string>
+    <string name="import_your_playlists_from_this_source">استيراد قوائم التشغيل الخاصة بك من هذا المصدر</string>
+    <string name="login">تسجيل الدخول</string>
+    <string name="sign_into_the_platform_of_this_source">تسجيل الدخول إلى منصة هذا المصدر</string>
+    <string name="management">الإدارة</string>
+    <string name="uninstall">إلغاء التثبيت</string>
+    <string name="removes_the_plugin_from_the_app">يزيل الإضافة من التطبيق</string>
+    <string name="delete_captcha">حذف كلمة التحقق</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">يحذف إجابة كلمة التحقق المخزنة لهذه الإضافة</string>
+    <string name="failed_to_retrieve_playlists">فشل في استرجاع قوائم التشغيل.</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} من اشتراكات المستخدم تم استرجاعها.</string>
+    <string name="failed_to_retrieve_subscriptions">فشل في استرجاع الاشتراكات.</string>
+    <string name="are_you_sure_you_want_to_uninstall">هل أنت متأكد أنك ترغب في إلغاء التثبيت</string>
+    <string name="uninstalled">تم إلغاء التثبيت </string>
+    <string name="failed_to_check_for_updates">فشل في التحقق من التحديثات</string>
+    <string name="plugin_is_fully_up_to_date">الإضافة مُحدّثة بالكامل</string>
+    <string name="rate_limit_warning">تحذير الحد الأقصى للمعدل</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">هذا إجراء مؤقت لمنع الأفراد من الوصول للحد الأقصى للمعدل حتى نوفر دعمًا أفضل للكثير من الاشتراكات.</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\nلديك اشتراكات كثيرة للإضافات التالية:\n</string>
+    <string name="posts">المشاركات</string>
+    <string name="planned">مُخطط</string>
+    <string name="no_results_found_swipe_down_to_refresh">لم يتم العثور على نتائج\nاسحب للأسفل للتحديث</string>
+    <string name="overlay">التراكب</string>
+    <string name="reload">إعادة التحميل</string>
+    <string name="watching_now">يشاهد الآن</string>
+    <string name="views">مشاهدات</string>
+    <string name="planned_in">مُخطط في</string>
+    <string name="failed_to_get_playback_tracker">فشل في الحصول على متتبع التشغيل</string>
+    <string name="exception_retrieving_live_events">استثناء في استرجاع الأحداث المباشرة:</string>
+    <string name="exception_retrieving_live_chat_window">استثناء في استرجاع نافذة الدردشة المباشرة:</string>
+    <string name="live_chat_failed_to_load">فشل في تحميل الدردشة المباشرة</string>
+    <string name="unsupported_cast_format">تنسيق البث غير مدعوم</string>
+    <string name="failed_to_load_media">فشل في تحميل الوسائط</string>
+    <string name="offline_playback">تشغيل بدون اتصال</string>
+    <string name="media_error">خطأ في الوسائط</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">المصدر الإعلامي واجه خطأ غير مصرح به.\nقد يُحل هذا الأمر بإعادة تحميل الإضافة.\nهل ترغب في إعادة التحميل؟\n(تجريبي)</string>
+    <string name="playback_rate">معدل التشغيل</string>
+    <string name="quality">الجودة</string>
+    <string name="offline_video">فيديو بدون اتصال</string>
+    <string name="offline_audio">صوت بدون اتصال</string>
+    <string name="offline_subtitles">ترجمة بدون اتصال</string>
+    <string name="stream_video">بث الفيديو</string>
+    <string name="stream_audio">بث الصوت</string>
+    <string name="audio">الصوت</string>
+    <string name="subtitles">الترجمة</string>
+    <string name="unavailable_video">فيديو غير متاح</string>
+    <string name="this_video_is_unavailable">هذا الفيديو غير متاح.</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">كان هناك فيديو غير متاح في قائمة الانتظار الخاصة بك [{videoName}] من قبل [{authorName}].</string>
+    <string name="back">رجوع</string>
+    <string name="pause">إيقاف مؤقت</string>
+    <string name="play">تشغيل</string>
+    <string name="pauses_the_video">يوقف الفيديو مؤقتًا</string>
+    <string name="resumes_the_video">يُكمل تشغيل الفيديو</string>
+    <string name="video_without_source">فيديو بدون مصدر</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">كان هناك في قائمة الانتظار الخاصة بك [{videoName}] من قبل [{authorName}] دون تمكين المصدر المطلوب، تم تجاوز التشغيل.</string>
+    <string name="failed_to_load_video_scriptimplementationexception">فشل في تحميل الفيديو (ScriptImplementationException)</string>
+    <string name="invalid_video">فيديو غير صالح</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">كان هناك فيديو غير صالح في قائمة الانتظار الخاصة بك [{videoName}] من قبل [{authorName}], تم تجاوز التشغيل.</string>
+    <string name="age_restricted_video">فيديو مقيد بحسب العمر</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">كان هناك فيديو مقيد بالعمر في قائمة الانتظار الخاصة بك [{videoName}] بواسطة [{authorName}]، هذا الفيديو لم يكن قابلًا للوصول وتم تجاوز التشغيل.</string>
+    <string name="failed_to_load_video_scriptexception">فشل في تحميل الفيديو (ScriptException)</string>
+    <string name="failed_to_load_video">فشل في تحميل الفيديو</string>
+    <string name="not_yet_available_retrying_in_time_s">لم يصبح متوفراً بعد، إعادة المحاولة في {time}s</string>
+    <string name="failed_to_retry_for_live_stream">فشل في إعادة المحاولة للبث المباشر</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">هذا التطبيق قيد التطوير. يرجى إرسال تقارير الأخطاء وفهم أن العديد من الميزات غير مكتملة.</string>
+    <string name="please_use_at_least_3_characters">يرجى استخدام 3 أحرف على الأقل</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">هل أنت متأكد من أنك ترغب في حذف هذا الفيديو؟</string>
+    <string name="tap_to_open">انقر للفتح</string>
+    <string name="watching">يشاهد</string>
+    <string name="available_in">متوفر في</string>
+    <string name="seconds">ثواني</string>
+    <string name="please_login_to_post_a_comment">الرجاء تسجيل الدخول لنشر تعليق</string>
+    <string name="failed_to_post_comment">فشل في نشر التعليق:</string>
+    <string name="waiting_for_unmetered">في انتظار شبكة غير محدودة</string>
+    <string name="last_error">آخر خطأ</string>
+    <string name="error">خطأ</string>
+    <string name="filters">مرشحات</string>
+    <string name="viewers">المشاهدين</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">كان من المتوقع الحصول على رد واحد على الأقل ولكن لم يتم إرجاع أي ردود من الخادم</string>
+    <string name="please_login_to_like">يرجى تسجيل الدخول للإعجاب</string>
+    <string name="please_login_to_dislike">يرجى تسجيل الدخول لعدم الإعجاب</string>
+    <string name="failed_to_load_comments">فشل في تحميل التعليقات.</string>
+    <string name="script_is_not_available">السكريبت غير متاح</string>
+    <string name="signature_is_valid">التوقيع صالح</string>
+    <string name="signature_is_invalid">التوقيع غير صالح</string>
+    <string name="no_signature_available">لا يوجد توقيع متاح</string>
+    <string name="subscribed_to">مشترك في</string>
+    <string name="unsubscribed_from">ألغى الاشتراك من</string>
+    <string name="you_don_t_have_any_automatic_backups">ليس لديك أي نسخ احتياطية تلقائية</string>
+    <string name="an_old_backup_is_available">نسخة احتياطية قديمة متاحة</string>
+    <string name="would_you_like_to_restore_this_backup">هل ترغب في استعادة هذه النسخة الاحتياطية؟</string>
+    <string name="override">تجاوز</string>
+    <string name="data_retry">إعادة المحاولة للبيانات</string>
+    <string name="no_downloads_available">لا توجد تنزيلات متاحة</string>
+    <string name="no_downloadable_sources_yet">لا توجد مصادر قابلة للتنزيل بعد</string>
+    <string name="none">لا شيء</string>
+    <string name="audio_only">الصوت فقط</string>
+    <string name="download_video">تنزيل الفيديو</string>
+    <string name="fetching_video_details">جاري جلب تفاصيل الفيديو</string>
+    <string name="failed_to_fetch_details_for_download">فشل في جلب تفاصيل للتنزيل</string>
+    <string name="target_resolution">الدقة المستهدفة</string>
+    <string name="target_bitrate">معدل البتات المستهدف</string>
+    <string name="low_bitrate">معدل بتات منخفض</string>
+    <string name="high_bitrate">معدل بتات عالي</string>
+    <string name="actions">الإجراءات</string>
+    <string name="download_the_video">تنزيل الفيديو</string>
+    <string name="video_options">خيارات الفيديو</string>
+    <string name="change_pins">تغيير الأزرار</string>
+    <string name="decide_which_buttons_should_be_pinned">قرر أي الأزرار يجب تثبيتها</string>
+    <string name="select_your_pins_in_order">حدد مساميرك بالترتيب</string>
+    <string name="more_options">المزيد من الخيارات</string>
+    <string name="save">حفظ</string>
+    <string name="make_a_backup_of_your_identity">قم بعمل نسخة احتياطية لهويتك</string>
+    <string name="sign_out_of_this_identity">تسجيل الخروج من هذه الهوية</string>
+    <string name="delete_this_profile">حذف هذا الملف الشخصي</string>
+    <string name="install_by_url">تثبيت عن طريق الرابط</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">التخزين المؤقت لتحميل الفيديوهات السابقة بسرعة</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">قائمة بالمشكلات التي أبلغ عنها المستخدمون والتي تم الإبلاغ عنها ذاتيا</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">يزيل أيضا أي بيانات مرتبطة بالإضافات مثل تسجيل الدخول أو الإعدادات</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">العناصر تحتاج إلى ترحيل أو تالفة، هل ترغب في استعادتها من النسخة الاحتياطية الآن؟</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">إذا تم تجاهلها، سيتم سؤالك مرة أخرى عند بدء التشغيل التالي</string>
+    <string name="ignore">تجاهل</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">سيتم إعادة تشغيل القائمة بعد انتهاء الفيديو</string>
+    <string name="restart_now">إعادة التشغيل الآن</string>
+    <string name="end_of_queue_reached">تم الوصول إلى نهاية الطابور</string>
+    <string name="end_of_playlist_reached">تم الوصول إلى نهاية القائمة</string>
+    <string name="end_of_watch_later_reached">تم الوصول إلى نهاية قائمة مشاهدة لاحقا</string>
+    <string name="reached_the_end_of_the_queue">تم الوصول إلى نهاية الطابور</string>
+    <string name="polycentric_explanation">عندما تتصفح مقاطع الفيديو عبر الإنترنت وترغب في ترك تعليق، فكر في استخدام Polycentric، وهو طريقة جديدة لإدارة حضورك على الإنترنت تركز على احتياجاتك وسهلة الاستخدام. إليك الأسباب التي تجعل من إنشاء ملف Polycentric خيارًا رائعًا:\n\n 1. أنت تتحكم: في Polycentric، لا يتم تخزين بياناتك في مكان واحد تتحكم فيه شركة واحدة. بدلاً من ذلك، يتم نشرها عبر مواقع متعددة، مما يعطيك المزيد من السيطرة على حضورك على الإنترنت. يمكنك تحديد مكان تخزين البيانات والتبديل بسهولة بين مزودين أو إضافة مزودين جدد.\n\n 2. الخصوصية والأمان: يحافظ Polycentric على أمان معلوماتك من خلال استخدام تقنيات الأمان المتقدمة. يمكنك الثقة في أن تفاصيلك الشخصية محمية جيدًا ومتاحة فقط لأولئك الذين تختار مشاركتهم بها.\n\n 3. التواصل السلس: يتيح لك Polycentric الاتصال بالآخرين والتفاعل مع محتواهم دون الارتباط بمنصة واحدة. إذا أصبح المزود غير موثوق أو حاول حجب الوصول، سيجد عميل Polycentric المعلومات تلقائيًا من مصادر أخرى، مما يبقيك متصلاً.\n\n 4. البحث الذكي والتوصيات: يستخدم Polycentric مصادر متعددة للبحث والتوصيات، مما يقدم لك أداءً رائعًا مع ضمان عدم وجود تأثير كبير لأي مزود على النتائج التي تراها.\n\n 5. متكيف ومفتوح: تم تصميم Polycentric ليكون مرنًا ومفتوحًا للتطورات الجديدة، مما يسمح بتحسينات مستمرة وميزات جديدة تتكيف مع احتياجات مستخدميه.\n\n 6. من خلال إنشاء ملف Polycentric، يمكنك ترك تعليقات على مقاطع الفيديو عبر الإنترنت والتمتع بتجربة على الإنترنت أكثر تخصيصًا. جرب بنفسك كيف يضع هذا الحل السهل الاستخدام في يديك السيطرة على حياتك الرقمية. سجل في Polycentric اليوم!</string>
+    <string name="publish">نشر</string>
+    <string name="usage">الاستخدام</string>
+    <string name="enable_in_home">تمكين في الصفحة الرئيسية</string>
+    <string name="enable_in_search">تمكين في البحث</string>
+    <string name="check">تحقق</string>
+    <string name="buy_text">Grayjay ليست تطبيقًا سهلًا أو رخيصًا للبناء والصيانة. لدينا مهندسون يعملون بدوام كامل على التطبيق والنظم المحيطة به. ومن غير المرجح أن يعيد جني أمواله في أي وقت قريب، إن كان ذلك سيحدث أصلاً.\n\nالمهمة التي تضعها FUTO هي لجعل البرمجيات مفتوحة المصدر وممارسات الأعمال البرمجية غير الضارة مصدرًا مستدامًا للدخل للمشاريع ومطوريها. لهذا السبب نحن نؤيد فعلياً أن يدفع المستخدمون مقابل البرمجيات.\n\nلهذا السبب تريد Grayjay أن تدفع مقابل البرمجيات.</string>
+    <string-array name="home_screen_array">
+        <item>التوصيات</item>
+        <item>الاشتراكات</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>تلقائي (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>لا شيء (فقط الصوت)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 موضوع</item>
+        <item>2 مواضيع</item>
+        <item>4 مواضيع</item>
+        <item>6 مواضيع</item>
+        <item>8 مواضيع</item>
+        <item>10 مواضيع</item>
+        <item>15 موضوع</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>أبداً</item>
+        <item>كل 15 دقيقة</item>
+        <item>كل ساعة</item>
+        <item>كل 3 ساعات</item>
+        <item>كل 6 ساعات</item>
+        <item>كل 12 ساعة</item>
+        <item>كل يوم</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>معدل البت منخفض</item>
+        <item>معدل البت عالي</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>عند التشغيل</item>
+        <item>أبداً</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>معطل</item>
+        <item>مفعل</item>
+        <item>كما في النظام</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>معطل</item>
+        <item>مفعل</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>على شبكة غير محدودة</item>
+        <item>على واي فاي وإيثرنت</item>
+        <item>دائمًا</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>معطل</item>
+        <item>مفعل</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>الاسم تصاعدياً</item>
+        <item>الاسم تنازلياً</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>معاينة</item>
+        <item>قائمة</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>لا شيء</item>
+        <item>الاستمرار في التشغيل</item>
+        <item>طبقة اللاعب</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>البدء من البداية</item>
+        <item>استئناف بعد 10 ثوان</item>
+        <item>استئناف دائم</item>
+    </string-array>
+    <string-array name="languages">
+        <item>الإنجليزية</item>
+        <item>الإسبانية</item>
+        <item>الفرنسية</item>
+        <item>الفرنسية</item>
+        <item>الكورية</item>
+        <item>التايلاندية</item>
+        <item>الفيتنامية</item>
+        <item>الإندونيسية</item>
+        <item>الهندية</item>
+        <item>العربية</item>
+        <item>التركية</item>
+        <item>الروسية</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>لا شيء</item>
+        <item>خطأ</item>
+        <item>تحذير</item>
+        <item>معلومات</item>
+        <item>تفصيلي</item>
+    </string-array>
+</resources>

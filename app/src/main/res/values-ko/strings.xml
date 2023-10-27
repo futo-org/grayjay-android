@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">캐스트</string>
+    <string name="search">검색</string>
+    <string name="add_to_query">쿼리에 추가</string>
+    <string name="thumbnail">섬네일</string>
+    <string name="channel_image">채널 이미지</string>
+    <string name="add_to">추가하기</string>
+    <string name="add_to_queue">대기열에 추가</string>
+    <string name="home">홈</string>
+    <string name="recommendations">추천</string>
+    <string name="more">더 보기</string>
+    <string name="playlists">재생 목록</string>
+    <string name="subscriptions">구독</string>
+    <string name="loading">로딩 중</string>
+    <string name="retry">다시 시도</string>
+    <string name="cancel">취소</string>
+    <string name="failed_to_retrieve_data_are_you_connected">데이터를 검색하지 못했습니다, 연결되어 있나요?</string>
+    <string name="settings">설정</string>
+    <string name="history">기록</string>
+    <string name="sources">소스</string>
+    <string name="buy">구매</string>
+    <string name="faq">자주 묻는 질문</string>
+    <string name="the_top_source_will_be_considered_primary">가장 높은 소스가 기본으로 고려됩니다</string>
+    <string name="defaults">기본값</string>
+    <string name="home_screen">홈 화면</string>
+    <string name="preferred_quality">선호 품질</string>
+    <string name="update">업데이트</string>
+    <string name="close">닫기</string>
+    <string name="never">절대로</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">업데이트가 있습니다, 업데이트하시겠습니까?</string>
+    <string name="downloading_update">업데이트 다운로드 중…</string>
+    <string name="installing_update">업데이트 설치 중…</string>
+    <string name="done">완료</string>
+    <string name="success">성공</string>
+    <string name="failed_to_update_with_error">오류로 업데이트 실패</string>
+    <string name="general_failure">일반적인 실패</string>
+    <string name="aborted">중단됨</string>
+    <string name="blocked">차단됨</string>
+    <string name="conflict">충돌</string>
+    <string name="incompatible">호환되지 않음</string>
+    <string name="invalid">유효하지 않음</string>
+    <string name="not_enough_storage">저장 공간 부족</string>
+    <string name="live_capitalized">라이브</string>
+    <string name="live">라이브</string>
+    <string name="click_to_read_more">더 읽기</string>
+    <string name="click_to_hide">숨기기</string>
+    <string name="version">버전</string>
+    <string name="sort_by">정렬 기준</string>
+    <string name="subscribe">구독</string>
+    <string name="unsubscribe">구독 취소</string>
+    <string name="background">배경</string>
+    <string name="background_revert">비디오</string>
+    <string name="add">추가</string>
+    <string name="download">다운로드</string>
+    <string name="share">공유</string>
+    <string name="view_all">모두 보기</string>
+    <string name="creators">크리에이터</string>
+    <string name="enabled">활성화됨</string>
+    <string name="discover">발견</string>
+    <string name="find_new_video_sources_to_add">추가할 새로운 비디오 소스 찾기</string>
+    <string name="these_sources_have_been_disabled">이러한 소스들은 비활성화되었습니다</string>
+    <string name="disabled">비활성화됨</string>
+    <string name="watch_later">나중에 보기</string>
+    <string name="create">생성</string>
+    <string name="ok">확인</string>
+    <string name="yes">예</string>
+    <string name="no">아니요</string>
+    <string name="confirm">확인</string>
+    <string name="confirm_delete_playlist">이 재생 목록을 삭제하시겠습니까?</string>
+    <string name="confirm_delete_subscription">이 구독을 삭제하시겠습니까?</string>
+    <string name="confirm_remove_source">이 소스를 제거하면 일부 구독이 해결되지 않을 수 있습니다.</string>
+    <string name="shuffle">셔플</string>
+    <string name="play_all">모두 재생</string>
+    <string name="search_history">검색 기록</string>
+    <string name="app_error">앱 오류</string>
+    <string name="developer">개발자</string>
+    <string name="remove_historical_suggestion">과거의 제안 제거</string>
+    <string name="comments">댓글</string>
+    <string name="reached_the_end_of_the_playlist">재생 목록의 끝에 도달했습니다</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">비디오가 끝나면 재생 목록이 다시 시작됩니다</string>
+    <string name="restart_now">지금 다시 시작</string>
+    <string name="end_of_queue_reached">대기열의 끝에 도달했습니다</string>
+    <string name="end_of_playlist_reached">재생 목록의 끝에 도달했습니다</string>
+    <string name="end_of_watch_later_reached">나중에 보기의 끝에 도달했습니다</string>
+    <string name="reached_the_end_of_the_queue">대기열의 끝에 도달했습니다</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">비디오가 끝나면 대기열이 다시 시작됩니다</string>
+    <string name="up_next">다음</string>
+    <string name="queue">대기열</string>
+    <string name="clear">지우기</string>
+    <string name="last_hour">지난 1시간</string>
+    <string name="last_24_hours">지난 24시간</string>
+    <string name="last_week">지난 주</string>
+    <string name="last_30_days">지난 30일</string>
+    <string name="last_year">지난 해</string>
+    <string name="all_time">전체 기간</string>
+    <string name="are_you_sure_delete_historical">これらの履歴エントリを削除してもよろしいですか？</string>
+    <string name="removed">削除されました</string>
+    <string name="add_source">ソースを追加</string>
+    <string name="repository_url">リポジトリURL</string>
+    <string name="script_url">スクリプトURL</string>
+    <string name="source_permissions_explanation">これはプラグインが機能するために必要な許可です</string>
+    <string name="source_explain_eval_access">プラグインはeval機能にアクセスできます</string>
+    <string name="source_explain_script_url">プラグインは以下のドメインにアクセスできます</string>
+    <string name="scan_qr">QRをスキャン</string>
+    <string name="scan_qr_explain">QRコードをスキャンしてインストール</string>
+    <string name="enter_url_explain">URLを入力してプラグインの設定をロードします。</string>
+    <string name="enter_url">URLを入力</string>
+    <string name="install">インストール</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">デバイスが見つかりません。デバイスが表示されるまでに時間がかかる場合がありますので、お待ちください</string>
+    <string name="not_ready">準備ができていません</string>
+    <string name="connect">接続</string>
+    <string name="stop">停止</string>
+    <string name="start">開始</string>
+    <string name="storage_space">ストレージスペース</string>
+    <string name="downloads">ダウンロード</string>
+    <string name="deselect_all">すべて選択解除</string>
+    <string name="select_all">すべて選択</string>
+    <string name="add_casting_device">キャスティングデバイスを追加</string>
+    <string name="new_activity">新しいアクティビティ</string>
+    <string name="creator_is_on_neopass">クリエーターはNeoPass上です</string>
+    <string name="options">オプション</string>
+    <string name="export">エクスポート</string>
+    <string name="delete">削除</string>
+    <string name="loading_update">アップデートを読み込み中…</string>
+    <string name="polycentric_explanation">オンラインビデオを閲覧し、コメントを残したい場合は、Polycentricを試してみてください。新しいオンラインプレゼンスの管理方法で、使いやすく、ユーザーのニーズに焦点を当てています。Polycentricプロフィールを作成する理由は次のとおりです：\n\n 1. コントロール：Polycentricでは、データは単一の企業が管理する1か所に保存されません。代わりに、複数の場所に広がっており、オンラインプレゼンスに対するコントロールが増します。データが保存される場所を自由に選び、プロバイダーを簡単に切り替えたり新たに追加することができます。\n\n 2. プライバシーとセキュリティ：Polycentricは高度なセキュリティ手法を使用して情報を安全に保ちます。個人情報はよく保護されており、共有する相手だけがアクセスできます。\n\n 3. シームレスなネットワーキング：Polycentricを使用すると、単一のプラットフォームに縛られずに他のユーザーと接続し、コンテンツに対話できます。プロバイダーが信頼できなくなったり、アクセスをブロックしようとすると、Polycentricクライアントは自動的に他のソースから情報を見つけます。\n\n 4. スマート検索と推奨：Polycentricは検索と推奨に複数のソースを使用し、優れたパフォーマンスを提供しながら、単一のプロバイダーが結果に対して影響力を持ちすぎないようにします。\n\n 5. 適応性とオープン性：Polycentricは柔軟性があり、新しい開発にオープンです。そのため、ユーザーのニーズに適応した絶えず改善される新機能があります。\n\n 6. Polycentricプロフィールを作成することで、オンラインビデオにコメントを残し、よりパーソナライズされたオンライン体験を楽しむことができます。この使いやすいソリューションがデジタルライフをコントロールする方法を自分で確認してください。今日Polycentricにサインアップ！</string>
+    <string name="publish">公開</string>
+    <string name="usage">使用法</string>
+    <string name="enable_in_home">ホームで有効にする</string>
+    <string name="enable_in_search">検索で有効にする</string>
+    <string name="check">確認</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">처리되지 않은 예외가 발생했습니다, 불편을 드려 죄송합니다.</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">이 문제를 해결하기 위해 아래의 충돌 보고서를 공유해주시고, 어떤 작업을 하고 있었는지 추가적인 정보를 제공해 주시면 도움이 될 것입니다.</string>
+    <string name="new_profile">새 프로필</string>
+    <string name="import_existing_profile">기존 프로필 가져오기</string>
+    <string name="generate_a_new_identity">새로운 아이덴티티 생성</string>
+    <string name="use_an_existing_identity">기존 아이덴티티 사용</string>
+    <string name="permissions">권한</string>
+    <string name="security_warnings">보안 경고</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">이것들은 플러그인의 동작과 구현에 대한 경고입니다</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">캡챠를 입력하고 완료되면 닫아주세요</string>
+    <string name="close_capitalized">닫기</string>
+    <string name="submit">제출</string>
+    <string name="restart">재시작</string>
+    <string name="manage_tabs">탭 관리</string>
+    <string name="scan_to_import">가져오기를 위해 스캔</string>
+    <string name="send_your_identity_to_another_app">다른 앱에 아이덴티티 전송</string>
+    <string name="copy">복사</string>
+    <string name="copy_your_identity_to_clipboard">클립보드에 아이덴티티 복사</string>
+    <string name="polycentric">폴리센트릭</string>
+    <string name="profile_name">프로필 이름</string>
+    <string name="this_will_be_visible_to_other_users">이것은 다른 사용자에게 보여집니다</string>
+    <string name="create_profile">프로필 생성</string>
+    <string name="or_capitalized">또는</string>
+    <string name="paste_profile_here_polycentric">여기에 프로필 붙여넣기 polycentric://…</string>
+    <string name="import_profile">프로필 가져오기</string>
+    <string name="you_re_apparantly_a_developer">당신은 명백히 개발자인 것 같습니다</string>
+    <string name="developer_settings">개발자 설정</string>
+    <string name="migration">마이그레이션</string>
+    <string name="set_a_password_for_your_daily_backup">일일 백업을 위한 비밀번호 설정</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">외부 저장소에 작성되는 일일 백업을 암호화하기 위한 비밀번호를 설정합니다.</string>
+    <string name="backup_password">백업 비밀번호</string>
+    <string name="restore_from_automatic_backup">자동 백업에서 복원</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">장치에 자동 백업이 있는 것 같습니다, 복원하려면 백업 비밀번호를 입력해주세요.</string>
+    <string name="restore">복원</string>
+    <string name="error_message_here">여기에 오류 메시지</string>
+    <string name="name">이름</string>
+    <string name="ip">IP</string>
+    <string name="port">포트</string>
+    <string name="discovered_devices">발견된 장치</string>
+    <string name="remembered_devices">기억된 장치</string>
+    <string name="there_are_no_remembered_devices">기억된 장치가 없습니다</string>
+    <string name="connected_to">연결됨:</string>
+    <string name="volume">볼륨</string>
+    <string name="changelog">변경 로그</string>
+    <string name="some_example_changelog">예시 변경 로그입니다.</string>
+    <string name="previous">이전</string>
+    <string name="next">다음</string>
+    <string name="comment">댓글</string>
+    <string name="str_import">가져오기</string>
+    <string name="my_playlist_name">내 재생 목록 이름</string>
+    <string name="do_you_want_to_import_this_store">이 스토어를 가져오시겠습니까?</string>
+    <string name="sources_required_need_to_be_enabled">필요한 소스는 활성화되어야 합니다</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">항목이 마이그레이션이 필요하거나 손상되었습니다, 지금 백업에서 복원하시겠습니까?</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">무시하면 다음 시작시에 다시 물어볼 것입니다.</string>
+    <string name="ignore">무시</string>
+    <string name="view_changelog">변경 로그 보기</string>
+    <string name="i_already_paid">이미 결제했습니다</string>
+    <string name="memberships">멤버십</string>
+    <string name="a_monthly_recurring_payment_with_often">자주 발생하는 월별 결제</string>
+    <string name="additional_perks">추가 혜택</string>
+    <string name="a_one_time_payment_to_support_the_creator">창작자를 지원하기 위한 일회성 결제</string>
+    <string name="donation">기부</string>
+    <string name="downloading">다운로드 중</string>
+    <string name="videos">비디오</string>
+    <string name="clear_history">기록 지우기</string>
+    <string name="nothing_to_import">가져올 것이 없습니다</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">많은 소스를 활성화하면 앱의 로딩 속도가 느려질 수 있습니다.</string>
+    <string name="support">지원</string>
+    <string name="store">스토어</string>
+    <string name="live_chat">실시간 채팅</string>
+    <string name="remove">제거</string>
+    <string name="space_videos">비디오</string>
+    <string name="playlist">재생 목록</string>
+    <string name="neopass_channel">다중 중심 채널</string>
+    <string name="enable">활성화</string>
+    <string name="under_construction">공사 중</string>
+    <string name="under">공사</string>
+    <string name="construction">중</string>
+    <string name="disable">비활성화</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">다음 콘텐츠는 누락된 플러그인으로 인해 Grayjay에서 열 수 없습니다.</string>
+    <string name="unknown">알 수 없음</string>
+    <string name="tap_to_open_in_browser">브라우저에서 열기를 탭하세요</string>
+    <string name="missing_plugin">누락된 플러그인</string>
+    <string name="viewers_are_raiding">시청자가 레이드 중입니다</string>
+    <string name="go_now">지금 가기</string>
+    <string name="prevent">방지</string>
+    <string name="recently_used_playlist">최근 사용한 재생 목록</string>
+    <string name="license_email">라이선스 이메일</string>
+    <string name="required_to_send_the_license_key">라이선스 키를 보내기 위해 필요합니다</string>
+    <string name="receipt_email_user_domain_com">영수증 이메일 (user@domain.com)</string>
+    <string name="payment_using">결제 수단</string>
+    <string name="country">국가</string>
+    <string name="postal_code">우편번호</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">세금 (</string>
+    <string name="total">합계</string>
+    <string name="pay">결제</string>
+    <string name="standard_payment_methods">표준 결제 방법</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe는 주요 신용 카드, 직불 카드 및 다양한 지역화된 결제 방법을 수락하는 안전한 온라인 결제 서비스입니다.</string>
+    <string name="add_a_comment">댓글 추가…</string>
+    <string name="dismiss">무시</string>
+    <string name="scan_a_qr_code_to_install">설치하기 위해 QR 코드를 스캔하세요</string>
+    <string name="toggle_fullscreen">전체 화면 전환</string>
+    <string name="by">작성자</string>
+    <string name="signature">서명</string>
+    <string name="valid">유효</string>
+    <string name="repeat">반복</string>
+    <string name="view">보기</string>
+    <string name="install_by_qr">QR 코드로 설치</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">QR 코드를 스캔하여 플러그인 설치</string>
+    <string name="logout">로그아웃</string>
+    <string name="video">비디오</string>
+    <string name="view_a_more_in_depth_video">더 자세한 비디오 보기</string>
+    <string name="technical_documentation">기술 문서</string>
+    <string name="view_the_technical_documentation">기술 문서 보기</string>
+    <string name="visit_my_store">내 스토어 방문하기</string>
+    <string name="make_a_backup_of_your_identity">당신의 신원을 백업하세요</string>
+    <string name="sign_out_of_this_identity">이 신원에서 로그아웃</string>
+    <string name="delete_this_profile">이 프로필 삭제</string>
+    <string name="install_by_url">URL로 설치</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">이전에 가져온 비디오를 빠르게 로드하기 위한 캐시</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">사용자가 보고한 및 자체 보고한 문제 목록</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">로그인이나 설정과 같은 관련 플러그인 데이터도 제거됩니다</string>
+    <string name="announcement">공고</string>
+    <string name="attempt_to_utilize_byte_ranges">바이트 범위 사용 시도</string>
+    <string name="auto_update">자동 업데이트</string>
+    <string name="auto_rotate">자동 회전</string>
+    <string name="auto_rotate_dead_zone">자동 회전 데드 존</string>
+    <string name="automatic_backup">자동 백업</string>
+    <string name="background_behavior">백그라운드 동작</string>
+    <string name="background_update">백그라운드 업데이트</string>
+    <string name="background_download">백그라운드 다운로드</string>
+    <string name="backup">백업</string>
+    <string name="browsing">브라우징</string>
+    <string name="byte_range_concurrency">바이트 범위 병렬 처리</string>
+    <string name="byte_range_download">바이트 범위 다운로드</string>
+    <string name="casting">캐스팅</string>
+    <string name="change_behavior_of_the_player">플레이어의 동작 변경</string>
+    <string name="change_external_downloads_directory">외부 다운로드 디렉터리 변경</string>
+    <string name="change_external_general_directory">외부 일반 디렉터리 변경</string>
+    <string name="change_tabs_visible_on_the_home_screen">홈 화면에 표시되는 탭 변경</string>
+    <string name="change_the_external_directory_for_general_files">일반 파일을 위한 외부 디렉터리 변경</string>
+    <string name="change_the_external_storage_for_download_files">다운로드 파일을 위한 외부 저장소 변경</string>
+    <string name="clear_cookies">쿠키 제거</string>
+    <string name="clear_cookies_on_logout">로그아웃시 쿠키 제거</string>
+    <string name="clear_payment">결제 취소</string>
+    <string name="clears_cookies_when_you_log_out">로그아웃시 쿠키 제거</string>
+    <string name="clears_in_app_browser_cookies">앱 내 브라우저의 쿠키 제거</string>
+    <string name="configure_browsing_behavior">브라우징 동작 설정</string>
+    <string name="configure_casting">캐스팅 설정</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">대형 실패시 일일 백업 설정</string>
+    <string name="configure_downloading_of_videos">비디오 다운로드 설정</string>
+    <string name="configure_how_your_home_tab_works_and_feels">홈 탭의 작동 방식과 느낌 설정</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">구독의 작동 방식과 느낌 설정</string>
+    <string name="configure_if_background_download_should_be_used">백그라운드 다운로드 사용 여부 설정</string>
+    <string name="configure_the_auto_updater">자동 업데이터 설정</string>
+    <string name="configure_when_updates_should_be_downloaded">업데이트가 다운로드되어야 하는 시기 설정</string>
+    <string name="configure_when_videos_should_be_downloaded">비디오가 다운로드되어야 하는 시기 설정</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Grayjay로 열어 가져올 수 있는 데이터가 있는 ZIP 파일 생성</string>
+    <string name="default_audio_quality">기본 오디오 품질</string>
+    <string name="default_playback_speed">기본 재생 속도</string>
+    <string name="default_video_quality">기본 비디오 품질</string>
+    <string name="deletes_license_keys_from_app">앱에서 라이선스 키 삭제</string>
+    <string name="download_when">다운로드 시기</string>
+    <string name="enable_video_cache">비디오 캐시 활성화</string>
+    <string name="enable_casting">캐스팅 활성화</string>
+    <string name="experimental_background_update_for_subscriptions_cache">구독 캐시를 위한 실험적인 백그라운드 업데이트</string>
+    <string name="export_data">데이터 내보내기</string>
+    <string name="external_storage">외부 저장소</string>
+    <string name="feed_style">피드 스타일</string>
+    <string name="fetch_on_app_boot">앱 부팅시 가져오기</string>
+    <string name="get_answers_to_common_questions">일반적인 질문에 대한 답 얻기</string>
+    <string name="give_feedback_on_the_application">애플리케이션에 대한 피드백 제공</string>
+    <string name="info">정보</string>
+    <string name="live_chat_webview">실시간 채팅 웹뷰</string>
+    <string name="log_level">로그 레벨</string>
+    <string name="logging">로깅</string>
+    <string name="manage_polycentric_identity">다중 중심 아이덴티티 관리</string>
+    <string name="manage_your_polycentric_identity">자신의 다중 중심 아이덴티티 관리</string>
+    <string name="manual_check">수동 확인</string>
+    <string name="manually_check_for_updates">수동으로 업데이트 확인</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">제한된 소스에서 다운로드 속도를 증가시키기 위한 동시 스레드 수</string>
+    <string name="payment">결제</string>
+    <string name="payment_status">결제 상태</string>
+    <string name="player">플레이어</string>
+    <string name="plugins">플러그인</string>
+    <string name="preferred_casting_quality">선호하는 캐스팅 품질</string>
+    <string name="preferred_metered_quality">선호하는 미터링 품질</string>
+    <string name="preferred_preview_quality">선호하는 미리보기 품질</string>
+    <string name="primary_language">기본 언어</string>
+    <string name="reinstall_embedded_plugins">임베디드 플러그인 재설치</string>
+    <string name="remove_cached_version">캐시된 버전 제거</string>
+    <string name="remove_the_last_downloaded_version">마지막으로 다운로드된 버전 제거</string>
+    <string name="reset_announcements">공지사항 재설정</string>
+    <string name="reset_hidden_announcements">숨겨진 공지사항 재설정</string>
+    <string name="restore_automatic_backup">자동 백업 복원</string>
+    <string name="restore_a_previous_automatic_backup">이전 자동 백업 복원</string>
+    <string name="resume_after_preview">미리보기 후 이어보기</string>
+    <string name="review_the_current_and_past_changelogs">현재와 과거 변경 로그 검토</string>
+    <string name="set_automatic_backup">자동 백업 설정</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">앱을 열자마자 구독 정보를 가져오기 시작합니다</string>
+    <string name="show_faq">FAQ 보기</string>
+    <string name="show_issues">이슈 보기</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">채널을 가져오는 데 사용할 스레드 수 지정</string>
+    <string name="submit_feedback">피드백 제출</string>
+    <string name="submit_logs">로그 제출</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">문제를 좁히기 위해 로그를 제출해 주세요</string>
+    <string name="subscription_concurrency">구독 동시성</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">이것은 장치가 주어진 각도 내에서 회전하지 않게 합니다</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">기존 구현보다 웹 창 라이브 채팅을 사용할 수 있을 때 사용</string>
+    <string name="version_code">버전 코드</string>
+    <string name="version_name">버전 이름</string>
+    <string name="version_type">버전 유형</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">미리보기 모드에서 비디오를 볼 때 비디오 코드를 열면 위치에서 이어서 보기</string>
+    <string name="please_enable_logging_to_submit_logs">로그를 제출하려면 로깅을 활성화해 주세요</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">내장 플러그인이 다시 설치되었습니다, 재부팅이 권장됩니다</string>
+    <string name="announcements_reset">공지사항이 초기화되었습니다.</string>
+    <string name="failed_to_show_store">스토어를 표시하지 못했습니다.</string>
+    <string name="retrieving_changelog">변경 로그 검색 중</string>
+    <string name="paid">유료</string>
+    <string name="not_paid">무료</string>
+    <string name="licenses_cleared_might_require_app_restart">라이선스가 지워졌습니다, 앱을 다시 시작해야 할 수 있습니다</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">getHome에서 2페이지를 가져오려고 시도</string>
+    <string name="background_subscription_testing">백그라운드 구독 테스트</string>
+    <string name="clear_all_downloaded">모든 다운로드 지우기</string>
+    <string name="clear_downloads">다운로드 지우기</string>
+    <string name="clear_all_cookies_from_the_cookieManager">CookieManager에서 모든 쿠키 지우기</string>
+    <string name="crash_me">나를 충돌시켜</string>
+    <string name="crashes_the_application_on_purpose">의도적으로 애플리케이션을 충돌시킵니다</string>
+    <string name="delete_announcements">공지사항 삭제</string>
+    <string name="delete_unresolved">미해결 항목 삭제</string>
+    <string name="delete_all_announcements">모든 공지사항 삭제</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">모든 다운로드된 비디오와 관련 파일 삭제</string>
+    <string name="deletes_all_ongoing_downloads">진행 중인 모든 다운로드 삭제</string>
+    <string name="deletes_all_unresolved_source_files">모든 미해결 소스 파일 삭제</string>
+    <string name="developer_mode">개발자 모드</string>
+    <string name="development_server">개발 서버</string>
+    <string name="experimental">실험적</string>
+    <string name="fill_storage_till_error">오류가 발생할 때까지 저장소 채우기</string>
+    <string name="inject">인젝트</string>
+    <string name="injects_a_test_source_config_local_into_v8">테스트 소스 설정(로컬)을 V8에 인젝트</string>
+    <string name="other">기타</string>
+    <string name="others_ellipsis">기타…</string>
+    <string name="removes_all_subscriptions">모든 구독 제거</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">개발 서버와 관련된 설정, 보안 취약점이 발생할 수 있으니 주의하세요</string>
+    <string name="start_server">서버 시작</string>
+    <string name="start_server_on_boot">부팅 시 서버 시작</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">11337 포트에서 DevServer를 시작, 취약점이 노출될 수 있습니다.</string>
+    <string name="test_v8_communication_speed">V8 통신 속도 테스트</string>
+    <string name="test_v8_creation_speed">V8 생성 속도 테스트</string>
+    <string name="tests_v8_communication_speeds">V8 통신 속도를 테스트</string>
+    <string name="tests_v8_creation_times_and_running">V8 생성 시간과 실행을 테스트</string>
+    <string name="unsubscribe_all">모두 구독 취소</string>
+    <string name="v8_benchmarks">V8 벤치마크</string>
+    <string name="v8_script_testing">V8 스크립트 테스팅</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">통합된 V8 엔진을 사용한 다양한 벤치마크</string>
+    <string name="various_tests_against_a_custom_source">사용자 지정 소스에 대한 다양한 테스트</string>
+    <string name="writes_to_disk_till_no_space_is_left">디스크에 공간이 없을 때까지 쓰기</string>
+    <string name="visibility">가시성</string>
+    <string name="enable_where_this_plugins_content_are_visible">이 플러그인의 콘텐츠가 보이는 위치를 활성화</string>
+    <string name="show_content_in_home_tab">홈 탭에 내용 표시</string>
+    <string name="show_content_in_search_results">검색 결과에 내용 표시</string>
+    <string name="no_valid_url_provided">유효한 URL이 제공되지 않았습니다.</string>
+    <string name="invalid_config_format">잘못된 구성 형식</string>
+    <string name="failed_to_fetch_configuration">구성을 가져오는 데 실패했습니다</string>
+    <string name="failed_to_fetch_script">스크립트를 가져오는 데 실패했습니다</string>
+    <string name="url_access">URL 접근</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">이 플러그인은 다음 도메인에 접근할 수 있습니다</string>
+    <string name="eval_access">Eval 접근</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">플러그인은 eval 기능에 접근할 수 있습니다 (원격 인젝션)</string>
+    <string name="failed_to_scan_qr_code">QR 코드를 스캔하는 데 실패했습니다</string>
+    <string name="not_a_plugin_url">플러그인 URL이 아닙니다</string>
+    <string name="scan_a_qr_code">QR 코드 스캔</string>
+    <string name="not_implemented_yet">아직 구현되지 않았습니다.</string>
+    <string name="unknown_context">알 수 없는 컨텍스트</string>
+    <string name="something_went_wrong_missing_stack_trace">문제가 발생했습니다… 스택 추적이 누락되었나요?</string>
+    <string name="logs_already_submitted">로그가 이미 제출되었습니다.</string>
+    <string name="no_logs_found">로그가 없습니다.</string>
+    <string name="failed_automated_share_share_manually">자동 공유 실패, 수동으로 공유하시겠습니까?</string>
+    <string name="shared_id">{id} 공유됨</string>
+    <string name="unhandled_exception_in_vs">VS에서 처리되지 않은 예외</string>
+    <string name="send_exception_to_developers">개발자에게 예외를 보냅니다…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">라이선스 키가 설정되었습니다!\n앱을 다시 시작해야 할 수 있습니다.</string>
+    <string name="invalid_license_format">잘못된 라이선스 형식</string>
+    <string name="unknown_content_format">알 수 없는 콘텐츠 형식</string>
+    <string name="unknown_file_format">알 수 없는 파일 형식</string>
+    <string name="unknown_polycentric_format">알 수 없는 폴리센트릭 형식</string>
+    <string name="unknown_url_format">알 수 없는 URL 형식</string>
+    <string name="failed_to_handle_file">파일을 처리하는 데 실패했습니다</string>
+    <string name="unknown_reconstruction_type">알 수 없는 복구 유형</string>
+    <string name="failed_to_parse_newpipe_subscriptions">NewPipe 구독을 파싱하는 데 실패했습니다</string>
+    <string name="failed_to_generate_qr_code">QR 코드를 생성하는 데 실패했습니다</string>
+    <string name="share_text">텍스트 공유</string>
+    <string name="copied_text">텍스트 복사됨</string>
+    <string name="must_be_at_least_3_characters_long">최소 3자 이상이어야 합니다.</string>
+    <string name="failed_to_create_profile">프로필을 생성하는 데 실패했습니다.</string>
+    <string name="failed_to_fully_backfill_servers">서버를 완전히 백필하는 데 실패했습니다.</string>
+    <string name="sign_in_to_this_identity">이 아이덴티티에 로그인</string>
+    <string name="text_field_does_not_contain_any_data">텍스트 필드에 데이터가 없습니다</string>
+    <string name="not_a_valid_url">유효한 URL이 아닙니다</string>
+    <string name="this_profile_is_already_imported">이 프로필은 이미 가져왔습니다</string>
+    <string name="failed_to_import_profile">프로필을 가져오는 데 실패했습니다:</string>
+    <string name="failed_to_backfill_client">클라이언트를 백필하는 데 실패했습니다</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">이 프로필을 삭제하시겠습니까?</string>
+    <string name="no_process_handle_set">프로세스 핸들이 설정되지 않았습니다</string>
+    <string name="name_must_be_at_least_3_characters_long">이름은 최소 3자 이상이어야 합니다</string>
+    <string name="process_handle_unset">프로세스 핸들이 설정되지 않았습니다</string>
+    <string name="failed_to_read_image">이미지를 읽는 데 실패했습니다</string>
+    <string name="changes_have_been_saved">변경 사항이 저장되었습니다</string>
+    <string name="failed_to_synchronize_changes">변경 사항을 동기화하는 데 실패했습니다</string>
+    <string name="image_picker_cancelled">이미지 선택이 취소되었습니다</string>
+    <string name="you_are_now_in_developer_mode">지금 개발자 모드에 있습니다</string>
+    <string name="subscribers">구독자</string>
+    <string name="find_name_on">{name}을(를) 찾기</string>
+    <string name="failed_to_fetch">데이터 가져오기 실패</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">구매해 주셔서 감사합니다, 결제 확인 후 이메일로 키가 발송됩니다!</string>
+    <string name="payment_failed">결제 실패</string>
+    <string name="payment_succeeded">결제 성공</string>
+    <string name="enter_license_key">라이선스 키 입력</string>
+    <string name="invalid_license_key">잘못된 라이선스 키</string>
+    <string name="license">라이선스</string>
+    <string name="failed_to_activate_key">키 활성화 실패</string>
+    <string name="no_source_enabled_to_support_this_channel">이 채널을 지원하는 소스가 없습니다</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">{channelName} 채널을 플레이리스트로 변환하시겠습니까?</string>
+    <string name="failed_to_convert_channel">채널 변환 실패</string>
+    <string name="page">페이지</string>
+    <string name="hide">숨기기</string>
+    <string name="hide_from_home">홈에서 숨기기</string>
+    <string name="play_feed_as_queue">큐로 피드 재생</string>
+    <string name="play_entire_feed">전체 피드 재생</string>
+    <string name="queued">대기 중</string>
+    <string name="used">사용됨</string>
+    <string name="available">사용 가능</string>
+    <string name="failed_to_load_next_page">다음 페이지 로드 실패</string>
+    <string name="plugin_pluginname_failed_message">{pluginName} 플러그인 실패:\n{message}</string>
+    <string name="plugin_failed_due_to">다음 때문에 플러그인 실패:</string>
+    <string name="failed_to_get_home_plugin">홈 플러그인 가져오기 실패</string>
+    <string name="failed_to_get_home">홈 가져오기 실패</string>
+    <string name="no_home_available">홈이 없습니다</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">홈 페이지를 사용할 수 없습니다, 인터넷 연결을 확인하고 새로고침해 주세요.</string>
+    <string name="import_playlists">플레이리스트 가져오기</string>
+    <string name="playlists_imported">플레이리스트 가져옴.</string>
+    <string name="index_out_of_size_selected">{index} / {size} 선택됨</string>
+    <string name="import_subscriptions">구독 가져오기</string>
+    <string name="subscriptions_imported">구독 가져옴.</string>
+    <string name="edit_playlist">플레이리스트 수정</string>
+    <string name="share_as_text">텍스트로 공유</string>
+    <string name="share_as_a_list_of_video_urls">비디오 URL 목록으로 공유</string>
+    <string name="share_as_import">가져오기로 공유</string>
+    <string name="share_as_a_import_file_for_grayjay">Grayjay에 가져오기 파일로 공유</string>
+    <string name="failed_to_load_playlist">플레이리스트 로드 실패</string>
+    <string name="please_wait_for_playlist_to_finish_loading">플레이리스트 로딩을 기다려 주세요</string>
+    <string name="playlist_copied_as_local_playlist">로컬 플레이리스트로 플레이리스트 복사됨</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">다운로드한 비디오를 삭제하시겠습니까?</string>
+    <string name="create_new_playlist">새 플레이리스트 생성</string>
+    <string name="expected_media_content_found">미디어 컨텐츠를 기대했으나 다음을 찾음:</string>
+    <string name="failed_to_load_post">게시물 로드 실패.</string>
+    <string name="replies">답글</string>
+    <string name="Replies">답글</string>
+    <string name="plugin_settings_saved">플러그인 설정 저장됨</string>
+    <string name="plugin_settings">플러그인 설정</string>
+    <string name="these_settings_are_defined_by_the_plugin">이 설정들은 플러그인에 의해 정의됩니다</string>
+    <string name="failed_to_load_source">소스 로드 실패</string>
+    <string name="check_for_updates">업데이트 확인</string>
+    <string name="checks_for_new_versions_of_the_source">소스의 새 버전 확인</string>
+    <string name="authentication">인증</string>
+    <string name="sign_out_of_the_platform">플랫폼에서 로그아웃</string>
+    <string name="import_your_subscriptions_from_this_source">이 소스에서 구독 가져오기</string>
+    <string name="import_your_playlists_from_this_source">이 소스에서 플레이리스트 가져오기</string>
+    <string name="login">로그인</string>
+    <string name="sign_into_the_platform_of_this_source">이 소스의 플랫폼에 로그인</string>
+    <string name="management">관리</string>
+    <string name="uninstall">제거</string>
+    <string name="removes_the_plugin_from_the_app">앱에서 플러그인 제거</string>
+    <string name="delete_captcha">캡챠 삭제</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">이 플러그인에 대한 저장된 캡챠 답변 삭제</string>
+    <string name="failed_to_retrieve_playlists">플레이리스트 가져오기 실패.</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount}개의 사용자 구독 가져옴.</string>
+    <string name="failed_to_retrieve_subscriptions">구독 가져오기 실패.</string>
+    <string name="are_you_sure_you_want_to_uninstall">제거하시겠습니까</string>
+    <string name="uninstalled">제거됨 </string>
+    <string name="failed_to_check_for_updates">업데이트 확인 실패</string>
+    <string name="plugin_is_fully_up_to_date">플러그인이 완전히 최신입니다</string>
+    <string name="rate_limit_warning">요율 제한 경고</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">이것은 많은 구독에 대한 더 나은 지원을 갖출 때까지 사람들이 요율 제한에 걸리지 않도록 하는 임시 조치입니다.</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\n다음 플러그인에 대한 구독이 너무 많습니다:\n</string>
+    <string name="posts">게시물</string>
+    <string name="planned">계획됨</string>
+    <string name="no_results_found_swipe_down_to_refresh">결과 없음\n아래로 스크롤하여 새로 고침</string>
+    <string name="overlay">오버레이</string>
+    <string name="reload">재로드</string>
+    <string name="watching_now">지금 시청 중</string>
+    <string name="views">조회수</string>
+    <string name="planned_in">계획됨</string>
+    <string name="failed_to_get_playback_tracker">재생 트래커를 가져오지 못했습니다</string>
+    <string name="exception_retrieving_live_events">라이브 이벤트 검색 중 예외 발생:</string>
+    <string name="exception_retrieving_live_chat_window">라이브 채팅 창 검색 중 예외 발생:</string>
+    <string name="live_chat_failed_to_load">라이브 채팅을 로드하지 못했습니다</string>
+    <string name="unsupported_cast_format">지원되지 않는 캐스트 형식</string>
+    <string name="failed_to_load_media">미디어를 로드하지 못했습니다</string>
+    <string name="offline_playback">오프라인 재생</string>
+    <string name="media_error">미디어 오류</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">미디어 소스에서 권한이 없는 오류가 발생했습니다.\n플러그인을 다시 로드하면 해결될 수 있습니다.\n다시 로드하시겠습니까?\n(실험적)</string>
+    <string name="playback_rate">재생 속도</string>
+    <string name="quality">품질</string>
+    <string name="offline_video">오프라인 비디오</string>
+    <string name="offline_audio">오프라인 오디오</string>
+    <string name="offline_subtitles">오프라인 자막</string>
+    <string name="stream_video">스트림 비디오</string>
+    <string name="stream_audio">스트림 오디오</string>
+    <string name="audio">오디오</string>
+    <string name="subtitles">자막</string>
+    <string name="unavailable_video">사용할 수 없는 비디오</string>
+    <string name="this_video_is_unavailable">이 비디오는 사용할 수 없습니다.</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">당신의 대기열에 사용할 수 없는 비디오가 있었습니다 [{videoName}] 작성자: [{authorName}].</string>
+    <string name="back">뒤로</string>
+    <string name="pause">일시정지</string>
+    <string name="play">재생</string>
+    <string name="pauses_the_video">비디오 일시정지</string>
+    <string name="resumes_the_video">비디오 재생 재개</string>
+    <string name="video_without_source">소스 없는 비디오</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">당신의 대기열에 필요한 소스가 활성화되지 않은 비디오가 있었습니다 [{videoName}] 작성자: [{authorName}], 재생이 건너뛰어졌습니다.</string>
+    <string name="failed_to_load_video_scriptimplementationexception">비디오를 로드하지 못했습니다 (ScriptImplementationException)</string>
+    <string name="invalid_video">잘못된 비디오</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">당신의 대기열에 잘못된 비디오가 있었습니다 [{videoName}] 작성자: [{authorName}], 재생이 건너뛰어졌습니다.</string>
+    <string name="age_restricted_video">연령 제한 비디오</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">당신의 대기열에 연령 제한이 있는 비디오가 있었습니다 [{videoName}] 작성자: [{authorName}], 이 비디오는 접근할 수 없으며 재생이 건너뛰어졌습니다.</string>
+    <string name="failed_to_load_video_scriptexception">비디오를 로드하지 못했습니다 (ScriptException)</string>
+    <string name="failed_to_load_video">비디오를 로드하지 못했습니다</string>
+    <string name="not_yet_available_retrying_in_time_s">아직 사용할 수 없습니다, {time}초 후에 다시 시도합니다</string>
+    <string name="failed_to_retry_for_live_stream">라이브 스트림을 다시 시도하지 못했습니다</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">이 앱은 개발 중입니다. 버그 보고를 제출해 주시고, 많은 기능이 미완성임을 이해해 주세요.</string>
+    <string name="please_use_at_least_3_characters">최소 3자 이상 사용해 주세요</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">이 비디오를 삭제하시겠습니까?</string>
+    <string name="tap_to_open">열려면 탭하세요</string>
+    <string name="watching">시청 중</string>
+    <string name="available_in">에서 사용 가능</string>
+    <string name="seconds">초</string>
+    <string name="please_login_to_post_a_comment">댓글을 작성하려면 로그인하세요</string>
+    <string name="failed_to_post_comment">댓글 작성 실패:</string>
+    <string name="waiting_for_unmetered">제한 없는 대기 중</string>
+    <string name="last_error">마지막 오류</string>
+    <string name="error">오류</string>
+    <string name="filters">필터</string>
+    <string name="viewers">시청자</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">서버에서 답글이 하나 이상 예상되었으나 반환되지 않았습니다</string>
+    <string name="please_login_to_like">좋아요를 누르려면 로그인하세요</string>
+    <string name="please_login_to_dislike">싫어요를 누르려면 로그인하세요</string>
+    <string name="failed_to_load_comments">댓글을 불러오지 못했습니다.</string>
+    <string name="script_is_not_available">스크립트를 사용할 수 없습니다</string>
+    <string name="signature_is_valid">서명이 유효합니다</string>
+    <string name="signature_is_invalid">서명이 유효하지 않습니다</string>
+    <string name="no_signature_available">사용 가능한 서명이 없습니다</string>
+    <string name="subscribed_to">구독함: </string>
+    <string name="unsubscribed_from">구독 취소: </string>
+    <string name="you_don_t_have_any_automatic_backups">자동 백업이 없습니다</string>
+    <string name="an_old_backup_is_available">이전 백업이 있습니다</string>
+    <string name="would_you_like_to_restore_this_backup">이 백업을 복원하시겠습니까?</string>
+    <string name="override">오버라이드</string>
+    <string name="data_retry">데이터 재시도</string>
+    <string name="no_downloads_available">다운로드할 수 없습니다</string>
+    <string name="no_downloadable_sources_yet">다운로드 가능한 소스 없음(아직)</string>
+    <string name="none">없음</string>
+    <string name="audio_only">오디오만</string>
+    <string name="download_video">비디오 다운로드</string>
+    <string name="fetching_video_details">비디오 세부 정보 가져오는 중</string>
+    <string name="failed_to_fetch_details_for_download">다운로드 세부 정보를 가져오지 못했습니다</string>
+    <string name="target_resolution">목표 해상도</string>
+    <string name="target_bitrate">목표 비트레이트</string>
+    <string name="low_bitrate">낮은 비트레이트</string>
+    <string name="high_bitrate">높은 비트레이트</string>
+    <string name="actions">동작</string>
+    <string name="download_the_video">비디오 다운로드</string>
+    <string name="video_options">비디오 옵션</string>
+    <string name="change_pins">핀 변경</string>
+    <string name="decide_which_buttons_should_be_pinned">고정할 버튼을 결정하세요</string>
+    <string name="select_your_pins_in_order">핀을 순서대로 선택하세요</string>
+    <string name="more_options">더 많은 옵션</string>
+    <string name="save">저장</string>
+    <string name="buy_text">Grayjay은 쉽거나 저렴하게 구축하고 유지할 수 있는 앱이 아닙니다. 전문 엔지니어가 이 앱과 주변 시스템을 지속적으로 작업하고 있으며, 아마도 조만간 수익을 창출하지 못할 것입니다.\n\nFUTO의 임무는 오픈 소스 소프트웨어와 비악의적이지 않은 소프트웨어 비즈니스 관행이 프로젝트와 개발자들에게 지속 가능한 수입원이 되도록 하는 것입니다. 이러한 이유로 우리는 사용자가 실제로 소프트웨어에 대한 비용을 지불하는 것을 지지합니다.\n\n그래서 Grayjay는 당신에게 소프트웨어 비용을 지불하길 원합니다.</string>
+    <string-array name="home_screen_array">
+        <item>추천</item>
+        <item>구독</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>자동 (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>없음 (오디오만)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 스레드</item>
+        <item>2 스레드</item>
+        <item>4 스레드</item>
+        <item>6 스레드</item>
+        <item>8 스레드</item>
+        <item>10 스레드</item>
+        <item>15 스레드</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>안 함</item>
+        <item>15분마다</item>
+        <item>1시간마다</item>
+        <item>3시간마다</item>
+        <item>6시간마다</item>
+        <item>12시간마다</item>
+        <item>매일</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>낮은 비트레이트</item>
+        <item>높은 비트레이트</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>시작할 때</item>
+        <item>안 함</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>비활성화</item>
+        <item>활성화</item>
+        <item>시스템과 동일</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>비활성화</item>
+        <item>활성화</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>무제한 시</item>
+        <item>와이파이 &amp; 이더넷 시</item>
+        <item>항상</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>비활성화</item>
+        <item>활성화</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>이름 오름차순</item>
+        <item>이름 내림차순</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>미리보기</item>
+        <item>목록</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>없음</item>
+        <item>계속 재생</item>
+        <item>플레이어 오버레이</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>처음부터 시작</item>
+        <item>10초 후에 이어서</item>
+        <item>항상 이어서</item>
+    </string-array>
+    <string-array name="languages">
+        <item>영어</item>
+        <item>스페인어</item>
+        <item>프랑스어</item>
+        <item>프랑스어</item>
+        <item>한국어</item>
+        <item>태국어</item>
+        <item>베트남어</item>
+        <item>인도네시아어</item>
+        <item>힌디어</item>
+        <item>아랍어</item>
+        <item>터키어</item>
+        <item>러시아어</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>없음</item>
+        <item>오류</item>
+        <item>경고</item>
+        <item>정보</item>
+        <item>상세</item>
+    </string-array>
+</resources>

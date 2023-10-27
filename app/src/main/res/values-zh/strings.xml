@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">投放</string>
+    <string name="search">搜索</string>
+    <string name="add_to_query">添加到查询</string>
+    <string name="thumbnail">缩略图</string>
+    <string name="channel_image">频道图片</string>
+    <string name="add_to">添加到</string>
+    <string name="add_to_queue">加入队列</string>
+    <string name="home">首页</string>
+    <string name="recommendations">推荐</string>
+    <string name="more">更多</string>
+    <string name="playlists">播放列表</string>
+    <string name="subscriptions">订阅</string>
+    <string name="loading">加载中</string>
+    <string name="retry">重试</string>
+    <string name="cancel">取消</string>
+    <string name="failed_to_retrieve_data_are_you_connected">获取数据失败，是否已连接？</string>
+    <string name="settings">设置</string>
+    <string name="history">历史</string>
+    <string name="sources">来源</string>
+    <string name="buy">购买</string>
+    <string name="faq">常见问题解答</string>
+    <string name="the_top_source_will_be_considered_primary">顶部来源将被视为主要来源</string>
+    <string name="defaults">默认值</string>
+    <string name="home_screen">主屏幕</string>
+    <string name="preferred_quality">首选质量</string>
+    <string name="update">更新</string>
+    <string name="close">关闭</string>
+    <string name="never">永不</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">有可用更新，是否更新？</string>
+    <string name="downloading_update">下载更新中…</string>
+    <string name="installing_update">安装更新中…</string>
+    <string name="done">完成</string>
+    <string name="success">成功</string>
+    <string name="failed_to_update_with_error">更新包失败，出现错误</string>
+    <string name="general_failure">操作以通用方式失败</string>
+    <string name="aborted">操作因主动中断而失败</string>
+    <string name="blocked">操作因被阻止而失败</string>
+    <string name="conflict">操作因与设备上已安装的其他软件包冲突（或不一致）而失败</string>
+    <string name="incompatible">操作因与此设备基本不兼容而失败</string>
+    <string name="invalid">操作因一个或多个 APK 无效而失败</string>
+    <string name="not_enough_storage">操作因存储问题而失败</string>
+    <string name="live_capitalized">直播</string>
+    <string name="live">直播</string>
+    <string name="click_to_read_more">点击查看更多</string>
+    <string name="click_to_hide">点击隐藏</string>
+    <string name="version">版本</string>
+    <string name="sort_by">排序方式</string>
+    <string name="subscribe">订阅</string>
+    <string name="unsubscribe">取消订阅</string>
+    <string name="background">背景</string>
+    <string name="background_revert">视频</string>
+    <string name="add">添加</string>
+    <string name="download">下载</string>
+    <string name="share">分享</string>
+    <string name="view_all">查看全部</string>
+    <string name="creators">创作者</string>
+    <string name="enabled">已启用</string>
+    <string name="discover">发现</string>
+    <string name="find_new_video_sources_to_add">查找新的视频来源以添加</string>
+    <string name="these_sources_have_been_disabled">这些来源已被禁用</string>
+    <string name="disabled">已禁用</string>
+    <string name="watch_later">稍后观看</string>
+    <string name="create">创建</string>
+    <string name="ok">确定</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="confirm">确认</string>
+    <string name="confirm_delete_playlist">确定要删除此播放列表吗？</string>
+    <string name="confirm_delete_subscription">确定要取消此订阅吗？</string>
+    <string name="confirm_remove_source">删除此来源将导致某些订阅无法解析。</string>
+    <string name="shuffle">随机播放</string>
+    <string name="play_all">播放全部</string>
+    <string name="search_history">搜索历史</string>
+    <string name="app_error">应用错误</string>
+    <string name="developer">开发者</string>
+    <string name="remove_historical_suggestion">删除历史建议</string>
+    <string name="comments">评论</string>
+    <string name="reached_the_end_of_the_playlist">已到达播放列表尾端</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">视频结束后播放列表将重新开始</string>
+    <string name="restart_now">立即重启</string>
+    <string name="end_of_queue_reached">已到达队列尾端</string>
+    <string name="end_of_playlist_reached">已到达播放列表尾端</string>
+    <string name="end_of_watch_later_reached">已到达稍后观看尾端</string>
+    <string name="reached_the_end_of_the_queue">已到达队列尾端</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">视频结束后队列将重新开始</string>
+    <string name="up_next">接下来</string>
+    <string name="queue">队列</string>
+    <string name="clear">清除</string>
+    <string name="last_hour">最近一小时</string>
+    <string name="last_24_hours">最近24小时</string>
+    <string name="last_week">最近一周</string>
+    <string name="last_30_days">最近30天</string>
+    <string name="last_year">最近一年</string>
+    <string name="all_time">全部时间</string>
+    <string name="are_you_sure_delete_historical">您确定要删除这些历史记录吗？</string>
+    <string name="removed">已删除</string>
+    <string name="add_source">添加源</string>
+    <string name="repository_url">仓库网址</string>
+    <string name="script_url">脚本网址</string>
+    <string name="source_permissions_explanation">这些是插件需要正常工作的权限</string>
+    <string name="source_explain_eval_access">插件将具有评估能力的访问权限</string>
+    <string name="source_explain_script_url">插件将有权访问以下域名</string>
+    <string name="scan_qr">扫描二维码</string>
+    <string name="scan_qr_explain">扫描二维码以安装</string>
+    <string name="enter_url_explain">输入URL以从中加载插件配置。</string>
+    <string name="enter_url">输入URL</string>
+    <string name="install">安装</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">没有找到设备。您的设备可能需要一段时间才能显示出来，请耐心等待</string>
+    <string name="not_ready">未准备好</string>
+    <string name="connect">连接</string>
+    <string name="stop">停止</string>
+    <string name="start">开始</string>
+    <string name="storage_space">存储空间</string>
+    <string name="downloads">下载</string>
+    <string name="deselect_all">取消全选</string>
+    <string name="select_all">全选</string>
+    <string name="add_casting_device">添加投影设备</string>
+    <string name="new_activity">新活动</string>
+    <string name="creator_is_on_neopass">创建者在NeoPass上</string>
+    <string name="options">选项</string>
+    <string name="export">导出</string>
+    <string name="delete">删除</string>
+    <string name="loading_update">正在加载更新…</string>
+    <string name="polycentric_explanation">当您浏览在线视频并想留下评论时，考虑尝试Polycentric，这是一种易于使用且以您的需求为重点的新方法来管理您的在线存在。创建Polycentric配置文件是一个很好的选择，原因如下：\n\n 1. 你掌握控制权：在Polycentric中，您的数据不会存储在由单个公司控制的一个地方。相反，它分布在多个位置，让您更多地控制您的在线存在。您决定您的数据存储在哪里，并且可以轻松地在提供商之间切换或添加新的。\n\n 2. 隐私和安全：Polycentric使用先进的安全技术来保护您的信息。您可以信任您的个人详细信息得到了很好的保护，并且只有您选择与之分享的人才能访问。\n\n 3. 无缝网络：Polycentric允许您与他人建立联系并与他们的内容互动，而不会被束缚在单一平台上。如果提供商变得不可靠或试图阻止访问，您的Polycentric客户端将自动从其他来源查找信息，使您保持连接。\n\n 4. 智能搜索和推荐：Polycentric使用多个搜索和推荐来源，为您提供一流的性能，同时确保没有单个提供商对您看到的结果有太多影响。\n\n 5. 可适应和开放：Polycentric旨在灵活并对新发展开放，允许不断改进和添加适应其用户需求的新功能。\n\n 6. 通过创建Polycentric配置文件，您可以在在线视频上发表评论，并享受更个性化的在线体验。亲自体验这种用户友好的解决方案如何让您掌控自己的数字生活。立即注册Polycentric！</string>
+    <string name="publish">发布</string>
+    <string name="usage">使用</string>
+    <string name="enable_in_home">在家中启用</string>
+    <string name="enable_in_search">在搜索中启用</string>
+    <string name="check">检查</string>
+    <string name="buy_text">Grayjay并不是一个容易或便宜的应用程序来构建和维护。我们有全职工程师在应用程序及其周围系统上工作。而且可能不会很快赚回成本，如果有的话。\n\nFUTO的使命是使开源软件和非恶意软件商业实践成为项目及其开发人员的可持续收入来源。因此，我们支持用户实际支付软件。\n\n这就是Grayjay希望您支付软件的原因。</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">发生了未捕获的异常，对于造成的不便我们深感抱歉。</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">为了帮助我们解决这个问题，请与我们分享以下崩溃报告，并可能添加一些您当时正在做什么的上下文。</string>
+    <string name="new_profile">新建配置</string>
+    <string name="import_existing_profile">导入现有配置</string>
+    <string name="generate_a_new_identity">生成新身份</string>
+    <string name="use_an_existing_identity">使用现有身份</string>
+    <string name="permissions">权限</string>
+    <string name="security_warnings">安全警告</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">这些是插件行为和实现的警告</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">请输入验证码并完成后关闭</string>
+    <string name="close_capitalized">关闭</string>
+    <string name="submit">提交</string>
+    <string name="restart">重新启动</string>
+    <string name="manage_tabs">管理标签</string>
+    <string name="scan_to_import">扫描以导入</string>
+    <string name="send_your_identity_to_another_app">将您的身份发送到另一个应用</string>
+    <string name="copy">复制</string>
+    <string name="copy_your_identity_to_clipboard">将您的身份复制到剪贴板</string>
+    <string name="polycentric">多心</string>
+    <string name="profile_name">配置名</string>
+    <string name="this_will_be_visible_to_other_users">这将对其他用户可见</string>
+    <string name="create_profile">创建配置</string>
+    <string name="or_capitalized">或者</string>
+    <string name="paste_profile_here_polycentric">在此处粘贴配置 polycentric://…</string>
+    <string name="import_profile">导入配置</string>
+    <string name="you_re_apparantly_a_developer">您显然是一名开发者</string>
+    <string name="developer_settings">开发者设置</string>
+    <string name="migration">迁移</string>
+    <string name="set_a_password_for_your_daily_backup">为您的日常备份设置密码</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">设置用于加密写入外部存储的日常备份的密码。</string>
+    <string name="backup_password">备份密码</string>
+    <string name="restore_from_automatic_backup">从自动备份中恢复</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">您的设备上似乎存在自动备份，如果您想恢复，请输入您的备份密码。</string>
+    <string name="restore">恢复</string>
+    <string name="error_message_here">此处为错误信息</string>
+    <string name="name">名称</string>
+    <string name="ip">IP地址</string>
+    <string name="port">端口</string>
+    <string name="discovered_devices">已发现的设备</string>
+    <string name="remembered_devices">已记住的设备</string>
+    <string name="there_are_no_remembered_devices">没有已记住的设备</string>
+    <string name="connected_to">已连接到</string>
+    <string name="volume">音量</string>
+    <string name="changelog">更新日志</string>
+    <string name="some_example_changelog">一些示例的更新日志。</string>
+    <string name="previous">上一个</string>
+    <string name="next">下一个</string>
+    <string name="comment">评论</string>
+    <string name="str_import">导入</string>
+    <string name="my_playlist_name">我的播放列表名称</string>
+    <string name="do_you_want_to_import_this_store">您想导入这个商店吗？</string>
+    <string name="sources_required_need_to_be_enabled">需要启用所需的来源</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">项目需要迁移或已损坏，您现在想从备份中恢复它们吗？</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">如果忽略，下次启动时您将再次被询问。</string>
+    <string name="ignore">忽略</string>
+    <string name="view_changelog">查看更改日志</string>
+    <string name="i_already_paid">我已经付款了</string>
+    <string name="memberships">会员资格</string>
+    <string name="a_monthly_recurring_payment_with_often">一个经常带有附加福利的每月定期付款</string>
+    <string name="additional_perks">额外的好处</string>
+    <string name="a_one_time_payment_to_support_the_creator">一次性付款以支持创作者</string>
+    <string name="donation">捐款</string>
+    <string name="downloading">下载中</string>
+    <string name="videos">视频</string>
+    <string name="clear_history">清除历史</string>
+    <string name="nothing_to_import">没有可导入的内容</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">启用大量的来源可能会降低您的应用程序的加载速度。</string>
+    <string name="support">支持</string>
+    <string name="store">商店</string>
+    <string name="live_chat">在线聊天</string>
+    <string name="remove">移除</string>
+    <string name="space_videos">空间视频</string>
+    <string name="playlist">播放列表</string>
+    <string name="neopass_channel">多中心渠道</string>
+    <string name="enable">启用</string>
+    <string name="under_construction">施工中</string>
+    <string name="under">在</string>
+    <string name="construction">施工</string>
+    <string name="disable">禁用</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">由于缺少插件，以下内容无法在Grayjay中打开。</string>
+    <string name="unknown">未知</string>
+    <string name="tap_to_open_in_browser">点击在浏览器中打开</string>
+    <string name="missing_plugin">缺少插件</string>
+    <string name="viewers_are_raiding">观众正在进行突袭</string>
+    <string name="go_now">现在去</string>
+    <string name="prevent">防止</string>
+    <string name="recently_used_playlist">最近使用的播放列表</string>
+    <string name="license_email">许可证电子邮件</string>
+    <string name="required_to_send_the_license_key">需要发送许可证密钥</string>
+    <string name="receipt_email_user_domain_com">收据电子邮件 (user@domain.com)</string>
+    <string name="payment_using">使用支付</string>
+    <string name="country">国家</string>
+    <string name="postal_code">邮政编码</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">销售税 (</string>
+    <string name="total">总计</string>
+    <string name="pay">支付</string>
+    <string name="standard_payment_methods">标准支付方式</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe是一个安全的在线支付服务，接受主要的信用卡、借记卡和各种本地化支付方式。</string>
+    <string name="add_a_comment">添加评论…</string>
+    <string name="dismiss">解散</string>
+    <string name="scan_a_qr_code_to_install">扫描二维码以安装</string>
+    <string name="toggle_fullscreen">切换全屏</string>
+    <string name="by">由</string>
+    <string name="signature">签名</string>
+    <string name="valid">有效</string>
+    <string name="repeat">重复</string>
+    <string name="view">查看</string>
+    <string name="install_by_qr">通过二维码安装</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">通过扫描二维码安装插件</string>
+    <string name="logout">注销</string>
+    <string name="video">视频</string>
+    <string name="view_a_more_in_depth_video">查看更深入的视频</string>
+    <string name="technical_documentation">技术文档</string>
+    <string name="view_the_technical_documentation">查看技术文档</string>
+    <string name="visit_my_store">访问我的商店</string>
+    <string name="make_a_backup_of_your_identity">备份您的身份</string>
+    <string name="sign_out_of_this_identity">从此身份退出</string>
+    <string name="delete_this_profile">删除此个人资料</string>
+    <string name="install_by_url">通过URL安装</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">缓存以快速加载之前获取的视频</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">用户报告和自报的问题列表</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">还将删除与插件相关的任何数据，如登录或设置</string>
+    <string name="announcement">公告</string>
+    <string name="attempt_to_utilize_byte_ranges">尝试使用字节范围</string>
+    <string name="auto_update">自动更新</string>
+    <string name="auto_rotate">自动旋转</string>
+    <string name="auto_rotate_dead_zone">自动旋转死区</string>
+    <string name="automatic_backup">自动备份</string>
+    <string name="background_behavior">后台行为</string>
+    <string name="background_update">后台更新</string>
+    <string name="background_download">后台下载</string>
+    <string name="backup">备份</string>
+    <string name="browsing">浏览</string>
+    <string name="byte_range_concurrency">字节范围并发</string>
+    <string name="byte_range_download">字节范围下载</string>
+    <string name="casting">投屏</string>
+    <string name="change_behavior_of_the_player">更改播放器行为</string>
+    <string name="change_external_downloads_directory">更改外部下载目录</string>
+    <string name="change_external_general_directory">更改外部通用目录</string>
+    <string name="change_tabs_visible_on_the_home_screen">更改主屏幕上可见的选项卡</string>
+    <string name="change_the_external_directory_for_general_files">更改通用文件的外部目录</string>
+    <string name="change_the_external_storage_for_download_files">更改下载文件的外部存储</string>
+    <string name="clear_cookies">清除Cookies</string>
+    <string name="clear_cookies_on_logout">注销时清除Cookies</string>
+    <string name="clear_payment">清除付款</string>
+    <string name="clears_cookies_when_you_log_out">当你注销时清除Cookies</string>
+    <string name="clears_in_app_browser_cookies">清除应用内浏览器的Cookies</string>
+    <string name="configure_browsing_behavior">配置浏览行为</string>
+    <string name="configure_casting">配置投屏</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">在灾难性失败的情况下配置每日备份</string>
+    <string name="configure_downloading_of_videos">配置视频下载</string>
+    <string name="configure_how_your_home_tab_works_and_feels">配置主页选项卡的工作方式和感觉</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">配置订阅的工作方式和感觉</string>
+    <string name="configure_if_background_download_should_be_used">配置是否应使用后台下载</string>
+    <string name="configure_the_auto_updater">配置自动更新器</string>
+    <string name="configure_when_updates_should_be_downloaded">配置何时应下载更新</string>
+    <string name="configure_when_videos_should_be_downloaded">配置何时应下载视频</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">创建一个包含您的数据的zip文件，可以通过用Grayjay打开它来导入</string>
+    <string name="default_audio_quality">默认音频质量</string>
+    <string name="default_playback_speed">默认播放速度</string>
+    <string name="default_video_quality">默认视频质量</string>
+    <string name="deletes_license_keys_from_app">从应用中删除许可证密钥</string>
+    <string name="download_when">何时下载</string>
+    <string name="enable_video_cache">启用视频缓存</string>
+    <string name="enable_casting">启用投屏</string>
+    <string name="experimental_background_update_for_subscriptions_cache">订阅缓存的实验性后台更新</string>
+    <string name="export_data">导出数据</string>
+    <string name="external_storage">外部存储</string>
+    <string name="feed_style">信息流样式</string>
+    <string name="fetch_on_app_boot">应用启动时获取</string>
+    <string name="get_answers_to_common_questions">获取常见问题的答案</string>
+    <string name="give_feedback_on_the_application">对应用程序提供反馈</string>
+    <string name="info">信息</string>
+    <string name="live_chat_webview">实时聊天网页视图</string>
+    <string name="log_level">日志级别</string>
+    <string name="logging">日志记录</string>
+    <string name="manage_polycentric_identity">管理多心身份</string>
+    <string name="manage_your_polycentric_identity">管理您的多心身份</string>
+    <string name="manual_check">手动检查</string>
+    <string name="manually_check_for_updates">手动检查更新</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">用于从受限制的来源提高下载速度的并发线程数</string>
+    <string name="payment">支付</string>
+    <string name="payment_status">支付状态</string>
+    <string name="player">播放器</string>
+    <string name="plugins">插件</string>
+    <string name="preferred_casting_quality">首选投屏质量</string>
+    <string name="preferred_metered_quality">首选计量质量</string>
+    <string name="preferred_preview_quality">首选预览质量</string>
+    <string name="primary_language">主要语言</string>
+    <string name="reinstall_embedded_plugins">重新安装嵌入式插件</string>
+    <string name="remove_cached_version">删除缓存版本</string>
+    <string name="remove_the_last_downloaded_version">删除最后下载的版本</string>
+    <string name="reset_announcements">重置公告</string>
+    <string name="reset_hidden_announcements">重置隐藏的公告</string>
+    <string name="restore_automatic_backup">恢复自动备份</string>
+    <string name="restore_a_previous_automatic_backup">恢复以前的自动备份</string>
+    <string name="resume_after_preview">预览后继续</string>
+    <string name="review_the_current_and_past_changelogs">查看当前和过去的更改日志</string>
+    <string name="set_automatic_backup">设置自动备份</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">打开应用后立即开始获取订阅</string>
+    <string name="show_faq">显示常见问题解答</string>
+    <string name="show_issues">显示问题</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">指定用于获取频道的线程数量</string>
+    <string name="submit_feedback">提交反馈</string>
+    <string name="submit_logs">提交日志</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">提交日志以帮助我们定位问题</string>
+    <string name="subscription_concurrency">订阅并发性</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">这可以防止设备在指定角度内旋转</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">优先使用可用的在线聊天网页窗口而不是本地实现</string>
+    <string name="version_code">版本代码</string>
+    <string name="version_name">版本名称</string>
+    <string name="version_type">版本类型</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">预览模式下观看视频时，打开视频代码后从原位置开始</string>
+    <string name="please_enable_logging_to_submit_logs">请启用日志记录以提交日志</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">已重新安装嵌入式插件，建议重新启动</string>
+    <string name="announcements_reset">公告已重置。</string>
+    <string name="failed_to_show_store">无法显示商店。</string>
+    <string name="retrieving_changelog">检索更改日志</string>
+    <string name="paid">已付费</string>
+    <string name="not_paid">未付费</string>
+    <string name="licenses_cleared_might_require_app_restart">许可已清除，可能需要重启应用</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">尝试从getHome获取2页</string>
+    <string name="background_subscription_testing">后台订阅测试</string>
+    <string name="clear_all_downloaded">清除所有已下载的</string>
+    <string name="clear_downloads">清除下载</string>
+    <string name="clear_all_cookies_from_the_cookieManager">从CookieManager中清除所有Cookie</string>
+    <string name="crash_me">崩溃我</string>
+    <string name="crashes_the_application_on_purpose">故意使应用崩溃</string>
+    <string name="delete_announcements">删除公告</string>
+    <string name="delete_unresolved">删除未解决的</string>
+    <string name="delete_all_announcements">删除所有公告</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">删除所有已下载的视频和相关文件</string>
+    <string name="deletes_all_ongoing_downloads">删除所有正在进行的下载</string>
+    <string name="deletes_all_unresolved_source_files">删除所有未解析的源文件</string>
+    <string name="developer_mode">开发者模式</string>
+    <string name="development_server">开发服务器</string>
+    <string name="experimental">实验性的</string>
+    <string name="fill_storage_till_error">填满存储直到出错</string>
+    <string name="inject">注入</string>
+    <string name="injects_a_test_source_config_local_into_v8">将测试源配置（本地）注入到V8</string>
+    <string name="other">其他</string>
+    <string name="others_ellipsis">其他…</string>
+    <string name="removes_all_subscriptions">删除所有订阅</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">与开发服务器相关的设置，请小心，因为这可能会使您的手机面临安全风险</string>
+    <string name="start_server">启动服务器</string>
+    <string name="start_server_on_boot">开机启动服务器</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">在端口11337上启动DevServer，可能会暴露漏洞。</string>
+    <string name="test_v8_communication_speed">测试V8通信速度</string>
+    <string name="test_v8_creation_speed">测试V8创建速度</string>
+    <string name="tests_v8_communication_speeds">测试V8通信速度</string>
+    <string name="tests_v8_creation_times_and_running">测试V8创建时间和运行</string>
+    <string name="unsubscribe_all">取消所有订阅</string>
+    <string name="v8_benchmarks">V8基准测试</string>
+    <string name="v8_script_testing">V8脚本测试</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">使用集成的V8引擎进行各种基准测试</string>
+    <string name="various_tests_against_a_custom_source">针对自定义源的各种测试</string>
+    <string name="writes_to_disk_till_no_space_is_left">写入磁盘直到没有空间为止</string>
+    <string name="visibility">可见性</string>
+    <string name="enable_where_this_plugins_content_are_visible">启用此插件的内容可见位置</string>
+    <string name="show_content_in_home_tab">在主页选项卡中显示内容</string>
+    <string name="show_content_in_search_results">在搜索结果中显示内容</string>
+    <string name="no_valid_url_provided">未提供有效的URL。</string>
+    <string name="invalid_config_format">无效的配置格式</string>
+    <string name="failed_to_fetch_configuration">获取配置失败</string>
+    <string name="failed_to_fetch_script">获取脚本失败</string>
+    <string name="url_access">URL访问</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">插件将可以访问以下域名</string>
+    <string name="eval_access">Eval访问权限</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">插件将具有远程注入Eval的能力</string>
+    <string name="failed_to_scan_qr_code">扫描QR码失败</string>
+    <string name="not_a_plugin_url">不是插件网址</string>
+    <string name="scan_a_qr_code">扫描二维码</string>
+    <string name="not_implemented_yet">尚未实现..</string>
+    <string name="unknown_context">未知上下文</string>
+    <string name="something_went_wrong_missing_stack_trace">出了点问题…找不到堆栈追踪？</string>
+    <string name="logs_already_submitted">日志已提交。</string>
+    <string name="no_logs_found">找不到日志。</string>
+    <string name="failed_automated_share_share_manually">自动分享失败，手动分享？</string>
+    <string name="shared_id">已分享 {id}</string>
+    <string name="unhandled_exception_in_vs">VS 中的未处理异常</string>
+    <string name="send_exception_to_developers">向开发者发送异常…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">您的许可证密钥已设置！\n可能需要重新启动应用程序。</string>
+    <string name="invalid_license_format">无效的许可证格式</string>
+    <string name="unknown_content_format">未知的内容格式</string>
+    <string name="unknown_file_format">未知的文件格式</string>
+    <string name="unknown_polycentric_format">未知的多中心格式</string>
+    <string name="unknown_url_format">未知的网址格式</string>
+    <string name="failed_to_handle_file">无法处理文件</string>
+    <string name="unknown_reconstruction_type">未知的重建类型</string>
+    <string name="failed_to_parse_newpipe_subscriptions">解析 NewPipe 订阅失败</string>
+    <string name="failed_to_generate_qr_code">生成二维码失败</string>
+    <string name="share_text">分享文本</string>
+    <string name="copied_text">已复制文本</string>
+    <string name="must_be_at_least_3_characters_long">必须至少为3个字符长。</string>
+    <string name="failed_to_create_profile">创建配置文件失败。</string>
+    <string name="failed_to_fully_backfill_servers">无法完全填充服务器。</string>
+    <string name="sign_in_to_this_identity">登录到此身份</string>
+    <string name="text_field_does_not_contain_any_data">文本字段不包含任何数据</string>
+    <string name="not_a_valid_url">不是有效的网址</string>
+    <string name="this_profile_is_already_imported">此配置文件已经导入</string>
+    <string name="failed_to_import_profile">导入配置文件失败：</string>
+    <string name="failed_to_backfill_client">无法填充客户端</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">您确定要删除此配置文件吗？</string>
+    <string name="no_process_handle_set">未设置进程句柄</string>
+    <string name="name_must_be_at_least_3_characters_long">名称必须至少为3个字符长</string>
+    <string name="process_handle_unset">进程句柄未设置</string>
+    <string name="failed_to_read_image">无法读取图像</string>
+    <string name="changes_have_been_saved">更改已保存</string>
+    <string name="failed_to_synchronize_changes">无法同步更改</string>
+    <string name="image_picker_cancelled">图像选择器已取消</string>
+    <string name="you_are_now_in_developer_mode">您现在处于开发者模式</string>
+    <string name="subscribers">订阅者</string>
+    <string name="find_name_on">在此找到 {name}</string>
+    <string name="failed_to_fetch">获取失败</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">感谢您的购买，付款收到后，密钥将发送到您的电子邮件！</string>
+    <string name="payment_failed">付款失败</string>
+    <string name="payment_succeeded">付款成功</string>
+    <string name="enter_license_key">输入许可证密钥</string>
+    <string name="invalid_license_key">无效的许可证密钥</string>
+    <string name="license">许可证</string>
+    <string name="failed_to_activate_key">激活密钥失败</string>
+    <string name="no_source_enabled_to_support_this_channel">没有启用支持此频道的源</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">您想将频道 {channelName} 转换为播放列表吗？</string>
+    <string name="failed_to_convert_channel">转换频道失败</string>
+    <string name="page">页面</string>
+    <string name="hide">隐藏</string>
+    <string name="hide_from_home">从主页隐藏</string>
+    <string name="play_feed_as_queue">作为队列播放 Feed</string>
+    <string name="play_entire_feed">播放整个 Feed</string>
+    <string name="queued">已排队</string>
+    <string name="used">已使用</string>
+    <string name="available">可用</string>
+    <string name="failed_to_load_next_page">无法加载下一页</string>
+    <string name="plugin_pluginname_failed_message">插件 {pluginName} 失败：\n{message}</string>
+    <string name="plugin_failed_due_to">插件由于以下原因失败：</string>
+    <string name="failed_to_get_home_plugin">获取主页插件失败</string>
+    <string name="failed_to_get_home">获取主页失败</string>
+    <string name="no_home_available">没有可用的主页</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">没有可用的主页，请检查您是否连接到互联网并刷新。</string>
+    <string name="import_playlists">导入播放列表</string>
+    <string name="playlists_imported">播放列表已导入。</string>
+    <string name="index_out_of_size_selected">{index} 已选，总共 {size}</string>
+    <string name="import_subscriptions">导入订阅</string>
+    <string name="subscriptions_imported">订阅已导入。</string>
+    <string name="edit_playlist">编辑播放列表</string>
+    <string name="share_as_text">作为文本分享</string>
+    <string name="share_as_a_list_of_video_urls">作为视频网址列表分享</string>
+    <string name="share_as_import">作为导入文件分享</string>
+    <string name="share_as_a_import_file_for_grayjay">作为 Grayjay 的导入文件分享</string>
+    <string name="failed_to_load_playlist">加载播放列表失败</string>
+    <string name="please_wait_for_playlist_to_finish_loading">请等待播放列表完成加载</string>
+    <string name="playlist_copied_as_local_playlist">播放列表已复制为本地播放列表</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">确定要删除下载的视频吗？</string>
+    <string name="create_new_playlist">创建新播放列表</string>
+    <string name="expected_media_content_found">找到了预期的媒体内容</string>
+    <string name="failed_to_load_post">加载帖子失败。</string>
+    <string name="replies">回复</string>
+    <string name="Replies">回复</string>
+    <string name="plugin_settings_saved">插件设置已保存</string>
+    <string name="plugin_settings">插件设置</string>
+    <string name="these_settings_are_defined_by_the_plugin">这些设置由插件定义</string>
+    <string name="failed_to_load_source">加载源失败</string>
+    <string name="check_for_updates">检查更新</string>
+    <string name="checks_for_new_versions_of_the_source">检查源的新版本</string>
+    <string name="authentication">认证</string>
+    <string name="sign_out_of_the_platform">退出平台</string>
+    <string name="import_your_subscriptions_from_this_source">从此源导入您的订阅</string>
+    <string name="import_your_playlists_from_this_source">从此源导入您的播放列表</string>
+    <string name="login">登录</string>
+    <string name="sign_into_the_platform_of_this_source">登录到此源的平台</string>
+    <string name="management">管理</string>
+    <string name="uninstall">卸载</string>
+    <string name="removes_the_plugin_from_the_app">从应用中删除插件</string>
+    <string name="delete_captcha">删除验证码</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">删除此插件存储的验证码答案</string>
+    <string name="failed_to_retrieve_playlists">获取播放列表失败。</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} 用户订阅已检索。</string>
+    <string name="failed_to_retrieve_subscriptions">检索订阅失败。</string>
+    <string name="are_you_sure_you_want_to_uninstall">您确定要卸载吗</string>
+    <string name="uninstalled">已卸载 </string>
+    <string name="failed_to_check_for_updates">检查更新失败</string>
+    <string name="plugin_is_fully_up_to_date">插件是完全最新的</string>
+    <string name="rate_limit_warning">速率限制警告</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">这是一个临时措施，以防止人们达到速率限制，直到我们对大量订阅有更好的支持。</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\n您对以下插件有太多订阅：\n</string>
+    <string name="posts">帖子</string>
+    <string name="planned">计划</string>
+    <string name="no_results_found_swipe_down_to_refresh">未找到结果\n向下滑动以刷新</string>
+    <string name="overlay">覆盖</string>
+    <string name="reload">重新加载</string>
+    <string name="watching_now">正在观看</string>
+    <string name="views">观看次数</string>
+    <string name="planned_in">计划在</string>
+    <string name="failed_to_get_playback_tracker">获取播放跟踪器失败</string>
+    <string name="exception_retrieving_live_events">检索直播事件时出现异常：</string>
+    <string name="exception_retrieving_live_chat_window">检索直播聊天窗口时出现异常：</string>
+    <string name="live_chat_failed_to_load">直播聊天加载失败</string>
+    <string name="unsupported_cast_format">不支持的投射格式</string>
+    <string name="failed_to_load_media">加载媒体失败</string>
+    <string name="offline_playback">离线播放</string>
+    <string name="media_error">媒体错误</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">媒体源遇到了未授权的错误。\n重新加载插件可能会解决这个问题。\n要重新加载吗？\n（实验性）</string>
+    <string name="playback_rate">播放速率</string>
+    <string name="quality">质量</string>
+    <string name="offline_video">离线视频</string>
+    <string name="offline_audio">离线音频</string>
+    <string name="offline_subtitles">离线字幕</string>
+    <string name="stream_video">流媒体视频</string>
+    <string name="stream_audio">流媒体音频</string>
+    <string name="audio">音频</string>
+    <string name="subtitles">字幕</string>
+    <string name="unavailable_video">视频不可用</string>
+    <string name="this_video_is_unavailable">此视频不可用。</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">您的队列中有一个不可用的视频 [{videoName}] 由 [{authorName}]。</string>
+    <string name="back">返回</string>
+    <string name="pause">暂停</string>
+    <string name="play">播放</string>
+    <string name="pauses_the_video">暂停视频</string>
+    <string name="resumes_the_video">恢复视频</string>
+    <string name="video_without_source">没有源的视频</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">您的队列中有一个没有启用所需源的视频 [{videoName}] 由 [{authorName}]，播放被跳过。</string>
+    <string name="failed_to_load_video_scriptimplementationexception">加载视频失败（ScriptImplementationException）</string>
+    <string name="invalid_video">无效视频</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">您的队列中有一个无效的视频 [{videoName}] 由 [{authorName}]，播放被跳过。</string>
+    <string name="age_restricted_video">年龄限制视频</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">您的队列中有一个年龄限制的视频[{videoName}]，由[{authorName}]制作，该视频无法访问，播放已跳过。</string>
+    <string name="failed_to_load_video_scriptexception">无法加载视频（ScriptException）</string>
+    <string name="failed_to_load_video">无法加载视频</string>
+    <string name="not_yet_available_retrying_in_time_s">尚未可用，将在{time}s后重试</string>
+    <string name="failed_to_retry_for_live_stream">无法重新尝试直播流</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">此应用处于开发中。请提交错误报告，并理解许多功能尚未完成。</string>
+    <string name="please_use_at_least_3_characters">请至少使用3个字符</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">您确定要删除此视频吗？</string>
+    <string name="tap_to_open">点击打开</string>
+    <string name="watching">正在观看</string>
+    <string name="available_in">可用于</string>
+    <string name="seconds">秒</string>
+    <string name="please_login_to_post_a_comment">请登录以发表评论</string>
+    <string name="failed_to_post_comment">评论发布失败：</string>
+    <string name="waiting_for_unmetered">等待不计费</string>
+    <string name="last_error">最后一个错误</string>
+    <string name="error">错误</string>
+    <string name="filters">过滤器</string>
+    <string name="viewers">观众</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">预计至少有一条回复，但服务器没有返回任何回复</string>
+    <string name="please_login_to_like">请登录以点赞</string>
+    <string name="please_login_to_dislike">请登录以点不喜欢</string>
+    <string name="failed_to_load_comments">评论加载失败</string>
+    <string name="script_is_not_available">脚本不可用</string>
+    <string name="signature_is_valid">签名有效</string>
+    <string name="signature_is_invalid">签名无效</string>
+    <string name="no_signature_available">没有可用签名</string>
+    <string name="subscribed_to">已订阅</string>
+    <string name="unsubscribed_from">已取消订阅</string>
+    <string name="you_don_t_have_any_automatic_backups">您没有任何自动备份</string>
+    <string name="an_old_backup_is_available">有一个旧的备份可用</string>
+    <string name="would_you_like_to_restore_this_backup">您想恢复此备份吗？</string>
+    <string name="override">覆盖</string>
+    <string name="data_retry">数据重试</string>
+    <string name="no_downloads_available">没有可用的下载</string>
+    <string name="no_downloadable_sources_yet">还没有可下载的来源</string>
+    <string name="none">无</string>
+    <string name="audio_only">仅音频</string>
+    <string name="download_video">下载视频</string>
+    <string name="fetching_video_details">获取视频详细信息</string>
+    <string name="failed_to_fetch_details_for_download">获取下载详细信息失败</string>
+    <string name="target_resolution">目标分辨率</string>
+    <string name="target_bitrate">目标比特率</string>
+    <string name="low_bitrate">低比特率</string>
+    <string name="high_bitrate">高比特率</string>
+    <string name="actions">操作</string>
+    <string name="download_the_video">下载视频</string>
+    <string name="video_options">视频选项</string>
+    <string name="change_pins">更改固定项</string>
+    <string name="decide_which_buttons_should_be_pinned">决定哪些按钮应该被固定</string>
+    <string name="select_your_pins_in_order">按顺序选择您的固定项</string>
+    <string name="more_options">更多选项</string>
+    <string name="save">保存</string>
+    <string-array name="home_screen_array">
+        <item>推荐</item>
+        <item>订阅</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>自动 (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>无 (仅音频)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 线程</item>
+        <item>2 线程</item>
+        <item>4 线程</item>
+        <item>6 线程</item>
+        <item>8 线程</item>
+        <item>10 线程</item>
+        <item>15 线程</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>从不</item>
+        <item>每15分钟</item>
+        <item>每小时</item>
+        <item>每3小时</item>
+        <item>每6小时</item>
+        <item>每12小时</item>
+        <item>每天</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>低比特率</item>
+        <item>高比特率</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>启动时</item>
+        <item>从不</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>已禁用</item>
+        <item>已启用</item>
+        <item>与系统相同</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>已禁用</item>
+        <item>已启用</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>在不计费时</item>
+        <item>在Wifi和以太网下</item>
+        <item>始终</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>已禁用</item>
+        <item>已启用</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>名称升序</item>
+        <item>名称降序</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>预览</item>
+        <item>列表</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>无</item>
+        <item>继续播放</item>
+        <item>播放器覆盖</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>从头开始</item>
+        <item>预览后10秒继续</item>
+        <item>始终继续</item>
+    </string-array>
+    <string-array name="languages">
+        <item>英语</item>
+        <item>西班牙语</item>
+        <item>法语</item>
+        <item>法语</item>
+        <item>韩语</item>
+        <item>泰语</item>
+        <item>越南语</item>
+        <item>印度尼西亚语</item>
+        <item>印地语</item>
+        <item>阿拉伯语</item>
+        <item>土耳其语</item>
+        <item>俄语</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>无</item>
+        <item>错误</item>
+        <item>警告</item>
+        <item>信息</item>
+        <item>详细</item>
+    </string-array>
+</resources>
