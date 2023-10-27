@@ -345,7 +345,7 @@
     <string name="version_type">Versionstyp</string>
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Beim Ansehen eines Videos im Vorschau-Modus fortsetzen an der Stelle, an der das Video geöffnet wurde</string>
     <string name="please_enable_logging_to_submit_logs">Bitte aktivieren Sie das Protokollieren, um Protokolle zu senden</string>
-    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded-Plugins neu installiert, ein Neustart wird empfohlen</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded-Plugins neu installiert, ein Neustart der App ist empfohlen</string>
     <string name="announcements_reset">Ankündigungen zurückgesetzt.</string>
     <string name="failed_to_show_store">Fehler beim Anzeigen des Geschäfts.</string>
     <string name="retrieving_changelog">Änderungsprotokoll abrufen</string>
@@ -370,7 +370,7 @@
     <string name="experimental">Experimentell</string>
     <string name="fill_storage_till_error">Füllen Sie den Speicher bis zum Fehler</string>
     <string name="inject">Einfügen</string>
-    <string name="injects_a_test_source_config_local_into_v8">Fügt eine Testquellekonfiguration (lokal) in V8 ein</string>
+    <string name="injects_a_test_source_config_local_into_v8">Fügt eine Testquellenkonfiguration (lokal) in V8 ein</string>
     <string name="other">Andere</string>
     <string name="others_ellipsis">Andere…</string>
     <string name="removes_all_subscriptions">Entfernt alle Abonnements</string>
@@ -583,7 +583,7 @@
     <string name="signature_is_valid">Die Signatur ist gültig</string>
     <string name="signature_is_invalid">Die Signatur ist ungültig</string>
     <string name="no_signature_available">Keine Signatur verfügbar</string>
-    <string name="subscribed_to">"Abonniert bei "</string>
+    <string name="subscribed_to">"Abonniert zu "</string>
     <string name="unsubscribed_from">"Abonnement gekündigt bei "</string>
     <string name="you_don_t_have_any_automatic_backups">Sie haben keine automatischen Backups</string>
     <string name="an_old_backup_is_available">Ein altes Backup ist verfügbar</string>
@@ -606,7 +606,7 @@
     <string name="video_options">Videooptionen</string>
     <string name="change_pins">Pins ändern</string>
     <string name="decide_which_buttons_should_be_pinned">Entscheiden Sie, welche Tasten angeheftet werden sollen</string>
-    <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in der Reihenfolge aus</string>
+    <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in Reihenfolge aus</string>
     <string name="more_options">Weitere Optionen</string>
     <string name="save">Speichern</string>
     <string-array name="home_screen_array">
