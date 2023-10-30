@@ -48,7 +48,6 @@
     <string name="version">Version</string>
     <string name="sort_by">Sortieren nach</string>
     <string name="subscribe">Abonnieren</string>
-    <string name="unsubscribe">Abbestellen</string>
     <string name="background">Hintergrund</string>
     <string name="background_revert">Video</string>
     <string name="add">Hinzufügen</string>
@@ -67,21 +66,16 @@
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
     <string name="confirm">Bestätigen</string>
-    <string name="confirm_delete_playlist">Möchten Sie diese Wiedergabeliste wirklich löschen?</string>
     <string name="confirm_delete_subscription">Möchten Sie dieses Abonnement wirklich löschen?</string>
     <string name="confirm_remove_source">Das Entfernen dieser Quelle führt dazu, dass einige Ihrer Abonnements nicht aufgelöst werden.</string>
-    <string name="shuffle">Zufall</string>
     <string name="play_all">Alle abspielen</string>
     <string name="search_history">Suchverlauf</string>
     <string name="app_error">App-Fehler</string>
     <string name="developer">Entwickler</string>
     <string name="remove_historical_suggestion">Historischen Vorschlag entfernen</string>
     <string name="comments">Kommentare</string>
-    <string name="reached_the_end_of_the_playlist">Ende der Wiedergabeliste erreicht</string>
-    <string name="the_playlist_will_restart_after_the_video_is_finished">Die Wiedergabeliste wird nach dem Ende des Videos neu gestartet</string>
     <string name="restart_now">Jetzt neu starten</string>
     <string name="end_of_queue_reached">Ende der Warteschlange erreicht</string>
-    <string name="end_of_playlist_reached">Ende der Wiedergabeliste erreicht</string>
     <string name="end_of_watch_later_reached">Ende von "Später ansehen" erreicht</string>
     <string name="reached_the_end_of_the_queue">Ende der Warteschlange erreicht</string>
     <string name="the_queue_will_restart_after_the_video_is_finished">Die Warteschlange wird nach dem Ende des Videos neu gestartet</string>
@@ -104,7 +98,6 @@
     <string name="source_explain_script_url">Das Plugin hat Zugriff auf die folgenden Domains</string>
     <string name="scan_qr">QR-Code scannen</string>
     <string name="scan_qr_explain">Scannen Sie einen QR-Code, um zu installieren</string>
-    <string name="enter_url_explain">Geben Sie eine URL ein, um die Plugin-Konfiguration von dort zu laden.</string>
     <string name="enter_url">URL eingeben</string>
     <string name="install">Installieren</string>
     <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">Keine Geräte gefunden. Es kann eine Weile dauern, bis Ihr Gerät angezeigt wird. Bitte haben Sie Geduld</string>
@@ -129,8 +122,6 @@
     <string name="enable_in_home">Zu Hause aktivieren</string>
     <string name="enable_in_search">In der Suche aktivieren</string>
     <string name="check">Überprüfen</string>
-    <string name="buy_text">Grayjay ist weder eine einfache noch eine günstige App zum Aufbauen und Warten. Wir haben Vollzeit-Ingenieure, die an der App und den umliegenden Systemen arbeiten. Und wird wahrscheinlich nicht so bald, wenn überhaupt, sein Geld zurückverdienen.\n\nDie Mission von FUTO besteht darin, dass Open-Source-Software und nicht böswillige Geschäftspraktiken für Projekte und ihre Entwickler eine nachhaltige Einnahmequelle werden. Aus diesem Grund sind wir dafür, dass die Benutzer tatsächlich für die Software bezahlen.\n\nAus diesem Grund möchte Grayjay, dass Sie für die Software bezahlen.</string>
-    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Ein ungefangene Ausnahme wurde ausgelöst, es tut uns leid für die Unannehmlichkeiten.</string>
     <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Um uns bei der Lösung zu helfen, teilen Sie bitte den unten stehenden Absturzbericht mit uns und geben Sie vielleicht einige Informationen darüber, was Sie getan haben.</string>
     <string name="new_profile">Neues Profil</string>
     <string name="import_existing_profile">Bestehendes Profil importieren</string>
@@ -158,7 +149,6 @@
     <string name="you_re_apparantly_a_developer">Sie sind anscheinend ein Entwickler</string>
     <string name="developer_settings">Entwicklereinstellungen</string>
     <string name="migration">Migration</string>
-    <string name="set_a_password_for_your_daily_backup">Legen Sie ein Passwort für Ihre tägliche Sicherung fest</string>
     <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Legen Sie ein Passwort fest, das zur Verschlüsselung Ihrer täglichen Sicherung verwendet wird, die auf dem externen Speicher geschrieben ist.</string>
     <string name="backup_password">Sicherungspasswort</string>
     <string name="restore_from_automatic_backup">Von automatischer Sicherung wiederherstellen</string>
@@ -182,7 +172,6 @@
     <string name="my_playlist_name">Mein Playlist-Name</string>
     <string name="do_you_want_to_import_this_store">Möchten Sie diesen Speicher importieren?</string>
     <string name="sources_required_need_to_be_enabled">Erforderliche Quellen müssen aktiviert sein</string>
-    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elemente erfordern eine Migration oder sind beschädigt. Möchten Sie sie jetzt aus der Sicherung wiederherstellen?</string>
     <string name="if_ignored_you_will_be_asked_again_next_startup">Wenn Sie dies ignorieren, werden Sie beim nächsten Start erneut gefragt.</string>
     <string name="ignore">Ignorieren</string>
     <string name="view_changelog">Änderungsprotokoll ansehen</string>
@@ -216,7 +205,6 @@
     <string name="viewers_are_raiding">Zuschauer überfallen</string>
     <string name="go_now">Jetzt gehen</string>
     <string name="prevent">Verhindern</string>
-    <string name="recently_used_playlist">Kürzlich verwendete Wiedergabeliste</string>
     <string name="license_email">Lizenz-E-Mail</string>
     <string name="required_to_send_the_license_key">Erforderlich zum Senden des Lizenzschlüssels</string>
     <string name="receipt_email_user_domain_com">Empfangs-E-Mail (user@domain.com)</string>
@@ -246,7 +234,6 @@
     <string name="technical_documentation">Technische Dokumentation</string>
     <string name="view_the_technical_documentation">Die technische Dokumentation ansehen</string>
     <string name="visit_my_store">Meinen Shop besuchen</string>
-    <string name="make_a_backup_of_your_identity">Eine Sicherung Ihrer Identität erstellen</string>
     <string name="sign_out_of_this_identity">Von dieser Identität abmelden</string>
     <string name="delete_this_profile">Dieses Profil löschen</string>
     <string name="install_by_url">Durch URL installieren</string>
@@ -326,7 +313,6 @@
     <string name="reset_announcements">Ankündigungen zurücksetzen</string>
     <string name="reset_hidden_announcements">Versteckte Ankündigungen zurücksetzen</string>
     <string name="restore_automatic_backup">Automatische Sicherung wiederherstellen</string>
-    <string name="restore_a_previous_automatic_backup">Eine vorherige automatische Sicherung wiederherstellen</string>
     <string name="resume_after_preview">Nach Vorschau fortsetzen</string>
     <string name="review_the_current_and_past_changelogs">Die aktuellen und vergangenen Änderungsprotokolle überprüfen</string>
     <string name="set_automatic_backup">Automatische Sicherung einstellen</string>
@@ -345,7 +331,6 @@
     <string name="version_type">Versionstyp</string>
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Beim Ansehen eines Videos im Vorschau-Modus fortsetzen an der Stelle, an der das Video geöffnet wurde</string>
     <string name="please_enable_logging_to_submit_logs">Bitte aktivieren Sie das Protokollieren, um Protokolle zu senden</string>
-    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded-Plugins neu installiert, ein Neustart wird empfohlen</string>
     <string name="announcements_reset">Ankündigungen zurückgesetzt.</string>
     <string name="failed_to_show_store">Fehler beim Anzeigen des Geschäfts.</string>
     <string name="retrieving_changelog">Änderungsprotokoll abrufen</string>
@@ -370,7 +355,6 @@
     <string name="experimental">Experimentell</string>
     <string name="fill_storage_till_error">Füllen Sie den Speicher bis zum Fehler</string>
     <string name="inject">Einfügen</string>
-    <string name="injects_a_test_source_config_local_into_v8">Fügt eine Testquellekonfiguration (lokal) in V8 ein</string>
     <string name="other">Andere</string>
     <string name="others_ellipsis">Andere…</string>
     <string name="removes_all_subscriptions">Entfernt alle Abonnements</string>
@@ -453,7 +437,6 @@
     <string name="license">Lizenz</string>
     <string name="failed_to_activate_key">Fehler beim Aktivieren des Schlüssels</string>
     <string name="no_source_enabled_to_support_this_channel">Keine Quelle aktiviert, um diesen Kanal zu unterstützen</string>
-    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Möchten Sie den Kanal {channelName} in eine Wiedergabeliste umwandeln?</string>
     <string name="failed_to_convert_channel">Fehler beim Konvertieren des Kanals</string>
     <string name="page">Seite</string>
     <string name="hide">Verbergen</string>
@@ -470,12 +453,10 @@
     <string name="failed_to_get_home">Fehler beim Abrufen der Startseite</string>
     <string name="no_home_available">Keine Startseite verfügbar</string>
     <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">Die Startseite ist nicht verfügbar. Bitte überprüfen Sie, ob Sie mit dem Internet verbunden sind, und aktualisieren Sie sie.</string>
-    <string name="import_playlists">Wiedergabelisten importieren</string>
     <string name="playlists_imported">Wiedergabelisten importiert.</string>
     <string name="index_out_of_size_selected">{index} von {size} ausgewählt</string>
     <string name="import_subscriptions">Abonnements importieren</string>
     <string name="subscriptions_imported">Abonnements importiert.</string>
-    <string name="edit_playlist">Wiedergabeliste bearbeiten</string>
     <string name="share_as_text">Als Text teilen</string>
     <string name="share_as_a_list_of_video_urls">Als Liste von Video-URLs teilen</string>
     <string name="share_as_import">Als Import teilen</string>
@@ -506,7 +487,6 @@
     <string name="removes_the_plugin_from_the_app">Entfernt das Plugin aus der App</string>
     <string name="delete_captcha">Captcha löschen</string>
     <string name="deletes_stored_captcha_answer_for_this_plugin">Löscht die gespeicherte Captcha-Antwort für dieses Plugin</string>
-    <string name="failed_to_retrieve_playlists">Abrufen von Wiedergabelisten fehlgeschlagen.</string>
     <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} Benutzerabonnements abgerufen.</string>
     <string name="failed_to_retrieve_subscriptions">Abrufen von Abonnements fehlgeschlagen.</string>
     <string name="are_you_sure_you_want_to_uninstall">Sind Sie sicher, dass Sie deinstallieren möchten</string>
@@ -583,7 +563,6 @@
     <string name="signature_is_valid">Die Signatur ist gültig</string>
     <string name="signature_is_invalid">Die Signatur ist ungültig</string>
     <string name="no_signature_available">Keine Signatur verfügbar</string>
-    <string name="subscribed_to">"Abonniert bei "</string>
     <string name="unsubscribed_from">"Abonnement gekündigt bei "</string>
     <string name="you_don_t_have_any_automatic_backups">Sie haben keine automatischen Backups</string>
     <string name="an_old_backup_is_available">Ein altes Backup ist verfügbar</string>
@@ -606,9 +585,30 @@
     <string name="video_options">Videooptionen</string>
     <string name="change_pins">Pins ändern</string>
     <string name="decide_which_buttons_should_be_pinned">Entscheiden Sie, welche Tasten angeheftet werden sollen</string>
-    <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in der Reihenfolge aus</string>
     <string name="more_options">Weitere Optionen</string>
     <string name="save">Speichern</string>
+    <string name="unsubscribe">Abbestellen</string>
+    <string name="confirm_delete_playlist">Möchten Sie diese Playlist wirklich löschen?</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="reached_the_end_of_the_playlist">Ende der Playlist erreicht</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">Die Playlist wird nach dem Ende des Videos neu gestartet</string>
+    <string name="end_of_playlist_reached">Ende der Playlist erreicht</string>
+    <string name="enter_url_explain">Geben Sie eine URL ein, um die Plugin-Konfiguration von dort zu laden.</string>
+    <string name="buy_text">Es ist weder einfache noch günstige, eine App wie Grayjay, zu Entwikeln und zu Warten…</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Ein unabgefangene Ausnahme wurde ausgelöst, es tut uns leid für die Unannehmlichkeiten.</string>
+    <string name="set_a_password_for_your_daily_backup">Legen Sie ein Passwort für Ihr tägliches Backup fest</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elemente erfordern eine Migration oder sind beschädigt. Möchten Sie sie jetzt aus dem Backup wiederherstellen?</string>
+    <string name="recently_used_playlist">Kürzlich verwendete Playlist</string>
+    <string name="make_a_backup_of_your_identity">Ein Backup Ihrer Identität erstellen</string>
+    <string name="restore_a_previous_automatic_backup">Ein vorheriges automatisches Backup wiederherstellen</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded-Plugins neu installiert, ein Neustart der App ist empfohlen</string>
+    <string name="injects_a_test_source_config_local_into_v8">Fügt eine Testquellenkonfiguration (lokal) in V8 ein</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Möchten Sie den Kanal {channelName} in eine Playlist umwandeln?</string>
+    <string name="import_playlists">Playlisten importieren</string>
+    <string name="edit_playlist">Playlist bearbeiten</string>
+    <string name="failed_to_retrieve_playlists">Abrufen von Playlisten fehlgeschlagen.</string>
+    <string name="subscribed_to">"Abonniert bei "</string>
+    <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in Reihenfolge aus</string>
     <string-array name="home_screen_array">
         <item>Empfehlungen</item>
         <item>Abonnements</item>
