@@ -314,6 +314,11 @@ class VideoDetailView : ConstraintLayout {
         _layoutMonetization.visibility = View.GONE;
         _player.attachPlayer();
 
+
+        _buttonSubscribe.onSubscribed.subscribe {
+            UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
+        };
+
         _container_content_liveChat.onRaidNow.subscribe {
             StatePlayer.instance.clearQueue();
             fragment.navigate<VideoDetailFragment>(it.targetUrl);

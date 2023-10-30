@@ -29,6 +29,8 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithm
+import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithms
 import kotlinx.coroutines.*
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
@@ -53,7 +55,6 @@ class StateSubscriptions {
     private val _subscriptionsPool = ForkJoinPool(Settings.instance.subscriptions.getSubscriptionsConcurrency());
     private val _legacySubscriptions = FragmentedStorage.get<SubscriptionStorage>();
 
-    val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
     private var _globalSubscriptionsLock = Object();
     private var _globalSubscriptionFeed: ReusablePager<IPlatformContent>? = null;
@@ -62,12 +63,16 @@ class StateSubscriptions {
     var globalSubscriptionExceptions: List<Throwable> = listOf()
         private set;
 
+    private val _algorithmSubscriptions = SubscriptionFetchAlgorithms.SIMPLE;
+
     private var _lastGlobalSubscriptionProgress: Int = 0;
     private var _lastGlobalSubscriptionTotal: Int = 0;
     val onGlobalSubscriptionsUpdateProgress = Event2<Int, Int>();
     val onGlobalSubscriptionsUpdated = Event0();
     val onGlobalSubscriptionsUpdatedOnce = Event1<Throwable?>();
     val onGlobalSubscriptionsException = Event1<List<Throwable>>();
+
+    val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
     fun getGlobalSubscriptionProgress(): Pair<Int, Int> {
         return Pair(_lastGlobalSubscriptionProgress, _lastGlobalSubscriptionTotal);
@@ -223,37 +228,27 @@ class StateSubscriptions {
     }
 
     fun getSubscriptionRequestCount(): Map<JSClient, Int> {
-        val subs = getSubscriptions();
-        val pluginReqCounts = mutableMapOf<JSClient, Int>();
+        return SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, StateApp.instance.scope)
+            .countRequests(getSubscriptions());
+    }
 
-        for(sub in subs) {
-            val client = StatePlatform.instance.getChannelClientOrNull(sub.channel.url);
-            if(client !is JSClient)
-                continue;
+    fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
+        val algo = SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, cacheScope, allowFailure, withCacheFallback, _subscriptionsPool);
 
-            val channelCaps = client.getChannelCapabilities();
-            if(!pluginReqCounts.containsKey(client))
-                pluginReqCounts[client] = 1;
-            else
-                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
-
-            if(channelCaps.hasType(ResultCapabilities.TYPE_STREAMS) && sub.shouldFetchStreams())
-                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
-            if(channelCaps.hasType(ResultCapabilities.TYPE_LIVE) && sub.shouldFetchLiveStreams())
-                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
-            if(channelCaps.hasType(ResultCapabilities.TYPE_POSTS) && sub.shouldFetchPosts())
-                pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+        algo.onProgress.subscribe { progress, total ->
+            onProgress?.invoke(progress, total);
         }
-        return pluginReqCounts;
-    }
+        algo.onNewCacheHit.subscribe { sub, content ->
 
-    fun getSubscriptionsFeed(allowFailure: Boolean = false): IPager<IPlatformContent> {
-        val result = getSubscriptionsFeedWithExceptions(allowFailure, true);
-        if(result.second.any())
-            throw result.second.first();
-        return result.first;
-    }
-    fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope? = null, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
+        }
+
+        val subUrls = getSubscriptions().associateWith {
+            StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id)
+        };
+
+        val result = algo.getSubscriptions(subUrls);
+        return Pair(result.pager, result.exceptions);
+        /*
         val subsPager: Array<IPager<IPlatformContent>>;
         val exs: ArrayList<Throwable> = arrayListOf();
 
@@ -384,6 +379,7 @@ class StateSubscriptions {
         pager.initialize();
         //return Pair(pager, exs);
         return Pair(DedupContentPager(pager), exs);
+        */
     }
 
     //New Migration

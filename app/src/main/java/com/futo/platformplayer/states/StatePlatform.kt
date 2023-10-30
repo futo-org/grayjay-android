@@ -651,11 +651,8 @@ class StatePlatform {
             return _scope.async { getChannelLive(url, updateSubscriptions) };
     }
 
-    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
-        Logger.i(TAG, "Platform - getChannelVideos");
-        val baseClient = getChannelClient(channelUrl, ignorePlugins);
+    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
         val clientCapabilities = baseClient.getChannelCapabilities();
-
         val client = if(usePooledClients > 1)
             _channelClientPool.getClientPooled(baseClient, usePooledClients);
         else baseClient;
@@ -770,6 +767,20 @@ class StatePlatform {
 
         return pagerResult;
     }
+    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
+        Logger.i(TAG, "Platform - getChannelVideos");
+        val baseClient = getChannelClient(channelUrl, ignorePlugins);
+        return getChannelContent(baseClient, channelUrl, isSubscriptionOptimized, usePooledClients, ignorePlugins);
+    }
+    fun getChannelContent(channelUrl: String, type: String?, ordering: String = ResultCapabilities.ORDER_CHONOLOGICAL): IPager<IPlatformContent> {
+        val client = getChannelClient(channelUrl);
+        return getChannelContent(client, channelUrl, type, ordering);
+    }
+    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, type: String?, ordering: String = ResultCapabilities.ORDER_CHONOLOGICAL): IPager<IPlatformContent> {
+        val client = _channelClientPool.getClientPooled(baseClient, Settings.instance.subscriptions.getSubscriptionsConcurrency());
+        return client.getChannelContents(channelUrl, type, ordering) ;
+    }
+
 
     fun getChannelLive(url: String, updateSubscriptions: Boolean = true): IPlatformChannel {
         val channel = getChannelClient(url).getChannel(url);

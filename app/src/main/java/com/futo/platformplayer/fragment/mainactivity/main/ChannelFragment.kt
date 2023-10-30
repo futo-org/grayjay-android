@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -41,6 +42,7 @@ import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.adapters.ChannelViewPagerAdapter
@@ -100,6 +102,7 @@ class ChannelFragment : MainFragment() {
         private var _viewPager: ViewPager2;
         private var _tabLayoutMediator: TabLayoutMediator;
         private var _buttonSubscribe: SubscribeButton;
+        private var _buttonSubscriptionSettings: ImageButton;
 
         private var _overlayContainer: FrameLayout;
         private var _overlay_loading: LinearLayout;
@@ -160,9 +163,20 @@ class ChannelFragment : MainFragment() {
             _creatorThumbnail = findViewById(R.id.creator_thumbnail);
             _imageBanner = findViewById(R.id.image_channel_banner);
             _buttonSubscribe = findViewById(R.id.button_subscribe);
+            _buttonSubscriptionSettings = findViewById(R.id.button_sub_settings);
             _overlay_loading = findViewById(R.id.channel_loading_overlay);
             _overlay_loading_spinner = findViewById(R.id.channel_loader);
             _overlayContainer = findViewById(R.id.overlay_container);
+
+            _buttonSubscribe.onSubscribed.subscribe {
+                UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
+            }
+
+            _buttonSubscriptionSettings.setOnClickListener {
+                val url = channel?.url ?: _url ?: return@setOnClickListener;
+                val sub = StateSubscriptions.instance.getSubscription(url) ?: return@setOnClickListener;
+                UISlideOverlays.showSubscriptionOptionsOverlay(sub, _overlayContainer);
+            };
 
             //TODO: Determine if this is really the only solution (isSaveEnabled=false)
             viewPager.isSaveEnabled = false;
@@ -246,6 +260,7 @@ class ChannelFragment : MainFragment() {
 
                 if (parameter is String) {
                     _buttonSubscribe.setSubscribeChannel(parameter);
+                    _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
                     setPolycentricProfileOr(parameter) {
                         _textChannel.text = "";
                         _textChannelSub.text = "";
@@ -377,6 +392,7 @@ class ChannelFragment : MainFragment() {
             _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons);
 
             _buttonSubscribe.setSubscribeChannel(channel);
+            _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
             _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} " + context.getString(R.string.subscribers).lowercase() else "";
 
             //TODO: Find a better way to access the adapter fragments..

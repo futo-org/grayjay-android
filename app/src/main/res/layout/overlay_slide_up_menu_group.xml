@@ -15,6 +15,14 @@
         android:textColor="@color/white"
         android:fontFamily="@font/inter_semibold"
         android:textSize="11dp" />
+    <TextView
+        android:id="@+id/slide_up_menu_group_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="Recently Used Playlist"
+        android:textColor="@color/text_color_tinted"
+        android:fontFamily="@font/inter_light"
+        android:textSize="10dp" />
 
     <LinearLayout
         android:id="@+id/slide_up_menu_group_items"

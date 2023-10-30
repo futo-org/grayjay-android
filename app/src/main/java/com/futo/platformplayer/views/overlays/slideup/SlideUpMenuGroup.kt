@@ -11,6 +11,7 @@ import com.futo.platformplayer.R
 class SlideUpMenuGroup : LinearLayout {
 
     private lateinit var title: TextView;
+    private lateinit var description: TextView;
     private lateinit var itemContainer: LinearLayout;
     private var parentClickListener: (()->Unit)? = null;
     private val items: List<SlideUpMenuItem>;
@@ -28,6 +29,16 @@ class SlideUpMenuGroup : LinearLayout {
         groupTag = tag;
         this.items = items.toList();
         addItems(items);
+        description.visibility = View.GONE;
+    }
+    constructor(context: Context, titleText: String, descriptionText: String, tag: Any, items: List<SlideUpMenuItem>) : super(context){
+        init();
+        title.text = titleText;
+        groupTag = tag;
+        this.items = items.toList();
+        addItems(items);
+        description.text = descriptionText;
+        description.visibility = View.VISIBLE;
     }
 
     constructor(context: Context, titleText: String, tag: Any, vararg items: SlideUpMenuItem)
@@ -37,6 +48,7 @@ class SlideUpMenuGroup : LinearLayout {
         LayoutInflater.from(context).inflate(R.layout.overlay_slide_up_menu_group, this, true);
 
         title = findViewById(R.id.slide_up_menu_group_title);
+        description = findViewById(R.id.slide_up_menu_group_description);
         itemContainer = findViewById(R.id.slide_up_menu_group_items);
     }
 

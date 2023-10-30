@@ -82,7 +82,7 @@
                             tools:text="CHANNEL NAME"
                             app:layout_constraintLeft_toRightOf="@id/creator_thumbnail"
                             app:layout_constraintBottom_toTopOf="@id/text_metadata"
-                            app:layout_constraintRight_toLeftOf="@id/button_subscribe" />
+                            app:layout_constraintRight_toLeftOf="@id/button_sub_settings" />
 
                         <TextView
                             android:id="@+id/text_metadata"
@@ -97,8 +97,18 @@
                             android:ellipsize="end"
                             tools:text="17 videos"
                             app:layout_constraintLeft_toRightOf="@id/creator_thumbnail"
-                            app:layout_constraintRight_toLeftOf="@id/button_subscribe"
+                            app:layout_constraintRight_toLeftOf="@id/button_sub_settings"
                             app:layout_constraintBottom_toBottomOf="parent" />
+                        <ImageButton
+                            android:id="@+id/button_sub_settings"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_marginTop="3dp"
+                            android:layout_marginRight="10dp"
+                            android:scaleType="fitCenter"
+                            app:layout_constraintTop_toTopOf="@id/button_subscribe"
+                            app:layout_constraintRight_toLeftOf="@id/button_subscribe"
+                            android:src="@drawable/ic_settings" />
 
                         <com.futo.platformplayer.views.subscriptions.SubscribeButton
                             android:id="@+id/button_subscribe"

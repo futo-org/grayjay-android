@@ -11,13 +11,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 
 class SubscribeButton : LinearLayout {
     private val _root: FrameLayout;
@@ -29,11 +28,14 @@ class SubscribeButton : LinearLayout {
     var url : String? = null
         private set;
 
-    private var _isSubscribed: Boolean = false;
+    var isSubscribed: Boolean = false
+        private set;
 
     private val _subscribeTask = if (!isInEditMode) {
         TaskHandler<String, IPlatformChannel>(StateApp.instance.scopeGetter, StatePlatform.instance::getChannelLive).success(::handleSubscribe)
     } else { null };
+
+    val onSubscribed = Event1<Subscription>();
 
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -69,9 +71,10 @@ class SubscribeButton : LinearLayout {
 
     private fun handleSubscribe(channel: IPlatformChannel) {
         setIsLoading(false);
-        StateSubscriptions.instance.addSubscription(channel);
+        val sub = StateSubscriptions.instance.addSubscription(channel);
         UIDialogs.toast(context, context.getString(R.string.subscribed_to) + channel.name);
         setIsSubscribed(true);
+        onSubscribed.emit(sub);
     }
     private fun handleUnSubscribe(url: String) {
         setIsLoading(false);
@@ -118,6 +121,6 @@ class SubscribeButton : LinearLayout {
         else
             _root.visibility = INVISIBLE;
 
-        _isSubscribed = isSubcribed;
+        isSubscribed = isSubcribed;
     }
 }

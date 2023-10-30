@@ -1,8 +1,12 @@
 package com.futo.platformplayer
 
 import android.content.ContentResolver
+import android.graphics.Color
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
@@ -16,6 +20,7 @@ import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.views.Loader
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
@@ -42,6 +47,64 @@ class UISlideOverlays {
                 menu.hide();
                 onOk.invoke();
             };
+            menu.show();
+        }
+
+        fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
+            val items = arrayListOf<View>();
+            var menu: SlideUpMenuOverlay? = null;
+
+            val originalNotif = subscription.doNotifications;
+            val originalLive = subscription.doFetchLive;
+            val originalStream = subscription.doFetchStreams;
+            val originalVideo = subscription.doFetchVideos;
+            val originalPosts = subscription.doFetchPosts;
+
+            items.addAll(listOf(
+                SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
+                    subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
+                }, false),
+                SlideUpMenuGroup(container.context, "Fetch Settings",
+                    "Depending on the platform you might not need to enable a type for it to be available.",
+                    -1, listOf()),
+                SlideUpMenuItem(container.context, R.drawable.ic_live_tv, "Livestreams", "Check for livestreams", "fetchLive", {
+                    subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
+                }, false),
+                SlideUpMenuItem(container.context, R.drawable.ic_play, "Streams", "Check for finished streams", "fetchStreams", {
+                    subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchLive;
+                }, false),
+                SlideUpMenuItem(container.context, R.drawable.ic_play, "Videos", "Check for videos", "fetchVideos", {
+                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchLive;
+                }, false),
+                SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
+                    subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchLive;
+                }, false)));
+
+            menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
+
+            if(subscription.doFetchLive)
+                menu.selectOption(null, "fetchLive", true, true);
+            if(subscription.doFetchStreams)
+                menu.selectOption(null, "fetchStreams", true, true);
+            if(subscription.doFetchVideos)
+                menu.selectOption(null, "fetchVideos", true, true);
+            if(subscription.doFetchPosts)
+                menu.selectOption(null, "fetchPosts", true, true);
+
+            menu.onOK.subscribe {
+                StateSubscriptions.instance.saveSubscription(subscription);
+                menu.hide(true);
+            };
+            menu.onCancel.subscribe {
+                subscription.doNotifications = originalNotif;
+                subscription.doFetchLive = originalLive;
+                subscription.doFetchStreams = originalStream;
+                subscription.doFetchVideos = originalVideo;
+                subscription.doFetchPosts = originalPosts;
+            };
+
+            menu.setOk("Save");
+
             menu.show();
         }
 

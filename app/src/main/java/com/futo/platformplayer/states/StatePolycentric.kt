@@ -144,6 +144,33 @@ class StatePolycentric {
         return DedupContentPager(pager, StatePlatform.instance.getEnabledClients().map { it.id });
     }
 
+    fun getChannelUrls(url: String, channelId: PlatformID? = null): List<String> {
+
+        var polycentricProfile: PolycentricProfile? = null;
+        try {
+            polycentricProfile = PolycentricCache.instance.getCachedProfile(url)?.profile;
+            if (polycentricProfile == null && channelId != null) {
+                Logger.i("StateSubscriptions", "Get polycentric profile not cached");
+                polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId) }?.profile;
+            } else {
+                Logger.i("StateSubscriptions", "Get polycentric profile cached");
+            }
+        }
+        catch(ex: Throwable) {
+            Logger.w(StateSubscriptions.TAG, "Polycentric getCachedProfile failed for subscriptions", ex);
+            //TODO: Some way to communicate polycentric failing without blocking here
+        }
+        if(polycentricProfile != null) {
+            val urls = polycentricProfile.ownedClaims.groupBy { it.claim.claimType }
+                .mapNotNull { it.value.firstOrNull()?.claim?.resolveChannelUrl() }.toMutableList();
+            if(urls.any { it.equals(url, true) })
+                return urls;
+            else
+                return listOf(url) + urls;
+        }
+        else
+            return listOf(url);
+    }
     fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent>? {
         //TODO: Currently abusing subscription concurrency for parallelism
         val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;

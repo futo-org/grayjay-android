@@ -12,6 +12,13 @@ import java.time.OffsetDateTime
 class Subscription {
     var channel: SerializedChannel;
 
+    //Settings
+    var doNotifications: Boolean = false;
+    var doFetchLive: Boolean = false;
+    var doFetchStreams: Boolean = true;
+    var doFetchVideos: Boolean = true;
+    var doFetchPosts: Boolean = false;
+
     //Last found content
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
     var lastVideo : OffsetDateTime = OffsetDateTime.MAX;
@@ -47,9 +54,5 @@ class Subscription {
 
     fun updateChannel(channel: IPlatformChannel) {
         this.channel = SerializedChannel.fromChannel(channel);
-    }
-
-    fun updateVideoStatus(allVideos: List<IPlatformContent>? = null, liveStreams: List<IPlatformContent>? = null) {
-
     }
 }

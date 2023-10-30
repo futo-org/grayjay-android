@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -209,6 +210,11 @@ class PostDetailFragment : MainFragment {
             _layoutThumbnails = findViewById(R.id.layout_thumbnails);
 
             _repliesOverlay = findViewById(R.id.replies_overlay);
+
+            _buttonSubscribe.onSubscribed.subscribe {
+                //TODO: add overlay to layout
+                //UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
+            };
 
             val layoutTop: LinearLayout = findViewById(R.id.layout_top);
             root.removeView(layoutTop);
