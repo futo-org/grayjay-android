@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="cast">Reparto</string>
+    <string name="cast">Transmitir</string>
     <string name="search">Buscar</string>
-    <string name="add_to_query">Añadir a consulta</string>
+    <string name="add_to_query">Añadir a la busqueda</string>
     <string name="thumbnail">Miniatura</string>
     <string name="channel_image">Imagen del canal</string>
     <string name="add_to">Añadir a</string>
@@ -15,13 +15,13 @@
     <string name="loading">Cargando</string>
     <string name="retry">Reintentar</string>
     <string name="cancel">Cancelar</string>
-    <string name="failed_to_retrieve_data_are_you_connected">Error al recuperar los datos, ¿estás conectado?</string>
+    <string name="failed_to_retrieve_data_are_you_connected">Error al cargar los datos, ¿estás conectado?</string>
     <string name="settings">Configuración</string>
     <string name="history">Historial</string>
     <string name="sources">Fuentes</string>
     <string name="buy">Comprar</string>
     <string name="faq">Preguntas frecuentes</string>
-    <string name="the_top_source_will_be_considered_primary">La fuente principal será la primera</string>
+    <string name="the_top_source_will_be_considered_primary">La primera fuente será considerada la principal</string>
     <string name="defaults">Predeterminados</string>
     <string name="home_screen">Pantalla de inicio</string>
     <string name="preferred_quality">Calidad preferida</string>
@@ -70,7 +70,7 @@
     <string name="confirm_delete_playlist">¿Estás seguro de que deseas eliminar esta lista de reproducción?</string>
     <string name="confirm_delete_subscription">¿Estás seguro de que deseas eliminar esta suscripción?</string>
     <string name="confirm_remove_source">Eliminar esta fuente resultará en que algunas de tus suscripciones no se resuelvan.</string>
-    <string name="shuffle">Aleatorio</string>
+    <string name="shuffle">Mezclar</string>
     <string name="play_all">Reproducir todo</string>
     <string name="search_history">Historial de búsqueda</string>
     <string name="app_error">Error de la aplicación</string>
@@ -93,8 +93,7 @@
     <string name="last_week">Última semana</string>
     <string name="last_30_days">Últimos 30 días</string>
     <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Se ha lanzado una excepción no capturada, lamentamos las molestias.</string>
-    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Para ayudarnos a resolver esto, por favor comparte el siguiente informe de fallos con nosotros y tal vez añade algo de contexto sobre lo que estabas haciendo.</string>
-    <string name="new_profile">Nuevo Perfil</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Para ayudarnos a resolver este problema, por favor comparte el siguiente informe del fallo con nosotros y tal vez añade algo de contexto sobre lo que estabas haciendo.</string>    <string name="new_profile">Nuevo Perfil</string>
     <string name="import_existing_profile">Importar Perfil Existente</string>
     <string name="generate_a_new_identity">Generar una nueva identidad</string>
     <string name="use_an_existing_identity">Usar una identidad existente</string>
@@ -110,18 +109,18 @@
     <string name="send_your_identity_to_another_app">Enviar tu identidad a otra aplicación</string>
     <string name="copy">Copiar</string>
     <string name="copy_your_identity_to_clipboard">Copia tu identidad al portapapeles</string>
-    <string name="polycentric">Policéntrico</string>
+    <string name="polycentric">Polycentric</string>
     <string name="profile_name">Nombre de Perfil</string>
     <string name="this_will_be_visible_to_other_users">Esto será visible para otros usuarios</string>
     <string name="create_profile">Crear Perfil</string>
     <string name="or_capitalized">O</string>
-    <string name="paste_profile_here_polycentric">Pega el perfil aquí policéntrico://…</string>
+    <string name="paste_profile_here_polycentric">Pega el perfil aquí polycentric://…</string>
     <string name="import_profile">Importar Perfil</string>
-    <string name="you_re_apparantly_a_developer">Al parecer eres un desarrollador</string>
+    <string name="you_re_apparantly_a_developer">Aparantemente eres un desarrollador</string>
     <string name="developer_settings">Configuraciones de Desarrollador</string>
     <string name="migration">Migración</string>
     <string name="set_a_password_for_your_daily_backup">Establece una contraseña para tu copia de seguridad diaria</string>
-    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Establece una contraseña utilizada para cifrar tu copia de seguridad diaria que se escribe en el almacenamiento externo.</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Establece una contraseña utilizada para cifrar tu copia de seguridad diaria que se guarda en el almacenamiento externo.</string>
     <string name="backup_password">Contraseña de Copia de Seguridad</string>
     <string name="restore_from_automatic_backup">Restaurar desde Copia de Seguridad Automática</string>
     <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">Parece que existe una copia de seguridad automática en tu dispositivo, si deseas restaurar, introduce tu contraseña de copia de seguridad.</string>
@@ -142,7 +141,7 @@
     <string name="comment">Comentario</string>
     <string name="str_import">Importar</string>
     <string name="my_playlist_name">Nombre de Mi Lista de Reproducción</string>
-    <string name="do_you_want_to_import_this_store">¿Quieres importar esta tienda?</string>
+    <string name="do_you_want_to_import_this_store">¿Quieres importar este almacenamiento?</string>
     <string name="sources_required_need_to_be_enabled">Las fuentes requeridas deben estar habilitadas</string>
     <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Los elementos requieren migración o están dañados, ¿te gustaría restaurarlos desde la copia de seguridad ahora?</string>
     <string name="if_ignored_you_will_be_asked_again_next_startup">Si se ignora, se te preguntará de nuevo en el próximo inicio.</string>
@@ -165,7 +164,7 @@
     <string name="remove">Eliminar</string>
     <string name="space_videos">Vídeos</string>
     <string name="playlist">Lista de reproducción</string>
-    <string name="neopass_channel">Canal policéntrico</string>
+    <string name="neopass_channel">Canal Polycentric</string>
     <string name="enable">Habilitar</string>
     <string name="under_construction">En construcción</string>
     <string name="under">BAJO</string>
@@ -262,15 +261,15 @@
     <string name="export_data">Exportar datos</string>
     <string name="external_storage">Almacenamiento externo</string>
     <string name="feed_style">Estilo de feed</string>
-    <string name="fetch_on_app_boot">Obtener al iniciar la aplicación</string>
+    <string name="fetch_on_app_boot">Descargar al iniciar la aplicación</string>
     <string name="get_answers_to_common_questions">Obtener respuestas a preguntas comunes</string>
     <string name="give_feedback_on_the_application">Dar retroalimentación sobre la aplicación</string>
     <string name="info">Información</string>
     <string name="live_chat_webview">Chat en vivo en vista web</string>
     <string name="log_level">Nivel de registro</string>
     <string name="logging">Registro</string>
-    <string name="manage_polycentric_identity">Gestionar identidad policéntrica</string>
-    <string name="manage_your_polycentric_identity">Gestionar tu identidad policéntrica</string>
+    <string name="manage_polycentric_identity">Gestionar identidad Polycentric</string>
+    <string name="manage_your_polycentric_identity">Gestionar tu identidad Polycentric</string>
     <string name="manual_check">Verificación manual</string>
     <string name="manually_check_for_updates">Verificar actualizaciones manualmente</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Número de hilos concurrentes para multiplicar las velocidades de descarga de fuentes limitadas</string>
@@ -336,7 +335,7 @@
     <string name="other">Otro</string>
     <string name="others_ellipsis">Otros…</string>
     <string name="removes_all_subscriptions">Eliminar todas las suscripciones</string>
-    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Configuraciones relacionadas con el servidor de desarrollo, ten cuidado ya que puede abrir tu teléfono a vulnerabilidades de seguridad</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Configuraciones relacionadas con el servidor de desarrollo, ten cuidado ya que puede exponer tu teléfono a vulnerabilidades de seguridad</string>
     <string name="start_server">Iniciar servidor</string>
     <string name="start_server_on_boot">Iniciar servidor al arrancar</string>
     <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Inicia un DevServer en el puerto 11337, puede exponer vulnerabilidades.</string>
@@ -439,7 +438,7 @@
     <string name="subscriptions_imported">suscripciones importadas.</string>
     <string name="edit_playlist">Editar lista de reproducción</string>
     <string name="share_as_text">Compartir como texto</string>
-    <string name="share_as_a_list_of_video_urls">Compartir como una lista de URL de video</string>
+    <string name="share_as_a_list_of_video_urls">Compartir como una lista de links de videos</string>
     <string name="share_as_import">Compartir como importación</string>
     <string name="share_as_a_import_file_for_grayjay">Compartir como archivo de importación para Grayjay</string>
     <string name="failed_to_load_playlist">Error al cargar la lista de reproducción</string>
@@ -522,7 +521,7 @@
     <string name="failed_to_load_video_scriptexception">Error al cargar el video (ScriptException)</string>
     <string name="failed_to_load_video">Error al cargar el video</string>
     <string name="not_yet_available_retrying_in_time_s">Todavía no está disponible, reintento en {time}s</string>
-    <string name="failed_to_retry_for_live_stream">Error al intentar nuevamente la transmisión en vivo</string>
+    <string name="failed_to_retry_for_live_stream">Error al reintentar la transmisión en vivo</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">Esta aplicación está en desarrollo. Por favor, envía informes de errores y comprende que muchas características están incompletas.</string>
     <string name="please_use_at_least_3_characters">Por favor, usa al menos 3 caracteres</string>
     <string name="are_you_sure_you_want_to_delete_this_video">¿Estás seguro de que deseas eliminar este video?</string>
@@ -532,12 +531,12 @@
     <string name="seconds">segundos</string>
     <string name="please_login_to_post_a_comment">Por favor, inicia sesión para publicar un comentario</string>
     <string name="failed_to_post_comment">Error al publicar el comentario:</string>
-    <string name="waiting_for_unmetered">Esperando para deshacer la limitación de datos</string>
+    <string name="waiting_for_unmetered">Esperando una red no medida</string>
     <string name="last_error">Último error</string>
     <string name="error">Error</string>
     <string name="filters">Filtros</string>
     <string name="viewers">espectadores</string>
-    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">Se esperaba al menos una respuesta, pero el servidor no devolvió ninguna respuesta</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">Se esperaba al menos una respuesta, pero el servidor no devolvió ninguna</string>
     <string name="please_login_to_like">Por favor, inicia sesión para dar me gusta</string>
     <string name="please_login_to_dislike">Por favor, inicia sesión para dar no me gusta</string>
     <string name="failed_to_load_comments">Error al cargar los comentarios.</string>
@@ -608,7 +607,7 @@
     <string name="enable_in_home">Habilitar en inicio</string>
     <string name="enable_in_search">Habilitar en búsqueda</string>
     <string name="check">Comprobar</string>
-    <string name="buy_text">Grayjay no es una aplicación fácil ni barata de construir y mantener. Tenemos ingenieros trabajando a tiempo completo en la aplicación y sus sistemas circundantes. Y probablemente no recuperaremos el dinero invertido en mucho tiempo, si es que alguna vez lo hacemos.\n\nLa misión de FUTO es que el software de código abierto y las prácticas empresariales no maliciosas se conviertan en una fuente de ingresos sostenible para los proyectos y sus desarrolladores. Por esta razón, estamos a favor de que los usuarios realmente paguen por el software.\n\nPor eso Grayjay quiere que pagues por el software.</string>
+    <string name="buy_text">Grayjay no es una aplicación fácil ni barata de construir y mantener. Tenemos ingenieros trabajando a tiempo completo en la aplicación y sus sistemas circundantes. Probablemente no recuperaremos el dinero invertido en mucho tiempo, si es que alguna vez lo hacemos.\n\nLa misión de FUTO es que el software de código abierto y las prácticas empresariales no maliciosas se conviertan en una fuente de ingresos sostenible para los proyectos y sus desarrolladores. Por esta razón, estamos a favor de que los usuarios realmente paguen por el software.\n\nPor eso Grayjay quiere que pagues por este software.</string>
     <string-array name="home_screen_array">
         <item>Recomendaciones</item>
         <item>Suscripciones</item>
@@ -669,7 +668,7 @@
         <item>Alta Tasa de Bits</item>
     </string-array>
     <string-array name="auto_update_when_array">
-        <item>En Inicio</item>
+        <item>Al Iniciar</item>
         <item>Nunca</item>
     </string-array>
     <string-array name="system_enabled_disabled_array">
