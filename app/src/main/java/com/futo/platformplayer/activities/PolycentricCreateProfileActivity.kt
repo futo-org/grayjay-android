@@ -75,9 +75,11 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                     }
 
                     try {
+                        Logger.i(TAG, "Started backfill");
                         processHandle.fullyBackfillServers();
+                        Logger.i(TAG, "Finished backfill");
                     } catch (e: Throwable) {
-                        Logger.e(TAG, getString(R.string.failed_to_fully_backfill_servers));
+                        Logger.e(TAG, getString(R.string.failed_to_fully_backfill_servers), e);
                     }
 
                     withContext(Dispatchers.Main) {
