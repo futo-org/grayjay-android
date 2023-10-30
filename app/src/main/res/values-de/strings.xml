@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="cast">Besetzung</string>
+    <string name="cast">Übertragen</string>
     <string name="search">Suche</string>
     <string name="add_to_query">Zur Anfrage hinzufügen</string>
     <string name="thumbnail">Vorschaubild</string>
@@ -43,8 +43,8 @@
     <string name="not_enough_storage">Nicht genügend Speicherplatz</string>
     <string name="live_capitalized">LIVE</string>
     <string name="live">Live</string>
-    <string name="click_to_read_more">Klicken Sie hier, um mehr zu lesen</string>
-    <string name="click_to_hide">Klicken Sie hier, um auszublenden</string>
+    <string name="click_to_read_more">Hier klicken, um mehr zu lesen</string>
+    <string name="click_to_hide">Hier klicken, um auszublenden</string>
     <string name="version">Version</string>
     <string name="sort_by">Sortieren nach</string>
     <string name="subscribe">Abonnieren</string>
@@ -139,7 +139,7 @@
     <string name="send_your_identity_to_another_app">Senden Sie Ihre Identität an eine andere App</string>
     <string name="copy">Kopieren</string>
     <string name="copy_your_identity_to_clipboard">Kopieren Sie Ihre Identität in die Zwischenablage</string>
-    <string name="polycentric">Polyzentrisch</string>
+    <string name="polycentric">Polycentric</string>
     <string name="profile_name">Profilname</string>
     <string name="this_will_be_visible_to_other_users">Dies wird für andere Benutzer sichtbar sein</string>
     <string name="create_profile">Profil erstellen</string>
@@ -192,7 +192,7 @@
     <string name="remove">Entfernen</string>
     <string name="space_videos">Videos</string>
     <string name="playlist">Wiedergabeliste</string>
-    <string name="neopass_channel">Polyzentrischer Kanal</string>
+    <string name="neopass_channel">Polycentric Kanal</string>
     <string name="enable">Aktivieren</string>
     <string name="under_construction">Im Bau</string>
     <string name="under">IM</string>
@@ -294,8 +294,8 @@
     <string name="live_chat_webview">Live-Chat-Webansicht</string>
     <string name="log_level">Log-Level</string>
     <string name="logging">Protokollierung</string>
-    <string name="manage_polycentric_identity">Polyzentrische Identität verwalten</string>
-    <string name="manage_your_polycentric_identity">Ihre polyzentrische Identität verwalten</string>
+    <string name="manage_polycentric_identity">Polycentic Identität verwalten</string>
+    <string name="manage_your_polycentric_identity">Ihre Polycentric Identität verwalten</string>
     <string name="manual_check">Manuelle Überprüfung</string>
     <string name="manually_check_for_updates">Manuell nach Updates suchen</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Anzahl der gleichzeitigen Threads zur Multiplikation der Download-Geschwindigkeiten von gedrosselten Quellen</string>
@@ -332,14 +332,14 @@
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Beim Ansehen eines Videos im Vorschau-Modus fortsetzen an der Stelle, an der das Video geöffnet wurde</string>
     <string name="please_enable_logging_to_submit_logs">Bitte aktivieren Sie das Protokollieren, um Protokolle zu senden</string>
     <string name="announcements_reset">Ankündigungen zurückgesetzt.</string>
-    <string name="failed_to_show_store">Fehler beim Anzeigen des Geschäfts.</string>
+    <string name="failed_to_show_store">Fehler beim Anzeigen des Shops.</string>
     <string name="retrieving_changelog">Änderungsprotokoll abrufen</string>
     <string name="paid">Bezahlt</string>
     <string name="not_paid">Nicht bezahlt</string>
     <string name="licenses_cleared_might_require_app_restart">Lizenzen gelöscht, ein Neustart der App ist möglicherweise erforderlich</string>
     <string name="attempts_to_fetch_2_pages_from_getHome">Versuche, 2 Seiten von "getHome" abzurufen</string>
     <string name="background_subscription_testing">Hintergrund-Abonnement-Tests</string>
-    <string name="clear_all_downloaded">Alle heruntergeladenen löschen</string>
+    <string name="clear_all_downloaded">Alle Downloads löschen</string>
     <string name="clear_downloads">Downloads löschen</string>
     <string name="clear_all_cookies_from_the_cookieManager">Alle Cookies aus dem CookieManager löschen</string>
     <string name="crash_me">Stürzen Sie mich ab</string>
@@ -358,10 +358,10 @@
     <string name="other">Andere</string>
     <string name="others_ellipsis">Andere…</string>
     <string name="removes_all_subscriptions">Entfernt alle Abonnements</string>
-    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Einstellungen im Zusammenhang mit dem Entwicklungsserver, seien Sie vorsichtig, da dies Ihr Telefon Sicherheitslücken öffnen kann</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Einstellungen im Zusammenhang mit dem Entwicklungsserver, seien Sie vorsichtig, da dies Sicherheitslücken Ihres Telefons öffnen kann</string>
     <string name="start_server">Server starten</string>
     <string name="start_server_on_boot">Server beim Starten starten</string>
-    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Startet einen DevServer auf Port 11337, kann Sicherheitslücken aufdecken.</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Startet einen DevServer auf Port 11337, kann Sicherheitslücken öffnen.</string>
     <string name="test_v8_communication_speed">Testen der V8-Kommunikationsgeschwindigkeit</string>
     <string name="test_v8_creation_speed">Testen der V8-Erstellungsgeschwindigkeit</string>
     <string name="tests_v8_communication_speeds">Tests der V8-Kommunikationsgeschwindigkeiten</string>
@@ -376,7 +376,7 @@
     <string name="enable_where_this_plugins_content_are_visible">Aktivieren Sie, wo der Inhalt dieses Plugins sichtbar ist</string>
     <string name="show_content_in_home_tab">Inhalt im Starttab anzeigen</string>
     <string name="show_content_in_search_results">Inhalt in den Suchergebnissen anzeigen</string>
-    <string name="no_valid_url_provided">Keine gültige URL angegeben..</string>
+    <string name="no_valid_url_provided">Keine gültige URL angegeben.</string>
     <string name="invalid_config_format">Ungültiges Konfigurationsformat</string>
     <string name="failed_to_fetch_configuration">Konfiguration konnte nicht abgerufen werden</string>
     <string name="failed_to_fetch_script">Skript konnte nicht abgerufen werden</string>
@@ -387,15 +387,15 @@
     <string name="failed_to_scan_qr_code">Fehler beim Scannen des QR-Codes</string>
     <string name="not_a_plugin_url">Keine Plugin-URL</string>
     <string name="scan_a_qr_code">Einen QR-Code scannen</string>
-    <string name="not_implemented_yet">Noch nicht implementiert...</string>
+    <string name="not_implemented_yet">Noch nicht implementiert…</string>
     <string name="unknown_context">Unbekannter Kontext</string>
-    <string name="something_went_wrong_missing_stack_trace">Etwas ist schiefgelaufen... fehlender Stack-Trace?</string>
+    <string name="something_went_wrong_missing_stack_trace">Etwas ist schiefgelaufen… fehlender Stack-Trace?</string>
     <string name="logs_already_submitted">Logs bereits übermittelt.</string>
     <string name="no_logs_found">Keine Logs gefunden.</string>
     <string name="failed_automated_share_share_manually">Automatisches Teilen fehlgeschlagen, manuell teilen?</string>
     <string name="shared_id">Geteilt {id}</string>
     <string name="unhandled_exception_in_vs">Unbehandelte Ausnahme in VS</string>
-    <string name="send_exception_to_developers">Ausnahme an Entwickler senden...</string>
+    <string name="send_exception_to_developers">Ausnahme an Entwickler senden…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Ihr Lizenzschlüssel wurde festgelegt!\nEin Neustart der App könnte erforderlich sein.</string>
     <string name="invalid_license_format">Ungültiges Lizenzformat</string>
     <string name="unknown_content_format">Unbekanntes Inhaltsformat</string>
