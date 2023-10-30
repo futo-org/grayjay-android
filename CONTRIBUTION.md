@@ -19,7 +19,7 @@ Thank you for your interest in contributing! This document outlines how you can 
 
 ### License
 
-The official plugins for this project are licensed under GPLv3. Any contributions you make will also fall under the GPLv3 license.
+The official plugins for this project are licensed under AGPL. Any contributions you make will also fall under the AGPL license.
 
 ### How to Contribute
 

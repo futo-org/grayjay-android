@@ -363,7 +363,9 @@ class PostDetailFragment : MainFragment {
 
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                                 try {
+                                    Logger.i(TAG, "Started backfill");
                                     args.processHandle.fullyBackfillServers();
+                                    Logger.i(TAG, "Finished backfill");
                                 } catch (e: Throwable) {
                                     Logger.e(TAG, "Failed to backfill servers", e)
                                 }

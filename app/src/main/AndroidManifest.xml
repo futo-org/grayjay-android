@@ -38,6 +38,7 @@
             android:enabled="true" />
 
         <receiver android:name=".receivers.MediaControlReceiver" />
+        <receiver android:name=".receivers.AudioNoisyReceiver" />
 
         <activity
             android:name=".activities.MainActivity"
@@ -182,9 +183,8 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
 
-
         <activity
-            android:name=".activities.AddSourceOptionsActivity$QRCaptureActivity"
+            android:name=".activities.QRCaptureActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
     </application>

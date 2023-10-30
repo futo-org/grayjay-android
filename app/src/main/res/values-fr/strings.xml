@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast">Caster</string>
+    <string name="search">Rechercher</string>
+    <string name="add_to_query">Ajouter à la requête</string>
+    <string name="thumbnail">Miniature</string>
+    <string name="channel_image">Image de chaîne</string>
+    <string name="add_to">Ajouter à</string>
+    <string name="add_to_queue">Ajouter à la file d\'attente</string>
+    <string name="home">Accueil</string>
+    <string name="recommendations">Recommandations</string>
+    <string name="more">Plus</string>
+    <string name="playlists">Listes de lecture</string>
+    <string name="subscriptions">Abonnements</string>
+    <string name="loading">Chargement</string>
+    <string name="retry">Réessayer</string>
+    <string name="cancel">Annuler</string>
+    <string name="failed_to_retrieve_data_are_you_connected">Échec de récupération des données, êtes-vous connecté ?</string>
+    <string name="settings">Paramètres</string>
+    <string name="history">Historique</string>
+    <string name="sources">Sources</string>
+    <string name="buy">Acheter</string>
+    <string name="faq">FAQ</string>
+    <string name="the_top_source_will_be_considered_primary">La source principale sera celle en haut</string>
+    <string name="defaults">Par défaut</string>
+    <string name="home_screen">Écran d\'accueil</string>
+    <string name="preferred_quality">Qualité préférée</string>
+    <string name="update">Mise à jour</string>
+    <string name="close">Fermer</string>
+    <string name="never">Jamais</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">Une mise à jour est disponible, souhaitez-vous mettre à jour ?</string>
+    <string name="downloading_update">Téléchargement de la mise à jour…</string>
+    <string name="installing_update">Installation de la mise à jour…</string>
+    <string name="done">Terminé</string>
+    <string name="success">Succès</string>
+    <string name="failed_to_update_with_error">Échec de la mise à jour avec erreur</string>
+    <string name="general_failure">L\'opération a échoué de manière générique</string>
+    <string name="aborted">L\'opération a été interrompue</string>
+    <string name="blocked">L\'opération a été bloquée</string>
+    <string name="conflict">L\'opération est en conflit avec un autre package déjà installé</string>
+    <string name="incompatible">L\'opération est incompatible avec cet appareil</string>
+    <string name="invalid">L\'opération a échoué car un ou plusieurs des APK sont invalides</string>
+    <string name="not_enough_storage">L\'opération a échoué en raison d\'un manque d\'espace de stockage</string>
+    <string name="live_capitalized">EN DIRECT</string>
+    <string name="live">En direct</string>
+    <string name="click_to_read_more">Cliquez pour en savoir plus</string>
+    <string name="click_to_hide">Cliquez pour masquer</string>
+    <string name="version">Version</string>
+    <string name="sort_by">Trier par</string>
+    <string name="subscribe">S\'abonner</string>
+    <string name="unsubscribe">Se désabonner</string>
+    <string name="background">Arrière-plan</string>
+    <string name="background_revert">Vidéo</string>
+    <string name="add">Ajouter</string>
+    <string name="download">Télécharger</string>
+    <string name="share">Partager</string>
+    <string name="view_all">Tout voir</string>
+    <string name="creators">Créateurs</string>
+    <string name="enabled">Activé</string>
+    <string name="discover">Découvrir</string>
+    <string name="find_new_video_sources_to_add">Trouver de nouvelles sources vidéo à ajouter</string>
+    <string name="these_sources_have_been_disabled">Ces sources ont été désactivées</string>
+    <string name="disabled">Désactivé</string>
+    <string name="watch_later">Regarder plus tard</string>
+    <string name="create">Créer</string>
+    <string name="ok">OK</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="confirm">Confirmer</string>
+    <string name="confirm_delete_playlist">Êtes-vous sûr de vouloir supprimer cette liste de lecture ?</string>
+    <string name="confirm_delete_subscription">Êtes-vous sûr de vouloir supprimer cet abonnement ?</string>
+    <string name="confirm_remove_source">La suppression de cette source entraînera des problèmes de résolution pour certains de vos abonnements.</string>
+    <string name="shuffle">Mélanger</string>
+    <string name="play_all">Tout lire</string>
+    <string name="search_history">Historique de recherche</string>
+    <string name="app_error">Erreur de l\'application</string>
+    <string name="developer">Développeur</string>
+    <string name="remove_historical_suggestion">Retirer la suggestion historique</string>
+    <string name="comments">Commentaires</string>
+    <string name="reached_the_end_of_the_playlist">Fin de la liste de lecture atteinte</string>
+    <string name="the_playlist_will_restart_after_the_video_is_finished">La liste de lecture recommencera après la fin de la vidéo</string>
+    <string name="restart_now">Redémarrer maintenant</string>
+    <string name="end_of_queue_reached">Fin de la file d\'attente atteinte</string>
+    <string name="end_of_playlist_reached">Fin de la liste de lecture atteinte</string>
+    <string name="end_of_watch_later_reached">Fin de la liste "Regarder plus tard" atteinte</string>
+    <string name="reached_the_end_of_the_queue">Fin de la file d\'attente atteinte</string>
+    <string name="the_queue_will_restart_after_the_video_is_finished">La file d\'attente recommencera après la fin de la vidéo</string>
+    <string name="up_next">À suivre</string>
+    <string name="queue">File d\'attente</string>
+    <string name="clear">Effacer</string>
+    <string name="last_hour">Dernière heure</string>
+    <string name="last_24_hours">Dernières 24 heures</string>
+    <string name="last_week">Dernière semaine</string>
+    <string name="last_30_days">30 derniers jours</string>
+    <string name="last_year">Dernière année</string>
+    <string name="all_time">Depuis toujours</string>
+    <string name="are_you_sure_delete_historical">Êtes-vous sûr de vouloir supprimer ces entrées historiques ?</string>
+    <string name="removed">supprimé</string>
+    <string name="add_source">Ajouter une source</string>
+    <string name="repository_url">URL du dépôt</string>
+    <string name="script_url">URL du script</string>
+    <string name="source_permissions_explanation">Voici les permissions nécessaires au plugin pour fonctionner</string>
+    <string name="source_explain_eval_access">Le plugin aura accès à la capacité d\'évaluation</string>
+    <string name="source_explain_script_url">Le plugin aura accès aux domaines suivants</string>
+    <string name="scan_qr">Scanner le QR</string>
+    <string name="scan_qr_explain">Scannez un code QR pour installer</string>
+    <string name="enter_url_explain">Entrez une URL pour charger la configuration du plugin.</string>
+    <string name="enter_url">Entrez l\'URL</string>
+    <string name="install">Installer</string>
+    <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">Aucun appareil trouvé. Cela peut prendre un certain temps pour que votre appareil apparaisse, soyez patient</string>
+    <string name="not_ready">Pas prêt</string>
+    <string name="connect">Connecter</string>
+    <string name="stop">Arrêter</string>
+    <string name="start">Commencer</string>
+    <string name="storage_space">Espace de stockage</string>
+    <string name="downloads">Téléchargements</string>
+    <string name="deselect_all">Tout désélectionner</string>
+    <string name="select_all">Tout sélectionner</string>
+    <string name="add_casting_device">Ajouter un appareil de diffusion</string>
+    <string name="new_activity">Nouvelle activité</string>
+    <string name="creator_is_on_neopass">Le créateur est sur NeoPass</string>
+    <string name="options">Options</string>
+    <string name="export">Exporter</string>
+    <string name="delete">Supprimer</string>
+    <string name="loading_update">Chargement de la mise à jour…</string>
+    <string name="polycentric_explanation">Lorsque vous parcourez des vidéos en ligne et souhaitez laisser un commentaire, pensez à essayer Polycentric, une nouvelle manière de gérer votre présence en ligne qui est à la fois facile à utiliser et axée sur vos besoins. Voici pourquoi créer un profil Polycentric est un excellent choix :\n\n 1. Vous êtes en contrôle : Avec Polycentric, vos données ne sont pas stockées dans un seul endroit contrôlé par une seule entreprise. Au lieu de cela, elles sont réparties entre plusieurs emplacements, vous donnant plus de contrôle sur votre présence en ligne. Vous décidez où vos données sont stockées et pouvez facilement passer d\'un fournisseur à un autre ou en ajouter de nouveaux.\n\n 2. Confidentialité et sécurité : Polycentric protège vos informations en utilisant des techniques de sécurité avancées. Vous pouvez avoir confiance que vos données personnelles sont bien protégées et uniquement accessibles par ceux avec qui vous choisissez de les partager.\n\n 3. Réseautage sans couture : Polycentric vous permet de vous connecter avec d\'autres et d\'interagir avec leur contenu sans être lié à une seule plateforme. Si un fournisseur devient peu fiable ou tente de bloquer l\'accès, votre client Polycentric trouvera automatiquement des informations provenant d\'autres sources, vous maintenant connecté.\n\n 4. Recherche intelligente et recommandations : Polycentric utilise plusieurs sources pour la recherche et les recommandations, vous offrant des performances de premier ordre tout en veillant à ce qu\'aucun fournisseur n\'ait trop d\'influence sur les résultats que vous voyez.\n\n 5. Adaptable et ouvert : Polycentric est conçu pour être flexible et ouvert aux nouveaux développements, permettant des améliorations constantes et de nouvelles fonctionnalités qui s\'adaptent aux besoins de ses utilisateurs.\n\n 6. En créant un profil Polycentric, vous pouvez laisser des commentaires sur des vidéos en ligne et profiter d\'une expérience en ligne plus personnalisée. Découvrez par vous-même comment cette solution conviviale vous met aux commandes de votre vie numérique. Inscrivez-vous à Polycentric aujourd\'hui !</string>
+    <string name="publish">Publier</string>
+    <string name="usage">Utilisation</string>
+    <string name="enable_in_home">Activer à la maison</string>
+    <string name="enable_in_search">Activer dans la recherche</string>
+    <string name="check">Vérifier</string>
+    <string name="buy_text">Grayjay n\'est pas une application facile ou bon marché à construire et à maintenir. Nous avons des ingénieurs à plein temps qui travaillent sur l\'application et ses systèmes environnants. Et il est peu probable que l\'application rentabilise son coût de développement de sitôt, si jamais.\n\nLa mission de FUTO est de faire de l\'open source et des pratiques commerciales non malveillantes une source de revenu durable pour les projets et leurs développeurs. C\'est pour cette raison que nous sommes en faveur des utilisateurs qui paient réellement pour le logiciel.\n\nC\'est pourquoi Grayjay souhaite que vous payiez pour le logiciel.</string>
+    <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Une exception non gérée a été levée, nous sommes désolés pour le désagrément.</string>
+    <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Pour nous aider à résoudre ce problème, veuillez partager le rapport de plantage ci-dessous avec nous et, éventuellement, ajouter un contexte sur ce que vous faisiez.</string>
+    <string name="new_profile">Nouveau Profil</string>
+    <string name="import_existing_profile">Importer un profil existant</string>
+    <string name="generate_a_new_identity">Générer une nouvelle identité</string>
+    <string name="use_an_existing_identity">Utiliser une identité existante</string>
+    <string name="permissions">Autorisations</string>
+    <string name="security_warnings">Avertissements de sécurité</string>
+    <string name="these_are_warnings_of_plugin_behavior_and_implementation">Ce sont des avertissements sur le comportement et la mise en œuvre du plugin</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">Veuillez entrer le captcha et fermer une fois terminé</string>
+    <string name="close_capitalized">FERMER</string>
+    <string name="submit">Soumettre</string>
+    <string name="restart">Redémarrer</string>
+    <string name="manage_tabs">Gérer les onglets</string>
+    <string name="scan_to_import">Scanner pour importer</string>
+    <string name="send_your_identity_to_another_app">Envoyer votre identité à une autre application</string>
+    <string name="copy">Copier</string>
+    <string name="copy_your_identity_to_clipboard">Copier votre identité dans le presse-papiers</string>
+    <string name="polycentric">Polycentrique</string>
+    <string name="profile_name">Nom du profil</string>
+    <string name="this_will_be_visible_to_other_users">Cela sera visible pour les autres utilisateurs</string>
+    <string name="create_profile">Créer un profil</string>
+    <string name="or_capitalized">OU</string>
+    <string name="paste_profile_here_polycentric">Coller le profil ici polycentric://…</string>
+    <string name="import_profile">Importer un profil</string>
+    <string name="you_re_apparantly_a_developer">Vous êtes apparemment un développeur</string>
+    <string name="developer_settings">Paramètres pour développeurs</string>
+    <string name="migration">Migration</string>
+    <string name="set_a_password_for_your_daily_backup">Définissez un mot de passe pour votre sauvegarde quotidienne</string>
+    <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Définissez un mot de passe utilisé pour crypter votre sauvegarde quotidienne écrite sur le stockage externe.</string>
+    <string name="backup_password">Mot de passe de la sauvegarde</string>
+    <string name="restore_from_automatic_backup">Restaurer à partir de la sauvegarde automatique</string>
+    <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">Il semble qu\'une sauvegarde automatique existe sur votre appareil, si vous souhaitez restaurer, entrez votre mot de passe de sauvegarde.</string>
+    <string name="restore">Restaurer</string>
+    <string name="error_message_here">Message d\'erreur ici</string>
+    <string name="name">Nom</string>
+    <string name="ip">IP</string>
+    <string name="port">Port</string>
+    <string name="discovered_devices">Appareils découverts</string>
+    <string name="remembered_devices">Appareils mémorisés</string>
+    <string name="there_are_no_remembered_devices">Il n\'y a pas d\'appareils mémorisés</string>
+    <string name="connected_to">Connecté à</string>
+    <string name="volume">Volume</string>
+    <string name="changelog">Journal des modifications</string>
+    <string name="some_example_changelog">Un exemple de journal des modifications.</string>
+    <string name="previous">Précédent</string>
+    <string name="next">Suivant</string>
+    <string name="comment">Commentaire</string>
+    <string name="str_import">Importer</string>
+    <string name="my_playlist_name">Nom de ma playlist</string>
+    <string name="do_you_want_to_import_this_store">Voulez-vous importer ce magasin ?</string>
+    <string name="sources_required_need_to_be_enabled">Les sources requises doivent être activées</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Les éléments nécessitent une migration ou sont corrompus, souhaitez-vous les restaurer à partir de la sauvegarde maintenant ?</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">Si vous ignorez, vous serez à nouveau interrogé au prochain démarrage.</string>
+    <string name="ignore">Ignorer</string>
+    <string name="view_changelog">Voir le journal des modifications</string>
+    <string name="i_already_paid">J\'ai déjà payé</string>
+    <string name="memberships">Adhésions</string>
+    <string name="a_monthly_recurring_payment_with_often">Un paiement récurrent mensuel avec souvent</string>
+    <string name="additional_perks">avantages supplémentaires.</string>
+    <string name="a_one_time_payment_to_support_the_creator">Un paiement unique pour soutenir le créateur</string>
+    <string name="donation">Don</string>
+    <string name="downloading">Téléchargement</string>
+    <string name="videos">Vidéos</string>
+    <string name="clear_history">Effacer l\'historique</string>
+    <string name="nothing_to_import">Rien à importer</string>
+    <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Activer de nombreuses sources peut réduire la vitesse de chargement de votre application.</string>
+    <string name="support">Support</string>
+    <string name="store">Magasin</string>
+    <string name="live_chat">Chat en direct</string>
+    <string name="remove">Retirer</string>
+    <string name="space_videos">Vidéos</string>
+    <string name="playlist">Liste de lecture</string>
+    <string name="neopass_channel">Chaîne polycentrique</string>
+    <string name="enable">Activer</string>
+    <string name="under_construction">En construction</string>
+    <string name="under">SOUS</string>
+    <string name="construction">CONSTRUCTION</string>
+    <string name="disable">Désactiver</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">Le contenu suivant ne peut pas être ouvert dans Grayjay en raison d\'un plugin manquant.</string>
+    <string name="unknown">Inconnu</string>
+    <string name="tap_to_open_in_browser">Appuyez pour ouvrir dans le navigateur</string>
+    <string name="missing_plugin">Plugin manquant</string>
+    <string name="viewers_are_raiding">Les spectateurs font un raid</string>
+    <string name="go_now">Aller maintenant</string>
+    <string name="prevent">Empêcher</string>
+    <string name="recently_used_playlist">Liste de lecture récemment utilisée</string>
+    <string name="license_email">E-mail de licence</string>
+    <string name="required_to_send_the_license_key">Requis pour envoyer la clé de licence</string>
+    <string name="receipt_email_user_domain_com">E-mail de réception (user@domain.com)</string>
+    <string name="payment_using">Paiement en utilisant</string>
+    <string name="country">Pays</string>
+    <string name="postal_code">Code postal</string>
+    <string name="grayjay">Grayjay</string>
+    <string name="sales_tax">Taxe de vente (</string>
+    <string name="total">Total</string>
+    <string name="pay">Payer</string>
+    <string name="standard_payment_methods">Méthodes de paiement standard</string>
+    <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe est un service de paiement en ligne sécurisé qui accepte les principales cartes de crédit, les cartes de débit et diverses méthodes de paiement localisées.</string>
+    <string name="add_a_comment">Ajouter un commentaire…</string>
+    <string name="dismiss">Ignorer</string>
+    <string name="scan_a_qr_code_to_install">Scannez un code QR pour installer</string>
+    <string name="toggle_fullscreen">Basculer en plein écran</string>
+    <string name="by">Par</string>
+    <string name="signature">Signature</string>
+    <string name="valid">Valide</string>
+    <string name="repeat">Répéter</string>
+    <string name="view">Voir</string>
+    <string name="install_by_qr">Installer par QR</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">Installez un plugin en scannant un code QR</string>
+    <string name="logout">Déconnexion</string>
+    <string name="video">Vidéo</string>
+    <string name="view_a_more_in_depth_video">Voir une vidéo plus approfondie</string>
+    <string name="technical_documentation">Documentation technique</string>
+    <string name="view_the_technical_documentation">Voir la documentation technique</string>
+    <string name="visit_my_store">Visitez ma boutique</string>
+    <string name="make_a_backup_of_your_identity">Faites une sauvegarde de votre identité</string>
+    <string name="sign_out_of_this_identity">Se déconnecter de cette identité</string>
+    <string name="delete_this_profile">Supprimer ce profil</string>
+    <string name="install_by_url">Installer par URL</string>
+    <string name="cache_to_quickly_load_previously_fetched_videos">Cache pour charger rapidement les vidéos précédemment récupérées</string>
+    <string name="a_list_of_user_reported_and_self_reported_issues">Une liste de problèmes signalés par les utilisateurs et auto-déclarés</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">Supprime également toutes les données associées au plugin, comme la connexion ou les paramètres</string>
+    <string name="announcement">Annonce</string>
+    <string name="attempt_to_utilize_byte_ranges">Tentative d\'utilisation de plages d\'octets</string>
+    <string name="auto_update">Mise à jour automatique</string>
+    <string name="auto_rotate">Rotation automatique</string>
+    <string name="auto_rotate_dead_zone">Zone morte de rotation automatique</string>
+    <string name="automatic_backup">Sauvegarde automatique</string>
+    <string name="background_behavior">Comportement en arrière-plan</string>
+    <string name="background_update">Mise à jour en arrière-plan</string>
+    <string name="background_download">Téléchargement en arrière-plan</string>
+    <string name="backup">Sauvegarde</string>
+    <string name="browsing">Navigation</string>
+    <string name="byte_range_concurrency">Concurrence de plage d\'octets</string>
+    <string name="byte_range_download">Téléchargement de plage d\'octets</string>
+    <string name="casting">Diffusion</string>
+    <string name="change_behavior_of_the_player">Modifier le comportement du lecteur</string>
+    <string name="change_external_downloads_directory">Changer le répertoire externe des téléchargements</string>
+    <string name="change_external_general_directory">Changer le répertoire général externe</string>
+    <string name="change_tabs_visible_on_the_home_screen">Modifier les onglets visibles sur l\'écran d\'accueil</string>
+    <string name="change_the_external_directory_for_general_files">Modifier le répertoire externe pour les fichiers généraux</string>
+    <string name="change_the_external_storage_for_download_files">Modifier le stockage externe pour les fichiers téléchargés</string>
+    <string name="clear_cookies">Effacer les cookies</string>
+    <string name="clear_cookies_on_logout">Effacer les cookies à la déconnexion</string>
+    <string name="clear_payment">Effacer le paiement</string>
+    <string name="clears_cookies_when_you_log_out">Efface les cookies lorsque vous vous déconnectez</string>
+    <string name="clears_in_app_browser_cookies">Efface les cookies du navigateur intégré</string>
+    <string name="configure_browsing_behavior">Configurer le comportement de navigation</string>
+    <string name="configure_casting">Configurer la diffusion</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">Configurer la sauvegarde quotidienne en cas de panne catastrophique</string>
+    <string name="configure_downloading_of_videos">Configurer le téléchargement de vidéos</string>
+    <string name="configure_how_your_home_tab_works_and_feels">Configurer le fonctionnement et l\'apparence de votre onglet d\'accueil</string>
+    <string name="configure_how_your_subscriptions_works_and_feels">Configurer le fonctionnement et l\'apparence de vos abonnements</string>
+    <string name="configure_if_background_download_should_be_used">Configurer si le téléchargement en arrière-plan doit être utilisé</string>
+    <string name="configure_the_auto_updater">Configurer le programme de mise à jour automatique</string>
+    <string name="configure_when_updates_should_be_downloaded">Configurer le moment où les mises à jour doivent être téléchargées</string>
+    <string name="configure_when_videos_should_be_downloaded">Configurer le moment où les vidéos doivent être téléchargées</string>
+    <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Crée un fichier zip avec vos données qui peuvent être importées en l\'ouvrant avec Grayjay</string>
+    <string name="default_audio_quality">Qualité audio par défaut</string>
+    <string name="default_playback_speed">Vitesse de lecture par défaut</string>
+    <string name="default_video_quality">Qualité vidéo par défaut</string>
+    <string name="deletes_license_keys_from_app">Supprime les clés de licence de l\'application</string>
+    <string name="download_when">Télécharger quand</string>
+    <string name="enable_video_cache">Activer le cache vidéo</string>
+    <string name="enable_casting">Activer la diffusion</string>
+    <string name="experimental_background_update_for_subscriptions_cache">Mise à jour en arrière-plan expérimentale pour le cache des abonnements</string>
+    <string name="export_data">Exporter les données</string>
+    <string name="external_storage">Stockage externe</string>
+    <string name="feed_style">Style du flux</string>
+    <string name="fetch_on_app_boot">Récupérer au démarrage de l\'application</string>
+    <string name="get_answers_to_common_questions">Obtenir des réponses aux questions courantes</string>
+    <string name="give_feedback_on_the_application">Donner un retour sur l\'application</string>
+    <string name="info">Info</string>
+    <string name="live_chat_webview">Vue Web du chat en direct</string>
+    <string name="log_level">Niveau de journalisation</string>
+    <string name="logging">Journalisation</string>
+    <string name="manage_polycentric_identity">Gérer l\'identité polycentrique</string>
+    <string name="manage_your_polycentric_identity">Gérez votre identité polycentrique</string>
+    <string name="manual_check">Vérification manuelle</string>
+    <string name="manually_check_for_updates">Vérifier manuellement les mises à jour</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Nombre de threads concurrents pour multiplier les vitesses de téléchargement depuis des sources limitées</string>
+    <string name="payment">Paiement</string>
+    <string name="payment_status">Statut du paiement</string>
+    <string name="player">Lecteur</string>
+    <string name="plugins">Plugins</string>
+    <string name="preferred_casting_quality">Qualité de diffusion préférée</string>
+    <string name="preferred_metered_quality">Qualité mesurée préférée</string>
+    <string name="preferred_preview_quality">Qualité de prévisualisation préférée</string>
+    <string name="primary_language">Langue principale</string>
+    <string name="reinstall_embedded_plugins">Réinstaller les plugins intégrés</string>
+    <string name="remove_cached_version">Supprimer la version en cache</string>
+    <string name="remove_the_last_downloaded_version">Supprimer la dernière version téléchargée</string>
+    <string name="reset_announcements">Réinitialiser les annonces</string>
+    <string name="reset_hidden_announcements">Réinitialiser les annonces cachées</string>
+    <string name="restore_automatic_backup">Restaurer la sauvegarde automatique</string>
+    <string name="restore_a_previous_automatic_backup">Restaurer une sauvegarde automatique précédente</string>
+    <string name="resume_after_preview">Reprendre après la prévisualisation</string>
+    <string name="review_the_current_and_past_changelogs">Revoir les journaux des modifications actuels et passés</string>
+    <string name="set_automatic_backup">Définir la sauvegarde automatique</string>
+    <string name="shortly_after_opening_the_app_start_fetching_subscriptions">Peu de temps après l\'ouverture de l\'application, commencez à récupérer les abonnements</string>
+    <string name="show_faq">Afficher la FAQ</string>
+    <string name="show_issues">Afficher les problèmes</string>
+    <string name="specify_how_many_threads_are_used_to_fetch_channels">Spécifiez combien de threads sont utilisés pour récupérer les chaînes</string>
+    <string name="submit_feedback">Envoyer des commentaires</string>
+    <string name="submit_logs">Envoyer des journaux</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">Envoyer des journaux pour nous aider à cibler les problèmes</string>
+    <string name="subscription_concurrency">Concurrence d\'abonnement</string>
+    <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">Cela empêche le périphérique de pivoter dans l\'angle donné de degrés</string>
+    <string name="use_the_live_chat_web_window_when_available_over_native_implementation">Utilisez la fenêtre de chat en direct sur le web lorsque disponible plutôt que l\'implémentation native</string>
+    <string name="version_code">Code de version</string>
+    <string name="version_name">Nom de version</string>
+    <string name="version_type">Type de version</string>
+    <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Lors de la visualisation d\'une vidéo en mode de prévisualisation, reprenez à la position où vous avez ouvert la vidéo</string>
+    <string name="please_enable_logging_to_submit_logs">Veuillez activer l\'enregistrement pour soumettre des journaux</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Plugins intégrés réinstallés, un redémarrage est recommandé</string>
+    <string name="announcements_reset">Annonces réinitialisées.</string>
+    <string name="failed_to_show_store">Échec de l\'affichage du magasin.</string>
+    <string name="retrieving_changelog">Récupération du journal des modifications</string>
+    <string name="paid">Payé</string>
+    <string name="not_paid">Non payé</string>
+    <string name="licenses_cleared_might_require_app_restart">Licences effacées, un redémarrage de l\'application peut être nécessaire</string>
+    <string name="attempts_to_fetch_2_pages_from_getHome">Tentatives de récupération de 2 pages depuis getHome</string>
+    <string name="background_subscription_testing">Test d\'abonnement en arrière-plan</string>
+    <string name="clear_all_downloaded">Effacer tout le contenu téléchargé</string>
+    <string name="clear_downloads">Effacer les téléchargements</string>
+    <string name="clear_all_cookies_from_the_cookieManager">Effacer tous les cookies du CookieManager</string>
+    <string name="crash_me">Me faire planter</string>
+    <string name="crashes_the_application_on_purpose">Fait planter l\'application intentionnellement</string>
+    <string name="delete_announcements">Supprimer les annonces</string>
+    <string name="delete_unresolved">Supprimer les éléments non résolus</string>
+    <string name="delete_all_announcements">Supprimer toutes les annonces</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">Supprime toutes les vidéos téléchargées et les fichiers associés</string>
+    <string name="deletes_all_ongoing_downloads">Supprime tous les téléchargements en cours</string>
+    <string name="deletes_all_unresolved_source_files">Supprime tous les fichiers source non résolus</string>
+    <string name="developer_mode">Mode développeur</string>
+    <string name="development_server">Serveur de développement</string>
+    <string name="experimental">Expérimental</string>
+    <string name="fill_storage_till_error">Remplir le stockage jusqu\'à l\'erreur</string>
+    <string name="inject">Injecter</string>
+    <string name="injects_a_test_source_config_local_into_v8">Injecte une configuration de source de test (locale) dans V8</string>
+    <string name="other">Autre</string>
+    <string name="others_ellipsis">Autres…</string>
+    <string name="removes_all_subscriptions">Supprime tous les abonnements</string>
+    <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Paramètres liés au serveur de développement, soyez prudent car cela peut ouvrir votre téléphone à des vulnérabilités de sécurité</string>
+    <string name="start_server">Démarrer le serveur</string>
+    <string name="start_server_on_boot">Démarrer le serveur au démarrage</string>
+    <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Démarre un serveur de développement sur le port 11337, peut exposer des vulnérabilités.</string>
+    <string name="test_v8_communication_speed">Test de la vitesse de communication de V8</string>
+    <string name="test_v8_creation_speed">Test de la vitesse de création de V8</string>
+    <string name="tests_v8_communication_speeds">Teste les vitesses de communication de V8</string>
+    <string name="tests_v8_creation_times_and_running">Teste les temps de création de V8 et son exécution</string>
+    <string name="unsubscribe_all">Se désabonner de tout</string>
+    <string name="v8_benchmarks">Benchmarks de V8</string>
+    <string name="v8_script_testing">Test de script V8</string>
+    <string name="various_benchmarks_using_the_integrated_v8_engine">Divers benchmarks utilisant le moteur V8 intégré</string>
+    <string name="various_tests_against_a_custom_source">Divers tests contre une source personnalisée</string>
+    <string name="writes_to_disk_till_no_space_is_left">Écrit sur le disque jusqu\'à ce qu\'il n\'y ait plus d\'espace</string>
+    <string name="visibility">Visibilité</string>
+    <string name="enable_where_this_plugins_content_are_visible">Activer lorsque le contenu de ce plugin est visible</string>
+    <string name="show_content_in_home_tab">Afficher le contenu dans l\'onglet Accueil</string>
+    <string name="show_content_in_search_results">Afficher le contenu dans les résultats de recherche</string>
+    <string name="no_valid_url_provided">Aucune URL valide fournie..</string>
+    <string name="invalid_config_format">Format de configuration non valide</string>
+    <string name="failed_to_fetch_configuration">Échec de la récupération de la configuration</string>
+    <string name="failed_to_fetch_script">Échec de la récupération du script</string>
+    <string name="url_access">Accès à l\'URL</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">Le plugin aura accès aux domaines suivants</string>
+    <string name="eval_access">Accès à l\'évaluation</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">Le plugin aura accès à la capacité d\'évaluation (injection à distance)</string>
+    <string name="failed_to_scan_qr_code">Échec de la numérisation du code QR</string>
+    <string name="not_a_plugin_url">URL non valide pour le plugin</string>
+    <string name="scan_a_qr_code">Numériser un code QR</string>
+    <string name="not_implemented_yet">Pas encore implémenté…</string>
+    <string name="unknown_context">Contexte inconnu</string>
+    <string name="something_went_wrong_missing_stack_trace">Quelque chose s\'est mal passé… trace de pile manquante?</string>
+    <string name="logs_already_submitted">Journaux déjà soumis.</string>
+    <string name="no_logs_found">Aucun journal trouvé.</string>
+    <string name="failed_automated_share_share_manually">Échec de partage automatisé, partager manuellement ?</string>
+    <string name="shared_id">Partagé {id}</string>
+    <string name="unhandled_exception_in_vs">Exception non gérée dans VS</string>
+    <string name="send_exception_to_developers">Envoyer l\'exception aux développeurs…</string>
+    <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Votre clé de licence a été définie !\nUn redémarrage de l\'application peut être nécessaire.</string>
+    <string name="invalid_license_format">Format de licence invalide</string>
+    <string name="unknown_content_format">Format de contenu inconnu</string>
+    <string name="unknown_file_format">Format de fichier inconnu</string>
+    <string name="unknown_polycentric_format">Format polycentrique inconnu</string>
+    <string name="unknown_url_format">Format d\'URL inconnu</string>
+    <string name="failed_to_handle_file">Échec du traitement du fichier</string>
+    <string name="unknown_reconstruction_type">Type de reconstruction inconnu</string>
+    <string name="failed_to_parse_newpipe_subscriptions">Échec de l\'analyse des abonnements NewPipe</string>
+    <string name="failed_to_generate_qr_code">Échec de la génération du code QR</string>
+    <string name="share_text">Partager le texte</string>
+    <string name="copied_text">Texte copié</string>
+    <string name="must_be_at_least_3_characters_long">Doit comporter au moins 3 caractères.</string>
+    <string name="failed_to_create_profile">Échec de la création du profil.</string>
+    <string name="failed_to_fully_backfill_servers">Échec du remplissage complet des serveurs.</string>
+    <string name="sign_in_to_this_identity">Connectez-vous à cette identité</string>
+    <string name="text_field_does_not_contain_any_data">Le champ texte ne contient aucune donnée</string>
+    <string name="not_a_valid_url">URL non valide</string>
+    <string name="this_profile_is_already_imported">Ce profil est déjà importé</string>
+    <string name="failed_to_import_profile">Échec de l\'importation du profil :</string>
+    <string name="failed_to_backfill_client">Échec du remplissage du client</string>
+    <string name="are_you_sure_you_want_to_remove_this_profile">Êtes-vous sûr de vouloir supprimer ce profil ?</string>
+    <string name="no_process_handle_set">Aucune poignée de processus définie</string>
+    <string name="name_must_be_at_least_3_characters_long">Le nom doit comporter au moins 3 caractères</string>
+    <string name="process_handle_unset">Poignée de processus non définie</string>
+    <string name="failed_to_read_image">Échec de la lecture de l\'image</string>
+    <string name="changes_have_been_saved">Les modifications ont été enregistrées</string>
+    <string name="failed_to_synchronize_changes">Échec de la synchronisation des modifications</string>
+    <string name="image_picker_cancelled">Sélecteur d\'image annulé</string>
+    <string name="you_are_now_in_developer_mode">Vous êtes maintenant en mode développeur</string>
+    <string name="subscribers">Abonnés</string>
+    <string name="find_name_on">Trouver {name} sur</string>
+    <string name="failed_to_fetch">Échec de la récupération</string>
+    <string name="thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received">Merci pour votre achat, une clé vous sera envoyée par e-mail une fois votre paiement reçu !</string>
+    <string name="payment_failed">Échec du paiement</string>
+    <string name="payment_succeeded">Paiement réussi</string>
+    <string name="enter_license_key">Entrez la clé de licence</string>
+    <string name="invalid_license_key">Clé de licence invalide</string>
+    <string name="license">Licence</string>
+    <string name="failed_to_activate_key">Échec de l\'activation de la clé</string>
+    <string name="no_source_enabled_to_support_this_channel">Aucune source activée pour prendre en charge cette chaîne</string>
+    <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Voulez-vous convertir la chaîne {channelName} en une playlist ?</string>
+    <string name="failed_to_convert_channel">Échec de la conversion de la chaîne</string>
+    <string name="page">Page</string>
+    <string name="hide">Cacher</string>
+    <string name="hide_from_home">Cacher depuis l\'accueil</string>
+    <string name="play_feed_as_queue">Lire le flux comme une file d\'attente</string>
+    <string name="play_entire_feed">Lire tout le flux</string>
+    <string name="queued">En attente</string>
+    <string name="used">Utilisé</string>
+    <string name="available">Disponible</string>
+    <string name="failed_to_load_next_page">Échec du chargement de la page suivante</string>
+    <string name="plugin_pluginname_failed_message">Échec du plugin {pluginName} : {message}</string>
+    <string name="plugin_failed_due_to">Échec du plugin en raison de :</string>
+    <string name="failed_to_get_home_plugin">Échec de l\'obtention du plugin d\'accueil</string>
+    <string name="failed_to_get_home">Échec de l\'obtention de l\'accueil</string>
+    <string name="no_home_available">Aucun accueil disponible</string>
+    <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">Aucune page d\'accueil n\'est disponible, veuillez vérifier si vous êtes connecté à Internet et rafraîchir.</string>
+    <string name="import_playlists">Importer des listes de lecture</string>
+    <string name="playlists_imported">listes de lecture importées.</string>
+    <string name="index_out_of_size_selected">{index} sur {size} sélectionnés</string>
+    <string name="import_subscriptions">Importer les abonnements</string>
+    <string name="subscriptions_imported">abonnements importés.</string>
+    <string name="edit_playlist">Modifier la liste de lecture</string>
+    <string name="share_as_text">Partager en tant que texte</string>
+    <string name="share_as_a_list_of_video_urls">Partager sous forme de liste d\'URL de vidéos</string>
+    <string name="share_as_import">Partager en tant qu\'importation</string>
+    <string name="share_as_a_import_file_for_grayjay">Partager en tant que fichier d\'importation pour Grayjay</string>
+    <string name="failed_to_load_playlist">Échec du chargement de la liste de lecture</string>
+    <string name="please_wait_for_playlist_to_finish_loading">Veuillez attendre que la liste de lecture ait fini de se charger</string>
+    <string name="playlist_copied_as_local_playlist">Liste de lecture copiée en tant que liste de lecture locale</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">Êtes-vous sûr de vouloir supprimer les vidéos téléchargées ?</string>
+    <string name="create_new_playlist">Créer une nouvelle liste de lecture</string>
+    <string name="expected_media_content_found">Contenu multimédia attendu, trouvé</string>
+    <string name="failed_to_load_post">Échec du chargement de la publication.</string>
+    <string name="replies">réponses</string>
+    <string name="Replies">Réponses</string>
+    <string name="plugin_settings_saved">Paramètres du plug-in enregistrés</string>
+    <string name="plugin_settings">Paramètres du plug-in</string>
+    <string name="these_settings_are_defined_by_the_plugin">Ces paramètres sont définis par le plug-in</string>
+    <string name="failed_to_load_source">Échec du chargement de la source</string>
+    <string name="check_for_updates">Vérifier les mises à jour</string>
+    <string name="checks_for_new_versions_of_the_source">Vérifie les nouvelles versions de la source</string>
+    <string name="authentication">Authentification</string>
+    <string name="sign_out_of_the_platform">Se déconnecter de la plateforme</string>
+    <string name="import_your_subscriptions_from_this_source">Importer vos abonnements à partir de cette source</string>
+    <string name="import_your_playlists_from_this_source">Importer vos listes de lecture à partir de cette source</string>
+    <string name="login">Connexion</string>
+    <string name="sign_into_the_platform_of_this_source">Connectez-vous à la plateforme de cette source</string>
+    <string name="management">Gestion</string>
+    <string name="uninstall">Désinstaller</string>
+    <string name="removes_the_plugin_from_the_app">Supprime le plug-in de l\'application</string>
+    <string name="delete_captcha">Supprimer le captcha</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">Supprime la réponse au captcha stockée pour ce plug-in</string>
+    <string name="failed_to_retrieve_playlists">Échec de la récupération des listes de lecture.</string>
+    <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} abonnements d\'utilisateur récupérés.</string>
+    <string name="failed_to_retrieve_subscriptions">Échec de la récupération des abonnements.</string>
+    <string name="are_you_sure_you_want_to_uninstall">Êtes-vous sûr de vouloir désinstaller</string>
+    <string name="uninstalled">Désinstallé </string>
+    <string name="failed_to_check_for_updates">Échec de la vérification des mises à jour</string>
+    <string name="plugin_is_fully_up_to_date">Le plug-in est entièrement à jour</string>
+    <string name="rate_limit_warning">Avertissement de limite de taux</string>
+    <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">Il s\'agit d\'une mesure temporaire pour empêcher les gens de dépasser la limite de taux jusqu\'à ce que nous ayons un meilleur support pour de nombreux abonnements.</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\nVous avez trop d\'abonnements pour les plugins suivants :\n</string>
+    <string name="posts">Publications</string>
+    <string name="planned">Prévues</string>
+    <string name="no_results_found_swipe_down_to_refresh">Aucun résultat trouvé\nBalayez vers le bas pour actualiser</string>
+    <string name="overlay">Superposition</string>
+    <string name="reload">Recharger</string>
+    <string name="watching_now">en train de regarder maintenant</string>
+    <string name="views">vues</string>
+    <string name="planned_in">Prévue dans</string>
+    <string name="failed_to_get_playback_tracker">Échec de l\'obtention du suivi de la lecture</string>
+    <string name="exception_retrieving_live_events">Exception lors de la récupération des événements en direct :</string>
+    <string name="exception_retrieving_live_chat_window">Exception lors de la récupération de la fenêtre de chat en direct :</string>
+    <string name="live_chat_failed_to_load">Échec du chargement du chat en direct</string>
+    <string name="unsupported_cast_format">Format Cast non pris en charge</string>
+    <string name="failed_to_load_media">Échec du chargement du média</string>
+    <string name="offline_playback">Lecture hors ligne</string>
+    <string name="media_error">Erreur multimédia</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">La source multimédia a rencontré une erreur non autorisée.\nCela pourrait être résolu par un rechargement du plug-in.\nSouhaitez-vous recharger ?\n(Expérimental)</string>
+    <string name="playback_rate">Taux de lecture</string>
+    <string name="quality">Qualité</string>
+    <string name="offline_video">Vidéo hors ligne</string>
+    <string name="offline_audio">Audio hors ligne</string>
+    <string name="offline_subtitles">Sous-titres hors ligne</string>
+    <string name="stream_video">Vidéo en streaming</string>
+    <string name="stream_audio">Audio en streaming</string>
+    <string name="audio">Audio</string>
+    <string name="subtitles">Sous-titres</string>
+    <string name="unavailable_video">Vidéo non disponible</string>
+    <string name="this_video_is_unavailable">Cette vidéo n\'est pas disponible.</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">Une vidéo n\'était pas disponible dans votre file d\'attente [{videoName}] par [{authorName}].</string>
+    <string name="back">Retour</string>
+    <string name="pause">Pause</string>
+    <string name="play">Lire</string>
+    <string name="pauses_the_video">Met en pause la vidéo</string>
+    <string name="resumes_the_video">Reprend la vidéo</string>
+    <string name="video_without_source">Vidéo sans source</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Il y avait une vidéo dans votre file d\'attente [{videoName}] par [{authorName}] sans la source requise activée, la lecture a été sautée.</string>
+    <string name="failed_to_load_video_scriptimplementationexception">Échec du chargement de la vidéo (ScriptImplementationException)</string>
+    <string name="invalid_video">Vidéo invalide</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Il y avait une vidéo invalide dans votre file d\'attente [{videoName}] par [{authorName}], la lecture a été sautée.</string>
+    <string name="age_restricted_video">Vidéo soumise à des restrictions d\'âge</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Il y avait une vidéo soumise à des restrictions d\'âge dans votre file d\'attente [{videoName}] par [{authorName}], cette vidéo n\'était pas accessible et la lecture a été sautée.</string>
+    <string name="failed_to_load_video_scriptexception">Échec du chargement de la vidéo (ScriptException)</string>
+    <string name="failed_to_load_video">Échec du chargement de la vidéo</string>
+    <string name="not_yet_available_retrying_in_time_s">Pas encore disponible, réessai dans {time}s</string>
+    <string name="failed_to_retry_for_live_stream">Échec de la tentative de réessai pour la diffusion en direct</string>
+    <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">Cette application est en développement. Veuillez soumettre des rapports de bug et comprendre que de nombreuses fonctionnalités ne sont pas encore complètes.</string>
+    <string name="please_use_at_least_3_characters">Veuillez utiliser au moins 3 caractères</string>
+    <string name="are_you_sure_you_want_to_delete_this_video">Êtes-vous sûr de vouloir supprimer cette vidéo ?</string>
+    <string name="tap_to_open">Appuyez pour ouvrir</string>
+    <string name="watching">en train de regarder</string>
+    <string name="available_in">disponible dans</string>
+    <string name="seconds">secondes</string>
+    <string name="please_login_to_post_a_comment">Veuillez vous connecter pour poster un commentaire</string>
+    <string name="failed_to_post_comment">Échec de la publication du commentaire :</string>
+    <string name="waiting_for_unmetered">En attente d\'un débit non mesuré</string>
+    <string name="last_error">Dernière erreur</string>
+    <string name="error">Erreur</string>
+    <string name="filters">Filtres</string>
+    <string name="viewers">spectateurs</string>
+    <string name="expected_at_least_one_reply_but_no_replies_were_returned_by_the_server">Au moins une réponse était attendue, mais aucune réponse n\'a été renvoyée par le serveur</string>
+    <string name="please_login_to_like">Veuillez vous connecter pour aimer</string>
+    <string name="please_login_to_dislike">Veuillez vous connecter pour ne pas aimer</string>
+    <string name="failed_to_load_comments">Échec du chargement des commentaires.</string>
+    <string name="script_is_not_available">Le script n\'est pas disponible</string>
+    <string name="signature_is_valid">La signature est valide</string>
+    <string name="signature_is_invalid">La signature est invalide</string>
+    <string name="no_signature_available">Aucune signature disponible</string>
+    <string name="subscribed_to">Abonné à</string>
+    <string name="unsubscribed_from">Désabonné de</string>
+    <string name="you_don_t_have_any_automatic_backups">Vous n\'avez pas de sauvegardes automatiques</string>
+    <string name="an_old_backup_is_available">Une ancienne sauvegarde est disponible</string>
+    <string name="would_you_like_to_restore_this_backup">Souhaitez-vous restaurer cette sauvegarde ?</string>
+    <string name="override">Remplacer</string>
+    <string name="data_retry">Réessai des données</string>
+    <string name="no_downloads_available">Aucun téléchargement disponible</string>
+    <string name="no_downloadable_sources_yet">Aucune source téléchargeable (pour le moment)</string>
+    <string name="none">Aucun</string>
+    <string name="audio_only">Audio seulement</string>
+    <string name="download_video">Télécharger la vidéo</string>
+    <string name="fetching_video_details">Récupération des détails de la vidéo</string>
+    <string name="failed_to_fetch_details_for_download">Échec de la récupération des détails pour le téléchargement</string>
+    <string name="target_resolution">Résolution cible</string>
+    <string name="target_bitrate">Débit binaire cible</string>
+    <string name="low_bitrate">Faible débit binaire</string>
+    <string name="high_bitrate">Débit binaire élevé</string>
+    <string name="actions">Actions</string>
+    <string name="download_the_video">Télécharger la vidéo</string>
+    <string name="video_options">Options vidéo</string>
+    <string name="change_pins">Modifier les épingles</string>
+    <string name="decide_which_buttons_should_be_pinned">Décidez quelles boutons doivent être épinglés</string>
+    <string name="select_your_pins_in_order">Sélectionnez vos épingles dans l\'ordre</string>
+    <string name="more_options">Plus d\'options</string>
+    <string name="save">Enregistrer</string>
+    <string-array name="home_screen_array">
+        <item>Recommandations</item>
+        <item>Abonnements</item>
+    </string-array>
+    <string-array name="preferred_quality_array">
+        <item>Automatique (720p)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="preferred_video_download">
+        <item>Aucun (Audio uniquement)</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>360p</item>
+        <item>240p</item>
+        <item>144p</item>
+    </string-array>
+    <string-array name="thread_count">
+        <item>1 Thread</item>
+        <item>2 Threads</item>
+        <item>4 Threads</item>
+        <item>6 Threads</item>
+        <item>8 Threads</item>
+        <item>10 Threads</item>
+        <item>15 Threads</item>
+    </string-array>
+    <string-array name="background_interval">
+        <item>Jamais</item>
+        <item>Toutes les 15 minutes</item>
+        <item>Toutes les heures</item>
+        <item>Toutes les 3 heures</item>
+        <item>Toutes les 6 heures</item>
+        <item>Toutes les 12 heures</item>
+        <item>Tous les jours</item>
+    </string-array>
+    <string-array name="preferred_audio_download">
+        <item>Faible débit</item>
+        <item>Haute débit</item>
+    </string-array>
+    <string-array name="auto_update_when_array">
+        <item>Au démarrage</item>
+        <item>Jamais</item>
+    </string-array>
+    <string-array name="system_enabled_disabled_array">
+        <item>Désactivé</item>
+        <item>Activé</item>
+        <item>Même que le système</item>
+    </string-array>
+    <string-array name="enabled_disabled_array">
+        <item>Désactivé</item>
+        <item>Activé</item>
+    </string-array>
+    <string-array name="when_download">
+        <item>Sur réseau non mesuré</item>
+        <item>Sur Wi-Fi et Ethernet</item>
+        <item>Toujours</item>
+    </string-array>
+    <string-array name="background_download">
+        <item>Désactivé</item>
+        <item>Activé</item>
+    </string-array>
+    <string-array name="subscriptions_sortby_array">
+        <item>Nom croissant</item>
+        <item>Nom décroissant</item>
+    </string-array>
+    <string-array name="feed_style">
+        <item>Aperçu</item>
+        <item>Liste</item>
+    </string-array>
+    <string-array name="player_background_behavior">
+        <item>Aucun</item>
+        <item>Continuer la lecture</item>
+        <item>Superposition du lecteur</item>
+    </string-array>
+    <string-array name="resume_after_preview">
+        <item>Reprendre depuis le début</item>
+        <item>Reprendre après 10s</item>
+        <item>Toujours reprendre</item>
+    </string-array>
+    <string-array name="languages">
+        <item>Anglais</item>
+        <item>Espagnol</item>
+        <item>Français</item>
+        <item>Français</item>
+        <item>Coréen</item>
+        <item>Thaï</item>
+        <item>Vietnamien</item>
+        <item>Indonésien</item>
+        <item>Hindi</item>
+        <item>Arabe</item>
+        <item>Turc</item>
+        <item>Russe</item>
+    </string-array>
+    <string-array name="log_levels">
+        <item>Aucun</item>
+        <item>Erreur</item>
+        <item>Avertissement</item>
+        <item>Information</item>
+        <item>Verbeux</item>
+    </string-array>
+</resources>

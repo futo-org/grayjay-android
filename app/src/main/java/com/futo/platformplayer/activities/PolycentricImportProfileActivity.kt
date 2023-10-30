@@ -131,8 +131,4 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "PolycentricImportProfileActivity";
     }
-
-    class QRCaptureActivity: CaptureActivity() {
-
-    }
 }

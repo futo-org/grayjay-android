@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -90,7 +91,9 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
+                    Logger.i(TAG, "Started backfill");
                     processHandle.fullyBackfillServers()
+                    Logger.i(TAG, "Finished backfill");
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to backfill servers.", e);
                 }

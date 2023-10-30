@@ -52,7 +52,7 @@ new PlatformVideo({
 			new Thumbnail("https://.../...", 720),
 			new Thumbnail("https://.../...", 1080),
 		]),
-	author: new AuthorLink(
+	author: new PlatformAuthorLink(
 		new PlatformID("SomePlatformName", "SomeAuthorID", config.id), 
 		"SomeAuthorName", 
 		"https://platform.com/your/channel/url", 
@@ -97,7 +97,7 @@ A nested item consists of an detail url and optional metadata such as name, desc
 new PlatformNestedMediaContent({
 	id: new PlatformID("SomePlatformName", "SomeId", config.id),
 	name: "Name of content link",
-	author: new AuthorLink(
+	author: new PlatformAuthorLink(
 		new PlatformID("SomePlatformName", "SomeAuthorID", config.id), 
 		"SomeAuthorName", 
 		"https://platform.com/your/channel/url", 
@@ -134,7 +134,7 @@ new PlatformVideoDetails({
 			new Thumbnail("https://.../...", 720),
 			new Thumbnail("https://.../...", 1080),
 		]),
-	author: new AuthorLink(
+	author: new PlatformAuthorLink(
 		new PlatformID("SomePlatformName", "SomeAuthorID", config.id), 
 		"SomeAuthorName", 
 		"https://platform.com/your/channel/url", 

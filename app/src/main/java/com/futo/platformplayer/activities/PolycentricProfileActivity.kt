@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.dialogs.CommentDialog
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
@@ -186,7 +187,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
                 if (hasChanges) {
                     try {
+                        Logger.i(TAG, "Started backfill");
                         processHandle.fullyBackfillServers();
+                        Logger.i(TAG, "Finished backfill");
                         withContext(Dispatchers.Main) {
                             UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.changes_have_been_saved));
                         }
