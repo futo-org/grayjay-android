@@ -72,9 +72,4 @@ class AddSourceOptionsActivity : AppCompatActivity() {
             UIDialogs.toast(this, getString(R.string.not_implemented_yet));
         }
     }
-
-
-    class QRCaptureActivity: CaptureActivity() {
-
-    }
 }
