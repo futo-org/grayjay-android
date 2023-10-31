@@ -66,6 +66,8 @@ class SimpleSubscriptionAlgorithm(
         val subsPager: Array<IPager<IPlatformContent>>;
         val exs: ArrayList<Throwable> = arrayListOf();
 
+        Logger.i(TAG, "getSubscriptions [Simple]");
+
         val tasks = mutableListOf<ForkJoinTask<Pair<Subscription, IPager<IPlatformContent>?>>>();
         var finished = 0;
         val exceptionMap: HashMap<Subscription, Throwable> = hashMapOf();

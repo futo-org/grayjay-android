@@ -1,5 +1,6 @@
 package com.futo.platformplayer.models
 
+import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -39,6 +40,7 @@ class Subscription {
 
     //Last video interval
     var uploadInterval : Int = 0;
+    var uploadStreamInterval : Int = 0;
     var uploadPostInterval : Int = 0;
 
 
@@ -46,13 +48,68 @@ class Subscription {
         this.channel = channel;
     }
 
-    fun shouldFetchStreams() = lastLiveStream.getNowDiffDays() < 7;
-    fun shouldFetchLiveStreams() = lastLiveStream.getNowDiffDays() < 14;
-    fun shouldFetchPosts() = lastPost.getNowDiffDays() < 2;
+    fun shouldFetchVideos() = true;
+    fun shouldFetchStreams() = doFetchStreams && lastLiveStream.getNowDiffDays() < 7;
+    fun shouldFetchLiveStreams() = doFetchLive && lastLiveStream.getNowDiffDays() < 14;
+    fun shouldFetchPosts() = doFetchPosts && lastPost.getNowDiffDays() < 2;
 
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 
     fun updateChannel(channel: IPlatformChannel) {
         this.channel = SerializedChannel.fromChannel(channel);
+    }
+
+    fun updateSubscriptionState(type: String, initialPage: List<IPlatformContent>) {
+        val interval: Int;
+        val mostRecent: OffsetDateTime?;
+        if(!initialPage.isEmpty()) {
+            val newestVideoDays = initialPage[0].datetime?.getNowDiffDays()?.toInt() ?: 0;
+            val diffs = mutableListOf<Int>()
+            for(i in (initialPage.size - 1) downTo  1) {
+                val currentVideoDays = initialPage[i].datetime?.getNowDiffDays();
+                val nextVideoDays = initialPage[i - 1].datetime?.getNowDiffDays();
+
+                if(currentVideoDays != null && nextVideoDays != null) {
+                    val diff = nextVideoDays - currentVideoDays;
+                    diffs.add(diff.toInt());
+                }
+            }
+            val averageDiff = if(diffs.size > 0)
+                newestVideoDays.coerceAtLeast(diffs.average().toInt())
+            else
+                newestVideoDays;
+            interval = averageDiff.coerceAtLeast(1);
+            mostRecent = initialPage[0].datetime;
+        }
+        else {
+            interval = 5;
+            mostRecent = null;
+        }
+        when(type) {
+            ResultCapabilities.TYPE_VIDEOS -> {
+                uploadInterval = interval;
+                if(mostRecent != null)
+                    lastVideo = mostRecent;
+                lastVideoUpdate = OffsetDateTime.now();
+            }
+            ResultCapabilities.TYPE_MIXED -> {
+                uploadInterval = interval;
+                if(mostRecent != null)
+                    lastVideo = mostRecent;
+                lastVideoUpdate = OffsetDateTime.now();
+            }
+            ResultCapabilities.TYPE_STREAMS -> {
+                uploadStreamInterval = interval;
+                if(mostRecent != null)
+                    lastLiveStream = mostRecent;
+                lastStreamUpdate = OffsetDateTime.now();
+            }
+            ResultCapabilities.TYPE_POSTS -> {
+                uploadPostInterval = interval;
+                if(mostRecent != null)
+                    lastPost = mostRecent;
+                lastPostUpdate = OffsetDateTime.now();
+            }
+        }
     }
 }

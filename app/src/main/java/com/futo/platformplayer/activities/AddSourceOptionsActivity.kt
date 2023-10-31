@@ -16,6 +16,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
 
     lateinit var _buttonQR: BigButton;
     lateinit var _buttonURL: BigButton;
+    lateinit var _buttonPlugins: BigButton;
 
     private val _qrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -51,6 +52,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
 
         _buttonQR = findViewById(R.id.option_qr);
         _buttonURL = findViewById(R.id.option_url);
+        _buttonPlugins = findViewById(R.id.option_plugins);
 
         _buttonBack.setOnClickListener {
             finish();

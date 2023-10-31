@@ -61,8 +61,18 @@
         android:layout_height="wrap_content"
         android:alpha="0.5"
         android:layout_marginTop="5dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="5dp"
         app:buttonText="@string/install_by_url"
         app:buttonSubText="@string/enter_url_explain"
         app:buttonIcon="@drawable/ic_link" />
+    <com.futo.platformplayer.views.buttons.BigButton
+        android:id="@+id/option_plugins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0.5"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="20dp"
+        app:buttonText="Install by Store"
+        app:buttonSubText="Browse plugins published through Polycentric."
+        app:buttonIcon="@drawable/ic_sources" />
 </LinearLayout>

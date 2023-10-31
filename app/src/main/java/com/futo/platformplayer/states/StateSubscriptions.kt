@@ -63,7 +63,7 @@ class StateSubscriptions {
     var globalSubscriptionExceptions: List<Throwable> = listOf()
         private set;
 
-    private val _algorithmSubscriptions = SubscriptionFetchAlgorithms.SIMPLE;
+    private val _algorithmSubscriptions = SubscriptionFetchAlgorithms.SMART;
 
     private var _lastGlobalSubscriptionProgress: Int = 0;
     private var _lastGlobalSubscriptionTotal: Int = 0;
@@ -248,138 +248,6 @@ class StateSubscriptions {
 
         val result = algo.getSubscriptions(subUrls);
         return Pair(result.pager, result.exceptions);
-        /*
-        val subsPager: Array<IPager<IPlatformContent>>;
-        val exs: ArrayList<Throwable> = arrayListOf();
-
-        val tasks = mutableListOf<ForkJoinTask<Pair<Subscription, IPager<IPlatformContent>?>>>();
-        var finished = 0;
-        val exceptionMap: HashMap<Subscription, Throwable> = hashMapOf();
-        val concurrency = Settings.instance.subscriptions.getSubscriptionsConcurrency();
-        val failedPlugins = arrayListOf<String>();
-        for (sub in getSubscriptions().filter { StatePlatform.instance.hasEnabledChannelClient(it.channel.url) }) {
-            tasks.add(_subscriptionsPool.submit<Pair<Subscription, IPager<IPlatformContent>?>> {
-                val toIgnore = synchronized(failedPlugins){ failedPlugins.toList() };
-
-                var polycentricProfile : PolycentricCache.CachedPolycentricProfile? = null;
-                val getProfileTime = measureTimeMillis {
-                    try {
-                        polycentricProfile = PolycentricCache.instance.getCachedProfile(sub.channel.url);
-                        if (polycentricProfile == null) {
-                            Logger.i("StateSubscriptions", "Get polycentric profile not cached");
-                            polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(sub.channel.id) };
-                        } else {
-                            Logger.i("StateSubscriptions", "Get polycentric profile cached");
-                        }
-                    }
-                    catch(ex: Throwable) {
-                        Logger.w(TAG, "Polycentric getCachedProfile failed for subscriptions", ex);
-                        //TODO: Some way to communicate polycentric failing without blocking here
-                        //UIDialogs.toast("Polycentric failed\n" + ex.message, false);
-                        //UIDialogs.showGeneralErrorDialog(it, "Polycentric getCachedProfile failed for subscriptions", ex);
-                    }
-                }
-
-                Logger.i("StateSubscriptions", "Get polycentric profile time ${getProfileTime}ms");
-
-                var pager: IPager<IPlatformContent>;
-                try {
-                    val time = measureTimeMillis {
-                        val profile = polycentricProfile?.profile
-                        pager = if (profile != null)
-                            StatePolycentric.instance.getChannelContent(profile, true, concurrency, toIgnore)
-                        else
-                            StatePlatform.instance.getChannelContent(sub.channel.url, true, concurrency, toIgnore);
-
-                        if (cacheScope != null)
-                            pager = ChannelContentCache.cachePagerResults(cacheScope, pager) {
-                                onNewCacheHit?.invoke(sub, it);
-                            };
-
-                        finished++;
-                        onProgress?.invoke(finished, tasks.size);
-                    }
-                    Logger.i(
-                        "StateSubscriptions",
-                        "Subscription [${sub.channel.name}] results in ${time}ms"
-                    );
-                }
-                catch(ex: Throwable) {
-                    Logger.e(TAG, "Subscription [${sub.channel.name}] failed", ex);
-                    finished++;
-                    onProgress?.invoke(finished, tasks.size);
-                    val channelEx = ChannelException(sub.channel, ex);
-                    synchronized(exceptionMap) {
-                        exceptionMap.put(sub, channelEx);
-                    }
-                    if(ex is ScriptCaptchaRequiredException) {
-                        synchronized(failedPlugins) {
-                            //Fail all subscription calls to plugin if it has a captcha issue
-                            if(ex.config is SourcePluginConfig && !failedPlugins.contains(ex.config.id)) {
-                                Logger.w(TAG, "Subscriptionsgnoring plugin [${ex.config.name}] due to Captcha");
-                                failedPlugins.add(ex.config.id);
-                            }
-                        }
-                    }
-                    else if(ex is ScriptCriticalException) {
-                        synchronized(failedPlugins) {
-                            //Fail all subscription calls to plugin if it has a critical issue
-                            if(ex.config is SourcePluginConfig && !failedPlugins.contains(ex.config.id)) {
-                                Logger.w(TAG, "Subscriptions ignoring plugin [${ex.config.name}] due to critical exception:\n" + ex.message);
-                                failedPlugins.add(ex.config.id);
-                            }
-                        }
-                    }
-                    if(!withCacheFallback)
-                        throw channelEx;
-                    else {
-                        Logger.i(TAG, "Channel ${sub.channel.name} failed, substituting with cache");
-                        pager = ChannelContentCache.instance.getChannelCachePager(sub.channel.url);
-                    }
-                }
-                return@submit Pair(sub, pager);
-            });
-        }
-        val timeTotal = measureTimeMillis {
-            val taskResults = arrayListOf<IPager<IPlatformContent>>();
-            for(task in tasks) {
-                try {
-                    val result = task.get();
-                    if(result != null) {
-                        if(result.second != null)
-                            taskResults.add(result.second!!);
-                        if(exceptionMap.containsKey(result.first)) {
-                            val ex = exceptionMap[result.first];
-                            if(ex != null) {
-                                val nonRuntimeEx = findNonRuntimeException(ex);
-                                if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
-                                    exs.add(nonRuntimeEx);
-                                else
-                                    throw ex.cause ?: ex;
-                            }
-                        }
-                    }
-                } catch (ex: ExecutionException) {
-                    val nonRuntimeEx = findNonRuntimeException(ex.cause);
-                    if(nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
-                        exs.add(nonRuntimeEx);
-                    else
-                        throw ex.cause ?: ex;
-                };
-            }
-            subsPager = taskResults.toTypedArray();
-        }
-        Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms")
-
-        if(subsPager.size <= 0 && exs.any())
-            throw exs.first();
-
-        Logger.i(TAG, "Subscription pager with ${subsPager.size} channels");
-        val pager = MultiChronoContentPager(subsPager, allowFailure, 15);
-        pager.initialize();
-        //return Pair(pager, exs);
-        return Pair(DedupContentPager(pager), exs);
-        */
     }
 
     //New Migration

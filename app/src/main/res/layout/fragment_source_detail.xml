@@ -57,6 +57,15 @@
                 </com.futo.platformplayer.views.fields.FieldForm>
 
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/advanced_source_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 

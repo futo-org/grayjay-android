@@ -34,6 +34,8 @@ abstract class SubscriptionFetchAlgorithm(
     );
 
     companion object {
+        public val TAG = "SubscriptionAlgorithm";
+
         fun getAlgorithm(algo: SubscriptionFetchAlgorithms, scope: CoroutineScope, allowFailure: Boolean = false, withCacheFallback: Boolean = false, pool: ForkJoinPool? = null): SubscriptionFetchAlgorithm {
             return when(algo) {
                 SubscriptionFetchAlgorithms.CACHE -> CachedSubscriptionAlgorithm(150, scope, allowFailure, withCacheFallback, pool);

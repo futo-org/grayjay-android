@@ -63,6 +63,7 @@ class SourceDetailFragment : MainFragment() {
 
         private val _sourceHeader: SourceHeaderView;
         private val _sourceButtons: LinearLayout;
+        private val _sourceAdvancedButtons: LinearLayout;
         private val _layoutLoader: FrameLayout;
         private val _imageSpinner: ImageView;
 
@@ -82,6 +83,7 @@ class SourceDetailFragment : MainFragment() {
             this.fragment = fragment;
             _sourceHeader = findViewById(R.id.source_header);
             _sourceButtons = findViewById(R.id.source_buttons);
+            _sourceAdvancedButtons = findViewById(R.id.advanced_source_buttons);
             _settingsAppForm = findViewById(R.id.source_app_setings);
             _settingsForm = findViewById(R.id.source_settings);
             _layoutLoader = findViewById(R.id.layout_loader);
@@ -283,6 +285,17 @@ class SourceDetailFragment : MainFragment() {
             for (group in groups) {
                 _sourceButtons.addView(group);
             }
+
+            val advancedButtons = BigButtonGroup(c, "Advanced",
+                BigButton(c, "Edit Code", "Modify the source of this plugin", R.drawable.ic_code) {
+
+                }.apply {
+                    this.alpha = 0.5f;
+                }
+            )
+
+            _sourceAdvancedButtons.removeAllViews();
+            _sourceAdvancedButtons.addView(advancedButtons);
         }
 
 
