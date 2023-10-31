@@ -4,12 +4,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.media.MediaSession2Service.MediaNotification
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
@@ -83,6 +85,8 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
 
         val newSubChanges = hashSetOf<Subscription>();
         val newItems = mutableListOf<IPlatformContent>();
+
+        val contentNotifs = mutableListOf<Pair<Subscription, IPlatformContent>>();
         withContext(Dispatchers.IO) {
             StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(true, false,this, { progress, total ->
                 Logger.i("BackgroundWorker", "SUBSCRIPTION PROGRESS: ${progress}/${total}");
@@ -97,8 +101,11 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
                 }
             }, { sub, content ->
                 synchronized(newSubChanges) {
-                    if(!newSubChanges.contains(sub))
+                    if(!newSubChanges.contains(sub)) {
                         newSubChanges.add(sub);
+                        if(sub.doNotifications)
+                            contentNotifs.add(Pair(sub, content));
+                    }
                     newItems.add(content);
                 }
             });
@@ -106,12 +113,31 @@ class BackgroundWorker(private val appContext: Context, workerParams: WorkerPara
 
         manager.cancel(12);
 
-        if(newItems.size > 0)
+        if(newItems.size > 0) {
+            try {
+                val items = contentNotifs.take(5).toList()
+                for(i in items.indices) {
+                    val contentNotif = items.get(i);
+                    manager.notify(13 + i, NotificationCompat.Builder(appContext, notificationChannel.id)
+                        .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
+                        .setContentTitle("New video by [${contentNotif.first.channel.name}]")
+                        .setContentText("${contentNotif.second.name}")
+                        .setSilent(true)
+                        .setContentIntent(PendingIntent.getActivity(this.appContext, 0, MainActivity.getVideoIntent(this.appContext, contentNotif.second.url),
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+                        .setChannelId(notificationChannel.id).build());
+                }
+            }
+            catch(ex: Throwable) {
+                Logger.e("BackgroundWorker", "Failed to create notif", ex);
+            }
+        }
+        /*
             manager.notify(13, NotificationCompat.Builder(appContext, notificationChannel.id)
                 .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
                 .setContentTitle("Grayjay")
                 .setContentText("${newItems.size} new content from ${newSubChanges.size} creators")
                 .setSilent(true)
-                .setChannelId(notificationChannel.id).build());
+                .setChannelId(notificationChannel.id).build());*/
     }
 }

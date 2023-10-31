@@ -459,6 +459,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     Logger.i(TAG, "View Received: " + targetData);
                 }
             }
+            "VIDEO" -> {
+                val url = intent.getStringExtra("VIDEO");
+                navigate(_fragVideoDetail, url);
+            }
             "TAB" -> {
                 when(intent.getStringExtra("TAB")){
                     "Sources" -> {
@@ -922,6 +926,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "TAB";
             sourcesIntent.putExtra("TAB", tab);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            return sourcesIntent;
+        }
+        fun getVideoIntent(context: Context, videoUrl: String) : Intent {
+            val sourcesIntent = Intent(context, MainActivity::class.java);
+            sourcesIntent.action = "VIDEO";
+            sourcesIntent.putExtra("VIDEO", videoUrl);
             sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             return sourcesIntent;
         }
