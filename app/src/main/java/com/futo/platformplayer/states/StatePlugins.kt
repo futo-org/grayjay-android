@@ -108,14 +108,12 @@ class StatePlugins {
             instance.deletePlugin(embedded.key);
         StatePlatform.instance.updateAvailableClients(context);
     }
-    fun updateEmbeddedPlugins(context: Context) {
-        for(embedded in getEmbeddedSources(context)) {
+    fun updateEmbeddedPlugins(context: Context, subset: List<String>? = null, force: Boolean = false) {
+        for(embedded in getEmbeddedSources(context).filter { subset == null || subset.contains(it.key) }) {
             val embeddedConfig = getEmbeddedPluginConfig(context, embedded.value);
-            if(FORCE_REINSTALL_EMBEDDED)
-                deletePlugin(embedded.key);
-            else if(embeddedConfig != null) {
+            if(embeddedConfig != null) {
                 val existing = getPlugin(embedded.key);
-                if(existing != null && existing.config.version < embeddedConfig.version ) {
+                if(existing != null && (existing.config.version < embeddedConfig.version || (force || FORCE_REINSTALL_EMBEDDED))) {
                     Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig?.version}), reinstalling");
                     //deletePlugin(embedded.key);
                     installEmbeddedPlugin(context, embedded.value)

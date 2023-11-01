@@ -68,6 +68,12 @@ fun ensureNotMainThread() {
     }
 }
 
+private val _regexUrl = Regex("https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&\\/\\/=]*)");
+fun String.isHttpUrl(): Boolean {
+    return _regexUrl.matchEntire(this) != null;
+}
+
+
 private val _regexHexColor = Regex("(#[a-fA-F0-9]{8})|(#[a-fA-F0-9]{6})|(#[a-fA-F0-9]{3})");
 fun String.isHexColor(): Boolean {
     return _regexHexColor.matches(this);

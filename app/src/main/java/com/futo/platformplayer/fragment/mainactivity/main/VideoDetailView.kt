@@ -38,6 +38,7 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
+import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
@@ -173,6 +174,8 @@ class VideoDetailView : ConstraintLayout {
     private val _addCommentView: AddCommentView;
     private val _toggleCommentType: Toggle;
 
+    private val _layoutSkip: LinearLayout;
+    private val _textSkip: TextView;
     private val _textResume: TextView;
     private val _layoutResume: LinearLayout;
     private var _jobHideResume: Job? = null;
@@ -296,6 +299,8 @@ class VideoDetailView : ConstraintLayout {
         _addCommentView = findViewById(R.id.add_comment_view);
         _commentsList = findViewById(R.id.comments_list);
 
+        _layoutSkip = findViewById(R.id.layout_skip);
+        _textSkip = findViewById(R.id.text_skip);
         _layoutResume = findViewById(R.id.layout_resume);
         _textResume = findViewById(R.id.text_resume);
         _layoutPlayerContainer = findViewById(R.id.layout_player_container);
@@ -403,6 +408,21 @@ class VideoDetailView : ConstraintLayout {
         _cast.onSettingsClick.subscribe { showVideoSettings() };
         _player.onVideoSettings.subscribe { showVideoSettings() };
         _player.onToggleFullScreen.subscribe(::handleFullScreen);
+        _player.onChapterChanged.subscribe { chapter, isScrub ->
+            if(_layoutSkip.visibility == VISIBLE && chapter?.type != ChapterType.SKIPPABLE)
+                _layoutSkip.visibility = GONE;
+
+            if(!isScrub) {
+                if(chapter?.type == ChapterType.SKIPPABLE) {
+                    _layoutSkip.visibility = VISIBLE;
+                }
+                else if(chapter?.type == ChapterType.SKIP) {
+                    _player.seekTo(chapter.timeEnd.toLong() * 1000);
+                    UIDialogs.toast(context, "Skipped chapter [${chapter.name}]", false);
+                }
+            }
+        }
+
         _cast.onMinimizeClick.subscribe {
             _player.setFullScreen(false);
             onMinimize.emit();
@@ -581,6 +601,13 @@ class VideoDetailView : ConstraintLayout {
 
             _layoutResume.visibility = View.GONE;
         };
+
+        _layoutSkip.setOnClickListener {
+            val currentChapter = _player.getCurrentChapter(_player.position);
+            if(currentChapter?.type == ChapterType.SKIPPABLE) {
+                _player.seekTo(currentChapter.timeEnd.toLong() * 1000);
+            }
+        }
     }
 
     fun updateMoreButtons() {
@@ -961,9 +988,10 @@ class VideoDetailView : ConstraintLayout {
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Failed to get chapters", ex);
-                    withContext(Dispatchers.Main) {
+
+                    /*withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);
-                    }
+                    }*/
                 }
                 try {
                     val stopwatch = com.futo.platformplayer.debug.Stopwatch()

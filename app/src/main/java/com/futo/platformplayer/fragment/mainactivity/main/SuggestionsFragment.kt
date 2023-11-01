@@ -117,7 +117,10 @@ class SuggestionsFragment : MainFragment {
                     } else if (_searchType == SearchType.PLAYLIST) {
                         navigate<PlaylistSearchResultsFragment>(it);
                     } else {
-                        navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, SearchType.VIDEO, _channelUrl));
+                        if(it.isHttpUrl())
+                            navigate<VideoDetailFragment>(it);
+                        else
+                            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, SearchType.VIDEO, _channelUrl));
                     }
                 };
 

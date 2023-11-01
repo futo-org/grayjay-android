@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
+import com.futo.platformplayer.isHttpUrl
 import com.futo.platformplayer.views.FeedStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -143,7 +144,10 @@ class ContentSearchResultsFragment : MainFragment() {
                     };
 
                     onSearch.subscribe(this) {
-                        setQuery(it, true);
+                        if(it.isHttpUrl())
+                            navigate<VideoDetailFragment>(it);
+                        else
+                            setQuery(it, true);
                     };
                 }
             }

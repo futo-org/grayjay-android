@@ -87,6 +87,7 @@ class SubscriptionsFeedFragment : MainFragment() {
     @SuppressLint("ViewConstructor")
     class SubscriptionsFeedView : ContentFeedView<SubscriptionsFeedFragment> {
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+            Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.onGlobalSubscriptionsUpdateProgress.subscribe(this) { progress, total ->
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
@@ -110,6 +111,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         }
 
         fun onShown() {
+            Logger.i(TAG, "SubscriptionsFeedFragment onShown()");
             val currentProgress = StateSubscriptions.instance.getGlobalSubscriptionProgress();
             setProgress(currentProgress.first, currentProgress.second);
 
@@ -176,6 +178,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 if(rateLimitPlugins.any())
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }
+            _bypassRateLimit = false;
             val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh);
 
             val currentExs = StateSubscriptions.instance.globalSubscriptionExceptions;
@@ -279,9 +282,10 @@ class SubscriptionsFeedFragment : MainFragment() {
             setLoading(true);
             Logger.i(TAG, "Subscriptions load");
             if(recyclerData.results.size == 0) {
+                Logger.i(TAG, "Subscriptions load cache");
                 val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
                 val results = cachePager.getResults();
-                Logger.i(TAG, "Subscription show cache (${results.size})");
+                Logger.i(TAG, "Subscriptions show cache (${results.size})");
                 setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
                 setPager(cachePager);
             } else {
@@ -291,7 +295,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         }
 
         private fun loadedResult(pager: IPager<IPlatformContent>) {
-            Logger.i(TAG, "Subscriptions new pager loaded");
+            Logger.i(TAG, "Subscriptions new pager loaded (${pager.getResults().size})");
 
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 try {

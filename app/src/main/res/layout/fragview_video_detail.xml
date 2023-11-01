@@ -150,6 +150,30 @@
             android:textSize="12dp"
             android:fontFamily="@font/inter_light" />
     </LinearLayout>
+    <LinearLayout
+        android:id="@+id/layout_skip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="5dp"
+        android:background="@drawable/background_button_transparent_round"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginTop="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/text_skip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skip"
+            android:textSize="12dp"
+            android:fontFamily="@font/inter_light" />
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/contentContainer"

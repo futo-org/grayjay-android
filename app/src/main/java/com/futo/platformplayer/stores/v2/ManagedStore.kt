@@ -181,6 +181,12 @@ class ManagedStore<T>{
         return ReconstructionResult(successes, exs, builder.messages);
     }
 
+
+    fun count(): Int {
+        synchronized(_files) {
+            return _files.size;
+        }
+    }
     fun getItems(): List<T> {
         synchronized(_files) {
             return _files.map { it.key };

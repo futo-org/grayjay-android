@@ -33,6 +33,7 @@ import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
+import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
@@ -54,6 +55,8 @@ import java.io.File
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 /***
  * This class contains global context for unconventional cases where obtaining context is hard.
@@ -380,6 +383,18 @@ class StateApp {
     fun mainAppStarted(context: Context) {
         Logger.i(TAG, "App started");
 
+        //Start loading cache
+        instance.scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                val time = measureTimeMillis {
+                    ChannelContentCache.instance;
+                }
+                Logger.i(TAG, "ChannelContentCache initialized in ${time}ms");
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to load announcements.", e)
+            }
+        }
+
         StateAnnouncement.instance.registerAnnouncement("fa4647d3-36fa-4c8c-832d-85b00fc72dca", "Disclaimer", "This is an early alpha build of the application, expect bugs and unfinished features.", AnnouncementType.DELETABLE, OffsetDateTime.now())
 
         if(SettingsDev.instance.developerMode && SettingsDev.instance.devServerSettings.devServerOnBoot)
@@ -441,7 +456,7 @@ class StateApp {
                 val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.config.subscriptionRateLimit?.let { rateLimit -> clientCount.value > rateLimit } == true };
                 if (isRateLimitReached) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
-                    delay(5000);
+                    delay(8000);
                     StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
                 }
                 else

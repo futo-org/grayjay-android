@@ -218,6 +218,13 @@ class SourceDetailFragment : MainFragment() {
                     BigButtonGroup(c, context.getString(R.string.authentication),
                         BigButton(c, context.getString(R.string.logout), context.getString(R.string.sign_out_of_the_platform), R.drawable.ic_logout) {
                             logoutSource();
+                        },
+                        BigButton(c, "Logout without Clear", "Logout but keep the browser cookies.\nThis allows for quick re-logging.", R.drawable.ic_logout) {
+                            logoutSource(false);
+                        }.apply {
+                            this.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                                setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                            };
                         }
                     )
                 );
@@ -286,12 +293,22 @@ class SourceDetailFragment : MainFragment() {
                 _sourceButtons.addView(group);
             }
 
+            val isEmbedded = StatePlugins.instance.getEmbeddedSources(context).any { it.key == config.id };
             val advancedButtons = BigButtonGroup(c, "Advanced",
                 BigButton(c, "Edit Code", "Modify the source of this plugin", R.drawable.ic_code) {
 
                 }.apply {
                     this.alpha = 0.5f;
-                }
+                },
+                if(isEmbedded) BigButton(c, "Reinstall", "Modify the source of this plugin", R.drawable.ic_refresh) {
+                    StatePlugins.instance.updateEmbeddedPlugins(context, listOf(config.id), true);
+                    reloadSource(config.id);
+                    UIDialogs.toast(context, "Embedded plugin reinstalled, may require refresh");
+                }.apply {
+                    this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                    };
+                } else null
             )
 
             _sourceAdvancedButtons.removeAllViews();
@@ -311,7 +328,7 @@ class SourceDetailFragment : MainFragment() {
                 reloadSource(config.id);
             };
         }
-        private fun logoutSource() {
+        private fun logoutSource(clear: Boolean = true) {
             val config = _config ?: return;
 
             StatePlugins.instance.setPluginAuth(config.id, null);
@@ -319,7 +336,7 @@ class SourceDetailFragment : MainFragment() {
 
 
             //TODO: Maybe add a dialog option..
-            if(Settings.instance.plugins.clearCookiesOnLogout) {
+            if(Settings.instance.plugins.clearCookiesOnLogout && clear) {
                 val cookieManager: CookieManager = CookieManager.getInstance();
                 cookieManager.removeAllCookies(null);
             }

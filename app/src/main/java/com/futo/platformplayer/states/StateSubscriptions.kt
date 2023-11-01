@@ -242,8 +242,12 @@ class StateSubscriptions {
 
         }
 
+        val usePolycentric = false;
         val subUrls = getSubscriptions().associateWith {
-            StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id)
+            if(usePolycentric)
+                StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id);
+            else
+                listOf(it.channel.url);
         };
 
         val result = algo.getSubscriptions(subUrls);

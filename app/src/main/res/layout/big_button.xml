@@ -3,10 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="60dp"
+    android:layout_height="wrap_content"
     android:gravity="center_vertical"
-    android:paddingTop="6dp"
-    android:paddingBottom="7dp"
     android:paddingStart="7dp"
     android:paddingEnd="12dp"
     android:background="@drawable/background_big_button"
@@ -26,6 +24,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
         android:orientation="vertical">
         <TextView
             android:id="@+id/button_text"
@@ -47,7 +47,7 @@
             android:textSize="12dp"
             android:gravity="center_vertical"
             android:fontFamily="@font/inter_extra_light"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end"
             tools:text="Attempts to fetch your subscriptions from this source" />
     </LinearLayout>

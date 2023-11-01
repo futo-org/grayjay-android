@@ -12,19 +12,43 @@ import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.toSafeFileName
-import com.futo.polycentric.core.toUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import kotlin.system.measureTimeMillis
 
 class ChannelContentCache {
+    private val _targetCacheSize = 2000;
     val _channelCacheDir = FragmentedStorage.getOrCreateDirectory("channelCache");
-    val _channelContents = HashMap(_channelCacheDir.listFiles()
-        .filter { it.isDirectory }
-        .associate { Pair(it.name, FragmentedStorage.storeJson<SerializedPlatformContent>(_channelCacheDir, it.name, PlatformContentSerializer())
-            .withoutBackup()
-            .load()) });
+    val _channelContents: HashMap<String, ManagedStore<SerializedPlatformContent>>;
+    init {
+        val allFiles = _channelCacheDir.listFiles() ?: arrayOf();
+        val initializeTime = measureTimeMillis {
+            _channelContents = HashMap(allFiles
+                .filter { it.isDirectory }
+                .associate {
+                    Pair(it.name, FragmentedStorage.storeJson(_channelCacheDir, it.name, PlatformContentSerializer())
+                            .withoutBackup()
+                            .load())
+                });
+        }
+        val minDays = OffsetDateTime.now().minusDays(10);
+        val totalItems = _channelContents.map { it.value.count() }.sum();
+        val toTrim = totalItems - _targetCacheSize;
+        val trimmed: Int;
+        if(toTrim > 0) {
+            val redundantContent = _channelContents.flatMap { it.value.getItems().filter { it.datetime != null && it.datetime!!.isBefore(minDays) }.drop(9) }
+                .sortedByDescending { it.datetime!! }.take(toTrim);
+            for(content in redundantContent)
+                uncacheContent(content);
+            trimmed = redundantContent.size;
+        }
+        else trimmed = 0;
+        Logger.i(TAG, "ChannelContentCache time: ${initializeTime}ms channels: ${allFiles.size}, videos: ${totalItems}, trimmed: ${trimmed}, total: ${totalItems - trimmed}");
+    }
 
     fun getChannelCachePager(channelUrl: String): PlatformContentPager {
         val validID = channelUrl.toSafeFileName();
@@ -38,7 +62,9 @@ class ChannelContentCache {
         return PlatformContentPager(items, Math.min(150, items.size));
     }
     fun getSubscriptionCachePager(): DedupContentPager {
+        Logger.i(TAG, "Subscriptions CachePager get subscriptions");
         val subs = StateSubscriptions.instance.getSubscriptions();
+        Logger.i(TAG, "Subscriptions CachePager polycentric urls");
         val allUrls = subs.map {
             val otherUrls =  PolycentricCache.instance.getCachedProfile(it.channel.url)?.profile?.ownedClaims?.mapNotNull { c -> c.claim.resolveChannelUrl() } ?: listOf();
             if(!otherUrls.contains(it.channel.url))
@@ -46,6 +72,7 @@ class ChannelContentCache {
             else
                 return@map otherUrls;
         }.flatten().distinct();
+        Logger.i(TAG, "Subscriptions CachePager compiling");
         val validSubIds = allUrls.map { it.toSafeFileName() }.toHashSet();
 
         val validStores = _channelContents
@@ -58,7 +85,11 @@ class ChannelContentCache {
         return DedupContentPager(PlatformContentPager(items, Math.min(150, items.size)), StatePlatform.instance.getEnabledClients().map { it.id });
     }
 
-    fun cacheVideos(contents: List<IPlatformContent>): List<IPlatformContent> {
+    fun uncacheContent(content: SerializedPlatformContent) {
+        val store = getContentStore(content);
+        store?.delete(content);
+    }
+    fun cacheContents(contents: List<IPlatformContent>): List<IPlatformContent> {
         return contents.filter { cacheContent(it) };
     }
     fun cacheContent(content: IPlatformContent, doUpdate: Boolean = false): Boolean {
@@ -66,14 +97,14 @@ class ChannelContentCache {
             return false;
 
         val channelId = content.author.url.toSafeFileName();
-        val store = synchronized(_channelContents) {
-            var channelStore = _channelContents.get(channelId);
-            if(channelStore == null) {
-                Logger.i(TAG, "New Subscription Cache for channel ${content.author.name}");
-                channelStore = FragmentedStorage.storeJson<SerializedPlatformContent>(_channelCacheDir, channelId, PlatformContentSerializer()).load();
-                _channelContents.put(channelId, channelStore);
+        val store = getContentStore(channelId).let {
+            if(it == null) {
+                Logger.i(TAG, "New Channel Cache for channel ${content.author.name}");
+                val store = FragmentedStorage.storeJson<SerializedPlatformContent>(_channelCacheDir, channelId, PlatformContentSerializer()).load();
+                _channelContents.put(channelId, store);
+                return@let store;
             }
-            return@synchronized channelStore;
+            else return@let it;
         }
         val serialized = SerializedPlatformContent.fromContent(content);
         val existing = store.findItems { it.url == content.url };
@@ -88,6 +119,17 @@ class ChannelContentCache {
         return existing.isEmpty();
     }
 
+    private fun getContentStore(content: IPlatformContent): ManagedStore<SerializedPlatformContent>? {
+        val channelId = content.author.url.toSafeFileName();
+        return getContentStore(channelId);
+    }
+    private fun getContentStore(channelId: String): ManagedStore<SerializedPlatformContent>? {
+        return synchronized(_channelContents) {
+            var channelStore = _channelContents.get(channelId);
+            return@synchronized channelStore;
+        }
+    }
+
     companion object {
         private val TAG = "ChannelCache";
 
@@ -95,10 +137,11 @@ class ChannelContentCache {
         private var _instance: ChannelContentCache? = null;
         val instance: ChannelContentCache get() {
             synchronized(_lock) {
-                if(_instance == null)
+                if(_instance == null) {
                     _instance = ChannelContentCache();
-                return _instance!!;
+                }
             }
+            return _instance!!;
         }
 
         fun cachePagerResults(scope: CoroutineScope, pager: IPager<IPlatformContent>, onNewCacheHit: ((IPlatformContent)->Unit)? = null): IPager<IPlatformContent> {
@@ -114,7 +157,7 @@ class ChannelContentCache {
             Logger.i(TAG, "Caching ${results.size} subscription initial results [${pager.hashCode()}]");
             scope.launch(Dispatchers.IO) {
                 try {
-                    val newCacheItems = instance.cacheVideos(results);
+                    val newCacheItems = instance.cacheContents(results);
                     if(onNewCacheItem != null)
                         newCacheItems.forEach { onNewCacheItem!!(it) }
                 } catch (e: Throwable) {
@@ -134,7 +177,7 @@ class ChannelContentCache {
             Logger.i(TAG, "Caching ${results.size} subscription results");
             scope.launch(Dispatchers.IO) {
                 try {
-                    val newCacheItems = instance.cacheVideos(results);
+                    val newCacheItems = instance.cacheContents(results);
                     if(onNewCacheItem != null)
                         newCacheItems.forEach { onNewCacheItem!!(it) }
                 } catch (e: Throwable) {

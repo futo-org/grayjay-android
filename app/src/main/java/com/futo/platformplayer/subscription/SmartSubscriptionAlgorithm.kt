@@ -49,8 +49,11 @@ class SmartSubscriptionAlgorithm(
                 };
         };
 
+        for(task in allTasks)
+            task.urgency = calculateUpdateUrgency(task.sub, task.type);
+
         val ordering = allTasks.groupBy { it.client }
-            .map { Pair(it.key, it.value.sortedBy { calculateUpdateUrgency(it.sub, it.type) }) };
+            .map { Pair(it.key, it.value.sortedBy { it.urgency }) };
 
         val finalTasks = mutableListOf<SubscriptionTask>();
 
@@ -100,7 +103,7 @@ class SmartSubscriptionAlgorithm(
         };
         val lastItemDaysAgo = lastItem.getNowDiffHours();
         val lastUpdateHoursAgo = lastUpdate.getNowDiffHours();
-        val expectedHours = lastUpdateHoursAgo.toDouble() - (interval*24);
+        val expectedHours = (interval * 24) - lastUpdateHoursAgo.toDouble();
 
         return (expectedHours * 100).toInt();
     }

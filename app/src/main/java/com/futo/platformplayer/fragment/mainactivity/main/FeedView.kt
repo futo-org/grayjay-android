@@ -141,7 +141,10 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             val filteredResults = filterResults(it);
             recyclerData.results.addAll(filteredResults);
             recyclerData.resultsUnfiltered.addAll(it);
-            recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
+            if(filteredResults.isEmpty())
+                loadNextPage()
+            else
+                recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
         }.exception<Throwable> {
             Logger.w(TAG, "Failed to load next page.", it);
             UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {

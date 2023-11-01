@@ -100,6 +100,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     val onSourceChanged = Event3<IVideoSource?, IAudioSource?, Boolean>();
     val onSourceEnded = Event0();
 
+    val onChapterChanged = Event2<IChapter?, Boolean>();
+
     val onVideoClicked = Event0();
     val onTimeBarChanged = Event2<Long, Long>();
 
@@ -185,6 +187,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
             override fun onScrubMove(timeBar: TimeBar, position: Long) {
                 gestureControl.restartHideJob();
+
+                updateCurrentChapter(position);
             }
 
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
@@ -233,17 +237,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             val delta = position - lastPos;
             if(delta > 1000 || delta < 0) {
                 lastPos = position;
-                val currentChapter = getCurrentChapter(position)
-                if(_currentChapter != currentChapter) {
-                    _currentChapter = currentChapter;
-                    if (currentChapter != null) {
-                        _control_chapter.text = " • " + currentChapter.name;
-                        _control_chapter_fullscreen.text = " • " + currentChapter.name;
-                    } else {
-                        _control_chapter.text = "";
-                        _control_chapter_fullscreen.text = "";
-                    }
-                }
+                updateCurrentChapter();
             }
         }
 
@@ -254,6 +248,22 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     fun attachPlayer() {
         exoPlayer?.attach(_videoView, PLAYER_STATE_NAME);
+    }
+
+    fun updateCurrentChapter(pos: Long? = null) {
+        val chaptPos = pos ?: position;
+        val currentChapter = getCurrentChapter(chaptPos);
+        if(_currentChapter != currentChapter) {
+            _currentChapter = currentChapter;
+            if (currentChapter != null) {
+                _control_chapter.text = " • " + currentChapter.name;
+                _control_chapter_fullscreen.text = " • " + currentChapter.name;
+            } else {
+                _control_chapter.text = "";
+                _control_chapter_fullscreen.text = "";
+            }
+            onChapterChanged.emit(currentChapter, pos != null);
+        }
     }
 
     fun setArtwork(drawable: Drawable?) {
