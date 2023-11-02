@@ -77,7 +77,11 @@ class StateSubscriptions {
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
     fun getOldestUpdateTime(): OffsetDateTime {
-        return getSubscriptions().minOf { it.lastVideoUpdate };
+        val subs = getSubscriptions();
+        if(subs.size == 0)
+            return OffsetDateTime.now();
+        else
+            return subs.minOf { it.lastVideoUpdate };
     }
     fun getGlobalSubscriptionProgress(): Pair<Int, Int> {
         return Pair(_lastGlobalSubscriptionProgress, _lastGlobalSubscriptionTotal);

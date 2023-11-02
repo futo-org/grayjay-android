@@ -36,6 +36,7 @@ class SubscribeButton : LinearLayout {
     } else { null };
 
     val onSubscribed = Event1<Subscription>();
+    val onUnSubscribed = Event1<String>();
 
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -82,6 +83,7 @@ class SubscribeButton : LinearLayout {
         if (removed != null)
             UIDialogs.toast(context, context.getString(R.string.unsubscribed_from) + removed.channel.name);
         setIsSubscribed(false);
+        onUnSubscribed.emit(url);
     }
 
     fun setSubscribeChannel(url: String) {

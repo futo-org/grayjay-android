@@ -210,7 +210,7 @@ class ImportSubscriptionsFragment : MainFragment() {
 
     companion object {
         val TAG = "ImportSubscriptionsFragment";
-        private const val MAXIMUM_BATCH_SIZE = 75;
+        private const val MAXIMUM_BATCH_SIZE = 90;
         fun newInstance() = ImportSubscriptionsFragment().apply {}
     }
 }

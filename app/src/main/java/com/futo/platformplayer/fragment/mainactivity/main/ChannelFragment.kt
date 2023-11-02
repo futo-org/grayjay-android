@@ -170,6 +170,10 @@ class ChannelFragment : MainFragment() {
 
             _buttonSubscribe.onSubscribed.subscribe {
                 UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
+                _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
+            }
+            _buttonSubscribe.onUnSubscribed.subscribe {
+                _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
             }
 
             _buttonSubscriptionSettings.setOnClickListener {
