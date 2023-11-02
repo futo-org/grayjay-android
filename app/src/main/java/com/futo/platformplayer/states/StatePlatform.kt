@@ -762,7 +762,7 @@ class StatePlatform {
             }
 
             if(hasChanges)
-                StateSubscriptions.instance.saveSubscription(sub);
+                sub.save();
         }
 
         return pagerResult;

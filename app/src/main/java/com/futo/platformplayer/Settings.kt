@@ -86,6 +86,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
+    /*
     @FormField(
         R.string.submit_feedback, FieldForm.BUTTON,
         R.string.give_feedback_on_the_application, -1
@@ -104,7 +105,7 @@ class Settings : FragmentedStorageFileJson() {
         } catch (e: Throwable) {
             //Ignored
         }
-    }
+    }*/
 
     @FormField(
         R.string.manage_tabs, FieldForm.BUTTON,
@@ -201,6 +202,12 @@ class Settings : FragmentedStorageFileJson() {
         fun getSubscriptionsConcurrency() : Int {
             return threadIndexToCount(subscriptionConcurrency);
         }
+
+        @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 9)
+        var showWatchMetrics: Boolean = false;
+
+        @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 10)
+        var allowPlaytimeTracking: Boolean = true;
     }
 
     @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)

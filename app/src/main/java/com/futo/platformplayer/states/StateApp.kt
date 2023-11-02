@@ -456,8 +456,9 @@ class StateApp {
                 val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.config.subscriptionRateLimit?.let { rateLimit -> clientCount.value > rateLimit } == true };
                 if (isRateLimitReached) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
-                    delay(8000);
-                    StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+                    delay(5000);
+                    if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                        StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
                 }
                 else
                     Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");

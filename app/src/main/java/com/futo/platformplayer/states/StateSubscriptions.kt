@@ -32,6 +32,7 @@ import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithm
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithms
 import kotlinx.coroutines.*
+import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
@@ -74,6 +75,9 @@ class StateSubscriptions {
 
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
+    fun getOldestUpdateTime(): OffsetDateTime {
+        return getSubscriptions().minOf { it.lastVideoUpdate };
+    }
     fun getGlobalSubscriptionProgress(): Pair<Int, Int> {
         return Pair(_lastGlobalSubscriptionProgress, _lastGlobalSubscriptionTotal);
     }
@@ -170,6 +174,9 @@ class StateSubscriptions {
     fun saveSubscription(sub: Subscription) {
         _subscriptions.save(sub, false, true);
     }
+    fun saveSubscriptionAsync(sub: Subscription) {
+        _subscriptions.saveAsync(sub, false, true);
+    }
     fun getSubscriptionCount(): Int {
         synchronized(_subscriptions) {
             return _subscriptions.getItems().size;
@@ -242,7 +249,7 @@ class StateSubscriptions {
 
         }
 
-        val usePolycentric = false;
+        val usePolycentric = true;
         val subUrls = getSubscriptions().associateWith {
             if(usePolycentric)
                 StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id);

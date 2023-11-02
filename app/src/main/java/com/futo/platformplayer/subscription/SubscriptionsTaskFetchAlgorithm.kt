@@ -54,7 +54,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 val clientTaskCount = clientTasks.value.filter { !it.fromCache }.size;
                 val clientCacheCount = clientTasks.value.size - clientTaskCount;
                 if(clientCacheCount > 0) {
-                    UIDialogs.toast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels.")
+                    UIDialogs.toast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels. (${clientCacheCount} cached)");
                 }
             }
 
@@ -155,7 +155,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
                         val initialPage = pager.getResults();
                         task.sub.updateSubscriptionState(task.type, initialPage);
-                        StateSubscriptions.instance.saveSubscription(task.sub);
+                        task.sub.save();
 
                         finished++;
                         onProgress.emit(finished, forkTasks.size);

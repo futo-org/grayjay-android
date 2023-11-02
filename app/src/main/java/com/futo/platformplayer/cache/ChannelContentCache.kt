@@ -41,7 +41,7 @@ class ChannelContentCache {
         val trimmed: Int;
         if(toTrim > 0) {
             val redundantContent = _channelContents.flatMap { it.value.getItems().filter { it.datetime != null && it.datetime!!.isBefore(minDays) }.drop(9) }
-                .sortedByDescending { it.datetime!! }.take(toTrim);
+                .sortedBy { it.datetime!! }.take(toTrim);
             for(content in redundantContent)
                 uncacheContent(content);
             trimmed = redundantContent.size;

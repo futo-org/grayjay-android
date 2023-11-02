@@ -12,7 +12,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
-import android.provider.Browser
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
@@ -23,7 +22,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.view.WindowManager
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
@@ -66,6 +64,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.*
@@ -96,7 +95,6 @@ import com.google.android.exoplayer2.Format
 import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException
-import com.google.common.base.Stopwatch
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.*
 import userpackage.Protocol
@@ -436,6 +434,7 @@ class VideoDetailView : ConstraintLayout {
             if (!_isCasting && !_didStop) {
                 setLastPositionMilliseconds(position, true);
             }
+            updatePlaybackTracking(position);
         };
 
         _player.onVideoClicked.subscribe {
@@ -606,6 +605,61 @@ class VideoDetailView : ConstraintLayout {
             val currentChapter = _player.getCurrentChapter(_player.position);
             if(currentChapter?.type == ChapterType.SKIPPABLE) {
                 _player.seekTo(currentChapter.timeEnd.toLong() * 1000);
+            }
+        }
+    }
+
+    val _trackingUpdateTimeLock = Object();
+    val _trackingUpdateInterval = 3000;
+    var _trackingLastUpdateTime = System.currentTimeMillis();
+    var _trackingLastPosition: Long = 0;
+    var _trackingLastVideo: IPlatformVideoDetails? = null;
+    var _trackingTotalWatched: Long = 0;
+    var _trackingDidCountView: Boolean = false;
+    var _trackingLastVideoSubscription: Subscription? = null;
+    fun updatePlaybackTracking(position: Long) {
+        if(!Settings.instance.subscriptions.allowPlaytimeTracking)
+            return;
+        val now = System.currentTimeMillis();
+        val shouldUpdate = synchronized(_trackingUpdateTimeLock) {
+            val doUpdate = (now - _trackingLastUpdateTime) > _trackingUpdateInterval;
+            if(doUpdate)
+                _trackingLastUpdateTime = now;
+            return@synchronized doUpdate;
+        }
+        if(shouldUpdate) {
+            val currentVideo = video;
+            val delta = position - _trackingLastPosition;
+            _trackingLastPosition = position;
+
+            if(currentVideo != null && currentVideo == _trackingLastVideo) {
+                if(delta > 500 && delta < _trackingUpdateInterval * 1.5) {
+                    _trackingLastVideoSubscription?.let {
+                        Logger.i(TAG, "Subscription [${it.channel.name}] watch time delta [${delta}]" +
+                                "(${"%.2f".format((_trackingTotalWatched / 1000) / currentVideo.duration.toDouble().coerceAtLeast(1.0))})");
+                        it.updatePlayback(currentVideo, (delta / 1000).toInt());
+                        _trackingTotalWatched += delta;
+                        if(!_trackingDidCountView && currentVideo.duration > 0) {
+                            val percentage = (_trackingTotalWatched / 1000) / currentVideo.duration.toDouble();
+                            if(percentage > 0.4) {
+                                Logger.i(TAG, "Subscription [${it.channel.name}] new view");
+                                _trackingDidCountView = true;
+                                it.addPlaybackView();
+                            }
+                        }
+                        it.saveAsync();
+                    };
+                }
+            }
+            else {
+                if(_trackingLastVideo == null && currentVideo == null)
+                    return;
+                _trackingLastVideo = currentVideo;
+                _trackingTotalWatched = 0;
+                if(currentVideo?.author?.url != null)
+                    _trackingLastVideoSubscription = StateSubscriptions.instance.getSubscription(currentVideo.author.url);
+                else
+                    _trackingLastVideoSubscription = null;
             }
         }
     }

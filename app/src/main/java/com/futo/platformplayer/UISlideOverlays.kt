@@ -92,7 +92,7 @@ class UISlideOverlays {
                 menu.selectOption(null, "fetchPosts", true, true);
 
             menu.onOK.subscribe {
-                StateSubscriptions.instance.saveSubscription(subscription);
+                subscription.save();
                 menu.hide(true);
             };
             menu.onCancel.subscribe {

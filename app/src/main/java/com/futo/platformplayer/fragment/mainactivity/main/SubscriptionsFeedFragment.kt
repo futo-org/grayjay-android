@@ -118,7 +118,11 @@ class SubscriptionsFeedFragment : MainFragment() {
             if(recyclerData.loadedFeedStyle != feedStyle ||
                 recyclerData.lastLoad.getNowDiffSeconds() > 60 ) {
                 recyclerData.lastLoad = OffsetDateTime.now();
-                loadResults();
+
+                if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                    loadResults(false);
+                else if(recyclerData.results.size == 0)
+                    loadCache();
             }
 
             val announcementsView = _announcementsView;
@@ -201,7 +205,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                             context.getString(R.string.rate_limit_warning),  context.getString(R.string.this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions) + context.getString(R.string.you_have_too_many_subscriptions_for_the_following_plugins),
                             subsByLimited.map { it.first.config.name + ": " + it.second.size + " " + context.getString(R.string.subscriptions) } .joinToString("\n"), 0, UIDialogs.Action("Refresh Anyway", {
                                 _bypassRateLimit = true;
-                                loadResults();
+                                loadResults(true);
                             }, UIDialogs.ActionStyle.DANGEROUS_TEXT),
                             UIDialogs.Action("OK", {
                                 finishRefreshLayoutLoader();
@@ -213,7 +217,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
                 if(it !is CancellationException)
-                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
+                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults(true) });
                 else {
                     finishRefreshLayoutLoader();
                     setLoading(false);
@@ -278,16 +282,19 @@ class SubscriptionsFeedFragment : MainFragment() {
             loadResults(true);
         }
 
+        private fun loadCache() {
+            Logger.i(TAG, "Subscriptions load cache");
+            val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
+            val results = cachePager.getResults();
+            Logger.i(TAG, "Subscriptions show cache (${results.size})");
+            setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+            setPager(cachePager);
+        }
         private fun loadResults(withRefetch: Boolean = false) {
             setLoading(true);
             Logger.i(TAG, "Subscriptions load");
             if(recyclerData.results.size == 0) {
-                Logger.i(TAG, "Subscriptions load cache");
-                val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
-                val results = cachePager.getResults();
-                Logger.i(TAG, "Subscriptions show cache (${results.size})");
-                setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
-                setPager(cachePager);
+                loadCache();
             } else {
                 setTextCentered(null);
             }

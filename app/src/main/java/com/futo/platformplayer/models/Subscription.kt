@@ -4,9 +4,11 @@ import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StateSubscriptions
 import java.time.OffsetDateTime
 
 @kotlinx.serialization.Serializable
@@ -43,6 +45,9 @@ class Subscription {
     var uploadStreamInterval : Int = 0;
     var uploadPostInterval : Int = 0;
 
+    var playbackSeconds: Int = 0;
+    var playbackViews: Int = 0;
+
 
     constructor(channel : SerializedChannel) {
         this.channel = channel;
@@ -55,8 +60,22 @@ class Subscription {
 
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 
+    fun save() {
+        StateSubscriptions.instance.saveSubscription(this);
+    }
+    fun saveAsync() {
+        StateSubscriptions.instance.saveSubscription(this);
+    }
+
     fun updateChannel(channel: IPlatformChannel) {
         this.channel = SerializedChannel.fromChannel(channel);
+    }
+
+    fun updatePlayback(content: IPlatformContentDetails, seconds: Int) {
+        playbackSeconds += seconds;
+    }
+    fun addPlaybackView() {
+        playbackViews += 1;
     }
 
     fun updateSubscriptionState(type: String, initialPage: List<IPlatformContent>) {

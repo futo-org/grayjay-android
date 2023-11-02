@@ -227,18 +227,18 @@ class ManagedStore<T>{
     }
 
 
-    fun saveAsync(obj: T, withReconstruction: Boolean = false) {
+    fun saveAsync(obj: T, withReconstruction: Boolean = false, onlyExisting: Boolean = false) {
         val scope = StateApp.instance.scopeOrNull;
         if(scope != null)
             scope.launch(Dispatchers.IO) {
                 try {
-                    save(obj, withReconstruction);
+                    save(obj, withReconstruction, onlyExisting);
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to save.", e);
                 }
             };
         else
-            save(obj, withReconstruction);
+            save(obj, withReconstruction, onlyExisting);
     }
     fun saveAllAsync(objs: List<T>, withReconstruction: Boolean = false) {
         val scope = StateApp.instance.scopeOrNull;

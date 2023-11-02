@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.IRefreshPager
 import com.futo.platformplayer.api.media.structures.IReplacerPager
 import com.futo.platformplayer.api.media.structures.MultiPager
+import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
@@ -33,6 +34,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
@@ -74,9 +76,14 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
     private val _taskLoadVideos = TaskHandler<IPlatformChannel, IPager<IPlatformContent>>({lifecycleScope}, {
             return@TaskHandler getContentPager(it);
-        }).success {
+        }).success { livePager ->
             setLoading(false);
-            setPager(it);
+
+            val pager = if(_channel?.let { StateSubscriptions.instance.isSubscribed(it) } == true)
+                ChannelContentCache.cachePagerResults(lifecycleScope, livePager);
+            else livePager;
+
+            setPager(pager);
         }
         .exception<ScriptCaptchaRequiredException> {  }
         .exception<Throwable> {

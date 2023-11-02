@@ -35,10 +35,25 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <com.futo.platformplayer.views.platform.PlatformIndicator
-            android:id="@+id/platform"
-            android:layout_width="25dp"
-            android:layout_height="25dp" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <com.futo.platformplayer.views.platform.PlatformIndicator
+                android:id="@+id/platform"
+                android:layout_width="25dp"
+                android:layout_height="25dp" />
+            <TextView
+                android:id="@+id/text_meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11dp"
+                android:textColor="#666666"
+                android:fontFamily="@font/inter_light"
+                android:layout_marginTop="5dp"
+                android:layout_marginLeft="5dp"
+                android:text="Testing " />
+        </LinearLayout>
     </LinearLayout>
 
     <ImageButton

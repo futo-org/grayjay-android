@@ -25,7 +25,7 @@ class SubscriptionBar : LinearLayout {
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_subscription_bar, this);
 
-        val subscriptions = StateSubscriptions.instance.getSubscriptions();
+        val subscriptions = StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackViews };
         _adapterView = findViewById<RecyclerView>(R.id.recycler_creators).asAny(subscriptions, orientation = RecyclerView.HORIZONTAL) {
             it.onClick.subscribe { c ->
                 onClickChannel.emit(c.channel);

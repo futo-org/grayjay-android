@@ -14,7 +14,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     private val _confirmationMessage: String;
 
     var onClick = Event1<Subscription>();
-    var sortBy: Int = 0
+    var sortBy: Int = 3
         set(value) {
             field = value;
             updateDataset();
@@ -51,6 +51,10 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         _sortedDataset = when (sortBy) {
             0 -> StateSubscriptions.instance.getSubscriptions().sortedBy({ u -> u.channel.name })
             1 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending({ u -> u.channel.name })
+            2 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackViews }
+            3 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackViews }
+            4 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackSeconds }
+            5 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackSeconds }
             else -> throw IllegalStateException("Invalid sorting algorithm selected.");
         }.toList();
 

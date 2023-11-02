@@ -185,6 +185,25 @@ fun OffsetDateTime.toHumanNowDiffString(abs: Boolean = false) : String {
 
     return "${value} ${unit}";
 };
+fun Int.toHumanTimeIndicator(abs: Boolean = false) : String {
+    var value = this;
+
+    var unit = "s";
+
+    if(abs) value = abs(value);
+    if(value >= secondsInHour) {
+        value = (this / secondsInHour).toInt();
+        if(abs) value = abs(value);
+        unit = "hr" + (if(value > 1) "s" else "");
+    }
+    else if(value >= secondsInMinute) {
+        value = (this / secondsInMinute).toInt();
+        if(abs) value = abs(value);
+        unit = "min";
+    }
+
+    return "${value}${unit}";
+}
 
 fun Long.toHumanTime(isMs: Boolean): String {
     var scaler = 1;

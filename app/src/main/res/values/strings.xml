@@ -339,6 +339,10 @@
     <string name="submit_logs">Submit logs</string>
     <string name="submit_logs_to_help_us_narrow_down_issues">Submit logs to help us narrow down issues</string>
     <string name="subscription_concurrency">Subscription Concurrency</string>
+    <string name="track_playtime_locally">Track Playtime Locally</string>
+    <string name="track_playtime_locally_description">Locally track playtime of subscriptions, used for subscriptions ordering and local creator recommendations.</string>
+    <string name="show_watch_metrics">Show Watch Metrics</string>
+    <string name="show_watch_metrics_description">Shows the watch time and views of each creator in the creators tab</string>
     <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">This prevents the device from rotating within the given amount of degrees</string>
     <string name="use_the_live_chat_web_window_when_available_over_native_implementation">Use the live chat web window when available over native implementation</string>
     <string name="version_code">Version Code</string>
@@ -700,6 +704,10 @@
     <string-array name="subscriptions_sortby_array">
         <item>Name Ascending</item>
         <item>Name Descending</item>
+        <item>Views Ascending</item>
+        <item>Views Descending</item>
+        <item>Watchtime Ascending</item>
+        <item>Watchtime Descending</item>
     </string-array>
     <string-array name="feed_style">
         <item>Preview</item>
