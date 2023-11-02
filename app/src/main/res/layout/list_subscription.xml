@@ -57,12 +57,23 @@
     </LinearLayout>
 
     <ImageButton
+        android:id="@+id/button_settings"
+        android:layout_width="50dp"
+        android:layout_height="40dp"
+        app:srcCompat="@drawable/ic_settings"
+        android:scaleType="fitCenter"
+        android:paddingStart="5dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:paddingEnd="0dp" />
+    <ImageButton
         android:id="@+id/button_trash"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/ic_trash_18dp"
-        android:paddingStart="20dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:paddingEnd="20dp" />
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        app:srcCompat="@drawable/ic_trash"
+        android:scaleType="fitCenter"
+        android:paddingStart="5dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:paddingEnd="5dp" />
 </LinearLayout>

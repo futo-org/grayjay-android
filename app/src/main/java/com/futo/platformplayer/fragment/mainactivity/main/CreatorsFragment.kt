@@ -6,10 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.FrameLayout
 import android.widget.Spinner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.views.adapters.SubscriptionAdapter
 
 class CreatorsFragment : MainFragment() {
@@ -18,13 +20,16 @@ class CreatorsFragment : MainFragment() {
     override val hasBottomBar: Boolean get() = true;
 
     private var _spinnerSortBy: Spinner? = null;
+    private var _overlayContainer: FrameLayout? = null;
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_creators, container, false);
 
         val adapter = SubscriptionAdapter(inflater, getString(R.string.confirm_delete_subscription));
         adapter.onClick.subscribe { platformUser -> navigate<ChannelFragment>(platformUser) };
+        adapter.onSettings.subscribe { sub -> _overlayContainer?.let { UISlideOverlays.showSubscriptionOptionsOverlay(sub, it) } }
 
+        _overlayContainer = view.findViewById(R.id.overlay_container);
         val spinnerSortBy: Spinner = view.findViewById(R.id.spinner_sortby);
         spinnerSortBy.adapter = ArrayAdapter(view.context, R.layout.spinner_item_simple, resources.getStringArray(R.array.subscriptions_sortby_array)).also {
             it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
@@ -48,6 +53,7 @@ class CreatorsFragment : MainFragment() {
     override fun onDestroyMainView() {
         super.onDestroyMainView();
         _spinnerSortBy = null;
+        _overlayContainer = null;
     }
 
     companion object {

@@ -10,6 +10,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.models.Subscription
@@ -18,6 +19,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.selectBestImage
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.toHumanBytesSpeed
 import com.futo.platformplayer.toHumanTimeIndicator
 import com.futo.platformplayer.views.others.CreatorThumbnail
@@ -29,6 +31,7 @@ class SubscriptionViewHolder : ViewHolder {
     private val _textName: TextView;
     private val _creatorThumbnail: CreatorThumbnail;
     private val _buttonTrash: ImageButton;
+    private val _buttonSettings: ImageButton;
     private val _platformIndicator : PlatformIndicator;
     private val _textMeta: TextView;
 
@@ -45,6 +48,7 @@ class SubscriptionViewHolder : ViewHolder {
 
     var onClick = Event1<Subscription>();
     var onTrash = Event0();
+    var onSettings = Event1<Subscription>();
 
     constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_subscription, viewGroup, false)) {
         _layoutSubscription = itemView.findViewById(R.id.layout_subscription);
@@ -52,6 +56,7 @@ class SubscriptionViewHolder : ViewHolder {
         _textMeta = itemView.findViewById(R.id.text_meta);
         _creatorThumbnail = itemView.findViewById(R.id.creator_thumbnail);
         _buttonTrash = itemView.findViewById(R.id.button_trash);
+        _buttonSettings = itemView.findViewById(R.id.button_settings);
         _platformIndicator = itemView.findViewById(R.id.platform);
 
         _layoutSubscription.setOnClickListener {
@@ -64,6 +69,11 @@ class SubscriptionViewHolder : ViewHolder {
         _buttonTrash.setOnClickListener {
             onTrash.emit();
         };
+        _buttonSettings.setOnClickListener {
+            subscription?.let {
+                onSettings.emit(it);
+            };
+        }
     }
 
     fun bind(sub: Subscription) {

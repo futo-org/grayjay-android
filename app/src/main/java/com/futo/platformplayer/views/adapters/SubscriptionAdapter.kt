@@ -14,6 +14,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     private val _confirmationMessage: String;
 
     var onClick = Event1<Subscription>();
+    var onSettings = Event1<Subscription>();
     var sortBy: Int = 3
         set(value) {
             field = value;
@@ -33,11 +34,15 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): SubscriptionViewHolder {
         val holder = SubscriptionViewHolder(viewGroup);
         holder.onClick.subscribe(onClick::emit);
+        holder.onSettings.subscribe(onSettings::emit);
         holder.onTrash.subscribe {
             val sub = holder.subscription ?: return@subscribe;
             UIDialogs.showConfirmationDialog(_inflater.context, _confirmationMessage, {
                 StateSubscriptions.instance.removeSubscription(sub.channel.url);
             });
+        };
+        holder.onSettings.subscribe {
+            onSettings.emit(it);
         };
 
         return holder;
