@@ -18,10 +18,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
+import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
 class ChannelContentCache {
-    private val _targetCacheSize = 2000;
+    private val _targetCacheSize = 3000;
     val _channelCacheDir = FragmentedStorage.getOrCreateDirectory("channelCache");
     val _channelContents: HashMap<String, ManagedStore<SerializedPlatformContent>>;
     init {
@@ -29,11 +30,11 @@ class ChannelContentCache {
         val initializeTime = measureTimeMillis {
             _channelContents = HashMap(allFiles
                 .filter { it.isDirectory }
-                .associate {
+                .parallelStream().map {
                     Pair(it.name, FragmentedStorage.storeJson(_channelCacheDir, it.name, PlatformContentSerializer())
                             .withoutBackup()
                             .load())
-                });
+                }.toList().associate { it })
         }
         val minDays = OffsetDateTime.now().minusDays(10);
         val totalItems = _channelContents.map { it.value.count() }.sum();

@@ -39,6 +39,7 @@ import java.util.concurrent.ForkJoinTask
 import kotlin.collections.ArrayList
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
 /***
@@ -250,12 +251,12 @@ class StateSubscriptions {
         }
 
         val usePolycentric = true;
-        val subUrls = getSubscriptions().associateWith {
+        val subUrls = getSubscriptions().parallelStream().map {
             if(usePolycentric)
-                StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id);
+                Pair(it, StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id));
             else
-                listOf(it.channel.url);
-        };
+                Pair(it, listOf(it.channel.url));
+        }.toList().associate { it };
 
         val result = algo.getSubscriptions(subUrls);
         return Pair(result.pager, result.exceptions);

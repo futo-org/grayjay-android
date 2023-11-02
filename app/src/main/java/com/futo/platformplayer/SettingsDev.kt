@@ -2,14 +2,24 @@ package com.futo.platformplayer
 
 import android.content.Context
 import android.webkit.CookieManager
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
@@ -28,6 +38,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream.range
 import kotlin.system.measureTimeMillis
 
@@ -87,11 +99,23 @@ class SettingsDev : FragmentedStorageFileJson() {
         val cookieManager: CookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null);
     }
+    @FormField(R.string.test_background_worker, FieldForm.BUTTON,
+        R.string.test_background_worker_description, 3)
+    fun triggerBackgroundUpdate() {
+        val act = SettingsActivity.getActivity()!!;
+        UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
+
+        val wm = WorkManager.getInstance(act);
+        val req = OneTimeWorkRequestBuilder<BackgroundWorker>()
+            .setInputData(Data.Builder().putBoolean("bypassMainCheck", true).build())
+            .build();
+        wm.enqueue(req);
+    }
 
     @Contextual
     @Transient
     @FormField(R.string.v8_benchmarks, FieldForm.GROUP,
-        R.string.various_benchmarks_using_the_integrated_v8_engine, 3)
+        R.string.various_benchmarks_using_the_integrated_v8_engine, 4)
     val v8Benchmarks: V8Benchmarks = V8Benchmarks();
     class V8Benchmarks {
         @FormField(
@@ -139,7 +163,7 @@ class SettingsDev : FragmentedStorageFileJson() {
 
         @FormField(
             R.string.test_v8_communication_speed, FieldForm.BUTTON,
-            R.string.tests_v8_communication_speeds, 2
+            R.string.tests_v8_communication_speeds, 4
         )
         fun testV8RunSpeeds() {
             var plugin: V8Plugin? = null;

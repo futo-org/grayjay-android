@@ -122,6 +122,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
 
+        var filteredNextPageCounter = 0;
         _nextPageHandler = TaskHandler<TPager, List<TResult>>({fragment.lifecycleScope}, {
             if (it is IAsyncPager<*>)
                 it.nextPageAsync();
@@ -141,10 +142,15 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             val filteredResults = filterResults(it);
             recyclerData.results.addAll(filteredResults);
             recyclerData.resultsUnfiltered.addAll(it);
-            if(filteredResults.isEmpty())
-                loadNextPage()
-            else
+            if(filteredResults.isEmpty()) {
+                filteredNextPageCounter++
+                if(filteredNextPageCounter <= 4)
+                    loadNextPage()
+            }
+            else {
+                filteredNextPageCounter = 0;
                 recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
+            }
         }.exception<Throwable> {
             Logger.w(TAG, "Failed to load next page.", it);
             UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
