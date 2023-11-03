@@ -21,9 +21,12 @@ class SourceHeaderView : LinearLayout {
     private val _sourceDescription: TextView;
 
     private val _sourceVersion: TextView;
+    private val _sourcePlatformUrl: TextView;
     private val _sourceRepositoryUrl: TextView;
     private val _sourceScriptUrl: TextView;
     private val _sourceSignature: TextView;
+
+    private val _sourcePlatformUrlContainer: LinearLayout;
 
     private var _config : SourcePluginConfig? = null;
 
@@ -38,6 +41,8 @@ class SourceHeaderView : LinearLayout {
 
         _sourceVersion = findViewById(R.id.source_version);
         _sourceRepositoryUrl = findViewById(R.id.source_repo);
+        _sourcePlatformUrl = findViewById(R.id.source_platform);
+        _sourcePlatformUrlContainer = findViewById(R.id.source_platform_container);
         _sourceScriptUrl = findViewById(R.id.source_script);
         _sourceSignature = findViewById(R.id.source_signature);
 
@@ -52,6 +57,10 @@ class SourceHeaderView : LinearLayout {
         _sourceScriptUrl.setOnClickListener {
             if(!_config?.absoluteScriptUrl.isNullOrEmpty())
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(_config?.absoluteScriptUrl)));
+        };
+        _sourcePlatformUrl.setOnClickListener {
+            if(!_config?.platformUrl.isNullOrEmpty())
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(_config?.platformUrl)));
         };
     }
 
@@ -73,6 +82,12 @@ class SourceHeaderView : LinearLayout {
         _sourceScriptUrl.text = config.absoluteScriptUrl;
         _sourceRepositoryUrl.text = config.repositoryUrl;
         _sourceAuthorID.text = "";
+
+        _sourcePlatformUrl.text = config.platformUrl ?: "";
+        if(!config.platformUrl.isNullOrEmpty())
+            _sourcePlatformUrlContainer.visibility = VISIBLE;
+        else
+            _sourcePlatformUrlContainer.visibility = GONE;
 
         if(!config.authorUrl.isNullOrEmpty())
             _sourceBy.setTextColor(resources.getColor(R.color.colorPrimary));
@@ -105,5 +120,7 @@ class SourceHeaderView : LinearLayout {
         _sourceScriptUrl.text = "";
         _sourceRepositoryUrl.text = "";
         _sourceAuthorID.text = "";
+        _sourcePlatformUrl.text = "";
+        _sourcePlatformUrlContainer.visibility = GONE;
     }
 }

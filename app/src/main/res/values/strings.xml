@@ -98,6 +98,7 @@
     <string name="are_you_sure_delete_historical">Are you sure you want to remove these historical entries?</string>
     <string name="removed">removed</string>
     <string name="add_source">Add Source</string>
+    <string name="platform_url">Platform URL</string>
     <string name="repository_url">Repository URL</string>
     <string name="script_url">Script URL</string>
     <string name="source_permissions_explanation">These are the permissions the plugin requires to function</string>

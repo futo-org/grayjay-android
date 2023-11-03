@@ -100,6 +100,30 @@
             tools:text="3" />
     </LinearLayout>
 
+    <!--Platform Url-->
+    <LinearLayout
+        android:id="@+id/source_platform_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/inter_light"
+            android:text="@string/platform_url" />
+        <TextView
+            android:id="@+id/source_platform"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14dp"
+            android:textColor="@color/colorPrimary"
+            android:fontFamily="@font/inter_extra_light"
+            tools:text="https://some.platform.url" />
+    </LinearLayout>
+
     <!--Repo Url-->
     <LinearLayout
         android:layout_width="match_parent"
