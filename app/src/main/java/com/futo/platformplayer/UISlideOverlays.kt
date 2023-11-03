@@ -82,6 +82,8 @@ class UISlideOverlays {
 
             menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
 
+            if(subscription.doNotifications)
+                menu.selectOption(null, "notifications", true, true);
             if(subscription.doFetchLive)
                 menu.selectOption(null, "fetchLive", true, true);
             if(subscription.doFetchStreams)
