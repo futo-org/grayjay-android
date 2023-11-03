@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.getNowDiffDays
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
@@ -56,9 +57,9 @@ class Subscription {
     fun shouldFetchVideos() = doFetchVideos &&
             (lastVideo.getNowDiffDays() < 30 || lastVideoUpdate.getNowDiffDays() >= 1) &&
             (lastVideo.getNowDiffDays() < 180 || lastVideoUpdate.getNowDiffDays() >= 3);
-    fun shouldFetchStreams() = doFetchStreams && lastLiveStream.getNowDiffDays() < 7;
-    fun shouldFetchLiveStreams() = doFetchLive && lastLiveStream.getNowDiffDays() < 14;
-    fun shouldFetchPosts() = doFetchPosts && lastPost.getNowDiffDays() < 5;
+    fun shouldFetchStreams() = doFetchStreams && (lastLiveStream.getNowDiffDays() < 7);
+    fun shouldFetchLiveStreams() = doFetchLive && (lastLiveStream.getNowDiffDays() < 14);
+    fun shouldFetchPosts() = doFetchPosts && (lastPost.getNowDiffDays() < 5);
 
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 
@@ -105,30 +106,39 @@ class Subscription {
         else {
             interval = 5;
             mostRecent = null;
+            Logger.i("Subscription", "Subscription [${channel.name}]:${type} no results found");
         }
         when(type) {
             ResultCapabilities.TYPE_VIDEOS -> {
                 uploadInterval = interval;
                 if(mostRecent != null)
                     lastVideo = mostRecent;
+                else if(lastVideo.year > 3000)
+                    lastVideo = OffsetDateTime.MIN;
                 lastVideoUpdate = OffsetDateTime.now();
             }
             ResultCapabilities.TYPE_MIXED -> {
                 uploadInterval = interval;
                 if(mostRecent != null)
                     lastVideo = mostRecent;
+                else if(lastVideo.year > 3000)
+                    lastVideo = OffsetDateTime.MIN;
                 lastVideoUpdate = OffsetDateTime.now();
             }
             ResultCapabilities.TYPE_STREAMS -> {
                 uploadStreamInterval = interval;
                 if(mostRecent != null)
                     lastLiveStream = mostRecent;
+                else if(lastLiveStream.year > 3000)
+                    lastLiveStream = OffsetDateTime.MIN;
                 lastStreamUpdate = OffsetDateTime.now();
             }
             ResultCapabilities.TYPE_POSTS -> {
                 uploadPostInterval = interval;
                 if(mostRecent != null)
                     lastPost = mostRecent;
+                else if(lastPost.year > 3000)
+                    lastPost = OffsetDateTime.MIN;
                 lastPostUpdate = OffsetDateTime.now();
             }
         }
