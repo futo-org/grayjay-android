@@ -53,10 +53,12 @@ class Subscription {
         this.channel = channel;
     }
 
-    fun shouldFetchVideos() = true;
+    fun shouldFetchVideos() = doFetchVideos &&
+            (lastVideo.getNowDiffDays() < 30 || lastVideoUpdate.getNowDiffDays() >= 1) &&
+            (lastVideo.getNowDiffDays() < 180 || lastVideoUpdate.getNowDiffDays() >= 3);
     fun shouldFetchStreams() = doFetchStreams && lastLiveStream.getNowDiffDays() < 7;
     fun shouldFetchLiveStreams() = doFetchLive && lastLiveStream.getNowDiffDays() < 14;
-    fun shouldFetchPosts() = doFetchPosts && lastPost.getNowDiffDays() < 2;
+    fun shouldFetchPosts() = doFetchPosts && lastPost.getNowDiffDays() < 5;
 
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 

@@ -54,7 +54,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 val clientTaskCount = clientTasks.value.filter { !it.fromCache }.size;
                 val clientCacheCount = clientTasks.value.size - clientTaskCount;
                 if(clientCacheCount > 0) {
-                    UIDialogs.toast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels. (${clientCacheCount} cached)");
+                    UIDialogs.toast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels (rqs). (${clientCacheCount} cached)");
                 }
             }
 

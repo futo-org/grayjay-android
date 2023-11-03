@@ -85,21 +85,21 @@ class SmartSubscriptionAlgorithm(
             ResultCapabilities.TYPE_STREAMS -> sub.lastLiveStream;
             ResultCapabilities.TYPE_LIVE -> sub.lastLiveStream;
             ResultCapabilities.TYPE_POSTS -> sub.lastPost;
-            else -> sub.lastVideo; //TODO: minimum of all
+            else -> sub.lastVideo; //TODO: minimum of all?
         };
         val lastUpdate = when(type) {
             ResultCapabilities.TYPE_VIDEOS -> sub.lastVideoUpdate;
             ResultCapabilities.TYPE_STREAMS -> sub.lastLiveStreamUpdate;
             ResultCapabilities.TYPE_LIVE -> sub.lastLiveStreamUpdate;
             ResultCapabilities.TYPE_POSTS -> sub.lastPostUpdate;
-            else -> sub.lastVideoUpdate; //TODO: minimum of all
+            else -> sub.lastVideoUpdate; //TODO: minimum of all?
         };
         val interval = when(type) {
             ResultCapabilities.TYPE_VIDEOS -> sub.uploadInterval;
             ResultCapabilities.TYPE_STREAMS -> sub.uploadStreamInterval;
             ResultCapabilities.TYPE_LIVE -> sub.uploadStreamInterval;
             ResultCapabilities.TYPE_POSTS -> sub.uploadPostInterval;
-            else -> sub.uploadInterval; //TODO: minimum of all
+            else -> sub.uploadInterval; //TODO: minimum of all?
         };
         val lastItemDaysAgo = lastItem.getNowDiffHours();
         val lastUpdateHoursAgo = lastUpdate.getNowDiffHours();

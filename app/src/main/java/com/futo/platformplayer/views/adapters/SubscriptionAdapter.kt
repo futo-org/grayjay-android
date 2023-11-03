@@ -54,15 +54,20 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
 
     private fun updateDataset() {
         _sortedDataset = when (sortBy) {
-            0 -> StateSubscriptions.instance.getSubscriptions().sortedBy({ u -> u.channel.name })
-            1 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending({ u -> u.channel.name })
-            2 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackViews }
-            3 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackViews }
+            0 -> StateSubscriptions.instance.getSubscriptions().sortedBy({ u -> u.channel.name.lowercase() })
+            1 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending({ u -> u.channel.name.lowercase() })
+            2 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackViews * VIEW_PRIORITY + it.playbackSeconds }
+            3 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackViews * VIEW_PRIORITY + it.playbackSeconds }
             4 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackSeconds }
             5 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackSeconds }
             else -> throw IllegalStateException("Invalid sorting algorithm selected.");
         }.toList();
 
         notifyDataSetChanged();
+    }
+
+
+    companion object {
+        val VIEW_PRIORITY = 36000 * 3;
     }
 }

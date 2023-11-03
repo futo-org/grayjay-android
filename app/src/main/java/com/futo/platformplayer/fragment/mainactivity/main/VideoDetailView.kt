@@ -610,7 +610,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     val _trackingUpdateTimeLock = Object();
-    val _trackingUpdateInterval = 3000;
+    val _trackingUpdateInterval = 2500;
     var _trackingLastUpdateTime = System.currentTimeMillis();
     var _trackingLastPosition: Long = 0;
     var _trackingLastVideo: IPlatformVideoDetails? = null;
