@@ -92,6 +92,19 @@ open class JSClient : IPlatformClient {
     val enableInSearch get() = descriptor.appSettings.tabEnabled.enableSearch ?: true
     val enableInHome get() = descriptor.appSettings.tabEnabled.enableHome ?: true
 
+    fun getSubscriptionRateLimit(): Int? {
+        val pluginRateLimit = config.subscriptionRateLimit;
+        val settingsRateLimit = descriptor.appSettings.rateLimit.getSubRateLimit();
+        if(settingsRateLimit > 0) {
+            if(pluginRateLimit != null)
+                return settingsRateLimit.coerceAtMost(pluginRateLimit);
+            else
+                return settingsRateLimit;
+        }
+        else
+            return pluginRateLimit;
+    }
+
     val onDisabled = Event1<JSClient>();
     val onCaptchaException = Event2<JSClient, ScriptCaptchaRequiredException>();
 

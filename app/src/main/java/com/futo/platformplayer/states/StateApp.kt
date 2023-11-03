@@ -452,8 +452,8 @@ class StateApp {
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
             scope.launch(Dispatchers.IO) {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
-                val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.config.subscriptionRateLimit}" }.joinToString("\n");
-                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.config.subscriptionRateLimit?.let { rateLimit -> clientCount.value > rateLimit } == true };
+                val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
+                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true };
                 if (isRateLimitReached) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
                     delay(5000);

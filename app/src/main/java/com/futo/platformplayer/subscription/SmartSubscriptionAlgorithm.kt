@@ -59,7 +59,7 @@ class SmartSubscriptionAlgorithm(
 
 
         for(clientTasks in ordering) {
-            val limit = clientTasks.first.config.subscriptionRateLimit;
+            val limit = clientTasks.first.getSubscriptionRateLimit();
             if(limit == null || limit <= 0)
                 finalTasks.addAll(clientTasks.second);
             else {

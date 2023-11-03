@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media.platforms.js
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
+import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
 import kotlinx.serialization.Serializable
@@ -79,6 +80,29 @@ class SourcePluginDescriptor {
             var enableSearch: Boolean? = null;
         }
 
+        @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 3)
+        var rateLimit = RateLimit();
+        @Serializable
+        class RateLimit {
+            @FormField(R.string.subscriptions, FieldForm.DROPDOWN, R.string.ratelimit_sub_setting_description, 1)
+            @DropdownFieldOptions("Plugin defined", "25", "50", "75", "100", "125", "150", "200")
+            var rateLimitSubs: Int = 0;
+
+            fun getSubRateLimit(): Int {
+                return when(rateLimitSubs) {
+                    0 -> -1
+                    1 -> 25
+                    2 -> 50
+                    3 -> 75
+                    4 -> 100
+                    5 -> 125
+                    6 -> 150
+                    7 -> 200
+                    else -> -1
+                }
+            }
+
+        }
 
 
         fun loadDefaults(config: SourcePluginConfig) {
