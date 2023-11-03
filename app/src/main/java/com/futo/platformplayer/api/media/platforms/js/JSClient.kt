@@ -584,7 +584,7 @@ open class JSClient : IPlatformClient {
             if(it.containsKey(claimType)) {
                 val templates = it[claimType];
                 if(templates != null)
-                    for(value in values.keys.sortedBy { it }) {
+                    for(value in values.keys.sortedBy { if(it == config.primaryClaimFieldType) Int.MIN_VALUE else it }) {
                         if(templates.containsKey(value)) {
                             return templates[value]!!.replace("{{CLAIMVALUE}}", values[value]!!);
                         }

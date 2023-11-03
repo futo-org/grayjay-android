@@ -407,8 +407,9 @@ class StatePlatform {
                     return@async searchResult;
                 } catch(ex: Throwable) {
                     Logger.e(TAG, "getHomeRefresh", ex);
-                    throw ex;
+                    //throw ex;
                     //return@async null;
+                    return@async PlaceholderPager(10, { PlatformContentPlaceholder(it.id, ex) });
                 }
             });
         }.toList();

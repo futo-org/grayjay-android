@@ -178,7 +178,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
                 val rateLimitPlugins = subRequestCounts.filter { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true }
-                Logger.w(TAG, "Refreshing subscriptions with requests:\n" + reqCountStr);
+                Logger.w(TAG, "Trying to refreshing subscriptions with requests:\n" + reqCountStr);
                 if(rateLimitPlugins.any())
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }

@@ -45,7 +45,8 @@ class SourcePluginConfig(
     var subscriptionRateLimit: Int? = null,
     var enableInSearch: Boolean = true,
     var enableInHome: Boolean = true,
-    var supportedClaimTypes: List<Int> = listOf()
+    var supportedClaimTypes: List<Int> = listOf(),
+    var primaryClaimFieldType: Int? = null
 ) : IV8PluginConfig {
 
     val absoluteIconUrl: String? get() = resolveAbsoluteUrl(iconUrl, sourceUrl);

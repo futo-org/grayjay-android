@@ -33,7 +33,7 @@ class SmartSubscriptionAlgorithm(
                     val client = it.value!! as JSClient;
                     val capabilities = client.getChannelCapabilities();
 
-                    if(capabilities.hasType(ResultCapabilities.TYPE_MIXED))
+                    if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
                         return@flatMap listOf(SubscriptionTask(client, sub, it.key, ResultCapabilities.TYPE_MIXED));
                     else {
                         val types = listOf(

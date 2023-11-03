@@ -144,14 +144,15 @@ class StatePolycentric {
         return DedupContentPager(pager, StatePlatform.instance.getEnabledClients().map { it.id });
     }
 
-    fun getChannelUrls(url: String, channelId: PlatformID? = null): List<String> {
+    fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): List<String> {
 
         var polycentricProfile: PolycentricProfile? = null;
         try {
             polycentricProfile = PolycentricCache.instance.getCachedProfile(url)?.profile;
             if (polycentricProfile == null && channelId != null) {
                 Logger.i("StateSubscriptions", "Get polycentric profile not cached");
-                polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId) }?.profile;
+                if(!cacheOnly)
+                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId) }?.profile;
             } else {
                 Logger.i("StateSubscriptions", "Get polycentric profile cached");
             }

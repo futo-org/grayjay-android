@@ -16,6 +16,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StatePlatform
@@ -46,9 +47,10 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val tasksGrouped = tasks.groupBy { it.client }
         val taskCount = tasks.filter { !it.fromCache }.size;
         val cacheCount = tasks.size - taskCount;
+
         Logger.i(TAG, "Starting Subscriptions Fetch:\n" +
-            "   Tasks: ${taskCount}\n" +
-            "   Cached: ${cacheCount}");
+            tasksGrouped.map { "   ${it.key.name}: ${it.value.count { !it.fromCache }}, Cached(${it.value.count { it.fromCache } })" }.joinToString("\n"));
+
         try {
             for(clientTasks in tasksGrouped) {
                 val clientTaskCount = clientTasks.value.filter { !it.fromCache }.size;

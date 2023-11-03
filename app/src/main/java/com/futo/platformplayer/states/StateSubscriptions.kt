@@ -241,7 +241,7 @@ class StateSubscriptions {
 
     fun getSubscriptionRequestCount(): Map<JSClient, Int> {
         return SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, StateApp.instance.scope)
-            .countRequests(getSubscriptions());
+            .countRequests(getSubscriptions().associateWith { StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id, true) });
     }
 
     fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
