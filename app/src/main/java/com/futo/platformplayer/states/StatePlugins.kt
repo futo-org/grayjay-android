@@ -374,7 +374,10 @@ class StatePlugins {
             if(icon != null)
                 iconsDir.saveIconBinary(config.id, icon);
 
-            _plugins.save(SourcePluginDescriptor(config, existingAuth?.toEncrypted(), existingCaptcha?.toEncrypted(), flags));
+            val descriptor = SourcePluginDescriptor(config, existingAuth?.toEncrypted(), existingCaptcha?.toEncrypted(), flags);
+            descriptor.settings = existing?.settings ?: descriptor.settings;
+            descriptor.appSettings = existing?.appSettings ?: descriptor.appSettings;
+            _plugins.save(descriptor);
             return null;
         }
         catch(ex: Throwable) {
