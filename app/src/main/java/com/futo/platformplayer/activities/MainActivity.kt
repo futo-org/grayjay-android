@@ -501,6 +501,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             val videoUrl = targetData.substring("grayjay://video/".length);
                             navigate(_fragVideoDetail, videoUrl);
                         }
+                        else if(targetData.startsWith("grayjay://channel/")) {
+                            val channelUrl = targetData.substring("grayjay://channel/".length);
+                            navigate(_fragMainChannel, channelUrl);
+                        }
                     }
                     "content" -> {
                         if(!handleContent(targetData, intent.type)) {
