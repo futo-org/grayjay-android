@@ -497,6 +497,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             };
                             startActivity(intent);
                         }
+                        else if(targetData.startsWith("grayjay://video/")) {
+                            val videoUrl = targetData.substring("grayjay://video/".length);
+                            navigate(_fragVideoDetail, videoUrl);
+                        }
                     }
                     "content" -> {
                         if(!handleContent(targetData, intent.type)) {
