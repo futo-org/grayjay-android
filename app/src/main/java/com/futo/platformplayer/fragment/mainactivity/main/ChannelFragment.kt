@@ -386,14 +386,18 @@ class ChannelFragment : MainFragment() {
                 });
             });
 
-            val plugin = StatePlatform.instance.getChannelClientOrNull(channel.url);
-            if (plugin != null && plugin.capabilities.hasSearchChannelContents) {
-                buttons.add(Pair(R.drawable.ic_search) {
-                    _fragment.navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.VIDEO, channel.url));
-                });
-            }
+            _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                val plugin = StatePlatform.instance.getChannelClientOrNull(channel.url);
+                withContext(Dispatchers.Main) {
+                    if (plugin != null && plugin.capabilities.hasSearchChannelContents) {
+                        buttons.add(Pair(R.drawable.ic_search) {
+                            _fragment.navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.VIDEO, channel.url));
+                        });
 
-            _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons);
+                        _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons);
+                    }
+                }
+            }
 
             _buttonSubscribe.setSubscribeChannel(channel);
             _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
