@@ -494,8 +494,14 @@ class VideoDetailView : ConstraintLayout {
             updatePillButtonVisibilities();
 
             StateCasting.instance.onActiveDevicePlayChanged.subscribe(this) {
-                if (StateCasting.instance.activeDevice != null) {
+                val activeDevice = StateCasting.instance.activeDevice;
+                if (activeDevice != null) {
                     handlePlayChanged(it);
+
+                    val v = video;
+                    if (!it && v != null && v.duration - activeDevice.time.toLong() < 2L) {
+                        nextVideo();
+                    }
                 }
             };
 
