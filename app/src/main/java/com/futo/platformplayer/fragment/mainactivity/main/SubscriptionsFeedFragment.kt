@@ -282,6 +282,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             loadResults(true);
         }
 
+
         private fun loadCache() {
             Logger.i(TAG, "Subscriptions load cache");
             val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
@@ -301,6 +302,10 @@ class SubscriptionsFeedFragment : MainFragment() {
             _taskGetPager.run(withRefetch);
         }
 
+        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
+            super.onRestoreCachedData(cachedData);
+            setTextCentered(if (cachedData.results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+        }
         private fun loadedResult(pager: IPager<IPlatformContent>) {
             Logger.i(TAG, "Subscriptions new pager loaded (${pager.getResults().size})");
 
