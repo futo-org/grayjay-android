@@ -2,6 +2,7 @@ package com.futo.platformplayer.subscription
 
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -19,6 +20,7 @@ import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +57,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
             for(clientTasks in tasksGrouped) {
                 val clientTaskCount = clientTasks.value.filter { !it.fromCache }.size;
                 val clientCacheCount = clientTasks.value.size - clientTaskCount;
-                if(clientCacheCount > 0) {
+                if(clientCacheCount > 0 && StateApp.instance.contextOrNull?.let { it is MainActivity && it.isFragmentActive<SubscriptionsFeedFragment>() } == true) {
                     UIDialogs.toast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels (rqs). (${clientCacheCount} cached)");
                 }
             }

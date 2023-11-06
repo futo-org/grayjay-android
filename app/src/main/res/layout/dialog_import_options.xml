@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="@color/gray_1d">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="40dp">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/update_spinner"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_move_up" />
+
+            <TextView
+                android:id="@+id/text_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:layout_gravity="center"
+                android:textSize="14dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/text_dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/import_options"
+            android:textAlignment="center"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginTop="30dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="10dp"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="28dp">
+            <com.futo.platformplayer.views.buttons.BigButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:buttonIcon="@drawable/ic_zip"
+                app:buttonText="Import Grayjay export (.zip)"
+                android:layout_margin="5dp"
+                app:buttonBackground="@drawable/background_big_button_black"
+                app:buttonSubText="Pick a Grayjay export zip file" />
+            <com.futo.platformplayer.views.buttons.BigButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:buttonIcon="@drawable/ic_encrypted"
+                android:alpha="0.5"
+                app:buttonBackground="@drawable/background_big_button_black"
+                app:buttonText="Import Grayjay Auto-Backup (.ezip)"
+                android:layout_margin="5dp"
+                app:buttonSubText="Pick a Grayjay auto-backup encrypted zip file" />
+            <com.futo.platformplayer.views.buttons.BigButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                app:buttonIcon="@drawable/ic_lines"
+                android:alpha="0.5"
+                app:buttonBackground="@drawable/background_big_button_black"
+                app:buttonText="Import Line Text file (.txt)"
+                app:buttonSubText="Pick a text file with one entry per line" />
+            <com.futo.platformplayer.views.buttons.BigButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                app:buttonIcon="@drawable/ic_play"
+                app:buttonBackground="@drawable/background_big_button_black"
+                app:buttonText="Import NewPipe Subscriptions (.json)"
+                app:buttonSubText="Pick a NewPipe subscriptions json file" />
+
+            <Button
+                android:id="@+id/button_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/close"
+                android:layout_marginTop="20dp"
+                android:textSize="14dp"
+                android:fontFamily="@font/inter_regular"
+                android:textColor="@color/colorPrimary"
+                android:background="@color/transparent" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

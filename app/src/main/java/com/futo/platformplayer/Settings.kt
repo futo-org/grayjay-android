@@ -603,6 +603,23 @@ class Settings : FragmentedStorageFileJson() {
         fun export() {
             StateBackup.startExternalBackup();
         }
+
+
+        /*
+        @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, 4)
+        fun import() {
+            val act = SettingsActivity.getActivity() ?: return;
+            StateApp.instance.requestFileReadAccess(act, null) {
+                if(it != null && it.exists()) {
+                    val name = it.name;
+                    val contents = it.readBytes(act);
+                    if(contents != null) {
+                        if(name != null && name.endsWith(".zip", true))
+                            StateBackup.importZipBytes(act, act.lifecycleScope, contents);
+                    }
+                }
+            }
+        }*/
     }
 
     @FormField(R.string.payment, FieldForm.GROUP, -1, 14)

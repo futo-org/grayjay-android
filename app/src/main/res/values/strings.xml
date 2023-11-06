@@ -28,6 +28,7 @@
     <string name="update">Update</string>
     <string name="close">Close</string>
     <string name="never">Never</string>
+    <string name="import_options">Select any of the following available import options.</string>
     <string name="there_is_an_update_available_do_you_wish_to_update">There is an update available, do you wish to update?</string>
     <string name="downloading_update">Downloading update…</string>
     <string name="installing_update">Installing update…</string>
@@ -302,6 +303,8 @@
     <string name="enable_casting">Enable casting</string>
     <string name="experimental_background_update_for_subscriptions_cache">Experimental background update for subscriptions cache</string>
     <string name="export_data">Export Data</string>
+    <string name="import_data">Import Data</string>
+    <string name="import_data_description">Select a file to import, support various files (alternative to opening directly)</string>
     <string name="external_storage">External Storage</string>
     <string name="feed_style">Feed Style</string>
     <string name="fetch_on_app_boot">Fetch on app boot</string>

@@ -239,6 +239,25 @@ class StateApp {
         return state;
     }
 
+    fun requestFileReadAccess(activity: IWithResultLauncher, path: Uri?, handle: (DocumentFile?)->Unit) {
+        if(activity is Context) {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT);
+            if(path != null)
+                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+            intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                .or(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            activity.launchForResult(intent, 98) {
+                if(it.resultCode == Activity.RESULT_OK) {
+                    val uri = it.data?.data;
+                    if(uri != null)
+                        handle(DocumentFile.fromSingleUri(activity, uri));
+                }
+                else
+                    UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
+            };
+        }
+    }
     fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit)
     {
         if(activity is Context)

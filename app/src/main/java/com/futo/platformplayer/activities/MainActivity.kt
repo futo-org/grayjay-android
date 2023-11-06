@@ -753,6 +753,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateSaved.instance.setVideoToOpenBlocking(null);
     }
 
+    inline fun <reified T> isFragmentActive(): Boolean {
+        return fragCurrent is T;
+    }
 
     /**
      * Navigate takes a MainFragment, and makes them the current main visible view
