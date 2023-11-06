@@ -92,6 +92,26 @@
                 <data android:host="*" />
                 <data android:scheme="file" />
 
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="content" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+                <data android:host="*" />
+                <data android:scheme="file" />
+
                 <data android:mimeType="application/zip" />
             </intent-filter>
             <intent-filter android:autoVerify="true">

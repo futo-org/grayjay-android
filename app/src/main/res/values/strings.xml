@@ -435,6 +435,7 @@
     <string name="unknown_url_format">Unknown url format</string>
     <string name="failed_to_handle_file">Failed to handle file</string>
     <string name="unknown_reconstruction_type">Unknown reconstruction type</string>
+    <string name="failed_to_parse_text_file">Failed to parse text file</string>
     <string name="failed_to_parse_newpipe_subscriptions">Failed to parse NewPipe Subscriptions</string>
     <string name="failed_to_generate_qr_code">Failed to generate QR code</string>
     <string name="share_text">Share Text</string>

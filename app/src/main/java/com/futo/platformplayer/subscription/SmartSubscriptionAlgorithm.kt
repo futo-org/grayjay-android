@@ -42,9 +42,13 @@ class SmartSubscriptionAlgorithm(
                               if(sub.shouldFetchPosts()) ResultCapabilities.TYPE_POSTS else null,
                               if(sub.shouldFetchLiveStreams()) ResultCapabilities.TYPE_LIVE else null
                         ).filterNotNull().filter { capabilities.hasType(it) };
-                        return@flatMap types.map {
-                            SubscriptionTask(client, sub, url, it);
-                        };
+
+                        if(!types.isEmpty())
+                            return@flatMap types.map {
+                                SubscriptionTask(client, sub, url, it);
+                            };
+                        else
+                            listOf(SubscriptionTask(client, sub, url, ResultCapabilities.TYPE_VIDEOS, true))
                     }
                 };
         };

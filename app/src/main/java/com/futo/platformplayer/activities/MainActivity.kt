@@ -591,6 +591,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             StateBackup.importZipBytes(this, lifecycleScope, data);
             return true;
         }
+        else if(file.lowercase().endsWith(".txt") || mime == "text/plain") {
+            return handleUnknownText(String(data));
+        }
         return false;
     }
     fun handleFile(file: String): Boolean {
@@ -607,6 +610,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         else if(file.lowercase().endsWith(".zip")) {
             StateBackup.importZipBytes(this, lifecycleScope, readSharedFile(file));
             return true;
+        }
+        else if(file.lowercase().endsWith(".txt")) {
+            return handleUnknownText(String(readSharedFile(file)));
         }
         return false;
     }
@@ -633,6 +639,20 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    fun handleUnknownText(text: String): Boolean {
+        try {
+            if(text.startsWith("@/Subscription") || text.startsWith("Subscriptions")) {
+                val lines = text.split("\n").map { it.trim() }.drop(1).filter { it.isNotEmpty() };
+                navigate(_fragImportSubscriptions, lines);
+                return true;
+            }
+        }
+        catch(ex: Throwable) {
+            Logger.e(TAG, ex.message, ex);
+            UIDialogs.showGeneralErrorDialog(this, getString(R.string.failed_to_parse_text_file), ex);
+        }
+        return false;
+    }
     fun handleUnknownJson(name: String?, json: String): Boolean {
 
         val context = this;
