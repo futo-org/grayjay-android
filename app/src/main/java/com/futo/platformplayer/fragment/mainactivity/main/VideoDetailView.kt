@@ -70,6 +70,7 @@ import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.views.MonetizationView
 import com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
 import com.futo.platformplayer.views.casting.CastView
 import com.futo.platformplayer.views.comments.AddCommentView
@@ -79,6 +80,7 @@ import com.futo.platformplayer.views.overlays.DescriptionOverlay
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
 import com.futo.platformplayer.views.overlays.RepliesOverlay
+import com.futo.platformplayer.views.overlays.SupportOverlay
 import com.futo.platformplayer.views.overlays.slideup.*
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.pills.RoundButton
@@ -191,6 +193,7 @@ class VideoDetailView : ConstraintLayout {
     private val _container_content_replies: RepliesOverlay;
     private val _container_content_description: DescriptionOverlay;
     private val _container_content_liveChat: LiveChatOverlay;
+    private val _container_content_support: SupportOverlay;
 
     private var _container_content_current: View;
 
@@ -200,9 +203,7 @@ class VideoDetailView : ConstraintLayout {
     private val _imageDislikeIcon: ImageView;
     private val _imageLikeIcon: ImageView;
 
-    private val _buttonSupport: LinearLayout;
-    private val _buttonStore: LinearLayout;
-    private val _layoutMonetization: LinearLayout;
+    private val _monetization: MonetizationView;
 
     private val _buttonMore: RoundButton;
 
@@ -292,6 +293,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies = findViewById(R.id.videodetail_container_replies);
         _container_content_description = findViewById(R.id.videodetail_container_description);
         _container_content_liveChat = findViewById(R.id.videodetail_container_livechat);
+        _container_content_support = findViewById(R.id.videodetail_container_support)
 
         _textComments = findViewById(R.id.text_comments);
         _addCommentView = findViewById(R.id.add_comment_view);
@@ -310,11 +312,7 @@ class VideoDetailView : ConstraintLayout {
         _imageLikeIcon = findViewById(R.id.image_like_icon);
         _imageDislikeIcon = findViewById(R.id.image_dislike_icon);
 
-        _buttonSupport = findViewById(R.id.button_support);
-        _buttonStore = findViewById(R.id.button_store);
-        _layoutMonetization = findViewById(R.id.layout_monetization);
-
-        _layoutMonetization.visibility = View.GONE;
+        _monetization = findViewById(R.id.monetization);
         _player.attachPlayer();
 
 
@@ -327,16 +325,12 @@ class VideoDetailView : ConstraintLayout {
             fragment.navigate<VideoDetailFragment>(it.targetUrl);
         };
 
-        _buttonSupport.setOnClickListener {
-            val author = video?.author ?: _searchVideo?.author;
-            author?.let { fragment.navigate<ChannelFragment>(it).selectTab(2); };
-            fragment.lifecycleScope.launch {
-                delay(100);
-                fragment.minimizeVideoDetail();
-            };
+        _monetization.onSupportTap.subscribe {
+            _container_content_support.setPolycentricProfile(_polycentricProfile?.profile, false);
+            switchContentView(_container_content_support);
         };
 
-        _buttonStore.setOnClickListener {
+        _monetization.onStoreTap.subscribe {
             _polycentricProfile?.profile?.systemState?.store?.let {
                 try {
                     val uri = Uri.parse(it);
@@ -347,6 +341,13 @@ class VideoDetailView : ConstraintLayout {
                     Logger.e(TAG, "Failed to open URI: '${it}'.", e);
                 }
             }
+        };
+
+        _player.attachPlayer();
+
+        _container_content_liveChat.onRaidNow.subscribe {
+            StatePlayer.instance.clearQueue();
+            fragment.navigate<VideoDetailFragment>(it.targetUrl);
         };
 
         StateApp.instance.preventPictureInPicture.subscribe(this) {
@@ -545,6 +546,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_liveChat.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_queue.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_replies.onClose.subscribe { switchContentView(_container_content_main); };
+        _container_content_support.onClose.subscribe { switchContentView(_container_content_main); };
 
         _description_viewMore.setOnClickListener {
             switchContentView(_container_content_description);
@@ -847,6 +849,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies.cleanup();
         _container_content_queue.cleanup();
         _container_content_description.cleanup();
+        _container_content_support.cleanup();
         StateCasting.instance.onActiveDevicePlayChanged.remove(this);
         StateCasting.instance.onActiveDeviceTimeChanged.remove(this);
         StateCasting.instance.onActiveDeviceConnectionStateChanged.remove(this);
@@ -2096,12 +2099,7 @@ class VideoDetailView : ConstraintLayout {
             _creatorThumbnail.setHarborAvailable(profile != null, animate);
         }
 
-        if (profile != null) {
-            _channelName.text = cachedPolycentricProfile.profile.systemState.username;
-            _layoutMonetization.visibility = View.VISIBLE;
-        } else {
-            _layoutMonetization.visibility = View.GONE;
-        }
+        _monetization.setPolycentricProfile(cachedPolycentricProfile, animate);
     }
 
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {

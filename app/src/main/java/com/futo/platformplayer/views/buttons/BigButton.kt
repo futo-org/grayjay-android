@@ -69,6 +69,10 @@ open class BigButton : LinearLayout {
         _textSecondary.text = attrTextSecondary;
     }
 
+    fun setSecondaryText(text: String?) {
+        _textSecondary.text = text
+    }
+
     fun withPrimaryText(text: String): BigButton {
         _textPrimary.text = text;
         return this;

@@ -445,65 +445,10 @@
                         android:text="@string/click_to_read_more"/>
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/layout_monetization"
+                <com.futo.platformplayer.views.MonetizationView
+                    android:id="@+id/monetization"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_marginEnd="14dp"
-                    android:layout_marginTop="14dp">
-
-                    <LinearLayout
-                        android:id="@+id/button_support"
-                        android:layout_width="0dp"
-                        android:layout_height="30dp"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:background="@drawable/background_support">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_paid" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@color/white"
-                            android:fontFamily="@font/inter_light"
-                            android:text="@string/support"
-                            android:textSize="14dp"
-                            android:includeFontPadding="false"
-                            android:layout_marginStart="6dp" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/button_store"
-                        android:layout_width="0dp"
-                        android:layout_height="30dp"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/background_store">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_store" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@color/white"
-                            android:fontFamily="@font/inter_light"
-                            tools:text="Store"
-                            android:textSize="14dp"
-                            android:includeFontPadding="false"
-                            android:layout_marginStart="6dp" />
-
-                    </LinearLayout>
-                </LinearLayout>
+                    android:layout_height="wrap_content" />
 
                 <com.futo.platformplayer.views.videometa.UpNextView
                     android:id="@+id/up_next"
@@ -599,6 +544,12 @@
 
         <com.futo.platformplayer.views.overlays.RepliesOverlay
             android:id="@+id/videodetail_container_replies"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.futo.platformplayer.views.overlays.SupportOverlay
+            android:id="@+id/videodetail_container_support"
             android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

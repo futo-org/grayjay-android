@@ -39,7 +39,12 @@ class PolycentricCache {
                     ContentType.USERNAME.value,
                     ContentType.DESCRIPTION.value,
                     ContentType.STORE.value,
-                    ContentType.SERVER.value
+                    ContentType.SERVER.value,
+                    ContentType.STORE_DATA.value,
+                    ContentType.PROMOTION_BANNER.value,
+                    ContentType.PROMOTION.value,
+                    ContentType.MEMBERSHIP_URLS.value,
+                    ContentType.DONATION_DESTINATIONS.value
                 )
             ).eventsList.map { e -> SignedEvent.fromProto(e) };
 
