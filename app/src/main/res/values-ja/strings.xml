@@ -680,8 +680,12 @@
         <item>有効</item>
     </string-array>
     <string-array name="subscriptions_sortby_array">
-        <item>名前昇順</item>
-        <item>名前降順</item>
+        <item>名前の昇順</item>
+        <item>名前の降順</item>
+        <item>視聴回数の昇順</item>
+        <item>視聴回数の降順</item>
+        <item>視聴時間の昇順</item>
+        <item>視聴時間の降順</item>
     </string-array>
     <string-array name="feed_style">
         <item>プレビュー</item>

@@ -680,8 +680,12 @@
         <item>Activé</item>
     </string-array>
     <string-array name="subscriptions_sortby_array">
-        <item>Nom croissant</item>
-        <item>Nom décroissant</item>
+        <item>Nom Ascendant</item>
+        <item>Nom Descendant</item>
+        <item>Vues Ascendantes</item>
+        <item>Vues Descendantes</item>
+        <item>Temps de visionnage Ascendant</item>
+        <item>Temps de visionnage Descendant</item>
     </string-array>
     <string-array name="feed_style">
         <item>Aperçu</item>
