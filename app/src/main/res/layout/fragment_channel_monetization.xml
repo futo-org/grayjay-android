@@ -1,92 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
-    android:layout_margin="18dp">
+    android:layout_height="match_parent">
 
-    <com.futo.platformplayer.views.buttons.BigButton
-        android:id="@+id/button_store"
+    <com.futo.platformplayer.views.SupportView
+        android:id="@+id/support"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:buttonIcon="@drawable/ic_store"
-        app:buttonText="@string/store"
-        app:buttonSubText="@string/visit_my_store" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="20dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16dp"
-            android:textColor="@color/white"
-            android:fontFamily="@font/inter_regular"
-            android:text="@string/memberships" />
-
-        <com.google.android.flexbox.FlexboxLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:flexWrap="wrap"
-            android:layout_marginTop="5dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14dp"
-                android:textColor="#909090"
-                android:fontFamily="@font/inter_light"
-                android:text="@string/a_monthly_recurring_payment_with_often" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14dp"
-                android:textColor="#909090"
-                android:fontFamily="@font/inter_bold"
-                android:text="@string/additional_perks" />
-        </com.google.android.flexbox.FlexboxLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
-
-            <com.futo.platformplayer.views.buttons.BigButton
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16dp"
-            android:textColor="@color/white"
-            android:fontFamily="@font/inter_regular"
-            android:text="@string/donation"
-            android:layout_marginTop="20dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14dp"
-            android:textColor="#909090"
-            android:fontFamily="@font/inter_light"
-            android:text="@string/a_one_time_payment_to_support_the_creator" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
-
-            <com.futo.platformplayer.views.buttons.BigButton
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
+        android:layout_height="match_parent" />
+</FrameLayout>
