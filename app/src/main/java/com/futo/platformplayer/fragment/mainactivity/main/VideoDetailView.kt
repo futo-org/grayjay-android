@@ -1051,6 +1051,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Failed to get chapters", ex);
+                    _player.setChapters(null);
 
                     /*withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);

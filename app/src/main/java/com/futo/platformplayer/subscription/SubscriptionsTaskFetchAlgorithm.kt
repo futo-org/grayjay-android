@@ -79,7 +79,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     if(result != null) {
                         if(result.pager != null)
                             taskResults.add(result);
-                        else if(result.exception != null) {
+                        if(result.exception != null) {
                             val ex = result.exception;
                             if(ex != null) {
                                 val nonRuntimeEx = findNonRuntimeException(ex);
@@ -198,6 +198,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                         Logger.i(StateSubscriptions.TAG, "Channel ${task.sub.channel.name} failed, substituting with cache");
                         pager = ChannelContentCache.instance.getChannelCachePager(task.sub.channel.url);
                         taskEx = ex;
+                        return@submit SubscriptionTaskResult(task, pager, taskEx);
                     }
                 }
                 return@submit SubscriptionTaskResult(task, null, taskEx);
