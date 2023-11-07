@@ -7,6 +7,8 @@ import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
@@ -23,12 +25,21 @@ import kotlinx.serialization.json.Json
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var _webView: WebView;
+    private lateinit var _textUrl: TextView;
+    private lateinit var _buttonClose: ImageButton;
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         setNavigationBarColorAndIcons();
+
+        _textUrl = findViewById(R.id.text_url);
+        _buttonClose = findViewById(R.id.button_close);
+        _buttonClose.setOnClickListener {
+            finish();
+        }
+
 
         _webView = findViewById(R.id.web_view);
         _webView.settings.javaScriptEnabled = true;
@@ -60,6 +71,8 @@ class LoginActivity : AppCompatActivity() {
         };
         var isFirstLoad = true;
         webViewClient.onPageLoaded.subscribe { view, url ->
+            _textUrl.setText(url ?: "");
+
             if(!isFirstLoad)
                 return@subscribe;
             isFirstLoad = false;
