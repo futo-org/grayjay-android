@@ -218,14 +218,14 @@ class MenuBottomBarFragment : MainActivityFragment() {
             if (buyIndex != -1) {
                 val button = buttons[buyIndex]
                 buttons.removeAt(buyIndex)
-                buttons.add(buttons.size, button)
+                buttons.add(0, button)
             }
             //Force faq to be second
             val faqIndex = buttons.indexOfFirst { b -> b.id == 97 };
             if (faqIndex != -1) {
                 val button = buttons[faqIndex]
                 buttons.removeAt(faqIndex)
-                buttons.add(buttons.size, button)
+                buttons.add(if (buttons.size == 1) 1 else 0, button)
             }
 
             for (data in buttons) {

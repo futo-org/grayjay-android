@@ -133,6 +133,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
         _time_bar_fullscreen = _videoControls_fullscreen.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
 
+        val castVisibility = if (Settings.instance.casting.enabled) View.VISIBLE else View.GONE
+        _control_cast.visibility = castVisibility
+        _control_cast_fullscreen.visibility = castVisibility
+
         _overlay_brightness = findViewById(R.id.overlay_brightness);
 
         _title_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_title);
