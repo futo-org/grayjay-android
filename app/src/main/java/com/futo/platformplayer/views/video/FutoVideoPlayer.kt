@@ -270,7 +270,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         if (drawable != null) {
             _videoView.defaultArtwork = drawable;
             _videoView.useArtwork = true;
-            fitHeight();
+            fitOrFill(isFullScreen);
         } else {
             _videoView.defaultArtwork = null;
             _videoView.useArtwork = false;
@@ -311,7 +311,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             gestureControl.hideControls();
             //videoControlsBar.visibility = View.GONE;
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
-            fillHeight();
+
             _videoControls_fullscreen.show();
             videoControls.hide();
         }
@@ -323,14 +323,23 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             gestureControl.hideControls();
             //videoControlsBar.visibility = View.VISIBLE;
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
-            fitHeight();
+
             videoControls.show();
             _videoControls_fullscreen.hide();
         }
 
+        fitOrFill(fullScreen);
         gestureControl.setFullscreen(fullScreen);
         onToggleFullScreen.emit(fullScreen);
         isFullScreen = fullScreen;
+    }
+
+    private fun fitOrFill(fullScreen: Boolean) {
+        if (fullScreen) {
+            fillHeight();
+        } else {
+            fitHeight();
+        }
     }
 
     fun lockControlsAlpha(locked : Boolean) {
