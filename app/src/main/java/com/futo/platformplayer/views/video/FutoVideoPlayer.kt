@@ -71,6 +71,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_videosettings_fullscreen: ImageButton;
     private val _control_minimize_fullscreen: ImageButton;
     private val _control_rotate_lock_fullscreen: ImageButton;
+    private val _control_cast_fullscreen: ImageButton;
     private val _control_play_fullscreen: ImageButton;
     private val _time_bar_fullscreen: TimeBar;
     private val _overlay_brightness: FrameLayout;
@@ -127,6 +128,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_minimize_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_minimize);
         _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_settings);
         _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_rotate_lock);
+        _control_cast_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_cast);
         _control_play_fullscreen = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
         _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
         _time_bar_fullscreen = _videoControls_fullscreen.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
@@ -213,7 +215,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             updateRotateLock();
         };
         _control_cast.setOnClickListener {
-            UIDialogs.showCastingDialog(context);
+
         };
 
         _control_minimize_fullscreen.setOnClickListener {
@@ -228,6 +230,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_rotate_lock_fullscreen.setOnClickListener {
             StatePlayer.instance.rotationLock = !StatePlayer.instance.rotationLock;
             updateRotateLock();
+        };
+        _control_cast_fullscreen.setOnClickListener {
+            UIDialogs.showCastingDialog(context);
         };
 
         var lastPos = 0L;

@@ -1812,6 +1812,7 @@ class VideoDetailView : ConstraintLayout {
         _isCasting = isCasting;
 
         if(isCasting) {
+            setFullscreen(false);
             _player.stop();
             _player.hideControls(false);
             _cast.visibility = View.VISIBLE;
