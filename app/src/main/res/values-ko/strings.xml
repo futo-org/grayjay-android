@@ -682,6 +682,10 @@
     <string-array name="subscriptions_sortby_array">
         <item>이름 오름차순</item>
         <item>이름 내림차순</item>
+        <item>조회수 오름차순</item>
+        <item>조회수 내림차순</item>
+        <item>시청시간 오름차순</item>
+        <item>시청시간 내림차순</item>
     </string-array>
     <string-array name="feed_style">
         <item>미리보기</item>

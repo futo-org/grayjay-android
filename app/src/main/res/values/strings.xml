@@ -79,6 +79,7 @@
     <string name="developer">Developer</string>
     <string name="remove_historical_suggestion">Remove historical suggestion</string>
     <string name="comments">Comments</string>
+    <string name="merchandise">Merchandise</string>
     <string name="reached_the_end_of_the_playlist">Reached the end of the playlist</string>
     <string name="the_playlist_will_restart_after_the_video_is_finished">The playlist will restart after the video is finished</string>
     <string name="restart_now">Restart Now</string>
@@ -192,15 +193,19 @@
     <string name="i_already_paid">I Already Paid</string>
     <string name="memberships">Memberships</string>
     <string name="a_monthly_recurring_payment_with_often">A monthly recurring payment with often</string>
-    <string name="additional_perks">additional perks.</string>
+    <string name="additional_perks">additional perks</string>
     <string name="a_one_time_payment_to_support_the_creator">A one-time payment to support the creator</string>
+    <string name="a_store_by_the_creator">A store by the creator</string>
     <string name="donation">Donation</string>
+    <string name="promotions">Promotions</string>
+    <string name="current_promotions_by_this_creator">Current promotions by this creator</string>
     <string name="downloading">Downloading</string>
     <string name="videos">Videos</string>
     <string name="clear_history">Clear history</string>
     <string name="nothing_to_import">Nothing to import</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Enabling lots of sources can reduce the loading speed of your application.</string>
     <string name="support">Support</string>
+    <string name="membership">Membership</string>
     <string name="store">Store</string>
     <string name="live_chat">Live Chat</string>
     <string name="remove">Remove</string>
@@ -631,6 +636,7 @@
     <string name="select_your_pins_in_order">Select your pins in order</string>
     <string name="more_options">More Options</string>
     <string name="save">Save</string>
+    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">This creator has not set any support options on Harbor (Polycentric)</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>

@@ -58,6 +58,14 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent">
         <ImageButton
+            android:id="@+id/exo_cast"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_cast" />
+        <ImageButton
             android:id="@+id/exo_rotate_lock"
             android:layout_width="50dp"
             android:layout_height="50dp"

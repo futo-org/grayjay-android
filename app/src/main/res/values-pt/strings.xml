@@ -682,6 +682,10 @@
     <string-array name="subscriptions_sortby_array">
         <item>Nome Ascendente</item>
         <item>Nome Descendente</item>
+        <item>Visualizações Ascendente</item>
+        <item>Visualizações Descendente</item>
+        <item>Tempo de Assistência Ascendente</item>
+        <item>Tempo de Assistência Descendente</item>
     </string-array>
     <string-array name="feed_style">
         <item>Pré-visualização</item>

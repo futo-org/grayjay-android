@@ -682,6 +682,10 @@
     <string-array name="subscriptions_sortby_array">
         <item>الاسم تصاعدياً</item>
         <item>الاسم تنازلياً</item>
+        <item>المشاهدات تصاعدياً</item>
+        <item>المشاهدات تنازلياً</item>
+        <item>زمن المشاهدة تصاعدياً</item>
+        <item>زمن المشاهدة تنازلياً</item>
     </string-array>
     <string-array name="feed_style">
         <item>معاينة</item>

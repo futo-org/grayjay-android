@@ -1,5 +1,7 @@
 package com.futo.platformplayer.images;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Priority;

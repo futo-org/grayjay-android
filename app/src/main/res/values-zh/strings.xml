@@ -682,6 +682,10 @@
     <string-array name="subscriptions_sortby_array">
         <item>名称升序</item>
         <item>名称降序</item>
+        <item>观看次数升序</item>
+        <item>观看次数降序</item>
+        <item>观看时间升序</item>
+        <item>观看时间降序</item>
     </string-array>
     <string-array name="feed_style">
         <item>预览</item>
