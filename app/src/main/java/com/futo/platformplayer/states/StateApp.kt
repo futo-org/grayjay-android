@@ -731,6 +731,34 @@ class StateApp {
         }
     }
 
+    fun getLocaleContext(baseContext: Context?): Context? {
+        val locale = getLocaleSetting(baseContext);
+        try {
+
+            if (baseContext != null && locale != null) {
+                val config = baseContext.resources.configuration;
+                config.setLocale(locale);
+                return baseContext.createConfigurationContext(config);
+            }
+            return baseContext;
+        }
+        catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to load locale", ex);
+            return baseContext;
+        }
+    }
+    fun getLocaleSetting(context: Context?): Locale? {
+        return context?.getSharedPreferences("language", Context.MODE_PRIVATE)
+                ?.getString("language", null)
+                ?.let { Locale(it) };
+    }
+    fun setLocaleSetting(context: Context?, locale: String?) {
+        context?.getSharedPreferences("language", Context.MODE_PRIVATE)
+            ?.edit()
+            ?.putString("language", locale)
+            ?.apply();
+    }
+
     companion object {
         private val TAG = "StateApp";
         @SuppressLint("StaticFieldLeak") //This is only alive while MainActivity is alive

@@ -34,7 +34,8 @@ class CommentsList : ConstraintLayout {
         }
         .exception<Throwable> {
             Logger.e(TAG, "Failed to load comments.", it);
-            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_comments) + (it.message ?: ""), it, ::fetchComments);
+            UIDialogs.toast(context, context.getString(R.string.failed_to_load_comments) + "\n" + (it.message ?: ""));
+            //UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_comments) + (it.message ?: ""), it, ::fetchComments);
             setLoading(false);
         } else TaskHandler(IPlatformVideoDetails::class.java, StateApp.instance.scopeGetter);
 

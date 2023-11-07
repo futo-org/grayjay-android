@@ -78,7 +78,7 @@ class HomeFragment : MainFragment() {
     }
 
     fun setPreviewsEnabled(previewsEnabled: Boolean) {
-        _view?.setPreviewsEnabled(previewsEnabled);
+        _view?.setPreviewsEnabled(previewsEnabled && Settings.instance.home.previewFeedItems);
     }
 
     @SuppressLint("ViewConstructor")
@@ -122,6 +122,8 @@ class HomeFragment : MainFragment() {
                     setLoading(false);
                 };
             };
+
+            setPreviewsEnabled(Settings.instance.home.previewFeedItems);
         }
 
         fun onShown() {

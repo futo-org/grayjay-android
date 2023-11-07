@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
@@ -152,6 +153,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             Runtime.getRuntime().exit(0);
         }
+    }
+
+    override fun attachBaseContext(newBase: Context?) {
+        Logger.i(TAG, "MainActivity.attachBaseContext")
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

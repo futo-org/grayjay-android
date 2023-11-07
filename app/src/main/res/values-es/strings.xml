@@ -713,7 +713,7 @@
         <item>Reanudar Después de 10s</item>
         <item>Siempre Reanudar</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>Inglés</item>
         <item>Español</item>
         <item>Francés</item>

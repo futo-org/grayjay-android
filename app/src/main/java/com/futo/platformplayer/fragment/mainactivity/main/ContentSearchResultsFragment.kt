@@ -63,7 +63,7 @@ class ContentSearchResultsFragment : MainFragment() {
     }
 
     fun setPreviewsEnabled(previewsEnabled: Boolean) {
-        _view?.setPreviewsEnabled(previewsEnabled);
+        _view?.setPreviewsEnabled(previewsEnabled && Settings.instance.search.previewFeedItems);
     }
 
     @SuppressLint("ViewConstructor")
@@ -93,6 +93,8 @@ class ContentSearchResultsFragment : MainFragment() {
                 Logger.w(TAG, "Failed to load results.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
             }
+
+            setPreviewsEnabled(Settings.instance.search.previewFeedItems);
         }
 
         override fun cleanup() {

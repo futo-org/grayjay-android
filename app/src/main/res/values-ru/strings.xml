@@ -697,7 +697,7 @@
         <item>Продолжить после 10 секунд</item>
         <item>Всегда продолжать</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>Английский</item>
         <item>Испанский</item>
         <item>Французский</item>
