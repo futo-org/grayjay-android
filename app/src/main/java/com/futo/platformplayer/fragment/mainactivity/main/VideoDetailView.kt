@@ -814,7 +814,7 @@ class VideoDetailView : ConstraintLayout {
             when (Settings.instance.playback.backgroundPlay) {
                 0 -> handlePause();
                 1 -> {
-                    if(!(video?.isLive ?: false))
+                    if(!(video?.isLive ?: false) && Settings.instance.playback.backgroundSwitchToAudio)
                         _player.switchToAudioMode();
                     StatePlayer.instance.startOrUpdateMediaSession(context, video);
                 }

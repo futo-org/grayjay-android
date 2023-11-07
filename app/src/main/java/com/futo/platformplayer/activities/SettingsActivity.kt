@@ -1,6 +1,7 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.Loader
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.ReadOnlyTextField
@@ -28,6 +30,10 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
 
     private var _isFinished = false;
 
+    override fun attachBaseContext(newBase: Context?) {
+        Logger.i("SettingsActivity", "SettingsActivity.attachBaseContext")
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
@@ -43,6 +49,11 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
             Logger.i("SettingsActivity", "Setting [${field.field?.name}] changed, saving");
             _form.setObjectValues();
             Settings.instance.save();
+
+            if(field.descriptor?.id == "app_language") {
+                Logger.i("SettingsActivity", "App language change detected, propogating to shared preferences");
+                StateApp.instance.setLocaleSetting(this, Settings.instance.language.getAppLanguageLocaleString());
+            }
         };
         _buttonBack.setOnClickListener {
             finish();

@@ -701,7 +701,7 @@
         <item>Nach 10 Sekunden fortsetzen</item>
         <item>Immer fortsetzen</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>Englisch</item>
         <item>Spanisch</item>
         <item>Französisch</item>

@@ -701,7 +701,7 @@
         <item>预览后10秒继续</item>
         <item>始终继续</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>英语</item>
         <item>西班牙语</item>
         <item>法语</item>

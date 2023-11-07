@@ -81,7 +81,7 @@ class SubscriptionsFeedFragment : MainFragment() {
     }
 
     fun setPreviewsEnabled(previewsEnabled: Boolean) {
-        _view?.setPreviewsEnabled(previewsEnabled);
+        _view?.setPreviewsEnabled(previewsEnabled && Settings.instance.subscriptions.previewFeedItems);
     }
 
     @SuppressLint("ViewConstructor")
@@ -108,6 +108,8 @@ class SubscriptionsFeedFragment : MainFragment() {
             };
 
             initializeToolbarContent();
+
+            setPreviewsEnabled(Settings.instance.subscriptions.previewFeedItems);
         }
 
         fun onShown() {

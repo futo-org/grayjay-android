@@ -4,9 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.webkit.CookieManager
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -30,6 +28,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.File
 import java.time.OffsetDateTime
+import java.util.Locale
 
 @Serializable
 data class MenuBottomBarSetting(val id: Int, var enabled: Boolean);
@@ -46,7 +45,7 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(
         R.string.manage_polycentric_identity, FieldForm.BUTTON,
-        R.string.manage_your_polycentric_identity, -4
+        R.string.manage_your_polycentric_identity, -5
     )
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
@@ -61,7 +60,7 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(
         R.string.show_faq, FieldForm.BUTTON,
-        R.string.get_answers_to_common_questions, -3
+        R.string.get_answers_to_common_questions, -4
     )
     @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
@@ -74,7 +73,7 @@ class Settings : FragmentedStorageFileJson() {
     }
     @FormField(
         R.string.show_issues, FieldForm.BUTTON,
-        R.string.a_list_of_user_reported_and_self_reported_issues, -2
+        R.string.a_list_of_user_reported_and_self_reported_issues, -3
     )
     @FormFieldButton(R.drawable.ic_data_alert)
     fun openIssues() {
@@ -109,7 +108,7 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(
         R.string.manage_tabs, FieldForm.BUTTON,
-        R.string.change_tabs_visible_on_the_home_screen, -1
+        R.string.change_tabs_visible_on_the_home_screen, -2
     )
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
@@ -122,11 +121,39 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
+
+
+    @FormField(R.string.home, "group", R.string.configure_how_your_home_tab_works_and_feels, 0)
+    var language = LanguageSettings();
+    @Serializable
+    class LanguageSettings {
+        @FormField(R.string.app_language, FieldForm.DROPDOWN, R.string.may_require_restart, 5, "app_language")
+        @DropdownFieldOptionsId(R.array.app_languages)
+        var appLanguage: Int = 0;
+
+        fun getAppLanguageLocaleString(): String? {
+            return when(appLanguage) {
+                0 -> null
+                1 -> "en";
+                2 -> "de";
+                3 -> "es";
+                4 -> "pt";
+                5 -> "fr"
+                6 -> "ja";
+                7 -> "ko";
+                8 -> "zh";
+                9 -> "ru";
+                10 -> "ar";
+                else -> null
+            }
+        }
+    }
+
     @FormField(R.string.home, "group", R.string.configure_how_your_home_tab_works_and_feels, 1)
     var home = HomeSettings();
     @Serializable
     class HomeSettings {
-        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 5)
         @DropdownFieldOptionsId(R.array.feed_style)
         var homeFeedStyle: Int = 1;
 
@@ -136,20 +163,27 @@ class Settings : FragmentedStorageFileJson() {
             else
                 return FeedStyle.THUMBNAIL;
         }
+
+        @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
+        var previewFeedItems: Boolean = true;
     }
 
     @FormField(R.string.search, "group", -1, 2)
     var search = SearchSettings();
     @Serializable
     class SearchSettings {
-        @FormField(R.string.search_history, FieldForm.TOGGLE, -1, 4)
+        @FormField(R.string.search_history, FieldForm.TOGGLE, R.string.may_require_restart, 3)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var searchHistory: Boolean = true;
 
 
-        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 4)
         @DropdownFieldOptionsId(R.array.feed_style)
         var searchFeedStyle: Int = 1;
+
+        @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
+        var previewFeedItems: Boolean = true;
+
 
 
         fun getSearchFeedStyle(): FeedStyle {
@@ -164,7 +198,7 @@ class Settings : FragmentedStorageFileJson() {
     var subscriptions = SubscriptionsSettings();
     @Serializable
     class SubscriptionsSettings {
-        @FormField(R.string.feed_style, FieldForm.DROPDOWN, -1, 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 4)
         @DropdownFieldOptionsId(R.array.feed_style)
         var subscriptionsFeedStyle: Int = 1;
 
@@ -174,6 +208,9 @@ class Settings : FragmentedStorageFileJson() {
             else
                 return FeedStyle.THUMBNAIL;
         }
+
+        @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
+        var previewFeedItems: Boolean = true;
 
         @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 6)
         @Serializable(with = FlexibleBooleanSerializer::class)
@@ -208,6 +245,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 10)
         var allowPlaytimeTracking: Boolean = true;
+
     }
 
     @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)
@@ -215,10 +253,10 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class PlaybackSettings {
         @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, 0)
-        @DropdownFieldOptionsId(R.array.languages)
+        @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
-        fun getPrimaryLanguage(context: Context) = context.resources.getStringArray(R.array.languages)[primaryLanguage];
+        fun getPrimaryLanguage(context: Context) = context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
         @FormField(R.string.default_playback_speed, FieldForm.DROPDOWN, -1, 1)
         @DropdownFieldOptionsId(R.array.playback_speeds)
@@ -277,10 +315,6 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.resume_after_preview)
         var resumeAfterPreview: Int = 1;
 
-
-        @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 8)
-        var useLiveChatWindow: Boolean = true;
-
         fun shouldResumePreview(previewedPosition: Long): Boolean{
             if(resumeAfterPreview == 2)
                 return true;
@@ -288,6 +322,14 @@ class Settings : FragmentedStorageFileJson() {
                 return true;
             return false;
         }
+
+        @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 8)
+        var useLiveChatWindow: Boolean = true;
+
+
+
+        @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 8)
+        var backgroundSwitchToAudio: Boolean = true;
     }
 
     @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 5)

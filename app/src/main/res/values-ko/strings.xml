@@ -701,7 +701,7 @@
         <item>10초 후에 이어서</item>
         <item>항상 이어서</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>영어</item>
         <item>스페인어</item>
         <item>프랑스어</item>

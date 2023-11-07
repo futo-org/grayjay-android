@@ -701,7 +701,7 @@
         <item>استئناف بعد 10 ثوان</item>
         <item>استئناف دائم</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>الإنجليزية</item>
         <item>الإسبانية</item>
         <item>الفرنسية</item>

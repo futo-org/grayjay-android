@@ -701,7 +701,7 @@
         <item>10秒後から再開</item>
         <item>常に再開</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>英語</item>
         <item>スペイン語</item>
         <item>フランス語</item>

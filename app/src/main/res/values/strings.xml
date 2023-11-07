@@ -312,11 +312,17 @@
     <string name="import_data_description">Select a file to import, support various files (alternative to opening directly)</string>
     <string name="external_storage">External Storage</string>
     <string name="feed_style">Feed Style</string>
+    <string name="app_language">App Language</string>
+    <string name="may_require_restart">May require restart</string>
     <string name="fetch_on_app_boot">Fetch on app boot</string>
     <string name="get_answers_to_common_questions">Get answers to common questions</string>
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>
     <string name="live_chat_webview">Live Chat Webview</string>
+    <string name="background_switch_audio">Switch to Audio in Background</string>
+    <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
+    <string name="preview_feed_items">Preview Feed Items</string>
+    <string name="preview_feed_items_description">When the preview feedstyle is used, if items should auto-preview when scrolling over them</string>
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
     <string name="manage_polycentric_identity">Manage Polycentric identity</string>
@@ -730,6 +736,19 @@
         <item>Preview</item>
         <item>List</item>
     </string-array>
+    <string-array name="app_languages">
+        <item>System</item>
+        <item>English (EN)</item>
+        <item>German (DE)</item>
+        <item>Spanish (ES)</item>
+        <item>Portuguese (PT)</item>
+        <item>French (FR)</item>
+        <item>Japanese (JA)</item>
+        <item>Korean (KO)</item>
+        <item>Chinese (ZH)</item>
+        <item>Russian (RU)</item>
+        <item>Arabic (AR)</item>
+    </string-array>
     <string-array name="player_background_behavior">
         <item>None</item>
         <item>Keep Playing</item>
@@ -740,7 +759,7 @@
         <item>Resume After 10s</item>
         <item>Always Resume</item>
     </string-array>
-    <string-array name="languages">
+    <string-array name="audio_languages">
         <item>English</item>
         <item>Spanish</item>
         <item>French</item>
