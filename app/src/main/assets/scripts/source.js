@@ -159,13 +159,27 @@ class FilterCapability {
 
 
 class PlatformAuthorLink {
-    constructor(id, name, url, thumbnail, subscribers) {
+    constructor(id, name, url, thumbnail, subscribers, membershipUrl) {
         this.id = id ?? PlatformID(); //PlatformID
         this.name = name ?? ""; //string
         this.url = url ?? ""; //string
         this.thumbnail = thumbnail; //string
         if(subscribers)
             this.subscribers = subscribers;
+        if(membershipUrl)
+            this.membershipUrl = membershipUrl ?? null; //string (for backcompat)
+    }
+}
+class PlatformAuthorMembershipLink {
+    constructor(id, name, url, thumbnail, subscribers, membershipUrl) {
+        this.id = id ?? PlatformID(); //PlatformID
+        this.name = name ?? ""; //string
+        this.url = url ?? ""; //string
+        this.thumbnail = thumbnail; //string
+        if(subscribers)
+            this.subscribers = subscribers;
+        if(membershipUrl)
+            this.membershipUrl = membershipUrl ?? null; //string
     }
 }
 class PlatformContent {

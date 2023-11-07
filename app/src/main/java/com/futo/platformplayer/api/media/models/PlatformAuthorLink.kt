@@ -10,7 +10,7 @@ import com.futo.platformplayer.getOrThrow
  * A link to a channel, often with its own name and thumbnail
  */
 @kotlinx.serialization.Serializable
-class PlatformAuthorLink {
+open class PlatformAuthorLink {
     val id: PlatformID;
     val name: String;
     val url: String;
@@ -28,6 +28,9 @@ class PlatformAuthorLink {
 
     companion object {
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformAuthorLink {
+            if(value.has("membershipUrl"))
+                return PlatformAuthorMembershipLink.fromV8(config, value);
+
             val context = "AuthorLink"
             return PlatformAuthorLink(PlatformID.fromV8(config, value.getOrThrow(config, "id", context, false)),
                 value.getOrThrow(config ,"name", context),

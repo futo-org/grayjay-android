@@ -1,6 +1,7 @@
 package com.futo.platformplayer.views
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.View
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.HorizontalSpaceItemDecoration
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
@@ -34,7 +36,8 @@ class MonetizationView : LinearLayout {
     private val _buttonSupport: LinearLayout;
     private val _buttonStore: LinearLayout;
     private val _buttonMembership: LinearLayout;
-    private val _platformIndicator: PlatformIndicator;
+    private val _membershipPlatform: PlatformIndicator;
+    private var _membershipUrl: String? = null;
 
     private val _textMerchandise: TextView;
     private val _recyclerMerchandise: RecyclerView;
@@ -66,7 +69,15 @@ class MonetizationView : LinearLayout {
         _buttonSupport = findViewById(R.id.button_support);
         _buttonStore = findViewById(R.id.button_store);
         _buttonMembership = findViewById(R.id.button_membership);
-        _platformIndicator = findViewById(R.id.platform_indicator);
+        _membershipPlatform = findViewById(R.id.membership_platform);
+        _buttonMembership.setOnClickListener {
+            _membershipUrl?.let {
+                val uri = Uri.parse(it);
+                val intent = Intent(Intent.ACTION_VIEW);
+                intent.data = uri;
+                context.startActivity(intent);
+            }
+        }
 
         _textMerchandise = findViewById(R.id.text_merchandise);
         _recyclerMerchandise = findViewById(R.id.recycler_merchandise);
@@ -84,8 +95,16 @@ class MonetizationView : LinearLayout {
         setMerchandise(null);
     }
 
-    fun setPlatformMembership() {
-        //TODO:
+    fun setPlatformMembership(pluginId: String?, url: String? = null) {
+        if(pluginId.isNullOrEmpty() || url.isNullOrEmpty()) {
+            _buttonMembership.visibility = GONE;
+            _membershipUrl = null;
+        }
+        else {
+            _membershipUrl = url;
+            _membershipPlatform.setPlatformFromClientID(pluginId);
+            _buttonMembership.visibility = VISIBLE;
+        }
     }
 
     private fun setMerchandise(items: List<StoreItem>?) {

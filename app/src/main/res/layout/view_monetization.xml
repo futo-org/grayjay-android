@@ -29,7 +29,7 @@
             android:background="@drawable/background_membership">
 
             <com.futo.platformplayer.views.platform.PlatformIndicator
-                android:id="@+id/platform_indicator"
+                android:id="@+id/membership_platform"
                 android:layout_width="18dp"
                 android:layout_height="18dp" />
 
