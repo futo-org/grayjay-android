@@ -218,14 +218,14 @@ class MenuBottomBarFragment : MainActivityFragment() {
             if (buyIndex != -1) {
                 val button = buttons[buyIndex]
                 buttons.removeAt(buyIndex)
-                buttons.add(0, button)
+                buttons.add(buttons.size, button)
             }
             //Force faq to be second
             val faqIndex = buttons.indexOfFirst { b -> b.id == 97 };
             if (faqIndex != -1) {
                 val button = buttons[faqIndex]
                 buttons.removeAt(faqIndex)
-                buttons.add(1, button)
+                buttons.add(buttons.size, button)
             }
 
             for (data in buttons) {
@@ -252,8 +252,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
             val defs = currentButtonDefinitions?.toMutableList() ?: return
             val metrics = StateApp.instance.displayMetrics ?: resources.displayMetrics;
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
-            if (_buttonsVisible - 2 >= defs.size) {
-                updateBottomMenuButtons(defs.slice(IntRange(0, defs.size - 1)).toMutableList(), false);
+            if (_buttonsVisible - 1 >= defs.size) {
+                updateBottomMenuButtons(defs.toMutableList(), false);
             } else {
                 updateBottomMenuButtons(defs.slice(IntRange(0, _buttonsVisible - 2)).toMutableList(), true);
                 updateMoreButtons(defs.slice(IntRange(_buttonsVisible - 1, defs.size - 1)).toMutableList());
