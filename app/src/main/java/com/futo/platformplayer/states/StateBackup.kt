@@ -20,6 +20,7 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.copyTo
 import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.encryption.EncryptionProvider
+import com.futo.platformplayer.encryption.PasswordEncryptionProvider
 import com.futo.platformplayer.getInputStream
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.getOutputStream
@@ -106,7 +107,7 @@ class StateBackup {
                         val data = export();
                         val zip = data.asZip();
 
-                        val encryptedZip = EncryptionProvider.instance.encrypt(zip, getAutomaticBackupPassword());
+                        val encryptedZip = PasswordEncryptionProvider(getAutomaticBackupPassword()).encrypt(zip);
 
                         if(!Settings.instance.storage.isStorageMainValid(context)) {
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
@@ -151,7 +152,7 @@ class StateBackup {
                         throw IllegalStateException("Backup file does not exist");
 
                     val backupBytesEncrypted = backupFiles.first!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.first?.uri}]");
-                    val backupBytes = EncryptionProvider.instance.decrypt(backupBytesEncrypted, getAutomaticBackupPassword(password));
+                    val backupBytes = PasswordEncryptionProvider(getAutomaticBackupPassword(password)).decrypt(backupBytesEncrypted);
                     importZipBytes(context, scope, backupBytes);
                     Logger.i(TAG, "Finished AutoBackup restore");
                 }
@@ -179,7 +180,7 @@ class StateBackup {
                         throw ex;
 
                     val backupBytesEncrypted = backupFiles.second!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.second?.uri}]");
-                    val backupBytes = EncryptionProvider.instance.decrypt(backupBytesEncrypted, getAutomaticBackupPassword(password));
+                    val backupBytes = PasswordEncryptionProvider(getAutomaticBackupPassword(password)).decrypt(backupBytesEncrypted);
                     importZipBytes(context, scope, backupBytes);
                     Logger.i(TAG, "Finished AutoBackup restore");
                 }
