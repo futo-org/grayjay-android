@@ -3,6 +3,7 @@ package com.futo.platformplayer.encryption
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import com.futo.polycentric.core.EncryptionProvider
 import java.security.Key
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -25,35 +26,32 @@ class EncryptionProvider {
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setRandomizedEncryptionRequired(false)
                 .build());
-            
+
             keyGenerator.generateKey();
         }
     }
 
-    fun encrypt(decrypted: String, password: String? = null): String {
-        val encodedBytes = encrypt(decrypted.toByteArray(), password);
+    fun encrypt(decrypted: String): String {
+        val encodedBytes = encrypt(decrypted.toByteArray());
         val encrypted = Base64.encodeToString(encodedBytes, Base64.DEFAULT);
         return encrypted;
     }
-    fun encrypt(decrypted: ByteArray, password: String? = null): ByteArray {
+    fun encrypt(decrypted: ByteArray): ByteArray {
         val c: Cipher = Cipher.getInstance(AES_MODE);
-        val keyToUse = if(password == null) secretKey else SecretKeySpec(password.toByteArray(), "AES");
-        c.init(Cipher.ENCRYPT_MODE, keyToUse, GCMParameterSpec(128, FIXED_IV));
+        c.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
         val encodedBytes: ByteArray = c.doFinal(decrypted);
         return encodedBytes;
     }
 
-    fun decrypt(encrypted: String, password: String? = null): String {
+    fun decrypt(encrypted: String): String {
         val c = Cipher.getInstance(AES_MODE);
-        val keyToUse = if(password == null) secretKey else SecretKeySpec(password.toByteArray(), "AES");
-        c.init(Cipher.DECRYPT_MODE, keyToUse, GCMParameterSpec(128, FIXED_IV));
+        c.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
         val decrypted = String(c.doFinal(Base64.decode(encrypted, Base64.DEFAULT)));
         return decrypted;
     }
-    fun decrypt(encrypted: ByteArray, password: String? = null): ByteArray {
+    fun decrypt(encrypted: ByteArray): ByteArray {
         val c = Cipher.getInstance(AES_MODE);
-        val keyToUse = if(password == null) secretKey else SecretKeySpec(password.toByteArray(), "AES");
-        c.init(Cipher.DECRYPT_MODE, keyToUse, GCMParameterSpec(128, FIXED_IV));
+        c.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
         return c.doFinal(encrypted);
     }
 

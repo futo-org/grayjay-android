@@ -1,29 +1,15 @@
 package com.futo.platformplayer
 
 import com.futo.platformplayer.encryption.EncryptionProvider
+import com.futo.platformplayer.encryption.PasswordEncryptionProvider
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 
-class EncryptionProviderTests {
+class PasswordEncryptionProviderTests {
     @Test
-    fun testEncryptDecrypt() {
-        val encryptionProvider = EncryptionProvider.instance
-        val plaintext = "This is a test string."
-
-        // Encrypt the plaintext
-        val ciphertext = encryptionProvider.encrypt(plaintext)
-
-        // Decrypt the ciphertext
-        val decrypted = encryptionProvider.decrypt(ciphertext)
-
-        // The decrypted string should be equal to the original plaintext
-        assertEquals(plaintext, decrypted)
-    }
-
-
-    @Test
-    fun testEncryptDecryptBytes() {
-        val encryptionProvider = EncryptionProvider.instance
+    fun testEncryptDecryptBytesPassword() {
+        val password = "1234".padStart(32, '9');
+        val encryptionProvider = PasswordEncryptionProvider(password);
         val bytes = "This is a test string.".toByteArray();
 
         // Encrypt the plaintext
