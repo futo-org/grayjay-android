@@ -20,6 +20,10 @@ class Thumbnails {
     fun getLQThumbnail() : String? {
         return sources.firstOrNull()?.url;
     }
+    fun getMinimumThumbnail(quality: Int): String? {
+        return sources.firstOrNull { it.quality >= quality }?.url ?: getHQThumbnail();
+    }
+
     fun hasMultiple() = sources.size > 1;
 
 

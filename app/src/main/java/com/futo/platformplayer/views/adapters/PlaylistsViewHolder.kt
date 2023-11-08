@@ -43,7 +43,7 @@ class PlaylistsViewHolder : ViewHolder {
     fun bind(p: Playlist) {
         if (p.videos.isNotEmpty()) {
             Glide.with(_imageThumbnail)
-                .load(p.videos[0].thumbnails.getLQThumbnail())
+                .load(p.videos[0].thumbnails.getMinimumThumbnail(380))
                 .placeholder(R.drawable.placeholder_video_thumbnail)
                 .crossfade()
                 .into(_imageThumbnail);

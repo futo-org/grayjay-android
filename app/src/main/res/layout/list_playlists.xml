@@ -13,12 +13,13 @@
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/image_video_thumbnail"
-        android:layout_height="60dp"
-        android:layout_width="60dp"
+        android:layout_height="50dp"
+        android:layout_width="50dp"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/roundedCorners_4dp"
         app:srcCompat="@drawable/placeholder_video_thumbnail"
         android:background="@drawable/video_thumbnail_outline"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
 
@@ -48,9 +49,10 @@
         android:fontFamily="@font/inter_extra_light"
         tools:text="3 videos"
         android:maxLines="1"
-        app:layout_constraintLeft_toRightOf="@id/image_video_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_name"
+        app:layout_constraintLeft_toRightOf="@id/image_video_thumbnail"
         app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="10dp" />
 
     <!--
