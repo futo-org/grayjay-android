@@ -8,6 +8,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.views.buttons.BigButton
 import java.lang.reflect.Field
@@ -37,7 +38,7 @@ class ButtonField : BigButton, IField {
     //private val _title : TextView;
     //private val _subtitle : TextView;
 
-    override val onChanged = Event2<IField, Any>();
+    override val onChanged = Event3<IField, Any, Any>();
 
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
         //inflate(context, R.layout.field_button, this);
@@ -58,6 +59,8 @@ class ButtonField : BigButton, IField {
                 _method?.invoke(_obj);
         }
     }
+
+    override fun setValue(value: Any) {}
 
     fun fromMethod(obj : Any, method: Method) : ButtonField {
         this._method = method;

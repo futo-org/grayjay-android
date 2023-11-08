@@ -144,7 +144,10 @@ class SourcePluginConfig(
         val description: String,
         val type: String,
         val default: String? = null,
-        val variable: String? = null
+        val variable: String? = null,
+        val dependency: String? = null,
+        val warningDialog: String? = null,
+        val options: List<String>? = null
     ) {
         @kotlinx.serialization.Transient
         val variableOrName: String get() = variable ?: name;

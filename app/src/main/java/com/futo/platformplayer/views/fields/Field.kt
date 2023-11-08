@@ -1,6 +1,7 @@
 package com.futo.platformplayer.views.fields
 
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
 
 
@@ -13,11 +14,12 @@ interface IField {
     val obj : Any?;
     val field : Field?;
 
-    val onChanged : Event2<IField, Any>;
+    val onChanged : Event3<IField, Any, Any>;
 
     var reference: Any?;
 
-
     fun fromField(obj : Any, field : Field, formField: FormField? = null) : IField;
     fun setField();
+
+    fun setValue(value: Any);
 }

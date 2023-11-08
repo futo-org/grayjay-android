@@ -6,6 +6,8 @@ import android.view.View
 import android.widget.*
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
+import com.futo.platformplayer.logging.Logger
 import java.lang.reflect.Field
 
 class DropdownField : TableRow, IField {
@@ -35,7 +37,7 @@ class DropdownField : TableRow, IField {
 
     override var reference: Any? = null;
 
-    override val onChanged = Event2<IField, Any>();
+    override val onChanged = Event3<IField, Any, Any>();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_dropdown, this);
@@ -50,11 +52,19 @@ class DropdownField : TableRow, IField {
                     _isInitFire = false;
                     return;
                 }
+                Logger.i("DropdownField", "Changed: ${_selected} -> ${pos}");
+                val old = _selected;
                 _selected = pos;
-                onChanged.emit(this@DropdownField, pos);
+                onChanged.emit(this@DropdownField, pos, old);
             }
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         };
+    }
+
+    override fun setValue(value: Any) {
+        if(value is Int) {
+            _spinner.setSelection(value);
+        }
     }
 
     fun asBoolean(name: String, description: String?, obj: Boolean) : DropdownField {
@@ -73,6 +83,23 @@ class DropdownField : TableRow, IField {
         }
         else
             _description.visibility = View.GONE;
+
+        return this;
+    }
+
+    fun withValue(title: String, description: String?, options: List<String>, value: Int): DropdownField {
+        _title.text = title;
+        _description.visibility = if(description.isNullOrEmpty()) View.GONE else View.VISIBLE;
+        _description.text = description ?: "";
+
+        _options = options.toTypedArray();
+        _spinner.adapter = ArrayAdapter<String>(context, R.layout.spinner_item_simple, _options).also {
+            it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
+        };
+
+        _selected = value;
+        _spinner.isSelected = false;
+        _spinner.setSelection(_selected, true);
 
         return this;
     }

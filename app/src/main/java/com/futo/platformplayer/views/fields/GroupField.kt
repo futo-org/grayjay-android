@@ -7,6 +7,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
 
 class GroupField : LinearLayout, IField {
@@ -27,7 +28,7 @@ class GroupField : LinearLayout, IField {
         return _field;
     };
 
-    override val onChanged = Event2<IField, Any>();
+    override val onChanged = Event3<IField, Any, Any>();
 
     private val _title : TextView;
     private val _subtitle : TextView;
@@ -138,4 +139,6 @@ class GroupField : LinearLayout, IField {
             field.setField();
         }
     }
+
+    override fun setValue(value: Any) {}
 }

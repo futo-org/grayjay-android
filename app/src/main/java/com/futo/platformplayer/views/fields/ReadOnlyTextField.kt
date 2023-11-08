@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.widget.*
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -27,7 +28,7 @@ class ReadOnlyTextField : TableRow, IField {
     private val _title : TextView;
     private val _value : TextView;
 
-    override val onChanged = Event2<IField, Any>();
+    override val onChanged = Event3<IField, Any, Any>();
 
     override var reference: Any? = null;
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
@@ -35,6 +36,8 @@ class ReadOnlyTextField : TableRow, IField {
         _title = findViewById(R.id.field_title);
         _value = findViewById(R.id.field_value);
     }
+
+    override fun setValue(value: Any) {}
 
     override fun fromField(obj : Any, field : Field, formField: FormField?) : ReadOnlyTextField {
         this._field = field;

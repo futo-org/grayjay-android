@@ -29,7 +29,7 @@ class Toggle : AppCompatImageView {
         scaleType = ScaleType.FIT_CENTER;
     }
 
-    fun setValue(v: Boolean, animated: Boolean = true) {
+    fun setValue(v: Boolean, animated: Boolean = true, withEvent: Boolean = false) {
         if (value == v) {
             return;
         }
@@ -44,5 +44,8 @@ class Toggle : AppCompatImageView {
         } else {
             setImageResource(if (v) R.drawable.toggle_enabled else R.drawable.toggle_disabled);
         }
+
+        if(withEvent)
+            onValueChanged.emit(value);
     }
 }

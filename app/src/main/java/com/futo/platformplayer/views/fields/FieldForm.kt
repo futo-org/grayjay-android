@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
@@ -49,7 +50,7 @@ class FieldForm : LinearLayout {
                         throw java.lang.IllegalStateException("Only views can be IFields");
 
                     _root.addView(field as View);
-                    field.onChanged.subscribe { a1, a2 ->
+                    field.onChanged.subscribe { a1, a2, oldValue ->
                         onChanged.emit(a1, a2);
                     };
                 }
@@ -67,7 +68,7 @@ class FieldForm : LinearLayout {
                 throw java.lang.IllegalStateException("Only views can be IFields");
 
             _root.addView(field as View);
-            field.onChanged.subscribe { a1, a2 ->
+            field.onChanged.subscribe { a1, a2, oldValue ->
                 onChanged.emit(a1, a2);
             };
         }
@@ -82,24 +83,58 @@ class FieldForm : LinearLayout {
 
         if(groupTitle == null) {
             for(field in newFields) {
-                if(field !is View)
+                if(field.second !is View)
                     throw java.lang.IllegalStateException("Only views can be IFields");
-                field.onChanged.subscribe { field, value ->
-                    onChanged.emit(field, value);
-                }
+                finalizePluginSettingField(field.first, field.second, newFields);
                 _root.addView(field as View);
             }
-            _fields = newFields;
+            _fields = newFields.map { it.second };
         } else {
             for(field in newFields) {
-                field.onChanged.subscribe { field, value ->
-                    onChanged.emit(field, value);
-                }
+                finalizePluginSettingField(field.first, field.second, newFields);
             }
             val group = GroupField(context, groupTitle, groupDescription)
-                .withFields(newFields);
+                .withFields(newFields.map { it.second });
             _root.addView(group as View);
         }
+    }
+    private fun finalizePluginSettingField(setting: SourcePluginConfig.Setting, field: IField, others: List<Pair<SourcePluginConfig.Setting, IField>>) {
+        field.onChanged.subscribe { field, value, oldValue ->
+            onChanged.emit(field, value);
+
+            setting.warningDialog?.let {
+                if(it.isNotBlank() && isValueTrue(value))
+                    UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, setting.warningDialog, null, null, 0,
+                        UIDialogs.Action("Cancel", {
+                            field.setValue(oldValue);
+                        }, UIDialogs.ActionStyle.NONE),
+                        UIDialogs.Action("Ok", {
+
+                        }, UIDialogs.ActionStyle.PRIMARY));
+            }
+        }
+        if(setting.dependency != null) {
+            val dependentField = others.firstOrNull { it.first.variableOrName == setting.dependency };
+            if(dependentField == null || dependentField.second !is View)
+                (field as View).visibility = View.GONE;
+            else {
+                dependentField.second.onChanged.subscribe { dependentField, value, oldValue ->
+                    val isValid = isValueTrue(value);
+                    if(isValid)
+                        (field as View).visibility = View.VISIBLE;
+                    else
+                        (field as View).visibility = View.GONE;
+                }
+            }
+        }
+    }
+    private fun isValueTrue(value: Any): Boolean {
+        return when(value) {
+            is Int -> value > 0;
+            is Boolean -> value;
+            is String -> value.toIntOrNull()?.let { it > 0 } ?: false || value.lowercase() == "true";
+            else -> false
+        };
     }
 
     fun setObjectValues(){
@@ -133,26 +168,42 @@ class FieldForm : LinearLayout {
         private val _json = Json {};
 
 
-        fun getFieldsFromPluginSettings(context: Context, settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>): List<IField> {
-            val fields = mutableListOf<IField>()
+        fun getFieldsFromPluginSettings(context: Context, settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>): List<Pair<SourcePluginConfig.Setting, IField>> {
+            val fields = mutableListOf<Pair<SourcePluginConfig.Setting, IField>>()
 
             for(setting in settings) {
+                val value = if(values.containsKey(setting.variableOrName)) values[setting.variableOrName] else setting.default;
+
                 val field = when(setting.type.lowercase()) {
+                    "header" -> {
+                        val groupField = GroupField(context, setting.name, setting.description);
+                        groupField;
+                    }
                     "boolean" -> {
-                        val value = if(values.containsKey(setting.variableOrName)) values[setting.variableOrName] else setting.default;
                         val field = ToggleField(context).withValue(setting.name,
                             setting.description,
                             value == "true" || value == "1" || value == "True");
-                        field.onChanged.subscribe { field, value ->
+                        field.onChanged.subscribe { field, value, oldValue ->
                             values[setting.variableOrName] = _json.encodeToString (value == 1 || value == true);
                         }
                         field;
+                    }
+                    "dropdown" -> {
+                        if(setting.options != null && !setting.options.isEmpty()) {
+                            var selected = value?.toIntOrNull()?.coerceAtLeast(0) ?: 0;
+                            val field = DropdownField(context).withValue(setting.name, setting.description, setting.options, selected);
+                            field.onChanged.subscribe { field, value, oldValue ->
+                                values[setting.variableOrName] = value.toString();
+                            }
+                            field;
+                        }
+                        else null;
                     }
                     else -> null;
                 }
 
                 if(field != null)
-                    fields.add(field);
+                    fields.add(Pair(setting, field));
             }
             return fields;
         }
