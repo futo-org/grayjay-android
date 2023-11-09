@@ -6,5 +6,18 @@
     <com.futo.platformplayer.views.SupportView
         android:id="@+id/support"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/text_monetization"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_gravity="center"
+        android:text="@string/this_creator_has_not_setup_any_monetization_features"
+        android:fontFamily="@font/inter_light"
+        android:textColor="#ACACAC"
+        android:textSize="12dp"
+        android:visibility="gone" />
 </FrameLayout>
