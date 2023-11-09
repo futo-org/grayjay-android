@@ -29,6 +29,7 @@ import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.Synchronization
 import com.futo.polycentric.core.SystemState
 import com.futo.polycentric.core.toURLInfoDataLink
+import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -222,7 +223,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
         val avatar = systemState.avatar.selectBestImage(dp_80 * dp_80);
 
         Glide.with(_imagePolycentric)
-            .load(avatar?.toURLInfoDataLink(processHandle.system.toProto(), processHandle.processSecret.process.toProto(), systemState.servers.toList()))
+            .load(avatar?.toURLInfoSystemLinkUrl(processHandle.system.toProto(), avatar.process, systemState.servers.toList()))
             .placeholder(R.drawable.placeholder_profile)
             .crossfade()
             .into(_imagePolycentric)

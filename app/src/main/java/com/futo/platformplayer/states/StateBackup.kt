@@ -1,29 +1,19 @@
 package com.futo.platformplayer.states
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.DocumentsContract.EXTRA_INITIAL_URI
-import androidx.activity.ComponentActivity
 import androidx.core.app.ShareCompat
 import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
-import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.copyTo
-import com.futo.platformplayer.copyToOutputStream
-import com.futo.platformplayer.encryption.EncryptionProvider
-import com.futo.platformplayer.encryption.PasswordEncryptionProvider
-import com.futo.platformplayer.getInputStream
+import com.futo.platformplayer.encryption.GPasswordEncryptionProvider
+import com.futo.platformplayer.encryption.GPasswordEncryptionProviderV0
 import com.futo.platformplayer.getNowDiffHours
-import com.futo.platformplayer.getOutputStream
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -39,9 +29,8 @@ import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileNotFoundException
-import java.io.InputStream
+import java.lang.Exception
 import java.time.OffsetDateTime
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -83,7 +72,7 @@ class StateBackup {
             val pbytes = password.toByteArray();
             if(pbytes.size < 4 || pbytes.size > 32)
                 throw IllegalStateException("Automatic backup passwords should atleast be 4 character and smaller than 32");
-            return password.padStart(32, '9');
+            return password;
         }
         fun hasAutomaticBackup(): Boolean {
             val context = StateApp.instance.contextOrNull ?: return false;
@@ -107,8 +96,8 @@ class StateBackup {
                         val data = export();
                         val zip = data.asZip();
 
-                        val encryptedZip = PasswordEncryptionProvider(getAutomaticBackupPassword()).encrypt(zip);
-
+                        //Prepend some magic bytes to identify everything version 1 and up
+                        val encryptedZip = byteArrayOf(0x11, 0x22, 0x33, 0x44, GPasswordEncryptionProvider.version.toByte()) + GPasswordEncryptionProvider.instance.encrypt(zip, getAutomaticBackupPassword());
                         if(!Settings.instance.storage.isStorageMainValid(context)) {
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                                 UIDialogs.toast("Missing permissions for auto-backup, please set the external general directory in settings");
@@ -152,8 +141,7 @@ class StateBackup {
                         throw IllegalStateException("Backup file does not exist");
 
                     val backupBytesEncrypted = backupFiles.first!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.first?.uri}]");
-                    val backupBytes = PasswordEncryptionProvider(getAutomaticBackupPassword(password)).decrypt(backupBytesEncrypted);
-                    importZipBytes(context, scope, backupBytes);
+                    importEncryptedZipBytes(context, scope, backupBytesEncrypted, password);
                     Logger.i(TAG, "Finished AutoBackup restore");
                 }
                 catch (exSec: FileNotFoundException) {
@@ -180,11 +168,28 @@ class StateBackup {
                         throw ex;
 
                     val backupBytesEncrypted = backupFiles.second!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.second?.uri}]");
-                    val backupBytes = PasswordEncryptionProvider(getAutomaticBackupPassword(password)).decrypt(backupBytesEncrypted);
-                    importZipBytes(context, scope, backupBytes);
+                    importEncryptedZipBytes(context, scope, backupBytesEncrypted, password);
                     Logger.i(TAG, "Finished AutoBackup restore");
                 }
             }
+        }
+
+        private fun importEncryptedZipBytes(context: Context, scope: CoroutineScope, backupBytesEncrypted: ByteArray, password: String) {
+            val backupBytes: ByteArray;
+            //Check magic bytes indicating version 1 and up
+            if (backupBytesEncrypted[0] == 0x11.toByte() && backupBytesEncrypted[1] == 0x22.toByte() && backupBytesEncrypted[2] == 0x33.toByte() && backupBytesEncrypted[3] == 0x44.toByte()) {
+                val version = backupBytesEncrypted[4].toInt();
+                if (version != GPasswordEncryptionProvider.version) {
+                    throw Exception("Invalid encryption version");
+                }
+
+                backupBytes = GPasswordEncryptionProvider.instance.decrypt(backupBytesEncrypted.sliceArray(IntRange(5, backupBytesEncrypted.size - 1)), getAutomaticBackupPassword(password))
+            } else {
+                //Else its a version 0
+                backupBytes = GPasswordEncryptionProviderV0(getAutomaticBackupPassword(password).padStart(32, '9')).decrypt(backupBytesEncrypted);
+            }
+
+            importZipBytes(context, scope, backupBytes);
         }
 
         fun startExternalBackup() {

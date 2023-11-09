@@ -41,6 +41,19 @@
             android:layout_weight="1" />
 
         <TextView
+            android:id="@+id/text_load_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_light"
+            android:textSize="15dp"
+            android:text="@string/load_more"
+            android:textColor="@color/colorPrimary" />
+
+        <Space android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <TextView
             android:id="@+id/text_select_counter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -1,7 +1,5 @@
 package com.futo.platformplayer.api.media.platforms.js
 
-import com.futo.platformplayer.encryption.EncryptionProvider
-import com.futo.platformplayer.logging.Logger
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -13,7 +11,7 @@ data class SourceCaptchaData(val cookieMap: HashMap<String, HashMap<String, Stri
     }
 
     fun toEncrypted(): String{
-        return EncryptionProvider.instance.encrypt(serialize());
+        return SourceEncrypted.fromDecrypted { serialize() }.toJson();
     }
 
     private fun serialize(): String {
@@ -21,20 +19,10 @@ data class SourceCaptchaData(val cookieMap: HashMap<String, HashMap<String, Stri
     }
 
     companion object {
-        val TAG = "SourceAuth";
+        val TAG = "SourceCaptchaData";
 
         fun fromEncrypted(encrypted: String?): SourceCaptchaData? {
-            if(encrypted == null)
-                return null;
-
-            val decrypted = EncryptionProvider.instance.decrypt(encrypted);
-            try {
-                return deserialize(decrypted);
-            }
-            catch(ex: Throwable) {
-                Logger.e(TAG, "Failed to deserialize authentication", ex);
-                return null;
-            }
+            return SourceEncrypted.decryptEncrypted(encrypted) { deserialize(it) };
         }
 
         fun deserialize(str: String): SourceCaptchaData {

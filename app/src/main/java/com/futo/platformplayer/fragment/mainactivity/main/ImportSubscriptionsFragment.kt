@@ -63,6 +63,7 @@ class ImportSubscriptionsFragment : MainFragment() {
         private var _textSelectDeselectAll: TextView;
         private var _textNothingToImport: TextView;
         private var _textCounter: TextView;
+        private var _textLoadMore: TextView;
         private var _adapterView: AnyAdapterView<SelectableIPlatformChannel, ImportSubscriptionViewHolder>;
         private var _links: List<String> = listOf();
         private val _items: ArrayList<SelectableIPlatformChannel> = arrayListOf();
@@ -79,6 +80,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             _textNothingToImport = findViewById(R.id.nothing_to_import);
             _textSelectDeselectAll = findViewById(R.id.text_select_deselect_all);
             _textCounter = findViewById(R.id.text_select_counter);
+            _textLoadMore = findViewById(R.id.text_load_more);
             _spinner = findViewById(R.id.channel_loader);
 
             _adapterView = findViewById<RecyclerView>(R.id.recycler_import).asAny( _items) {
@@ -120,6 +122,19 @@ class ImportSubscriptionsFragment : MainFragment() {
                 //UIDialogs.showDataRetryDialog(layoutInflater, { load(); });
                 loadNext();
             };
+
+            _textLoadMore.setOnClickListener {
+                if (!_limitToastShown) {
+                    return@setOnClickListener;
+                }
+
+                _textLoadMore.visibility = View.GONE;
+                _limitToastShown = false;
+                _counter = 0;
+                load();
+            };
+
+            _textLoadMore.visibility = View.GONE;
         }
 
         fun cleanup() {
@@ -165,7 +180,8 @@ class ImportSubscriptionsFragment : MainFragment() {
             if (_counter >= MAXIMUM_BATCH_SIZE) {
                 if (!_limitToastShown) {
                     _limitToastShown = true;
-                    UIDialogs.toast(context, "Stopped after {requestCount} to avoid rate limit, re-enter to import rest".replace("{requestCount}", MAXIMUM_BATCH_SIZE.toString()));
+                    _textLoadMore.visibility = View.VISIBLE;
+                    UIDialogs.toast(context, context.getString(R.string.stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more).replace("{requestCount}", MAXIMUM_BATCH_SIZE.toString()));
                 }
 
                 setLoading(false);
