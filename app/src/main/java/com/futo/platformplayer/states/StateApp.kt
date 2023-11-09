@@ -384,8 +384,8 @@ class StateApp {
         displayMetrics = context.resources.displayMetrics;
         ensureConnectivityManager(context);
 
+        Logger.i(TAG, "MainApp Starting: Initializing [Telemetry]");
         if (!BuildConfig.DEBUG) {
-            Logger.i(TAG, "MainApp Starting: Initializing [Telemetry]");
             StateTelemetry.instance.initialize();
             StateTelemetry.instance.upload();
         }
