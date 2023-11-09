@@ -354,6 +354,7 @@ class StateApp {
     }
 
     fun mainAppStarting(context: Context) {
+        Logger.i(TAG, "MainApp Starting");
         initializeFiles(true);
 
         val logFile = File(context.filesDir, "log.txt");
@@ -372,15 +373,19 @@ class StateApp {
 
             Logger.setLogConsumers(listOf(AndroidLogConsumer()));
         }
-
         StatePayment.instance.initialize();
+
+        Logger.i(TAG, "MainApp Starting: Initializing [Polycentric]");
         StatePolycentric.instance.load(context);
+        Logger.i(TAG, "MainApp Starting: Initializing [Saved]");
         StateSaved.instance.load();
 
+        Logger.i(TAG, "MainApp Starting: Initializing [Connectivity]");
         displayMetrics = context.resources.displayMetrics;
         ensureConnectivityManager(context);
 
         if (!BuildConfig.DEBUG) {
+            Logger.i(TAG, "MainApp Starting: Initializing [Telemetry]");
             StateTelemetry.instance.initialize();
             StateTelemetry.instance.upload();
         }
@@ -400,11 +405,12 @@ class StateApp {
         }
     }
     fun mainAppStarted(context: Context) {
-        Logger.i(TAG, "App started");
+        Logger.i(TAG, "MainApp Started");
 
         //Start loading cache
         instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
+                Logger.i(TAG, "MainApp Started: Initializing [ChannelContentCache]");
                 val time = measureTimeMillis {
                     ChannelContentCache.instance;
                 }
@@ -419,10 +425,12 @@ class StateApp {
         if(SettingsDev.instance.developerMode && SettingsDev.instance.devServerSettings.devServerOnBoot)
             StateDeveloper.instance.runServer();
 
+        Logger.i(TAG, "MainApp Started: Check [Migration (Subscriptions)]");
         if(StateSubscriptions.instance.shouldMigrate())
             StateSubscriptions.instance.tryMigrateIfNecessary();
 
         if(Settings.instance.downloads.shouldDownload()) {
+            Logger.i(TAG, "MainApp Started: Check [Downloads]");
             StateDownloads.instance.checkForOutdatedPlaylists();
 
             StateDownloads.instance.getDownloadPlaylists();
@@ -430,8 +438,10 @@ class StateApp {
                 DownloadService.getOrCreateService(context);
         }
 
+        Logger.i(TAG, "MainApp Started: Check [Exports]");
         StateDownloads.instance.checkForExportTodos();
 
+        Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate]");
         val autoUpdateEnabled = Settings.instance.autoUpdate.isAutoUpdateEnabled();
         val shouldDownload = Settings.instance.autoUpdate.shouldDownload();
         val backgroundDownload = Settings.instance.autoUpdate.backgroundDownload == 1;
@@ -455,6 +465,7 @@ class StateApp {
             }
         }
 
+        Logger.i(TAG, "MainApp Started: Initialize [Noisy]");
         _receiverBecomingNoisy?.let {
             _receiverBecomingNoisy = null;
             context.unregisterReceiver(it);
@@ -463,6 +474,7 @@ class StateApp {
         context.registerReceiver(_receiverBecomingNoisy, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
         //Migration
+        Logger.i(TAG, "MainApp Started: Check [Migrations]");
         migrateStores(context, listOf(
             StateSubscriptions.instance.toMigrateCheck(),
             StatePlaylists.instance.toMigrateCheck()
@@ -470,6 +482,7 @@ class StateApp {
 
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
             scope.launch(Dispatchers.IO) {
+                Logger.i(TAG, "MainApp Started: Fetch [Subscriptions]");
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
                 val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true };
@@ -484,9 +497,11 @@ class StateApp {
             }
         }
 
+        Logger.i(TAG, "MainApp Started: Initialize [BackgroundWork]");
         val interval = Settings.instance.subscriptions.getSubscriptionsBackgroundIntervalMinutes();
         scheduleBackgroundWork(context, interval != 0, interval);
 
+        Logger.i(TAG, "MainApp Started: Initialize [AutoBackup]");
         if(!Settings.instance.backup.didAskAutoBackup && !Settings.instance.backup.shouldAutomaticBackup()) {
             StateAnnouncement.instance.registerAnnouncement("backup", "Set Automatic Backup", "Configure daily backups of your data to restore in case of catastrophic failure.", AnnouncementType.SESSION, null, null, "Configure", {
                 if(context is IWithResultLauncher && !Settings.instance.storage.isStorageMainValid(context)) {
@@ -514,6 +529,7 @@ class StateApp {
             }
         }
 
+        Logger.i(TAG, "MainApp Started: Initialize [Announcements]");
         instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
                 StateAnnouncement.instance.loadAnnouncements();
@@ -532,7 +548,7 @@ class StateApp {
         }
 
         StateAnnouncement.instance.registerDidYouKnow();
-
+        Logger.i(TAG, "MainApp Started: Finished");
     }
     fun mainAppStartedWithExternalFiles(context: Context) {
         if(!Settings.instance.didFirstStart) {
