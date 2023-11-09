@@ -3,15 +3,14 @@ package com.futo.platformplayer.encryption
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
-import com.futo.polycentric.core.EncryptionProvider
 import java.security.Key
 import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
-class EncryptionProvider {
+class GEncryptionProviderV1 {
     private val _keyStore: KeyStore;
     private val secretKey: Key? get() = _keyStore.getKey(KEY_ALIAS, null);
 
@@ -32,36 +31,46 @@ class EncryptionProvider {
     }
 
     fun encrypt(decrypted: String): String {
-        val encodedBytes = encrypt(decrypted.toByteArray());
-        val encrypted = Base64.encodeToString(encodedBytes, Base64.DEFAULT);
-        return encrypted;
+        val encrypted = encrypt(decrypted.toByteArray());
+        val encoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
+        return encoded;
     }
     fun encrypt(decrypted: ByteArray): ByteArray {
+        val ivBytes = generateIv()
         val c: Cipher = Cipher.getInstance(AES_MODE);
-        c.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
+        c.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(TAG_LENGTH, ivBytes));
         val encodedBytes: ByteArray = c.doFinal(decrypted);
-        return encodedBytes;
+        return ivBytes + encodedBytes;
     }
 
-    fun decrypt(encrypted: String): String {
-        val c = Cipher.getInstance(AES_MODE);
-        c.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
-        val decrypted = String(c.doFinal(Base64.decode(encrypted, Base64.DEFAULT)));
-        return decrypted;
+    fun decrypt(data: String): String {
+        val bytes = Base64.decode(data, Base64.DEFAULT)
+        return String(decrypt(bytes));
     }
-    fun decrypt(encrypted: ByteArray): ByteArray {
+    fun decrypt(bytes: ByteArray): ByteArray {
+        val encrypted = bytes.sliceArray(IntRange(IV_SIZE, bytes.size - 1))
+        val ivBytes = bytes.sliceArray(IntRange(0, IV_SIZE - 1))
+
         val c = Cipher.getInstance(AES_MODE);
-        c.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, FIXED_IV));
+        c.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(TAG_LENGTH, ivBytes));
         return c.doFinal(encrypted);
     }
 
-    companion object {
-        val instance: EncryptionProvider = EncryptionProvider();
+    private fun generateIv(): ByteArray {
+        val r = SecureRandom()
+        val ivBytes = ByteArray(IV_SIZE)
+        r.nextBytes(ivBytes)
+        return ivBytes
+    }
 
-        private val FIXED_IV = byteArrayOf(12, 43, 127, 2, 99, 22, 6,  78,  24, 53, 8, 101);
+    companion object {
+        val instance: GEncryptionProviderV1 = GEncryptionProviderV1();
+
         private const val AndroidKeyStore = "AndroidKeyStore";
         private const val KEY_ALIAS = "FUTOMedia_Key";
         private const val AES_MODE = "AES/GCM/NoPadding";
-        private val TAG = "EncryptionProvider";
+        private const val IV_SIZE = 12;
+        private const val TAG_LENGTH = 128
+        private val TAG = "GEncryptionProviderV1";
     }
 }
