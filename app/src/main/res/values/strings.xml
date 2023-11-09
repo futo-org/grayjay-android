@@ -637,6 +637,8 @@
     <string name="more_options">More Options</string>
     <string name="save">Save</string>
     <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">This creator has not set any support options on Harbor (Polycentric)</string>
+    <string name="load_more">Load More</string>
+    <string name="stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more">Stopped after {requestCount} to avoid rate limit, click load more to load more.</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
