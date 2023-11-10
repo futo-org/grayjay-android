@@ -123,7 +123,7 @@ class Settings : FragmentedStorageFileJson() {
 
 
 
-    @FormField(R.string.home, "group", R.string.configure_how_your_home_tab_works_and_feels, 0)
+    @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();
     @Serializable
     class LanguageSettings {
@@ -166,6 +166,17 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
+
+
+        @FormField(R.string.clear_hidden, FieldForm.BUTTON, R.string.clear_hidden_description, 7)
+        @FormFieldButton(R.drawable.ic_visibility_off)
+        fun clearHidden() {
+            StateMeta.instance.removeAllHiddenCreators();
+            StateMeta.instance.removeAllHiddenVideos();
+            SettingsActivity.getActivity()?.let {
+                UIDialogs.toast(it, "Creators and videos should show up again");
+            }
+        }
     }
 
     @FormField(R.string.search, "group", -1, 2)

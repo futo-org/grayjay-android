@@ -7,6 +7,7 @@
     <string name="add_to">Add to</string>
     <string name="lorem_ipsum" translatable="false">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
     <string name="add_to_queue">Add to queue</string>
+    <string name="general">General</string>
     <string name="home">Home</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
@@ -312,6 +313,7 @@
     <string name="import_data_description">Select a file to import, support various files (alternative to opening directly)</string>
     <string name="external_storage">External Storage</string>
     <string name="feed_style">Feed Style</string>
+    <string name="language">Language</string>
     <string name="app_language">App Language</string>
     <string name="may_require_restart">May require restart</string>
     <string name="fetch_on_app_boot">Fetch on app boot</string>
@@ -345,6 +347,8 @@
     <string name="reinstall_embedded_plugins">Reinstall Embedded Plugins</string>
     <string name="remove_cached_version">Remove Cached Version</string>
     <string name="remove_the_last_downloaded_version">Remove the last downloaded version</string>
+    <string name="clear_hidden">Clear Hidden</string>
+    <string name="clear_hidden_description">Removes all hidden creators and videos, showing them again</string>
     <string name="reset_announcements">Reset announcements</string>
     <string name="reset_hidden_announcements">Reset hidden announcements</string>
     <string name="restore_automatic_backup">Restore Automatic Backup</string>
@@ -489,6 +493,7 @@
     <string name="page">Page</string>
     <string name="hide">Hide</string>
     <string name="hide_from_home">Hide from Home</string>
+    <string name="hide_creator_from_home">Hide Creator from Home</string>
     <string name="play_feed_as_queue">Play Feed as Queue</string>
     <string name="play_entire_feed">Play entire feed</string>
     <string name="queued">Queued</string>

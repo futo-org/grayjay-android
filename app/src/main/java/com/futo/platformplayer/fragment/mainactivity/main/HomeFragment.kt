@@ -152,7 +152,7 @@ class HomeFragment : MainFragment() {
         }
 
         override fun filterResults(contents: List<IPlatformContent>): List<IPlatformContent> {
-            return contents.filter { it !is IPlatformVideo || !StateMeta.instance.isVideoHidden(it.url) };
+            return contents.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) };
         }
 
         private fun loadResults() {

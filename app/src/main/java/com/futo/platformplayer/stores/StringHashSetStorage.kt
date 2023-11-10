@@ -35,6 +35,11 @@ class StringHashSetStorage : FragmentedStorageFileJson() {
             values.remove(obj);
         }
     }
+    fun removeAll() {
+        synchronized(values) {
+            values.clear();
+        }
+    }
     fun set(vararg objs: String) {
         synchronized(values) {
             values.clear();
