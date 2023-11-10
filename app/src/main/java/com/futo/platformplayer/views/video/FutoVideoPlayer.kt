@@ -219,7 +219,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             updateRotateLock();
         };
         _control_cast.setOnClickListener {
-
+            UIDialogs.showCastingDialog(context);
         };
 
         _control_minimize_fullscreen.setOnClickListener {
