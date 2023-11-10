@@ -315,6 +315,10 @@
     <string name="app_language">App Language</string>
     <string name="may_require_restart">May require restart</string>
     <string name="fetch_on_app_boot">Fetch on app boot</string>
+    <string name="fetch_on_tab_opened">Fetch on tab opened</string>
+    <string name="fetch_on_tab_opened_description">Fetch new results when the tab is opened (if no results yet, disabling is not recommended unless you have issues)</string>
+    <string name="always_reload_from_cache">Always reload from cache</string>
+    <string name="always_reload_from_cache_description">This is not recommended, but a possible workaround for some issues.</string>
     <string name="get_answers_to_common_questions">Get answers to common questions</string>
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>

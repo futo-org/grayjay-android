@@ -216,6 +216,9 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var fetchOnAppBoot: Boolean = true;
 
+        @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 6)
+        var fetchOnTabOpen: Boolean = true;
+
         @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 7)
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
@@ -246,6 +249,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 10)
         var allowPlaytimeTracking: Boolean = true;
 
+
+        @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 11)
+        var alwaysReloadFromCache: Boolean = false;
     }
 
     @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)

@@ -83,7 +83,7 @@ class ChannelContentCache {
         val items = validStores.flatMap { it.getItems() }
             .sortedByDescending { it.datetime };
 
-        return DedupContentPager(PlatformContentPager(items, Math.min(150, items.size)), StatePlatform.instance.getEnabledClients().map { it.id });
+        return DedupContentPager(PlatformContentPager(items, Math.min(30, items.size)), StatePlatform.instance.getEnabledClients().map { it.id });
     }
 
     fun uncacheContent(content: SerializedPlatformContent) {

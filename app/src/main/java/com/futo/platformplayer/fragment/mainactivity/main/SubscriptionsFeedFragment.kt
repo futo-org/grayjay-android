@@ -121,7 +121,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 recyclerData.lastLoad.getNowDiffSeconds() > 60 ) {
                 recyclerData.lastLoad = OffsetDateTime.now();
 
-                if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5 && Settings.instance.subscriptions.fetchOnTabOpen)
                     loadResults(false);
                 else if(recyclerData.results.size == 0)
                     loadCache();
@@ -193,7 +193,15 @@ class SubscriptionsFeedFragment : MainFragment() {
 
             return@TaskHandler resp;
         })
-            .success { loadedResult(it); }
+            .success {
+                if(!Settings.instance.subscriptions.alwaysReloadFromCache)
+                    loadedResult(it);
+                else {
+                    finishRefreshLayoutLoader();
+                    setLoading(false);
+                    loadCache();
+                }
+            } //TODO: Remove
             .exception<RateLimitException> {
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     val subs = StateSubscriptions.instance.getSubscriptions();
@@ -256,7 +264,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                 else null;
                 _filterSettings.save();
             };
-            loadResults(false)
+            if(Settings.instance.subscriptions.fetchOnTabOpen) //TODO: Do this different, temporary workaround
+                loadResults(false);
+            else
+                loadCache();
         }
 
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
