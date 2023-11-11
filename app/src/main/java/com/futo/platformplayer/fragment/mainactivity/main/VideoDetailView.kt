@@ -1101,9 +1101,12 @@ class VideoDetailView : ConstraintLayout {
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_2).toInt(), 0, 0);
         }
 
+
         video.author.let {
             if(it is PlatformAuthorMembershipLink && !it.membershipUrl.isNullOrEmpty())
                 _monetization.setPlatformMembership(video.id.pluginId, it.membershipUrl);
+            else
+                _monetization.setPlatformMembership(null, null);
         }
 
         _minimize_title.text = video.name;
