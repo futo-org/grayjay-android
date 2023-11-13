@@ -540,6 +540,8 @@
 	  <script>
 	  	IS_TESTING = true;
 	  	let lastScriptTag = null;
+	  	let shouldDevLog = true;
+	  	let shouldLoginCheck = true;
 		new Vue({
 		  el: '#app',
 		  data: {
@@ -603,7 +605,7 @@
 		  	};
 		  	setInterval(()=>{
 				try{
-					if(!this.Plugin.currentPlugin)
+					if(!this.Plugin.currentPlugin || !shouldDevLog)
 						return;
 
 					getDevLogs(this.Integration.lastLogIndex, (newLogs)=> {
@@ -638,7 +640,8 @@
 		  	}, 1000);
 		  	setInterval(()=>{
 		  		try{
-					this.isTestLoggedIn();
+		  			if(shouldLoginCheck)
+						this.isTestLoggedIn();
 				}catch(ex){}
 		  	}, 2500);
 		  },

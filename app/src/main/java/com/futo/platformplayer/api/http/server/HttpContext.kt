@@ -190,7 +190,9 @@ class HttpContext : AutoCloseable {
         do {
             read = readContentBytes(buffer, buffer.size);
             writer.write(buffer, 0, read);
-        } while(read > 0);
+        } while(read > 0);// && _stream.ready());
+        //if(!_stream.ready())
+        //    _totalRead = contentLength;
         return writer.toString();
     }
     inline fun <reified T> readContentJson() : T {

@@ -105,6 +105,8 @@ class VideoDetailFragment : MainFragment {
             return;
         }
 
+        if(Settings.instance.other.bypassRotationPrevention && orientation == OrientationManager.Orientation.PORTRAIT)
+            changeOrientation(OrientationManager.Orientation.PORTRAIT);
         if(lastOrientation == newOrientation)
             return;
 

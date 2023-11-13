@@ -338,6 +338,9 @@
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Number of concurrent threads to multiply download speeds from throttled sources</string>
     <string name="payment">Payment</string>
     <string name="payment_status">Payment Status</string>
+    <string name="bypass_rotation_prevention">Bypass Rotation Prevention</string>
+    <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>
+    <string name="bypass_rotation_prevention_warning">This may cause unexpected behavior, and is mostly untested.</string>
     <string name="player">Player</string>
     <string name="plugins">Plugins</string>
     <string name="preferred_casting_quality">Preferred Casting Quality</string>
@@ -362,6 +365,8 @@
     <string name="specify_how_many_threads_are_used_to_fetch_channels">Specify how many threads are used to fetch channels</string>
     <string name="submit_feedback">Submit feedback</string>
     <string name="submit_logs">Submit logs</string>
+    <string name="clear_channel_cache">Clear Channel Cache</string>
+    <string name="clear_channel_cache_description">Deletes all content from subscription channel cache</string>
     <string name="submit_logs_to_help_us_narrow_down_issues">Submit logs to help us narrow down issues</string>
     <string name="subscription_concurrency">Subscription Concurrency</string>
     <string name="track_playtime_locally">Track Playtime Locally</string>

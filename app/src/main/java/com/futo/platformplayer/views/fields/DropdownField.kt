@@ -39,6 +39,8 @@ class DropdownField : TableRow, IField {
 
     override val onChanged = Event3<IField, Any, Any>();
 
+    override val value: Any? get() = _selected;
+
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_dropdown, this);
         _spinner = findViewById(R.id.field_spinner);

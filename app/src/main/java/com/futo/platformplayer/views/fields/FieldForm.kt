@@ -17,6 +17,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
@@ -103,7 +104,7 @@ class FieldForm : LinearLayout {
             onChanged.emit(field, value);
 
             setting.warningDialog?.let {
-                if(it.isNotBlank() && isValueTrue(value))
+                if(it.isNotBlank() && IField.isValueTrue(value))
                     UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, setting.warningDialog, null, null, 0,
                         UIDialogs.Action("Cancel", {
                             field.setValue(oldValue);
@@ -118,8 +119,11 @@ class FieldForm : LinearLayout {
             if(dependentField == null || dependentField.second !is View)
                 (field as View).visibility = View.GONE;
             else {
+                val dependencyReady = IField.isValueTrue(dependentField.second.value);
+                if(!dependencyReady)
+                    (field as View).visibility = View.GONE;
                 dependentField.second.onChanged.subscribe { dependentField, value, oldValue ->
-                    val isValid = isValueTrue(value);
+                    val isValid = IField.isValueTrue(value);
                     if(isValid)
                         (field as View).visibility = View.VISIBLE;
                     else
@@ -127,14 +131,6 @@ class FieldForm : LinearLayout {
                 }
             }
         }
-    }
-    private fun isValueTrue(value: Any): Boolean {
-        return when(value) {
-            is Int -> value > 0;
-            is Boolean -> value;
-            is String -> value.toIntOrNull()?.let { it > 0 } ?: false || value.lowercase() == "true";
-            else -> false
-        };
     }
 
     fun setObjectValues(){
@@ -213,21 +209,42 @@ class FieldForm : LinearLayout {
                 .asSequence()
                 .asStream()
                 .filter { it.hasAnnotation<FormField>() && it.javaField != null }
-                .map { Pair<Field, FormField>(it.javaField!!, it.findAnnotation()!!) }
+                .map { Pair<KProperty<*>, FormField>(it, it.findAnnotation()!!) }
                 .toList()
 
+            //TODO: Rewrite fields to properties so no map is required
+            val propertyMap = mutableMapOf<Field, KProperty<*>>();
             val fields = mutableListOf<IField>();
             for(prop in objFields) {
-                prop.first.isAccessible = true;
+                prop.first.javaField!!.isAccessible = true;
 
                 val field = when(prop.second.type) {
-                    GROUP -> GroupField(context).fromField(obj, prop.first, prop.second);
-                    DROPDOWN -> DropdownField(context).fromField(obj, prop.first, prop.second);
-                    TOGGLE -> ToggleField(context).fromField(obj, prop.first, prop.second);
-                    READONLYTEXT -> ReadOnlyTextField(context).fromField(obj, prop.first, prop.second);
+                    GROUP -> GroupField(context).fromField(obj, prop.first.javaField!!, prop.second);
+                    DROPDOWN -> DropdownField(context).fromField(obj, prop.first.javaField!!, prop.second);
+                    TOGGLE -> ToggleField(context).fromField(obj, prop.first.javaField!!, prop.second);
+                    READONLYTEXT -> ReadOnlyTextField(context).fromField(obj, prop.first.javaField!!, prop.second);
                     else -> throw java.lang.IllegalStateException("Unknown field type ${prop.second.type} for ${prop.second.title}")
                 }
                 fields.add(field as IField);
+                propertyMap.put(prop.first.javaField!!, prop.first);
+            }
+
+            for(field in fields) {
+                if(field.field != null) {
+                    val warning = propertyMap[field.field]?.findAnnotation<FormFieldWarning>();
+                    if(warning != null) {
+                        field.onChanged.subscribe { field, value, oldValue ->
+                            if(IField.isValueTrue(value))
+                                UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, context.getString(warning.messageRes), null, null, 0,
+                                    UIDialogs.Action("Cancel", {
+                                        field.setValue(oldValue);
+                                    }, UIDialogs.ActionStyle.NONE),
+                                    UIDialogs.Action("Ok", {
+
+                                    }, UIDialogs.ActionStyle.PRIMARY));
+                        }
+                    }
+                }
             }
 
             val objProps = obj::class.declaredMemberProperties

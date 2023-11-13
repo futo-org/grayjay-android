@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.R
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.polycentric.core.*
@@ -32,6 +33,10 @@ class PolycentricBackupActivity : AppCompatActivity() {
     private lateinit var _imageQR: ImageView;
     private lateinit var _exportBundle: String;
     private lateinit var _textQR: TextView;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

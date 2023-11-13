@@ -31,6 +31,9 @@ class ReadOnlyTextField : TableRow, IField {
     override val onChanged = Event3<IField, Any, Any>();
 
     override var reference: Any? = null;
+
+    override val value: Any? = null;
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_readonly_text, this);
         _title = findViewById(R.id.field_title);

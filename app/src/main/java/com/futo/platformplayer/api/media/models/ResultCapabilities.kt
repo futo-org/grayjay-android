@@ -29,6 +29,7 @@ class ResultCapabilities(
         const val TYPE_LIVE = "LIVE";
         const val TYPE_POSTS = "POSTS";
         const val TYPE_MIXED = "MIXED";
+        const val TYPE_SUBSCRIPTIONS = "SUBSCRIPTIONS";
 
         const val ORDER_CHONOLOGICAL = "CHRONOLOGICAL";
 

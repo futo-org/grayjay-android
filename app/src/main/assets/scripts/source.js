@@ -10,7 +10,8 @@ let Type = {
         Videos: "VIDEOS",
         Streams: "STREAMS",
         Mixed: "MIXED",
-        Live: "LIVE"
+        Live: "LIVE",
+        Subscriptions: "SUBSCRIPTIONS"
     },
     Order: {
         Chronological: "CHRONOLOGICAL"

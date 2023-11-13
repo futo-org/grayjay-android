@@ -26,6 +26,8 @@ class ButtonField : BigButton, IField {
 
     override var reference: Any? = null;
 
+    override val value: Any? = null;
+
     override val obj : Any? get() {
         if(this._obj == null)
             throw java.lang.IllegalStateException("Can only be called if fromField is used");

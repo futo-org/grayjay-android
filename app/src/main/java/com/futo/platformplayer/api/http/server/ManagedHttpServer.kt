@@ -200,7 +200,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
             handler(req);
 
             requestsTotal++;
-            if(req.keepAlive) {
+            if(req.keepAlive){// && requestReader.ready()) {
                 keepAlive = true;
                 if(req.keepAliveMax > 0)
                     requestsMax = req.keepAliveMax;

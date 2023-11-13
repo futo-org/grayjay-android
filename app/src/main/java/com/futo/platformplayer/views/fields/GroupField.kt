@@ -9,6 +9,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
+import kotlin.reflect.KProperty
 
 class GroupField : LinearLayout, IField {
     override var descriptor : FormField? = null;
@@ -35,6 +36,8 @@ class GroupField : LinearLayout, IField {
     private val _container : LinearLayout;
 
     override var reference: Any? = null;
+
+    override val value: Any? = null;
 
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.field_group, this);

@@ -8,6 +8,7 @@ import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.logging.Logger
@@ -21,6 +22,7 @@ import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormFieldButton
+import com.futo.platformplayer.views.fields.FormFieldWarning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,10 +45,7 @@ class Settings : FragmentedStorageFileJson() {
     @Transient
     val onTabsChanged = Event0();
 
-    @FormField(
-        R.string.manage_polycentric_identity, FieldForm.BUTTON,
-        R.string.manage_your_polycentric_identity, -5
-    )
+    @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -5)
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
@@ -58,10 +57,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(
-        R.string.show_faq, FieldForm.BUTTON,
-        R.string.get_answers_to_common_questions, -4
-    )
+    @FormField(R.string.show_faq, FieldForm.BUTTON, R.string.get_answers_to_common_questions, -4)
     @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
         try {
@@ -71,10 +67,7 @@ class Settings : FragmentedStorageFileJson() {
             //Ignored
         }
     }
-    @FormField(
-        R.string.show_issues, FieldForm.BUTTON,
-        R.string.a_list_of_user_reported_and_self_reported_issues, -3
-    )
+    @FormField(R.string.show_issues, FieldForm.BUTTON, R.string.a_list_of_user_reported_and_self_reported_issues, -3)
     @FormFieldButton(R.drawable.ic_data_alert)
     fun openIssues() {
         try {
@@ -106,10 +99,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }*/
 
-    @FormField(
-        R.string.manage_tabs, FieldForm.BUTTON,
-        R.string.change_tabs_visible_on_the_home_screen, -2
-    )
+    @FormField(R.string.manage_tabs, FieldForm.BUTTON, R.string.change_tabs_visible_on_the_home_screen, -2)
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
         try {
@@ -263,6 +253,13 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 11)
         var alwaysReloadFromCache: Boolean = false;
+
+        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 12)
+        fun clearChannelCache() {
+            UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
+            ChannelContentCache.instance.clear();
+            UIDialogs.toast(SettingsActivity.getActivity()!!, "Finished clearing");
+        }
     }
 
     @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)
@@ -432,10 +429,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.log_levels)
         var logLevel: Int = 0;
 
-        @FormField(
-            R.string.submit_logs, FieldForm.BUTTON,
-            R.string.submit_logs_to_help_us_narrow_down_issues, 1
-        )
+        @FormField(R.string.submit_logs, FieldForm.BUTTON, R.string.submit_logs_to_help_us_narrow_down_issues, 1)
         fun submitLogs() {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
@@ -457,10 +451,7 @@ class Settings : FragmentedStorageFileJson() {
     var announcementSettings = AnnouncementSettings();
     @Serializable
     class AnnouncementSettings {
-        @FormField(
-            R.string.reset_announcements, FieldForm.BUTTON,
-            R.string.reset_hidden_announcements, 1
-        )
+        @FormField(R.string.reset_announcements, FieldForm.BUTTON, R.string.reset_hidden_announcements, 1)
         fun resetAnnouncements() {
             StateAnnouncement.instance.resetAnnouncements();
             SettingsActivity.getActivity()?.let { UIDialogs.toast(it, it.getString(R.string.announcements_reset)); };
@@ -476,18 +467,12 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
 
-        @FormField(
-            R.string.clear_cookies, FieldForm.BUTTON,
-            R.string.clears_in_app_browser_cookies, 1
-        )
+        @FormField(R.string.clear_cookies, FieldForm.BUTTON, R.string.clears_in_app_browser_cookies, 1)
         fun clearCookies() {
             val cookieManager: CookieManager = CookieManager.getInstance();
             cookieManager.removeAllCookies(null);
         }
-        @FormField(
-            R.string.reinstall_embedded_plugins, FieldForm.BUTTON,
-            R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1
-        )
+        @FormField(R.string.reinstall_embedded_plugins, FieldForm.BUTTON, R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1)
         fun reinstallEmbedded() {
             StateApp.instance.scopeOrNull!!.launch(Dispatchers.IO) {
                 try {
@@ -566,10 +551,7 @@ class Settings : FragmentedStorageFileJson() {
             return check == 0 && !BuildConfig.IS_PLAYSTORE_BUILD;
         }
 
-        @FormField(
-            R.string.manual_check, FieldForm.BUTTON,
-            R.string.manually_check_for_updates, 3
-        )
+        @FormField(R.string.manual_check, FieldForm.BUTTON, R.string.manually_check_for_updates, 3)
         fun manualCheck() {
             if (!BuildConfig.IS_PLAYSTORE_BUILD) {
                 SettingsActivity.getActivity()?.let {
@@ -586,10 +568,7 @@ class Settings : FragmentedStorageFileJson() {
             }
         }
 
-        @FormField(
-            R.string.view_changelog, FieldForm.BUTTON,
-            R.string.review_the_current_and_past_changelogs, 4
-        )
+        @FormField(R.string.view_changelog, FieldForm.BUTTON, R.string.review_the_current_and_past_changelogs, 4)
         fun viewChangelog() {
             SettingsActivity.getActivity()?.let {
                 UIDialogs.toast(it.getString(R.string.retrieving_changelog));
@@ -609,10 +588,7 @@ class Settings : FragmentedStorageFileJson() {
             };
         }
 
-        @FormField(
-            R.string.remove_cached_version, FieldForm.BUTTON,
-            R.string.remove_the_last_downloaded_version, 5
-        )
+        @FormField(R.string.remove_cached_version, FieldForm.BUTTON, R.string.remove_the_last_downloaded_version, 5)
         fun removeCachedVersion() {
             StateApp.withContext {
                 val outputDirectory = File(it.filesDir, "autoupdate");
@@ -698,7 +674,16 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.info, FieldForm.GROUP, -1, 15)
+    @FormField(R.string.other, FieldForm.GROUP, -1, 15)
+    var other = Other();
+    @Serializable
+    class Other {
+        @FormField(R.string.bypass_rotation_prevention, FieldForm.TOGGLE, R.string.bypass_rotation_prevention_description, 1)
+        @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
+        var bypassRotationPrevention: Boolean = false;
+    }
+
+    @FormField(R.string.info, FieldForm.GROUP, -1, 16)
     var info = Info();
     @Serializable
     class Info {

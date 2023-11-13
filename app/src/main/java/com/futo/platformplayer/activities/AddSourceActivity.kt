@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.os.Bundle
@@ -44,6 +45,10 @@ class AddSourceActivity : AppCompatActivity() {
 
     private var _config: SourcePluginConfig? = null;
     private var _script: String? = null;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

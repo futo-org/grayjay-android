@@ -35,6 +35,8 @@ class SmartSubscriptionAlgorithm(
 
                     if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
                         return@flatMap listOf(SubscriptionTask(client, sub, it.key, ResultCapabilities.TYPE_MIXED));
+                    else if(capabilities.hasType(ResultCapabilities.TYPE_SUBSCRIPTIONS))
+                        return@flatMap listOf(SubscriptionTask(client, sub, it.key, ResultCapabilities.TYPE_SUBSCRIPTIONS))
                     else {
                         val types = listOf(
                               if(sub.shouldFetchVideos()) ResultCapabilities.TYPE_VIDEOS else null,

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -7,11 +8,16 @@ import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.R
 import com.futo.platformplayer.setNavigationBarColorAndIcons
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.buttons.BigButton
 
 class PolycentricWhyActivity : AppCompatActivity() {
     private lateinit var _buttonVideo: BigButton;
     private lateinit var _buttonTechnical: BigButton;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

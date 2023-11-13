@@ -327,6 +327,15 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             fragCurrent.onOrientationChanged(it);
             if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED)
                 _fragVideoDetail.onOrientationChanged(it);
+            else if(Settings.instance.other.bypassRotationPrevention)
+            {
+                requestedOrientation = when(orientation) {
+                    OrientationManager.Orientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    OrientationManager.Orientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    OrientationManager.Orientation.REVERSED_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                    OrientationManager.Orientation.REVERSED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                }
+            }
         };
         _orientationManager.enable();
 

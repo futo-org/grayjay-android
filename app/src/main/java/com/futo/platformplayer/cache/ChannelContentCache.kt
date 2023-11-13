@@ -51,6 +51,14 @@ class ChannelContentCache {
         Logger.i(TAG, "ChannelContentCache time: ${initializeTime}ms channels: ${allFiles.size}, videos: ${totalItems}, trimmed: ${trimmed}, total: ${totalItems - trimmed}");
     }
 
+    fun clear() {
+        synchronized(_channelContents) {
+            for(channel in _channelContents)
+                for(content in channel.value.getItems())
+                    uncacheContent(content);
+        }
+    }
+
     fun getChannelCachePager(channelUrl: String): PlatformContentPager {
         val validID = channelUrl.toSafeFileName();
 

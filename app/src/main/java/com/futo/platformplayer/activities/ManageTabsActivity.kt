@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +11,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.setNavigationBarColorAndIcons
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.ItemMoveCallback
@@ -22,6 +24,10 @@ class ManageTabsActivity : AppCompatActivity() {
     private lateinit var _listTabs: AnyAdapterView<TabViewHolderData, TabViewHolder>;
     private lateinit var _recyclerTabs: RecyclerView;
     private lateinit var _touchHelper: ItemTouchHelper;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

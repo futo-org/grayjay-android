@@ -36,6 +36,8 @@ class ToggleField : TableRow, IField {
 
     override val onChanged = Event3<IField, Any, Any>();
 
+    override val value: Any get() = _lastValue;
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_toggle, this);
         _toggle = findViewById(R.id.field_toggle);

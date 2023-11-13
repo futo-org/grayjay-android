@@ -125,6 +125,14 @@ class Subscription {
                     lastVideo = OffsetDateTime.MIN;
                 lastVideoUpdate = OffsetDateTime.now();
             }
+            ResultCapabilities.TYPE_SUBSCRIPTIONS -> {
+                uploadInterval = interval;
+                if(mostRecent != null)
+                    lastVideo = mostRecent;
+                else if(lastVideo.year > 3000)
+                    lastVideo = OffsetDateTime.MIN;
+                lastVideoUpdate = OffsetDateTime.now();
+            }
             ResultCapabilities.TYPE_STREAMS -> {
                 uploadStreamInterval = interval;
                 if(mostRecent != null)

@@ -2,6 +2,7 @@ package com.futo.platformplayer.activities
 
 import android.app.Activity
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -47,6 +48,10 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _username: String;
     private lateinit var _imagePolycentric: ImageView;
     private var _avatarUri: Uri? = null;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

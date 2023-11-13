@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.LoginWebViewClient
+import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
@@ -28,6 +29,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var _textUrl: TextView;
     private lateinit var _buttonClose: ImageButton;
 
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

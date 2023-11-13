@@ -18,6 +18,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.CaptchaWebViewClient
 import com.futo.platformplayer.others.LoginWebViewClient
+import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
@@ -30,6 +31,10 @@ import java.util.UUID
 class CaptchaActivity : AppCompatActivity() {
     private lateinit var _webView: WebView;
     private lateinit var _buttonClose: Button;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

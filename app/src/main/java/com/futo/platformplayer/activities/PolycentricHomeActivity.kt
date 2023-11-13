@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -15,6 +16,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.polycentric.core.Store
@@ -26,6 +28,10 @@ class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _buttonNewProfile: BigButton;
     private lateinit var _buttonImportProfile: BigButton;
     private lateinit var _layoutButtons: LinearLayout;
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);

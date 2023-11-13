@@ -287,7 +287,6 @@ class DeveloperEndpoints(private val context: Context) {
     @HttpPOST("/plugin/remoteCall")
     fun pluginRemoteCall(context: HttpContext) {
         try {
-            val parameters = context.readContentString();
             val objId = context.query.get("id")
             val method = context.query.get("method")
 
@@ -299,12 +298,15 @@ class DeveloperEndpoints(private val context: Context) {
                 context.respondCode(400, "Missing method");
                 return;
             }
+            if(method != "isLoggedIn")
+                Logger.i(TAG, "Remote Call [${objId}].${method}(...)");
+
+            val parameters = context.readContentString(); //TODO: Temporary
+
             val remoteObj = getRemoteObject(objId);
             val paras = JsonParser.parseString(parameters);
             if(!paras.isJsonArray)
                 throw IllegalArgumentException("Expected json array as body");
-            if(method != "isLoggedIn")
-                Logger.i(TAG, "Remote Call [${objId}].${method}(...)");
             val callResult = remoteObj.call(method, paras as JsonArray);
             val json = wrapRemoteResult(callResult, false);
             context.respondCode(200, json, "application/json");

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.*
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.buttons.BigButton
 import com.google.zxing.integration.android.IntentIntegrator
 import com.journeyapps.barcodescanner.CaptureActivity
@@ -41,6 +43,10 @@ class AddSourceOptionsActivity : AppCompatActivity() {
             };
             startActivity(intent);
         }
+    }
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
