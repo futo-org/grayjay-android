@@ -69,12 +69,17 @@ class SmartSubscriptionAlgorithm(
             if(limit == null || limit <= 0)
                 finalTasks.addAll(clientTasks.second);
             else {
-                val fetchTasks = clientTasks.second.take(limit);
-                val cacheTasks = clientTasks.second.drop(limit);
+                val fetchTasks = mutableListOf<SubscriptionTask>();
+                val cacheTasks = mutableListOf<SubscriptionTask>();
 
-                for(cacheTask in cacheTasks)
-                    cacheTask.fromCache = true;
-
+                for(task in clientTasks.second) {
+                    if(!task.fromCache && fetchTasks.size < limit)
+                        fetchTasks.add(task);
+                    else {
+                        task.fromCache = true;
+                        cacheTasks.add(task);
+                    }
+                }
                 Logger.i(TAG, "Subscription Client Budget [${clientTasks.first.name}]: ${fetchTasks.size}/${limit}")
 
                 finalTasks.addAll(fetchTasks + cacheTasks);
