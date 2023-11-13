@@ -111,17 +111,13 @@ class StateApp {
         return null;
     }
     fun changeExternalDownloadDirectory(context: IWithResultLauncher, onChanged: ((DocumentFile?)->Unit)? = null) {
-
-        scopeOrNull?.launch(Dispatchers.Main) {
-            UIDialogs.toast("External download directory not yet used by export (WIP)");
-        };
         if(context is Context)
             requestDirectoryAccess(context, "Download Exports", "This directory is used to export downloads to for external usage.", null) {
                 if(it != null)
                     context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION));
                 if(it != null && isValidStorageUri(context, it)) {
                     Logger.i(TAG, "Changed external download directory: ${it}");
-                    Settings.instance.storage.storage_general = it.toString();
+                    Settings.instance.storage.storage_download = it.toString();
                     Settings.instance.save();
 
                     onChanged?.invoke(getExternalDownloadDirectory(context));

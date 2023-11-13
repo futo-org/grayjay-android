@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -7,9 +8,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.images.GlideHelper.Companion.loadThumbnails
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.adapters.AnyAdapter
@@ -47,7 +50,18 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
         }
         _videoExport.setOnClickListener {
             val v = _video ?: return@setOnClickListener;
-            StateDownloads.instance.export(v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+            if (StateApp.instance.getExternalDownloadDirectory(_view.context) == null) {
+                StateApp.instance.changeExternalDownloadDirectory(_view.context as MainActivity) {
+                    if (it == null) {
+                        UIDialogs.toast(_view.context, "Download directory must be set to export.");
+                        return@changeExternalDownloadDirectory;
+                    }
+
+                    StateDownloads.instance.export(v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+                };
+            } else {
+                StateDownloads.instance.export(v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+            }
         }
     }
 

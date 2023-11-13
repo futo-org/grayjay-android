@@ -400,10 +400,7 @@ class StateDownloads {
             _exporting.save(videoExport);
 
             if(notify) {
-                if(videoSource == null)
-                    UIDialogs.toast("Exporting [${shortName}]\nIn your music directory under Grayjay");
-                else
-                    UIDialogs.toast("Exporting [${shortName}]\nIn your movies directory under Grayjay");
+                UIDialogs.toast("Exporting [${shortName}]");
                 StateApp.withContext { ExportingService.getOrCreateService(it) };
                 onExportsChanged.emit();
             }

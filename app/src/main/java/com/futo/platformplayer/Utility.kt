@@ -164,9 +164,7 @@ fun Int.sp(resources: Resources): Int {
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, this.toFloat(), resources.displayMetrics).toInt()
 }
 
-fun File.share(context: Context) {
-    val uri = FileProvider.getUriForFile(context, context.resources.getString(R.string.authority), this);
-
+fun DocumentFile.share(context: Context) {
     val shareIntent = Intent();
     shareIntent.action = Intent.ACTION_SEND;
     shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

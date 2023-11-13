@@ -107,7 +107,7 @@ class ExportingService : Service() {
         {
             try{
                 notifyExport(currentExport);
-                doExport(currentExport);
+                doExport(applicationContext, currentExport);
             }
             catch(ex: Throwable) {
                 Logger.e(TAG, "Failed export [${currentExport.videoLocal.name}]: ${ex.message}", ex);
@@ -125,13 +125,13 @@ class ExportingService : Service() {
         stopService(this);
     }
 
-    private suspend fun doExport(export: VideoExport) {
+    private suspend fun doExport(context: Context, export: VideoExport) {
         Logger.i(TAG, "Exporting [${export.videoLocal.name}] started");
 
         export.changeState(VideoExport.State.EXPORTING);
 
         var lastNotifyTime: Long = 0L;
-        val file = export.export { progress ->
+        val file = export.export(context) { progress ->
             export.progress = progress;
 
             val currentTime = System.currentTimeMillis();
@@ -146,7 +146,7 @@ class ExportingService : Service() {
         notifyExport(export);
 
         withContext(Dispatchers.Main) {
-            StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), "File exported", "Exported [${file.path}]", AnnouncementType.SESSION, time = null, category = "download", actionButton = "Open") {
+            StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), "File exported", "Exported [${file.uri}]", AnnouncementType.SESSION, time = null, category = "download", actionButton = "Open") {
                 file.share(this@ExportingService);
             };
         }
