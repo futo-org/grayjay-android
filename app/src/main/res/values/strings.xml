@@ -278,9 +278,11 @@
     <string name="casting">Casting</string>
     <string name="change_behavior_of_the_player">Change behavior of the player</string>
     <string name="change_external_downloads_directory">Change external Downloads directory</string>
+    <string name="clear_external_downloads_directory">Clear external Downloads directory</string>
     <string name="change_external_general_directory">Change external General directory</string>
     <string name="change_tabs_visible_on_the_home_screen">Change tabs visible on the home screen</string>
     <string name="change_the_external_directory_for_general_files">Change the external directory for general files</string>
+    <string name="clear_the_external_storage_for_download_files">Clear the external storage for download files</string>
     <string name="change_the_external_storage_for_download_files">Change the external storage for download files</string>
     <string name="clear_cookies">Clear Cookies</string>
     <string name="clear_cookies_on_logout">Clear Cookies on Logout</string>

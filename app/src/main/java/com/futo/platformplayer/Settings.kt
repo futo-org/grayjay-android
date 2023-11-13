@@ -534,6 +534,13 @@ class Settings : FragmentedStorageFileJson() {
                 StateApp.instance.changeExternalDownloadDirectory(it);
             }
         }
+
+        @FormField(R.string.clear_external_downloads_directory, FieldForm.BUTTON, R.string.clear_the_external_storage_for_download_files, 5)
+        fun clearStorageDownload() {
+            Settings.instance.storage.storage_download = null;
+            Settings.instance.save();
+            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, "Cleared download storage directory") };
+        }
     }
 
 
