@@ -246,12 +246,11 @@ class StateSubscriptions {
 
     fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
         val algo = SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, cacheScope, allowFailure, withCacheFallback, _subscriptionsPool);
+        if(onNewCacheHit != null)
+            algo.onNewCacheHit.subscribe(onNewCacheHit)
 
         algo.onProgress.subscribe { progress, total ->
             onProgress?.invoke(progress, total);
-        }
-        algo.onNewCacheHit.subscribe { sub, content ->
-
         }
 
         val usePolycentric = true;
