@@ -76,7 +76,7 @@
                         android:id="@+id/button_buy_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        tools:text="$9.99"
+                        android:text="$9.99 + Tax"
                         android:textSize="14dp"
                         android:textColor="@color/white"
                         android:fontFamily="@font/inter_regular"

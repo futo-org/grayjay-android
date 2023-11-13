@@ -91,7 +91,7 @@ class BuyFragment : MainFragment() {
                         val price = prices[currency.id]!!;
                         val priceDecimal = (price.toDouble() / 100);
                         withContext(Dispatchers.Main) {
-                            _buttonBuyText.text = currency.symbol + String.format("%.2f", priceDecimal);
+                            _buttonBuyText.text = currency.symbol + String.format("%.2f", priceDecimal) + context.getString(R.string.plus_tax);
                         }
                     }
                 }
