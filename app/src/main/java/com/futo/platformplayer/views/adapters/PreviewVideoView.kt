@@ -68,6 +68,7 @@ open class PreviewVideoView : LinearLayout {
         };
 
     val onVideoClicked = Event2<IPlatformVideo, Long>();
+    val onLongPress = Event1<IPlatformVideo>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformVideo>();
     val onAddToQueueClicked = Event1<IPlatformVideo>();
@@ -119,7 +120,13 @@ open class PreviewVideoView : LinearLayout {
 
         this._exoPlayer = exoPlayer
 
-        setOnClickListener { onOpenClicked()  };
+        setOnLongClickListener {
+            onLongPress()
+            true
+        };
+        setOnClickListener {
+            onOpenClicked()
+        };
         _imageChannel.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
         _textChannelName.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
         _textVideoMetadata.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
@@ -142,6 +149,12 @@ open class PreviewVideoView : LinearLayout {
                 (currentPlayer.position / 1000).toLong();
             else 0L;
             onVideoClicked.emit(it, sec);
+        }
+    }
+
+    protected open fun onLongPress() {
+        currentVideo?.let {
+            onLongPress.emit(it);
         }
     }
 

@@ -27,6 +27,7 @@ import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.adapters.PreviewNestedVideoViewHolder
 import com.futo.platformplayer.views.adapters.PreviewVideoViewHolder
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import kotlin.math.floor
 
 abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent, IPlatformContent, IPager<IPlatformContent>, ContentPreviewViewHolder> where TFragment : MainFragment {
@@ -37,6 +38,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     private var _previewsEnabled: Boolean = true;
     override val visibleThreshold: Int get() = if (feedStyle == FeedStyle.PREVIEW) { 5 } else { 10 };
     protected lateinit var headerView: LinearLayout;
+    private var _videoOptionsOverlay: SlideUpMenuOverlay? = null;
 
     constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
 
@@ -70,26 +72,8 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         adapter.onChannelClicked.subscribe(this) { fragment.navigate<ChannelFragment>(it) };
         adapter.onAddToClicked.subscribe(this) { content ->
             //TODO: Reconstruct search video from detail if search is null
-            _overlayContainer.let {
-                if(content is IPlatformVideo)
-                    UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, context.getString(R.string.hide), context.getString(R.string.hide_from_home), "hide",
-                        { StateMeta.instance.addHiddenVideo(content.url);
-                            if (fragment is HomeFragment) {
-                                val removeIndex = recyclerData.results.indexOf(content);
-                                if (removeIndex >= 0) {
-                                    recyclerData.results.removeAt(removeIndex);
-                                    recyclerData.adapter.notifyItemRemoved(recyclerData.adapter.childToParentPosition(removeIndex));
-                                }
-                            }
-                        }),
-                        SlideUpMenuItem(context, R.drawable.ic_playlist, context.getString(R.string.play_feed_as_queue), context.getString(R.string.play_entire_feed), "playFeed",
-                        {
-                            val newQueue = listOf(content) + recyclerData.results
-                                .filterIsInstance<IPlatformVideo>()
-                                .filter { it != content };
-                            StatePlayer.instance.setQueue(newQueue, StatePlayer.TYPE_QUEUE, "Feed Queue", true, false);
-                        })
-                    );
+            if(content is IPlatformVideo) {
+                showVideoOptionsOverlay(content)
             }
         };
         adapter.onAddToQueueClicked.subscribe(this) {
@@ -99,6 +83,50 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                 UIDialogs.toast(context, context.getString(R.string.queued) + " [$name]", false);
             }
         };
+        adapter.onLongPress.subscribe(this) {
+            if (it is IPlatformVideo) {
+                showVideoOptionsOverlay(it)
+            }
+        };
+    }
+
+    fun onBackPressed(): Boolean {
+        val videoOptionsOverlay = _videoOptionsOverlay
+        if (videoOptionsOverlay != null) {
+            if (videoOptionsOverlay.isVisible) {
+                videoOptionsOverlay.hide();
+                _videoOptionsOverlay = null
+                return true;
+            }
+
+            _videoOptionsOverlay = null
+            return false
+        }
+
+        return false
+    }
+
+    private fun showVideoOptionsOverlay(content: IPlatformVideo) {
+        _overlayContainer.let {
+            _videoOptionsOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, context.getString(R.string.hide), context.getString(R.string.hide_from_home), "hide",
+                { StateMeta.instance.addHiddenVideo(content.url);
+                    if (fragment is HomeFragment) {
+                        val removeIndex = recyclerData.results.indexOf(content);
+                        if (removeIndex >= 0) {
+                            recyclerData.results.removeAt(removeIndex);
+                            recyclerData.adapter.notifyItemRemoved(recyclerData.adapter.childToParentPosition(removeIndex));
+                        }
+                    }
+                }),
+                SlideUpMenuItem(context, R.drawable.ic_playlist, context.getString(R.string.play_feed_as_queue), context.getString(R.string.play_entire_feed), "playFeed",
+                    {
+                        val newQueue = listOf(content) + recyclerData.results
+                            .filterIsInstance<IPlatformVideo>()
+                            .filter { it != content };
+                        StatePlayer.instance.setQueue(newQueue, StatePlayer.TYPE_QUEUE, "Feed Queue", true, false);
+                    })
+            );
+        }
     }
 
     private fun detachAdapterEvents() {
@@ -108,6 +136,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         adapter.onChannelClicked.remove(this);
         adapter.onAddToClicked.remove(this);
         adapter.onAddToQueueClicked.remove(this);
+        adapter.onLongPress.remove(this);
     }
 
     override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {

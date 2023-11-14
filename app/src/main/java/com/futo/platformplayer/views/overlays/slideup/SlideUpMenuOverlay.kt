@@ -134,6 +134,10 @@ class SlideUpMenuOverlay : RelativeLayout {
     }
 
     fun show(){
+        if (isVisible) {
+            return;
+        }
+
         isVisible = true;
         _container?.post {
             _container?.visibility = View.VISIBLE;
@@ -146,8 +150,8 @@ class SlideUpMenuOverlay : RelativeLayout {
             _viewBackground.alpha = 0f;
 
             val animations = arrayListOf<Animator>();
-            animations.add(ObjectAnimator.ofFloat(_viewBackground, "alpha", 0.0f, 1.0f).setDuration(500));
-            animations.add(ObjectAnimator.ofFloat(_viewOverlayContainer, "translationY", _viewOverlayContainer.measuredHeight.toFloat(), 0.0f).setDuration(500));
+            animations.add(ObjectAnimator.ofFloat(_viewBackground, "alpha", 0.0f, 1.0f).setDuration(ANIMATION_DURATION_MS));
+            animations.add(ObjectAnimator.ofFloat(_viewOverlayContainer, "translationY", _viewOverlayContainer.measuredHeight.toFloat(), 0.0f).setDuration(ANIMATION_DURATION_MS));
 
             val animatorSet = AnimatorSet();
             animatorSet.playTogether(animations);
@@ -159,11 +163,15 @@ class SlideUpMenuOverlay : RelativeLayout {
     }
 
     fun hide(animate: Boolean = true){
+        if (!isVisible) {
+            return
+        }
+
         isVisible = false;
         if (_animated && animate) {
             val animations = arrayListOf<Animator>();
-            animations.add(ObjectAnimator.ofFloat(_viewBackground, "alpha", 1.0f, 0.0f).setDuration(500));
-            animations.add(ObjectAnimator.ofFloat(_viewOverlayContainer, "translationY", 0.0f, _viewOverlayContainer.measuredHeight.toFloat()).setDuration(500));
+            animations.add(ObjectAnimator.ofFloat(_viewBackground, "alpha", 1.0f, 0.0f).setDuration(ANIMATION_DURATION_MS));
+            animations.add(ObjectAnimator.ofFloat(_viewOverlayContainer, "translationY", 0.0f, _viewOverlayContainer.measuredHeight.toFloat()).setDuration(ANIMATION_DURATION_MS));
 
             val animatorSet = AnimatorSet();
             animatorSet.doOnEnd {
@@ -179,5 +187,9 @@ class SlideUpMenuOverlay : RelativeLayout {
             _viewOverlayContainer.translationY = _viewOverlayContainer.measuredHeight.toFloat();
             _container?.visibility = View.GONE;
         }
+    }
+
+    companion object {
+        private const val ANIMATION_DURATION_MS = 350L
     }
 }
