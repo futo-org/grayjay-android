@@ -6,6 +6,7 @@ import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.drawable.Animatable
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -57,8 +58,10 @@ class GestureControlView : LinearLayout {
     private var _isFullScreen = false;
     private var _animatorBrightness: ObjectAnimator? = null;
     private val _layoutControlsFullscreen: FrameLayout;
-    private var _adjustingFullscreen: Boolean = false;
-    private var _fullScreenFactor = 1.0f;
+    private var _adjustingFullscreenUp: Boolean = false;
+    private var _adjustingFullscreenDown: Boolean = false;
+    private var _fullScreenFactorUp = 1.0f;
+    private var _fullScreenFactorDown = 1.0f;
 
     val onSeek = Event1<Long>();
     val onBrightnessAdjusted = Event1<Float>();
@@ -100,10 +103,14 @@ class GestureControlView : LinearLayout {
                     _soundFactor = (_soundFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _progressSound.progress = _soundFactor;
                     onSoundAdjusted.emit(_soundFactor);
-                } else if (_adjustingFullscreen) {
+                } else if (_adjustingFullscreenUp) {
                     val adjustAmount = (distanceY * 2) / height;
-                    _fullScreenFactor = (_fullScreenFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
-                    _layoutControlsFullscreen.transitionAlpha = _fullScreenFactor;
+                    _fullScreenFactorUp = (_fullScreenFactorUp + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                    _layoutControlsFullscreen.alpha = _fullScreenFactorUp;
+                } else if (_adjustingFullscreenDown) {
+                    val adjustAmount = (-distanceY * 2) / height;
+                    _fullScreenFactorDown = (_fullScreenFactorDown + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                    _layoutControlsFullscreen.alpha = _fullScreenFactorDown;
                 } else {
                     val rx = p0.x / width;
                     val ry = p0.y / height;
@@ -114,7 +121,11 @@ class GestureControlView : LinearLayout {
                         } else if (_isFullScreen && rx > 0.6) {
                             startAdjustingSound();
                         } else if (rx >= 0.4 && rx <= 0.6) {
-                            startAdjustingFullscreen();
+                            if (_isFullScreen) {
+                                startAdjustingFullscreenDown();
+                            } else {
+                                startAdjustingFullscreenUp();
+                            }
                         }
                     }
                 }
@@ -180,11 +191,18 @@ class GestureControlView : LinearLayout {
                     stopAdjustingBrightness();
                 }
 
-                if (_adjustingFullscreen && ev.action == MotionEvent.ACTION_UP) {
-                    if (_fullScreenFactor > 0.5) {
+                if (_adjustingFullscreenUp && ev.action == MotionEvent.ACTION_UP) {
+                    if (_fullScreenFactorUp > 0.5) {
                         onToggleFullscreen.emit();
                     }
-                    stopAdjustingFullscreen();
+                    stopAdjustingFullscreenUp();
+                }
+
+                if (_adjustingFullscreenDown && ev.action == MotionEvent.ACTION_UP) {
+                    if (_fullScreenFactorDown > 0.5) {
+                        onToggleFullscreen.emit();
+                    }
+                    stopAdjustingFullscreenDown();
                 }
 
                 startHideJobIfNecessary();
@@ -468,15 +486,27 @@ class GestureControlView : LinearLayout {
         _animatorSound?.start();
     }
 
-    private fun startAdjustingFullscreen() {
-        _adjustingFullscreen = true;
-        _fullScreenFactor = 0f;
-        _layoutControlsFullscreen.transitionAlpha = 0f;
+    private fun startAdjustingFullscreenUp() {
+        _adjustingFullscreenUp = true;
+        _fullScreenFactorUp = 0f;
+        _layoutControlsFullscreen.alpha = 0f;
         _layoutControlsFullscreen.visibility = View.VISIBLE;
     }
 
-    private fun stopAdjustingFullscreen() {
-        _adjustingFullscreen = false;
+    private fun stopAdjustingFullscreenUp() {
+        _adjustingFullscreenUp = false;
+        _layoutControlsFullscreen.visibility = View.GONE;
+    }
+
+    private fun startAdjustingFullscreenDown() {
+        _adjustingFullscreenDown = true;
+        _fullScreenFactorDown = 0f;
+        _layoutControlsFullscreen.alpha = 0f;
+        _layoutControlsFullscreen.visibility = View.VISIBLE;
+    }
+
+    private fun stopAdjustingFullscreenDown() {
+        _adjustingFullscreenDown = false;
         _layoutControlsFullscreen.visibility = View.GONE;
     }
 
@@ -510,7 +540,7 @@ class GestureControlView : LinearLayout {
             //onSoundAdjusted.emit(1.0f);
             stopAdjustingBrightness();
             stopAdjustingSound();
-            stopAdjustingFullscreen();
+            stopAdjustingFullscreenUp();
         }
 
         _isFullScreen = isFullScreen;
