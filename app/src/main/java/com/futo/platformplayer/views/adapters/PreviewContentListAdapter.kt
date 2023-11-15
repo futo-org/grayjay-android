@@ -32,6 +32,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
     val onAddToQueueClicked = Event1<IPlatformContent>();
+    val onLongPress = Event1<IPlatformContent>();
 
     private var _taskLoadContent = TaskHandler<Pair<ContentPreviewViewHolder, IPlatformContent>, Pair<ContentPreviewViewHolder, IPlatformContentDetails>>(
         StateApp.instance.scopeGetter, { (viewHolder, video) ->
@@ -93,6 +94,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
             this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@PreviewContentListAdapter.onAddToClicked::emit);
             this.onAddToQueueClicked.subscribe(this@PreviewContentListAdapter.onAddToQueueClicked::emit);
+            this.onLongPress.subscribe(this@PreviewContentListAdapter.onLongPress::emit);
         };
     private fun createPlaylistViewHolder(viewGroup: ViewGroup): PreviewPlaylistViewHolder = PreviewPlaylistViewHolder(viewGroup, _feedStyle).apply {
         this.onPlaylistClicked.subscribe { this@PreviewContentListAdapter.onContentClicked.emit(it, 0L) };

@@ -80,6 +80,13 @@ class SubscriptionsFeedFragment : MainFragment() {
         }
     }
 
+    override fun onBackPressed(): Boolean {
+        if (_view?.onBackPressed() == true)
+            return true
+
+        return super.onBackPressed()
+    }
+
     fun setPreviewsEnabled(previewsEnabled: Boolean) {
         _view?.setPreviewsEnabled(previewsEnabled && Settings.instance.subscriptions.previewFeedItems);
     }

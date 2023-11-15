@@ -44,6 +44,13 @@ class PlaylistSearchResultsFragment : MainFragment() {
         return view;
     }
 
+    override fun onBackPressed(): Boolean {
+        if (_view?.onBackPressed() == true)
+            return true
+
+        return super.onBackPressed()
+    }
+
     override fun onDestroyMainView() {
         super.onDestroyMainView();
         _view?.cleanup();

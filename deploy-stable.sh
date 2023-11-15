@@ -25,7 +25,7 @@ cp ./app/build/outputs/apk/stable/release/app-stable-arm64-v8a-release.apk $DOCU
 VERSION=$(git describe --tags)
 echo $VERSION > $DOCUMENT_ROOT/version.txt
 mkdir -p $DOCUMENT_ROOT/changelogs
-git tag -l $VERSION -n1000 | awk '{$1=""; print $0}' | sed -e 's/^[ \t]*//' > $DOCUMENT_ROOT/changelogs/$VERSION
+git tag -l --format='%(contents)' $VERSION > $DOCUMENT_ROOT/changelogs/$VERSION
 
 # Notify Cloudflare to wipe the CDN cache
 echo "Purging Cloudflare cache for zone $CLOUDFLARE_ZONE_ID..."

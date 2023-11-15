@@ -5,6 +5,8 @@ import android.graphics.Color
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -369,6 +371,33 @@ class UISlideOverlays {
             return overlay;
         }
 
+        fun showCreatePlaylistOverlay(container: ViewGroup, onCreate: (String) -> Unit): SlideUpMenuOverlay {
+            val nameInput = SlideUpMenuTextInput(container.context, container.context.getString(R.string.name));
+            val addPlaylistOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.create_new_playlist), container.context.getString(R.string.ok), false, nameInput);
+
+            addPlaylistOverlay.onOK.subscribe {
+                val text = nameInput.text;
+                if (text.isBlank()) {
+                    return@subscribe;
+                }
+
+                addPlaylistOverlay.hide();
+                nameInput.deactivate();
+                nameInput.clear();
+                onCreate(text)
+            };
+
+            addPlaylistOverlay.onCancel.subscribe {
+                nameInput.deactivate();
+                nameInput.clear();
+            };
+
+            addPlaylistOverlay.show();
+            nameInput.activate();
+
+            return addPlaylistOverlay
+        }
+
         fun showVideoOptionsOverlay(video: IPlatformVideo, container: ViewGroup, vararg actions: SlideUpMenuItem): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
             val lastUpdated = StatePlaylists.instance.getLastUpdatedPlaylist();
@@ -407,6 +436,13 @@ class UISlideOverlays {
             ));
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
+            playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
+                showCreatePlaylistOverlay(container) {
+                    val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
+                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                };
+            }, false))
+
             for (playlist in allPlaylists) {
                 playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, "${container.context.getString(R.string.add_to)} " + playlist.name + "", "${playlist.videos.size} " + container.context.getString(R.string.videos), "",
                     {

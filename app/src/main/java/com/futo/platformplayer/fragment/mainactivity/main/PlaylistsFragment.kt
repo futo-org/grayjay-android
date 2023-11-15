@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
@@ -54,6 +55,14 @@ class PlaylistsFragment : MainFragment() {
         _view?.onShown(parameter, isBack);
     }
 
+    override fun onBackPressed(): Boolean {
+        if (_view?.onBackPressed() == true) {
+            return true;
+        }
+
+        return super.onBackPressed()
+    }
+
     @SuppressLint("ViewConstructor")
     class PlaylistsView : LinearLayout {
         private val _fragment: PlaylistsFragment;
@@ -64,6 +73,7 @@ class PlaylistsFragment : MainFragment() {
         private var _adapterWatchLater: VideoListHorizontalAdapter;
         private var _adapterPlaylist: PlaylistsAdapter;
         private var _layoutWatchlist: ConstraintLayout;
+        private var _slideUpOverlay: SlideUpMenuOverlay? = null;
 
         constructor(fragment: PlaylistsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -92,39 +102,22 @@ class PlaylistsFragment : MainFragment() {
             recyclerPlaylists.adapter = _adapterPlaylist;
             recyclerPlaylists.layoutManager = LinearLayoutManager(context);
 
-            val nameInput = SlideUpMenuTextInput(context, context.getString(R.string.name));
-            val addPlaylistOverlay = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_create_playlist), context.getString(R.string.create_new_playlist), context.getString(R.string.ok), false, nameInput);
+
+
+            val buttonCreatePlaylist = findViewById<ImageButton>(R.id.button_create_playlist);
+            buttonCreatePlaylist.setOnClickListener {
+                _slideUpOverlay = UISlideOverlays.showCreatePlaylistOverlay(findViewById<FrameLayout>(R.id.overlay_create_playlist)) {
+                    val playlist = Playlist(it, arrayListOf());
+                    playlists.add(0, playlist);
+                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+
+                    _adapterPlaylist.notifyItemInserted(0);
+                };
+            };
 
             _adapterPlaylist.onClick.subscribe { p -> _fragment.navigate<PlaylistFragment>(p); };
             _adapterPlaylist.onPlay.subscribe { p ->
                 StatePlayer.instance.setPlaylist(p, 0, true);
-            };
-
-            addPlaylistOverlay.onOK.subscribe {
-                val text = nameInput.text;
-                if (text.isBlank()) {
-                    return@subscribe;
-                }
-
-                val playlist = Playlist(text, arrayListOf());
-                playlists.add(0, playlist);
-                StatePlaylists.instance.createOrUpdatePlaylist(playlist);
-
-                _adapterPlaylist.notifyItemInserted(0);
-                addPlaylistOverlay.hide();
-                nameInput.deactivate();
-                nameInput.clear();
-            };
-
-            addPlaylistOverlay.onCancel.subscribe {
-                nameInput.deactivate();
-                nameInput.clear();
-            };
-
-            val buttonCreatePlaylist = findViewById<ImageButton>(R.id.button_create_playlist);
-            buttonCreatePlaylist.setOnClickListener {
-                addPlaylistOverlay.show();
-                nameInput.activate();
             };
 
             _appBar = findViewById(R.id.app_bar);
@@ -142,10 +135,26 @@ class PlaylistsFragment : MainFragment() {
 
         fun onShown(parameter: Any?, isBack: Boolean) {
             playlists.clear()
-            playlists.addAll(StatePlaylists.instance.getPlaylists().sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) });
+            playlists.addAll(
+                StatePlaylists.instance.getPlaylists()
+                    .sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) });
             _adapterPlaylist.notifyDataSetChanged();
 
             updateWatchLater();
+        }
+
+        fun onBackPressed(): Boolean {
+            val slideUpOverlay = _slideUpOverlay;
+            if (slideUpOverlay != null) {
+                if (slideUpOverlay.isVisible) {
+                    slideUpOverlay.hide();
+                    return true;
+                }
+
+                return false;
+            }
+
+            return false;
         }
 
         private fun updateWatchLater() {
