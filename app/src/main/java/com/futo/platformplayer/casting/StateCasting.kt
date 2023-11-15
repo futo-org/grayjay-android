@@ -486,7 +486,7 @@ class StateCasting {
         }
         if (subtitleSource != null) {
             _castServer.addHandler(
-                HttpFileHandler("GET", subtitlePath, subtitleSource.format ?: "text/vtt", subtitleSource.filePath, true)
+                HttpFileHandler("GET", subtitlePath, subtitleSource.format ?: "text/vtt", subtitleSource.filePath)
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
             _castServer.addHandler(

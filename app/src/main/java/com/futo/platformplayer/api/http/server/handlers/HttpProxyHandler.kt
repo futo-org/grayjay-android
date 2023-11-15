@@ -4,6 +4,7 @@ import android.net.Uri
 import com.futo.platformplayer.api.http.server.HttpContext
 import com.futo.platformplayer.api.http.server.HttpHeaders
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.logging.Logger
 
 class HttpProxyHandler(method: String, path: String, val targetUrl: String): HttpHandler(method, path) {
     var content: String? = null;
@@ -34,8 +35,8 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String): Htt
             proxyHeaders.put("Referer", targetUrl);
 
         val useMethod = if (method == "inherit") context.method else method;
-        //Logger.i(TAG, "Proxied Request ${useMethod}: ${targetUrl}");
-        //Logger.i(TAG, "Headers:" + proxyHeaders.map { "${it.key}: ${it.value}" }.joinToString("\n"));
+        Logger.i(TAG, "Proxied Request ${useMethod}: ${targetUrl}");
+        Logger.i(TAG, "Headers:" + proxyHeaders.map { "${it.key}: ${it.value}" }.joinToString("\n"));
 
         val resp = when (useMethod) {
             "GET" -> _client.get(targetUrl, proxyHeaders);
@@ -44,7 +45,7 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String): Htt
             else -> _client.requestMethod(useMethod, targetUrl, proxyHeaders);
         };
 
-        //Logger.i(TAG, "Proxied Response [${resp.code}]");
+        Logger.i(TAG, "Proxied Response [${resp.code}]");
         val headersFiltered = HttpHeaders(resp.getHeadersFlat().filter { !_ignoreRequestHeaders.contains(it.key.lowercase()) });
         for(newHeader in headers)
             headersFiltered.put(newHeader.key, newHeader.value);
@@ -91,5 +92,9 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String): Htt
         _injectReferer = true;
         _ignoreRequestHeaders.add("referer");
         return this;
+    }
+
+    companion object {
+        private const val TAG = "HttpProxyHandler"
     }
 }
