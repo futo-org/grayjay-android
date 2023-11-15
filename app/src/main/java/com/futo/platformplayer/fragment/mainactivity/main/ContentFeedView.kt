@@ -166,11 +166,14 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
 
     protected open fun onContentClicked(content: IPlatformContent, time: Long) {
         if(content is IPlatformVideo) {
-            StatePlayer.instance.clearQueue();
-            if (Settings.instance.playback.shouldResumePreview(time))
-                fragment.navigate<VideoDetailFragment>(content.withTimestamp(time)).maximizeVideoDetail();
-            else
-                fragment.navigate<VideoDetailFragment>(content).maximizeVideoDetail();
+            if (StatePlayer.instance.hasQueue) {
+                StatePlayer.instance.addToQueue(content)
+            } else {
+                if (Settings.instance.playback.shouldResumePreview(time))
+                    fragment.navigate<VideoDetailFragment>(content.withTimestamp(time)).maximizeVideoDetail();
+                else
+                    fragment.navigate<VideoDetailFragment>(content).maximizeVideoDetail();
+            }
         } else if (content is IPlatformPlaylist) {
             fragment.navigate<PlaylistFragment>(content);
         } else if (content is IPlatformPost) {
