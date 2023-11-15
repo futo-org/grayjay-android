@@ -12,10 +12,10 @@ import com.futo.platformplayer.getOrThrow
 class JSChapter : IChapter {
     override val name: String;
     override val type: ChapterType;
-    override val timeStart: Int;
-    override val timeEnd: Int;
+    override val timeStart: Double;
+    override val timeEnd: Double;
 
-    constructor(name: String, timeStart: Int, timeEnd: Int, type: ChapterType = ChapterType.NORMAL) {
+    constructor(name: String, timeStart: Double, timeEnd: Double, type: ChapterType = ChapterType.NORMAL) {
         this.name = name;
         this.timeStart = timeStart;
         this.timeEnd = timeEnd;
@@ -29,8 +29,8 @@ class JSChapter : IChapter {
 
             val name = obj.getOrThrow<String>(config,"name", context);
             val type = ChapterType.fromInt(obj.getOrDefault<Int>(config, "type", context, ChapterType.NORMAL.value) ?: ChapterType.NORMAL.value);
-            val timeStart = obj.getOrThrow<Int>(config, "timeStart", context);
-            val timeEnd = obj.getOrThrow<Int>(config, "timeEnd", context);
+            val timeStart = obj.getOrThrow<Double>(config, "timeStart", context);
+            val timeEnd = obj.getOrThrow<Double>(config, "timeEnd", context);
 
             return JSChapter(name, timeStart, timeEnd, type);
         }

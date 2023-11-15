@@ -360,6 +360,8 @@
     <string name="restore_a_previous_automatic_backup">Restore a previous automatic backup</string>
     <string name="resume_after_preview">Resume After Preview</string>
     <string name="review_the_current_and_past_changelogs">Review the current and past changelogs</string>
+    <string name="chapter_update_fps_title">Chapter Update FPS</string>
+    <string name="chapter_update_fps_description">Change accuracy of chapter updating, higher might cost more performance</string>
     <string name="set_automatic_backup">Set Automatic Backup</string>
     <string name="shortly_after_opening_the_app_start_fetching_subscriptions">Shortly after opening the app, start fetching subscriptions</string>
     <string name="show_faq">Show FAQ</string>
@@ -778,6 +780,12 @@
         <item>Start At Beginning</item>
         <item>Resume After 10s</item>
         <item>Always Resume</item>
+    </string-array>
+    <string-array name="chapter_fps">
+        <item>24</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
     </string-array>
     <string-array name="audio_languages">
         <item>English</item>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.os.Handler
 import android.util.AttributeSet
 import android.util.Log
 import android.util.TypedValue
@@ -16,6 +17,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
+import androidx.lifecycle.LifecycleOwner
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -35,6 +37,10 @@ import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.StyledPlayerView
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.video.VideoSize
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 
@@ -91,6 +97,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     var isFitMode : Boolean = false
         private set;
 
+    private var _isScrubbing = false;
+    private val _currentChapterLoopLock = Object();
+    private var _currentChapterLoopActive = false;
+    private var _currentChapterLoopId: Int = 0;
     private var _currentChapter: IChapter? = null;
 
 
@@ -186,18 +196,30 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         if (!attrShowMinimize)
             _control_minimize.visibility = View.GONE;
 
+        var lastScrubPosition = 0L;
         _time_bar_listener = object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
+                _isScrubbing = true;
+                Logger.i(TAG, "Scrubbing started");
                 gestureControl.restartHideJob();
             }
 
             override fun onScrubMove(timeBar: TimeBar, position: Long) {
                 gestureControl.restartHideJob();
 
-                updateCurrentChapter(position);
+                val playerPosition = position;
+                val scrubDelta = abs(lastScrubPosition - position);
+                lastScrubPosition = position;
+
+                if(scrubDelta > 1000 || Math.abs(position - playerPosition) > 500)
+                    _currentChapterUpdateExecuter.execute {
+                        updateCurrentChapter(position);
+                    }
             }
 
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
+                _isScrubbing = false;
+                Logger.i(TAG, "Scrubbing stopped");
                 gestureControl.restartHideJob();
             }
         };
@@ -239,15 +261,16 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             UIDialogs.showCastingDialog(context);
         };
 
-        var lastPos = 0L;
         videoControls.setProgressUpdateListener { position, bufferedPosition ->
             onTimeBarChanged.emit(position, bufferedPosition);
 
-            val delta = position - lastPos;
-            if(delta > 1000 || delta < 0) {
-                lastPos = position;
-                updateCurrentChapter();
-            }
+            if(!_currentChapterLoopActive)
+                synchronized(_currentChapterLoopLock) {
+                    if(!_currentChapterLoopActive) {
+                        _currentChapterLoopActive = true;
+                        updateChaptersLoop(++_currentChapterLoopId);
+                    }
+                }
         }
 
         if(!isInEditMode) {
@@ -255,24 +278,58 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         }
     }
 
+    private val _currentChapterUpdateInterval: Long = 1000L / Settings.instance.playback.getChapterUpdateFrames();
+    private var _currentChapterUpdateLastPos = 0L;
+    private val _currentChapterUpdateExecuter = Executors.newSingleThreadScheduledExecutor();
+    private fun updateChaptersLoop(loopId: Int) {
+        if(_currentChapterLoopId == loopId) {
+            _currentChapterLoopActive = true;
+            _currentChapterUpdateExecuter.schedule({
+                try {
+                    if(!_isScrubbing) {
+                        var pos: Long =  runBlocking(Dispatchers.Main) { position; };
+                        val delta = pos - _currentChapterUpdateLastPos;
+                        if(delta > _currentChapterUpdateInterval || delta < 0) {
+                            _currentChapterUpdateLastPos = pos;
+                            if(updateCurrentChapter(pos))
+                                Logger.i(TAG, "Updated chapter to [${_currentChapter?.name}] with speed ${delta}ms (${pos - (_currentChapter?.timeStart?.times(1000)?.toLong() ?: 0)}ms late [${_currentChapter?.timeStart}s])");
+                        }
+                    }
+                    if(playingCached)
+                        updateChaptersLoop(loopId);
+                    else
+                        _currentChapterLoopActive = false;
+                }
+                catch(ex: Throwable) {
+                    _currentChapterLoopActive = false;
+                }
+            }, _currentChapterUpdateInterval, TimeUnit.MILLISECONDS);
+        }
+        else
+            _currentChapterLoopActive = false;
+    }
+
     fun attachPlayer() {
         exoPlayer?.attach(_videoView, PLAYER_STATE_NAME);
     }
 
-    fun updateCurrentChapter(pos: Long? = null) {
-        val chaptPos = pos ?: position;
+    fun updateCurrentChapter(chaptPos: Long, isScrub: Boolean = false): Boolean {
         val currentChapter = getCurrentChapter(chaptPos);
         if(_currentChapter != currentChapter) {
             _currentChapter = currentChapter;
-            if (currentChapter != null) {
-                _control_chapter.text = " • " + currentChapter.name;
-                _control_chapter_fullscreen.text = " • " + currentChapter.name;
-            } else {
-                _control_chapter.text = "";
-                _control_chapter_fullscreen.text = "";
+            runBlocking(Dispatchers.Main) {
+                if (currentChapter != null) {
+                    _control_chapter.text = " • " + currentChapter.name;
+                    _control_chapter_fullscreen.text = " • " + currentChapter.name;
+                } else {
+                    _control_chapter.text = "";
+                    _control_chapter_fullscreen.text = "";
+                }
+                onChapterChanged.emit(currentChapter, isScrub);
             }
-            onChapterChanged.emit(currentChapter, pos != null);
+            return true;
         }
+        return false;
     }
 
     fun setArtwork(drawable: Drawable?) {

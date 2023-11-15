@@ -210,7 +210,8 @@ class GestureControlView : LinearLayout {
 
                 hideControls();
             } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to hide controls", e);
+                if(e !is CancellationException)
+                    Logger.e(TAG, "Failed to hide controls", e);
             }
         };
     }

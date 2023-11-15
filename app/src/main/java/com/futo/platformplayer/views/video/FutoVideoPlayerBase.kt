@@ -60,6 +60,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         private set;
     val exoPlayerStateName: String;
 
+    protected var playingCached: Boolean = false;
     val playing: Boolean get() = exoPlayer?.player?.playWhenReady ?: false;
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
@@ -103,6 +104,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             super.onPlayWhenReadyChanged(playWhenReady, reason)
             onPlayChanged.emit(playWhenReady);
+            playingCached = playWhenReady;
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -167,6 +169,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun seekTo(ms: Long) {
+        Logger.i(TAG, "Seeking to [${ms}ms]");
         exoPlayer?.player?.seekTo(ms);
     }
     fun seekToEnd(ms: Long = 0) {
@@ -218,7 +221,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return _chapters?.let { it.toList() } ?: listOf();
     }
     fun getCurrentChapter(pos: Long): IChapter? {
-        return _chapters?.let { chaps -> chaps.find { pos / 1000 > it.timeStart && pos / 1000 < it.timeEnd } };
+        return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd } };
     }
 
     fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false) {

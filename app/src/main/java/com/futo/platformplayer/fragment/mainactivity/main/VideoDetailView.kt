@@ -419,7 +419,7 @@ class VideoDetailView : ConstraintLayout {
                     _layoutSkip.visibility = VISIBLE;
                 }
                 else if(chapter?.type == ChapterType.SKIP) {
-                    _player.seekTo(chapter.timeEnd.toLong() * 1000);
+                    _player.seekTo((chapter.timeEnd * 1000).toLong());
                     UIDialogs.toast(context, "Skipped chapter [${chapter.name}]", false);
                 }
             }
@@ -615,7 +615,7 @@ class VideoDetailView : ConstraintLayout {
         _layoutSkip.setOnClickListener {
             val currentChapter = _player.getCurrentChapter(_player.position);
             if(currentChapter?.type == ChapterType.SKIPPABLE) {
-                _player.seekTo(currentChapter.timeEnd.toLong() * 1000);
+                _player.seekTo((currentChapter.timeEnd * 1000).toLong());
             }
         }
     }

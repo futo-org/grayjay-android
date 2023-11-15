@@ -109,11 +109,29 @@ inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextN
             else
                 return this.expectOrThrow<V8ValueLong>(config, contextName).value.toLong() as T
         };
+        Float::class -> {
+            if(this is V8ValueDouble)
+                return this.value.toFloat() as T;
+            else if(this is V8ValueInteger)
+                return this.value.toFloat() as T;
+            else if(this is V8ValueLong)
+                return this.value.toFloat() as T;
+            else
+                return this.expectOrThrow<V8ValueDouble>(config, contextName).value.toDouble() as T
+        };
+        Double::class -> {
+            if(this is V8ValueDouble)
+                return this.value.toDouble() as T;
+            else if(this is V8ValueInteger)
+                return this.value.toDouble() as T;
+            else if(this is V8ValueLong)
+                return this.value.toDouble() as T;
+            else
+                return this.expectOrThrow<V8ValueDouble>(config, contextName).value.toDouble() as T
+        };
         V8ValueObject::class -> this.expectOrThrow<V8ValueObject>(config, contextName) as T
         V8ValueArray::class -> this.expectOrThrow<V8ValueArray>(config, contextName) as T;
         Boolean::class -> this.expectOrThrow<V8ValueBoolean>(config, contextName).value as T;
-        Float::class -> this.expectOrThrow<V8ValueDouble>(config, contextName).value.toFloat() as T;
-        Double::class -> this.expectOrThrow<V8ValueDouble>(config, contextName).value as T;
         HashMap::class -> this.expectOrThrow<V8ValueObject>(config, contextName).let { V8ObjectToHashMap(it) } as T;
         Map::class -> this.expectOrThrow<V8ValueObject>(config, contextName).let { V8ObjectToHashMap(it) } as T;
         List::class -> this.expectOrThrow<V8ValueArray>(config, contextName).let { V8ArrayToStringList(it) } as T;

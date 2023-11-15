@@ -6,8 +6,8 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 interface IChapter {
     val name: String;
     val type: ChapterType;
-    val timeStart: Int;
-    val timeEnd: Int;
+    val timeStart: Double;
+    val timeEnd: Double;
 }
 
 enum class ChapterType(val value: Int) {

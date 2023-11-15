@@ -337,12 +337,26 @@ class Settings : FragmentedStorageFileJson() {
             return false;
         }
 
-        @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 8)
+        @FormField(R.string.chapter_update_fps_title, FieldForm.DROPDOWN, R.string.chapter_update_fps_description, 8)
+        @DropdownFieldOptionsId(R.array.chapter_fps)
+        var chapterUpdateFPS: Int = 0;
+
+        fun getChapterUpdateFrames(): Int {
+            return when(chapterUpdateFPS) {
+                0 -> 24
+                1 -> 30
+                2 -> 60
+                3 -> 120
+                else -> 1
+            };
+        }
+
+        @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 9)
         var useLiveChatWindow: Boolean = true;
 
 
 
-        @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 8)
+        @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
         var backgroundSwitchToAudio: Boolean = true;
     }
 
