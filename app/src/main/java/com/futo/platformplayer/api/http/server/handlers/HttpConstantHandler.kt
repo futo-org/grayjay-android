@@ -7,7 +7,6 @@ class HttpConstantHandler(method: String, path: String, val content: String, val
         val headers = this.headers.clone();
         if(contentType != null)
             headers["Content-Type"] = contentType;
-        headers["Content-Length"] = content.length.toString();
 
         httpContext.respondCode(200, headers, content);
     }
