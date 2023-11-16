@@ -1,4 +1,4 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.animation.ObjectAnimator
 import android.content.Context

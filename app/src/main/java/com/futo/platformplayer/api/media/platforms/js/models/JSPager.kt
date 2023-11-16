@@ -59,8 +59,6 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun getResults(): List<T> {
-        warnIfMainThread("JSPager.getResults");
-
         val previousResults = _lastResults?.let {
             if(!_resultChanged)
                 return@let it;
@@ -70,6 +68,7 @@ abstract class JSPager<T> : IPager<T> {
         if(previousResults != null)
             return previousResults;
 
+        warnIfMainThread("JSPager.getResults");
         val items = pager.getOrThrow<V8ValueArray>(config, "results", "JSPager");
         val newResults = items.toArray()
             .map { convertResult(it as V8ValueObject) }

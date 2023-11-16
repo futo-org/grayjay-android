@@ -20,7 +20,6 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -46,7 +45,7 @@ import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.others.Toggle
-import com.futo.platformplayer.views.adapters.PreviewPostView
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.polycentric.core.ApiMethods

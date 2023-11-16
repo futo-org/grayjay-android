@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,7 +12,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
@@ -36,7 +34,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.adapters.PreviewContentListAdapter
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +54,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
     val onContentClicked = Event2<IPlatformContent, Long>();
     val onContentUrlClicked = Event2<String, ContentType>();
+    val onUrlClicked = Event1<String>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
     val onAddToQueueClicked = Event1<IPlatformContent>();
@@ -75,15 +74,14 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
     }
 
     private val _taskLoadVideos = TaskHandler<IPlatformChannel, IPager<IPlatformContent>>({lifecycleScope}, {
-            return@TaskHandler getContentPager(it);
+            val livePager = getContentPager(it);
+            return@TaskHandler if(_channel?.let { StateSubscriptions.instance.isSubscribed(it) } == true)
+                ChannelContentCache.cachePagerResults(lifecycleScope, livePager);
+            else livePager;
         }).success { livePager ->
             setLoading(false);
 
-            val pager = if(_channel?.let { StateSubscriptions.instance.isSubscribed(it) } == true)
-                ChannelContentCache.cachePagerResults(lifecycleScope, livePager);
-            else livePager;
-
-            setPager(pager);
+            setPager(livePager);
         }
         .exception<ScriptCaptchaRequiredException> {  }
         .exception<Throwable> {
@@ -155,6 +153,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
         _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
+            this.onUrlClicked.subscribe(this@ChannelContentsFragment.onUrlClicked::emit);
             this.onContentClicked.subscribe(this@ChannelContentsFragment.onContentClicked::emit);
             this.onChannelClicked.subscribe(this@ChannelContentsFragment.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@ChannelContentsFragment.onAddToClicked::emit);

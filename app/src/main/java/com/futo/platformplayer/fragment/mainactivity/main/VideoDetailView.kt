@@ -1087,7 +1087,7 @@ class VideoDetailView : ConstraintLayout {
 
         _player.setMetadata(video.name, video.author.name);
 
-        _toggleCommentType.setValue(false, false);
+        _toggleCommentType.setValue(Settings.instance.comments.defaultCommentSection == 1, false);
         updateCommentType(true);
 
         //UI

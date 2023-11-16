@@ -211,6 +211,16 @@ class PlatformNestedMediaContent extends PlatformContent {
         this.contentThumbnails = obj.contentThumbnails ?? new Thumbnails();
     }
 }
+class PlatformLockedContent extends PlatformContent {
+    constructor(obj) {
+        super(obj, 70);
+        obj = obj ?? {};
+        this.contentName = obj.contentName;
+        this.contentThumbnails = obj.contentThumbnails ?? new Thumbnails();
+        this.unlockUrl = obj.unlockUrl ?? "";
+        this.lockDescription = obj.lockDescription;
+    }
+}
 class PlatformVideo extends PlatformContent {
     constructor(obj) {
         super(obj, 1);

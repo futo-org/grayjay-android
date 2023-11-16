@@ -360,6 +360,15 @@ class Settings : FragmentedStorageFileJson() {
         var backgroundSwitchToAudio: Boolean = true;
     }
 
+    @FormField(R.string.comments, "group", R.string.comments_description, 4)
+    var comments = CommentSettings();
+    @Serializable
+    class CommentSettings {
+        @FormField(R.string.default_comment_section, FieldForm.DROPDOWN, -1, 0)
+        @DropdownFieldOptionsId(R.array.comment_sections)
+        var defaultCommentSection: Int = 0;
+    }
+
     @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 5)
     var downloads = Downloads();
     @Serializable

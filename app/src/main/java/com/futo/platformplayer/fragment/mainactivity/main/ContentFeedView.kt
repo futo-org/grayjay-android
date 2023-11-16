@@ -1,6 +1,5 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,15 +16,14 @@ import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.adapters.PreviewContentListAdapter
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
-import com.futo.platformplayer.views.adapters.PreviewNestedVideoViewHolder
-import com.futo.platformplayer.views.adapters.PreviewVideoViewHolder
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewNestedVideoViewHolder
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewVideoViewHolder
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import kotlin.math.floor
@@ -66,6 +64,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
 
     private fun attachAdapterEvents(adapter: PreviewContentListAdapter) {
         adapter.onContentUrlClicked.subscribe(this, this@ContentFeedView::onContentUrlClicked);
+        adapter.onUrlClicked.subscribe(this, this@ContentFeedView::onUrlClicked);
         adapter.onContentClicked.subscribe(this) { content, time ->
             this@ContentFeedView.onContentClicked(content, time);
         };
@@ -132,6 +131,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     private fun detachAdapterEvents() {
         val adapter = recyclerData.adapter as PreviewContentListAdapter? ?: return;
         adapter.onContentUrlClicked.remove(this);
+        adapter.onUrlClicked.remove(this);
         adapter.onContentClicked.remove(this);
         adapter.onChannelClicked.remove(this);
         adapter.onAddToClicked.remove(this);
@@ -190,6 +190,9 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             ContentType.URL -> fragment.navigate<BrowserFragment>(url);
             else -> {};
         }
+    }
+    protected open fun onUrlClicked(url: String) {
+        fragment.navigate<BrowserFragment>(url);
     }
 
     private fun playPreview() {

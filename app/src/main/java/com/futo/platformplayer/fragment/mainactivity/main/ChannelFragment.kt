@@ -210,6 +210,9 @@ class ChannelFragment : MainFragment() {
                     UIDialogs.toast(context, "Queued [$name]", false);
                 }
             }
+            adapter.onUrlClicked.subscribe { url ->
+                fragment.navigate<BrowserFragment>(url);
+            }
             adapter.onContentUrlClicked.subscribe { url, contentType ->
                 when(contentType) {
                     ContentType.MEDIA -> {

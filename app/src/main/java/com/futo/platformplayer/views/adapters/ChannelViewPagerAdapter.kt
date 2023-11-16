@@ -15,6 +15,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
     private val _cache: Array<Fragment?> = arrayOfNulls(4);
 
     val onContentUrlClicked = Event2<String, ContentType>();
+    val onUrlClicked = Event1<String>();
     val onContentClicked = Event2<IPlatformContent, Long>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
@@ -50,6 +51,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
             0 -> ChannelContentsFragment.newInstance().apply {
                 onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit);
                 onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit);
+                onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit);
                 onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit);
                 onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit);
                 onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit);

@@ -23,6 +23,7 @@ interface IJSContent: IPlatformContent  {
                 ContentType.POST -> JSPost(config, obj);
                 ContentType.NESTED_VIDEO -> JSNestedMediaContent(config, obj);
                 ContentType.PLAYLIST -> JSPlaylist(config, obj);
+                ContentType.LOCKED -> JSLockedContent(config, obj);
                 else -> throw NotImplementedError("Unknown content type ${type}");
             }
         }

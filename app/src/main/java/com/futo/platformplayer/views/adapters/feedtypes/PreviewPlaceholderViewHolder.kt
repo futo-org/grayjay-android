@@ -1,4 +1,4 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.content.Context
 import android.graphics.drawable.Animatable
@@ -12,6 +12,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.contents.PlatformContentPlaceholder
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.platform.PlatformIndicator
 
 

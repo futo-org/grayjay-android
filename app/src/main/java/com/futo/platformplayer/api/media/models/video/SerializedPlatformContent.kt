@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media.models.video
 
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.locked.IPlatformLockedContent
 import com.futo.platformplayer.api.media.models.nested.IPlatformNestedContent
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.serializers.PlatformContentSerializer
@@ -18,6 +19,7 @@ interface SerializedPlatformContent: IPlatformContent {
                 ContentType.MEDIA -> SerializedPlatformVideo.fromVideo(content as IPlatformVideo);
                 ContentType.NESTED_VIDEO -> SerializedPlatformNestedContent.fromNested(content as IPlatformNestedContent);
                 ContentType.POST -> SerializedPlatformPost.fromPost(content as IPlatformPost);
+                ContentType.LOCKED -> SerializedPlatformLockedContent.fromLocked(content as IPlatformLockedContent);
                 else -> throw NotImplementedError("Content type ${content.contentType} not implemented");
             };
         }

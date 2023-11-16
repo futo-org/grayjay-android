@@ -80,6 +80,7 @@
     <string name="developer">Developer</string>
     <string name="remove_historical_suggestion">Remove historical suggestion</string>
     <string name="comments">Comments</string>
+    <string name="comments_description">The comment section underneath content</string>
     <string name="merchandise">Merchandise</string>
     <string name="reached_the_end_of_the_playlist">Reached the end of the playlist</string>
     <string name="the_playlist_will_restart_after_the_video_is_finished">The playlist will restart after the video is finished</string>
@@ -219,6 +220,7 @@
     <string name="construction">CONSTRUCTION</string>
     <string name="disable">Disable</string>
     <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">The following content cannot be opened in Grayjay due to a missing plugin.</string>
+    <string name="locked_content_description">This content is locked</string>
     <string name="unknown">Unknown</string>
     <string name="tap_to_open_in_browser">Tap to open in browser</string>
     <string name="missing_plugin">Missing Plugin</string>
@@ -349,6 +351,7 @@
     <string name="preferred_metered_quality">Preferred Metered Quality</string>
     <string name="preferred_preview_quality">Preferred Preview Quality</string>
     <string name="primary_language">Primary Language</string>
+    <string name="default_comment_section">Default Comment Section</string>
     <string name="reinstall_embedded_plugins">Reinstall Embedded Plugins</string>
     <string name="remove_cached_version">Remove Cached Version</string>
     <string name="remove_the_last_downloaded_version">Remove the last downloaded version</string>
@@ -788,6 +791,10 @@
         <item>30</item>
         <item>60</item>
         <item>120</item>
+    </string-array>
+    <string-array name="comment_sections">
+        <item>Polycentric</item>
+        <item>Platform</item>
     </string-array>
     <string-array name="audio_languages">
         <item>English</item>

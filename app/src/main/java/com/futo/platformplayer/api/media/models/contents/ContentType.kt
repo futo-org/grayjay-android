@@ -13,6 +13,7 @@ enum class ContentType(val value: Int) {
 
     NESTED_VIDEO(11),
 
+    LOCKED(70),
 
     PLACEHOLDER(90),
     DEFERRED(91);

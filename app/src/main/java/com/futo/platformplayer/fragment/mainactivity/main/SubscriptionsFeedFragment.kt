@@ -280,7 +280,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
             val nowSoon = OffsetDateTime.now().plusMinutes(5);
             return results.filter {
-                val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO) ContentType.MEDIA else it.contentType);
+                val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
 
                 if(it.datetime?.isAfter(nowSoon) == true) {
                     if(!_filterSettings.allowPlanned)

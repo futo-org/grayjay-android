@@ -1,4 +1,4 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.view.ViewGroup
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 
 
 class PreviewPostViewHolder : ContentPreviewViewHolder {
@@ -18,7 +19,9 @@ class PreviewPostViewHolder : ContentPreviewViewHolder {
 
     private val view: PreviewPostView get() = itemView as PreviewPostView;
 
-    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(PreviewPostView(viewGroup.context, feedStyle)) {
+    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(
+        PreviewPostView(viewGroup.context, feedStyle)
+    ) {
         view.onContentClicked.subscribe(onContentClicked::emit);
         view.onChannelClicked.subscribe(onChannelClicked::emit);
     }
