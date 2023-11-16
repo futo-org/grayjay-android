@@ -7,13 +7,15 @@ import com.futo.platformplayer.api.media.Serializer
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.OutputStream
 import java.io.StringWriter
 import java.net.SocketTimeoutException
+import java.nio.ByteBuffer
 
 class HttpContext : AutoCloseable {
-    private val _stream: BufferedReader;
+    private val _stream: BufferedInputStream;
     private var _responseStream: OutputStream? = null;
     
     var id: String? = null;
@@ -38,14 +40,40 @@ class HttpContext : AutoCloseable {
 
     private val _responseHeaders: HttpHeaders = HttpHeaders();
 
+    private val newLineByte = "\n"[0];
+    private fun readStreamLine(): String {
+        //TODO: This is not ideal..
+        var twoByteArray = ByteBuffer.allocate(2);
+        var lastChar: Char = Char.MIN_VALUE;
+        val builder = StringBuilder();
+        do {
+            val firstByte = _stream.read();
+            if(firstByte == -1)
+                break;
+            if(isCharacter2Bytes(firstByte)) {
+                twoByteArray.put(0, firstByte.toByte());
+                val secondByte = _stream.read();
+                if(secondByte == -1)
+                    break;
+                twoByteArray.put(1, secondByte.toByte());
+            }
+            else
+                lastChar = firstByte.toChar();
+            builder.append(lastChar);
+            if(lastChar == newLineByte)
+                break;
+        }
+        while(lastChar != Char.MIN_VALUE);
+        return builder.toString();
+    }
 
-    constructor(stream: BufferedReader, responseStream: OutputStream? = null, requestId: String? = null, timeout: Int? = null) {
+    constructor(stream: BufferedInputStream, responseStream: OutputStream? = null, requestId: String? = null, timeout: Int? = null) {
         _stream = stream;
         _responseStream = responseStream;
         this.id = requestId;
 
         try {
-            head = stream.readLine() ?: throw EmptyRequestException("No head found");
+            head = readStreamLine() ?: throw EmptyRequestException("No head found");
         }
         catch(ex: SocketTimeoutException) {
             if((timeout ?: 0) > 0)
@@ -78,7 +106,7 @@ class HttpContext : AutoCloseable {
         }
 
         while (true) {
-            val line = stream.readLine();
+            val line = readStreamLine();
             val headerEndIndex = line.indexOf(":");
             if (headerEndIndex == -1)
                 break;
@@ -172,27 +200,37 @@ class HttpContext : AutoCloseable {
         statusCode = status;
     }
 
-    fun readContentBytes(buffer: CharArray, length: Int) : Int {
-        val reading = Math.min(length, (contentLength - _totalRead).toInt());
+    fun readContentBytes(buffer: ByteArray, length: Int) : Int {
+        val reading = if(contentLength - _totalRead < length)
+            (contentLength - _totalRead).toInt();
+        else
+            length;
         val read = _stream.read(buffer, 0, reading);
         _totalRead += read;
-
-        //TODO: Fix this properly
-        if(contentLength - _totalRead < 400 && read < length) {
-            _totalRead = contentLength;
-        }
         return read;
     }
     fun readContentString() : String{
         val writer = StringWriter();
         var read = 0;
-        val buffer = CharArray(4096);
+        val buffer = ByteArray(8192);
+        val twoByteArray = ByteArray(2);
         do {
             read = readContentBytes(buffer, buffer.size);
-            writer.write(buffer, 0, read);
-        } while(read > 0);// && _stream.ready());
-        //if(!_stream.ready())
-        //    _totalRead = contentLength;
+
+            if(read > 0) {
+                if (isCharacter2Bytes(buffer[read - 1].toInt())) {
+                    //Fixes overlapping buffers
+                    writer.write(String(buffer, 0, read - 1));
+                    twoByteArray[0] = buffer[read - 1];
+                    val secondByte = _stream.read();
+                    if (secondByte < 0)
+                        break;
+                    twoByteArray[1] = secondByte.toByte();
+                    writer.write(String(twoByteArray));
+                } else
+                    writer.write(String(buffer, 0, read));
+            }
+        } while(read > 0);
         return writer.toString();
     }
     inline fun <reified T> readContentJson() : T {
@@ -208,6 +246,10 @@ class HttpContext : AutoCloseable {
             _stream?.close();
             _responseStream?.close();
         }
+    }
+
+    private fun isCharacter2Bytes(firstByte: Int): Boolean {
+        return firstByte and 0xE0 == 0xC0
     }
 
     companion object {

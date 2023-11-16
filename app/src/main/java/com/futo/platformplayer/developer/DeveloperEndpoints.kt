@@ -301,7 +301,7 @@ class DeveloperEndpoints(private val context: Context) {
             if(method != "isLoggedIn")
                 Logger.i(TAG, "Remote Call [${objId}].${method}(...)");
 
-            val parameters = context.readContentString(); //TODO: Temporary
+            val parameters = context.readContentString();
 
             val remoteObj = getRemoteObject(objId);
             val paras = JsonParser.parseString(parameters);

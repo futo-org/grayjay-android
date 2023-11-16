@@ -5,8 +5,7 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.exceptions.EmptyRequestException
 import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpHandler
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.BufferedInputStream
 import java.io.OutputStream
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -76,12 +75,12 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
 
     private fun handleClientRequest(socket: Socket) {
         _workerPool?.submit {
-            val requestReader = BufferedReader(InputStreamReader(socket.getInputStream()))
+            val requestStream = BufferedInputStream(socket.getInputStream());
             val responseStream = socket.getOutputStream();
 
             val requestId = UUID.randomUUID().toString().substring(0, 5);
             try {
-                keepAliveLoop(requestReader, responseStream, requestId) { req ->
+                keepAliveLoop(requestStream, responseStream, requestId) { req ->
                     req.use { httpContext ->
                         if(!httpContext.path.startsWith("/plugin/"))
                             Logger.i(TAG, "[${req.id}] ${httpContext.method}: ${httpContext.path}")
@@ -107,7 +106,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
                 Logger.e(TAG, "Failed to handle client request.", e);
             }
             finally {
-                requestReader.close();
+                requestStream.close();
                 responseStream.close();
             }
         };
@@ -188,7 +187,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
         }
     }
 
-    private fun keepAliveLoop(requestReader: BufferedReader, responseStream: OutputStream, requestId: String, handler: (HttpContext)->Unit) {
+    private fun keepAliveLoop(requestReader: BufferedInputStream, responseStream: OutputStream, requestId: String, handler: (HttpContext)->Unit) {
         val stopCount = _stopCount;
         var keepAlive = false;
         var requestsMax = 0;
@@ -200,7 +199,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
             handler(req);
 
             requestsTotal++;
-            if(req.keepAlive){// && requestReader.ready()) {
+            if(req.keepAlive) {
                 keepAlive = true;
                 if(req.keepAliveMax > 0)
                     requestsMax = req.keepAliveMax;
