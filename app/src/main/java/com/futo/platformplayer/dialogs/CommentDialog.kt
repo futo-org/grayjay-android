@@ -85,6 +85,11 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
                 return@setOnClickListener;
             }
 
+            if (_editComment.text.isBlank()) {
+                UIDialogs.toast(context, "Comment should not be blank.");
+                return@setOnClickListener;
+            }
+
             val comment = _editComment.text.toString();
             val processHandle = StatePolycentric.instance.processHandle!!
             val eventPointer = processHandle.post(comment, null, ref)
