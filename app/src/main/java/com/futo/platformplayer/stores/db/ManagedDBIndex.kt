@@ -1,5 +1,8 @@
 package com.futo.platformplayer.stores.db
 
-class ManagedDBIndex {
+import androidx.room.PrimaryKey
 
-}
+open class ManagedDBIndex(
+    @PrimaryKey(true)
+    val id: Int? = null
+)
