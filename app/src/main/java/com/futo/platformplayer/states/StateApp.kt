@@ -1,24 +1,18 @@
 package com.futo.platformplayer.states
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.Uri
-import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
-import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -28,10 +22,9 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.media.Serializer
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.casting.StateCasting
@@ -43,20 +36,20 @@ import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
 import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.receivers.AudioNoisyReceiver
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ManagedStore
-import com.stripe.android.core.utils.encodeToJson
 import kotlinx.coroutines.*
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 /***
  * This class contains global context for unconventional cases where obtaining context is hard.
@@ -545,7 +538,73 @@ class StateApp {
 
         StateAnnouncement.instance.registerDidYouKnow();
         Logger.i(TAG, "MainApp Started: Finished");
+
+
+        if(true) {
+            Logger.i(TAG, "TEST:--------(200)---------");
+            testHistoryDB(200);
+            Logger.i(TAG, "TEST:--------(1000)---------");
+            testHistoryDB(1000);
+            Logger.i(TAG, "TEST:--------(2000)---------");
+            testHistoryDB(2000);
+            Logger.i(TAG, "TEST:--------(4000)---------");
+            testHistoryDB(4000);
+            Logger.i(TAG, "TEST:--------(6000)---------");
+            testHistoryDB(6000);
+        }
     }
+    fun testHistoryDB(count: Int) {
+        Logger.i(TAG, "TEST: Starting tests");
+        StatePlaylists.instance._historyDBStore.deleteAll();
+
+        val testHistoryItem = StatePlaylists.instance.getHistory().first();
+        val testItemJson = StatePlaylists.instance.getHistory().first().video.toJson();
+        val now = OffsetDateTime.now();
+
+        val testSet = (0..count).map { HistoryVideo(Json.decodeFromString<SerializedPlatformVideo>(testItemJson.replace(testHistoryItem.video.url, UUID.randomUUID().toString())), it.toLong(), now.minusHours(it.toLong())) }
+
+
+        Logger.i(TAG, "TEST: Inserting (${testSet.size})");
+        val insertMS = measureTimeMillis {
+            for(item in testSet)
+                StatePlaylists.instance._historyDBStore.insert(item);
+        };
+        Logger.i(TAG, "TEST: Inserting in ${insertMS}ms");
+
+        var fetched: List<DBHistory.Index>? = null;
+        val fetchMS = measureTimeMillis {
+            fetched = StatePlaylists.instance._historyDBStore.getAll();
+            Logger.i(TAG, "TEST: Fetched: ${fetched?.size}");
+        };
+        Logger.i(TAG, "TEST: Fetch speed ${fetchMS}MS");
+        val deserializeMS = measureTimeMillis {
+            val deserialized = StatePlaylists.instance._historyDBStore.convertObjects(fetched!!);
+            Logger.i(TAG, "TEST: Deserialized: ${deserialized.size}");
+        };
+        Logger.i(TAG, "TEST: Deserialize speed ${deserializeMS}MS");
+
+        var fetchedIndex: List<DBHistory.Index>? = null;
+        val fetchIndexMS = measureTimeMillis {
+            fetchedIndex = StatePlaylists.instance._historyDBStore.getAllIndexes();
+            Logger.i(TAG, "TEST: Fetched Index: ${fetchedIndex!!.size}");
+        };
+        Logger.i(TAG, "TEST: Fetched Index speed ${fetchIndexMS}ms");
+        val fetchFromIndex = measureTimeMillis {
+            for(preItem in testSet) {
+                val item = StatePlaylists.instance.historyIndex[preItem.video.url];
+                if(item == null)
+                    throw IllegalStateException("Missing item [${preItem.video.url}]");
+                if(item.url != preItem.video.url)
+                    throw IllegalStateException("Mismatch item [${preItem.video.url}]");
+            }
+        };
+        Logger.i(TAG, "TEST: Index Lookup speed ${fetchFromIndex}ms");
+
+        val page1 = StatePlaylists.instance._historyDBStore.getPage(0, 20);
+        val page2 = StatePlaylists.instance._historyDBStore.getPage(1, 20);
+        val page3 = StatePlaylists.instance._historyDBStore.getPage(2, 20);
+    }
+
     fun mainAppStartedWithExternalFiles(context: Context) {
         if(!Settings.instance.didFirstStart) {
             if(StateBackup.hasAutomaticBackup()) {

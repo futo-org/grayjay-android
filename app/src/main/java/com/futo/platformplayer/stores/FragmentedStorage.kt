@@ -2,6 +2,8 @@ package com.futo.platformplayer.stores
 
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.stores.db.ManagedDBIndex
+import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.StoreSerializer

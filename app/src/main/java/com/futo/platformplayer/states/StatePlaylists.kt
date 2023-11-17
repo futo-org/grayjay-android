@@ -3,6 +3,7 @@ package com.futo.platformplayer.states
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
@@ -19,6 +20,8 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.db.ManagedDBStore
+import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import kotlinx.serialization.encodeToString
@@ -26,6 +29,8 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 /***
  * Used to maintain playlists
@@ -48,6 +53,11 @@ class StatePlaylists {
         .load();
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
+        .load();
+
+    val historyIndex: ConcurrentMap<Any, DBHistory.Index> = ConcurrentHashMap();
+    val _historyDBStore = ManagedDBStore.create("history", DBHistory.Descriptor())
+        .withIndex({ it.url }, historyIndex)
         .load();
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
