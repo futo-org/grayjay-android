@@ -426,6 +426,9 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var enabled: Boolean = true;
 
+        @FormField(R.string.keep_screen_on, FieldForm.TOGGLE, R.string.keep_screen_on_while_casting, 1)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var keepScreenOn: Boolean = true;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)

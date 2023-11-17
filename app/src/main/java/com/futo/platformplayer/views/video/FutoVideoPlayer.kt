@@ -295,7 +295,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                                 Logger.i(TAG, "Updated chapter to [${_currentChapter?.name}] with speed ${delta}ms (${pos - (_currentChapter?.timeStart?.times(1000)?.toLong() ?: 0)}ms late [${_currentChapter?.timeStart}s])");
                         }
                     }
-                    if(playingCached)
+                    if(playing)
                         updateChaptersLoop(loopId);
                     else
                         _currentChapterLoopActive = false;

@@ -95,6 +95,8 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         _buttonUpdate.visibility = Button.GONE;
         setCancelable(false);
         setCanceledOnTouchOutside(false);
+
+        Logger.i(TAG, "Keep screen on set update")
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         _text.text = context.resources.getText(R.string.downloading_update);
@@ -178,6 +180,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
             }
         } finally {
             withContext(Dispatchers.Main) {
+                Logger.i(TAG, "Keep screen on unset install")
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         }

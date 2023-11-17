@@ -68,8 +68,6 @@ class VideoDetailFragment : MainFragment {
         super.onShownWithView(parameter, isBack);
         Logger.i(TAG, "onShownWithView parameter=$parameter")
 
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         if(parameter is IPlatformVideoDetails)
             _viewDetail?.setVideoDetails(parameter, true);
         else if (parameter is IPlatformVideo)
@@ -176,7 +174,6 @@ class VideoDetailFragment : MainFragment {
         _viewDetail?.onStop();
         close();
 
-        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         StatePlayer.instance.clearQueue();
         StatePlayer.instance.setPlayerClosed();
     }

@@ -60,6 +60,8 @@
     <string name="view_all">View all</string>
     <string name="creators">Creators</string>
     <string name="enabled">Enabled</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="keep_screen_on_while_casting">Keep screen on while casting</string>
     <string name="discover">Discover</string>
     <string name="find_new_video_sources_to_add">Find new video sources to add</string>
     <string name="these_sources_have_been_disabled">These sources have been disabled</string>

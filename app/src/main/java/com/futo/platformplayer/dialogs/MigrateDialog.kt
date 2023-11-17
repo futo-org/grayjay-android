@@ -144,6 +144,7 @@ class MigrateDialog : AlertDialog {
 
         setCancelable(false);
         setCanceledOnTouchOutside(false);
+        Logger.i(TAG, "Keep screen on set restore")
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         _updateSpinner.drawable?.assume<Animatable>()?.start();
@@ -214,6 +215,7 @@ class MigrateDialog : AlertDialog {
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to update import UI.", e)
                     } finally {
+                        Logger.i(TAG, "Keep screen on unset restore")
                         window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     }
                 }
