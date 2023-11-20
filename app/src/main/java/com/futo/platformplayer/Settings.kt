@@ -360,6 +360,15 @@ class Settings : FragmentedStorageFileJson() {
         var backgroundSwitchToAudio: Boolean = true;
     }
 
+    @FormField(R.string.comments, "group", R.string.comments_description, 4)
+    var comments = CommentSettings();
+    @Serializable
+    class CommentSettings {
+        @FormField(R.string.default_comment_section, FieldForm.DROPDOWN, -1, 0)
+        @DropdownFieldOptionsId(R.array.comment_sections)
+        var defaultCommentSection: Int = 0;
+    }
+
     @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 5)
     var downloads = Downloads();
     @Serializable
@@ -417,6 +426,9 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var enabled: Boolean = true;
 
+        @FormField(R.string.keep_screen_on, FieldForm.TOGGLE, R.string.keep_screen_on_while_casting, 1)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var keepScreenOn: Boolean = true;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)

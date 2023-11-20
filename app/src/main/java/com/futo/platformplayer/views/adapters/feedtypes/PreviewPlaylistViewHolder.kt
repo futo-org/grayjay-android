@@ -1,4 +1,4 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.view.ViewGroup
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -7,6 +7,8 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
+import com.futo.platformplayer.views.adapters.PlaylistView
 
 
 class PreviewPlaylistViewHolder : ContentPreviewViewHolder {

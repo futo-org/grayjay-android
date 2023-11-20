@@ -1,4 +1,4 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.content.Context
 import android.util.Log
@@ -18,6 +18,9 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
+import com.futo.platformplayer.views.adapters.EmptyPreviewViewHolder
+import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 
 class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewViewHolder> {
     private var _initialPlay = true;
@@ -27,6 +30,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     private val _feedStyle : FeedStyle;
     private var _paused: Boolean = false;
 
+    val onUrlClicked = Event1<String>();
     val onContentUrlClicked = Event2<String, ContentType>();
     val onContentClicked = Event2<IPlatformContent, Long>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
@@ -72,6 +76,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
             ContentType.POST -> createPostViewHolder(viewGroup);
             ContentType.PLAYLIST -> createPlaylistViewHolder(viewGroup);
             ContentType.NESTED_VIDEO -> createNestedViewHolder(viewGroup);
+            ContentType.LOCKED -> createLockedViewHolder(viewGroup);
             else -> EmptyPreviewViewHolder(viewGroup)
         }
     }
@@ -86,6 +91,9 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
         this.onAddToClicked.subscribe(this@PreviewContentListAdapter.onAddToClicked::emit);
         this.onAddToQueueClicked.subscribe(this@PreviewContentListAdapter.onAddToQueueClicked::emit);
+    };
+    private fun createLockedViewHolder(viewGroup: ViewGroup): PreviewLockedViewHolder = PreviewLockedViewHolder(viewGroup, _feedStyle).apply {
+        this.onLockedUrlClicked.subscribe(this@PreviewContentListAdapter.onUrlClicked::emit);
     };
     private fun createPlaceholderViewHolder(viewGroup: ViewGroup): PreviewPlaceholderViewHolder
         = PreviewPlaceholderViewHolder(viewGroup, _feedStyle);
@@ -143,6 +151,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     fun release() {
         _taskLoadContent.dispose();
         onContentUrlClicked.clear();
+        onUrlClicked.clear();
         onContentClicked.clear();
         onChannelClicked.clear();
         onAddToClicked.clear();

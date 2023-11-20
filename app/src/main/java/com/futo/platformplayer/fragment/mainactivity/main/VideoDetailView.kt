@@ -22,6 +22,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.WindowManager
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
@@ -59,6 +60,7 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.dialogs.AutoUpdateDialog
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
@@ -216,6 +218,9 @@ class VideoDetailView : ConstraintLayout {
     private var _lastAudioSource: IAudioSource? = null;
     private var _lastSubtitleSource: ISubtitleSource? = null;
     private var _isCasting: Boolean = false;
+
+    var isPlaying: Boolean = false
+        private set;
     var lastPositionMilliseconds: Long = 0
         private set;
     private var _historicalPosition: Long = 0;
@@ -600,6 +605,8 @@ class VideoDetailView : ConstraintLayout {
             _lastSubtitleSource = null;
             video = null;
             _playbackTracker = null;
+            Logger.i(TAG, "Keep screen on unset onClose")
+            fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         };
 
         _layoutResume.setOnClickListener {
@@ -1087,7 +1094,7 @@ class VideoDetailView : ConstraintLayout {
 
         _player.setMetadata(video.name, video.author.name);
 
-        _toggleCommentType.setValue(false, false);
+        _toggleCommentType.setValue(Settings.instance.comments.defaultCommentSection == 1, false);
         updateCommentType(true);
 
         //UI
@@ -1680,14 +1687,28 @@ class VideoDetailView : ConstraintLayout {
         if(playing) {
             _minimize_controls_pause.visibility = View.VISIBLE;
             _minimize_controls_play.visibility = View.GONE;
+
+            if (_isCasting) {
+                if (Settings.instance.casting.keepScreenOn) {
+                    Logger.i(TAG, "Keep screen on set handlePlayChanged casting")
+                    fragment.activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            } else {
+                Logger.i(TAG, "Keep screen on set handlePlayChanged player")
+                fragment.activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
         }
         else {
             _minimize_controls_pause.visibility = View.GONE;
             _minimize_controls_play.visibility = View.VISIBLE;
+
+            Logger.i(TAG, "Keep screen on unset handlePlayChanged")
+            fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
 
+        isPlaying = playing;
         onPlayChanged.emit(playing);
-        updateTracker(_player.position, playing, true);
+        updateTracker(lastPositionMilliseconds, playing, true);
     }
 
     private fun handleSelectVideoTrack(videoSource: IVideoSource) {
@@ -2031,7 +2052,8 @@ class VideoDetailView : ConstraintLayout {
             StatePlaylists.instance.updateHistoryPosition(v, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
             _lastPositionSaveTime = currentTime;
         }
-        updateTracker(positionMilliseconds, _player.playing, false);
+
+        updateTracker(positionMilliseconds, isPlaying, false);
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {

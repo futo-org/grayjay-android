@@ -1,9 +1,6 @@
-package com.futo.platformplayer.views.adapters
+package com.futo.platformplayer.views.adapters.feedtypes
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -13,6 +10,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 
 
 class PreviewNestedVideoViewHolder : ContentPreviewViewHolder {
@@ -25,7 +23,9 @@ class PreviewNestedVideoViewHolder : ContentPreviewViewHolder {
     override val content: IPlatformContent? get() = view.content;
     private val view: PreviewNestedVideoView get() = itemView as PreviewNestedVideoView;
 
-    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(PreviewNestedVideoView(viewGroup.context, feedStyle, exoPlayer)) {
+    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(
+        PreviewNestedVideoView(viewGroup.context, feedStyle, exoPlayer)
+    ) {
         view.onContentUrlClicked.subscribe(onContentUrlClicked::emit);
         view.onVideoClicked.subscribe(onVideoClicked::emit);
         view.onChannelClicked.subscribe(onChannelClicked::emit);

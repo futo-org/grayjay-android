@@ -134,6 +134,8 @@ class ImportDialog : AlertDialog {
 
         setCancelable(false);
         setCanceledOnTouchOutside(false);
+
+        Logger.i(TAG, "Keep screen on set import")
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         _updateSpinner.drawable?.assume<Animatable>()?.start();
@@ -201,6 +203,7 @@ class ImportDialog : AlertDialog {
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to update import UI.", e)
                     } finally {
+                        Logger.i(TAG, "Keep screen on unset update")
                         window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     }
                 }

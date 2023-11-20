@@ -1,6 +1,7 @@
 package com.futo.platformplayer.views.video
 
 import android.content.Context
+import android.media.session.PlaybackState
 import android.net.Uri
 import android.util.AttributeSet
 import android.widget.RelativeLayout
@@ -60,8 +61,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         private set;
     val exoPlayerStateName: String;
 
-    protected var playingCached: Boolean = false;
-    val playing: Boolean get() = exoPlayer?.player?.playWhenReady ?: false;
+    var playing: Boolean = false;
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
 
@@ -99,12 +99,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     }
                 }
             }
+
+            updatePlaying();
         }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             super.onPlayWhenReadyChanged(playWhenReady, reason)
-            onPlayChanged.emit(playWhenReady);
-            playingCached = playWhenReady;
+            updatePlaying();
+        }
+
+        fun updatePlaying() {
+            val newPlaying = exoPlayer?.let { it.player.playWhenReady && it.player.playbackState != Player.STATE_ENDED && it.player.playbackState != Player.STATE_IDLE } ?: false
+            if (newPlaying == playing) {
+                return;
+            }
+
+            playing = newPlaying;
+            onPlayChanged.emit(playing);
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
