@@ -5,10 +5,13 @@ import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.futo.platformplayer.api.media.Serializer
 
-interface ManagedDBIndex<T> {
-    var id: Long?
-    var serialized: ByteArray?
+open class ManagedDBIndex<T> {
+    @ColumnIndex
+    @PrimaryKey(true)
+    open var id: Long? = null;
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    var serialized: ByteArray? = null;
 
-    @get:Ignore
-    var obj: T?;
+    @Ignore
+    var obj: T? = null;
 }

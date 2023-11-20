@@ -15,11 +15,6 @@ class DBChannelCache {
     class Index: ManagedDBIndex<SerializedPlatformContent> {
         @PrimaryKey(true)
         override var id: Long? = null;
-        @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
-        override var serialized: ByteArray? = null;
-
-        @Ignore
-        override var obj: SerializedPlatformContent? = null;
 
         var feedType: String? = null;
         var channelUrl: String? = null;

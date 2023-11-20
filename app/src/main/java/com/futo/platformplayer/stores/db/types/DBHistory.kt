@@ -10,11 +10,14 @@ import androidx.room.Query
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.models.HistoryVideo
+import com.futo.platformplayer.stores.db.ColumnIndex
+import com.futo.platformplayer.stores.db.ColumnOrdered
 import com.futo.platformplayer.stores.db.ManagedDBDAOBase
 import com.futo.platformplayer.stores.db.ManagedDBDatabase
 import com.futo.platformplayer.stores.db.ManagedDBDescriptor
 import com.futo.platformplayer.stores.db.ManagedDBIndex
 import com.futo.platformplayer.stores.db.ManagedDBStore
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 class DBHistory {
@@ -22,6 +25,7 @@ class DBHistory {
         const val TABLE_NAME = "history";
     }
 
+    //These classes solely exist for bounding generics for type erasure
     @Dao
     interface DBDAO: ManagedDBDAOBase<HistoryVideo, Index> {}
     @Database(entities = [Index::class], version = 2)
@@ -30,26 +34,25 @@ class DBHistory {
     }
 
     class Descriptor: ManagedDBDescriptor<HistoryVideo, Index, DB, DBDAO>() {
+        override val table_name: String = TABLE_NAME;
         override fun create(obj: HistoryVideo): Index = Index(obj);
-        override fun dbClass(): Class<DB> = DB::class.java;
-
-        //Optional
-        override fun sqlIndexOnly(tableName: String): SimpleSQLiteQuery = SimpleSQLiteQuery("SELECT id, url, position, date FROM $TABLE_NAME");
-        override fun sqlPage(tableName: String, page: Int, length: Int): SimpleSQLiteQuery = SimpleSQLiteQuery("SELECT * FROM $TABLE_NAME ORDER BY date DESC, id DESC LIMIT ? OFFSET ?", arrayOf(length, page * length));
+        override fun dbClass(): KClass<DB> = DB::class;
+        override fun indexClass(): KClass<Index> = Index::class;
     }
 
     @Entity(TABLE_NAME)
     class Index: ManagedDBIndex<HistoryVideo> {
         @PrimaryKey(true)
+        @ColumnOrdered(1)
+        @ColumnIndex
         override var id: Long? = null;
-        @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
-        override var serialized: ByteArray? = null;
 
-        @Ignore
-        override var obj: HistoryVideo? = null;
-
+        @ColumnIndex
         var url: String;
+        @ColumnIndex
         var position: Long;
+        @ColumnIndex
+        @ColumnOrdered(0, true)
         var date: Long;
 
         constructor() {

@@ -59,20 +59,6 @@ import kotlin.system.measureTimeMillis
 class StateApp {
     val isMainActive: Boolean get() = contextOrNull != null && contextOrNull is MainActivity; //if context is MainActivity, it means its active
 
-    /*
-    private val externalRootDirectory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Grayjay");
-
-    fun getExternalRootDirectory(): File? {
-        if(!externalRootDirectory.exists()) {
-            val result = externalRootDirectory.mkdirs();
-            if(!result)
-                return null;
-            return externalRootDirectory;
-        }
-        else
-            return externalRootDirectory;
-    }*/
-
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();
         if(isValidStorageUri(context, generalUri))
@@ -539,8 +525,14 @@ class StateApp {
         StateAnnouncement.instance.registerDidYouKnow();
         Logger.i(TAG, "MainApp Started: Finished");
 
+        StatePlaylists.instance.toMigrateCheck();
 
-        if(true) {
+        StatePlaylists.instance._historyDBStore.deleteAll();
+        if(StatePlaylists.instance.shouldMigrateLegacyHistory())
+            StatePlaylists.instance.migrateLegacyHistory();
+
+
+        if(false) {
             Logger.i(TAG, "TEST:--------(200)---------");
             testHistoryDB(200);
             Logger.i(TAG, "TEST:--------(1000)---------");

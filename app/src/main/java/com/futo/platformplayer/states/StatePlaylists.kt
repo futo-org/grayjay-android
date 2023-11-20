@@ -12,6 +12,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
@@ -58,6 +59,7 @@ class StatePlaylists {
     val historyIndex: ConcurrentMap<Any, DBHistory.Index> = ConcurrentHashMap();
     val _historyDBStore = ManagedDBStore.create("history", DBHistory.Descriptor())
         .withIndex({ it.url }, historyIndex)
+        .withUnique({ it.url }, historyIndex)
         .load();
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
@@ -67,6 +69,137 @@ class StatePlaylists {
 
     fun toMigrateCheck(): List<ManagedStore<*>> {
         return listOf(playlistStore, _watchlistStore, _historyStore);
+    }
+
+    fun shouldMigrateLegacyHistory(): Boolean {
+        return _historyDBStore.count() == 0 && _historyStore.count() > 0;
+    }
+    fun migrateLegacyHistory() {
+        Logger.i(TAG, "Migrating legacy history");
+        _historyDBStore.deleteAll();
+        val allHistory = _historyStore.getItems();
+        Logger.i(TAG, "Migrating legacy history (${allHistory.size}) items");
+        for(item in allHistory) {
+            _historyDBStore.insert(item);
+        }
+    }
+
+
+    fun getHistoryPosition(url: String): Long {
+        return historyIndex[url]?.position ?: 0;
+    }
+    fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L): Long {
+        val pos = if(position < 0) 0 else position;
+        if(index.obj == null) throw IllegalStateException("Can only update history with a deserialized db item");
+        val historyVideo = index.obj!!;
+
+        val positionBefore = historyVideo.position;
+        if (updateExisting) {
+            var shouldUpdate = false;
+            if (positionBefore < 30) {
+                shouldUpdate = true;
+            } else {
+                if (position > 30) {
+                    shouldUpdate = true;
+                }
+            }
+
+            if (shouldUpdate) {
+
+                //A unrecovered item
+                if(historyVideo.video.author.id.value == null && historyVideo.video.duration == 0L)
+                    historyVideo.video = SerializedPlatformVideo.fromVideo(liveObj);
+
+                historyVideo.position = pos;
+                historyVideo.date = OffsetDateTime.now();
+                _historyDBStore.update(index.id!!, historyVideo);
+                onHistoricVideoChanged.emit(liveObj, pos);
+            }
+
+            return positionBefore;
+        }
+
+        return positionBefore;
+    }
+    /*
+    fun updateHistoryPosition(video: IPlatformVideo, updateExisting: Boolean, position: Long = -1L): Long {
+        val pos = if(position < 0) 0 else position;
+        val historyVideo = _historyStore.findItem { it.video.url == video.url };
+        if (historyVideo != null) {
+            val positionBefore = historyVideo.position;
+            if (updateExisting) {
+                var shouldUpdate = false;
+                if (positionBefore < 30) {
+                    shouldUpdate = true;
+                } else {
+                    if (position > 30) {
+                        shouldUpdate = true;
+                    }
+                }
+
+                if (shouldUpdate) {
+
+                    //A unrecovered item
+                    if(historyVideo.video.author.id.value == null && historyVideo.video.duration == 0L)
+                        historyVideo.video = SerializedPlatformVideo.fromVideo(video);
+
+                    historyVideo.position = pos;
+                    historyVideo.date = OffsetDateTime.now();
+                    _historyStore.saveAsync(historyVideo);
+                    onHistoricVideoChanged.emit(video, pos);
+                }
+            }
+
+            return positionBefore;
+        } else {
+            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), pos, OffsetDateTime.now());
+            _historyStore.saveAsync(newHistItem);
+            return 0;
+        }
+    }
+*/
+    fun getHistory() : List<HistoryVideo> {
+        return _historyDBStore.getAllObjects();
+        //return _historyStore.getItems().sortedByDescending { it.date };
+    }
+    fun getHistoryPager(): IPager<HistoryVideo> {
+        return _historyDBStore.getObjectPager();
+    }
+    fun getHistoryIndexByUrl(url: String): DBHistory.Index? {
+        return historyIndex[url];
+    }
+    fun getHistoryByVideo(video: IPlatformVideo, create: Boolean = false): DBHistory.Index {
+        val existing = historyIndex[video.url];
+        if(existing != null)
+            return _historyDBStore.get(existing.id!!);
+        else {
+            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, OffsetDateTime.now());
+            val id = _historyDBStore.insert(newHistItem);
+            return _historyDBStore.get(id);
+        }
+    }
+
+    fun removeHistory(url: String) {
+        val hist = getHistoryIndexByUrl(url);
+        if(hist != null)
+            _historyDBStore.delete(hist.id!!);
+        /*
+        val hist = _historyStore.findItem { it.video.url == url };
+        if(hist != null)
+            _historyStore.delete(hist);*/
+    }
+
+    fun removeHistoryRange(minutesToDelete: Long) {
+        val now = OffsetDateTime.now().toEpochSecond();
+        val toDelete = _historyDBStore.getAllIndexes().filter { minutesToDelete == -1L || (now - it.date) < minutesToDelete * 60 };
+        for(item in toDelete)
+            _historyDBStore.delete(item);
+        /*
+        val now = OffsetDateTime.now();
+        val toDelete = _historyStore.findItems { minutesToDelete == -1L || ChronoUnit.MINUTES.between(it.date, now) < minutesToDelete };
+
+        for(item in toDelete)
+            _historyStore.delete(item);*/
     }
 
     fun getWatchLater() : List<SerializedPlatformVideo> {
@@ -109,72 +242,13 @@ class StatePlaylists {
         return playlistStore.findItem { it.id == id };
     }
 
+
     fun didPlay(playlistId: String) {
         val playlist = getPlaylist(playlistId);
         if(playlist != null) {
             playlist.datePlayed = OffsetDateTime.now();
             playlistStore.saveAsync(playlist);
         }
-    }
-
-    fun getHistoryPosition(url: String): Long {
-        val histVideo = _historyStore.findItem { it.video.url == url };
-        if(histVideo != null)
-            return histVideo.position;
-        return 0;
-    }
-    fun updateHistoryPosition(video: IPlatformVideo, updateExisting: Boolean, position: Long = -1L): Long {
-        val pos = if(position < 0) 0 else position;
-        val historyVideo = _historyStore.findItem { it.video.url == video.url };
-        if (historyVideo != null) {
-            val positionBefore = historyVideo.position;
-            if (updateExisting) {
-                var shouldUpdate = false;
-                if (positionBefore < 30) {
-                    shouldUpdate = true;
-                } else {
-                    if (position > 30) {
-                        shouldUpdate = true;
-                    }
-                }
-
-                if (shouldUpdate) {
-
-                    //A unrecovered item
-                    if(historyVideo.video.author.id.value == null && historyVideo.video.duration == 0L)
-                        historyVideo.video = SerializedPlatformVideo.fromVideo(video);
-
-                    historyVideo.position = pos;
-                    historyVideo.date = OffsetDateTime.now();
-                    _historyStore.saveAsync(historyVideo);
-                    onHistoricVideoChanged.emit(video, pos);
-                }
-            }
-
-            return positionBefore;
-        } else {
-            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), pos, OffsetDateTime.now());
-            _historyStore.saveAsync(newHistItem);
-            return 0;
-        }
-    }
-
-    fun getHistory() : List<HistoryVideo> {
-        return _historyStore.getItems().sortedByDescending { it.date };
-    }
-
-    fun removeHistory(url: String) {
-        val hist = _historyStore.findItem { it.video.url == url };
-        if(hist != null)
-            _historyStore.delete(hist);
-    }
-
-    fun removeHistoryRange(minutesToDelete: Long) {
-        val now = OffsetDateTime.now();
-        val toDelete = _historyStore.findItems { minutesToDelete == -1L || ChronoUnit.MINUTES.between(it.date, now) < minutesToDelete };
-
-        for(item in toDelete)
-            _historyStore.delete(item);
     }
 
     suspend fun createPlaylistFromChannel(channelUrl: String, onPage: (Int) -> Unit): Playlist {
