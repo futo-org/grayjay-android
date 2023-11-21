@@ -13,3 +13,7 @@ inline fun <reified T, R> Any.assume(cb: (T) -> R): R? {
         return cb(result);
     return null;
 }
+
+fun String?.yesNoToBoolean(): Boolean {
+    return this?.uppercase() == "YES"
+}

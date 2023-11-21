@@ -219,8 +219,7 @@ class HttpContext : AutoCloseable {
             headersToRespond.put("keep-alive", "timeout=5, max=1000");
         }
 
-        val responseHeader = HttpResponse(status, headers);
-
+        val responseHeader = HttpResponse(status, headersToRespond);
         responseStream.write(responseHeader.getHttpHeaderBytes());
 
         if(method != "HEAD") {
