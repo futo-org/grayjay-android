@@ -10,6 +10,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
@@ -54,7 +55,6 @@ class UISlideOverlays {
 
         fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
             val items = arrayListOf<View>();
-            var menu: SlideUpMenuOverlay? = null;
 
             val originalNotif = subscription.doNotifications;
             val originalLive = subscription.doFetchLive;
@@ -62,54 +62,69 @@ class UISlideOverlays {
             val originalVideo = subscription.doFetchVideos;
             val originalPosts = subscription.doFetchPosts;
 
-            items.addAll(listOf(
-                SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
-                    subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
-                }, false),
-                SlideUpMenuGroup(container.context, "Fetch Settings",
-                    "Depending on the platform you might not need to enable a type for it to be available.",
-                    -1, listOf()),
-                SlideUpMenuItem(container.context, R.drawable.ic_live_tv, "Livestreams", "Check for livestreams", "fetchLive", {
-                    subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
-                }, false),
-                SlideUpMenuItem(container.context, R.drawable.ic_play, "Streams", "Check for finished streams", "fetchStreams", {
-                    subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchLive;
-                }, false),
-                SlideUpMenuItem(container.context, R.drawable.ic_play, "Videos", "Check for videos", "fetchVideos", {
-                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchLive;
-                }, false),
-                SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
-                    subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchLive;
-                }, false)));
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO){
+                val plugin = StatePlatform.instance.getChannelClient(subscription.channel.url);
+                val capabilities = plugin.getChannelCapabilities();
 
-            menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
+                withContext(Dispatchers.Main) {
 
-            if(subscription.doNotifications)
-                menu.selectOption(null, "notifications", true, true);
-            if(subscription.doFetchLive)
-                menu.selectOption(null, "fetchLive", true, true);
-            if(subscription.doFetchStreams)
-                menu.selectOption(null, "fetchStreams", true, true);
-            if(subscription.doFetchVideos)
-                menu.selectOption(null, "fetchVideos", true, true);
-            if(subscription.doFetchPosts)
-                menu.selectOption(null, "fetchPosts", true, true);
+                    var menu: SlideUpMenuOverlay? = null;
 
-            menu.onOK.subscribe {
-                subscription.save();
-                menu.hide(true);
-            };
-            menu.onCancel.subscribe {
-                subscription.doNotifications = originalNotif;
-                subscription.doFetchLive = originalLive;
-                subscription.doFetchStreams = originalStream;
-                subscription.doFetchVideos = originalVideo;
-                subscription.doFetchPosts = originalPosts;
-            };
 
-            menu.setOk("Save");
+                    items.addAll(listOf(
+                        SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
+                            subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
+                        }, false),
+                        SlideUpMenuGroup(container.context, "Fetch Settings",
+                            "Depending on the platform you might not need to enable a type for it to be available.",
+                            -1, listOf()),
+                        if(capabilities.hasType(ResultCapabilities.TYPE_LIVE)) SlideUpMenuItem(container.context, R.drawable.ic_live_tv, "Livestreams", "Check for livestreams", "fetchLive", {
+                            subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
+                        }, false) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_STREAMS)) SlideUpMenuItem(container.context, R.drawable.ic_play, "Streams", "Check for streams", "fetchStreams", {
+                            subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchStreams;
+                        }, false) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
+                            SlideUpMenuItem(container.context, R.drawable.ic_play, "Videos", "Check for videos", "fetchVideos", {
+                            subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
+                        }, false) else if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
+                            SlideUpMenuItem(container.context, R.drawable.ic_play, "Content", "Check for content", "fetchVideos", {
+                                subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
+                            }, false) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
+                            subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
+                        }, false) else null).filterNotNull());
 
-            menu.show();
+                    menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
+
+                    if(subscription.doNotifications)
+                        menu.selectOption(null, "notifications", true, true);
+                    if(subscription.doFetchLive)
+                        menu.selectOption(null, "fetchLive", true, true);
+                    if(subscription.doFetchStreams)
+                        menu.selectOption(null, "fetchStreams", true, true);
+                    if(subscription.doFetchVideos)
+                        menu.selectOption(null, "fetchVideos", true, true);
+                    if(subscription.doFetchPosts)
+                        menu.selectOption(null, "fetchPosts", true, true);
+
+                    menu.onOK.subscribe {
+                        subscription.save();
+                        menu.hide(true);
+                    };
+                    menu.onCancel.subscribe {
+                        subscription.doNotifications = originalNotif;
+                        subscription.doFetchLive = originalLive;
+                        subscription.doFetchStreams = originalStream;
+                        subscription.doFetchVideos = originalVideo;
+                        subscription.doFetchPosts = originalPosts;
+                    };
+
+                    menu.setOk("Save");
+
+                    menu.show();
+                }
+            }
         }
 
         fun showDownloadVideoOverlay(video: IPlatformVideoDetails, container: ViewGroup, contentResolver: ContentResolver? = null): SlideUpMenuOverlay? {

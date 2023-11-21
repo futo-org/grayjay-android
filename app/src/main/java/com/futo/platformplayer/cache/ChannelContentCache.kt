@@ -58,6 +58,14 @@ class ChannelContentCache {
                     uncacheContent(content);
         }
     }
+    fun clearToday() {
+        val yesterday = OffsetDateTime.now().minusDays(1);
+        synchronized(_channelContents) {
+            for(channel in _channelContents)
+                for(content in channel.value.getItems().filter { it.datetime?.isAfter(yesterday) == true })
+                    uncacheContent(content);
+        }
+    }
 
     fun getChannelCachePager(channelUrl: String): PlatformContentPager {
         val validID = channelUrl.toSafeFileName();
