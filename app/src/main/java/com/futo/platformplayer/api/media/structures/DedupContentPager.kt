@@ -52,7 +52,7 @@ class DedupContentPager : IPager<IPlatformContent>, IAsyncPager<IPlatformContent
             val sameItems = results.filter { isSameItem(result, it) };
             val platformItemMap = sameItems.groupBy { it.id.pluginId }.mapValues { (_, items) -> items.first() }
             val bestPlatform = _preferredPlatform.map { it.lowercase() }.firstOrNull { platformItemMap.containsKey(it) }
-            val bestItem = platformItemMap[bestPlatform] ?: sameItems.first()
+            val bestItem = platformItemMap[bestPlatform] ?: sameItems.firstOrNull();
 
             resultsToRemove.addAll(sameItems.filter { it != bestItem });
         }
