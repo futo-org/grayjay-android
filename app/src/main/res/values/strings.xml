@@ -10,6 +10,8 @@
     <string name="general">General</string>
     <string name="channel">Channel</string>
     <string name="home">Home</string>
+    <string name="progress_bar">Progress Bar</string>
+    <string name="progress_bar_description">If a historical progress bar should be shown</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
     <string name="playlists">Playlists</string>

@@ -24,6 +24,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 import kotlin.reflect.jvm.jvmErasure
 
@@ -185,7 +186,11 @@ class DeveloperEndpoints(private val context: Context) {
         val config = context.readContentJson<SourcePluginConfig>()
         try {
             _testPluginVariables.clear();
-            _testPlugin = V8Plugin(StateApp.instance.context, config);
+
+            val client = JSHttpClient(null, null, null, config);
+            val clientAuth = JSHttpClient(null, null, null, config);
+            _testPlugin = V8Plugin(StateApp.instance.context, config, null, client, clientAuth);
+
             context.respondJson(200, testPluginOrThrow.getPackageVariables());
         }
         catch(ex: Throwable) {
@@ -235,7 +240,7 @@ class DeveloperEndpoints(private val context: Context) {
             }
             LoginActivity.showLogin(StateApp.instance.context, config) {
                 _testPluginVariables.clear();
-                _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null), JSHttpClient(null, it));
+                _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, null, config), JSHttpClient(null, it, null, config));
 
             };
             context.respondCode(200, "Login started");
@@ -310,6 +315,11 @@ class DeveloperEndpoints(private val context: Context) {
             val callResult = remoteObj.call(method, paras as JsonArray);
             val json = wrapRemoteResult(callResult, false);
             context.respondCode(200, json, "application/json");
+        }
+        catch(invocation: InvocationTargetException) {
+            val innerException = invocation.targetException;
+            Logger.e("DeveloperEndpoints", innerException.message, innerException);
+            context.respondCode(500, innerException::class.simpleName + ":" + innerException.message ?: "", "text/plain")
         }
         catch(ilEx: IllegalArgumentException) {
             if(ilEx.message?.contains("does not exist") ?: false) {
