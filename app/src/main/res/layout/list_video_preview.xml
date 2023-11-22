@@ -32,6 +32,20 @@
                 android:scaleType="centerCrop"
                 tools:srcCompat="@drawable/placeholder_video_thumbnail" />
 
+            <com.futo.platformplayer.views.others.ProgressBar
+                android:id="@+id/time_bar"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="6dp"
+                app:progress="60%"
+                app:inactiveColor="#55EEEEEE"
+                app:radiusBottomLeft="0dp"
+                app:radiusBottomRight="0dp"
+                app:radiusTopLeft="0dp"
+                app:radiusTopRight="0dp"
+                android:visibility="visible"/>
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">

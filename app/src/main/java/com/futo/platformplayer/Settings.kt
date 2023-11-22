@@ -446,8 +446,28 @@ class Settings : FragmentedStorageFileJson() {
         }*/
     }
 
+    @FormField(R.string.time_bar, "group", R.string.configure_if_historical_time_bar_should_be_shown, 8)
+    var timeBars = TimeBars();
+    @Serializable
+    class TimeBars {
+        @FormField(R.string.home, FieldForm.TOGGLE, -1, 0)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var home: Boolean = true;
 
-    @FormField(R.string.logging, FieldForm.GROUP, -1, 8)
+        @FormField(R.string.subscriptions, FieldForm.TOGGLE, -1, 1)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var subscriptions: Boolean = true;
+
+        @FormField(R.string.search, FieldForm.TOGGLE, -1, 2)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var search: Boolean = true;
+
+        @FormField(R.string.channel, FieldForm.TOGGLE, -1, 3)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var channel: Boolean = true;
+    }
+
+    @FormField(R.string.logging, FieldForm.GROUP, -1, 9)
     var logging = Logging();
     @Serializable
     class Logging {
@@ -471,7 +491,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.announcement, FieldForm.GROUP, -1, 10)
+    @FormField(R.string.announcement, FieldForm.GROUP, -1, 11)
     var announcementSettings = AnnouncementSettings();
     @Serializable
     class AnnouncementSettings {
@@ -482,7 +502,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.notifications, FieldForm.GROUP, -1, 11)
+    @FormField(R.string.notifications, FieldForm.GROUP, -1, 12)
     var notifications = NotificationSettings();
     @Serializable
     class NotificationSettings {
@@ -490,7 +510,7 @@ class Settings : FragmentedStorageFileJson() {
         var plannedContentNotification: Boolean = true;
     }
 
-    @FormField(R.string.plugins, FieldForm.GROUP, -1, 12)
+    @FormField(R.string.plugins, FieldForm.GROUP, -1, 13)
     @Transient
     var plugins = Plugins();
     @Serializable
@@ -527,7 +547,7 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField(R.string.external_storage, FieldForm.GROUP, -1, 13)
+    @FormField(R.string.external_storage, FieldForm.GROUP, -1, 14)
     var storage = Storage();
     @Serializable
     class Storage {
@@ -561,7 +581,7 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField(R.string.auto_update, "group", R.string.configure_the_auto_updater, 14)
+    @FormField(R.string.auto_update, "group", R.string.configure_the_auto_updater, 15)
     var autoUpdate = AutoUpdate();
     @Serializable
     class AutoUpdate {
@@ -643,7 +663,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.backup, FieldForm.GROUP, -1, 15)
+    @FormField(R.string.backup, FieldForm.GROUP, -1, 16)
     var backup = Backup();
     @Serializable
     class Backup {
@@ -696,7 +716,7 @@ class Settings : FragmentedStorageFileJson() {
         }*/
     }
 
-    @FormField(R.string.payment, FieldForm.GROUP, -1, 16)
+    @FormField(R.string.payment, FieldForm.GROUP, -1, 17)
     var payment = Payment();
     @Serializable
     class Payment {
@@ -713,7 +733,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.other, FieldForm.GROUP, -1, 17)
+    @FormField(R.string.other, FieldForm.GROUP, -1, 18)
     var other = Other();
     @Serializable
     class Other {
@@ -722,7 +742,7 @@ class Settings : FragmentedStorageFileJson() {
         var bypassRotationPrevention: Boolean = false;
     }
 
-    @FormField(R.string.info, FieldForm.GROUP, -1, 18)
+    @FormField(R.string.info, FieldForm.GROUP, -1, 19)
     var info = Info();
     @Serializable
     class Info {

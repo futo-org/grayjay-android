@@ -19,6 +19,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.dialogs.CommentDialog
 import com.futo.platformplayer.dp
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.selectBestImage
@@ -194,7 +195,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 if (hasChanges) {
                     try {
                         Logger.i(TAG, "Started backfill");
-                        processHandle.fullyBackfillServers();
+                        processHandle.fullyBackfillServersAnnounceExceptions();
                         Logger.i(TAG, "Finished backfill");
                         withContext(Dispatchers.Main) {
                             UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.changes_have_been_saved));

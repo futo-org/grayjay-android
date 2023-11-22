@@ -93,6 +93,8 @@ class SubscriptionsFeedFragment : MainFragment() {
 
     @SuppressLint("ViewConstructor")
     class SubscriptionsFeedView : ContentFeedView<SubscriptionsFeedFragment> {
+        override val shouldShowTimeBar: Boolean get() = Settings.instance.timeBars.subscriptions
+
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.onGlobalSubscriptionsUpdateProgress.subscribe(this) { progress, total ->

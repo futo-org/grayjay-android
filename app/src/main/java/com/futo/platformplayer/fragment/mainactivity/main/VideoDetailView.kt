@@ -1181,7 +1181,7 @@ class VideoDetailView : ConstraintLayout {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
                                     Logger.i(TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServers();
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
                                     Logger.i(TAG, "Finished backfill");
                                 } catch (e: Throwable) {
                                     Logger.e(TAG, "Failed to backfill servers", e)
@@ -1486,6 +1486,7 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
         _overlay_quality_selector?.show();
+        _slideUpOverlay = _overlay_quality_selector;
     }
 
     fun prevVideo() {

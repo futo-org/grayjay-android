@@ -361,13 +361,13 @@ class StateCasting {
             else if (audioSource is IAudioUrlSource)
                 ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble());
             else if(videoSource is IHLSManifestSource) {
-                if (ad is ChromecastCastingDevice) {
+                if (ad is ChromecastCastingDevice && video.isLive) {
                     castHlsIndirect(video, videoSource.url, resumePosition);
                 } else {
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble());
                 }
             } else if(audioSource is IHLSManifestAudioSource) {
-                if (ad is ChromecastCastingDevice) {
+                if (ad is ChromecastCastingDevice && video.isLive) {
                     castHlsIndirect(video, audioSource.url, resumePosition);
                 } else {
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble());
@@ -578,7 +578,7 @@ class StateCasting {
             val masterPlaylist = HLS.downloadAndParseMasterPlaylist(_client, sourceUrl)
             val newVariantPlaylistRefs = arrayListOf<HLS.VariantPlaylistReference>()
             val newMediaRenditions = arrayListOf<HLS.MediaRendition>()
-            val newMasterPlaylist = HLS.MasterPlaylist(newVariantPlaylistRefs, newMediaRenditions, masterPlaylist.independentSegments)
+            val newMasterPlaylist = HLS.MasterPlaylist(newVariantPlaylistRefs, newMediaRenditions, masterPlaylist.sessionDataList, masterPlaylist.independentSegments)
 
             for (variantPlaylistRef in masterPlaylist.variantPlaylistsRefs) {
                 val playlistId = UUID.randomUUID();
@@ -606,15 +606,17 @@ class StateCasting {
                 val newPlaylistPath = "/hls-playlist-${playlistId}"
                 val newPlaylistUrl = url + newPlaylistPath;
 
-                _castServer.addHandler(HttpFuntionHandler("GET", newPlaylistPath) { vpContext ->
-                    val vpHeaders = vpContext.headers.clone()
-                    vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
+                if (mediaRendition.uri != null) {
+                    _castServer.addHandler(HttpFuntionHandler("GET", newPlaylistPath) { vpContext ->
+                        val vpHeaders = vpContext.headers.clone()
+                        vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                    val variantPlaylist = HLS.downloadAndParseVariantPlaylist(_client, mediaRendition.uri)
-                    val proxiedVariantPlaylist = proxyVariantPlaylist(url, playlistId, variantPlaylist)
-                    val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
-                    vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
-                }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castHlsIndirectVariant")
+                        val variantPlaylist = HLS.downloadAndParseVariantPlaylist(_client, mediaRendition.uri)
+                        val proxiedVariantPlaylist = proxyVariantPlaylist(url, playlistId, variantPlaylist)
+                        val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
+                        vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
+                    }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castHlsIndirectVariant")
+                }
 
                 newMediaRenditions.add(HLS.MediaRendition(
                     mediaRendition.type,
@@ -637,12 +639,16 @@ class StateCasting {
         return listOf(hlsUrl);
     }
 
-    private fun proxyVariantPlaylist(url: String, playlistId: UUID, variantPlaylist: HLS.VariantPlaylist): HLS.VariantPlaylist {
+    private fun proxyVariantPlaylist(url: String, playlistId: UUID, variantPlaylist: HLS.VariantPlaylist, proxySegments: Boolean = true): HLS.VariantPlaylist {
         val newSegments = arrayListOf<HLS.Segment>()
 
-        variantPlaylist.segments.forEachIndexed { index, segment ->
-            val sequenceNumber = variantPlaylist.mediaSequence + index.toLong()
-            newSegments.add(proxySegment(url, playlistId, segment, sequenceNumber))
+        if (proxySegments) {
+            variantPlaylist.segments.forEachIndexed { index, segment ->
+                val sequenceNumber = variantPlaylist.mediaSequence + index.toLong()
+                newSegments.add(proxySegment(url, playlistId, segment, sequenceNumber))
+            }
+        } else {
+            newSegments.addAll(variantPlaylist.segments)
         }
 
         return HLS.VariantPlaylist(

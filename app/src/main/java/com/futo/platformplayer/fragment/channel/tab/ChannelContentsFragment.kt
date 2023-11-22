@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -151,7 +152,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
         _recyclerResults = view.findViewById(R.id.recycler_videos);
 
-        _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results).apply {
+        _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.timeBars.channel).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
             this.onUrlClicked.subscribe(this@ChannelContentsFragment.onUrlClicked::emit);
             this.onContentClicked.subscribe(this@ChannelContentsFragment.onContentClicked::emit);

@@ -117,6 +117,20 @@
                     android:layout_gravity="end"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="4dp" />
+
+                <com.futo.platformplayer.views.others.ProgressBar
+                    android:id="@+id/time_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentBottom="true"
+                    app:progress="60%"
+                    app:inactiveColor="#55EEEEEE"
+                    app:radiusBottomLeft="4dp"
+                    app:radiusBottomRight="4dp"
+                    app:radiusTopLeft="0dp"
+                    app:radiusTopRight="0dp"
+                    android:visibility="visible"/>
             </RelativeLayout>
         </FrameLayout>
 

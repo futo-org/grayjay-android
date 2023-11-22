@@ -37,6 +37,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     override val visibleThreshold: Int get() = if (feedStyle == FeedStyle.PREVIEW) { 5 } else { 10 };
     protected lateinit var headerView: LinearLayout;
     private var _videoOptionsOverlay: SlideUpMenuOverlay? = null;
+    protected open val shouldShowTimeBar: Boolean get() = true
 
     constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
 
@@ -57,7 +58,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         };
         headerView = v;
 
-        return PreviewContentListAdapter(context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(v)).apply {
+        return PreviewContentListAdapter(context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(v), arrayListOf(), shouldShowTimeBar).apply {
             attachAdapterEvents(this);
         }
     }
