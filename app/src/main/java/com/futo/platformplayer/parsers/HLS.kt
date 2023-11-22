@@ -1,6 +1,7 @@
 package com.futo.platformplayer.parsers
 
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.toURIRobust
 import com.futo.platformplayer.yesNoToBoolean
 import java.net.URI
 import java.time.ZonedDateTime
@@ -14,10 +15,11 @@ class HLS {
 
             val masterPlaylistContent = masterPlaylistResponse.body?.string()
                 ?: throw Exception("Master playlist content is empty")
-            val baseUrl = URI(sourceUrl).resolve("./").toString()
+            val baseUrl = sourceUrl.toURIRobust()!!.resolve("./").toString()
 
             val variantPlaylists = mutableListOf<VariantPlaylistReference>()
             val mediaRenditions = mutableListOf<MediaRendition>()
+            val sessionDataList = mutableListOf<SessionData>()
             var independentSegments = false
 
             masterPlaylistContent.lines().forEachIndexed { index, line ->
@@ -37,10 +39,15 @@ class HLS {
                     line == "#EXT-X-INDEPENDENT-SEGMENTS" -> {
                         independentSegments = true
                     }
+
+                    line.startsWith("#EXT-X-SESSION-DATA") -> {
+                        val sessionData = parseSessionData(line)
+                        sessionDataList.add(sessionData)
+                    }
                 }
             }
 
-            return MasterPlaylist(variantPlaylists, mediaRenditions, independentSegments)
+            return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments)
         }
 
         fun downloadAndParseVariantPlaylist(client: ManagedHttpClient, sourceUrl: String): VariantPlaylist {
@@ -86,7 +93,7 @@ class HLS {
         }
 
         private fun resolveUrl(baseUrl: String, url: String): String {
-            return if (URI(url).isAbsolute) url else baseUrl + url
+            return if (url.toURIRobust()!!.isAbsolute) url else baseUrl + url
         }
 
 
@@ -105,11 +112,10 @@ class HLS {
 
         private fun parseMediaRendition(client: ManagedHttpClient, line: String, baseUrl: String): MediaRendition {
             val attributes = parseAttributes(line)
-            val uri = attributes["URI"]!!
-            val url = resolveUrl(baseUrl, uri)
+            val uri = attributes["URI"]?.let { resolveUrl(baseUrl, it) }
             return MediaRendition(
                 type = attributes["TYPE"],
-                uri = url,
+                uri = uri,
                 groupID = attributes["GROUP-ID"],
                 language = attributes["LANGUAGE"],
                 name = attributes["NAME"],
@@ -117,6 +123,13 @@ class HLS {
                 isAutoSelect = attributes["AUTOSELECT"]?.yesNoToBoolean(),
                 isForced = attributes["FORCED"]?.yesNoToBoolean()
             )
+        }
+
+        private fun parseSessionData(line: String): SessionData {
+            val attributes = parseAttributes(line)
+            val dataId = attributes["DATA-ID"]!!
+            val value = attributes["VALUE"]!!
+            return SessionData(dataId, value)
         }
 
         private fun parseAttributes(content: String): Map<String, String> {
@@ -158,6 +171,20 @@ class HLS {
         }
     }
 
+    data class SessionData(
+        val dataId: String,
+        val value: String
+    ) {
+        fun toM3U8Line(): String = buildString {
+            append("#EXT-X-SESSION-DATA:")
+            appendAttributes(this,
+                "DATA-ID" to dataId,
+                "VALUE" to value
+            )
+            append("\n")
+        }
+    }
+
     data class StreamInfo(
         val bandwidth: Int?,
         val resolution: String?,
@@ -170,7 +197,7 @@ class HLS {
 
     data class MediaRendition(
         val type: String?,
-        val uri: String,
+        val uri: String?,
         val groupID: String?,
         val language: String?,
         val name: String?,
@@ -194,9 +221,11 @@ class HLS {
         }
     }
 
+
     data class MasterPlaylist(
         val variantPlaylistsRefs: List<VariantPlaylistReference>,
         val mediaRenditions: List<MediaRendition>,
+        val sessionDataList: List<SessionData>,
         val independentSegments: Boolean
     ) {
         fun buildM3U8(): String {
@@ -212,6 +241,10 @@ class HLS {
 
             variantPlaylistsRefs.forEach { variant ->
                 builder.append(variant.toM3U8Line())
+            }
+
+            sessionDataList.forEach { data ->
+                builder.append(data.toM3U8Line())
             }
 
             return builder.toString()
