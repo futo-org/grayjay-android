@@ -152,7 +152,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
         _recyclerResults = view.findViewById(R.id.recycler_videos);
 
-        _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.timeBars.channel).apply {
+        _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
             this.onUrlClicked.subscribe(this@ChannelContentsFragment.onUrlClicked::emit);
             this.onContentClicked.subscribe(this@ChannelContentsFragment.onContentClicked::emit);
