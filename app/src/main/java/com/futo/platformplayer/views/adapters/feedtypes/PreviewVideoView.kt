@@ -69,7 +69,7 @@ open class PreviewVideoView : LinearLayout {
             Logger.w(TAG, "Failed to load profile.", it);
         };
 
-    private val _timeBar: ProgressBar;
+    private val _timeBar: ProgressBar?;
 
     val onVideoClicked = Event2<IPlatformVideo, Long>();
     val onLongPress = Event1<IPlatformVideo>();
@@ -243,12 +243,15 @@ open class PreviewVideoView : LinearLayout {
                 _containerDuration.visibility = VISIBLE;
             }
 
-            if (shouldShowTimeBar) {
-                val historyPosition = StatePlaylists.instance.getHistoryPosition(video.url)
-                _timeBar.visibility = if (historyPosition > 0) VISIBLE else GONE
-                _timeBar.progress = historyPosition.toFloat() / video.duration.toFloat()
-            } else {
-                _timeBar.visibility = GONE
+            val timeBar = _timeBar
+            if (timeBar != null) {
+                if (shouldShowTimeBar) {
+                    val historyPosition = StatePlaylists.instance.getHistoryPosition(video.url)
+                    timeBar.visibility = if (historyPosition > 0) VISIBLE else GONE
+                    timeBar.progress = historyPosition.toFloat() / video.duration.toFloat()
+                } else {
+                    timeBar.visibility = GONE
+                }
             }
         }
         else {
@@ -256,7 +259,7 @@ open class PreviewVideoView : LinearLayout {
             _imageVideo.setImageResource(0);
             _containerDuration.visibility = GONE;
             _containerLive.visibility = GONE;
-            _timeBar.visibility = GONE;
+            _timeBar?.visibility = GONE;
         }
 
         _textVideoMetadata.text = metadata + timeMeta;

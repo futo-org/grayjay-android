@@ -223,6 +223,12 @@ class ChannelFragment : MainFragment() {
                     else -> {};
                 }
             }
+            adapter.onLongPress.subscribe { content ->
+                _overlayContainer.let {
+                    if(content is IPlatformVideo)
+                        _slideUpOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it);
+                }
+            }
             viewPager.adapter = adapter;
 
             val tabLayoutMediator = TabLayoutMediator(tabs, viewPager) { tab, position ->
