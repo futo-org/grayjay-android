@@ -75,7 +75,7 @@ class CommentViewHolder : ViewHolder {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {
                     Logger.i(TAG, "Started backfill");
-                    args.processHandle.fullyBackfillServers();
+                    args.processHandle.fullyBackfillServersAnnounceExceptions();
                     Logger.i(TAG, "Finished backfill");
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to backfill servers.", e)
