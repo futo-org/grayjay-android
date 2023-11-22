@@ -27,8 +27,8 @@ class PreviewVideoViewHolder : ContentPreviewViewHolder {
 
     private val view: PreviewVideoView get() = itemView as PreviewVideoView;
 
-    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(
-        PreviewVideoView(viewGroup.context, feedStyle, exoPlayer)
+    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null, shouldShowTimeBar: Boolean = true): super(
+        PreviewVideoView(viewGroup.context, feedStyle, exoPlayer, shouldShowTimeBar)
     ) {
         view.onVideoClicked.subscribe(onVideoClicked::emit);
         view.onChannelClicked.subscribe(onChannelClicked::emit);

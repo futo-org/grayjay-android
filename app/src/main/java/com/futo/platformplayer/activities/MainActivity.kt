@@ -893,6 +893,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } else {
                 if (_fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
                     finish();
+                } else {
+                    UIDialogs.showConfirmationDialog(this, "There is a video playing, are you sure you want to exit the app?", {
+                        finish();
+                    })
                 }
             }
         }

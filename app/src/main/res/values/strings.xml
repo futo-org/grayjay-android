@@ -8,6 +8,7 @@
     <string name="lorem_ipsum" translatable="false">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
     <string name="add_to_queue">Add to queue</string>
     <string name="general">General</string>
+    <string name="channel">Channel</string>
     <string name="home">Home</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
@@ -299,6 +300,8 @@
     <string name="clears_cookies_when_you_log_out">Clears cookies when you log out</string>
     <string name="clears_in_app_browser_cookies">Clears in-app browser cookies</string>
     <string name="configure_browsing_behavior">Configure browsing behavior</string>
+    <string name="time_bar">Time bar</string>
+    <string name="configure_if_historical_time_bar_should_be_shown">Configure if historical time bars should be shown</string>
     <string name="configure_casting">Configure casting</string>
     <string name="configure_daily_backup_in_case_of_catastrophic_failure">Configure daily backup in case of catastrophic failure</string>
     <string name="configure_downloading_of_videos">Configure downloading of videos</string>

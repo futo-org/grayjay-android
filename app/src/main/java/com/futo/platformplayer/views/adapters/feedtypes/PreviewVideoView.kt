@@ -27,9 +27,11 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.video.FutoThumbnailPlayer
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
@@ -67,6 +69,8 @@ open class PreviewVideoView : LinearLayout {
             Logger.w(TAG, "Failed to load profile.", it);
         };
 
+    private val _timeBar: ProgressBar;
+
     val onVideoClicked = Event2<IPlatformVideo, Long>();
     val onLongPress = Event1<IPlatformVideo>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
@@ -77,10 +81,12 @@ open class PreviewVideoView : LinearLayout {
         private set
 
     val content: IPlatformContent? get() = currentVideo;
+    val shouldShowTimeBar: Boolean
 
-    constructor(context: Context, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null) : super(context) {
+    constructor(context: Context, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null, shouldShowTimeBar: Boolean = true) : super(context) {
         inflate(feedStyle);
         _feedStyle = feedStyle;
+        this.shouldShowTimeBar = shouldShowTimeBar
         val playerContainer = findViewById<FrameLayout>(R.id.player_container);
 
         val displayMetrics = Resources.getSystem().displayMetrics;
@@ -117,6 +123,7 @@ open class PreviewVideoView : LinearLayout {
         _button_add_to = findViewById(R.id.button_add_to);
         _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
         _layoutDownloaded = findViewById(R.id.layout_downloaded);
+        _timeBar = findViewById(R.id.time_bar)
 
         this._exoPlayer = exoPlayer
 
@@ -235,13 +242,23 @@ open class PreviewVideoView : LinearLayout {
                 _containerLive.visibility = GONE;
                 _containerDuration.visibility = VISIBLE;
             }
+
+            if (shouldShowTimeBar) {
+                val historyPosition = StatePlaylists.instance.getHistoryPosition(video.url)
+                _timeBar.visibility = if (historyPosition > 0) VISIBLE else GONE
+                _timeBar.progress = historyPosition.toFloat() / video.duration.toFloat()
+            } else {
+                _timeBar.visibility = GONE
+            }
         }
         else {
             currentVideo = null;
             _imageVideo.setImageResource(0);
             _containerDuration.visibility = GONE;
             _containerLive.visibility = GONE;
+            _timeBar.visibility = GONE;
         }
+
         _textVideoMetadata.text = metadata + timeMeta;
     }
 
