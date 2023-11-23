@@ -98,11 +98,15 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
             proxyHeaders.put("Referer", targetUrl);
 
         val useMethod = if (method == "inherit") context.method else method;
-        Logger.i(TAG, "handleWithTcp Proxied Request ${useMethod}: ${targetUrl}");
+        Logger.i(TAG, "handleWithTcp Proxied Request ${useMethod}: ${parsed}");
         Logger.i(TAG, "handleWithTcp Headers:" + proxyHeaders.map { "${it.key}: ${it.value}" }.joinToString("\n"));
 
+        makeTcpRequest(proxyHeaders, useMethod, parsed, context)
+    }
+
+    private fun makeTcpRequest(proxyHeaders: HashMap<String, String>, useMethod: String, parsed: Uri, context: HttpContext) {
         val requestBuilder = StringBuilder()
-        requestBuilder.append("$useMethod $targetUrl HTTP/1.1\r\n")
+        requestBuilder.append("$useMethod $parsed HTTP/1.1\r\n")
         proxyHeaders.forEach { (key, value) -> requestBuilder.append("$key: $value\r\n") }
         requestBuilder.append("\r\n")
 
@@ -128,23 +132,31 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
 
             val inputStream = s.getInputStream()
             val resp = HttpResponseParser(inputStream)
-            val isChunked = resp.transferEncoding.equals("chunked", ignoreCase = true)
-            val contentLength = resp.contentLength.toInt()
+            if (resp.statusCode == 302) {
+                val location = resp.location!!
+                Logger.i(TAG, "handleWithTcp Proxied ${resp.statusCode} following redirect to $location");
+                makeTcpRequest(proxyHeaders, useMethod, Uri.parse(location)!!, context)
+            } else {
+                val isChunked = resp.transferEncoding.equals("chunked", ignoreCase = true)
+                val contentLength = resp.contentLength.toInt()
 
-            val headersFiltered = HttpHeaders(resp.headers.filter { !_ignoreResponseHeaders.contains(it.key.lowercase()) });
-            for(newHeader in headers)
-                headersFiltered.put(newHeader.key, newHeader.value);
+                val headersFiltered = HttpHeaders(resp.headers.filter { !_ignoreResponseHeaders.contains(it.key.lowercase()) });
+                for (newHeader in headers)
+                    headersFiltered.put(newHeader.key, newHeader.value);
 
-            context.respond(resp.statusCode, headersFiltered) { responseStream ->
-                if (isChunked) {
-                    Logger.i(TAG, "handleWithTcp handleChunkedTransfer");
-                    handleChunkedTransfer(inputStream, responseStream)
-                } else if (contentLength != -1) {
-                    Logger.i(TAG, "handleWithTcp transferFixedLengthContent $contentLength");
-                    transferFixedLengthContent(inputStream, responseStream, contentLength)
-                } else {
-                    Logger.i(TAG, "handleWithTcp transferUntilEndOfStream");
-                    transferUntilEndOfStream(inputStream, responseStream)
+                context.respond(resp.statusCode, headersFiltered) { responseStream ->
+                    if (isChunked) {
+                        Logger.i(TAG, "handleWithTcp handleChunkedTransfer");
+                        handleChunkedTransfer(inputStream, responseStream)
+                    } else if (contentLength > 0) {
+                        Logger.i(TAG, "handleWithTcp transferFixedLengthContent $contentLength");
+                        transferFixedLengthContent(inputStream, responseStream, contentLength)
+                    } else if (contentLength == -1) {
+                        Logger.i(TAG, "handleWithTcp transferUntilEndOfStream");
+                        transferUntilEndOfStream(inputStream, responseStream)
+                    } else {
+                        Logger.i(TAG, "handleWithTcp no content");
+                    }
                 }
             }
         }
@@ -156,7 +168,6 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
 
         while (inputStream.readLine().also { line = it } != null) {
             val size = line!!.trim().toInt(16)
-            Logger.i(TAG, "handleWithTcp handleChunkedTransfer chunk size $size")
 
             responseStream.write(line!!.encodeToByteArray())
             responseStream.write("\r\n".encodeToByteArray())

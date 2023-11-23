@@ -14,6 +14,7 @@ class HttpResponseParser : AutoCloseable {
 
     var contentType: String? = null;
     var transferEncoding: String? = null;
+    var location: String? = null;
     var contentLength: Long = -1L;
 
     var statusCode: Int = -1;
@@ -47,6 +48,7 @@ class HttpResponseParser : AutoCloseable {
                     "content-length" -> contentLength = headerValue.toLong();
                     "content-type" -> contentType = headerValue;
                     "transfer-encoding" -> transferEncoding = headerValue;
+                    "location" -> location = headerValue;
                 }
                 if(line.isNullOrEmpty())
                     break;

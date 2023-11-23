@@ -356,27 +356,35 @@ class StateCasting {
                 }
             }
         } else {
-            if (videoSource is IVideoUrlSource)
+            if (videoSource is IVideoUrlSource) {
+                Logger.i(TAG, "Casting as singular video");
                 ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble());
-            else if (audioSource is IAudioUrlSource)
+            } else if (audioSource is IAudioUrlSource) {
+                Logger.i(TAG, "Casting as singular audio");
                 ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble());
-            else if(videoSource is IHLSManifestSource) {
-                if (ad is ChromecastCastingDevice && video.isLive) {
+            } else if(videoSource is IHLSManifestSource) {
+                if (ad is ChromecastCastingDevice) {
+                    Logger.i(TAG, "Casting as proxied HLS");
                     castHlsIndirect(video, videoSource.url, resumePosition);
                 } else {
+                    Logger.i(TAG, "Casting as non-proxied HLS");
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble());
                 }
             } else if(audioSource is IHLSManifestAudioSource) {
-                if (ad is ChromecastCastingDevice && video.isLive) {
+                if (ad is ChromecastCastingDevice) {
+                    Logger.i(TAG, "Casting as proxied audio HLS");
                     castHlsIndirect(video, audioSource.url, resumePosition);
                 } else {
+                    Logger.i(TAG, "Casting as non-proxied audio HLS");
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble());
                 }
-            } else if (videoSource is LocalVideoSource)
+            } else if (videoSource is LocalVideoSource) {
+                Logger.i(TAG, "Casting as local video");
                 castLocalVideo(video, videoSource, resumePosition);
-            else if (audioSource is LocalAudioSource)
+            } else if (audioSource is LocalAudioSource) {
+                Logger.i(TAG, "Casting as local audio");
                 castLocalAudio(video, audioSource, resumePosition);
-            else {
+            } else {
                 var str = listOf(
                     if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
                     if(audioSource != null) "Audio: ${audioSource::class.java.simpleName}" else null,
@@ -411,6 +419,14 @@ class StateCasting {
         val ad = activeDevice ?: return false;
         ad.seekVideo(timeSeconds);
         return true;
+    }
+
+    private fun castVideoIndirect() {
+
+    }
+
+    private fun castAudioIndirect() {
+
     }
 
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double) : List<String> {
@@ -634,7 +650,7 @@ class StateCasting {
         }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castHlsIndirectMaster")
 
         Logger.i(TAG, "added new castHlsIndirect handlers (hlsPath: $hlsPath).");
-        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble());
 
         return listOf(hlsUrl);
     }
@@ -684,8 +700,6 @@ class StateCasting {
         val proxyStreams = ad !is FastCastCastingDevice;
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
-        Logger.i(TAG, "DASH url: $url");
-
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -694,6 +708,8 @@ class StateCasting {
         val subtitlePath = "/subtitle-${id}"
 
         val dashUrl = url + dashPath;
+        Logger.i(TAG, "DASH url: $dashUrl");
+
         val videoUrl = if(proxyStreams) url + videoPath else videoSource?.getVideoUrl();
         val audioUrl = if(proxyStreams) url + audioPath else audioSource?.getAudioUrl();
 
@@ -719,6 +735,10 @@ class StateCasting {
                         HttpConstantHandler("GET", subtitlePath, content!!, subtitleSource?.format ?: "text/vtt")
                             .withHeader("Access-Control-Allow-Origin", "*"), true
                     ).withTag("cast");
+                    _castServer.addHandler(
+                        HttpOptionsAllowHandler(subtitlePath)
+                            .withHeader("Access-Control-Allow-Origin", "*")
+                    ).withTag("cast");
                 }
 
                 subtitlesUrl = url + subtitlePath;
@@ -732,28 +752,32 @@ class StateCasting {
                 "application/dash+xml")
                 .withHeader("Access-Control-Allow-Origin", "*"), true
         ).withTag("cast");
+        _castServer.addHandler(
+            HttpOptionsAllowHandler(dashPath)
+                .withHeader("Access-Control-Allow-Origin", "*")
+        ).withTag("cast");
+
         if (videoSource != null) {
             _castServer.addHandler(
-                HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl())
+                HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl(), true)
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
             _castServer.addHandler(
                 HttpOptionsAllowHandler(videoPath)
                 .withHeader("Access-Control-Allow-Origin", "*")
-                .withHeader("Connection", "keep-alive"))
-                .withTag("cast");
+            ).withTag("cast");
         }
         if (audioSource != null) {
             _castServer.addHandler(
-                HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl())
+                HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
             _castServer.addHandler(
                 HttpOptionsAllowHandler(audioPath)
                     .withHeader("Access-Control-Allow-Origin", "*")
-                    .withHeader("Connection", "keep-alivcontexte"))
+            )
                 .withTag("cast");
         }
 

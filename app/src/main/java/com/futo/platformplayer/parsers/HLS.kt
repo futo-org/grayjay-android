@@ -1,7 +1,6 @@
 package com.futo.platformplayer.parsers
 
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.toURIRobust
 import com.futo.platformplayer.yesNoToBoolean
 import java.net.URI
 import java.time.ZonedDateTime
@@ -15,7 +14,7 @@ class HLS {
 
             val masterPlaylistContent = masterPlaylistResponse.body?.string()
                 ?: throw Exception("Master playlist content is empty")
-            val baseUrl = sourceUrl.toURIRobust()!!.resolve("./").toString()
+            val baseUrl = URI(sourceUrl).resolve("./").toString()
 
             val variantPlaylists = mutableListOf<VariantPlaylistReference>()
             val mediaRenditions = mutableListOf<MediaRendition>()
@@ -81,7 +80,7 @@ class HLS {
                     }
                     else -> {
                         currentSegment?.let {
-                            it.uri = line
+                            it.uri = resolveUrl(sourceUrl, line)
                             segments.add(it)
                         }
                         currentSegment = null
@@ -93,9 +92,16 @@ class HLS {
         }
 
         private fun resolveUrl(baseUrl: String, url: String): String {
-            return if (url.toURIRobust()!!.isAbsolute) url else baseUrl + url
-        }
+            val baseUri = URI(baseUrl)
+            val urlUri = URI(url)
 
+            return if (urlUri.isAbsolute) {
+                url
+            } else {
+                val resolvedUri = baseUri.resolve(urlUri)
+                resolvedUri.toString()
+            }
+        }
 
         private fun parseStreamInfo(content: String): StreamInfo {
             val attributes = parseAttributes(content)
