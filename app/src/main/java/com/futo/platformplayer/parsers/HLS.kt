@@ -1,6 +1,7 @@
 package com.futo.platformplayer.parsers
 
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.toYesNo
 import com.futo.platformplayer.yesNoToBoolean
 import java.net.URI
 import java.time.ZonedDateTime
@@ -112,6 +113,7 @@ class HLS {
                 frameRate = attributes["FRAME-RATE"],
                 videoRange = attributes["VIDEO-RANGE"],
                 audio = attributes["AUDIO"],
+                subtitles = attributes["SUBTITLES"],
                 closedCaptions = attributes["CLOSED-CAPTIONS"]
             )
         }
@@ -198,6 +200,7 @@ class HLS {
         val frameRate: String?,
         val videoRange: String?,
         val audio: String?,
+        val subtitles: String?,
         val closedCaptions: String?
     )
 
@@ -219,9 +222,9 @@ class HLS {
                 "GROUP-ID" to groupID,
                 "LANGUAGE" to language,
                 "NAME" to name,
-                "DEFAULT" to isDefault?.toString()?.uppercase(),
-                "AUTOSELECT" to isAutoSelect?.toString()?.uppercase(),
-                "FORCED" to isForced?.toString()?.uppercase()
+                "DEFAULT" to isDefault.toYesNo(),
+                "AUTOSELECT" to isAutoSelect.toYesNo(),
+                "FORCED" to isForced.toYesNo()
             )
             append("\n")
         }
@@ -267,6 +270,7 @@ class HLS {
                 "FRAME-RATE" to streamInfo.frameRate,
                 "VIDEO-RANGE" to streamInfo.videoRange,
                 "AUDIO" to streamInfo.audio,
+                "SUBTITLES" to streamInfo.subtitles,
                 "CLOSED-CAPTIONS" to streamInfo.closedCaptions
             )
             append("\n$url\n")

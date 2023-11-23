@@ -365,7 +365,7 @@ class StateCasting {
             } else if(videoSource is IHLSManifestSource) {
                 if (ad is ChromecastCastingDevice) {
                     Logger.i(TAG, "Casting as proxied HLS");
-                    castHlsIndirect(video, videoSource.url, resumePosition);
+                    castProxiedHls(video, videoSource.url, resumePosition);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied HLS");
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble());
@@ -373,7 +373,7 @@ class StateCasting {
             } else if(audioSource is IHLSManifestAudioSource) {
                 if (ad is ChromecastCastingDevice) {
                     Logger.i(TAG, "Casting as proxied audio HLS");
-                    castHlsIndirect(video, audioSource.url, resumePosition);
+                    castProxiedHls(video, audioSource.url, resumePosition);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied audio HLS");
                     ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble());
@@ -574,7 +574,7 @@ class StateCasting {
         return listOf(videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "");
     }
 
-    private fun castHlsIndirect(video: IPlatformVideoDetails, sourceUrl: String, resumePosition: Double): List<String> {
+    private fun castProxiedHls(video: IPlatformVideoDetails, sourceUrl: String, resumePosition: Double): List<String> {
         _castServer.removeAllHandlers("castHlsIndirectMaster")
 
         val ad = activeDevice ?: return listOf();
@@ -695,6 +695,138 @@ class StateCasting {
         )
     }
 
+    private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
+        val ad = activeDevice ?: return listOf();
+        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val id = UUID.randomUUID();
+
+        val hlsPath = "/hls-${id}"
+
+        val hlsUrl = url + hlsPath;
+        Logger.i(TAG, "HLS url: $hlsUrl");
+
+        val mediaRenditions = arrayListOf<HLS.MediaRendition>()
+        val variantPlaylistReferences = arrayListOf<HLS.VariantPlaylistReference>()
+
+        if (audioSource != null) {
+            val audioPath = "/audio-${id}"
+            val audioUrl = url + audioPath
+
+            val duration = audioSource.duration ?: videoSource?.duration ?: throw Exception("Duration unknown")
+            val audioVariantPlaylistPath = "/audio-playlist-${id}"
+            val audioVariantPlaylistUrl = url + audioVariantPlaylistPath
+            val audioVariantPlaylistSegments = listOf(HLS.Segment(duration.toDouble(), audioUrl))
+            val audioVariantPlaylist = HLS.VariantPlaylist(3, duration.toInt(), 0, 0, null, audioVariantPlaylistSegments)
+
+            _castServer.addHandler(
+                HttpConstantHandler("GET", audioVariantPlaylistPath, audioVariantPlaylist.buildM3U8(),
+                    "application/vnd.apple.mpegurl")
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castHlsIndirectVariant");
+
+            mediaRenditions.add(HLS.MediaRendition("AUDIO", audioVariantPlaylistUrl, "audio", "en", "english", true, true, true))
+
+            _castServer.addHandler(
+                HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
+                    .withInjectedHost()
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("cast");
+        }
+
+        val subtitlesUri = if (subtitleSource != null) withContext(Dispatchers.IO) {
+            return@withContext subtitleSource.getSubtitlesURI();
+        } else null;
+
+        var subtitlesUrl: String? = null;
+        if (subtitlesUri != null) {
+            val subtitlePath = "/subtitles-${id}"
+            if(subtitlesUri.scheme == "file") {
+                var content: String? = null;
+                val inputStream = contentResolver.openInputStream(subtitlesUri);
+                inputStream?.use { stream ->
+                    val reader = stream.bufferedReader();
+                    content = reader.use { it.readText() };
+                }
+
+                if (content != null) {
+                    _castServer.addHandler(
+                        HttpConstantHandler("GET", subtitlePath, content!!, subtitleSource?.format ?: "text/vtt")
+                            .withHeader("Access-Control-Allow-Origin", "*"), true
+                    ).withTag("cast");
+                    _castServer.addHandler(
+                        HttpOptionsAllowHandler(subtitlePath)
+                            .withHeader("Access-Control-Allow-Origin", "*")
+                    ).withTag("cast");
+                }
+
+                subtitlesUrl = url + subtitlePath;
+            } else {
+                subtitlesUrl = subtitlesUri.toString();
+            }
+        }
+
+        if (subtitlesUrl != null) {
+            val duration = videoSource?.duration ?: audioSource?.duration ?: throw Exception("Duration unknown")
+            val subtitleVariantPlaylistPath = "/subtitle-playlist-${id}"
+            val subtitleVariantPlaylistUrl = url + subtitleVariantPlaylistPath
+            val subtitleVariantPlaylistSegments = listOf(HLS.Segment(duration.toDouble(), subtitlesUrl))
+            val subtitleVariantPlaylist = HLS.VariantPlaylist(3, duration.toInt(), 0, 0, null, subtitleVariantPlaylistSegments)
+
+            _castServer.addHandler(
+                HttpConstantHandler("GET", subtitleVariantPlaylistPath, subtitleVariantPlaylist.buildM3U8(),
+                    "application/vnd.apple.mpegurl")
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castHlsIndirectVariant");
+
+            mediaRenditions.add(HLS.MediaRendition("SUBTITLES", subtitleVariantPlaylistUrl, "subtitles", "en", "english", true, true, true))
+        }
+
+        if (videoSource != null) {
+            val videoPath = "/video-${id}"
+            val videoUrl = url + videoPath
+
+            val duration = videoSource.duration
+            val videoVariantPlaylistPath = "/video-playlist-${id}"
+            val videoVariantPlaylistUrl = url + videoVariantPlaylistPath
+            val videoVariantPlaylistSegments = listOf(HLS.Segment(duration.toDouble(), videoUrl))
+            val videoVariantPlaylist = HLS.VariantPlaylist(3, duration.toInt(), 0, 0, null, videoVariantPlaylistSegments)
+
+            _castServer.addHandler(
+                HttpConstantHandler("GET", videoVariantPlaylistPath, videoVariantPlaylist.buildM3U8(),
+                    "application/vnd.apple.mpegurl")
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castHlsIndirectVariant");
+
+            variantPlaylistReferences.add(HLS.VariantPlaylistReference(videoVariantPlaylistUrl, HLS.StreamInfo(
+                videoSource.bitrate ?: 0,
+                "${videoSource.width}x${videoSource.height}",
+                videoSource.codec,
+                null,
+                null,
+                if (audioSource != null) "audio" else null,
+                if (subtitleSource != null) "subtitles" else null,
+                null)))
+
+            _castServer.addHandler(
+                HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl(), true)
+                    .withInjectedHost()
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("cast");
+        }
+
+        val masterPlaylist = HLS.MasterPlaylist(variantPlaylistReferences, mediaRenditions, listOf(), true)
+        _castServer.addHandler(
+            HttpConstantHandler("GET", hlsPath, masterPlaylist.buildM3U8(),
+                "application/vnd.apple.mpegurl")
+                .withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("castHlsIndirectMaster")
+
+        Logger.i(TAG, "added new castHls handlers (hlsPath: $hlsPath).");
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble());
+
+        return listOf(hlsUrl, videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
+    }
+
     private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = ad !is FastCastCastingDevice;
@@ -782,7 +914,7 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
-        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble());
 
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }

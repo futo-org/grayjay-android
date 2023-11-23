@@ -22,3 +22,7 @@ inline fun <reified T, R> Any.assume(cb: (T) -> R): R? {
 fun String?.yesNoToBoolean(): Boolean {
     return this?.uppercase() == "YES"
 }
+
+fun Boolean?.toYesNo(): String {
+    return if (this == true) "YES" else "NO"
+}
