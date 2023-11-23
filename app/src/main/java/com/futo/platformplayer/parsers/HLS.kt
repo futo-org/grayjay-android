@@ -66,18 +66,22 @@ class HLS {
             val programDateTime = lines.find { it.startsWith("#EXT-X-PROGRAM-DATE-TIME:") }?.substringAfter(":")?.let {
                 ZonedDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME)
             }
+            val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
 
             val segments = mutableListOf<Segment>()
-            var currentSegment: Segment? = null
+            var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
                     line.startsWith("#EXTINF:") -> {
                         val duration = line.substringAfter(":").substringBefore(",").toDoubleOrNull()
                             ?: throw Exception("Invalid segment duration format")
-                        currentSegment = Segment(duration = duration)
+                        currentSegment = MediaSegment(duration = duration)
                     }
-                    line.startsWith("#") -> {
-                        // Handle other tags if necessary
+                    line == "#EXT-X-DISCONTINUITY" -> {
+                        segments.add(DiscontinuitySegment())
+                    }
+                    line =="#EXT-X-ENDLIST" -> {
+                        segments.add(EndListSegment())
                     }
                     else -> {
                         currentSegment?.let {
@@ -89,7 +93,7 @@ class HLS {
                 }
             }
 
-            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, segments)
+            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, segments)
         }
 
         private fun resolveUrl(baseUrl: String, url: String): String {
@@ -113,6 +117,7 @@ class HLS {
                 frameRate = attributes["FRAME-RATE"],
                 videoRange = attributes["VIDEO-RANGE"],
                 audio = attributes["AUDIO"],
+                video = attributes["VIDEO"],
                 subtitles = attributes["SUBTITLES"],
                 closedCaptions = attributes["CLOSED-CAPTIONS"]
             )
@@ -159,7 +164,7 @@ class HLS {
             return attributes
         }
 
-        private val _quoteList = listOf("GROUP-ID", "NAME", "URI", "CODECS", "AUDIO")
+        private val _quoteList = listOf("GROUP-ID", "NAME", "URI", "CODECS", "AUDIO", "VIDEO")
         private fun shouldQuote(key: String, value: String?): Boolean {
             if (value == null)
                 return false;
@@ -200,6 +205,7 @@ class HLS {
         val frameRate: String?,
         val videoRange: String?,
         val audio: String?,
+        val video: String?,
         val subtitles: String?,
         val closedCaptions: String?
     )
@@ -270,6 +276,7 @@ class HLS {
                 "FRAME-RATE" to streamInfo.frameRate,
                 "VIDEO-RANGE" to streamInfo.videoRange,
                 "AUDIO" to streamInfo.audio,
+                "VIDEO" to streamInfo.video,
                 "SUBTITLES" to streamInfo.subtitles,
                 "CLOSED-CAPTIONS" to streamInfo.closedCaptions
             )
@@ -283,6 +290,7 @@ class HLS {
         val mediaSequence: Long,
         val discontinuitySequence: Int,
         val programDateTime: ZonedDateTime?,
+        val playlistType: String?,
         val segments: List<Segment>
     ) {
         fun buildM3U8(): String = buildString {
@@ -291,19 +299,44 @@ class HLS {
             append("#EXT-X-TARGETDURATION:$targetDuration\n")
             append("#EXT-X-MEDIA-SEQUENCE:$mediaSequence\n")
             append("#EXT-X-DISCONTINUITY-SEQUENCE:$discontinuitySequence\n")
+
+            playlistType?.let {
+                append("#EXT-X-PLAYLIST-TYPE:$it\n")
+            }
+
             programDateTime?.let {
                 append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n")
             }
 
             segments.forEach { segment ->
-                append("#EXTINF:${segment.duration},\n")
-                append(segment.uri + "\n")
+                append(segment.toM3U8Line())
             }
         }
     }
 
-    data class Segment(
+    abstract class Segment {
+        abstract fun toM3U8Line(): String
+    }
+
+    data class MediaSegment (
         val duration: Double,
         var uri: String = ""
-    )
+    ) : Segment() {
+        override fun toM3U8Line(): String = buildString {
+            append("#EXTINF:${duration},\n")
+            append(uri + "\n")
+        }
+    }
+
+    class DiscontinuitySegment : Segment() {
+        override fun toM3U8Line(): String = buildString {
+            append("#EXT-X-DISCONTINUITY\n")
+        }
+    }
+
+    class EndListSegment : Segment() {
+        override fun toM3U8Line(): String = buildString {
+            append("#EXT-X-ENDLIST\n")
+        }
+    }
 }
