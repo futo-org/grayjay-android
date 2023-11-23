@@ -2,6 +2,7 @@ package com.futo.platformplayer.stores.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Room
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.IPager
@@ -241,6 +242,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         if(index.serialized == null) throw IllegalStateException("Cannot deserialize index-only items from [${name}]");
         val obj = _serializer.deserialize(_class, index.serialized!!);
         index.obj = obj;
+        index.serialized = null;
         return index;
     }
     fun deserializeIndexes(indexes: List<I>): List<I> {

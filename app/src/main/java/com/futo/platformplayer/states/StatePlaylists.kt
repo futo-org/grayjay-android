@@ -58,8 +58,7 @@ class StatePlaylists {
 
     val historyIndex: ConcurrentMap<Any, DBHistory.Index> = ConcurrentHashMap();
     val _historyDBStore = ManagedDBStore.create("history", DBHistory.Descriptor())
-        .withIndex({ it.url }, historyIndex)
-        .withUnique({ it.url }, historyIndex)
+        .withIndex({ it.url }, historyIndex, true)
         .load();
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
@@ -158,6 +157,9 @@ class StatePlaylists {
         }
     }
 */
+    fun getHistoryLegacy(): List<HistoryVideo> {
+        return _historyStore.getItems();
+    }
     fun getHistory() : List<HistoryVideo> {
         return _historyDBStore.getAllObjects();
         //return _historyStore.getItems().sortedByDescending { it.date };

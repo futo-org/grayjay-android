@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateApp
@@ -45,6 +46,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
 
     fun updateFilteredVideos() {
         val videos = StatePlaylists.instance.getHistory();
+
         if (_query.isBlank()) {
             _filteredVideos = videos.toMutableList();
         } else {

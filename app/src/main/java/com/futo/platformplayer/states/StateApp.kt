@@ -528,11 +528,13 @@ class StateApp {
         StatePlaylists.instance.toMigrateCheck();
 
         StatePlaylists.instance._historyDBStore.deleteAll();
+
         if(StatePlaylists.instance.shouldMigrateLegacyHistory())
             StatePlaylists.instance.migrateLegacyHistory();
 
 
-        if(false) {
+        if(true) {
+            /*
             Logger.i(TAG, "TEST:--------(200)---------");
             testHistoryDB(200);
             Logger.i(TAG, "TEST:--------(1000)---------");
@@ -543,14 +545,19 @@ class StateApp {
             testHistoryDB(4000);
             Logger.i(TAG, "TEST:--------(6000)---------");
             testHistoryDB(6000);
+            */
+            Logger.i(TAG, "TEST:--------(100000)---------");
+            scope.launch(Dispatchers.Default) {
+                testHistoryDB(100000);
+            }
         }
     }
     fun testHistoryDB(count: Int) {
         Logger.i(TAG, "TEST: Starting tests");
         StatePlaylists.instance._historyDBStore.deleteAll();
 
-        val testHistoryItem = StatePlaylists.instance.getHistory().first();
-        val testItemJson = StatePlaylists.instance.getHistory().first().video.toJson();
+        val testHistoryItem = StatePlaylists.instance.getHistoryLegacy().first();
+        val testItemJson = testHistoryItem.video.toJson();
         val now = OffsetDateTime.now();
 
         val testSet = (0..count).map { HistoryVideo(Json.decodeFromString<SerializedPlatformVideo>(testItemJson.replace(testHistoryItem.video.url, UUID.randomUUID().toString())), it.toLong(), now.minusHours(it.toLong())) }
@@ -562,7 +569,7 @@ class StateApp {
                 StatePlaylists.instance._historyDBStore.insert(item);
         };
         Logger.i(TAG, "TEST: Inserting in ${insertMS}ms");
-
+        /*
         var fetched: List<DBHistory.Index>? = null;
         val fetchMS = measureTimeMillis {
             fetched = StatePlaylists.instance._historyDBStore.getAll();
@@ -574,7 +581,7 @@ class StateApp {
             Logger.i(TAG, "TEST: Deserialized: ${deserialized.size}");
         };
         Logger.i(TAG, "TEST: Deserialize speed ${deserializeMS}MS");
-
+        */
         var fetchedIndex: List<DBHistory.Index>? = null;
         val fetchIndexMS = measureTimeMillis {
             fetchedIndex = StatePlaylists.instance._historyDBStore.getAllIndexes();
