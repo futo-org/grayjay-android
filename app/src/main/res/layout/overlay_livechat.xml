@@ -46,10 +46,9 @@
             app:layout_constraintLeft_toRightOf="@id/ic_viewers"
             tools:text="1536 viewers"/>
 
-        <ScrollView
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="35dp"
-            android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent">
@@ -61,7 +60,7 @@
                 android:layout_height="match_parent">
 
             </LinearLayout>
-        </ScrollView>
+        </HorizontalScrollView>
 
         <ImageView
             android:id="@+id/button_close"
