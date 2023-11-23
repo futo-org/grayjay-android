@@ -69,7 +69,7 @@ class ChromecastCastingDevice : CastingDevice {
             return;
         }
 
-        Logger.i(FastCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
 
         time = resumePosition;
         _streamType = streamType;
