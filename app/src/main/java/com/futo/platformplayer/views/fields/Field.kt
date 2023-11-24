@@ -23,6 +23,8 @@ interface IField {
 
     var reference: Any?;
 
+    val searchContent: String?;
+
     fun fromField(obj : Any, field : Field, formField: FormField? = null) : IField;
     fun setField();
 

@@ -41,6 +41,9 @@ class DropdownField : TableRow, IField {
 
     override val value: Any? get() = _selected;
 
+    override val searchContent: String?
+        get() = "${_title.text} ${_description.text}";
+
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_dropdown, this);
         _spinner = findViewById(R.id.field_spinner);

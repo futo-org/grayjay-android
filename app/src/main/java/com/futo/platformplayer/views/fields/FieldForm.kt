@@ -3,12 +3,14 @@ package com.futo.platformplayer.views.fields
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
+import androidx.core.widget.addTextChangedListener
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event2
-import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,11 +26,12 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaMethod
 import kotlin.streams.asStream
-import kotlin.streams.toList
 
 class FieldForm : LinearLayout {
 
-    private val _root : LinearLayout;
+    private val _containerSearch: FrameLayout;
+    private val _editSearch: EditText;
+    private val _fieldsContainer : LinearLayout;
 
     val onChanged = Event2<IField, Any>();
 
@@ -36,11 +39,45 @@ class FieldForm : LinearLayout {
 
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.field_form, this);
-        _root = findViewById(R.id.field_form_root);
+        _containerSearch = findViewById(R.id.container_search);
+        _editSearch = findViewById(R.id.edit_search);
+        _fieldsContainer = findViewById(R.id.field_form_container);
+
+        _editSearch.addTextChangedListener {
+            updateSettingsVisibility();
+        }
+    }
+
+    fun updateSettingsVisibility(group: GroupField? = null) {
+        val settings = group?.getFields() ?: _fields;
+
+        val query = _editSearch.text.toString().lowercase();
+
+        var groupVisible = false;
+        val isGroupMatch = query.isEmpty() || group?.searchContent?.lowercase()?.contains(query) == true;
+        for(field in settings) {
+            if(field is GroupField)
+                updateSettingsVisibility(field);
+            else if(field is View && field.descriptor != null) {
+                val txt = field.searchContent?.lowercase();
+                if(txt != null) {
+                    val visible = isGroupMatch || txt.contains(query);
+                    field.visibility = if (visible) View.VISIBLE else View.GONE;
+                    groupVisible = groupVisible || visible;
+                }
+            }
+        }
+        if(group != null)
+            group.visibility = if(groupVisible) View.VISIBLE else View.GONE;
+    }
+
+    fun setSearchVisible(visible: Boolean) {
+        _containerSearch.visibility = if(visible) View.VISIBLE else View.GONE;
+        _editSearch.setText("");
     }
 
     fun fromObject(scope: CoroutineScope, obj : Any, onLoaded: (()->Unit)? = null) {
-        _root.removeAllViews();
+        _fieldsContainer.removeAllViews();
 
         scope.launch(Dispatchers.Default) {
             val newFields = getFieldsFromObject(context, obj);
@@ -50,7 +87,7 @@ class FieldForm : LinearLayout {
                     if (field !is View)
                         throw java.lang.IllegalStateException("Only views can be IFields");
 
-                    _root.addView(field as View);
+                    _fieldsContainer.addView(field as View);
                     field.onChanged.subscribe { a1, a2, oldValue ->
                         onChanged.emit(a1, a2);
                     };
@@ -62,13 +99,13 @@ class FieldForm : LinearLayout {
         }
     }
     fun fromObject(obj : Any) {
-        _root.removeAllViews();
+        _fieldsContainer.removeAllViews();
         val newFields = getFieldsFromObject(context, obj);
         for(field in newFields) {
             if(field !is View)
                 throw java.lang.IllegalStateException("Only views can be IFields");
 
-            _root.addView(field as View);
+            _fieldsContainer.addView(field as View);
             field.onChanged.subscribe { a1, a2, oldValue ->
                 onChanged.emit(a1, a2);
             };
@@ -76,7 +113,7 @@ class FieldForm : LinearLayout {
         _fields = newFields;
     }
     fun fromPluginSettings(settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>, groupTitle: String? = null, groupDescription: String? = null) {
-        _root.removeAllViews();
+        _fieldsContainer.removeAllViews();
         val newFields = getFieldsFromPluginSettings(context, settings, values);
         if (newFields.isEmpty()) {
             return;
@@ -87,7 +124,7 @@ class FieldForm : LinearLayout {
                 if(field.second !is View)
                     throw java.lang.IllegalStateException("Only views can be IFields");
                 finalizePluginSettingField(field.first, field.second, newFields);
-                _root.addView(field as View);
+                _fieldsContainer.addView(field as View);
             }
             _fields = newFields.map { it.second };
         } else {
@@ -96,7 +133,7 @@ class FieldForm : LinearLayout {
             }
             val group = GroupField(context, groupTitle, groupDescription)
                 .withFields(newFields.map { it.second });
-            _root.addView(group as View);
+            _fieldsContainer.addView(group as View);
         }
     }
     private fun finalizePluginSettingField(setting: SourcePluginConfig.Setting, field: IField, others: List<Pair<SourcePluginConfig.Setting, IField>>) {
@@ -210,7 +247,6 @@ class FieldForm : LinearLayout {
                 .asStream()
                 .filter { it.hasAnnotation<FormField>() && it.javaField != null }
                 .map { Pair<KProperty<*>, FormField>(it, it.findAnnotation()!!) }
-                .toList()
 
             //TODO: Rewrite fields to properties so no map is required
             val propertyMap = mutableMapOf<Field, KProperty<*>>();
@@ -252,7 +288,6 @@ class FieldForm : LinearLayout {
                 .asStream()
                 .filter { it.hasAnnotation<FormField>() && it.javaField == null && it.getter.javaMethod != null}
                 .map { Pair<Method, FormField>(it.getter.javaMethod!!, it.findAnnotation()!!) }
-                .toList();
 
             for(prop in objProps) {
                 prop.first.isAccessible = true;
@@ -270,7 +305,6 @@ class FieldForm : LinearLayout {
                 .asStream()
                 .filter { it.getAnnotation(FormField::class.java) != null && !it.name.startsWith("get") && !it.name.startsWith("set") }
                 .map { Pair<Method, FormField>(it, it.getAnnotation(FormField::class.java)) }
-                .toList();
 
             for(meth in objMethods) {
                 meth.first.isAccessible = true;

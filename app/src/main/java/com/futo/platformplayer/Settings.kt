@@ -307,29 +307,29 @@ class Settings : FragmentedStorageFileJson() {
             else -> 1.0f;
         };
 
-        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, -1, 2)
+        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, R.string.preferred_quality_description, 2)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredQuality: Int = 0;
 
-        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, -1, 2)
+        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, R.string.preferred_metered_quality_description, 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredMeteredQuality: Int = 0;
         fun getPreferredQualityPixelCount(): Int = preferedQualityToPixels(preferredQuality);
         fun getPreferredMeteredQualityPixelCount(): Int = preferedQualityToPixels(preferredMeteredQuality);
         fun getCurrentPreferredQualityPixelCount(): Int = if(!StateApp.instance.isCurrentMetered()) getPreferredQualityPixelCount() else getPreferredMeteredQualityPixelCount();
 
-        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, -1, 3)
+        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, R.string.preferred_preview_quality_description, 4)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
 
-        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 4)
+        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
         fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
 
-        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 5)
+        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 6)
         @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
         var autoRotateDeadZone: Int = 0;
 
@@ -337,7 +337,7 @@ class Settings : FragmentedStorageFileJson() {
             return autoRotateDeadZone * 5;
         }
 
-        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
+        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 

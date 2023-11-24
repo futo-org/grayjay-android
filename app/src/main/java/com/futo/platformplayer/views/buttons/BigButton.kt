@@ -19,6 +19,9 @@ open class BigButton : LinearLayout {
     private val _textPrimary: TextView;
     private val _textSecondary: TextView;
 
+    val title: String get() = _textPrimary.text.toString();
+    val description: String get() = _textSecondary.text.toString();
+
     val onClick = Event0();
 
     constructor(context : Context, text: String, subText: String, icon: Int, action: ()->Unit) : super(context) {
