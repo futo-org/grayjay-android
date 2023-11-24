@@ -5,6 +5,7 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.exceptions.EmptyRequestException
 import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpOptionsAllowHandler
 import java.io.BufferedInputStream
 import java.io.OutputStream
 import java.lang.reflect.Field
@@ -141,6 +142,23 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
         }
         return handler;
     }
+
+    fun addHandlerWithAllowAllOptions(handler: HttpHandler, withHEAD: Boolean = false) : HttpHandler {
+        val allowedMethods = arrayListOf(handler.method, "OPTIONS")
+        if (withHEAD) {
+            allowedMethods.add("HEAD")
+        }
+
+        val tag = handler.tag
+        if (tag != null) {
+            addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods).withTag(tag))
+        } else {
+            addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods))
+        }
+
+        return addHandler(handler, withHEAD)
+    }
+
     fun removeHandler(method: String, path: String) {
         synchronized(_handlers) {
             val handlerMap = _handlers[method] ?: return
