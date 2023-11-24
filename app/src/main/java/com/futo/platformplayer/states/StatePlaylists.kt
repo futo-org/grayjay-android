@@ -58,7 +58,7 @@ class StatePlaylists {
 
     val historyIndex: ConcurrentMap<Any, DBHistory.Index> = ConcurrentHashMap();
     val _historyDBStore = ManagedDBStore.create("history", DBHistory.Descriptor())
-        .withIndex({ it.url }, historyIndex, true)
+        .withIndex({ it.url }, historyIndex, false, true)
         .load();
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");

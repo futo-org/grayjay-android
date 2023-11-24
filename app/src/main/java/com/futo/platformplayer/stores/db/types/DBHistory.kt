@@ -66,7 +66,6 @@ class DBHistory {
             url = historyVideo.video.url;
             position = historyVideo.position;
             date = historyVideo.date.toEpochSecond();
-            obj = historyVideo;
         }
     }
 }

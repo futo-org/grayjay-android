@@ -24,7 +24,6 @@ class DBChannelCache {
         constructor(sCache: SerializedPlatformContent) {
             id = null;
             serialized = null;
-            obj = sCache;
             channelUrl = sCache.author.url;
         }
     }

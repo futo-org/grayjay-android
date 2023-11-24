@@ -1,15 +1,13 @@
 package com.futo.platformplayer.stores.db
 
+import android.content.Context
 import androidx.room.ColumnInfo
 import androidx.room.Room
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.assume
-import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.StoreSerializer
 import kotlinx.serialization.KSerializer
@@ -37,6 +35,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     private val _columnInfo: List<ColumnMetadata>;
 
     private val _sqlGet: (Long)-> SimpleSQLiteQuery;
+    private val _sqlGetIndex: (Long)-> SimpleSQLiteQuery;
     private val _sqlGetAll: (LongArray)-> SimpleSQLiteQuery;
     private val _sqlAll: SimpleSQLiteQuery;
     private val _sqlCount: SimpleSQLiteQuery;
@@ -49,7 +48,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
     val name: String;
 
-    private val _indexes: ArrayList<Pair<(I)->Any, ConcurrentMap<Any, I>>> = arrayListOf();
+    private val _indexes: ArrayList<IndexDescriptor<I>> = arrayListOf();
     private val _indexCollection = ConcurrentHashMap<Long, I>();
 
     private var _withUnique: Pair<(I)->Any, ConcurrentMap<Any, I>>? = null;
@@ -76,6 +75,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         else "";
 
         _sqlGet = { SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} WHERE id = ?", arrayOf(it)) };
+        _sqlGetIndex = { SimpleSQLiteQuery("SELECT ${indexColumnNames.joinToString(", ")} FROM ${_dbDescriptor.table_name} WHERE id = ?", arrayOf(it)) };
         _sqlGetAll = { SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} WHERE id IN (?)", arrayOf(it)) };
         _sqlAll = SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} ${orderSQL}");
         _sqlCount = SimpleSQLiteQuery("SELECT COUNT(id) FROM ${_dbDescriptor.table_name}");
@@ -90,10 +90,10 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         }
     }
 
-    fun withIndex(keySelector: (I)->Any, indexContainer: ConcurrentMap<Any, I>, withUnique: Boolean = false): ManagedDBStore<I, T, D, DA> {
+    fun withIndex(keySelector: (I)->Any, indexContainer: ConcurrentMap<Any, I>, allowChange: Boolean = false, withUnique: Boolean = false): ManagedDBStore<I, T, D, DA> {
         if(_sqlIndexed == null)
             throw IllegalStateException("Can only create indexes if sqlIndexOnly is implemented");
-        _indexes.add(Pair(keySelector, indexContainer));
+        _indexes.add(IndexDescriptor(keySelector, indexContainer, allowChange));
 
         if(withUnique)
             withUnique(keySelector, indexContainer);
@@ -108,8 +108,11 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         return this;
     }
 
-    fun load(): ManagedDBStore<I, T, D, DA> {
-        _db = Room.databaseBuilder(StateApp.instance.context, _dbDescriptor.dbClass().java, _name)
+    fun load(context: Context? = null, inMemory: Boolean = false): ManagedDBStore<I, T, D, DA> {
+        _db = (if(!inMemory)
+                    Room.databaseBuilder(context ?: StateApp.instance.context, _dbDescriptor.dbClass().java, _name)
+                else
+                    Room.inMemoryDatabaseBuilder(context ?: StateApp.instance.context, _dbDescriptor.dbClass().java))
             .fallbackToDestructiveMigration()
             .allowMainThreadQueries()
             .build()
@@ -117,10 +120,16 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         if(_indexes.any()) {
             val allItems = _dbDaoBase!!.getMultiple(_sqlIndexed!!);
             for(index in _indexes)
-                index.second.putAll(allItems.associateBy(index.first));
+                index.collection.putAll(allItems.associateBy(index.keySelector));
         }
 
         return this;
+    }
+    fun shutdown() {
+        val db = _db;
+        _db = null;
+        _dbDaoBase = null;
+        db?.close();
     }
 
     fun getUnique(obj: I): I? {
@@ -142,9 +151,12 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
     fun insert(obj: T): Long {
         val newIndex = _dbDescriptor.create(obj);
-        val unique = getUnique(newIndex);
-        if(unique != null)
-            return unique.id!!;
+
+        if(_withUnique != null) {
+            val unique = getUnique(newIndex);
+            if (unique != null)
+                return unique.id!!;
+        }
 
         newIndex.serialized = serialize(obj);
         newIndex.id = dbDaoBase.insert(newIndex);
@@ -153,13 +165,15 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
         if(!_indexes.isEmpty()) {
             for (index in _indexes) {
-                val key = index.first(newIndex);
-                index.second.put(key, newIndex);
+                val key = index.keySelector(newIndex);
+                index.collection.put(key, newIndex);
             }
         }
         return newIndex.id!!;
     }
     fun update(id: Long, obj: T) {
+        val existing = if(_indexes.any { it.checkChange }) _dbDaoBase!!.getNullable(_sqlGetIndex(id)) else null
+
         val newIndex = _dbDescriptor.create(obj);
         newIndex.id = id;
         newIndex.serialized = serialize(obj);
@@ -168,8 +182,13 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
         if(!_indexes.isEmpty()) {
             for (index in _indexes) {
-                val key = index.first(newIndex);
-                index.second.put(key, newIndex);
+                val key = index.keySelector(newIndex);
+                if(index.checkChange && existing != null) {
+                    val keyExisting = index.keySelector(existing);
+                    if(keyExisting != key)
+                        index.collection.remove(keyExisting);
+                }
+                index.collection.put(key, newIndex);
             }
         }
     }
@@ -188,6 +207,15 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun getObject(id: Long) = get(id).obj!!;
     fun get(id: Long): I {
         return deserializeIndex(dbDaoBase.get(_sqlGet(id)));
+    }
+    fun getOrNull(id: Long): I? {
+        val result = dbDaoBase.getNullable(_sqlGet(id));
+        if(result == null)
+            return null;
+        return deserializeIndex(result);
+    }
+    fun getIndexOnlyOrNull(id: Long): I? {
+        return dbDaoBase.get(_sqlGetIndex(id));
     }
 
     fun getAllObjects(vararg id: Long): List<T> = getAll(*id).map { it.obj!! };
@@ -217,19 +245,20 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         dbDaoBase.delete(item);
 
         for(index in _indexes)
-            index.second.remove(index.first(item));
+            index.collection.remove(index.keySelector(item));
     }
     fun delete(id: Long) {
         dbDaoBase.action(_sqlDeleteById(id));
+
         for(index in _indexes)
-            index.second.values.removeIf { it.id == id }
+            index.collection.values.removeIf { it.id == id }
     }
     fun deleteAll() {
         dbDaoBase.action(_sqlDeleteAll);
 
         _indexCollection.clear();
         for(index in _indexes)
-            index.second.clear();
+            index.collection.clear();
     }
 
     fun convertObject(index: I): T? {
@@ -241,7 +270,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun deserializeIndex(index: I): I {
         if(index.serialized == null) throw IllegalStateException("Cannot deserialize index-only items from [${name}]");
         val obj = _serializer.deserialize(_class, index.serialized!!);
-        index.obj = obj;
+        index.setInstance(obj);
         index.serialized = null;
         return index;
     }
@@ -259,6 +288,13 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         inline fun <reified T, I: ManagedDBIndex<T>, D:  ManagedDBDatabase<T, I, DA>, DA: ManagedDBDAOBase<T, I>> create(name: String, descriptor: ManagedDBDescriptor<T, I, D, DA>, serializer: KSerializer<T>? = null)
             = ManagedDBStore(name, descriptor, kotlin.reflect.typeOf<T>(), JsonStoreSerializer.create(serializer));
     }
+
+    //Pair<(I)->Any, ConcurrentMap<Any, I>>
+    class IndexDescriptor<I>(
+        val keySelector: (I) -> Any,
+        val collection: ConcurrentMap<Any, I>,
+        val checkChange: Boolean
+    )
 
     class ColumnMetadata(
         val field: Field,

@@ -15,6 +15,8 @@ interface ManagedDBDAOBase<T, I: ManagedDBIndex<T>> {
     @RawQuery
     fun get(query: SupportSQLiteQuery): I;
     @RawQuery
+    fun getNullable(query: SupportSQLiteQuery): I?;
+    @RawQuery
     fun getMultiple(query: SupportSQLiteQuery): List<I>;
 
     @RawQuery

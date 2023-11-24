@@ -13,5 +13,12 @@ open class ManagedDBIndex<T> {
     var serialized: ByteArray? = null;
 
     @Ignore
-    var obj: T? = null;
+    private var _obj: T? = null;
+
+    @get:Ignore
+    val obj: T get() = _obj ?: throw IllegalStateException("Attempted to access serialized object on a index-only instance");
+
+    fun setInstance(obj: T) {
+        this._obj = obj;
+    }
 }
