@@ -9,12 +9,7 @@ import java.time.format.DateTimeFormatter
 
 class HLS {
     companion object {
-        fun downloadAndParseMasterPlaylist(client: ManagedHttpClient, sourceUrl: String): MasterPlaylist {
-            val masterPlaylistResponse = client.get(sourceUrl)
-            check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
-
-            val masterPlaylistContent = masterPlaylistResponse.body?.string()
-                ?: throw Exception("Master playlist content is empty")
+        fun parseMasterPlaylist(masterPlaylistContent: String, sourceUrl: String): MasterPlaylist {
             val baseUrl = URI(sourceUrl).resolve("./").toString()
 
             val variantPlaylists = mutableListOf<VariantPlaylistReference>()
@@ -33,7 +28,7 @@ class HLS {
                     }
 
                     line.startsWith("#EXT-X-MEDIA") -> {
-                        mediaRenditions.add(parseMediaRendition(client, line, baseUrl))
+                        mediaRenditions.add(parseMediaRendition(line, baseUrl))
                     }
 
                     line == "#EXT-X-INDEPENDENT-SEGMENTS" -> {
@@ -50,27 +45,21 @@ class HLS {
             return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments)
         }
 
-        fun downloadAndParseVariantPlaylist(client: ManagedHttpClient, sourceUrl: String): VariantPlaylist {
-            val response = client.get(sourceUrl)
-            check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
-
-            val content = response.body?.string()
-                ?: throw Exception("Variant playlist content is empty")
-
+        fun parseVariantPlaylist(content: String, sourceUrl: String): VariantPlaylist {
             val lines = content.lines()
-            val version = lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull() ?: 3
+            val version = lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull()
             val targetDuration = lines.find { it.startsWith("#EXT-X-TARGETDURATION:") }?.substringAfter(":")?.toIntOrNull()
-                ?: throw Exception("Target duration not found in variant playlist")
-            val mediaSequence = lines.find { it.startsWith("#EXT-X-MEDIA-SEQUENCE:") }?.substringAfter(":")?.toLongOrNull() ?: 0
-            val discontinuitySequence = lines.find { it.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") }?.substringAfter(":")?.toIntOrNull() ?: 0
+            val mediaSequence = lines.find { it.startsWith("#EXT-X-MEDIA-SEQUENCE:") }?.substringAfter(":")?.toLongOrNull()
+            val discontinuitySequence = lines.find { it.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") }?.substringAfter(":")?.toIntOrNull()
             val programDateTime = lines.find { it.startsWith("#EXT-X-PROGRAM-DATE-TIME:") }?.substringAfter(":")?.let {
                 ZonedDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME)
             }
             val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
+            val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
             val segments = mutableListOf<Segment>()
             var currentSegment: MediaSegment? = null
-            lines.forEach { line ->
+            lines.forEachIndexed { index, line ->
                 when {
                     line.startsWith("#EXTINF:") -> {
                         val duration = line.substringAfter(":").substringBefore(",").toDoubleOrNull()
@@ -93,7 +82,7 @@ class HLS {
                 }
             }
 
-            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, segments)
+            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments)
         }
 
         private fun resolveUrl(baseUrl: String, url: String): String {
@@ -123,7 +112,7 @@ class HLS {
             )
         }
 
-        private fun parseMediaRendition(client: ManagedHttpClient, line: String, baseUrl: String): MediaRendition {
+        private fun parseMediaRendition(line: String, baseUrl: String): MediaRendition {
             val attributes = parseAttributes(line)
             val uri = attributes["URI"]?.let { resolveUrl(baseUrl, it) }
             return MediaRendition(
@@ -208,7 +197,23 @@ class HLS {
         val video: String?,
         val subtitles: String?,
         val closedCaptions: String?
-    )
+    ) {
+        fun toM3U8Line(): String = buildString {
+            append("#EXT-X-STREAM-INF:")
+            appendAttributes(this,
+                "BANDWIDTH" to bandwidth?.toString(),
+                "RESOLUTION" to resolution,
+                "CODECS" to codecs,
+                "FRAME-RATE" to frameRate,
+                "VIDEO-RANGE" to videoRange,
+                "AUDIO" to audio,
+                "VIDEO" to video,
+                "SUBTITLES" to subtitles,
+                "CLOSED-CAPTIONS" to closedCaptions
+            )
+            append("\n")
+        }
+    }
 
     data class MediaRendition(
         val type: String?,
@@ -268,45 +273,30 @@ class HLS {
 
     data class VariantPlaylistReference(val url: String, val streamInfo: StreamInfo) {
         fun toM3U8Line(): String = buildString {
-            append("#EXT-X-STREAM-INF:")
-            appendAttributes(this,
-                "BANDWIDTH" to streamInfo.bandwidth?.toString(),
-                "RESOLUTION" to streamInfo.resolution,
-                "CODECS" to streamInfo.codecs,
-                "FRAME-RATE" to streamInfo.frameRate,
-                "VIDEO-RANGE" to streamInfo.videoRange,
-                "AUDIO" to streamInfo.audio,
-                "VIDEO" to streamInfo.video,
-                "SUBTITLES" to streamInfo.subtitles,
-                "CLOSED-CAPTIONS" to streamInfo.closedCaptions
-            )
-            append("\n$url\n")
+            append(streamInfo.toM3U8Line())
+            append("$url\n")
         }
     }
 
     data class VariantPlaylist(
-        val version: Int,
-        val targetDuration: Int,
-        val mediaSequence: Long,
-        val discontinuitySequence: Int,
+        val version: Int?,
+        val targetDuration: Int?,
+        val mediaSequence: Long?,
+        val discontinuitySequence: Int?,
         val programDateTime: ZonedDateTime?,
         val playlistType: String?,
+        val streamInfo: StreamInfo?,
         val segments: List<Segment>
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")
-            append("#EXT-X-VERSION:$version\n")
-            append("#EXT-X-TARGETDURATION:$targetDuration\n")
-            append("#EXT-X-MEDIA-SEQUENCE:$mediaSequence\n")
-            append("#EXT-X-DISCONTINUITY-SEQUENCE:$discontinuitySequence\n")
-
-            playlistType?.let {
-                append("#EXT-X-PLAYLIST-TYPE:$it\n")
-            }
-
-            programDateTime?.let {
-                append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n")
-            }
+            version?.let { append("#EXT-X-VERSION:$it\n") }
+            targetDuration?.let { append("#EXT-X-TARGETDURATION:$it\n") }
+            mediaSequence?.let { append("#EXT-X-MEDIA-SEQUENCE:$it\n") }
+            discontinuitySequence?.let { append("#EXT-X-DISCONTINUITY-SEQUENCE:$it\n") }
+            playlistType?.let { append("#EXT-X-PLAYLIST-TYPE:$it\n") }
+            programDateTime?.let { append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n") }
+            streamInfo?.let { append(it.toM3U8Line()) }
 
             segments.forEach { segment ->
                 append(segment.toM3U8Line())
