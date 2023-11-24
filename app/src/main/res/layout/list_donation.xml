@@ -9,7 +9,7 @@
     android:paddingStart="7dp"
     android:paddingEnd="12dp"
     android:layout_marginEnd="5dp"
-    android:background="@drawable/background_pill"
+    android:background="@drawable/background_donation"
     android:orientation="vertical"
     android:id="@+id/root">
 
@@ -24,7 +24,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
+            android:layout_marginLeft="0dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/placeholder_profile" />
 
@@ -32,7 +32,7 @@
             android:id="@+id/donation_amount"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_marginLeft="5dp"
+            android:layout_marginLeft="3dp"
             app:layout_constraintLeft_toRightOf="@id/donation_author_image"
             app:layout_constraintTop_toTopOf="parent"
             android:textColor="@color/white"

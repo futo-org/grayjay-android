@@ -197,8 +197,13 @@ class HttpContext : AutoCloseable {
     }
     fun respondCode(status: Int, headers: HttpHeaders, body: String? = null) {
         val bytes = body?.toByteArray(Charsets.UTF_8);
-        if(body != null && headers.get("content-length").isNullOrEmpty())
-            headers.put("content-length", bytes!!.size.toString());
+        if(headers.get("content-length").isNullOrEmpty()) {
+            if (body != null) {
+                headers.put("content-length", bytes!!.size.toString());
+            } else {
+                headers.put("content-length", "0")
+            }
+        }
         respond(status, headers) { responseStream ->
             if(body != null) {
                 responseStream.write(bytes!!);
@@ -219,8 +224,7 @@ class HttpContext : AutoCloseable {
             headersToRespond.put("keep-alive", "timeout=5, max=1000");
         }
 
-        val responseHeader = HttpResponse(status, headers);
-
+        val responseHeader = HttpResponse(status, headersToRespond);
         responseStream.write(responseHeader.getHttpHeaderBytes());
 
         if(method != "HEAD") {

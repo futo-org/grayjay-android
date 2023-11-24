@@ -29,6 +29,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     private val _exoPlayer: PlayerManager?;
     private val _feedStyle : FeedStyle;
     private var _paused: Boolean = false;
+    private val _shouldShowTimeBar: Boolean
 
     val onUrlClicked = Event1<String>();
     val onContentUrlClicked = Event2<String, ContentType>();
@@ -48,12 +49,13 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
 
     constructor(context: Context, feedStyle : FeedStyle, dataSet: ArrayList<IPlatformContent>, exoPlayer: PlayerManager? = null,
                 initialPlay: Boolean = false, viewsToPrepend: ArrayList<View> = arrayListOf(),
-                viewsToAppend: ArrayList<View> = arrayListOf()) : super(context, viewsToPrepend, viewsToAppend) {
+                viewsToAppend: ArrayList<View> = arrayListOf(), shouldShowTimeBar: Boolean = true) : super(context, viewsToPrepend, viewsToAppend) {
 
         this._feedStyle = feedStyle;
         this._dataSet = dataSet;
         this._initialPlay = initialPlay;
         this._exoPlayer = exoPlayer;
+        this._shouldShowTimeBar = shouldShowTimeBar
     }
 
     override fun getChildCount(): Int = _dataSet.size;
@@ -97,7 +99,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     };
     private fun createPlaceholderViewHolder(viewGroup: ViewGroup): PreviewPlaceholderViewHolder
         = PreviewPlaceholderViewHolder(viewGroup, _feedStyle);
-    private fun createVideoPreviewViewHolder(viewGroup: ViewGroup): PreviewVideoViewHolder = PreviewVideoViewHolder(viewGroup, _feedStyle, _exoPlayer).apply {
+    private fun createVideoPreviewViewHolder(viewGroup: ViewGroup): PreviewVideoViewHolder = PreviewVideoViewHolder(viewGroup, _feedStyle, _exoPlayer, _shouldShowTimeBar).apply {
             this.onVideoClicked.subscribe(this@PreviewContentListAdapter.onContentClicked::emit);
             this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@PreviewContentListAdapter.onAddToClicked::emit);

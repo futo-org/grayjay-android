@@ -8,7 +8,10 @@
     <string name="lorem_ipsum" translatable="false">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
     <string name="add_to_queue">Add to queue</string>
     <string name="general">General</string>
+    <string name="channel">Channel</string>
     <string name="home">Home</string>
+    <string name="progress_bar">Progress Bar</string>
+    <string name="progress_bar_description">If a historical progress bar should be shown</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
     <string name="playlists">Playlists</string>
@@ -26,6 +29,7 @@
     <string name="defaults">Defaults</string>
     <string name="home_screen">Home Screen</string>
     <string name="preferred_quality">Preferred Quality</string>
+    <string name="preferred_quality_description">Default quality for watching a video</string>
     <string name="update">Update</string>
     <string name="close">Close</string>
     <string name="never">Never</string>
@@ -267,6 +271,9 @@
     <string name="a_list_of_user_reported_and_self_reported_issues">A list of user-reported and self-reported issues</string>
     <string name="also_removes_any_data_related_plugin_like_login_or_settings">Also removes any data related plugin like login or settings</string>
     <string name="announcement">Announcement</string>
+    <string name="notifications">Notifications</string>
+    <string name="planned_content_notifications">Planned Content Notifications</string>
+    <string name="planned_content_notifications_description">Schedules discovered planned content as notifications, resulting in more accurate notifications for this content.</string>
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
     <string name="auto_update">Auto Update</string>
     <string name="auto_rotate">Auto-Rotate</string>
@@ -296,6 +303,8 @@
     <string name="clears_cookies_when_you_log_out">Clears cookies when you log out</string>
     <string name="clears_in_app_browser_cookies">Clears in-app browser cookies</string>
     <string name="configure_browsing_behavior">Configure browsing behavior</string>
+    <string name="time_bar">Time bar</string>
+    <string name="configure_if_historical_time_bar_should_be_shown">Configure if historical time bars should be shown</string>
     <string name="configure_casting">Configure casting</string>
     <string name="configure_daily_backup_in_case_of_catastrophic_failure">Configure daily backup in case of catastrophic failure</string>
     <string name="configure_downloading_of_videos">Configure downloading of videos</string>
@@ -350,8 +359,11 @@
     <string name="player">Player</string>
     <string name="plugins">Plugins</string>
     <string name="preferred_casting_quality">Preferred Casting Quality</string>
+    <string name="preferred_casting_quality_description">Default quality while casting to an external device</string>
     <string name="preferred_metered_quality">Preferred Metered Quality</string>
+    <string name="preferred_metered_quality_description">Default quality while on metered connections such as cellular</string>
     <string name="preferred_preview_quality">Preferred Preview Quality</string>
+    <string name="preferred_preview_quality_description">Default quality while previewing a video in a feed</string>
     <string name="primary_language">Primary Language</string>
     <string name="default_comment_section">Default Comment Section</string>
     <string name="reinstall_embedded_plugins">Reinstall Embedded Plugins</string>

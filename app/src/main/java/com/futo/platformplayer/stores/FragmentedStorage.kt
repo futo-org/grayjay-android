@@ -33,7 +33,7 @@ class FragmentedStorage {
         fun initialize(filesDir: File) {
             _filesDir = filesDir;
         }
-
+        inline fun <reified T> storeJson(name: String, serializer: KSerializer<T>? = null): ManagedStore<T> = store(name, JsonStoreSerializer.create(serializer), null, null);
         inline fun <reified T> storeJson(parentDir: File, name: String, serializer: KSerializer<T>? = null): ManagedStore<T> = store(name, JsonStoreSerializer.create(serializer), null, parentDir);
         inline fun <reified T> storeJson(name: String, prettyName: String? = null, parentDir: File? = null): ManagedStore<T> = store(name, JsonStoreSerializer.create(), prettyName, parentDir);
         inline fun <reified  T> store(name: String, serializer: StoreSerializer<T>, prettyName: String? = null, parentDir: File? = null): ManagedStore<T> {

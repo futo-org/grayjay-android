@@ -84,6 +84,7 @@ class ContentSearchResultsFragment : MainFragment() {
         private var _channelUrl: String? = null;
 
         private val _taskSearch: TaskHandler<String, IPager<IPlatformContent>>;
+        override val shouldShowTimeBar: Boolean get() = Settings.instance.search.progressBar
 
         constructor(fragment: ContentSearchResultsFragment, inflater: LayoutInflater) : super(fragment, inflater) {
             _taskSearch = TaskHandler<String, IPager<IPlatformContent>>({fragment.lifecycleScope}, { query ->

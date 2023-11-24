@@ -6,33 +6,25 @@ import android.app.PendingIntent
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.media.MediaSession2Service.MediaNotification
-import androidx.concurrent.futures.CallbackToFutureAdapter
-import androidx.concurrent.futures.ResolvableFuture
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
-import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StateNotifications
 import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.views.adapters.viewholders.TabViewHolder
-import com.google.common.util.concurrent.ListenableFuture
+import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.toHumanNowDiffStringMinDay
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.OffsetDateTime
 
@@ -54,8 +46,10 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
                 this.setSound(null, null);
             };
             notificationManager.createNotificationChannel(notificationChannel);
+            val contentChannel = StateNotifications.instance.contentNotifChannel
+            notificationManager.createNotificationChannel(contentChannel);
             try {
-                    doSubscriptionUpdating(notificationManager, notificationChannel);
+                    doSubscriptionUpdating(notificationManager, notificationChannel, contentChannel);
             }
             catch(ex: Throwable) {
                 exception = ex;
@@ -77,13 +71,13 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
     }
 
 
-    suspend fun doSubscriptionUpdating(manager: NotificationManager, notificationChannel: NotificationChannel) {
-        val notif = NotificationCompat.Builder(appContext, notificationChannel.id)
+    suspend fun doSubscriptionUpdating(manager: NotificationManager, backgroundChannel: NotificationChannel, contentChannel: NotificationChannel) {
+        val notif = NotificationCompat.Builder(appContext, backgroundChannel.id)
             .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
             .setContentTitle("Grayjay")
             .setContentText("Updating subscriptions...")
             .setSilent(true)
-            .setChannelId(notificationChannel.id)
+            .setChannelId(backgroundChannel.id)
             .setProgress(1, 0, true);
 
         manager.notify(12, notif.build());
@@ -94,6 +88,7 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
         val newItems = mutableListOf<IPlatformContent>();
 
         val now = OffsetDateTime.now();
+        val threeDays = now.minusDays(4);
         val contentNotifs = mutableListOf<Pair<Subscription, IPlatformContent>>();
         withContext(Dispatchers.IO) {
             val results = StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(true, false,this, { progress, total ->
@@ -111,8 +106,14 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
                 synchronized(newSubChanges) {
                     if(!newSubChanges.contains(sub)) {
                         newSubChanges.add(sub);
-                        if(sub.doNotifications && content.datetime?.let { it < now } == true)
-                            contentNotifs.add(Pair(sub, content));
+                        if(sub.doNotifications) {
+                            if(content.datetime != null) {
+                                if(content.datetime!! <= now.plusMinutes(StateNotifications.instance.plannedWarningMinutesEarly) && content.datetime!! > threeDays)
+                                    contentNotifs.add(Pair(sub, content));
+                                else if(content.datetime!! > now.plusMinutes(StateNotifications.instance.plannedWarningMinutesEarly) && Settings.instance.notifications.plannedContentNotification)
+                                    StateNotifications.instance.scheduleContentNotification(applicationContext, content);
+                            }
+                        }
                     }
                     newItems.add(content);
                 }
@@ -135,22 +136,7 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
                 val items = contentNotifs.take(5).toList()
                 for(i in items.indices) {
                     val contentNotif = items.get(i);
-                    val thumbnail = if(contentNotif.second is IPlatformVideo) (contentNotif.second as IPlatformVideo).thumbnails.getHQThumbnail()
-                        else null;
-                    if(thumbnail != null)
-                        Glide.with(appContext).asBitmap()
-                            .load(thumbnail)
-                            .into(object: CustomTarget<Bitmap>() {
-                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                    notifyNewContent(manager, notificationChannel, 13 + i, contentNotif.first, contentNotif.second, resource);
-                                }
-                                override fun onLoadCleared(placeholder: Drawable?) {}
-                                override fun onLoadFailed(errorDrawable: Drawable?) {
-                                    notifyNewContent(manager, notificationChannel, 13 + i, contentNotif.first, contentNotif.second, null);
-                                }
-                            })
-                    else
-                        notifyNewContent(manager, notificationChannel, 13 + i, contentNotif.first, contentNotif.second, null);
+                    StateNotifications.instance.notifyNewContentWithThumbnail(appContext, manager, contentChannel, 13 + i, contentNotif.second);
                 }
             }
             catch(ex: Throwable) {
@@ -164,21 +150,5 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
                 .setContentText("${newItems.size} new content from ${newSubChanges.size} creators")
                 .setSilent(true)
                 .setChannelId(notificationChannel.id).build());*/
-    }
-
-    fun notifyNewContent(manager: NotificationManager, notificationChannel: NotificationChannel, id: Int, sub: Subscription, content: IPlatformContent, thumbnail: Bitmap? = null) {
-        val notifBuilder = NotificationCompat.Builder(appContext, notificationChannel.id)
-            .setSmallIcon(com.futo.platformplayer.R.drawable.foreground)
-            .setContentTitle("New by [${sub.channel.name}]")
-            .setContentText("${content.name}")
-            .setSilent(true)
-            .setContentIntent(PendingIntent.getActivity(this.appContext, 0, MainActivity.getVideoIntent(this.appContext, content.url),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-            .setChannelId(notificationChannel.id);
-        if(thumbnail != null) {
-            //notifBuilder.setLargeIcon(thumbnail);
-            notifBuilder.setStyle(NotificationCompat.BigPictureStyle().bigPicture(thumbnail).bigLargeIcon(null as Bitmap?));
-        }
-        manager.notify(id, notifBuilder.build());
     }
 }

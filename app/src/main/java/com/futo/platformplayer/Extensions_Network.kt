@@ -1,11 +1,15 @@
 package com.futo.platformplayer
 
 import com.google.common.base.CharMatcher
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 
 
 private const val IPV4_PART_COUNT = 4;
@@ -272,4 +276,47 @@ fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
     }
 
     return connectedSocket;
+}
+
+fun InputStream.readHttpHeaderBytes() : ByteArray {
+    val headerBytes = ByteArrayOutputStream()
+    var crlfCount = 0
+
+    while (crlfCount < 4) {
+        val b = read()
+        if (b == -1) {
+            throw IOException("Unexpected end of stream while reading headers")
+        }
+
+        if (b == 0x0D || b == 0x0A) { // CR or LF
+            crlfCount++
+        } else {
+            crlfCount = 0
+        }
+
+        headerBytes.write(b)
+    }
+
+    return headerBytes.toByteArray()
+}
+
+fun InputStream.readLine() : String? {
+    val line = ByteArrayOutputStream()
+    var crlfCount = 0
+
+    while (crlfCount < 2) {
+        val b = read()
+        if (b == -1) {
+            return null
+        }
+
+        if (b == 0x0D || b == 0x0A) { // CR or LF
+            crlfCount++
+        } else {
+            crlfCount = 0
+            line.write(b)
+        }
+    }
+
+    return String(line.toByteArray(), Charsets.UTF_8)
 }

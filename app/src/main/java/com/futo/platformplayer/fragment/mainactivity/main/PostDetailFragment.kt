@@ -31,6 +31,7 @@ import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlWhitespace
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
@@ -363,7 +364,7 @@ class PostDetailFragment : MainFragment {
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                                 try {
                                     Logger.i(TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServers();
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
                                     Logger.i(TAG, "Finished backfill");
                                 } catch (e: Throwable) {
                                     Logger.e(TAG, "Failed to backfill servers", e)

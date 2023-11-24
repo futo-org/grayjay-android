@@ -38,6 +38,9 @@ class ToggleField : TableRow, IField {
 
     override val value: Any get() = _lastValue;
 
+    override val searchContent: String?
+        get() = "${_title.text} ${_description.text}";
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_toggle, this);
         _toggle = findViewById(R.id.field_toggle);

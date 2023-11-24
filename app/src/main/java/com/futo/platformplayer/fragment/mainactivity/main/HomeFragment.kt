@@ -95,6 +95,7 @@ class HomeFragment : MainFragment() {
         private var _announcementsView: AnnouncementView;
 
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
+        override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
         constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             _announcementsView = AnnouncementView(context, null).apply {

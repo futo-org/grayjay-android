@@ -28,6 +28,10 @@ class ButtonField : BigButton, IField {
 
     override val value: Any? = null;
 
+    override val searchContent: String?
+        get() = "$title $description";
+
+
     override val obj : Any? get() {
         if(this._obj == null)
             throw java.lang.IllegalStateException("Can only be called if fromField is used");

@@ -125,6 +125,7 @@ class VideoDetailView : ConstraintLayout {
     private var _searchVideo: IPlatformVideo? = null;
     var video: IPlatformVideoDetails? = null
         private set;
+    var videoLocal: VideoLocal? = null;
     private var _playbackTracker: IPlaybackTracker? = null;
     private var _historyIndex: DBHistory.Index? = null;
 
@@ -1055,10 +1056,32 @@ class VideoDetailView : ConstraintLayout {
             _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
         }
 
-        val video = if(videoDetail is VideoLocal)
-            videoDetail;
-        else //TODO: Update cached video if it exists with video
-            StateDownloads.instance.getCachedVideo(videoDetail.id) ?: videoDetail;
+        var videoLocal: VideoLocal? = null;
+        var video: IPlatformVideoDetails? = null;
+
+       if(videoDetail is VideoLocal) {
+            videoLocal = videoDetail;
+            video = videoDetail;
+            val videoTask = StatePlatform.instance.getContentDetails(videoDetail.url);
+            videoTask.invokeOnCompletion { ex ->
+                if(ex != null) {
+                    Logger.e(TAG, "Failed to fetch live video for offline video", ex);
+                    return@invokeOnCompletion;
+                }
+                val result = videoTask.getCompleted();
+                if(this.video == videoDetail && result != null && result is IPlatformVideoDetails) {
+                    this.video = result;
+                    fragment.lifecycleScope.launch(Dispatchers.Main) {
+                        updateQualitySourcesOverlay(result, videoLocal);
+                    }
+                }
+            };
+        }
+        else { //TODO: Update cached video if it exists with video
+            videoLocal = StateDownloads.instance.getCachedVideo(videoDetail.id);
+            video = videoDetail;
+        }
+        this.videoLocal = videoLocal;
         this.video = video;
         this._playbackTracker = null;
 
@@ -1093,9 +1116,13 @@ class VideoDetailView : ConstraintLayout {
                         me._playbackTracker = tracker;
                 }
                 catch(ex: Throwable) {
-                    withContext(Dispatchers.Main) {
-                        UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_get_playback_tracker), ex);
+                    Logger.e(TAG, "Playback tracker failed", ex);
+                    if(me.video?.isLive == true) withContext(Dispatchers.Main) {
+                        UIDialogs.toast(context, context.getString(R.string.failed_to_get_playback_tracker));
                     };
+                    else withContext(Dispatchers.Main) {
+                        UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_get_playback_tracker), ex);
+                    }
                 }
             };
         }
@@ -1192,7 +1219,7 @@ class VideoDetailView : ConstraintLayout {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
                                     Logger.i(TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServers();
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
                                     Logger.i(TAG, "Finished backfill");
                                 } catch (e: Throwable) {
                                     Logger.e(TAG, "Failed to backfill servers", e)
@@ -1246,7 +1273,7 @@ class VideoDetailView : ConstraintLayout {
 
 
         //Overlay
-        updateQualitySourcesOverlay(video);
+        updateQualitySourcesOverlay(video, videoLocal);
 
         setLoading(false);
 
@@ -1503,6 +1530,7 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
         _overlay_quality_selector?.show();
+        _slideUpOverlay = _overlay_quality_selector;
     }
 
     fun prevVideo() {
@@ -1530,9 +1558,9 @@ class VideoDetailView : ConstraintLayout {
     //Quality Selector data
     private fun updateQualityFormatsOverlay(liveStreamVideoFormats : List<Format>?, liveStreamAudioFormats : List<Format>?) {
         val v = video ?: return;
-        updateQualitySourcesOverlay(v, liveStreamVideoFormats, liveStreamAudioFormats);
+        updateQualitySourcesOverlay(v, videoLocal, liveStreamVideoFormats, liveStreamAudioFormats);
     }
-    private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
+    private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
         Logger.i(TAG, "updateQualitySourcesOverlay");
 
         val video: IPlatformVideoDetails?;
@@ -1540,23 +1568,34 @@ class VideoDetailView : ConstraintLayout {
         val localAudioSource: List<LocalAudioSource>?;
         val localSubtitleSources: List<LocalSubtitleSource>?;
 
+        val videoSources: List<IVideoSource>?;
+        val audioSources: List<IAudioSource>?;
+
         if(videoDetails is VideoLocal) {
-            video = videoDetails.videoSerialized;
+            video = videoLocal?.videoSerialized;
             localVideoSources = videoDetails.videoSource.toList();
             localAudioSource = videoDetails.audioSource.toList();
             localSubtitleSources = videoDetails.subtitlesSources.toList();
+            videoSources = null
+            audioSources = null;
         }
         else {
             video = videoDetails;
-            localVideoSources = null;
-            localAudioSource = null;
-            localSubtitleSources = null;
+            videoSources = video?.video?.videoSources?.toList();
+            audioSources = if(video?.video?.isUnMuxed == true)
+                (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
+            else null
+            if(videoLocal != null) {
+                localVideoSources = videoLocal.videoSource.toList();
+                localAudioSource = videoLocal.audioSource.toList();
+                localSubtitleSources = videoLocal.subtitlesSources.toList();
+            }
+            else {
+                localVideoSources = null;
+                localAudioSource = null;
+                localSubtitleSources = null;
+            }
         }
-
-        val videoSources = video?.video?.videoSources?.toList();
-        val audioSources = if(video?.video?.isUnMuxed == true)
-            (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
-        else null
 
         val bestVideoSources = videoSources?.map { it.height * it.width }
             ?.distinct()
@@ -1857,7 +1896,7 @@ class VideoDetailView : ConstraintLayout {
     private fun setCastEnabled(isCasting: Boolean) {
         Logger.i(TAG, "setCastEnabled(isCasting=$isCasting)")
 
-        video?.let { updateQualitySourcesOverlay(it); };
+        video?.let { updateQualitySourcesOverlay(it, videoLocal); };
 
         _isCasting = isCasting;
 

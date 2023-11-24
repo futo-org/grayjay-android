@@ -34,6 +34,9 @@ class ReadOnlyTextField : TableRow, IField {
 
     override val value: Any? = null;
 
+    override val searchContent: String?
+        get() = "${_title.text}";
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs){
         inflate(context, R.layout.field_readonly_text, this);
         _title = findViewById(R.id.field_title);

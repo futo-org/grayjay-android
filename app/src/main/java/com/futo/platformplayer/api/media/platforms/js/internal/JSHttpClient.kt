@@ -6,10 +6,13 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.matchesDomain
 
 class JSHttpClient : ManagedHttpClient {
     private val _jsClient: JSClient?;
+    private val _jsConfig: SourcePluginConfig?;
     private val _auth: SourceAuth?;
     private val _captcha: SourceCaptchaData?;
 
@@ -20,8 +23,9 @@ class JSHttpClient : ManagedHttpClient {
 
     private var _currentCookieMap: HashMap<String, HashMap<String, String>>;
 
-    constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null) : super() {
+    constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, config: SourcePluginConfig? = null) : super() {
         _jsClient = jsClient;
+        _jsConfig = config;
         _auth = auth;
         _captcha = captcha;
 
@@ -87,7 +91,11 @@ class JSHttpClient : ManagedHttpClient {
             }
         }
 
-        _jsClient?.validateUrlOrThrow(request.url.toString());
+        if(_jsClient != null)
+            _jsClient?.validateUrlOrThrow(request.url.toString());
+        else if (_jsConfig != null && !_jsConfig.isUrlAllowed(request.url.toString()))
+            throw ScriptImplementationException(_jsConfig, "Attempted to access non-whitelisted url: ${request.url.toString()}\nAdd it to your config");
+
         return newBuilder?.let { it.build() } ?: request;
     }
 

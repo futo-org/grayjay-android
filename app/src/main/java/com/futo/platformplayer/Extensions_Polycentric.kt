@@ -1,6 +1,11 @@
 package com.futo.platformplayer
 
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.AnnouncementType
+import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.views.adapters.CommentViewHolder
+import com.futo.polycentric.core.ProcessHandle
 import userpackage.Protocol
 import kotlin.math.abs
 import kotlin.math.min
@@ -39,4 +44,21 @@ fun Protocol.Claim.resolveChannelUrl(): String? {
 
 fun Protocol.Claim.resolveChannelUrls(): List<String> {
     return StatePlatform.instance.resolveChannelUrlsByClaimTemplates(this.claimType.toInt(), this.claimFieldsList.associate { Pair(it.key.toInt(), it.value) })
+}
+
+suspend fun ProcessHandle.fullyBackfillServersAnnounceExceptions() {
+    val exceptions = fullyBackfillServers()
+    for (pair in exceptions) {
+        val server = pair.key
+        val exception = pair.value
+
+        StateAnnouncement.instance.registerAnnouncement(
+            "backfill-failed",
+            "Backfill failed",
+            "Failed to backfill server $server. $exception",
+            AnnouncementType.SESSION_RECURRING
+        );
+
+        Logger.e("Backfill", "Failed to backfill server $server.", exception)
+    }
 }

@@ -5,6 +5,7 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.exceptions.EmptyRequestException
 import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpOptionsAllowHandler
 import java.io.BufferedInputStream
 import java.io.OutputStream
 import java.lang.reflect.Field
@@ -17,6 +18,7 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.stream.IntStream.range
+import kotlin.collections.HashMap
 
 class ManagedHttpServer(private val _requestedPort: Int = 0) {
     private val _client : ManagedHttpClient = ManagedHttpClient();
@@ -28,7 +30,8 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
     var port = 0
             private set;
 
-    private val _handlers = mutableListOf<HttpHandler>();
+    private val _handlers = hashMapOf<String, HashMap<String, HttpHandler>>()
+    private val _headHandlers = hashMapOf<String, HttpHandler>()
     private var _workerPool: ExecutorService? = null;
 
     @Synchronized
@@ -114,32 +117,78 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
 
     fun getHandler(method: String, path: String) : HttpHandler? {
         synchronized(_handlers) {
-            //TODO: Support regex paths?
-            if(method == "HEAD")
-                return _handlers.firstOrNull { it.path == path && (it.allowHEAD || it.method == "HEAD") }
-            return _handlers.firstOrNull { it.method == method && it.path == path };
+            if (method == "HEAD") {
+                return _headHandlers[path]
+            }
+
+            val handlerMap = _handlers[method] ?: return null
+            return handlerMap[path]
         }
     }
     fun addHandler(handler: HttpHandler, withHEAD: Boolean = false) : HttpHandler {
         synchronized(_handlers) {
-            _handlers.add(handler);
             handler.allowHEAD = withHEAD;
+
+            var handlerMap: HashMap<String, HttpHandler>? = _handlers[handler.method];
+            if (handlerMap == null) {
+                handlerMap = hashMapOf()
+                _handlers[handler.method] = handlerMap
+            }
+
+            handlerMap[handler.path] = handler;
+            if (handler.allowHEAD || handler.method == "HEAD") {
+                _headHandlers[handler.path] = handler
+            }
         }
         return handler;
     }
+
+    fun addHandlerWithAllowAllOptions(handler: HttpHandler, withHEAD: Boolean = false) : HttpHandler {
+        val allowedMethods = arrayListOf(handler.method, "OPTIONS")
+        if (withHEAD) {
+            allowedMethods.add("HEAD")
+        }
+
+        val tag = handler.tag
+        if (tag != null) {
+            addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods).withTag(tag))
+        } else {
+            addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods))
+        }
+
+        return addHandler(handler, withHEAD)
+    }
+
     fun removeHandler(method: String, path: String) {
         synchronized(_handlers) {
-            val handler = getHandler(method, path);
-            if(handler != null)
-                _handlers.remove(handler);
+            val handlerMap = _handlers[method] ?: return
+            val handler = handlerMap.remove(path) ?: return
+            if (method == "HEAD" || handler.allowHEAD) {
+                _headHandlers.remove(path)
+            }
         }
     }
     fun removeAllHandlers(tag: String? = null) {
         synchronized(_handlers) {
             if(tag == null)
                 _handlers.clear();
-            else
-                _handlers.removeIf { it.tag == tag };
+            else {
+                for (pair in _handlers) {
+                    val toRemove = ArrayList<String>()
+                    for (innerPair in pair.value) {
+                        if (innerPair.value.tag == tag) {
+                            toRemove.add(innerPair.key)
+
+                            if (pair.key == "HEAD" || innerPair.value.allowHEAD) {
+                                _headHandlers.remove(innerPair.key)
+                            }
+                        }
+                    }
+
+                    for (x in toRemove)
+                        pair.value.remove(x)
+                }
+            }
         }
     }
     fun addBridgeHandlers(obj: Any, tag: String? = null) {

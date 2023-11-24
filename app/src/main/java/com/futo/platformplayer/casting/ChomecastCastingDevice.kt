@@ -69,7 +69,7 @@ class ChromecastCastingDevice : CastingDevice {
             return;
         }
 
-        Logger.i(FastCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
 
         time = resumePosition;
         _streamType = streamType;
@@ -314,6 +314,7 @@ class ChromecastCastingDevice : CastingDevice {
                 connectionState = CastConnectionState.CONNECTING;
 
                 try {
+                    _socket?.close()
                     _socket = factory.createSocket(usedRemoteAddress, port) as SSLSocket;
                     _socket?.startHandshake();
                     Logger.i(TAG, "Successfully connected to Chromecast at $usedRemoteAddress:$port");
@@ -324,7 +325,7 @@ class ChromecastCastingDevice : CastingDevice {
                     } catch (e: Throwable) {
                         Logger.i(TAG, "Failed to authenticate to Chromecast.", e);
                     }
-                } catch (e: IOException) {
+                } catch (e: Throwable) {
                     _socket?.close();
                     Logger.i(TAG, "Failed to connect to Chromecast.", e);
 

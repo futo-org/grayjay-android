@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
@@ -884,15 +885,20 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         if((fragment?.isOverlay ?: false) && fragBeforeOverlay != null) {
             navigate(fragBeforeOverlay!!, null, false, true);
-
-        }
-        else {
+        } else {
             val last = _queue.lastOrNull();
             if (last != null) {
                 _queue.remove(last);
                 navigate(last.first, last.second, false, true);
-            } else
-                finish();
+            } else {
+                if (_fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
+                    finish();
+                } else {
+                    UIDialogs.showConfirmationDialog(this, "There is a video playing, are you sure you want to exit the app?", {
+                        finish();
+                    })
+                }
+            }
         }
     }
 

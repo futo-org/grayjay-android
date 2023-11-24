@@ -15,6 +15,7 @@ abstract class HttpHandler(val method: String, val path: String) {
         headers.put(key, value);
         return this;
     }
+
     fun withContentType(contentType: String) = withHeader("Content-Type", contentType);
 
     fun withTag(tag: String) : HttpHandler {

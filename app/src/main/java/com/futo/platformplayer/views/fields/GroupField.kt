@@ -39,6 +39,8 @@ class GroupField : LinearLayout, IField {
 
     override val value: Any? = null;
 
+    override val searchContent: String? get() = "${_title.text} ${_subtitle.text}";
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.field_group, this);
         _title = findViewById(R.id.field_group_title);
@@ -141,6 +143,9 @@ class GroupField : LinearLayout, IField {
         for(field in _fields){
             field.setField();
         }
+    }
+    fun getFields(): List<IField> {
+        return _fields;
     }
 
     override fun setValue(value: Any) {}

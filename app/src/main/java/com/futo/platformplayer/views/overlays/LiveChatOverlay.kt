@@ -308,13 +308,21 @@ class LiveChatOverlay : LinearLayout {
             }
         };
     }
+    private var _dedupHackfix = "";
     fun addDonation(donation: LiveEventDonation) {
+        val uniqueIdentifier = "${donation.name}${donation.amount}${donation.message}";
         if(donation.hasExpired()) {
             Logger.i(TAG, "Donation that is already expired: [${donation.amount}]" + donation.name + ":" + donation.message + " EXPIRE: ${donation.expire}");
             return;
         }
+        else if(_dedupHackfix == uniqueIdentifier) {
+            Logger.i(TAG, "Donation duplicate found, ignoring");
+            return;
+        }
         else
             Logger.i(TAG, "Donation Added: [${donation.amount}]" + donation.name + ":" + donation.message + " EXPIRE: ${donation.expire}");
+        _dedupHackfix = uniqueIdentifier;
+
         val view = LiveChatDonationPill(context, donation);
         view.setOnClickListener {
             showDonation(donation);

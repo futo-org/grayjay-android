@@ -20,6 +20,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.background.BackgroundWorker
+import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
@@ -111,6 +112,14 @@ class SettingsDev : FragmentedStorageFileJson() {
             .build();
         wm.enqueue(req);
     }
+    @FormField(R.string.clear_channel_cache, FieldForm.BUTTON,
+        R.string.test_background_worker_description, 3)
+    fun clearChannelContentCache() {
+        UIDialogs.toast(SettingsActivity.getActivity()!!, "Clearing cache");
+        ChannelContentCache.instance.clearToday();
+        UIDialogs.toast(SettingsActivity.getActivity()!!, "Cleared");
+    }
+
 
     @Contextual
     @Transient

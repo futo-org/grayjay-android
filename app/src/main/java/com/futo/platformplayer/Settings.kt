@@ -158,7 +158,11 @@ class Settings : FragmentedStorageFileJson() {
         var previewFeedItems: Boolean = true;
 
 
-        @FormField(R.string.clear_hidden, FieldForm.BUTTON, R.string.clear_hidden_description, 7)
+        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
+        var progressBar: Boolean = false;
+
+
+        @FormField(R.string.clear_hidden, FieldForm.BUTTON, R.string.clear_hidden_description, 8)
         @FormFieldButton(R.drawable.ic_visibility_off)
         fun clearHidden() {
             StateMeta.instance.removeAllHiddenCreators();
@@ -185,6 +189,8 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
         var previewFeedItems: Boolean = true;
 
+        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
+        var progressBar: Boolean = false;
 
 
         fun getSearchFeedStyle(): FeedStyle {
@@ -195,7 +201,17 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.subscriptions, "group", R.string.configure_how_your_subscriptions_works_and_feels, 3)
+
+    @FormField(R.string.channel, "group", -1, 3)
+    var channel = ChannelSettings();
+    @Serializable
+    class ChannelSettings {
+
+        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
+        var progressBar: Boolean = false;
+    }
+
+    @FormField(R.string.subscriptions, "group", R.string.configure_how_your_subscriptions_works_and_feels, 4)
     var subscriptions = SubscriptionsSettings();
     @Serializable
     class SubscriptionsSettings {
@@ -213,14 +229,17 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
         var previewFeedItems: Boolean = true;
 
-        @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 6)
+        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
+        var progressBar: Boolean = false;
+
+        @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 7)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var fetchOnAppBoot: Boolean = true;
 
-        @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 6)
+        @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 8)
         var fetchOnTabOpen: Boolean = true;
 
-        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 7)
+        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 9)
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
 
@@ -236,7 +255,7 @@ class Settings : FragmentedStorageFileJson() {
         };
 
 
-        @FormField(R.string.subscription_concurrency, FieldForm.DROPDOWN, R.string.specify_how_many_threads_are_used_to_fetch_channels, 8)
+        @FormField(R.string.subscription_concurrency, FieldForm.DROPDOWN, R.string.specify_how_many_threads_are_used_to_fetch_channels, 10)
         @DropdownFieldOptionsId(R.array.thread_count)
         var subscriptionConcurrency: Int = 3;
 
@@ -244,17 +263,17 @@ class Settings : FragmentedStorageFileJson() {
             return threadIndexToCount(subscriptionConcurrency);
         }
 
-        @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 9)
+        @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 11)
         var showWatchMetrics: Boolean = false;
 
-        @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 10)
+        @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 12)
         var allowPlaytimeTracking: Boolean = true;
 
 
-        @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 11)
+        @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 13)
         var alwaysReloadFromCache: Boolean = false;
 
-        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 12)
+        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 14)
         fun clearChannelCache() {
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
             ChannelContentCache.instance.clear();
@@ -262,7 +281,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 4)
+    @FormField(R.string.player, "group", R.string.change_behavior_of_the_player, 5)
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
@@ -288,29 +307,29 @@ class Settings : FragmentedStorageFileJson() {
             else -> 1.0f;
         };
 
-        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, -1, 2)
+        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, R.string.preferred_quality_description, 2)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredQuality: Int = 0;
 
-        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, -1, 2)
+        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, R.string.preferred_metered_quality_description, 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredMeteredQuality: Int = 0;
         fun getPreferredQualityPixelCount(): Int = preferedQualityToPixels(preferredQuality);
         fun getPreferredMeteredQualityPixelCount(): Int = preferedQualityToPixels(preferredMeteredQuality);
         fun getCurrentPreferredQualityPixelCount(): Int = if(!StateApp.instance.isCurrentMetered()) getPreferredQualityPixelCount() else getPreferredMeteredQualityPixelCount();
 
-        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, -1, 3)
+        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, R.string.preferred_preview_quality_description, 4)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
 
-        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 4)
+        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
         fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
 
-        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 5)
+        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 6)
         @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
         var autoRotateDeadZone: Int = 0;
 
@@ -318,7 +337,7 @@ class Settings : FragmentedStorageFileJson() {
             return autoRotateDeadZone * 5;
         }
 
-        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
+        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 
@@ -360,7 +379,7 @@ class Settings : FragmentedStorageFileJson() {
         var backgroundSwitchToAudio: Boolean = true;
     }
 
-    @FormField(R.string.comments, "group", R.string.comments_description, 4)
+    @FormField(R.string.comments, "group", R.string.comments_description, 6)
     var comments = CommentSettings();
     @Serializable
     class CommentSettings {
@@ -369,7 +388,7 @@ class Settings : FragmentedStorageFileJson() {
         var defaultCommentSection: Int = 0;
     }
 
-    @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 5)
+    @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 7)
     var downloads = Downloads();
     @Serializable
     class Downloads {
@@ -409,7 +428,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.browsing, "group", R.string.configure_browsing_behavior, 6)
+    @FormField(R.string.browsing, "group", R.string.configure_browsing_behavior, 8)
     var browsing = Browsing();
     @Serializable
     class Browsing {
@@ -418,7 +437,7 @@ class Settings : FragmentedStorageFileJson() {
         var videoCache: Boolean = true;
     }
 
-    @FormField(R.string.casting, "group", R.string.configure_casting, 7)
+    @FormField(R.string.casting, "group", R.string.configure_casting, 9)
     var casting = Casting();
     @Serializable
     class Casting {
@@ -446,8 +465,7 @@ class Settings : FragmentedStorageFileJson() {
         }*/
     }
 
-
-    @FormField(R.string.logging, FieldForm.GROUP, -1, 8)
+    @FormField(R.string.logging, FieldForm.GROUP, -1, 10)
     var logging = Logging();
     @Serializable
     class Logging {
@@ -471,9 +489,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-
-
-    @FormField(R.string.announcement, FieldForm.GROUP, -1, 10)
+    @FormField(R.string.announcement, FieldForm.GROUP, -1, 11)
     var announcementSettings = AnnouncementSettings();
     @Serializable
     class AnnouncementSettings {
@@ -484,7 +500,15 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.plugins, FieldForm.GROUP, -1, 11)
+    @FormField(R.string.notifications, FieldForm.GROUP, -1, 12)
+    var notifications = NotificationSettings();
+    @Serializable
+    class NotificationSettings {
+        @FormField(R.string.planned_content_notifications, FieldForm.TOGGLE, R.string.planned_content_notifications_description, 1)
+        var plannedContentNotification: Boolean = true;
+    }
+
+    @FormField(R.string.plugins, FieldForm.GROUP, -1, 13)
     @Transient
     var plugins = Plugins();
     @Serializable
@@ -521,7 +545,7 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField(R.string.external_storage, FieldForm.GROUP, -1, 12)
+    @FormField(R.string.external_storage, FieldForm.GROUP, -1, 14)
     var storage = Storage();
     @Serializable
     class Storage {
@@ -555,7 +579,7 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
-    @FormField(R.string.auto_update, "group", R.string.configure_the_auto_updater, 12)
+    @FormField(R.string.auto_update, "group", R.string.configure_the_auto_updater, 15)
     var autoUpdate = AutoUpdate();
     @Serializable
     class AutoUpdate {
@@ -637,7 +661,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.backup, FieldForm.GROUP, -1, 13)
+    @FormField(R.string.backup, FieldForm.GROUP, -1, 16)
     var backup = Backup();
     @Serializable
     class Backup {
@@ -690,7 +714,7 @@ class Settings : FragmentedStorageFileJson() {
         }*/
     }
 
-    @FormField(R.string.payment, FieldForm.GROUP, -1, 14)
+    @FormField(R.string.payment, FieldForm.GROUP, -1, 17)
     var payment = Payment();
     @Serializable
     class Payment {
@@ -707,7 +731,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.other, FieldForm.GROUP, -1, 15)
+    @FormField(R.string.other, FieldForm.GROUP, -1, 18)
     var other = Other();
     @Serializable
     class Other {
@@ -716,7 +740,7 @@ class Settings : FragmentedStorageFileJson() {
         var bypassRotationPrevention: Boolean = false;
     }
 
-    @FormField(R.string.info, FieldForm.GROUP, -1, 16)
+    @FormField(R.string.info, FieldForm.GROUP, -1, 19)
     var info = Info();
     @Serializable
     class Info {

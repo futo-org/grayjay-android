@@ -69,9 +69,11 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
     }
 
     fun reloadSettings() {
+        _form.setSearchVisible(false);
         _loader.start();
         _form.fromObject(lifecycleScope, Settings.instance) {
             _loader.stop();
+            _form.setSearchVisible(true);
 
             var devCounter = 0;
             _form.findField("code")?.assume<ReadOnlyTextField>()?.setOnClickListener {

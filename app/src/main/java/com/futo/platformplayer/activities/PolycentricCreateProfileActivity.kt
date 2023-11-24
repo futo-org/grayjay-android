@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
@@ -82,7 +83,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
 
                     try {
                         Logger.i(TAG, "Started backfill");
-                        processHandle.fullyBackfillServers();
+                        processHandle.fullyBackfillServersAnnounceExceptions();
                         Logger.i(TAG, "Finished backfill");
                     } catch (e: Throwable) {
                         Logger.e(TAG, getString(R.string.failed_to_fully_backfill_servers), e);
