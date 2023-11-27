@@ -379,6 +379,8 @@
     <string name="restore_a_previous_automatic_backup">Restore a previous automatic backup</string>
     <string name="resume_after_preview">Resume After Preview</string>
     <string name="review_the_current_and_past_changelogs">Review the current and past changelogs</string>
+    <string name="restart_after_audio_focus_loss">Restart after audio focus loss</string>
+    <string name="restart_playback_when_gaining_audio_focus_after_a_loss">Restart playback when gaining audio focus after a loss</string>
     <string name="chapter_update_fps_title">Chapter Update FPS</string>
     <string name="chapter_update_fps_description">Change accuracy of chapter updating, higher might cost more performance</string>
     <string name="set_automatic_backup">Set Automatic Backup</string>
@@ -842,5 +844,11 @@
         <item>Warning</item>
         <item>Information</item>
         <item>Verbose</item>
+    </string-array>
+    <string-array name="restart_playback_after_loss">
+        <item>Never</item>
+        <item>Within 10 seconds of loss</item>
+        <item>Within 30 seconds of loss</item>
+        <item>Always</item>
     </string-array>
 </resources>

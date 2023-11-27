@@ -385,6 +385,10 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
         var backgroundSwitchToAudio: Boolean = true;
+
+        @FormField(R.string.restart_after_audio_focus_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_audio_focus_after_a_loss, 11)
+        @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
+        var restartPlaybackAfterLoss: Int = 1;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

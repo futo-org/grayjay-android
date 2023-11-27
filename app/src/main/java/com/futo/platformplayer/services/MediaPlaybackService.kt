@@ -23,6 +23,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.activities.MainActivity
@@ -49,6 +50,7 @@ class MediaPlaybackService : Service() {
     private var _mediaSession: MediaSessionCompat? = null;
     private var _hasFocus: Boolean = false;
     private var _focusRequest: AudioFocusRequest? = null;
+    private var _audioFocusLossTime_ms: Long? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Logger.v(TAG, "onStartCommand");
@@ -335,16 +337,32 @@ class MediaPlaybackService : Service() {
                         //Do not start playing on gaining audo focus
                         //MediaControlReceiver.onPlayReceived.emit();
                         _hasFocus = true;
-                        Log.i(TAG, "Audio focus gained");
+                        Log.i(TAG, "Audio focus gained (restartPlaybackAfterLoss = ${Settings.instance.playback.restartPlaybackAfterLoss}, _audioFocusLossTime_ms = $_audioFocusLossTime_ms)");
+
+                        if (Settings.instance.playback.restartPlaybackAfterLoss == 1) {
+                            val lossTime_ms = _audioFocusLossTime_ms
+                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 30) {
+                                MediaControlReceiver.onPlayReceived.emit()
+                            }
+                        } else if (Settings.instance.playback.restartPlaybackAfterLoss == 2) {
+                            val lossTime_ms = _audioFocusLossTime_ms
+                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 10) {
+                                MediaControlReceiver.onPlayReceived.emit()
+                            }
+                        } else if (Settings.instance.playback.restartPlaybackAfterLoss == 3) {
+                            MediaControlReceiver.onPlayReceived.emit()
+                        }
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                         MediaControlReceiver.onPauseReceived.emit();
+                        _audioFocusLossTime_ms = System.currentTimeMillis()
                         Log.i(TAG, "Audio focus transient loss");
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         Log.i(TAG, "Audio focus transient loss, can duck");
                     }
                     AudioManager.AUDIOFOCUS_LOSS -> {
+                        _audioFocusLossTime_ms = System.currentTimeMillis()
                         _hasFocus = false;
                         MediaControlReceiver.onPauseReceived.emit();
                         Log.i(TAG, "Audio focus lost");
