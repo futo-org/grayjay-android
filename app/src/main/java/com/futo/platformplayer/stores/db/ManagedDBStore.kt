@@ -15,6 +15,7 @@ import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
@@ -30,7 +31,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     private var _dbDaoBase: ManagedDBDAOBase<T, I>? = null;
     val dbDaoBase: ManagedDBDAOBase<T, I> get() = _dbDaoBase ?: throw IllegalStateException("Not initialized db [${name}]");
 
-    private var _dbDescriptor: ManagedDBDescriptor<T, I, D, DA>;
+    val descriptor: ManagedDBDescriptor<T, I, D, DA>;
 
     private val _columnInfo: List<ColumnMetadata>;
 
@@ -52,9 +53,10 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     private val _indexCollection = ConcurrentHashMap<Long, I>();
 
     private var _withUnique: Pair<(I)->Any, ConcurrentMap<Any, I>>? = null;
+    private val _orderSQL: String?;
 
     constructor(name: String, descriptor: ManagedDBDescriptor<T, I, D, DA>, clazz: KType, serializer: StoreSerializer<T>, niceName: String? = null) {
-        _dbDescriptor = descriptor;
+        this.descriptor = descriptor;
         _name = name;
         this.name = niceName ?: name.let {
             if(it.isNotEmpty())
@@ -63,29 +65,29 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         };
         _serializer = serializer;
         _class = clazz;
-        _columnInfo = _dbDescriptor.indexClass().memberProperties
+        _columnInfo = this.descriptor.indexClass().memberProperties
             .filter { it.hasAnnotation<ColumnIndex>() && it.name != "serialized" }
             .map { ColumnMetadata(it.javaField!!, it.findAnnotation<ColumnIndex>()!!, it.findAnnotation<ColumnOrdered>()) };
 
         val indexColumnNames = _columnInfo.map { it.name };
 
         val orderedColumns = _columnInfo.filter { it.ordered != null }.sortedBy { it.ordered!!.priority };
-        val orderSQL = if(orderedColumns.size > 0)
+        _orderSQL = if(orderedColumns.size > 0)
             " ORDER BY " + orderedColumns.map { "${it.name} ${if(it.ordered!!.descending) "DESC" else "ASC"}" }.joinToString(", ");
         else "";
 
-        _sqlGet = { SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} WHERE id = ?", arrayOf(it)) };
-        _sqlGetIndex = { SimpleSQLiteQuery("SELECT ${indexColumnNames.joinToString(", ")} FROM ${_dbDescriptor.table_name} WHERE id = ?", arrayOf(it)) };
-        _sqlGetAll = { SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} WHERE id IN (?)", arrayOf(it)) };
-        _sqlAll = SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} ${orderSQL}");
-        _sqlCount = SimpleSQLiteQuery("SELECT COUNT(id) FROM ${_dbDescriptor.table_name}");
-        _sqlDeleteAll = SimpleSQLiteQuery("DELETE FROM ${_dbDescriptor.table_name}");
-        _sqlDeleteById = { id -> SimpleSQLiteQuery("DELETE FROM ${_dbDescriptor.table_name} WHERE id = :id", arrayOf(id)) };
-        _sqlIndexed = SimpleSQLiteQuery("SELECT ${indexColumnNames.joinToString(", ")} FROM ${_dbDescriptor.table_name}");
+        _sqlGet = { SimpleSQLiteQuery("SELECT * FROM ${this.descriptor.table_name} WHERE id = ?", arrayOf(it)) };
+        _sqlGetIndex = { SimpleSQLiteQuery("SELECT ${indexColumnNames.joinToString(", ")} FROM ${this.descriptor.table_name} WHERE id = ?", arrayOf(it)) };
+        _sqlGetAll = { SimpleSQLiteQuery("SELECT * FROM ${this.descriptor.table_name} WHERE id IN (?)", arrayOf(it)) };
+        _sqlAll = SimpleSQLiteQuery("SELECT * FROM ${this.descriptor.table_name} ${_orderSQL}");
+        _sqlCount = SimpleSQLiteQuery("SELECT COUNT(id) FROM ${this.descriptor.table_name}");
+        _sqlDeleteAll = SimpleSQLiteQuery("DELETE FROM ${this.descriptor.table_name}");
+        _sqlDeleteById = { id -> SimpleSQLiteQuery("DELETE FROM ${this.descriptor.table_name} WHERE id = :id", arrayOf(id)) };
+        _sqlIndexed = SimpleSQLiteQuery("SELECT ${indexColumnNames.joinToString(", ")} FROM ${this.descriptor.table_name}");
 
         if(orderedColumns.size > 0) {
             _sqlPage = { page, length ->
-                SimpleSQLiteQuery("SELECT * FROM ${_dbDescriptor.table_name} ${orderSQL} LIMIT ? OFFSET ?", arrayOf(length, page * length));
+                SimpleSQLiteQuery("SELECT * FROM ${this.descriptor.table_name} ${_orderSQL} LIMIT ? OFFSET ?", arrayOf(length, page * length));
             }
         }
     }
@@ -110,9 +112,9 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
     fun load(context: Context? = null, inMemory: Boolean = false): ManagedDBStore<I, T, D, DA> {
         _db = (if(!inMemory)
-                    Room.databaseBuilder(context ?: StateApp.instance.context, _dbDescriptor.dbClass().java, _name)
+                    Room.databaseBuilder(context ?: StateApp.instance.context, descriptor.dbClass().java, _name)
                 else
-                    Room.inMemoryDatabaseBuilder(context ?: StateApp.instance.context, _dbDescriptor.dbClass().java))
+                    Room.inMemoryDatabaseBuilder(context ?: StateApp.instance.context, descriptor.dbClass().java))
             .fallbackToDestructiveMigration()
             .allowMainThreadQueries()
             .build()
@@ -150,7 +152,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     }
 
     fun insert(obj: T): Long {
-        val newIndex = _dbDescriptor.create(obj);
+        val newIndex = descriptor.create(obj);
 
         if(_withUnique != null) {
             val unique = getUnique(newIndex);
@@ -174,7 +176,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun update(id: Long, obj: T) {
         val existing = if(_indexes.any { it.checkChange }) _dbDaoBase!!.getNullable(_sqlGetIndex(id)) else null
 
-        val newIndex = _dbDescriptor.create(obj);
+        val newIndex = descriptor.create(obj);
         newIndex.id = id;
         newIndex.serialized = serialize(obj);
         dbDaoBase.update(newIndex);
@@ -223,21 +225,52 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         return deserializeIndexes(dbDaoBase.getMultiple(_sqlGetAll(id)));
     }
 
-    fun getObjectPage(page: Int, length: Int): List<T> = convertObjects(getPage(page, length));
-    fun getObjectPager(pageLength: Int = 20): IPager<T> {
+    fun query(field: String, obj: Any): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} = ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+    fun query(field: KProperty<*>, obj: Any): List<I> = query(validateFieldName(field), obj);
+    fun queryPage(field: String, obj: Any, page: Int, pageSize: Int): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} = ? ${_orderSQL} LIMIT ? OFFSET ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, pageSize, page * pageSize));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+    fun queryPage(field: KProperty<*>, obj: Any, page: Int, pageSize: Int): List<I> = queryPage(validateFieldName(field), obj, page, pageSize);
+
+    fun queryPageObjects(field: String, obj: Any, page: Int, pageSize: Int): List<T> = convertObjects(queryPage(field, obj, page, pageSize));
+    fun queryPageObjects(field: KProperty<*>, obj: Any, page: Int, pageSize: Int): List<T> = queryPageObjects(validateFieldName(field), obj, page, pageSize);
+
+    fun queryPager(field: KProperty<*>, obj: Any, pageSize: Int): IPager<I> = queryPager(validateFieldName(field), obj, pageSize);
+    fun queryPager(field: String, obj: Any, pageSize: Int): IPager<I> {
         return AdhocPager({
-            getObjectPage(it - 1, pageLength);
+           queryPage(field, obj, it - 1, pageSize);
         });
     }
+
+    fun queryObjectPager(field: KProperty<*>, obj: Any, pageSize: Int): IPager<T> = queryObjectPager(validateFieldName(field), obj, pageSize);
+    fun queryObjectPager(field: String, obj: Any, pageSize: Int): IPager<T> {
+        return AdhocPager({
+            queryPageObjects(field, obj, it - 1, pageSize);
+        });
+    }
+
     fun getPage(page: Int, length: Int): List<I> {
         if(_sqlPage == null)
             throw IllegalStateException("DB Store [${name}] does not have ordered fields to provide pages");
         val query = _sqlPage!!(page, length) ?: throw IllegalStateException("Paged db not setup for ${_name}");
-        return dbDaoBase.getMultiple(query);
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
+    fun getPageObjects(page: Int, length: Int): List<T> = convertObjects(getPage(page, length));
+
     fun getPager(pageLength: Int = 20): IPager<I> {
         return AdhocPager({
             getPage(it - 1, pageLength);
+        });
+    }
+    fun getObjectPager(pageLength: Int = 20): IPager<T> {
+        return AdhocPager({
+            getPageObjects(it - 1, pageLength);
         });
     }
 
@@ -282,6 +315,14 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
     fun serialize(obj: T): ByteArray {
         return _serializer.serialize(_class, obj);
+    }
+
+
+    private fun validateFieldName(prop: KProperty<*>): String {
+        val declaringClass = prop.javaField?.declaringClass;
+        if(declaringClass != descriptor.indexClass().java)
+            throw IllegalStateException("Cannot query by property [${prop.name}] from ${declaringClass?.simpleName} not part of ${descriptor.indexClass().simpleName}");
+        return prop.name;
     }
 
     companion object {

@@ -533,7 +533,7 @@ class StateApp {
             StatePlaylists.instance.migrateLegacyHistory();
 
 
-        if(true) {
+        if(false) {
             /*
             Logger.i(TAG, "TEST:--------(200)---------");
             testHistoryDB(200);

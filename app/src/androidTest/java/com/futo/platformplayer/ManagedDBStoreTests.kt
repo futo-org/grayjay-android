@@ -127,8 +127,123 @@ class ManagedDBStoreTests {
 
         store.shutdown();
     }
+    @Test
+    fun getPage() {
+        val store = ManagedDBStore.create("test", Descriptor())
+            .load(context, true);
+        store.deleteAll();
+
+        val testObjs = createSequence(store, 25);
+
+        val page1 = store.getPage(0, 10);
+        val page2 = store.getPage(1, 10);
+        val page3 = store.getPage(2, 10);
+        Assert.assertEquals(10, page1.size);
+        Assert.assertEquals(10, page2.size);
+        Assert.assertEquals(5, page3.size);
+
+        store.shutdown();
+    }
 
 
+    @Test
+    fun query() {
+        val store = ManagedDBStore.create("test", Descriptor())
+            .load(context, true);
+        store.deleteAll();
+
+        val testStr = UUID.randomUUID().toString();
+
+        val testObj1 = DBTOs.TestObject();
+        val testObj2 = DBTOs.TestObject();
+        val testObj3 = DBTOs.TestObject();
+        val testObj4 = DBTOs.TestObject();
+        testObj3.someStr = testStr;
+        testObj4.someStr = testStr;
+        val obj1 = createAndAssert(store, testObj1);
+        val obj2 = createAndAssert(store, testObj2);
+        val obj3 = createAndAssert(store, testObj3);
+        val obj4 = createAndAssert(store, testObj4);
+
+        val results = store.query(DBTOs.TestIndex::someString, testStr);
+
+        Assert.assertEquals(2, results.size);
+        for(result in results) {
+            if(result.someNum == obj3.someNum)
+                assertIndexEquals(obj3, result);
+            else
+                assertIndexEquals(obj4, result);
+        }
+        store.shutdown();
+    }
+    @Test
+    fun queryPage() {
+        val index = ConcurrentHashMap<Any, DBTOs.TestIndex>();
+        val store = ManagedDBStore.create("test", Descriptor())
+            .withIndex({ it.someNum },  index)
+            .load(context, true);
+        store.deleteAll();
+
+        val testStr = UUID.randomUUID().toString();
+
+        val testResults = createSequence(store, 40, { i, testObject ->
+            if(i % 2 == 0)
+                testObject.someStr = testStr;
+        });
+        val page1 = store.queryPage(DBTOs.TestIndex::someString, testStr, 0,10);
+        val page2 = store.queryPage(DBTOs.TestIndex::someString, testStr, 1,10);
+        val page3 = store.queryPage(DBTOs.TestIndex::someString, testStr, 2,10);
+
+        Assert.assertEquals(10, page1.size);
+        Assert.assertEquals(10, page2.size);
+        Assert.assertEquals(0, page3.size);
+
+
+        store.shutdown();
+    }
+    @Test
+    fun queryPager() {
+        val store = ManagedDBStore.create("test", Descriptor())
+            .load(context, true);
+        store.deleteAll();
+
+        val testStr = UUID.randomUUID().toString();
+
+        val testResults = createSequence(store, 100, { i, testObject ->
+            if(i % 2 == 0)
+                testObject.someStr = testStr;
+        });
+        val pager = store.queryPager(DBTOs.TestIndex::someString, testStr, 10);
+
+        val items = pager.getResults().toMutableList();
+        while(pager.hasMorePages()) {
+            pager.nextPage();
+            items.addAll(pager.getResults());
+        }
+        Assert.assertEquals(50, items.size);
+        for(i in 0 until 50) {
+            val k = i * 2;
+            Assert.assertEquals(k, items[i].someNum);
+        }
+
+        store.shutdown();
+    }
+
+
+
+
+
+
+    private fun createSequence(store: ManagedDBStore<DBTOs.TestIndex, DBTOs.TestObject, DBTOs.DB, DBTOs.DBDAO>, count: Int, modifier: ((Int, DBTOs.TestObject)->Unit)? = null): List<DBTOs.TestIndex> {
+        val list = mutableListOf<DBTOs.TestIndex>();
+        for(i in 0 until count) {
+            val obj = DBTOs.TestObject();
+            obj.someNum = i;
+            modifier?.invoke(i, obj);
+            list.add(createAndAssert(store, obj));
+        }
+        return list;
+    }
 
     private fun createAndAssert(store: ManagedDBStore<DBTOs.TestIndex, DBTOs.TestObject, DBTOs.DB, DBTOs.DBDAO>, obj: DBTOs.TestObject): DBTOs.TestIndex {
         val id = store.insert(obj);
@@ -147,6 +262,11 @@ class ManagedDBStoreTests {
         Assert.assertEquals(obj1.someString, obj2.someStr);
         Assert.assertEquals(obj1.someNum, obj2.someNum);
         assertObjectEquals(obj1.obj, obj2);
+    }
+    private fun assertIndexEquals(obj1: DBTOs.TestIndex, obj2: DBTOs.TestIndex) {
+        Assert.assertEquals(obj1.someString, obj2.someString);
+        Assert.assertEquals(obj1.someNum, obj2.someNum);
+        assertIndexEquals(obj1, obj2.obj);
     }
 
 
