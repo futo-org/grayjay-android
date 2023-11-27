@@ -3,74 +3,107 @@
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Grayjay App Overview](#grayjay-app-overview)
-- [Plugin Development Overview](#plugin-development-overview)
-- [Setting up the Development Environment](#setting-up-the-development-environment)
-- [Using the Developer Interface](#using-the-developer-interface)
+- [Quick Start](#quick-start)
+- [Configuration file](#configuration-file)
+- [Example plugin](#example-plugin)
 - [Plugin Deployment](#plugin-deployment)
 - [Common Issues and Troubleshooting](#common-issues-and-troubleshooting)
-- [Additional Resources](#additional-resources)
 - [Support and Contact](#support-and-contact)
 
 
 ## Introduction
 
-Welcome to the Grayjay App plugin development documentation. This guide will provide an overview of Grayjay's plugin system and guide you through the steps necessary to create, test, debug, and deploy plugins.
+Welcome to the Grayjay App plugin development documentation. Plugins are additional components that you can create to extend the functionality of the Grayjay app, for example a YouTube or Odysee plugin. This guide will provide an overview of Grayjay's plugin system and guide you through the steps necessary to create, test, debug, and deploy plugins.
 
-## Grayjay App Overview
+## Quick Start
 
-Grayjay is a unique media application that aims to revolutionize the relationship between content creators and their audiences. By shifting the focus from platforms to creators, Grayjay democratizes the content delivery process, empowering creators to retain full ownership of their content and directly monetize their work.
+### Download GrayJay:
 
-For users, Grayjay offers a more privacy-focused and personalized content viewing experience. Rather than being manipulated by opaque algorithms, users can decide what they want to watch, thus enhancing their engagement and enjoyment of the content. 
+- Download the GrayJay app for Android [here](https://grayjay.app/).
 
-Our ultimate goal is to create the best media app, merging content and features that users love with a strong emphasis on user and creator empowerment and privacy.
+### Enable GrayJay Developer Mode:
 
-By developing Grayjay, we strive to make a stride toward a more open, interconnected, and equitable media ecosystem. This ecosystem fosters a thriving community of creators who are supported by their audiences, all facilitated through a platform that respects and prioritizes privacy and ownership.
+- Enable developer mode in the GrayJay app (not Android settings app) by tapping the “More” tab, tapping “Settings”, scrolling all the way to the bottom, and tapping the “Version Code” multiple times.
 
-## Plugin Development Overview
+### Run the GrayJay DevServer:
 
-Plugins are additional components that you can create to extend the functionality of the Grayjay app.
+- At the bottom of the Settings page in the GrayJay app, Click the purple “Developer Settings” button. Then click the “Start Server” button to start the DevServer.
 
-## Setting up the Developer Environment
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/07fc4919b0a8446c4cdf5335565c0611/image.png" width="200">
 
-Before you start developing plugins, it is necessary to set up a suitable developer environment. Here's how to do it:
+### Open the GrayJay DevServer on your computer:
 
-1. Create a plugin, the minimal starting point is the following.
+- Open the Android settings app and search for “IP address”. The IP address should look like `192.168.X.X`.
+- Open `http://<phone-ip>:11337/dev` in your web browser.
+    
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/72885c3bc51b8efe9462ee68d47e3b51/image.png" width="600">
 
-`SomeConfig.js`
-```json
+### Create and host your plugin:
+
+- Clone the [Odysee plugin](https://gitlab.futo.org/videostreaming/plugins/odysee) as an example
+- `cd` into the project folder and serve with `npx serve` (if you have [Node.js](https://nodejs.org/en/))
+- `npx serve` should give you a Network url (not the localhost one) that looks like `http://192.168.X.X:3000`. Your config file URL will be something like `http://192.168.X.X:3000/OdyseeConfig.json`.
+    
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/cc266da0a0b85c5770abca22c0b03b3b/image.png" width="600">
+
+### Test your plugin:
+
+- When the DevServer is open in your browser, enter the config file URL and click “Load Plugin”. This will NOT inject the plugin into the app, for that you need to click "Inject Plugin" on the Integration tab.
+    
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/386a562f30a60cfcbb8a8a1345a788e5/image.png" width="600">
+    
+- On the Testing tab, you can individually test the methods in your plugin. To reload once you make changes on the plugin, click the top-right refresh button. *Note: While testing, the custom domParser package is overwritten with the browser's implementation, so it may behave differently than once it is loaded into the app.*
+    
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/08830eb8cc56cc55ba445dd49db86235/image.png" width="600">
+    
+- On the Integration tab you can test your plugin end-to-end in the GrayJay app and monitor device logs. You can click "Inject Plugin" in order to inject the plugin into the app. Your plugin should show up on the Sources tab in the GrayJay app. If you make changes and want to reload the plugin, click "Inject Plugin" again.
+    
+  <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/74813fbf37dcfc63055595061e41c48b/image.png" width="600">
+
+## Configuration file
+
+Create a configuration file for your plugin.
+
+`SomeConfig.json`
+```js
 {
 	"name": "Some name",
 	"description": "A description for your plugin",
 	"author": "Your author name",
 	"authorUrl": "https://yoursite.com",
 	
+    // The `sourceUrl` field should contain the URL where your plugin will be publically accessible in the future. This allows the app to scan this location to see if there are any updates available.
 	"sourceUrl": "https://yoursite.com/SomeConfig.json",
 	"repositoryUrl": "https://github.com/someuser/someproject",
 	"scriptUrl": "./SomeScript.js",
 	"version": 1,
 	
 	"iconUrl": "./someimage.png",
+
+    // The `id` field should be a uniquely generated UUID like from [https://www.uuidgenerator.net/](https://www.uuidgenerator.net/). This will be used to distinguish your plugin from others.
 	"id": "309b2e83-7ede-4af8-8ee9-822bc4647a24",
 	
-	"scriptSignature": "<ommitted>",
-	"scriptPublicKey": "<ommitted>",
+    // The `scriptSignature` and `scriptPublicKey` should be set whenever you deploy your script (NOT REQUIRED DURING DEVELOPMENT). The purpose of these fields is to verify that a plugin update was made by the same individual that developed the original plugin. This prevents somebody from hijacking your plugin without having access to your public private keypair. When this value is not present, you can still use this plugin, however the user will be informed that these values are missing and that this is a security risk. Here is an example script showing you how to generate these values.
+	"scriptSignature": "<omitted>",
+	"scriptPublicKey": "<omitted>",
+
+    // The `packages` field allows you to specify which packages you want to use, current available packages are:
+    // - `Http`: for performing HTTP requests
+    // - `DOMParser`: for parsing a DOM
+    // - `Utilities`: for various utility functions like generating UUIDs or converting to Base64
+    // See documentation for more: https://gitlab.futo.org/videostreaming/grayjay/-/tree/master/docs/packages
 	"packages": ["Http"],
 	
 	"allowEval": false,
+
+    // The `allowUrls` field is allowed to be `everywhere`, this means that the plugin is allowed to access all URLs. However, this will popup a warning for the user that this is the case. Therefore, it is recommended to narrow the scope of the accessible URLs only to the URLs that you actually need. Other requests will be blocked. During development it can be convenient to use `everywhere`. Possible values are `odysee.com`, `api.odysee.com`, etc.
 	"allowUrls": [
 		"everywhere"
 	]
 }
 ```
 
-The `sourceUrl` field should contain the URL where your plugin will be publically accessible in the future. This allows the app to scan this location to see if there are any updates available.
-
-The `id` field should be a uniquely generated UUID like from [https://www.uuidgenerator.net/](https://www.uuidgenerator.net/). This will be used to distinguish your plugin from others.
-
-The `allowUrls` field is allowed to be `everywhere`, this means that the plugin is allowed to access all URLs. However, this will popup a warning for the user that this is the case. Therefore, it is recommended to narrow the scope of the accessible URLs only to the URLs that you actually need. Other requests will be blocked. During development it can be convenient to use `everywhere`. Possible values are `odysee.com`, `api.odysee.com`, etc.
-
-The `scriptSignature` and `scriptPublicKey` should be set whenever you deploy your script (NOT REQUIRED DURING DEVELOPMENT). The purpose of these fields is to verify that a plugin update was made by the same individual that developed the original plugin. This prevents somebody from hijacking your plugin without having access to your public private keypair. When this value is not present, you can still use this plugin, however the user will be informed that these values are missing and that this is a security risk. Here is an example script showing you how to generate these values.
+You can use this script to generate the `scriptSignature` and `scriptPublicKey` fields above:
 
 `sign-script.sh`
 ```sh
@@ -96,15 +129,11 @@ fi
 
 SIGNATURE=$(echo -n "$DATA" | openssl dgst -sha512 -sign ~/.ssh/id_rsa | base64 -w 0)
 echo "This is your signature: '$SIGNATURE'"
-
 ```
 
-The `packages` field allows you to specify which packages you want to use, current available packages are:
-- `Http`: for performing HTTP requests (see [docs](TODO))
-- `DOMParser`: for parsing a DOM (see [docs](TODO))
-- `Utilities`: for various utility functions like generating random UUIDs or converting to Base64 (see [docs](TODO))
+## Example plugin
 
-Note that this is just a starting point, plugins can also implement optional features such as login, importing playlists/subscriptions, etc. For full examples please see in-house developed plugins (click [here](TODO)).
+Note that this is just a starting point, plugins can also implement optional features such as login, importing playlists/subscriptions, etc. For full examples please see in-house developed plugins (click [here](https://gitlab.futo.org/videostreaming/plugins)).
 
 `SomeScript.js`
 ```js
@@ -348,19 +377,6 @@ class SomeChannelVideoPager extends VideoPager {
 }
 ```
 
-2. Configure a web server to host the plugin. This can be something as simple as a NGINX server where you just place the files in the wwwroot or a simple dotnet/npm program that hosts the file for you. The important part is that the webserver and the phone are on the same network and the phone can access the files hosted by the development machine. An example of what this would look like is [here](https://plugins.grayjay.app/Odysee/OdyseeConfig.json). Alternatively, you could simply point to a Github/Gitlab raw file if you do not want to host it yourself. Note that the URL is not required to be publically accessible during development and HTTPS is NOT required.
-3. Enable developer mode on the mobile application by going to settings, clicking on the version code multiple times. Once enabled, click on developer settings and then in the developer settings enable the webserver.
-4. You are now able to access the developer interface on the phone via `http://<phone-ip>:11337/dev`.
-
-## Using the Developer Interface
-
-Once in the web portal you will see several tabs and a form allowing you to load a plugin.
-
-1. Lets load your plugin. Take the URL that your plugin config is available at (like http://192.168.1.196:5000/Some/SomeConfig.json) and enter it in the `Plugin Config Json Url` field. Once entered, click load plugin.
-*The package override domParser will override the domParser with the browser implementation. This is useful when you quickly want to iterate on plugins that parse the DOM, but it is less accurate to what the plugin will behave like once in-app.*
-2. Once the plugin is loaded, you can click on the `Testing` tab and call individual methods. This allows you to quickly iterate, test methods and make sure they are returning the proper values. To reload once you make changes on the plugin, click the top-right refresh button.
-3. After you are sure everything is working properly, click the `Integration` tab in order to perform integration testing on your plugin. You can click the `Inject Plugin` button in order to inject the plugin into the app. On the sources page in your app you should see your source and you are able to test it and make sure everything works. If you make changes and want to reload the plugin, click the `Inject Plugin` button again.
-
 ## Plugin Deployment
 
 Here's how to deploy your plugin and distribute it to end-users:
@@ -402,12 +418,6 @@ Ensure the QR code correctly points to the plugin config URL. The URL must be pu
 ### The plugin fails to load after signing the script and incrementing the version.
 
 Make sure the signature is correctly generated and added. Also, ensure the version number in the config matches the new version number.
-
-## Additional Resources
-
-Here are some additional resources that might help you with your plugin development:
-
-Please 
 
 ## Support and Contact
 
