@@ -1,8 +1,22 @@
 package com.futo.platformplayer.parsers
 
+import android.view.View
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantSubtitleUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.toYesNo
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.yesNoToBoolean
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.URI
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -84,6 +98,48 @@ class HLS {
 
             return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments)
         }
+
+        fun parseAndGetVideoSources(source: Any, content: String, url: String): List<HLSVariantVideoUrlSource> {
+            val masterPlaylist: MasterPlaylist
+            try {
+                masterPlaylist = parseMasterPlaylist(content, url)
+                return masterPlaylist.getVideoSources()
+            } catch (e: Throwable) {
+                if (content.lines().any { it.startsWith("#EXTINF:") }) {
+                    return if (source is IHLSManifestSource) {
+                        listOf(HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, url))
+                    } else if (source is IHLSManifestAudioSource) {
+                        listOf()
+                    } else {
+                        throw NotImplementedError()
+                    }
+                } else {
+                    throw e
+                }
+            }
+        }
+
+        fun parseAndGetAudioSources(source: Any, content: String, url: String): List<HLSVariantAudioUrlSource> {
+            val masterPlaylist: MasterPlaylist
+            try {
+                masterPlaylist = parseMasterPlaylist(content, url)
+                return masterPlaylist.getAudioSources()
+            } catch (e: Throwable) {
+                if (content.lines().any { it.startsWith("#EXTINF:") }) {
+                    return if (source is IHLSManifestSource) {
+                        listOf()
+                    } else if (source is IHLSManifestAudioSource) {
+                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, url))
+                    } else {
+                        throw NotImplementedError()
+                    }
+                } else {
+                    throw e
+                }
+            }
+        }
+
+        //TODO: getSubtitleSources
 
         private fun resolveUrl(baseUrl: String, url: String): String {
             val baseUri = URI(baseUrl)
@@ -268,6 +324,49 @@ class HLS {
             }
 
             return builder.toString()
+        }
+
+        fun getVideoSources(): List<HLSVariantVideoUrlSource> {
+            return variantPlaylistsRefs.map {
+                var width: Int? = null
+                var height: Int? = null
+                val resolutionTokens = it.streamInfo.resolution?.split('x')
+                if (resolutionTokens?.isNotEmpty() == true) {
+                    width = resolutionTokens[0].toIntOrNull()
+                    height = resolutionTokens[1].toIntOrNull()
+                }
+
+                val suffix = listOf(it.streamInfo.video, it.streamInfo.codecs).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+                HLSVariantVideoUrlSource(suffix, width ?: 0, height ?: 0, "application/vnd.apple.mpegurl", it.streamInfo.codecs ?: "", it.streamInfo.bandwidth, 0, false, it.url)
+            }
+        }
+
+        fun getAudioSources(): List<HLSVariantAudioUrlSource> {
+            return mediaRenditions.mapNotNull {
+                if (it.uri == null) {
+                    return@mapNotNull null
+                }
+
+                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+                return@mapNotNull when (it.type) {
+                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language ?: "", null, false, it.uri)
+                    else -> null
+                }
+            }
+        }
+
+        fun getSubtitleSources(): List<HLSVariantSubtitleUrlSource> {
+            return mediaRenditions.mapNotNull {
+                if (it.uri == null) {
+                    return@mapNotNull null
+                }
+
+                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+                return@mapNotNull when (it.type) {
+                    "SUBTITLE" -> HLSVariantSubtitleUrlSource(it.name?.ifEmpty { "Subtitle (${suffix})" } ?: "Subtitle (${suffix})", it.uri, "application/vnd.apple.mpegurl")
+                    else -> null
+                }
+            }
         }
     }
 
