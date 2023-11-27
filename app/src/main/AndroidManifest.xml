@@ -133,50 +133,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="polycentric" />
             </intent-filter>
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:host="youtu.be" />
-                <data android:host="www.you.be" />
-                <data android:host="youtube.com"  />
-                <data android:host="www.youtube.com"  />
-                <data android:host="m.youtube.com" />
-                <data android:host="rumble.com" />
-                <data android:host="kick.com" />
-                <data android:host="nebula.tv" />
-                <data android:host="odysee.com" />
-                <data android:host="patreon.com" />
-                <data android:host="soundcloud.com" />
-                <data android:host="twitch.tv" />
-                <data android:pathPrefix="/" />
-            </intent-filter>
-            <intent-filter android:autoVerify="true">
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <action android:name="android.intent.action.SEND" />
-
-                <data android:mimeType="text/plain" />
-
-                <data android:host="youtu.be" />
-                <data android:host="www.you.be" />
-                <data android:host="youtube.com"  />
-                <data android:host="www.youtube.com"  />
-                <data android:host="m.youtube.com" />
-                <data android:host="rumble.com" />
-                <data android:host="kick.com" />
-                <data android:host="nebula.tv" />
-                <data android:host="odysee.com" />
-                <data android:host="patreon.com" />
-                <data android:host="soundcloud.com" />
-                <data android:host="twitch.tv" />
-            </intent-filter>
         </activity>
 
         <activity

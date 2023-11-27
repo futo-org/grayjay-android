@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -109,17 +110,25 @@ class UIDialogs {
 
             view.findViewById<LinearLayout>(R.id.button_yes).apply {
                 this.setOnClickListener {
-                    try {
-                        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        val uri = Uri.fromParts("package", context.packageName, null)
-                        intent.data = uri
-                        context.startActivity(intent)
-                    } catch (e: Throwable) {
-                        toast(context, context.getString(R.string.failed_to_show_settings))
-                    }
+                    if (BuildConfig.IS_PLAYSTORE_BUILD) {
+                        dialog.dismiss()
+                        showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.play_store_version_does_not_support_default_url_handling)) {
+                            onYes?.invoke()
+                        }
+                    } else {
+                        try {
+                            val intent =
+                                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            val uri = Uri.fromParts("package", context.packageName, null)
+                            intent.data = uri
+                            context.startActivity(intent)
+                        } catch (e: Throwable) {
+                            toast(context, context.getString(R.string.failed_to_show_settings))
+                        }
 
-                    onYes?.invoke()
-                    dialog.dismiss()
+                        onYes?.invoke()
+                        dialog.dismiss()
+                    }
                 }
             }
 
