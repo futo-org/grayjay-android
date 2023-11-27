@@ -111,7 +111,15 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-
+    @FormField(R.string.link_handling, FieldForm.BUTTON, R.string.allow_grayjay_to_handle_links, -1)
+    @FormFieldButton(R.drawable.ic_link)
+    fun manageLinks() {
+        try {
+            SettingsActivity.getActivity()?.let { UIDialogs.showUrlHandlingPrompt(it) }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to show url handling prompt", e)
+        }
+    }
 
     @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();

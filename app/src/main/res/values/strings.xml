@@ -292,6 +292,8 @@
     <string name="clear_external_downloads_directory">Clear external Downloads directory</string>
     <string name="change_external_general_directory">Change external General directory</string>
     <string name="change_tabs_visible_on_the_home_screen">Change tabs visible on the home screen</string>
+    <string name="link_handling">Link Handling</string>
+    <string name="allow_grayjay_to_handle_links">Allow Grayjay to handle links</string>
     <string name="change_the_external_directory_for_general_files">Change the external directory for general files</string>
     <string name="clear_the_external_storage_for_download_files">Clear the external storage for download files</string>
     <string name="change_the_external_storage_for_download_files">Change the external storage for download files</string>
@@ -678,6 +680,10 @@
     <string name="plus_tax">" + Tax"</string>
     <string name="new_playlist">New playlist</string>
     <string name="add_to_new_playlist">Add to new playlist</string>
+    <string name="url_handling">URL Handling</string>
+    <string name="allow_grayjay_to_handle_specific_urls">Allow Grayjay to handle specific URLs?</string>
+    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">When you click \'Yes\', the Grayjay app settings will open.\n\nThere, navigate to:\n1. "Open by default" or "Set as default" section.\nYou might find this option directly or under \'Advanced\' settings, depending on your device.\n\n2. Choose \'Open supported links\' for Grayjay.\n\n(some devices have this listed under \'Default Apps\' in the main settings followed by selecting Grayjay for relevant categories)</string>
+    <string name="failed_to_show_settings">Failed to show settings</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>

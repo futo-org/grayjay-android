@@ -1,6 +1,7 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
@@ -256,9 +257,6 @@ class StateAnnouncement {
 
     }
 
-
-
-
     fun registerDidYouKnow() {
         val random = Random();
         val message: String? = when (random.nextInt(4 * 18 + 1)) {
@@ -291,6 +289,23 @@ class StateAnnouncement {
                 message,
                 AnnouncementType.SESSION_RECURRING
             );
+        }
+    }
+
+    fun registerDefaultHandlerAnnouncement() {
+        registerAnnouncement(
+            "default-url-handler",
+            "Allow Grayjay to open URLs",
+            "Click here to allow Grayjay to open URLs",
+            AnnouncementType.SESSION_RECURRING,
+            null,
+            null,
+            "Allow"
+        ) {
+            UIDialogs.showUrlHandlingPrompt(StateApp.instance.context) {
+                instance.neverAnnouncement("default-url-handler")
+                instance.onAnnouncementChanged.emit()
+            }
         }
     }
 

@@ -2,7 +2,9 @@ package com.futo.platformplayer
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -91,6 +93,42 @@ class UIDialogs {
                 }.toTypedArray());
         }
 
+        fun showUrlHandlingPrompt(context: Context, onYes: (() -> Unit)? = null) {
+            val builder = AlertDialog.Builder(context)
+            val view = LayoutInflater.from(context).inflate(R.layout.dialog_url_handling, null)
+            builder.setView(view)
+
+            val dialog = builder.create()
+            registerDialogOpened(dialog)
+
+            view.findViewById<TextView>(R.id.button_no).apply {
+                this.setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
+
+            view.findViewById<LinearLayout>(R.id.button_yes).apply {
+                this.setOnClickListener {
+                    try {
+                        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts("package", context.packageName, null)
+                        intent.data = uri
+                        context.startActivity(intent)
+                    } catch (e: Throwable) {
+                        toast(context, context.getString(R.string.failed_to_show_settings))
+                    }
+
+                    onYes?.invoke()
+                    dialog.dismiss()
+                }
+            }
+
+            dialog.setOnDismissListener {
+                registerDialogClosed(dialog)
+            }
+
+            dialog.show()
+        }
 
         fun showAutomaticBackupDialog(context: Context, skipRestoreCheck: Boolean = false, onClosed: (()->Unit)? = null) {
             val dialogAction: ()->Unit = {
@@ -107,7 +145,8 @@ class UIDialogs {
                     }, UIDialogs.ActionStyle.DANGEROUS),
                     UIDialogs.Action(context.getString(R.string.restore), {
                         UIDialogs.showAutomaticRestoreDialog(context, StateApp.instance.scope);
-                    }, UIDialogs.ActionStyle.PRIMARY));
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
             else {
                 dialogAction();
             }
