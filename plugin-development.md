@@ -5,11 +5,15 @@
 - [Introduction](#introduction)
 - [Quick Start](#quick-start)
 - [Configuration file](#configuration-file)
+- [Packages](#packages)
+- [Authentication](#authentication)
+- [Content Types](#content-types)
 - [Example plugin](#example-plugin)
+- [Pagination](#pagination)
+- [Script signing](#script-signing)
 - [Plugin Deployment](#plugin-deployment)
 - [Common Issues and Troubleshooting](#common-issues-and-troubleshooting)
 - [Support and Contact](#support-and-contact)
-
 
 ## Introduction
 
@@ -83,15 +87,11 @@ Create a configuration file for your plugin.
     // The `id` field should be a uniquely generated UUID like from [https://www.uuidgenerator.net/](https://www.uuidgenerator.net/). This will be used to distinguish your plugin from others.
 	"id": "309b2e83-7ede-4af8-8ee9-822bc4647a24",
 	
-    // The `scriptSignature` and `scriptPublicKey` should be set whenever you deploy your script (NOT REQUIRED DURING DEVELOPMENT). The purpose of these fields is to verify that a plugin update was made by the same individual that developed the original plugin. This prevents somebody from hijacking your plugin without having access to your public private keypair. When this value is not present, you can still use this plugin, however the user will be informed that these values are missing and that this is a security risk. Here is an example script showing you how to generate these values.
+    // See the "Script Signing" section for details
 	"scriptSignature": "<omitted>",
 	"scriptPublicKey": "<omitted>",
 
-    // The `packages` field allows you to specify which packages you want to use, current available packages are:
-    // - `Http`: for performing HTTP requests
-    // - `DOMParser`: for parsing a DOM
-    // - `Utilities`: for various utility functions like generating UUIDs or converting to Base64
-    // See documentation for more: https://gitlab.futo.org/videostreaming/grayjay/-/tree/master/docs/packages
+    // See the "Packages" section for details, currently allowed values are: ["Http", "DOMParser", "Utilities"]
 	"packages": ["Http"],
 	
 	"allowEval": false,
@@ -103,279 +103,42 @@ Create a configuration file for your plugin.
 }
 ```
 
-You can use this script to generate the `scriptSignature` and `scriptPublicKey` fields above:
+## Packages
 
-`sign-script.sh`
-```sh
-#!/bin/sh
-#Example usage:
-#cat script.js | sign-script.sh
-#sh sign-script.sh script.js
+The `packages` field allows you to specify which packages you want to use, current available packages are:
+- `Http`: for performing HTTP requests (see [docs](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/packages/packageHttp.md))
+- `DOMParser`: for parsing a DOM (no docs yet, see [source code](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/app/src/main/java/com/futo/platformplayer/engine/packages/PackageDOMParser.kt))
+- `Utilities`: for various utility functions like generating UUIDs or converting to Base64 (no docs yet, see [source code](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/app/src/main/java/com/futo/platformplayer/engine/packages/PackageUtilities.kt))
 
-#Set your key paths here
-PRIVATE_KEY_PATH=~/.ssh/id_rsa
-PUBLIC_KEY_PATH=~/.ssh/id_rsa.pub
+## Authentication
 
-PUBLIC_KEY_PKCS8=$(ssh-keygen -f "$PUBLIC_KEY_PATH" -e -m pkcs8 | tail -n +2 | head -n -1 | tr -d '\n')
-echo "This is your public key: '$PUBLIC_KEY_PKCS8'"
+Authentication is sometimes required by plugins to access user data and premium content, for example on YouTube or Patreon.
 
-if [ $# -eq 0 ]; then
-  # No parameter provided, read from stdin
-  DATA=$(cat)
-else
-  # Parameter provided, read from file
-  DATA=$(cat "$1")
-fi
+See [Authentication.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Authentication.md)
 
-SIGNATURE=$(echo -n "$DATA" | openssl dgst -sha512 -sign ~/.ssh/id_rsa | base64 -w 0)
-echo "This is your signature: '$SIGNATURE'"
-```
+## Content Types
+
+Docs for data structures like PlatformVideo your plugin uses to communicate with the GrayJay app.
+
+See [Content Types.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Content%20Types.md)
 
 ## Example plugin
 
-Note that this is just a starting point, plugins can also implement optional features such as login, importing playlists/subscriptions, etc. For full examples please see in-house developed plugins (click [here](https://gitlab.futo.org/videostreaming/plugins)).
+See the example plugin to better understand the plugin API e.g. `getHome` and `search`.
 
-`SomeScript.js`
-```js
-source.enable = function (conf) {
-    /**
-     * @param conf: SourceV8PluginConfig (the SomeConfig.js)
-     */
-}
+See [Example Plugin.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Example%20Plugin.md)
 
-source.getHome = function(continuationToken) {
-    /**
-     * @param continuationToken: any?
-     * @returns: VideoPager
-     */
-    const videos = []; // The results (PlatformVideo)
-    const hasMore = false; // Are there more pages?
-    const context = { continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeHomeVideoPager(videos, hasMore, context);
-}
+## Pagination
 
-source.searchSuggestions = function(query) {
-    /**
-     * @param query: string
-     * @returns: string[]
-     */
+Plugins use "Pagers" to send paginated data to the GrayJay app.
 
-    const suggestions = []; //The suggestions for a specific search query
-    return suggestions;
-}
+See [Pagers.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Pagers.md)
 
-source.getSearchCapabilities = function() {
-    //This is an example of how to return search capabilities like available sorts, filters and which feed types are available (see source.js for more details) 
-	return {
-		types: [Type.Feed.Mixed],
-		sorts: [Type.Order.Chronological, "^release_time"],
-		filters: [
-			{
-				id: "date",
-				name: "Date",
-				isMultiSelect: false,
-				filters: [
-					{ id: Type.Date.Today, name: "Last 24 hours", value: "today" },
-					{ id: Type.Date.LastWeek, name: "Last week", value: "thisweek" },
-					{ id: Type.Date.LastMonth, name: "Last month", value: "thismonth" },
-					{ id: Type.Date.LastYear, name: "Last year", value: "thisyear" }
-				]
-			},
-		]
-	};
-}
+## Script signing
 
-source.search = function (query, type, order, filters, continuationToken) {
-    /**
-     * @param query: string
-     * @param type: string
-     * @param order: string
-     * @param filters: Map<string, Array<string>>
-     * @param continuationToken: any?
-     * @returns: VideoPager
-     */
-    const videos = []; // The results (PlatformVideo)
-    const hasMore = false; // Are there more pages?
-    const context = { query: query, type: type, order: order, filters: filters, continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeSearchVideoPager(videos, hasMore, context);
-}
+When you deploy your plugin, you'll need to add code signing for security.
 
-source.getSearchChannelContentsCapabilities = function () {
-    //This is an example of how to return search capabilities on a channel like available sorts, filters and which feed types are available (see source.js for more details)
-	return {
-		types: [Type.Feed.Mixed],
-		sorts: [Type.Order.Chronological],
-		filters: []
-	};
-}
-
-source.searchChannelContents = function (url, query, type, order, filters, continuationToken) {
-    /**
-     * @param url: string
-     * @param query: string
-     * @param type: string
-     * @param order: string
-     * @param filters: Map<string, Array<string>>
-     * @param continuationToken: any?
-     * @returns: VideoPager
-     */
-
-    const videos = []; // The results (PlatformVideo)
-    const hasMore = false; // Are there more pages?
-    const context = { channelUrl: channelUrl, query: query, type: type, order: order, filters: filters, continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeSearchChannelVideoPager(videos, hasMore, context);
-}
-
-source.searchChannels = function (query, continuationToken) {
-    /**
-     * @param query: string
-     * @param continuationToken: any?
-     * @returns: ChannelPager
-     */
-
-    const channels = []; // The results (PlatformChannel)
-    const hasMore = false; // Are there more pages?
-    const context = { query: query, continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeChannelPager(channels, hasMore, context);
-}
-
-source.isChannelUrl = function(url) {
-    /**
-     * @param url: string
-     * @returns: boolean
-     */
-
-	return REGEX_CHANNEL_URL.test(url);
-}
-
-source.getChannel = function(url) {
-	return new PlatformChannel({
-		//... see source.js for more details
-	});
-}
-
-source.getChannelContents = function(url, type, order, filters, continuationToken) {
-    /**
-     * @param url: string
-     * @param type: string
-     * @param order: string
-     * @param filters: Map<string, Array<string>>
-     * @param continuationToken: any?
-     * @returns: VideoPager
-     */
-
-    const videos = []; // The results (PlatformVideo)
-    const hasMore = false; // Are there more pages?
-    const context = { url: url, query: query, type: type, order: order, filters: filters, continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeChannelVideoPager(videos, hasMore, context);
-}
-
-source.isContentDetailsUrl = function(url) {
-    /**
-     * @param url: string
-     * @returns: boolean
-     */
-
-	return REGEX_DETAILS_URL.test(url);
-}
-
-source.getContentDetails = function(url) {
-    /**
-     * @param url: string
-     * @returns: PlatformVideoDetails
-     */
-
-	return new PlatformVideoDetails({
-		//... see source.js for more details
-	});
-}
-
-source.getComments = function (url, continuationToken) {
-    /**
-     * @param url: string
-     * @param continuationToken: any?
-     * @returns: CommentPager
-     */
-
-    const comments = []; // The results (Comment)
-    const hasMore = false; // Are there more pages?
-    const context = { url: url, continuationToken: continuationToken }; // Relevant data for the next page
-    return new SomeCommentPager(comments, hasMore, context);
-
-}
-source.getSubComments = function (comment) {
-    /**
-     * @param comment: Comment
-     * @returns: SomeCommentPager
-     */
-
-	if (typeof comment === 'string') {
-		comment = JSON.parse(comment);
-	}
-
-	return getCommentsPager(comment.context.claimId, comment.context.claimId, 1, false, comment.context.commentId);
-}
-
-class SomeCommentPager extends CommentPager {
-    constructor(results, hasMore, context) {
-        super(results, hasMore, context);
-    }
-
-    nextPage() {
-        return source.getComments(this.context.url, this.context.continuationToken);
-    }
-}
-
-class SomeHomeVideoPager extends VideoPager {
-	constructor(results, hasMore, context) {
-		super(results, hasMore, context);
-	}
-	
-	nextPage() {
-		return source.getHome(this.context.continuationToken);
-	}
-}
-
-class SomeSearchVideoPager extends VideoPager {
-	constructor(results, hasMore, context) {
-		super(results, hasMore, context);
-	}
-	
-	nextPage() {
-		return source.search(this.context.query, this.context.type, this.context.order, this.context.filters, this.context.continuationToken);
-	}
-}
-
-class SomeSearchChannelVideoPager extends VideoPager {
-	constructor(results, hasMore, context) {
-		super(results, hasMore, context);
-	}
-	
-	nextPage() {
-		return source.searchChannelContents(this.context.channelUrl, this.context.query, this.context.type, this.context.order, this.context.filters, this.context.continuationToken);
-	}
-}
-
-class SomeChannelPager extends ChannelPager {
-	constructor(results, hasMore, context) {
-		super(results, hasMore, context);
-	}
-	
-	nextPage() {
-		return source.searchChannelContents(this.context.query, this.context.continuationToken);
-	}
-}
-
-class SomeChannelVideoPager extends VideoPager {
-	constructor(results, hasMore, context) {
-		super(results, hasMore, context);
-	}
-	
-	nextPage() {
-		return source.getChannelContents(this.context.url, this.context.type, this.context.order, this.context.filters, this.context.continuationToken);
-	}
-}
-```
+See [Script Signing.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Script%Signing.md)
 
 ## Plugin Deployment
 
