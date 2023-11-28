@@ -45,7 +45,7 @@ Welcome to the Grayjay App plugin development documentation. Plugins are additio
 ### Create and host your plugin:
 
 - Clone the [Odysee plugin](https://gitlab.futo.org/videostreaming/plugins/odysee) as an example
-- `cd` into the project folder and serve with `npx serve` (if you have [Node.js](https://nodejs.org/en/))
+- `cd` into the project folder and serve with `npx serve` (if you have [Node.js](https://nodejs.org/en/)) or any other HTTP Server you desire.
 - `npx serve` should give you a Network url (not the localhost one) that looks like `http://192.168.X.X:3000`. Your config file URL will be something like `http://192.168.X.X:3000/OdyseeConfig.json`.
     
   <img src="https://gitlab.futo.org/videostreaming/grayjay/uploads/cc266da0a0b85c5770abca22c0b03b3b/image.png" width="600">
