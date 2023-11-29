@@ -154,33 +154,35 @@ class CommentsFragment : MainFragment() {
         }
 
         private fun onDelete(comment: IPlatformComment) {
-            val processHandle = StatePolycentric.instance.processHandle ?: return
-            if (comment !is PolycentricPlatformComment) {
-                return
-            }
+            UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete this comment?", {
+                val processHandle = StatePolycentric.instance.processHandle ?: return@showConfirmationDialog
+                if (comment !is PolycentricPlatformComment) {
+                    return@showConfirmationDialog
+                }
 
-            val index = _comments.indexOf(comment)
-            if (index != -1) {
-                _comments.removeAt(index)
-                _adapterComments.notifyItemRemoved(_adapterComments.childToParentPosition(index))
+                val index = _comments.indexOf(comment)
+                if (index != -1) {
+                    _comments.removeAt(index)
+                    _adapterComments.notifyItemRemoved(_adapterComments.childToParentPosition(index))
 
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    try {
-                        processHandle.delete(comment.eventPointer.process, comment.eventPointer.logicalClock)
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to delete event.", e);
-                        return@launch;
-                    }
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                        try {
+                            processHandle.delete(comment.eventPointer.process, comment.eventPointer.logicalClock)
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to delete event.", e);
+                            return@launch
+                        }
 
-                    try {
-                        Logger.i(TAG, "Started backfill");
-                        processHandle.fullyBackfillServersAnnounceExceptions();
-                        Logger.i(TAG, "Finished backfill");
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to fully backfill servers.", e);
+                        try {
+                            Logger.i(TAG, "Started backfill");
+                            processHandle.fullyBackfillServersAnnounceExceptions();
+                            Logger.i(TAG, "Finished backfill");
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to fully backfill servers.", e);
+                        }
                     }
                 }
-            }
+            })
         }
 
         fun onBackPressed(): Boolean {
