@@ -12,10 +12,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.CastProtocolType
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.models.CastingDeviceInfo
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toInetAddress
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class CastingAddDialog(context: Context?) : AlertDialog(context) {
@@ -62,7 +59,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
 
         _buttonConfirm.setOnClickListener {
             val castProtocolType: CastProtocolType = when (_spinnerType.selectedItemPosition) {
-                0 -> CastProtocolType.FASTCAST
+                0 -> CastProtocolType.FCAST
                 1 -> CastProtocolType.CHROMECAST
                 2 -> CastProtocolType.AIRPLAY
                 else -> {

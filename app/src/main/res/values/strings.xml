@@ -839,7 +839,7 @@
         <item>Russian</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
-        <item>FastCast</item>
+        <item>FCast</item>
         <item>ChromeCast</item>
         <item>AirPlay</item>
     </string-array>

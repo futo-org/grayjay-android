@@ -1,10 +1,15 @@
 package com.futo.platformplayer.casting
 
-import android.content.Context
-import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.getNowDiffMiliseconds
 import com.futo.platformplayer.models.CastingDeviceInfo
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.net.InetAddress
 import java.time.OffsetDateTime
 
@@ -14,10 +19,27 @@ enum class CastConnectionState {
     CONNECTED
 }
 
+@Serializable(with = CastProtocolType.CastProtocolTypeSerializer::class)
 enum class CastProtocolType {
     CHROMECAST,
     AIRPLAY,
-    FASTCAST
+    FCAST;
+
+    object CastProtocolTypeSerializer : KSerializer<CastProtocolType> {
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CastProtocolType", PrimitiveKind.STRING)
+
+        override fun serialize(encoder: Encoder, value: CastProtocolType) {
+            encoder.encodeString(value.name)
+        }
+
+        override fun deserialize(decoder: Decoder): CastProtocolType {
+            val name = decoder.decodeString()
+            return when (name) {
+                "FASTCAST" -> FCAST // Handle the renamed case
+                else -> CastProtocolType.valueOf(name)
+            }
+        }
+    }
 }
 
 abstract class CastingDevice {

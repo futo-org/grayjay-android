@@ -2,7 +2,6 @@ package com.futo.platformplayer.casting
 
 import android.os.Looper
 import android.util.Log
-import com.futo.platformplayer.casting.models.FastCastSetVolumeMessage
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.models.CastingDeviceInfo
@@ -13,7 +12,6 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.io.IOException
 import java.net.InetAddress
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext

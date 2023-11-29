@@ -345,7 +345,7 @@ class StateCasting {
             } else {
                 StateApp.instance.scope.launch(Dispatchers.IO) {
                     try {
-                        if (ad is FastCastCastingDevice) {
+                        if (ad is FCastCastingDevice) {
                             Logger.i(TAG, "Casting as DASH direct");
                             castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition);
                         } else if (ad is AirPlayCastingDevice) {
@@ -961,7 +961,7 @@ class StateCasting {
 
     private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val proxyStreams = ad !is FastCastCastingDevice;
+        val proxyStreams = ad !is FCastCastingDevice;
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
@@ -1042,8 +1042,8 @@ class StateCasting {
             CastProtocolType.AIRPLAY -> {
                 AirPlayCastingDevice(deviceInfo);
             }
-            CastProtocolType.FASTCAST -> {
-                FastCastCastingDevice(deviceInfo);
+            CastProtocolType.FCAST -> {
+                FCastCastingDevice(deviceInfo);
             }
             else -> throw Exception("${deviceInfo.type} is not a valid casting protocol")
         }
@@ -1090,8 +1090,8 @@ class StateCasting {
     }
 
     private fun addOrUpdateFastCastDevice(name: String, addresses: Array<InetAddress>, port: Int) {
-        return addOrUpdateCastDevice<FastCastCastingDevice>(name,
-            deviceFactory = { FastCastCastingDevice(name, addresses, port) },
+        return addOrUpdateCastDevice<FCastCastingDevice>(name,
+            deviceFactory = { FCastCastingDevice(name, addresses, port) },
             deviceUpdater = { d ->
                 if (d.isReady) {
                     return@addOrUpdateCastDevice false;
