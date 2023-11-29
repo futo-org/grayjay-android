@@ -19,7 +19,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.Loader
+import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,7 +28,7 @@ class PreviewNestedVideoView : PreviewVideoView {
 
     protected val _platformIndicatorNested: PlatformIndicator;
     protected val _containerLoader: LinearLayout;
-    protected val _loader: Loader;
+    protected val _loaderView: LoaderView;
     protected val _containerUnavailable: LinearLayout;
     protected val _textNestedUrl: TextView;
 
@@ -42,7 +42,7 @@ class PreviewNestedVideoView : PreviewVideoView {
     constructor(context: Context, feedStyle: FeedStyle, exoPlayer: PlayerManager? = null): super(context, feedStyle, exoPlayer) {
         _platformIndicatorNested = findViewById(R.id.thumbnail_platform_nested);
         _containerLoader = findViewById(R.id.container_loader);
-        _loader = findViewById(R.id.loader);
+        _loaderView = findViewById(R.id.loader);
         _containerUnavailable = findViewById(R.id.container_unavailable);
         _textNestedUrl = findViewById(R.id.text_nested_url);
 
@@ -116,7 +116,7 @@ class PreviewNestedVideoView : PreviewVideoView {
             if(!_contentSupported) {
                 _containerUnavailable.visibility = View.VISIBLE;
                 _containerLoader.visibility = View.GONE;
-                _loader.stop();
+                _loaderView.stop();
             }
             else {
                 if(_feedStyle == FeedStyle.THUMBNAIL)
@@ -132,14 +132,14 @@ class PreviewNestedVideoView : PreviewVideoView {
             _contentSupported = false;
             _containerUnavailable.visibility = View.VISIBLE;
             _containerLoader.visibility = View.GONE;
-            _loader.stop();
+            _loaderView.stop();
         }
     }
 
     private fun loadNested(content: IPlatformNestedContent, onCompleted: ((IPlatformContentDetails)->Unit)? = null) {
         Logger.i(TAG, "Loading nested content [${content.contentUrl}]");
         _containerLoader.visibility = View.VISIBLE;
-        _loader.start();
+        _loaderView.start();
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             val def = StatePlatform.instance.getContentDetails(content.contentUrl);
             def.invokeOnCompletion {
@@ -150,13 +150,13 @@ class PreviewNestedVideoView : PreviewVideoView {
                         if(_content == content) {
                             _containerUnavailable.visibility = View.VISIBLE;
                             _containerLoader.visibility = View.GONE;
-                            _loader.stop();
+                            _loaderView.stop();
                         }
                         //TODO: Handle exception
                     }
                     else if(_content == content) {
                         _containerLoader.visibility = View.GONE;
-                        _loader.stop();
+                        _loaderView.stop();
                         val nestedContent = def.getCompleted();
                         _contentNested = nestedContent;
                         if(nestedContent is IPlatformVideoDetails) {

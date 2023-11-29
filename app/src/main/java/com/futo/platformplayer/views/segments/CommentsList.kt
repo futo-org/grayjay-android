@@ -19,9 +19,12 @@ import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
+import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.UnknownHostException
 
 class CommentsList : ConstraintLayout {
@@ -69,7 +72,7 @@ class CommentsList : ConstraintLayout {
     private val _prependedView: FrameLayout;
     private var _readonly: Boolean = false;
 
-    var onClick = Event1<IPlatformComment>();
+    var onRepliesClick = Event1<IPlatformComment>();
     var onCommentsLoaded = Event1<Int>();
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -85,7 +88,8 @@ class CommentsList : ConstraintLayout {
             childViewHolderBinder = { viewHolder, position -> viewHolder.bind(_comments[position], _readonly); },
             childViewHolderFactory = { viewGroup, _ ->
                 val holder = CommentViewHolder(viewGroup);
-                holder.onClick.subscribe { c -> onClick.emit(c) };
+                holder.onRepliesClick.subscribe { c -> onRepliesClick.emit(c) };
+                holder.onDelete.subscribe(::onDelete);
                 return@InsertedViewAdapterWithLoader holder;
             }
         );
@@ -104,6 +108,36 @@ class CommentsList : ConstraintLayout {
     fun setPrependedView(view: View) {
         _prependedView.removeAllViews();
         _prependedView.addView(view);
+    }
+
+    private fun onDelete(comment: IPlatformComment) {
+        val processHandle = StatePolycentric.instance.processHandle ?: return
+        if (comment !is PolycentricPlatformComment) {
+            return
+        }
+
+        val index = _comments.indexOf(comment)
+        if (index != -1) {
+            _comments.removeAt(index)
+            _adapterComments.notifyItemRemoved(_adapterComments.childToParentPosition(index))
+
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                try {
+                    processHandle.delete(comment.eventPointer.process, comment.eventPointer.logicalClock)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to delete event.", e);
+                    return@launch;
+                }
+
+                try {
+                    Logger.i(TAG, "Started backfill");
+                    processHandle.fullyBackfillServersAnnounceExceptions();
+                    Logger.i(TAG, "Finished backfill");
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to fully backfill servers.", e);
+                }
+            }
+        }
     }
 
     private fun onScrolled() {

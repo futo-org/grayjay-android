@@ -722,4 +722,8 @@
         <item>Информация</item>
         <item>Подробно</item>
     </string-array>
+    <string-array name="comments_sortby_array">
+        <item>Newest</item>
+        <item>Oldest</item>
+    </string-array>
 </resources>

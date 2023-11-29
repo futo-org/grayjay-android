@@ -4,8 +4,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -13,8 +11,8 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
-import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -25,40 +23,39 @@ import com.futo.polycentric.core.Opinion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class CommentViewHolder : ViewHolder {
+class CommentWithReferenceViewHolder : ViewHolder {
     private val _creatorThumbnail: CreatorThumbnail;
     private val _textAuthor: TextView;
     private val _textMetadata: TextView;
     private val _textBody: TextView;
-    private val _imageLikeIcon: ImageView;
-    private val _textLikes: TextView;
-    private val _imageDislikeIcon: ImageView;
-    private val _textDislikes: TextView;
     private val _buttonReplies: PillButton;
-    private val _layoutRating: LinearLayout;
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
     private val _layoutComment: ConstraintLayout;
     private val _buttonDelete: FrameLayout;
+
+    private val _taskGetLiveComment = TaskHandler<PolycentricPlatformComment, PolycentricPlatformComment>(StateApp.instance.scopeGetter, { StatePolycentric.instance.getLiveComment(it.contextUrl, it.reference) })
+        .success {
+            bind(it, true);
+        }
+        .exception<Throwable> {
+            Logger.w(TAG, "Failed to get live comment.", it);
+            //TODO: Show error
+        }
 
     var onRepliesClick = Event1<IPlatformComment>();
     var onDelete = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
-    constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_comment, viewGroup, false)) {
+    constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_comment_with_reference, viewGroup, false)) {
         _layoutComment = itemView.findViewById(R.id.layout_comment);
         _creatorThumbnail = itemView.findViewById(R.id.image_thumbnail);
         _textAuthor = itemView.findViewById(R.id.text_author);
         _textMetadata = itemView.findViewById(R.id.text_metadata);
         _textBody = itemView.findViewById(R.id.text_body);
-        _imageLikeIcon = itemView.findViewById(R.id.image_like_icon);
-        _textLikes = itemView.findViewById(R.id.text_likes);
-        _imageDislikeIcon = itemView.findViewById(R.id.image_dislike_icon);
-        _textDislikes = itemView.findViewById(R.id.text_dislikes);
         _buttonReplies = itemView.findViewById(R.id.button_replies);
-        _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
-        _buttonDelete = itemView.findViewById(R.id.button_delete);
+        _buttonDelete = itemView.findViewById(R.id.button_delete)
 
         _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
@@ -102,7 +99,9 @@ class CommentViewHolder : ViewHolder {
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
     }
 
-    fun bind(comment: IPlatformComment, readonly: Boolean) {
+    fun bind(comment: IPlatformComment, live: Boolean = false) {
+        _taskGetLiveComment.cancel()
+
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
         _creatorThumbnail.setHarborAvailable(comment is PolycentricPlatformComment,false);
         _textAuthor.text = comment.author.name;
@@ -124,69 +123,43 @@ class CommentViewHolder : ViewHolder {
 
         _textBody.text = comment.message.fixHtmlLinks();
 
-        if (readonly) {
-            _layoutRating.visibility = View.VISIBLE;
-            _pillRatingLikesDislikes.visibility = View.GONE;
-
-            when (comment.rating) {
-                is RatingLikeDislikes -> {
-                    val r = comment.rating as RatingLikeDislikes;
-                    _textLikes.visibility = View.VISIBLE;
-                    _imageLikeIcon.visibility = View.VISIBLE;
-                    _textLikes.text = r.likes.toHumanNumber();
-
-                    _imageDislikeIcon.visibility = View.VISIBLE;
-                    _textDislikes.visibility = View.VISIBLE;
-                    _textDislikes.text = r.dislikes.toHumanNumber();
-                }
-                is RatingLikes -> {
-                    val r = comment.rating as RatingLikes;
-                    _textLikes.visibility = View.VISIBLE;
-                    _imageLikeIcon.visibility = View.VISIBLE;
-                    _textLikes.text = r.likes.toHumanNumber();
-
-                    _imageDislikeIcon.visibility = View.GONE;
-                    _textDislikes.visibility = View.GONE;
-                }
-                else -> {
-                    _textLikes.visibility = View.GONE;
-                    _imageLikeIcon.visibility = View.GONE;
-                    _imageDislikeIcon.visibility = View.GONE;
-                    _textDislikes.visibility = View.GONE;
-                }
-            }
-        } else {
-            _layoutRating.visibility = View.GONE;
-            _pillRatingLikesDislikes.visibility = View.VISIBLE;
-
-            if (comment is PolycentricPlatformComment) {
+        if (comment is PolycentricPlatformComment) {
+            if (live) {
                 val hasLiked = StatePolycentric.instance.hasLiked(comment.reference);
                 val hasDisliked = StatePolycentric.instance.hasDisliked(comment.reference);
                 _pillRatingLikesDislikes.setRating(comment.rating, hasLiked, hasDisliked);
             } else {
-                _pillRatingLikesDislikes.setRating(comment.rating);
+                _pillRatingLikesDislikes.setLoading(true)
             }
-        }
 
-        val replies = comment.replyCount ?: 0;
-        if (!readonly || replies > 0) {
-            _buttonReplies.visibility = View.VISIBLE;
-            _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
-        } else {
-            _buttonReplies.visibility = View.GONE;
-        }
+            if (live) {
+                _buttonReplies.setLoading(false)
 
-        val processHandle = StatePolycentric.instance.processHandle
-        if (processHandle != null && comment is PolycentricPlatformComment && processHandle.system == comment.eventPointer.system) {
-            _buttonDelete.visibility = View.VISIBLE
+                val replies = comment.replyCount ?: 0;
+                if (replies > 0) {
+                    _buttonReplies.visibility = View.VISIBLE;
+                    _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
+                } else {
+                    _buttonReplies.visibility = View.GONE;
+                }
+            } else {
+                _buttonReplies.setLoading(true)
+            }
+
+            if (false) {
+                //Restore from cached
+            } else {
+                //_taskGetLiveComment.run(comment)
+            }
         } else {
-            _buttonDelete.visibility = View.GONE
+            _pillRatingLikesDislikes.visibility = View.GONE
+            _buttonReplies.visibility = View.GONE
         }
 
         this.comment = comment;
     }
 
     companion object {
-        private const val TAG = "CommentViewHolder";
+        private const val TAG = "CommentWithReferenceViewHolder";
     }
 }

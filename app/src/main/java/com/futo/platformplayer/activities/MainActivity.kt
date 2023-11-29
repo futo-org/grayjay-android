@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainPlaylistSearchResults: PlaylistSearchResultsFragment;
     lateinit var _fragMainSuggestions: SuggestionsFragment;
     lateinit var _fragMainSubscriptions: CreatorsFragment;
+    lateinit var _fragMainComments: CommentsFragment;
     lateinit var _fragMainSubscriptionsFeed: SubscriptionsFeedFragment;
     lateinit var _fragMainChannel: ChannelFragment;
     lateinit var _fragMainSources: SourcesFragment;
@@ -205,6 +206,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainCreatorSearchResults = CreatorSearchResultsFragment.newInstance();
         _fragMainPlaylistSearchResults = PlaylistSearchResultsFragment.newInstance();
         _fragMainSubscriptions = CreatorsFragment.newInstance();
+        _fragMainComments = CommentsFragment.newInstance();
         _fragMainChannel = ChannelFragment.newInstance();
         _fragMainSubscriptionsFeed = SubscriptionsFeedFragment.newInstance();
         _fragMainSources = SourcesFragment.newInstance();
@@ -282,6 +284,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         //Set top bars
         _fragMainHome.topBar = _fragTopBarGeneral;
         _fragMainSubscriptions.topBar = _fragTopBarGeneral;
+        _fragMainComments.topBar = _fragTopBarGeneral;
         _fragMainSuggestions.topBar = _fragTopBarSearch;
         _fragMainVideoSearchResults.topBar = _fragTopBarSearch;
         _fragMainCreatorSearchResults.topBar = _fragTopBarSearch;
@@ -916,6 +919,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             GeneralTopBarFragment::class -> _fragTopBarGeneral as T;
             SearchTopBarFragment::class -> _fragTopBarSearch as T;
             CreatorsFragment::class -> _fragMainSubscriptions as T;
+            CommentsFragment::class -> _fragMainComments as T;
             SubscriptionsFeedFragment::class -> _fragMainSubscriptionsFeed as T;
             PlaylistSearchResultsFragment::class -> _fragMainPlaylistSearchResults as T;
             ChannelFragment::class -> _fragMainChannel as T;

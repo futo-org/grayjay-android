@@ -687,6 +687,7 @@
     <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">When you click \'Yes\', the Grayjay app settings will open.\n\nThere, navigate to:\n1. "Open by default" or "Set as default" section.\nYou might find this option directly or under \'Advanced\' settings, depending on your device.\n\n2. Choose \'Open supported links\' for Grayjay.\n\n(some devices have this listed under \'Default Apps\' in the main settings followed by selecting Grayjay for relevant categories)</string>
     <string name="failed_to_show_settings">Failed to show settings</string>
     <string name="play_store_version_does_not_support_default_url_handling">Play store version does not support default URL handling.</string>
+    <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">These are all {commentCount} comments you have made in Grayjay.</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
@@ -773,6 +774,10 @@
     <string-array name="background_download">
         <item>Disabled</item>
         <item>Enabled</item>
+    </string-array>
+    <string-array name="comments_sortby_array">
+        <item>Newest</item>
+        <item>Oldest</item>
     </string-array>
     <string-array name="subscriptions_sortby_array">
         <item>Name Ascending</item>

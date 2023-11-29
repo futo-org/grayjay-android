@@ -32,7 +32,7 @@ import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.*
-import com.futo.platformplayer.views.Loader
+import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
@@ -137,7 +137,7 @@ class UISlideOverlays {
         }
 
         fun showHlsPicker(video: IPlatformVideoDetails, source: Any, sourceUrl: String, container: ViewGroup): SlideUpMenuOverlay {
-            val items = arrayListOf<View>(Loader(container.context))
+            val items = arrayListOf<View>(LoaderView(container.context))
             val slideUpMenuOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.download_video), null, true, items)
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
@@ -501,7 +501,7 @@ class UISlideOverlays {
             val dp70 = 70.dp(container.context.resources);
             val dp15 = 15.dp(container.context.resources);
             val overlay = SlideUpMenuOverlay(container.context, container, text, null, true, listOf(
-                Loader(container.context, true, dp70).apply {
+                LoaderView(container.context, true, dp70).apply {
                     this.setPadding(0, dp15, 0, dp15);
                 }
             ), true);

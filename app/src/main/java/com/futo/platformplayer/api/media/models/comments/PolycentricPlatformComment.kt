@@ -4,10 +4,7 @@ import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.polycentric.PolycentricCache
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.Pointer
-import com.futo.polycentric.core.SignedEvent
 import userpackage.Protocol.Reference
 import java.time.OffsetDateTime
 
@@ -20,16 +17,18 @@ class PolycentricPlatformComment : IPlatformComment {
 
     override val replyCount: Int?;
 
+    val eventPointer: Pointer;
     val reference: Reference;
 
-    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, reference: Reference, replyCount: Int? = null) {
+    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, eventPointer: Pointer, replyCount: Int? = null) {
         this.contextUrl = contextUrl;
         this.author = author;
         this.message = msg;
         this.rating = rating;
         this.date = date;
         this.replyCount = replyCount;
-        this.reference = reference;
+        this.eventPointer = eventPointer;
+        this.reference = eventPointer.toReference();
     }
 
     override fun getReplies(client: IPlatformClient): IPager<IPlatformComment> {
@@ -37,7 +36,7 @@ class PolycentricPlatformComment : IPlatformComment {
     }
 
     fun cloneWithUpdatedReplyCount(replyCount: Int?): PolycentricPlatformComment {
-        return PolycentricPlatformComment(contextUrl, author, message, rating, date, reference, replyCount);
+        return PolycentricPlatformComment(contextUrl, author, message, rating, date, eventPointer, replyCount);
     }
 
     companion object {

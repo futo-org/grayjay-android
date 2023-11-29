@@ -35,6 +35,11 @@ class BuyFragment : MainFragment() {
         return view;
     }
 
+    override fun onDestroyMainView() {
+        super.onDestroyMainView()
+        _view = null
+    }
+
     class BuyView: LinearLayout {
         private val _fragment: BuyFragment;
 

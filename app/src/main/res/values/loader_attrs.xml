@@ -2,5 +2,6 @@
 <resources>
     <declare-styleable name="LoaderView">
         <attr name="automatic" format="boolean" />
+        <attr name="isWhite" format="boolean" />
     </declare-styleable>
 </resources>

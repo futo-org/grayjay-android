@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/black"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -15,6 +16,78 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_parent_comment"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        app:layout_constraintTop_toBottomOf="@id/topbar"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="6dp"
+        android:padding="12dp"
+        android:background="@drawable/background_16_round_4dp">
+
+        <com.futo.platformplayer.views.others.CreatorThumbnail
+            android:id="@+id/image_thumbnail"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:contentDescription="@string/channel_image"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/placeholder_channel_thumbnail" />
+
+        <TextView
+            android:id="@+id/text_author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:fontFamily="@font/inter_regular"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+            app:layout_constraintTop_toTopOf="@id/image_thumbnail"
+            android:text="ShortCircuit" />
+
+        <TextView
+            android:id="@+id/text_metadata"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:fontFamily="@font/inter_regular"
+            android:textColor="@color/gray_ac"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="@id/text_author"
+            app:layout_constraintLeft_toRightOf="@id/text_author"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/text_author"
+            android:text=" • 3 years ago" />
+
+        <com.futo.platformplayer.views.behavior.NonScrollingTextView
+            android:id="@+id/text_body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginStart="10dp"
+            android:background="@color/transparent"
+            android:fontFamily="@font/inter_regular"
+            android:isScrollContainer="false"
+            android:textColor="#CCCCCC"
+            android:textSize="13sp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/text_metadata"
+            app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+            app:layout_constraintRight_toRightOf="parent"
+            android:text="@string/lorem_ipsum" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <com.futo.platformplayer.views.comments.AddCommentView
         android:id="@+id/add_comment_view"
         android:layout_width="match_parent"
@@ -22,8 +95,7 @@
         android:layout_marginTop="12dp"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
-        android:paddingBottom="12dp"
-        app:layout_constraintTop_toBottomOf="@id/topbar"
+        app:layout_constraintTop_toBottomOf="@id/layout_parent_comment"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
@@ -32,6 +104,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toBottomOf="@id/add_comment_view"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="12dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

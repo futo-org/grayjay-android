@@ -16,6 +16,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.views.LoaderView
 import com.futo.polycentric.core.ProcessHandle
 
 data class OnLikeDislikeUpdatedArgs(
@@ -29,9 +30,12 @@ data class OnLikeDislikeUpdatedArgs(
 class PillRatingLikesDislikes : LinearLayout {
     private val _textLikes: TextView;
     private val _textDislikes: TextView;
+    private val _loaderViewLikes: LoaderView;
+    private val _loaderViewDislikes: LoaderView;
     private val _seperator: View;
     private val _iconLikes: ImageView;
     private val _iconDislikes: ImageView;
+    private var _isLoading: Boolean = false;
 
     private var _likes = 0L;
     private var _hasLiked = false;
@@ -47,14 +51,42 @@ class PillRatingLikesDislikes : LinearLayout {
         _seperator = findViewById(R.id.pill_seperator);
         _iconDislikes = findViewById(R.id.pill_dislike_icon);
         _iconLikes = findViewById(R.id.pill_like_icon);
+        _loaderViewLikes = findViewById(R.id.loader_likes)
+        _loaderViewDislikes = findViewById(R.id.loader_dislikes)
 
-        _iconLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
-        _textLikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
-        _iconDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
-        _textDislikes.setOnClickListener { StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+        _iconLikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
+        _textLikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
+        _iconDislikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+        _textDislikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+    }
+
+    fun setLoading(loading: Boolean) {
+        if (_isLoading == loading) {
+            return
+        }
+
+        if (loading) {
+            _textLikes.visibility = View.GONE
+            _loaderViewLikes.visibility = View.VISIBLE
+            _textDislikes.visibility = View.GONE
+            _loaderViewDislikes.visibility = View.VISIBLE
+            _loaderViewLikes.start()
+            _loaderViewDislikes.start()
+        } else {
+            _loaderViewLikes.stop()
+            _loaderViewDislikes.stop()
+            _textLikes.visibility = View.VISIBLE
+            _loaderViewLikes.visibility = View.GONE
+            _textDislikes.visibility = View.VISIBLE
+            _loaderViewDislikes.visibility = View.GONE
+        }
+
+        _isLoading = loading
     }
 
     fun setRating(rating: IRating, hasLiked: Boolean = false, hasDisliked: Boolean = false) {
+        setLoading(false)
+
         when (rating) {
             is RatingLikeDislikes -> {
                 setRating(rating, hasLiked, hasDisliked);

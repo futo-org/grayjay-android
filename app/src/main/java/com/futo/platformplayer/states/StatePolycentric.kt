@@ -218,6 +218,59 @@ class StatePolycentric {
         }
     }
 
+    fun getSystemComments(context: Context, system: PublicKey): List<IPlatformComment> {
+        val dp_25 = 25.dp(context.resources)
+        val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
+        val author = system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable())
+        val posts = arrayListOf<PolycentricPlatformComment>()
+        Store.instance.enumerateSignedEvents(system, ContentType.POST) { se ->
+            val ev = se.event
+            val post = Protocol.Post.parseFrom(ev.content)
+
+            posts.add(PolycentricPlatformComment(
+                contextUrl = author,
+                author = PlatformAuthorLink(
+                    id = PlatformID("polycentric", author, null, ClaimType.POLYCENTRIC.value.toInt()),
+                    name = systemState.username,
+                    url = author,
+                    thumbnail = systemState.avatar?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                    subscribers = null
+                ),
+                msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
+                rating = RatingLikeDislikes(0, 0),
+                date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
+                replyCount = 0,
+                eventPointer = se.toPointer()
+            ))
+        }
+
+        return posts
+    }
+
+    suspend fun getLiveComment(contextUrl: String, reference: Protocol.Reference): PolycentricPlatformComment {
+        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
+            Protocol.QueryReferencesRequestEvents.newBuilder()
+                .setFromType(ContentType.POST.value)
+                .addAllCountLwwElementReferences(arrayListOf(
+                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                        .setFromType(ContentType.OPINION.value)
+                        .setValue(ByteString.copyFrom(Opinion.like.data))
+                        .build(),
+                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                        .setFromType(ContentType.OPINION.value)
+                        .setValue(ByteString.copyFrom(Opinion.dislike.data))
+                        .build()
+                ))
+                .addCountReferences(
+                    Protocol.QueryReferencesRequestCountReferences.newBuilder()
+                        .setFromType(ContentType.POST.value)
+                        .build())
+                .build()
+        )
+
+        return mapQueryReferences(contextUrl, response).first()
+    }
+
     suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference): IPager<IPlatformComment> {
         val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
             Protocol.QueryReferencesRequestEvents.newBuilder()
@@ -284,7 +337,7 @@ class StatePolycentric {
         };
     }
 
-    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<IPlatformComment> {
+    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<PolycentricPlatformComment> {
         return response.itemsList.mapNotNull {
             val sev = SignedEvent.fromProto(it.event);
             val ev = sev.event;
@@ -338,7 +391,7 @@ class StatePolycentric {
                     rating = RatingLikeDislikes(likes, dislikes),
                     date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
                     replyCount = replies.toInt(),
-                    reference = sev.toPointer().toReference()
+                    eventPointer = sev.toPointer()
                 );
             } catch (e: Throwable) {
                 return@mapNotNull null;

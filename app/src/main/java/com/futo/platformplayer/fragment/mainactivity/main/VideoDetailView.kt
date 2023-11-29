@@ -37,7 +37,6 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -52,7 +51,6 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.api.media.platforms.js.models.IJSContentDetails
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
@@ -60,7 +58,6 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.dialogs.AutoUpdateDialog
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
@@ -109,7 +106,6 @@ import java.time.OffsetDateTime
 import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToLong
-import kotlin.streams.toList
 
 
 class VideoDetailView : ConstraintLayout {
@@ -578,7 +574,7 @@ class VideoDetailView : ConstraintLayout {
 
         _container_content_current = _container_content_main;
 
-        _commentsList.onClick.subscribe { c ->
+        _commentsList.onRepliesClick.subscribe { c ->
             val replyCount = c.replyCount ?: 0;
             var metadata = "";
             if (replyCount > 0) {
@@ -587,7 +583,7 @@ class VideoDetailView : ConstraintLayout {
 
             if (c is PolycentricPlatformComment) {
                 var parentComment: PolycentricPlatformComment = c;
-                _container_content_replies.load(_toggleCommentType.value, metadata, c.contextUrl, c.reference,
+                _container_content_replies.load(_toggleCommentType.value, metadata, c.contextUrl, c.reference, c,
                     { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
                     {
                         val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
@@ -595,7 +591,7 @@ class VideoDetailView : ConstraintLayout {
                         parentComment = newComment;
                     });
             } else {
-                _container_content_replies.load(_toggleCommentType.value, metadata, null, null, { StatePlatform.instance.getSubComments(c) });
+                _container_content_replies.load(_toggleCommentType.value, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
             }
             switchContentView(_container_content_replies);
         };
