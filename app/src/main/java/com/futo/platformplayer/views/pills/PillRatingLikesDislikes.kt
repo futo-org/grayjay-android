@@ -159,6 +159,8 @@ class PillRatingLikesDislikes : LinearLayout {
     }
 
     fun setRating(rating: RatingLikeDislikes, hasLiked: Boolean = false, hasDisliked: Boolean = false) {
+        setLoading(false)
+
         _textLikes.text = rating.likes.toHumanNumber();
         _textDislikes.text = rating.dislikes.toHumanNumber();
         _textLikes.visibility = View.VISIBLE;
@@ -172,6 +174,8 @@ class PillRatingLikesDislikes : LinearLayout {
         updateColors();
     }
     fun setRating(rating: RatingLikes, hasLiked: Boolean = false) {
+        setLoading(false)
+
         _textLikes.text = rating.likes.toHumanNumber();
         _textLikes.visibility = View.VISIBLE;
         _textDislikes.visibility = View.GONE;

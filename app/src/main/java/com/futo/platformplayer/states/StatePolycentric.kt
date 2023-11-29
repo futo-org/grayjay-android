@@ -11,17 +11,12 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
-import com.futo.platformplayer.api.media.models.contents.PlatformContentPlaceholder
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.api.media.structures.PlaceholderPager
-import com.futo.platformplayer.api.media.structures.RefreshChronoContentPager
-import com.futo.platformplayer.api.media.structures.RefreshDedupContentPager
-import com.futo.platformplayer.api.media.structures.RefreshDistributionContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -247,28 +242,36 @@ class StatePolycentric {
         return posts
     }
 
-    suspend fun getLiveComment(contextUrl: String, reference: Protocol.Reference): PolycentricPlatformComment {
-        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
-            Protocol.QueryReferencesRequestEvents.newBuilder()
-                .setFromType(ContentType.POST.value)
-                .addAllCountLwwElementReferences(arrayListOf(
-                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                        .setFromType(ContentType.OPINION.value)
-                        .setValue(ByteString.copyFrom(Opinion.like.data))
-                        .build(),
-                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                        .setFromType(ContentType.OPINION.value)
-                        .setValue(ByteString.copyFrom(Opinion.dislike.data))
-                        .build()
-                ))
-                .addCountReferences(
-                    Protocol.QueryReferencesRequestCountReferences.newBuilder()
-                        .setFromType(ContentType.POST.value)
-                        .build())
-                .build()
-        )
+    data class LikesDislikesReplies(
+        var likes: Long,
+        var dislikes: Long,
+        var replyCount: Long
+    )
 
-        return mapQueryReferences(contextUrl, response).first()
+    suspend fun getLikesDislikesReplies(reference: Protocol.Reference): LikesDislikesReplies {
+        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
+            null,
+            listOf(
+                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                    .setFromType(ContentType.OPINION.value)
+                    .setValue(ByteString.copyFrom(Opinion.like.data))
+                    .build(),
+                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                    .setFromType(ContentType.OPINION.value)
+                    .setValue(ByteString.copyFrom(Opinion.dislike.data))
+                    .build()
+            ),
+            listOf(
+                Protocol.QueryReferencesRequestCountReferences.newBuilder()
+                    .setFromType(ContentType.POST.value)
+                    .build()
+            )
+        );
+
+        val likes = response.countsList[0];
+        val dislikes = response.countsList[1];
+        val replyCount = response.countsList[2];
+        return LikesDislikesReplies(likes, dislikes, replyCount)
     }
 
     suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference): IPager<IPlatformComment> {
@@ -347,7 +350,6 @@ class StatePolycentric {
 
             try {
                 val post = Protocol.Post.parseFrom(ev.content);
-                val id = ev.system.toProto().key.toByteArray().toBase64();
                 val likes = it.countsList[0];
                 val dislikes = it.countsList[1];
                 val replies = it.countsList[2];

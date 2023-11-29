@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,8 @@ import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.polycentric.core.Opinion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import userpackage.Protocol
+import java.util.IdentityHashMap
 
 class CommentWithReferenceViewHolder : ViewHolder {
     private val _creatorThumbnail: CreatorThumbnail;
@@ -32,14 +35,18 @@ class CommentWithReferenceViewHolder : ViewHolder {
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
     private val _layoutComment: ConstraintLayout;
     private val _buttonDelete: FrameLayout;
+    private val _cache: IdentityHashMap<IPlatformComment, StatePolycentric.LikesDislikesReplies>;
+    private var _likesDislikesReplies: StatePolycentric.LikesDislikesReplies? = null;
 
-    private val _taskGetLiveComment = TaskHandler<PolycentricPlatformComment, PolycentricPlatformComment>(StateApp.instance.scopeGetter, { StatePolycentric.instance.getLiveComment(it.contextUrl, it.reference) })
+    private val _taskGetLiveComment = TaskHandler(StateApp.instance.scopeGetter, ::getLikesDislikesReplies)
         .success {
-            bind(it, true);
+            _likesDislikesReplies = it
+            updateLikesDislikesReplies()
         }
         .exception<Throwable> {
             Logger.w(TAG, "Failed to get live comment.", it);
             //TODO: Show error
+            hideLikesDislikesReplies()
         }
 
     var onRepliesClick = Event1<IPlatformComment>();
@@ -47,7 +54,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
     var comment: IPlatformComment? = null
         private set;
 
-    constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_comment_with_reference, viewGroup, false)) {
+    constructor(viewGroup: ViewGroup, cache: IdentityHashMap<IPlatformComment, StatePolycentric.LikesDislikesReplies>) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_comment_with_reference, viewGroup, false)) {
         _layoutComment = itemView.findViewById(R.id.layout_comment);
         _creatorThumbnail = itemView.findViewById(R.id.image_thumbnail);
         _textAuthor = itemView.findViewById(R.id.text_author);
@@ -56,6 +63,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
         _buttonReplies = itemView.findViewById(R.id.button_replies);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete)
+        _cache = cache
 
         _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
@@ -99,7 +107,18 @@ class CommentWithReferenceViewHolder : ViewHolder {
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
     }
 
-    fun bind(comment: IPlatformComment, live: Boolean = false) {
+    private suspend fun getLikesDislikesReplies(c: PolycentricPlatformComment): StatePolycentric.LikesDislikesReplies {
+        val likesDislikesReplies = StatePolycentric.instance.getLikesDislikesReplies(c.reference)
+        synchronized(_cache) {
+            _cache[c] = likesDislikesReplies
+        }
+        return likesDislikesReplies
+    }
+
+    fun bind(comment: IPlatformComment) {
+        Log.i(TAG, "bind")
+
+        _likesDislikesReplies = null;
         _taskGetLiveComment.cancel()
 
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
@@ -123,40 +142,51 @@ class CommentWithReferenceViewHolder : ViewHolder {
 
         _textBody.text = comment.message.fixHtmlLinks();
 
-        if (comment is PolycentricPlatformComment) {
-            if (live) {
-                val hasLiked = StatePolycentric.instance.hasLiked(comment.reference);
-                val hasDisliked = StatePolycentric.instance.hasDisliked(comment.reference);
-                _pillRatingLikesDislikes.setRating(comment.rating, hasLiked, hasDisliked);
-            } else {
-                _pillRatingLikesDislikes.setLoading(true)
+        this.comment = comment;
+        updateLikesDislikesReplies();
+    }
+
+    private fun updateLikesDislikesReplies() {
+        Log.i(TAG, "updateLikesDislikesReplies")
+
+        val c = comment ?: return
+        if (c is PolycentricPlatformComment) {
+            if (_likesDislikesReplies == null) {
+                Log.i(TAG, "updateLikesDislikesReplies retrieving from cache")
+
+                synchronized(_cache) {
+                    _likesDislikesReplies = _cache[c]
+                }
             }
 
-            if (live) {
+            val likesDislikesReplies = _likesDislikesReplies
+            if (likesDislikesReplies != null) {
+                Log.i(TAG, "updateLikesDislikesReplies set")
+
+                val hasLiked = StatePolycentric.instance.hasLiked(c.reference);
+                val hasDisliked = StatePolycentric.instance.hasDisliked(c.reference);
+                _pillRatingLikesDislikes.setRating(RatingLikeDislikes(likesDislikesReplies.likes, likesDislikesReplies.dislikes), hasLiked, hasDisliked);
+
                 _buttonReplies.setLoading(false)
 
-                val replies = comment.replyCount ?: 0;
-                if (replies > 0) {
-                    _buttonReplies.visibility = View.VISIBLE;
-                    _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
-                } else {
-                    _buttonReplies.visibility = View.GONE;
-                }
+                val replies = likesDislikesReplies.replyCount ?: 0;
+                _buttonReplies.visibility = View.VISIBLE;
+                _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
             } else {
-                _buttonReplies.setLoading(true)
-            }
+                Log.i(TAG, "updateLikesDislikesReplies to load")
 
-            if (false) {
-                //Restore from cached
-            } else {
-                //_taskGetLiveComment.run(comment)
+                _pillRatingLikesDislikes.setLoading(true)
+                _buttonReplies.setLoading(true)
+                _taskGetLiveComment.run(c)
             }
         } else {
-            _pillRatingLikesDislikes.visibility = View.GONE
-            _buttonReplies.visibility = View.GONE
+            hideLikesDislikesReplies()
         }
+    }
 
-        this.comment = comment;
+    private fun hideLikesDislikesReplies() {
+        _pillRatingLikesDislikes.visibility = View.GONE
+        _buttonReplies.visibility = View.GONE
     }
 
     companion object {

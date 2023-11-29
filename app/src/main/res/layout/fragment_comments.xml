@@ -61,6 +61,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <com.futo.platformplayer.views.overlays.RepliesOverlay
+        android:id="@+id/replies_overlay"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <LinearLayout android:id="@+id/layout_not_logged_in"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -80,12 +86,6 @@
             android:paddingStart="28dp"
             android:paddingEnd="28dp"
             android:layout_marginBottom="20dp"/>
-
-        <com.futo.platformplayer.views.overlays.RepliesOverlay
-            android:id="@+id/replies_overlay"
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
 
         <LinearLayout
             android:id="@+id/button_login"

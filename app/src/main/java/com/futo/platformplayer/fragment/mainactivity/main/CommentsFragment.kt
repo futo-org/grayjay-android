@@ -33,6 +33,7 @@ import com.futo.polycentric.core.PublicKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException
+import java.util.IdentityHashMap
 
 class CommentsFragment : MainFragment() {
     override val isMainView : Boolean = true
@@ -84,6 +85,7 @@ class CommentsFragment : MainFragment() {
         private var _loading = false;
         private val _repliesOverlay: RepliesOverlay;
         private var _repliesAnimator: ViewPropertyAnimator? = null;
+        private val _cache: IdentityHashMap<IPlatformComment, StatePolycentric.LikesDislikesReplies> = IdentityHashMap()
 
         private val _taskLoadComments = if(!isInEditMode) TaskHandler<PublicKey, List<IPlatformComment>>(
             StateApp.instance.scopeGetter, { StatePolycentric.instance.getSystemComments(context, it) })
@@ -111,7 +113,7 @@ class CommentsFragment : MainFragment() {
                 childCountGetter = { _comments.size },
                 childViewHolderBinder = { viewHolder, position -> viewHolder.bind(_comments[position]); },
                 childViewHolderFactory = { viewGroup, _ ->
-                    val holder = CommentWithReferenceViewHolder(viewGroup);
+                    val holder = CommentWithReferenceViewHolder(viewGroup, _cache);
                     holder.onDelete.subscribe(::onDelete);
                     holder.onRepliesClick.subscribe(::onRepliesClick);
                     return@InsertedViewAdapterWithLoader holder;
@@ -202,15 +204,21 @@ class CommentsFragment : MainFragment() {
             }
 
             if (c is PolycentricPlatformComment) {
-                var parentComment: PolycentricPlatformComment = c;
                 _repliesOverlay.load(false, metadata, c.contextUrl, c.reference, c,
                     { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
-                    {
-                        val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
-                        val index = _comments.indexOf(c);
-                        _comments[index] = newComment;
-                        _adapterComments.notifyItemChanged(_adapterComments.childToParentPosition(index));
-                        parentComment = newComment;
+                    { newComment ->
+                        synchronized(_cache) {
+                            _cache.remove(c)
+                        }
+
+                        val newCommentIndex = if (_spinnerSortBy.selectedItemPosition == 0) {
+                            _comments.indexOfFirst { it.date!! < newComment.date!! }.takeIf { it != -1 } ?: _comments.size
+                        } else {
+                            _comments.indexOfFirst { it.date!! > newComment.date!! }.takeIf { it != -1 } ?: _comments.size
+                        }
+
+                        _comments.add(newCommentIndex, newComment)
+                        _adapterComments.notifyItemInserted(_adapterComments.childToParentPosition(newCommentIndex))
                     });
             } else {
                 _repliesOverlay.load(true, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
