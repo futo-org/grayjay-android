@@ -225,12 +225,32 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         return deserializeIndexes(dbDaoBase.getMultiple(_sqlGetAll(id)));
     }
 
+    fun query(field: KProperty<*>, obj: Any): List<I> = query(validateFieldName(field), obj);
     fun query(field: String, obj: Any): List<I> {
         val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} = ?";
         val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
         return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
-    fun query(field: KProperty<*>, obj: Any): List<I> = query(validateFieldName(field), obj);
+    fun queryGreater(field: KProperty<*>, obj: Any): List<I> = queryGreater(validateFieldName(field), obj);
+    fun queryGreater(field: String, obj: Any): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} > ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+    fun querySmaller(field: KProperty<*>, obj: Any): List<I> = querySmaller(validateFieldName(field), obj);
+    fun querySmaller(field: String, obj: Any): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} < ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+    fun queryBetween(field: KProperty<*>, greaterThan: Any, smallerThan: Any): List<I> = queryBetween(validateFieldName(field), greaterThan, smallerThan);
+    fun queryBetween(field: String, greaterThan: Any, smallerThan: Any): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} > ? AND ${field} < ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(greaterThan, smallerThan));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+
+
     fun queryPage(field: String, obj: Any, page: Int, pageSize: Int): List<I> {
         val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} = ? ${_orderSQL} LIMIT ? OFFSET ?";
         val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, pageSize, page * pageSize));
@@ -245,6 +265,12 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun queryPager(field: String, obj: Any, pageSize: Int): IPager<I> {
         return AdhocPager({
            queryPage(field, obj, it - 1, pageSize);
+        });
+    }
+    fun <X> queryPager(field: KProperty<*>, obj: Any, pageSize: Int, convert: (I)->X): IPager<X> = queryPager(validateFieldName(field), obj, pageSize, convert);
+    fun <X> queryPager(field: String, obj: Any, pageSize: Int, convert: (I)->X): IPager<X> {
+        return AdhocPager({
+            queryPage(field, obj, it - 1, pageSize).map(convert);
         });
     }
 
