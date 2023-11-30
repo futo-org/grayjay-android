@@ -87,7 +87,7 @@ class GestureControlView : LinearLayout {
         _layoutControlsFullscreen = findViewById(R.id.layout_controls_fullscreen);
 
         _gestureController = GestureDetectorCompat(context, object : GestureDetector.OnGestureListener {
-            override fun onDown(p0: MotionEvent): Boolean { Logger.v(TAG, "onDown ${p0.x}, ${p0.y}"); return false; }
+            override fun onDown(p0: MotionEvent): Boolean { return false; }
             override fun onShowPress(p0: MotionEvent) = Unit;
             override fun onSingleTapUp(p0: MotionEvent): Boolean { return false; }
             override fun onScroll(p0: MotionEvent, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
@@ -112,7 +112,6 @@ class GestureControlView : LinearLayout {
                 } else {
                     val rx = (p0.x + p1.x) / (2 * width);
                     val ry = (p0.y + p1.y) / (2 * height);
-                    Logger.v(TAG, "onScroll p0.x = ${p0.x}, p0.y = ${p0.y}, p1.x = ${p1.x}, p1.y = ${p1.y}, rx = $rx, ry = $ry, width = $width, height = $height, _isFullScreen = $_isFullScreen")
                     if (ry > 0.1 && ry < 0.9) {
                         if (_isFullScreen && rx < 0.2) {
                             startAdjustingBrightness();
@@ -174,7 +173,6 @@ class GestureControlView : LinearLayout {
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val ev = event ?: return super.onTouchEvent(event);
-        Logger.v(TAG, "onTouch x = $x, y = $y, ev.x = ${ev.x}, ev.y = ${ev.y}");
 
         cancelHideJob();
 
