@@ -2,6 +2,7 @@ package com.futo.platformplayer
 
 import android.content.Context
 import android.webkit.CookieManager
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -20,12 +21,12 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.background.BackgroundWorker
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateSubscriptions
@@ -82,26 +83,74 @@ class SettingsDev : FragmentedStorageFileJson() {
         var backgroundSubscriptionFetching: Boolean = false;
     }
 
+
+    @FormField(R.string.cache, FieldForm.GROUP, -1, 3)
+    val cache: Cache = Cache();
+    @Serializable
+    class Cache {
+
+        @FormField(R.string.subscriptions_cache_5000, FieldForm.BUTTON, -1, 1)
+        fun subscriptionsCache5000() {
+            StateApp.instance.scope.launch(Dispatchers.IO) {
+                try {
+                    val subsCache =
+                        StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(cacheScope = this)?.first;
+
+                    var total = 0;
+                    var page = 0;
+                    var lastToast = System.currentTimeMillis();
+                    while(subsCache!!.hasMorePages() && total < 5000) {
+                        subsCache!!.nextPage();
+                        total += subsCache!!.getResults().size;
+                        page++;
+
+                        if(page % 10 == 0)
+                            withContext(Dispatchers.Main) {
+                                val diff = System.currentTimeMillis() - lastToast;
+                                lastToast = System.currentTimeMillis();
+                                UIDialogs.toast(
+                                    SettingsActivity.getActivity()!!,
+                                    "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
+                                );
+                            }
+                        Thread.sleep(250);
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(
+                            SettingsActivity.getActivity()!!,
+                            "FINISHED Page: ${page}, Total: ${total}"
+                        );
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e("SettingsDev", ex.message, ex);
+                    Logger.i("SettingsDev", "Failed: ${ex.message}");
+                }
+            }
+        }
+    }
+
     @FormField(R.string.crash_me, FieldForm.BUTTON,
-        R.string.crashes_the_application_on_purpose, 2)
+        R.string.crashes_the_application_on_purpose, 3)
     fun crashMe() {
         throw java.lang.IllegalStateException("This is an uncaught exception triggered on purpose!");
     }
 
     @FormField(R.string.delete_announcements, FieldForm.BUTTON,
-        R.string.delete_all_announcements, 2)
+        R.string.delete_all_announcements, 3)
     fun deleteAnnouncements() {
         StateAnnouncement.instance.deleteAllAnnouncements();
     }
 
     @FormField(R.string.clear_cookies, FieldForm.BUTTON,
-        R.string.clear_all_cookies_from_the_cookieManager, 2)
+        R.string.clear_all_cookies_from_the_cookieManager, 3)
     fun clearCookies() {
         val cookieManager: CookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null);
     }
     @FormField(R.string.test_background_worker, FieldForm.BUTTON,
-        R.string.test_background_worker_description, 3)
+        R.string.test_background_worker_description, 4)
     fun triggerBackgroundUpdate() {
         val act = SettingsActivity.getActivity()!!;
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
@@ -113,10 +162,10 @@ class SettingsDev : FragmentedStorageFileJson() {
         wm.enqueue(req);
     }
     @FormField(R.string.clear_channel_cache, FieldForm.BUTTON,
-        R.string.test_background_worker_description, 3)
+        R.string.test_background_worker_description, 4)
     fun clearChannelContentCache() {
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Clearing cache");
-        ChannelContentCache.instance.clearToday();
+        StateCache.instance.clearToday();
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Cleared");
     }
 
@@ -361,6 +410,17 @@ class SettingsDev : FragmentedStorageFileJson() {
                 }
             }
         }
+    }
+
+
+    @Contextual
+    @Transient
+    @FormField(R.string.info, FieldForm.GROUP, -1, 19)
+    var info = Info();
+    @Serializable
+    class Info {
+        @FormField(R.string.dev_info_channel_cache_size, FieldForm.READONLYTEXT, -1, 1, "channelCacheSize")
+        var channelCacheStartupCount = StateCache.instance.channelCacheStartupCount;
     }
 
     //region BOILERPLATE

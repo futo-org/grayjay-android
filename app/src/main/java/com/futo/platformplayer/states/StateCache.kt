@@ -6,7 +6,6 @@ import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.api.media.structures.PlatformContentPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
@@ -16,11 +15,17 @@ import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBChannelCache
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.toSafeFileName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
+import kotlin.system.measureTimeMillis
 
 class StateCache {
     private val _channelCache = ManagedDBStore.create("channelCache", DBChannelCache.Descriptor(), PlatformContentSerializer())
         .load();
+
+    val channelCacheStartupCount = _channelCache.count();
 
     fun clear() {
         _channelCache.deleteAll();
@@ -36,6 +41,12 @@ class StateCache {
             it.obj;
         }
     }
+    fun getChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
+        val pagers = MultiChronoContentPager(channelUrls.map { _channelCache.queryPager(DBChannelCache.Index::channelUrl, it, 20) {
+            it.obj;
+        } }, false, 20);
+        return DedupContentPager(pagers, StatePlatform.instance.getEnabledClients().map { it.id });
+    }
     fun getSubscriptionCachePager(): DedupContentPager {
         Logger.i(TAG, "Subscriptions CachePager get subscriptions");
         val subs = StateSubscriptions.instance.getSubscriptions();
@@ -47,10 +58,15 @@ class StateCache {
             else
                 return@map otherUrls;
         }.flatten().distinct();
-        Logger.i(TAG, "Subscriptions CachePager compiling");
 
-        val pagers = MultiChronoContentPager(allUrls.map { getChannelCachePager(it) }, false, 20);
-        return DedupContentPager(pagers, StatePlatform.instance.getEnabledClients().map { it.id });
+        Logger.i(TAG, "Subscriptions CachePager get pagers");
+        val pagers = allUrls.parallelStream().map { getChannelCachePager(it) }.toList();
+
+        Logger.i(TAG, "Subscriptions CachePager compiling");
+        val pager = MultiChronoContentPager(pagers, false, 20);
+        pager.initialize();
+        Logger.i(TAG, "Subscriptions CachePager compiled");
+        return DedupContentPager(pager, StatePlatform.instance.getEnabledClients().map { it.id });
     }
 
 
@@ -63,8 +79,8 @@ class StateCache {
         if(item != null)
             _channelCache.delete(item);
     }
-    fun cacheContents(contents: List<IPlatformContent>): List<IPlatformContent> {
-        return contents.filter { cacheContent(it) };
+    fun cacheContents(contents: List<IPlatformContent>, doUpdate: Boolean = false): List<IPlatformContent> {
+        return contents.filter { cacheContent(it, doUpdate) };
     }
     fun cacheContent(content: IPlatformContent, doUpdate: Boolean = false): Boolean {
         if(content.author.url.isEmpty())
@@ -102,5 +118,58 @@ class StateCache {
                 _instance = null;
             }
         }
+
+
+        fun cachePagerResults(scope: CoroutineScope, pager: IPager<IPlatformContent>, onNewCacheHit: ((IPlatformContent)->Unit)? = null): IPager<IPlatformContent> {
+            return ChannelContentCachePager(pager, scope, onNewCacheHit);
+        }
+    }
+    class ChannelContentCachePager(val pager: IPager<IPlatformContent>, private val scope: CoroutineScope, private val onNewCacheItem: ((IPlatformContent)->Unit)? = null): IPager<IPlatformContent> {
+
+        init {
+            val results = pager.getResults();
+
+            Logger.i(TAG, "Caching ${results.size} subscription initial results [${pager.hashCode()}]");
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val newCacheItems = StateCache.instance.cacheContents(results, true);
+                    if(onNewCacheItem != null)
+                        newCacheItems.forEach { onNewCacheItem!!(it) }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to cache videos.", e);
+                }
+            }
+        }
+
+        override fun hasMorePages(): Boolean {
+            return pager.hasMorePages();
+        }
+
+        override fun nextPage() {
+            pager.nextPage();
+            val results = pager.getResults();
+
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val newCacheItemsCount: Int;
+                    val ms = measureTimeMillis {
+                        val newCacheItems = instance.cacheContents(results, true);
+                        newCacheItemsCount = newCacheItems.size;
+                        if(onNewCacheItem != null)
+                            newCacheItems.forEach { onNewCacheItem!!(it) }
+                    }
+                    Logger.i(TAG, "Caching ${results.size} subscription results, updated ${newCacheItemsCount} (${ms}ms)");
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to cache ${results.size} videos.", e);
+                }
+            }
+        }
+
+        override fun getResults(): List<IPlatformContent> {
+            val results = pager.getResults();
+
+            return results;
+        }
+
     }
 }

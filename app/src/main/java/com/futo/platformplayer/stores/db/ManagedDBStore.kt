@@ -7,6 +7,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.assume
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.StoreSerializer
@@ -264,6 +265,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun queryPager(field: KProperty<*>, obj: Any, pageSize: Int): IPager<I> = queryPager(validateFieldName(field), obj, pageSize);
     fun queryPager(field: String, obj: Any, pageSize: Int): IPager<I> {
         return AdhocPager({
+            Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
            queryPage(field, obj, it - 1, pageSize);
         });
     }

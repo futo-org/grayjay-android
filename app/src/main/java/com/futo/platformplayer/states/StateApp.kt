@@ -26,7 +26,6 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
@@ -387,7 +386,7 @@ class StateApp {
             try {
                 Logger.i(TAG, "MainApp Started: Initializing [ChannelContentCache]");
                 val time = measureTimeMillis {
-                    ChannelContentCache.instance;
+                    StateCache.instance;
                 }
                 Logger.i(TAG, "ChannelContentCache initialized in ${time}ms");
             } catch (e: Throwable) {

@@ -8,7 +8,6 @@ import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.logging.Logger
@@ -276,7 +275,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 14)
         fun clearChannelCache() {
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
-            ChannelContentCache.instance.clear();
+            StateCache.instance.clear();
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Finished clearing");
         }
     }

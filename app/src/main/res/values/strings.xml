@@ -399,6 +399,7 @@
     <string name="version_code">Version Code</string>
     <string name="version_name">Version Name</string>
     <string name="version_type">Version Type</string>
+    <string name="dev_info_channel_cache_size">Channel Cache Size (Startup)</string>
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">When watching a video in preview mode, resume at the position when opening the video code</string>
     <string name="please_enable_logging_to_submit_logs">Please enable logging to submit logs</string>
     <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded plugins reinstalled, a reboot is recommended</string>
@@ -424,6 +425,7 @@
     <string name="developer_mode">Developer Mode</string>
     <string name="development_server">Development Server</string>
     <string name="experimental">Experimental</string>
+    <string name="cache">Cache</string>
     <string name="fill_storage_till_error">Fill storage till error</string>
     <string name="inject">Inject</string>
     <string name="injects_a_test_source_config_local_into_v8">Injects a test source config (local) into V8</string>
@@ -432,6 +434,7 @@
     <string name="removes_all_subscriptions">Removes all subscriptions</string>
     <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Settings related to development server, be careful as it may open your phone to security vulnerabilities</string>
     <string name="start_server">Start Server</string>
+    <string name="subscriptions_cache_5000">Subscriptions Cache 5000</string>
     <string name="start_server_on_boot">Start Server on boot</string>
     <string name="starts_a_devServer_on_port_11337_may_expose_vulnerabilities">Starts a DevServer on port 11337, may expose vulnerabilities.</string>
     <string name="test_v8_communication_speed">Test V8 Communication speed</string>

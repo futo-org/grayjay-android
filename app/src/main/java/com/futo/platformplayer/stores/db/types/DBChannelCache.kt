@@ -3,7 +3,9 @@ package com.futo.platformplayer.stores.db.types
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
+import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.models.HistoryVideo
@@ -25,7 +27,7 @@ class DBChannelCache {
     //These classes solely exist for bounding generics for type erasure
     @Dao
     interface DBDAO: ManagedDBDAOBase<SerializedPlatformContent, Index> {}
-    @Database(entities = [Index::class], version = 2)
+    @Database(entities = [Index::class], version = 4)
     abstract class DB: ManagedDBDatabase<SerializedPlatformContent, Index, DBDAO>() {
         abstract override fun base(): DBDAO;
     }
@@ -37,6 +39,11 @@ class DBChannelCache {
         override fun indexClass(): KClass<Index> = Index::class;
     }
 
+    @Entity(TABLE_NAME, indices = [
+        androidx.room.Index(value = ["url"]),
+        androidx.room.Index(value = ["channelUrl"]),
+        androidx.room.Index(value = ["datetime"], orders = [androidx.room.Index.Order.DESC])
+    ])
     class Index: ManagedDBIndex<SerializedPlatformContent> {
         @ColumnIndex
         @PrimaryKey(true)
@@ -49,7 +56,7 @@ class DBChannelCache {
         var channelUrl: String? = null;
 
         @ColumnIndex
-        @ColumnOrdered(0)
+        @ColumnOrdered(0, true)
         var datetime: Long? = null;
 
 
