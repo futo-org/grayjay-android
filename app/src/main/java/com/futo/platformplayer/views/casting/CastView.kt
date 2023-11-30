@@ -58,7 +58,8 @@ class CastView : ConstraintLayout {
         _timeBar = findViewById(R.id.time_progress);
         _background = findViewById(R.id.layout_background);
         _gestureControlView = findViewById(R.id.gesture_control);
-        _gestureControlView.setupTouchArea(_background);
+        _gestureControlView.fullScreenGestureEnabled = false
+        _gestureControlView.setupTouchArea();
         _gestureControlView.onSeek.subscribe {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;
             StateCasting.instance.videoSeekTo(d.expectedCurrentTime + it / 1000);

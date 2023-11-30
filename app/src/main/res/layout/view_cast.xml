@@ -23,6 +23,11 @@
         android:background="#cc000000"
         android:layout_marginBottom="6dp" />
 
+    <com.futo.platformplayer.views.behavior.GestureControlView
+        android:id="@+id/gesture_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <ImageButton
         android:id="@+id/button_minimize"
         android:layout_width="50dp"
@@ -128,11 +133,6 @@
         app:layout_constraintLeft_toRightOf="@id/text_divider"
         app:layout_constraintTop_toTopOf="@id/text_position"
         app:layout_constraintBottom_toBottomOf="@id/text_position"/>
-
-    <com.futo.platformplayer.views.behavior.GestureControlView
-        android:id="@+id/gesture_control"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
     <com.google.android.exoplayer2.ui.DefaultTimeBar
         android:id="@+id/time_progress"
