@@ -688,6 +688,16 @@
     <string name="failed_to_show_settings">Failed to show settings</string>
     <string name="play_store_version_does_not_support_default_url_handling">Play store version does not support default URL handling.</string>
     <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">These are all {commentCount} comments you have made in Grayjay.</string>
+    <string name="tutorial">Tutorial</string>
+    <string name="go_back_to_casting_add_dialog">Go back to casting add dialog</string>
+    <string name="view_a_video_about_how_to_cast">View a video about how to cast</string>
+    <string name="view_the_fcast_technical_documentation">View the FCast technical documentation</string>
+    <string name="guide">Guide</string>
+    <string name="how_to_use_fcast_guide">How to use FCast guide</string>
+    <string name="fcast">FCast</string>
+    <string name="open_the_fcast_website">Open the FCast website</string>
+    <string name="fcast_website">FCast Website</string>
+    <string name="fcast_technical_documentation">FCast Technical Documentation</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>

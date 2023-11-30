@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
-import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -18,7 +17,6 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.*
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -342,6 +340,13 @@ class UIDialogs {
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             }
+        }
+
+        fun showCastingTutorialDialog(context: Context) {
+            val dialog = CastingHelpDialog(context);
+            registerDialogOpened(dialog);
+            dialog.setOnDismissListener { registerDialogClosed(dialog) };
+            dialog.show();
         }
 
         fun showCastingAddDialog(context: Context) {

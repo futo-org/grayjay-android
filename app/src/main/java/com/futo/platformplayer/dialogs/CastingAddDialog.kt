@@ -23,6 +23,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
     private lateinit var _textError: TextView;
     private lateinit var _buttonCancel: Button;
     private lateinit var _buttonConfirm: LinearLayout;
+    private lateinit var _buttonTutorial: TextView;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -35,6 +36,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
         _textError = findViewById(R.id.text_error);
         _buttonCancel = findViewById(R.id.button_cancel);
         _buttonConfirm = findViewById(R.id.button_confirm);
+        _buttonTutorial = findViewById(R.id.button_tutorial)
 
         ArrayAdapter.createFromResource(context, R.array.casting_device_type_array, R.layout.spinner_item_simple).also { adapter ->
             adapter.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
@@ -102,6 +104,11 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
             StateCasting.instance.addRememberedDevice(castingDeviceInfo);
             performDismiss();
         };
+
+        _buttonTutorial.setOnClickListener {
+            UIDialogs.showCastingTutorialDialog(context)
+            dismiss()
+        }
     }
 
     override fun show() {

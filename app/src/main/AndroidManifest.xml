@@ -210,5 +210,9 @@
             android:name=".activities.QRCaptureActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <activity
+            android:name=".activities.FCastGuideActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
     </application>
 </manifest>
