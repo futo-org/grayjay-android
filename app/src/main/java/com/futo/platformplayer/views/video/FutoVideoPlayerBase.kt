@@ -156,21 +156,20 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             val dur = duration;
             var shouldRestartPlayback = false
             if (_shouldPlaybackRestartOnConnectivity && abs(pos - dur) > 2000) {
-                if (Settings.instance.playback.restartPlaybackAfterLoss == 1) {
+                if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 1) {
                     val lossTime_ms = _connectivityLossTime_ms
                     if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 30) {
                         shouldRestartPlayback = true
                     }
-                } else if (Settings.instance.playback.restartPlaybackAfterLoss == 2) {
+                } else if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 2) {
                     val lossTime_ms = _connectivityLossTime_ms
                     if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 10) {
                         shouldRestartPlayback = true
                     }
-                } else if (Settings.instance.playback.restartPlaybackAfterLoss == 3) {
+                } else if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 3) {
                     shouldRestartPlayback = true
                 }
             }
-
 
             if (shouldRestartPlayback) {
                 Logger.i(TAG, "Playback ended due to connection loss, resuming playback since connection is restored.");
@@ -529,13 +528,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
                 onDatasourceError.emit(error);
             }
-            PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
-            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
-            PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+            //PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
+            //PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+            //PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
-            PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
-            PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
+            //PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
+            //PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
             PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> {
                 Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true");
                 _shouldPlaybackRestartOnConnectivity = true;
@@ -557,8 +556,6 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             Logger.i(TAG, "_shouldPlaybackRestartOnConnectivity=false");
             _shouldPlaybackRestartOnConnectivity = false;
         }
-
-
     }
 
     companion object {

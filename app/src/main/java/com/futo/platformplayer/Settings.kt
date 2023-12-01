@@ -390,7 +390,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
         var restartPlaybackAfterLoss: Int = 1;
 
-        @FormField(R.string.restart_after_connectivity_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_connectivity_after_a_loss, 11)
+        @FormField(R.string.restart_after_connectivity_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_connectivity_after_a_loss, 12)
         @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
         var restartPlaybackAfterConnectivityLoss: Int = 1;
     }
