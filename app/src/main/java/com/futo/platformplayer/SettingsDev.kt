@@ -13,9 +13,11 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
+import com.futo.platformplayer.activities.DeveloperActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
@@ -29,9 +31,13 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
+import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.views.fields.ButtonField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream.range
@@ -89,8 +96,16 @@ class SettingsDev : FragmentedStorageFileJson() {
     @Serializable
     class Cache {
 
-        @FormField(R.string.subscriptions_cache_5000, FieldForm.BUTTON, -1, 1)
+        @FormField(R.string.subscriptions_cache_5000, FieldForm.BUTTON, -1, 1, "subscription_cache_button")
         fun subscriptionsCache5000() {
+            Logger.i("SettingsDev", "Started caching 5000 sub items");
+            UIDialogs.toast(
+                SettingsActivity.getActivity()!!,
+                "Started caching 5000 sub items"
+            );
+            val button = DeveloperActivity.getActivity()?.getField("subscription_cache_button");
+            if(button is ButtonField)
+                button.setButtonEnabled(false);
             StateApp.instance.scope.launch(Dispatchers.IO) {
                 try {
                     val subsCache =
@@ -126,6 +141,77 @@ class SettingsDev : FragmentedStorageFileJson() {
                 catch(ex: Throwable) {
                     Logger.e("SettingsDev", ex.message, ex);
                     Logger.i("SettingsDev", "Failed: ${ex.message}");
+                }
+                finally {
+                    withContext(Dispatchers.Main) {
+                        if(button is ButtonField)
+                            button.setButtonEnabled(true);
+                    }
+                }
+            }
+        }
+
+        @FormField(R.string.history_cache_100, FieldForm.BUTTON, -1, 1, "history_cache_button")
+        fun historyCache100() {
+            Logger.i("SettingsDev", "Started caching 100 history items (from home)");
+            UIDialogs.toast(
+                SettingsActivity.getActivity()!!,
+                "Started caching 100 history items (from home)"
+            );
+            val button = DeveloperActivity.getActivity()?.getField("history_cache_button");
+            if(button is ButtonField)
+                button.setButtonEnabled(false);
+            StateApp.instance.scope.launch(Dispatchers.IO) {
+                try {
+                    val subsCache = StatePlatform.instance.getHome();
+
+                    var num = 0;
+                    for(item in subsCache.getResults().filterIsInstance<IPlatformVideo>()) {
+                        StateHistory.instance.getHistoryByVideo(item, true, OffsetDateTime.now().minusHours(num.toLong() * 4))
+                        num++;
+                    }
+
+                    var total = 0;
+                    var page = 0;
+                    var lastToast = System.currentTimeMillis();
+                    while(subsCache!!.hasMorePages() && total < 5000) {
+                        subsCache!!.nextPage();
+                        total += subsCache!!.getResults().size;
+                        page++;
+
+                        for(item in subsCache.getResults().filterIsInstance<IPlatformVideo>()) {
+                            StateHistory.instance.getHistoryByVideo(item, true, OffsetDateTime.now().minusHours(num.toLong() * 4))
+                            num++;
+                        }
+
+                        if(page % 4 == 0)
+                            withContext(Dispatchers.Main) {
+                                val diff = System.currentTimeMillis() - lastToast;
+                                lastToast = System.currentTimeMillis();
+                                UIDialogs.toast(
+                                    SettingsActivity.getActivity()!!,
+                                    "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
+                                );
+                            }
+                        Thread.sleep(500);
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(
+                            SettingsActivity.getActivity()!!,
+                            "FINISHED Page: ${page}, Total: ${total}"
+                        );
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e("SettingsDev", ex.message, ex);
+                    Logger.i("SettingsDev", "Failed: ${ex.message}");
+                }
+                finally {
+                    withContext(Dispatchers.Main) {
+                        if(button is ButtonField)
+                            button.setButtonEnabled(true);
+                    }
                 }
             }
         }

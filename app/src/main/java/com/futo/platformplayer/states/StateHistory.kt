@@ -105,12 +105,12 @@ class StateHistory {
     fun getHistoryIndexByUrl(url: String): DBHistory.Index? {
         return historyIndex[url];
     }
-    fun getHistoryByVideo(video: IPlatformVideo, create: Boolean = false): DBHistory.Index? {
+    fun getHistoryByVideo(video: IPlatformVideo, create: Boolean = false, watchDate: OffsetDateTime? = null): DBHistory.Index? {
         val existing = historyIndex[video.url];
         if(existing != null)
             return _historyDBStore.get(existing.id!!);
         else if(create) {
-            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, OffsetDateTime.now());
+            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, watchDate ?: OffsetDateTime.now());
             val id = _historyDBStore.insert(newHistItem);
             return _historyDBStore.get(id);
         }
