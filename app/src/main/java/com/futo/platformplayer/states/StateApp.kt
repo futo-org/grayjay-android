@@ -526,10 +526,8 @@ class StateApp {
 
         StatePlaylists.instance.toMigrateCheck();
 
-        StatePlaylists.instance._historyDBStore.deleteAll();
-
-        if(StatePlaylists.instance.shouldMigrateLegacyHistory())
-            StatePlaylists.instance.migrateLegacyHistory();
+        if(StateHistory.instance.shouldMigrateLegacyHistory())
+            StateHistory.instance.migrateLegacyHistory();
 
 
         if(false) {
@@ -544,63 +542,12 @@ class StateApp {
             testHistoryDB(4000);
             Logger.i(TAG, "TEST:--------(6000)---------");
             testHistoryDB(6000);
-            */
             Logger.i(TAG, "TEST:--------(100000)---------");
             scope.launch(Dispatchers.Default) {
-                testHistoryDB(100000);
+                StateHistory.instance.testHistoryDB(100000);
             }
+            */
         }
-    }
-    fun testHistoryDB(count: Int) {
-        Logger.i(TAG, "TEST: Starting tests");
-        StatePlaylists.instance._historyDBStore.deleteAll();
-
-        val testHistoryItem = StatePlaylists.instance.getHistoryLegacy().first();
-        val testItemJson = testHistoryItem.video.toJson();
-        val now = OffsetDateTime.now();
-
-        val testSet = (0..count).map { HistoryVideo(Json.decodeFromString<SerializedPlatformVideo>(testItemJson.replace(testHistoryItem.video.url, UUID.randomUUID().toString())), it.toLong(), now.minusHours(it.toLong())) }
-
-
-        Logger.i(TAG, "TEST: Inserting (${testSet.size})");
-        val insertMS = measureTimeMillis {
-            for(item in testSet)
-                StatePlaylists.instance._historyDBStore.insert(item);
-        };
-        Logger.i(TAG, "TEST: Inserting in ${insertMS}ms");
-        /*
-        var fetched: List<DBHistory.Index>? = null;
-        val fetchMS = measureTimeMillis {
-            fetched = StatePlaylists.instance._historyDBStore.getAll();
-            Logger.i(TAG, "TEST: Fetched: ${fetched?.size}");
-        };
-        Logger.i(TAG, "TEST: Fetch speed ${fetchMS}MS");
-        val deserializeMS = measureTimeMillis {
-            val deserialized = StatePlaylists.instance._historyDBStore.convertObjects(fetched!!);
-            Logger.i(TAG, "TEST: Deserialized: ${deserialized.size}");
-        };
-        Logger.i(TAG, "TEST: Deserialize speed ${deserializeMS}MS");
-        */
-        var fetchedIndex: List<DBHistory.Index>? = null;
-        val fetchIndexMS = measureTimeMillis {
-            fetchedIndex = StatePlaylists.instance._historyDBStore.getAllIndexes();
-            Logger.i(TAG, "TEST: Fetched Index: ${fetchedIndex!!.size}");
-        };
-        Logger.i(TAG, "TEST: Fetched Index speed ${fetchIndexMS}ms");
-        val fetchFromIndex = measureTimeMillis {
-            for(preItem in testSet) {
-                val item = StatePlaylists.instance.historyIndex[preItem.video.url];
-                if(item == null)
-                    throw IllegalStateException("Missing item [${preItem.video.url}]");
-                if(item.url != preItem.video.url)
-                    throw IllegalStateException("Mismatch item [${preItem.video.url}]");
-            }
-        };
-        Logger.i(TAG, "TEST: Index Lookup speed ${fetchFromIndex}ms");
-
-        val page1 = StatePlaylists.instance._historyDBStore.getPage(0, 20);
-        val page2 = StatePlaylists.instance._historyDBStore.getPage(1, 20);
-        val page3 = StatePlaylists.instance._historyDBStore.getPage(2, 20);
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {

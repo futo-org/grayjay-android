@@ -232,6 +232,12 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
         return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
+    fun queryLike(field: KProperty<*>, obj: String): List<I> = queryLike(validateFieldName(field), obj);
+    fun queryLike(field: String, obj: String): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} LIKE ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
     fun queryGreater(field: KProperty<*>, obj: Any): List<I> = queryGreater(validateFieldName(field), obj);
     fun queryGreater(field: String, obj: Any): List<I> {
         val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} > ?";
@@ -251,17 +257,30 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
 
-
+    //Query Pages
+    fun queryPage(field: KProperty<*>, obj: Any, page: Int, pageSize: Int): List<I> = queryPage(validateFieldName(field), obj, page, pageSize);
     fun queryPage(field: String, obj: Any, page: Int, pageSize: Int): List<I> {
         val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} = ? ${_orderSQL} LIMIT ? OFFSET ?";
         val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, pageSize, page * pageSize));
         return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
-    fun queryPage(field: KProperty<*>, obj: Any, page: Int, pageSize: Int): List<I> = queryPage(validateFieldName(field), obj, page, pageSize);
 
+    fun queryLikePage(field: KProperty<*>, obj: String, page: Int, pageSize: Int): List<I> = queryLikePage(validateFieldName(field), obj, page, pageSize);
+    fun queryLikePage(field: String, obj: String, page: Int, pageSize: Int): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} LIKE ? ${_orderSQL} LIMIT ? OFFSET ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, pageSize, page * pageSize));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }
+    fun queryLikeObjectPage(field: String, obj: String, page: Int, pageSize: Int): List<T> {
+        return convertObjects(queryLikePage(field, obj, page, pageSize));
+    }
+
+
+    //Query Page Objects
     fun queryPageObjects(field: String, obj: Any, page: Int, pageSize: Int): List<T> = convertObjects(queryPage(field, obj, page, pageSize));
     fun queryPageObjects(field: KProperty<*>, obj: Any, page: Int, pageSize: Int): List<T> = queryPageObjects(validateFieldName(field), obj, page, pageSize);
 
+    //Query Pager
     fun queryPager(field: KProperty<*>, obj: Any, pageSize: Int): IPager<I> = queryPager(validateFieldName(field), obj, pageSize);
     fun queryPager(field: String, obj: Any, pageSize: Int): IPager<I> {
         return AdhocPager({
@@ -269,6 +288,23 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
            queryPage(field, obj, it - 1, pageSize);
         });
     }
+
+    fun queryLikePager(field: KProperty<*>, obj: String, pageSize: Int): IPager<I> = queryLikePager(validateFieldName(field), obj, pageSize);
+    fun queryLikePager(field: String, obj: String, pageSize: Int): IPager<I> {
+        return AdhocPager({
+            Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
+            queryLikePage(field, obj, it - 1, pageSize);
+        });
+    }
+    fun queryLikeObjectPager(field: KProperty<*>, obj: String, pageSize: Int): IPager<T> = queryLikeObjectPager(validateFieldName(field), obj, pageSize);
+    fun queryLikeObjectPager(field: String, obj: String, pageSize: Int): IPager<T> {
+        return AdhocPager({
+            Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
+            queryLikeObjectPage(field, obj, it - 1, pageSize);
+        });
+    }
+
+    //Query Pager with convert
     fun <X> queryPager(field: KProperty<*>, obj: Any, pageSize: Int, convert: (I)->X): IPager<X> = queryPager(validateFieldName(field), obj, pageSize, convert);
     fun <X> queryPager(field: String, obj: Any, pageSize: Int, convert: (I)->X): IPager<X> {
         return AdhocPager({
@@ -276,6 +312,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         });
     }
 
+    //Query Object Pager
     fun queryObjectPager(field: KProperty<*>, obj: Any, pageSize: Int): IPager<T> = queryObjectPager(validateFieldName(field), obj, pageSize);
     fun queryObjectPager(field: String, obj: Any, pageSize: Int): IPager<T> {
         return AdhocPager({
@@ -283,6 +320,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         });
     }
 
+    //Page
     fun getPage(page: Int, length: Int): List<I> {
         if(_sqlPage == null)
             throw IllegalStateException("DB Store [${name}] does not have ordered fields to provide pages");

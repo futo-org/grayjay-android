@@ -27,6 +27,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.others.CreatorThumbnail
@@ -246,7 +247,7 @@ open class PreviewVideoView : LinearLayout {
             val timeBar = _timeBar
             if (timeBar != null) {
                 if (shouldShowTimeBar) {
-                    val historyPosition = StatePlaylists.instance.getHistoryPosition(video.url)
+                    val historyPosition = StateHistory.instance.getHistoryPosition(video.url)
                     timeBar.visibility = if (historyPosition > 0) VISIBLE else GONE
                     timeBar.progress = historyPosition.toFloat() / video.duration.toFloat()
                 } else {

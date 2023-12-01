@@ -8,6 +8,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlaylists
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -22,7 +23,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
     constructor() : super() {
         updateFilteredVideos();
 
-        StatePlaylists.instance.onHistoricVideoChanged.subscribe(this) { video, position ->
+        StateHistory.instance.onHistoricVideoChanged.subscribe(this) { video, position ->
             StateApp.instance.scope.launch(Dispatchers.Main) {
                 val index = _filteredVideos.indexOfFirst { v -> v.video.url == video.url };
                 if (index == -1) {
@@ -45,7 +46,9 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
     }
 
     fun updateFilteredVideos() {
-        val videos = StatePlaylists.instance.getHistory();
+        val videos = StateHistory.instance.getHistory();
+        val pager = StateHistory.instance.getHistoryPager();
+        //filtered val pager = StateHistory.instance.getHistorySearchPager("querrryyyyy");
 
         if (_query.isBlank()) {
             _filteredVideos = videos.toMutableList();
@@ -57,7 +60,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
     }
 
     fun cleanup() {
-        StatePlaylists.instance.onHistoricVideoChanged.remove(this);
+        StateHistory.instance.onHistoricVideoChanged.remove(this);
     }
 
     override fun getItemCount() = _filteredVideos.size;
@@ -73,7 +76,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
                 return@subscribe;
             }
 
-            StatePlaylists.instance.removeHistory(v.video.url);
+            StateHistory.instance.removeHistory(v.video.url);
             _filteredVideos.removeAt(index);
             notifyItemRemoved(index);
         };

@@ -5,16 +5,12 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.api.media.structures.PlatformContentPager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.serializers.PlatformContentSerializer
-import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
-import com.futo.platformplayer.stores.db.types.DBChannelCache
-import com.futo.platformplayer.stores.db.types.DBHistory
-import com.futo.platformplayer.toSafeFileName
+import com.futo.platformplayer.stores.db.types.DBSubscriptionCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,27 +18,27 @@ import java.time.OffsetDateTime
 import kotlin.system.measureTimeMillis
 
 class StateCache {
-    private val _channelCache = ManagedDBStore.create("channelCache", DBChannelCache.Descriptor(), PlatformContentSerializer())
+    private val _subscriptionCache = ManagedDBStore.create("subscriptionCache", DBSubscriptionCache.Descriptor(), PlatformContentSerializer())
         .load();
 
-    val channelCacheStartupCount = _channelCache.count();
+    val channelCacheStartupCount = _subscriptionCache.count();
 
     fun clear() {
-        _channelCache.deleteAll();
+        _subscriptionCache.deleteAll();
     }
     fun clearToday() {
-        val today = _channelCache.queryGreater(DBChannelCache.Index::datetime, OffsetDateTime.now().toEpochSecond());
+        val today = _subscriptionCache.queryGreater(DBSubscriptionCache.Index::datetime, OffsetDateTime.now().toEpochSecond());
         for(content in today)
-            _channelCache.delete(content);
+            _subscriptionCache.delete(content);
     }
 
     fun getChannelCachePager(channelUrl: String): IPager<IPlatformContent> {
-        return _channelCache.queryPager(DBChannelCache.Index::channelUrl, channelUrl, 20) {
+        return _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) {
             it.obj;
         }
     }
     fun getChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
-        val pagers = MultiChronoContentPager(channelUrls.map { _channelCache.queryPager(DBChannelCache.Index::channelUrl, it, 20) {
+        val pagers = MultiChronoContentPager(channelUrls.map { _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, it, 20) {
             it.obj;
         } }, false, 20);
         return DedupContentPager(pagers, StatePlatform.instance.getEnabledClients().map { it.id });
@@ -70,14 +66,14 @@ class StateCache {
     }
 
 
-    fun getCachedContent(url: String): DBChannelCache.Index? {
-        return _channelCache.query(DBChannelCache.Index::url, url).firstOrNull();
+    fun getCachedContent(url: String): DBSubscriptionCache.Index? {
+        return _subscriptionCache.query(DBSubscriptionCache.Index::url, url).firstOrNull();
     }
 
     fun uncacheContent(content: SerializedPlatformContent) {
         val item = getCachedContent(content.url);
         if(item != null)
-            _channelCache.delete(item);
+            _subscriptionCache.delete(item);
     }
     fun cacheContents(contents: List<IPlatformContent>, doUpdate: Boolean = false): List<IPlatformContent> {
         return contents.filter { cacheContent(it, doUpdate) };
@@ -90,11 +86,11 @@ class StateCache {
         val existing = getCachedContent(content.url);
 
         if(existing != null && doUpdate) {
-            _channelCache.update(existing.id!!, serialized);
+            _subscriptionCache.update(existing.id!!, serialized);
             return true;
         }
         else if(existing == null) {
-            _channelCache.insert(serialized);
+            _subscriptionCache.insert(serialized);
             return true;
         }
 

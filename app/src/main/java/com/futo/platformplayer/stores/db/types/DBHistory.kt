@@ -28,7 +28,7 @@ class DBHistory {
     //These classes solely exist for bounding generics for type erasure
     @Dao
     interface DBDAO: ManagedDBDAOBase<HistoryVideo, Index> {}
-    @Database(entities = [Index::class], version = 2)
+    @Database(entities = [Index::class], version = 3)
     abstract class DB: ManagedDBDatabase<HistoryVideo, Index, DBDAO>() {
         abstract override fun base(): DBDAO;
     }
@@ -40,32 +40,34 @@ class DBHistory {
         override fun indexClass(): KClass<Index> = Index::class;
     }
 
-    @Entity(TABLE_NAME)
-    class Index: ManagedDBIndex<HistoryVideo> {
+    @Entity(TABLE_NAME, indices = [
+        androidx.room.Index(value = ["url"]),
+        androidx.room.Index(value = ["name"]),
+        androidx.room.Index(value = ["datetime"], orders = [androidx.room.Index.Order.DESC])
+    ])
+    class Index(): ManagedDBIndex<HistoryVideo>() {
         @PrimaryKey(true)
         @ColumnOrdered(1)
         @ColumnIndex
         override var id: Long? = null;
 
         @ColumnIndex
-        var url: String;
+        var url: String = "";
         @ColumnIndex
-        var position: Long;
+        var position: Long = 0;
         @ColumnIndex
         @ColumnOrdered(0, true)
-        var date: Long;
+        var datetime: Long = 0;
+        @ColumnIndex
+        var name: String = "";
 
-        constructor() {
-            url = "";
-            position = 0;
-            date = 0;
-        }
-        constructor(historyVideo: HistoryVideo) {
+        constructor(historyVideo: HistoryVideo) : this() {
             id = null;
             serialized = null;
             url = historyVideo.video.url;
             position = historyVideo.position;
-            date = historyVideo.date.toEpochSecond();
+            datetime = historyVideo.date.toEpochSecond();
+            name = historyVideo.video.name;
         }
     }
 }

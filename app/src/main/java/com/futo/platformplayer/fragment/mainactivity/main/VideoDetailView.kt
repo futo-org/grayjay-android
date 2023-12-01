@@ -778,7 +778,7 @@ class VideoDetailView : ConstraintLayout {
     suspend fun getHistoryIndex(video: IPlatformVideo): DBHistory.Index = withContext(Dispatchers.IO){
         val current = _historyIndex;
         if(current == null || current.url != video.url) {
-            val index = StatePlaylists.instance.getHistoryByVideo(video, true);
+            val index = StateHistory.instance.getHistoryByVideo(video, true)!!;
             _historyIndex = index;
             return@withContext index;
         }
@@ -1290,7 +1290,7 @@ class VideoDetailView : ConstraintLayout {
             val historyItem = getHistoryIndex(videoDetail);
 
             withContext(Dispatchers.Main) {
-                _historicalPosition = StatePlaylists.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
+                _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
                 Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
                 if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
                     _layoutResume.visibility = View.VISIBLE;
@@ -2107,7 +2107,7 @@ class VideoDetailView : ConstraintLayout {
         if (updateHistory && (_lastPositionSaveTime == -1L || currentTime - _lastPositionSaveTime > 5000)) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 val history = getHistoryIndex(v);
-                StatePlaylists.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+                StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
             }
             _lastPositionSaveTime = currentTime;
         }

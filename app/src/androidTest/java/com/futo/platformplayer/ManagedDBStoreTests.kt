@@ -203,35 +203,105 @@ class ManagedDBStoreTests {
     }
     @Test
     fun queryPager() {
-        val store = ManagedDBStore.create("test", Descriptor())
-            .load(context, true);
-        store.deleteAll();
-
         val testStr = UUID.randomUUID().toString();
-
-        val testResults = createSequence(store, 100, { i, testObject ->
+        testQuery(100, { i, testObject ->
             if(i % 2 == 0)
                 testObject.someStr = testStr;
-        });
-        val pager = store.queryPager(DBTOs.TestIndex::someString, testStr, 10);
+        }) {
+            val pager = it.queryPager(DBTOs.TestIndex::someString, testStr, 10);
 
-        val items = pager.getResults().toMutableList();
-        while(pager.hasMorePages()) {
-            pager.nextPage();
-            items.addAll(pager.getResults());
+            val items = pager.getResults().toMutableList();
+            while(pager.hasMorePages()) {
+                pager.nextPage();
+                items.addAll(pager.getResults());
+            }
+            Assert.assertEquals(50, items.size);
+            for(i in 0 until 50) {
+                val k = i * 2;
+                Assert.assertEquals(k, items[i].someNum);
+            }
         }
-        Assert.assertEquals(50, items.size);
-        for(i in 0 until 50) {
-            val k = i * 2;
-            Assert.assertEquals(k, items[i].someNum);
-        }
-
-        store.shutdown();
     }
 
 
 
+    @Test
+    fun queryLike() {
+        val testStr = UUID.randomUUID().toString();
+        val testStrLike = testStr.substring(0, 8) + "Testing" + testStr.substring(8, testStr.length);
+        testQuery(100, { i, testObject ->
+            if(i % 2 == 0)
+                testObject.someStr = testStrLike;
+        }) {
+            val results = it.queryLike(DBTOs.TestIndex::someString, "%Testing%");
 
+            Assert.assertEquals(50, results.size);
+        }
+    }
+    @Test
+    fun queryLikePager() {
+        val testStr = UUID.randomUUID().toString();
+        val testStrLike = testStr.substring(0, 8) + "Testing" + testStr.substring(8, testStr.length);
+        testQuery(100, { i, testObject ->
+            if(i % 2 == 0)
+                testObject.someStr = testStrLike;
+
+        }) {
+            val pager = it.queryLikePager(DBTOs.TestIndex::someString, "%Testing%", 10);
+            val items = pager.getResults().toMutableList();
+            while(pager.hasMorePages()) {
+                pager.nextPage();
+                items.addAll(pager.getResults());
+            }
+            Assert.assertEquals(50, items.size);
+            for(i in 0 until 50) {
+                val k = i * 2;
+                Assert.assertEquals(k, items[i].someNum);
+            }
+        }
+    }
+
+    @Test
+    fun queryGreater() {
+        testQuery(100, { i, testObject ->
+            testObject.someNum = i;
+        }) {
+            val results = it.queryGreater(DBTOs.TestIndex::someNum, 51);
+            Assert.assertEquals(48, results.size);
+        }
+    }
+    @Test
+    fun querySmaller() {
+        testQuery(100, { i, testObject ->
+            testObject.someNum = i;
+        }) {
+            val results = it.querySmaller(DBTOs.TestIndex::someNum, 30);
+            Assert.assertEquals(30, results.size);
+        }
+    }
+    @Test
+    fun queryBetween() {
+        testQuery(100, { i, testObject ->
+            testObject.someNum = i;
+        }) {
+            val results = it.queryBetween(DBTOs.TestIndex::someNum, 30, 65);
+            Assert.assertEquals(34, results.size);
+        }
+    }
+
+
+    private fun testQuery(items: Int, modifier: (Int, DBTOs.TestObject)->Unit, testing: (ManagedDBStore<DBTOs.TestIndex, DBTOs.TestObject, DBTOs.DB, DBTOs.DBDAO>)->Unit) {
+        val store = ManagedDBStore.create("test", Descriptor())
+            .load(context, true);
+        store.deleteAll();
+        createSequence(store, items, modifier);
+        try {
+            testing(store);
+        }
+        finally {
+            store.shutdown();
+        }
+    }
 
 
     private fun createSequence(store: ManagedDBStore<DBTOs.TestIndex, DBTOs.TestObject, DBTOs.DB, DBTOs.DBDAO>, count: Int, modifier: ((Int, DBTOs.TestObject)->Unit)? = null): List<DBTOs.TestIndex> {

@@ -15,7 +15,7 @@ import java.util.UUID
 class DBTOs {
     @Dao
     interface DBDAO: ManagedDBDAOBase<TestObject, TestIndex> {}
-    @Database(entities = [TestIndex::class], version = 2)
+    @Database(entities = [TestIndex::class], version = 3)
     abstract class DB: ManagedDBDatabase<TestObject, TestIndex, DBDAO>() {
         abstract override fun base(): DBDAO;
     }

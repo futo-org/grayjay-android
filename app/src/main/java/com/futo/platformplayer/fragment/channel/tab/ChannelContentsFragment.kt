@@ -106,7 +106,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         }
 
         val posBefore = _results.size;
-        val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo };
+        val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo }
         _results.addAll(toAdd);
         _adapterResults?.let { adapterVideo -> adapterVideo.notifyItemRangeInserted(adapterVideo.childToParentPosition(posBefore), toAdd.size); };
     }.exception<Throwable> {
