@@ -2,8 +2,11 @@ package com.futo.platformplayer.casting
 
 import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.os.Looper
+import android.util.Base64
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.ManagedHttpServer
 import com.futo.platformplayer.api.http.server.handlers.*
@@ -27,6 +30,9 @@ import javax.jmdns.ServiceListener
 import kotlin.collections.HashMap
 import com.futo.platformplayer.stores.CastingDeviceInfoStorage
 import com.futo.platformplayer.stores.FragmentedStorage
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import javax.jmdns.ServiceTypeListener
 
 class StateCasting {
@@ -145,6 +151,32 @@ class StateCasting {
 
             Logger.i(TAG, "Sub type for service type added (name: ${event.name}, type: ${event.type})");
         }
+    }
+
+    fun handleUrl(context: Context, url: String) {
+        val uri = Uri.parse(url)
+        if (uri.scheme != "fcast") {
+            throw Exception("Expected scheme to be FCast")
+        }
+
+        val type = uri.host
+        if (type != "r") {
+            throw Exception("Expected type r")
+        }
+
+        val connectionInfo = uri.pathSegments[0]
+        val json = Base64.decode(connectionInfo, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).toString(Charsets.UTF_8)
+        val networkConfig = Json.decodeFromString<FCastNetworkConfig>(json)
+        val tcpService = networkConfig.services.first { v -> v.type == 0 }
+
+        addRememberedDevice(CastingDeviceInfo(
+            name = networkConfig.name,
+            type = CastProtocolType.FCAST,
+            addresses = networkConfig.addresses.toTypedArray(),
+            port = tcpService.port
+        ))
+
+        UIDialogs.toast(context,"FCast device '${networkConfig.name}' added")
     }
 
     fun onStop() {
@@ -1166,6 +1198,19 @@ class StateCasting {
             }).withTag("dev");
         }
     }
+
+    @Serializable
+    private data class FCastNetworkConfig(
+        val name: String,
+        val addresses: List<String>,
+        val services: List<FCastService>
+    )
+
+    @Serializable
+    private data class FCastService(
+        val port: Int,
+        val type: Int
+    )
 
     companion object {
         val instance: StateCasting = StateCasting();

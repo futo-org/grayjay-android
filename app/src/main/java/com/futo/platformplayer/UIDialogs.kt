@@ -1,5 +1,6 @@
 package com.futo.platformplayer
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -337,6 +338,10 @@ class UIDialogs {
             } else {
                 val dialog = ConnectCastingDialog(context);
                 registerDialogOpened(dialog);
+                val c = context
+                if (c is Activity) {
+                    dialog.setOwnerActivity(c);
+                }
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             }
