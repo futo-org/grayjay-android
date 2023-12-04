@@ -178,6 +178,9 @@ open class PreviewVideoView : LinearLayout {
         val cachedProfile = PolycentricCache.instance.getCachedProfile(content.author.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
+            if (cachedProfile.expired) {
+                _taskLoadProfile.run(content.author.id);
+            }
         } else {
             _imageNeopassChannel?.visibility = View.GONE;
             _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
