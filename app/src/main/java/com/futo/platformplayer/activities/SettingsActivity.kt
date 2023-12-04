@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.activity.result.ActivityResult
@@ -30,6 +31,8 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
 
     private var _isFinished = false;
 
+    lateinit var overlay: FrameLayout;
+
     override fun attachBaseContext(newBase: Context?) {
         Logger.i("SettingsActivity", "SettingsActivity.attachBaseContext")
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
@@ -44,6 +47,7 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         _buttonDev = findViewById(R.id.button_dev);
         _devSets = findViewById(R.id.dev_settings);
         _loaderView = findViewById(R.id.loader);
+        overlay = findViewById(R.id.overlay_container);
 
         _form.onChanged.subscribe { field, value ->
             Logger.i("SettingsActivity", "Setting [${field.field?.name}] changed, saving");

@@ -1,30 +1,21 @@
 package com.futo.platformplayer
 
 import android.content.ContentResolver
-import android.graphics.Color
-import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.TextView
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
-import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantSubtitleUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
-import com.futo.platformplayer.api.media.models.streams.sources.SubtitleRawSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
@@ -40,12 +31,10 @@ import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
 import com.futo.platformplayer.views.overlays.slideup.*
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
-import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.internal.notifyAll
 import java.lang.IllegalStateException
 
 class UISlideOverlays {

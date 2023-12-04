@@ -515,6 +515,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 val url = intent.getStringExtra("VIDEO");
                 navigate(_fragVideoDetail, url);
             }
+            "IMPORT_OPTIONS" -> {
+                UIDialogs.showImportOptionsDialog(this);
+            }
             "TAB" -> {
                 when(intent.getStringExtra("TAB")){
                     "Sources" -> {
@@ -730,18 +733,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (!newPipeSubsParsed.has("subscriptions") || !newPipeSubsParsed["subscriptions"].isJsonArray)
                 return false;//throw IllegalArgumentException("Invalid NewPipe json structure found");
 
-            val jsonSubs = newPipeSubsParsed["subscriptions"]
-            val jsonSubsArray = jsonSubs.asJsonArray;
-            val jsonSubsArrayItt = jsonSubsArray.iterator();
-            val subs = mutableListOf<String>()
-            while(jsonSubsArrayItt.hasNext()) {
-                val jsonSubObj = jsonSubsArrayItt.next().asJsonObject;
-
-                if(jsonSubObj.has("url"))
-                    subs.add(jsonSubObj["url"].asString);
-            }
-
-            navigate(_fragImportSubscriptions, subs);
+            StateBackup.importNewPipeSubs(this, newPipeSubsParsed);
         }
         catch(ex: Exception) {
             Logger.e(TAG, ex.message, ex);
@@ -1051,6 +1043,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "VIDEO";
             sourcesIntent.putExtra("VIDEO", videoUrl);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            return sourcesIntent;
+        }
+
+        fun getImportOptionsIntent(context: Context): Intent {
+            val sourcesIntent = Intent(context, MainActivity::class.java);
+            sourcesIntent.action = "IMPORT_OPTIONS";
             sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             return sourcesIntent;
         }

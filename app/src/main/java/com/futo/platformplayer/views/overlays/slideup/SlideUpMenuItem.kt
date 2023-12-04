@@ -25,7 +25,7 @@ class SlideUpMenuItem : RelativeLayout {
         init();
     }
 
-    constructor(context: Context, imageRes: Int = 0, mainText: String, subText: String = "", tag: Any, call: (()->Unit)? = null, invokeParent: Boolean = true): super(context){
+    constructor(context: Context, imageRes: Int = 0, mainText: String, subText: String = "", tag: Any?, call: (()->Unit)? = null, invokeParent: Boolean = true): super(context){
         init();
         _image.setImageResource(imageRes);
         _text.text = mainText;
