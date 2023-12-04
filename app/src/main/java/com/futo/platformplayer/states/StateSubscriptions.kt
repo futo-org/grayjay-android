@@ -38,6 +38,7 @@ import java.util.concurrent.ForkJoinTask
 import kotlin.collections.ArrayList
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
@@ -258,7 +259,9 @@ class StateSubscriptions {
                 Pair(it, StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id));
             else
                 Pair(it, listOf(it.channel.url));
-        }.toList().associate { it };
+        }.asSequence()
+            .toList()
+            .associate { it };
 
         val result = algo.getSubscriptions(subUrls);
         return Pair(result.pager, result.exceptions);

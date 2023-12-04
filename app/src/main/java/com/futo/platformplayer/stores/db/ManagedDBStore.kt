@@ -361,22 +361,33 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     }
 
     fun convertObject(index: I): T? {
-        return index.obj ?: deserializeIndex(index).obj;
+        return index.objOrNull ?: deserializeIndex(index).obj;
     }
     fun convertObjects(indexes: List<I>): List<T> {
-        return indexes.mapNotNull { it.obj ?: convertObject(it) };
+        return indexes.mapNotNull { it.objOrNull ?: convertObject(it) };
     }
     fun deserializeIndex(index: I): I {
+        if(index.isCorrupted)
+            return index;
         if(index.serialized == null) throw IllegalStateException("Cannot deserialize index-only items from [${name}]");
-        val obj = _serializer.deserialize(_class, index.serialized!!);
-        index.setInstance(obj);
+        try {
+            val obj = _serializer.deserialize(_class, index.serialized!!);
+            index.setInstance(obj);
+        }
+        catch(ex: Throwable) {
+            if(index.serialized != null && index.serialized!!.size > 0) {
+                Logger.w("ManagedDBStore", "Corrupted object in ${name} found [${index.id}], deleting due to ${ex.message}", ex);
+                index.isCorrupted = true;
+                delete(index.id!!);
+            }
+        }
         index.serialized = null;
         return index;
     }
     fun deserializeIndexes(indexes: List<I>): List<I> {
         for(index in indexes)
             deserializeIndex(index);
-        return indexes;
+        return indexes.filter { !it.isCorrupted }
     }
 
     fun serialize(obj: T): ByteArray {

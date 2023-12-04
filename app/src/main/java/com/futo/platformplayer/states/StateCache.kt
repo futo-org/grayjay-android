@@ -1,5 +1,6 @@
 package com.futo.platformplayer.states
 
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.api.media.structures.DedupContentPager
@@ -11,10 +12,15 @@ import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBSubscriptionCache
+import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import kotlin.streams.asSequence
+import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
 class StateCache {
@@ -34,6 +40,8 @@ class StateCache {
 
     fun getChannelCachePager(channelUrl: String): IPager<IPlatformContent> {
         return _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) {
+            if(it.objOrNull?.contentType == ContentType.POST)
+                Logger.i(TAG, "FOUND CACHED POST\n (${it.objOrNull?.name})");
             it.obj;
         }
     }
@@ -56,7 +64,10 @@ class StateCache {
         }.flatten().distinct();
 
         Logger.i(TAG, "Subscriptions CachePager get pagers");
-        val pagers = allUrls.parallelStream().map { getChannelCachePager(it) }.toList();
+        val pagers = allUrls.parallelStream()
+            .map { getChannelCachePager(it) }
+            .asSequence()
+            .toList();
 
         Logger.i(TAG, "Subscriptions CachePager compiling");
         val pager = MultiChronoContentPager(pagers, false, 20);

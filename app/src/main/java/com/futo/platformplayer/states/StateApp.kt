@@ -13,6 +13,7 @@ import android.net.NetworkRequest
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
+import android.util.Xml
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +23,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -37,9 +39,12 @@ import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.receivers.AudioNoisyReceiver
+import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.ManagedStore
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
@@ -548,6 +553,7 @@ class StateApp {
             }
             */
         }
+
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {
