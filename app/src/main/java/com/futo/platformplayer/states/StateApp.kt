@@ -543,6 +543,7 @@ class StateApp {
             );
         }
 
+        StateAnnouncement.instance.registerDefaultHandlerAnnouncement();
         StateAnnouncement.instance.registerDidYouKnow();
         Logger.i(TAG, "MainApp Started: Finished");
     }

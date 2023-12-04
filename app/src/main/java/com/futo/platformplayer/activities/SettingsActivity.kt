@@ -15,7 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.views.Loader
+import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.ReadOnlyTextField
 import com.google.android.material.button.MaterialButton
@@ -23,7 +23,7 @@ import com.google.android.material.button.MaterialButton
 class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
     private lateinit var _form: FieldForm;
     private lateinit var _buttonBack: ImageButton;
-    private lateinit var _loader: Loader;
+    private lateinit var _loaderView: LoaderView;
 
     private lateinit var _devSets: LinearLayout;
     private lateinit var _buttonDev: MaterialButton;
@@ -43,7 +43,7 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         _buttonBack = findViewById(R.id.button_back);
         _buttonDev = findViewById(R.id.button_dev);
         _devSets = findViewById(R.id.dev_settings);
-        _loader = findViewById(R.id.loader);
+        _loaderView = findViewById(R.id.loader);
 
         _form.onChanged.subscribe { field, value ->
             Logger.i("SettingsActivity", "Setting [${field.field?.name}] changed, saving");
@@ -70,9 +70,9 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
 
     fun reloadSettings() {
         _form.setSearchVisible(false);
-        _loader.start();
+        _loaderView.start();
         _form.fromObject(lifecycleScope, Settings.instance) {
-            _loader.stop();
+            _loaderView.stop();
             _form.setSearchVisible(true);
 
             var devCounter = 0;

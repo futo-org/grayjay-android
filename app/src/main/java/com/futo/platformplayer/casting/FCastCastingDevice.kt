@@ -30,10 +30,10 @@ enum class Opcode(val value: Byte) {
     SET_VOLUME(8)
 }
 
-class FastCastCastingDevice : CastingDevice {
+class FCastCastingDevice : CastingDevice {
     //See for more info: TODO
 
-    override val protocol: CastProtocolType get() = CastProtocolType.FASTCAST;
+    override val protocol: CastProtocolType get() = CastProtocolType.FCAST;
     override val isReady: Boolean get() = name != null && addresses != null && addresses?.isNotEmpty() == true && port != 0;
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
@@ -72,7 +72,7 @@ class FastCastCastingDevice : CastingDevice {
         Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
 
         time = resumePosition;
-        sendMessage(Opcode.PLAY, FastCastPlayMessage(
+        sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             url = contentId,
             time = resumePosition.toInt()
@@ -87,7 +87,7 @@ class FastCastCastingDevice : CastingDevice {
         Logger.i(TAG, "Start streaming content (contentType: $contentType, resumePosition: $resumePosition, duration: $duration)");
 
         time = resumePosition;
-        sendMessage(Opcode.PLAY, FastCastPlayMessage(
+        sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             content = content,
             time = resumePosition.toInt()
@@ -100,7 +100,7 @@ class FastCastCastingDevice : CastingDevice {
         }
 
         this.volume = volume
-        sendMessage(Opcode.SET_VOLUME, FastCastSetVolumeMessage(volume))
+        sendMessage(Opcode.SET_VOLUME, FCastSetVolumeMessage(volume))
     }
 
     override fun seekVideo(timeSeconds: Double) {
@@ -108,7 +108,7 @@ class FastCastCastingDevice : CastingDevice {
             return;
         }
 
-        sendMessage(Opcode.SEEK, FastCastSeekMessage(
+        sendMessage(Opcode.SEEK, FCastSeekMessage(
             time = timeSeconds.toInt()
         ));
     }
@@ -282,7 +282,7 @@ class FastCastCastingDevice : CastingDevice {
                     return;
                 }
 
-                val playbackUpdate = Json.decodeFromString<FastCastPlaybackUpdateMessage>(json);
+                val playbackUpdate = Json.decodeFromString<FCastPlaybackUpdateMessage>(json);
                 time = playbackUpdate.time.toDouble();
                 isPlaying = when (playbackUpdate.state) {
                     1 -> true
@@ -295,7 +295,7 @@ class FastCastCastingDevice : CastingDevice {
                     return;
                 }
 
-                val volumeUpdate = Json.decodeFromString<FastCastVolumeUpdateMessage>(json);
+                val volumeUpdate = Json.decodeFromString<FCastVolumeUpdateMessage>(json);
                 volume = volumeUpdate.volume;
             }
             else -> { }
@@ -398,7 +398,7 @@ class FastCastCastingDevice : CastingDevice {
     }
 
     override fun getDeviceInfo(): CastingDeviceInfo {
-        return CastingDeviceInfo(name!!, CastProtocolType.FASTCAST, addresses!!.filter { a -> a.hostAddress != null }.map { a -> a.hostAddress!!  }.toTypedArray(), port);
+        return CastingDeviceInfo(name!!, CastProtocolType.FCAST, addresses!!.filter { a -> a.hostAddress != null }.map { a -> a.hostAddress!!  }.toTypedArray(), port);
     }
 
     companion object {

@@ -24,6 +24,12 @@
                 <data android:host="www.youtube.com"  />
                 <data android:host="m.youtube.com" />
                 <data android:host="rumble.com" />
+                <data android:host="kick.com" />
+                <data android:host="nebula.tv" />
+                <data android:host="odysee.com" />
+                <data android:host="patreon.com" />
+                <data android:host="soundcloud.com" />
+                <data android:host="twitch.tv" />
                 <data android:pathPrefix="/" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
@@ -33,11 +39,18 @@
 
                 <data android:mimeType="text/plain" />
 
-                <data android:host="youtube.com"  />
-                <data android:host="m.youtube.com" />
-                <data android:host="you.be" />
+                <data android:host="youtu.be" />
                 <data android:host="www.you.be" />
+                <data android:host="youtube.com"  />
+                <data android:host="www.youtube.com"  />
+                <data android:host="m.youtube.com" />
                 <data android:host="rumble.com" />
+                <data android:host="kick.com" />
+                <data android:host="nebula.tv" />
+                <data android:host="odysee.com" />
+                <data android:host="patreon.com" />
+                <data android:host="soundcloud.com" />
+                <data android:host="twitch.tv" />
             </intent-filter>
         </activity>
     </application>

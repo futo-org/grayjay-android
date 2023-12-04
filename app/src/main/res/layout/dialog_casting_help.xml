@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/gray_1d"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:id="@+id/layout_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/button_video"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonText="@string/video"
+            app:buttonSubText="@string/view_a_video_about_how_to_cast"
+            app:buttonIcon="@drawable/ic_smart_display"
+            android:layout_marginTop="8dp"
+            app:buttonBackground="@drawable/background_big_button_black"
+            android:alpha="0.4" />
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/button_guide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonText="FCast Guide"
+            app:buttonSubText="@string/how_to_use_fcast_guide"
+            app:buttonIcon="@drawable/ic_code"
+            android:layout_marginTop="8dp"
+            app:buttonBackground="@drawable/background_big_button_black" />
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/button_website"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonText="@string/fcast_website"
+            app:buttonSubText="@string/open_the_fcast_website"
+            app:buttonIcon="@drawable/ic_link"
+            android:layout_marginTop="8dp"
+            app:buttonBackground="@drawable/background_big_button_black" />
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/button_technical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonText="@string/fcast_technical_documentation"
+            app:buttonSubText="@string/view_the_fcast_technical_documentation"
+            app:buttonIcon="@drawable/ic_wrench"
+            android:layout_marginTop="8dp"
+            app:buttonBackground="@drawable/background_big_button_black" />
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/button_close"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:buttonText="@string/close"
+            app:buttonSubText="@string/go_back_to_casting_add_dialog"
+            app:buttonIcon="@drawable/ic_close"
+            android:layout_marginTop="8dp"
+            app:buttonBackground="@drawable/background_big_button_black"/>
+    </LinearLayout>
+</FrameLayout>

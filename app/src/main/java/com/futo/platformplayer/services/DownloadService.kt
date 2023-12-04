@@ -162,6 +162,8 @@ class DownloadService : Service() {
         Logger.i(TAG, "doDownloading - Ending Downloads");
         stopService(this);
     }
+
+
     private suspend fun doDownload(download: VideoDownload) {
         if(!Settings.instance.downloads.shouldDownload())
             throw IllegalStateException("Downloading disabled on current network");
@@ -183,14 +185,14 @@ class DownloadService : Service() {
 
         Logger.i(TAG, "Preparing [${download.name}] started");
         if(download.state == VideoDownload.State.PREPARING)
-            download.prepare();
+            download.prepare(_client);
         download.changeState(VideoDownload.State.DOWNLOADING);
         notifyDownload(download);
 
         var lastNotifyTime: Long = 0L;
         Logger.i(TAG, "Downloading [${download.name}] started");
         //TODO: Use plugin client?
-        download.download(_client) { progress ->
+        download.download(applicationContext, _client) { progress ->
             download.progress = progress;
 
             val currentTime = System.currentTimeMillis();

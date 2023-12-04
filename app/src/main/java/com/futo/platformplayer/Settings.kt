@@ -111,7 +111,15 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-
+    @FormField(R.string.link_handling, FieldForm.BUTTON, R.string.allow_grayjay_to_handle_links, -1)
+    @FormFieldButton(R.drawable.ic_link)
+    fun manageLinks() {
+        try {
+            SettingsActivity.getActivity()?.let { UIDialogs.showUrlHandlingPrompt(it) }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to show url handling prompt", e)
+        }
+    }
 
     @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();
@@ -377,6 +385,14 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
         var backgroundSwitchToAudio: Boolean = true;
+
+        @FormField(R.string.restart_after_audio_focus_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_audio_focus_after_a_loss, 11)
+        @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
+        var restartPlaybackAfterLoss: Int = 1;
+
+        @FormField(R.string.restart_after_connectivity_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_connectivity_after_a_loss, 12)
+        @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
+        var restartPlaybackAfterConnectivityLoss: Int = 1;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

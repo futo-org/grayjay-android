@@ -292,6 +292,8 @@
     <string name="clear_external_downloads_directory">Clear external Downloads directory</string>
     <string name="change_external_general_directory">Change external General directory</string>
     <string name="change_tabs_visible_on_the_home_screen">Change tabs visible on the home screen</string>
+    <string name="link_handling">Link Handling</string>
+    <string name="allow_grayjay_to_handle_links">Allow Grayjay to handle links</string>
     <string name="change_the_external_directory_for_general_files">Change the external directory for general files</string>
     <string name="clear_the_external_storage_for_download_files">Clear the external storage for download files</string>
     <string name="change_the_external_storage_for_download_files">Change the external storage for download files</string>
@@ -377,6 +379,10 @@
     <string name="restore_a_previous_automatic_backup">Restore a previous automatic backup</string>
     <string name="resume_after_preview">Resume After Preview</string>
     <string name="review_the_current_and_past_changelogs">Review the current and past changelogs</string>
+    <string name="restart_after_audio_focus_loss">Restart after audio focus loss</string>
+    <string name="restart_playback_when_gaining_audio_focus_after_a_loss">Restart playback when gaining audio focus after a loss</string>
+    <string name="restart_after_connectivity_loss">Restart after connectivity loss</string>
+    <string name="restart_playback_when_gaining_connectivity_after_a_loss">Restart playback when gaining connectivity after a loss</string>
     <string name="chapter_update_fps_title">Chapter Update FPS</string>
     <string name="chapter_update_fps_description">Change accuracy of chapter updating, higher might cost more performance</string>
     <string name="set_automatic_backup">Set Automatic Backup</string>
@@ -678,6 +684,22 @@
     <string name="plus_tax">" + Tax"</string>
     <string name="new_playlist">New playlist</string>
     <string name="add_to_new_playlist">Add to new playlist</string>
+    <string name="url_handling">URL Handling</string>
+    <string name="allow_grayjay_to_handle_specific_urls">Allow Grayjay to handle specific URLs?</string>
+    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">When you click \'Yes\', the Grayjay app settings will open.\n\nThere, navigate to:\n1. "Open by default" or "Set as default" section.\nYou might find this option directly or under \'Advanced\' settings, depending on your device.\n\n2. Choose \'Open supported links\' for Grayjay.\n\n(some devices have this listed under \'Default Apps\' in the main settings followed by selecting Grayjay for relevant categories)</string>
+    <string name="failed_to_show_settings">Failed to show settings</string>
+    <string name="play_store_version_does_not_support_default_url_handling">Play store version does not support default URL handling.</string>
+    <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">These are all {commentCount} comments you have made in Grayjay.</string>
+    <string name="tutorial">Tutorial</string>
+    <string name="go_back_to_casting_add_dialog">Go back to casting add dialog</string>
+    <string name="view_a_video_about_how_to_cast">View a video about how to cast</string>
+    <string name="view_the_fcast_technical_documentation">View the FCast technical documentation</string>
+    <string name="guide">Guide</string>
+    <string name="how_to_use_fcast_guide">How to use FCast guide</string>
+    <string name="fcast">FCast</string>
+    <string name="open_the_fcast_website">Open the FCast website</string>
+    <string name="fcast_website">FCast Website</string>
+    <string name="fcast_technical_documentation">FCast Technical Documentation</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
@@ -765,6 +787,10 @@
         <item>Disabled</item>
         <item>Enabled</item>
     </string-array>
+    <string-array name="comments_sortby_array">
+        <item>Newest</item>
+        <item>Oldest</item>
+    </string-array>
     <string-array name="subscriptions_sortby_array">
         <item>Name Ascending</item>
         <item>Name Descending</item>
@@ -825,7 +851,7 @@
         <item>Russian</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
-        <item>FastCast</item>
+        <item>FCast</item>
         <item>ChromeCast</item>
         <item>AirPlay</item>
     </string-array>
@@ -835,5 +861,11 @@
         <item>Warning</item>
         <item>Information</item>
         <item>Verbose</item>
+    </string-array>
+    <string-array name="restart_playback_after_loss">
+        <item>Never</item>
+        <item>Within 10 seconds of loss</item>
+        <item>Within 30 seconds of loss</item>
+        <item>Always</item>
     </string-array>
 </resources>

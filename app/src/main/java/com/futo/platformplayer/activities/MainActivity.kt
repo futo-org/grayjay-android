@@ -7,7 +7,6 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
@@ -25,11 +24,9 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
-import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.constructs.Event3
+import com.futo.platformplayer.dialogs.ConnectCastingDialog
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
@@ -45,6 +42,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.google.gson.JsonParser
+import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -90,6 +88,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainPlaylistSearchResults: PlaylistSearchResultsFragment;
     lateinit var _fragMainSuggestions: SuggestionsFragment;
     lateinit var _fragMainSubscriptions: CreatorsFragment;
+    lateinit var _fragMainComments: CommentsFragment;
     lateinit var _fragMainSubscriptionsFeed: SubscriptionsFeedFragment;
     lateinit var _fragMainChannel: ChannelFragment;
     lateinit var _fragMainSources: SourcesFragment;
@@ -122,6 +121,24 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         private set;
     private var _isVisible = true;
     private var _wasStopped = false;
+
+    private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+        scanResult?.let {
+            val content = it.contents
+            if (content == null) {
+                UIDialogs.toast(this, getString(R.string.failed_to_scan_qr_code))
+                return@let
+            }
+
+            try {
+                handleUrlAll(content)
+            } catch (e: Throwable) {
+                Logger.i(TAG, "Failed to handle URL.", e)
+                UIDialogs.toast(this, "Failed to handle URL: ${e.message}")
+            }
+        }
+    }
 
     constructor() : super() {
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
@@ -205,6 +222,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainCreatorSearchResults = CreatorSearchResultsFragment.newInstance();
         _fragMainPlaylistSearchResults = PlaylistSearchResultsFragment.newInstance();
         _fragMainSubscriptions = CreatorsFragment.newInstance();
+        _fragMainComments = CommentsFragment.newInstance();
         _fragMainChannel = ChannelFragment.newInstance();
         _fragMainSubscriptionsFeed = SubscriptionsFeedFragment.newInstance();
         _fragMainSources = SourcesFragment.newInstance();
@@ -282,6 +300,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         //Set top bars
         _fragMainHome.topBar = _fragTopBarGeneral;
         _fragMainSubscriptions.topBar = _fragTopBarGeneral;
+        _fragMainComments.topBar = _fragTopBarGeneral;
         _fragMainSuggestions.topBar = _fragTopBarSearch;
         _fragMainVideoSearchResults.topBar = _fragTopBarSearch;
         _fragMainCreatorSearchResults.topBar = _fragTopBarSearch;
@@ -406,6 +425,23 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             UIDialogs.toast(this, "No external file permissions\nExporting and auto backups will not work");
     }*/
 
+    fun showUrlQrCodeScanner() {
+        try {
+            val integrator = IntentIntegrator(this)
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+            integrator.setPrompt(getString(R.string.scan_a_qr_code))
+            integrator.setOrientationLocked(true);
+            integrator.setCameraId(0)
+            integrator.setBeepEnabled(false)
+            integrator.setBarcodeImageEnabled(true)
+            integrator.captureActivity = QRCaptureActivity::class.java
+            _urlQrCodeResultLauncher.launch(integrator.createScanIntent())
+        } catch (e: Throwable) {
+            Logger.i(TAG, "Failed to handle show QR scanner.", e)
+            UIDialogs.toast(this, "Failed to show QR scanner: ${e.message}")
+        }
+    }
+
     override fun onResume() {
         super.onResume();
         Logger.v(TAG, "onResume")
@@ -493,80 +529,95 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         try {
             if (targetData != null) {
-                when(intent.scheme) {
-                    "grayjay" -> {
-                        if(targetData.startsWith("grayjay://license/")) {
-                            if(StatePayment.instance.setPaymentLicenseUrl(targetData))
-                            {
-                                UIDialogs.showDialogOk(this, R.drawable.ic_check, getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required));
-
-                                if(fragCurrent is BuyFragment)
-                                    closeSegment(fragCurrent);
-                            }
-                            else
-                                UIDialogs.toast(getString(R.string.invalid_license_format));
-
-                        }
-                        else if(targetData.startsWith("grayjay://plugin/")) {
-                            val intent = Intent(this, AddSourceActivity::class.java).apply {
-                                data = Uri.parse(targetData.substring("grayjay://plugin/".length));
-                            };
-                            startActivity(intent);
-                        }
-                        else if(targetData.startsWith("grayjay://video/")) {
-                            val videoUrl = targetData.substring("grayjay://video/".length);
-                            navigate(_fragVideoDetail, videoUrl);
-                        }
-                        else if(targetData.startsWith("grayjay://channel/")) {
-                            val channelUrl = targetData.substring("grayjay://channel/".length);
-                            navigate(_fragMainChannel, channelUrl);
-                        }
-                    }
-                    "content" -> {
-                        if(!handleContent(targetData, intent.type)) {
-                            UIDialogs.showSingleButtonDialog(
-                                this,
-                                R.drawable.ic_play,
-                                getString(R.string.unknown_content_format) + " [${targetData}]",
-                                "Ok",
-                                { });
-                        }
-                    }
-                    "file" -> {
-                        if(!handleFile(targetData)) {
-                            UIDialogs.showSingleButtonDialog(
-                                this,
-                                R.drawable.ic_play,
-                                getString(R.string.unknown_file_format) + " [${targetData}]",
-                                "Ok",
-                                { });
-                        }
-                    }
-                    "polycentric" -> {
-                        if(!handlePolycentric(targetData)) {
-                            UIDialogs.showSingleButtonDialog(
-                                this,
-                                R.drawable.ic_play,
-                                getString(R.string.unknown_polycentric_format) + " [${targetData}]",
-                                "Ok",
-                                { });
-                        }
-                    }
-                    else -> {
-                        if (!handleUrl(targetData)) {
-                            UIDialogs.showSingleButtonDialog(
-                                this,
-                                R.drawable.ic_play,
-                                getString(R.string.unknown_url_format) + " [${targetData}]",
-                                "Ok",
-                                { });
-                        }
-                    }
-                }
+                handleUrlAll(targetData)
             }
         }
         catch(ex: Throwable) {
             UIDialogs.showGeneralErrorDialog(this, getString(R.string.failed_to_handle_file), ex);
+        }
+    }
+
+    fun handleUrlAll(url: String) {
+        val uri = Uri.parse(url)
+        when (uri.scheme) {
+            "grayjay" -> {
+                if(url.startsWith("grayjay://license/")) {
+                    if(StatePayment.instance.setPaymentLicenseUrl(url))
+                    {
+                        UIDialogs.showDialogOk(this, R.drawable.ic_check, getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required));
+
+                        if(fragCurrent is BuyFragment)
+                            closeSegment(fragCurrent);
+                    }
+                    else
+                        UIDialogs.toast(getString(R.string.invalid_license_format));
+
+                }
+                else if(url.startsWith("grayjay://plugin/")) {
+                    val intent = Intent(this, AddSourceActivity::class.java).apply {
+                        data = Uri.parse(url.substring("grayjay://plugin/".length));
+                    };
+                    startActivity(intent);
+                }
+                else if(url.startsWith("grayjay://video/")) {
+                    val videoUrl = url.substring("grayjay://video/".length);
+                    navigate(_fragVideoDetail, videoUrl);
+                }
+                else if(url.startsWith("grayjay://channel/")) {
+                    val channelUrl = url.substring("grayjay://channel/".length);
+                    navigate(_fragMainChannel, channelUrl);
+                }
+            }
+            "content" -> {
+                if(!handleContent(url, intent.type)) {
+                    UIDialogs.showSingleButtonDialog(
+                        this,
+                        R.drawable.ic_play,
+                        getString(R.string.unknown_content_format) + " [${url}]",
+                        "Ok",
+                        { });
+                }
+            }
+            "file" -> {
+                if(!handleFile(url)) {
+                    UIDialogs.showSingleButtonDialog(
+                        this,
+                        R.drawable.ic_play,
+                        getString(R.string.unknown_file_format) + " [${url}]",
+                        "Ok",
+                        { });
+                }
+            }
+            "polycentric" -> {
+                if(!handlePolycentric(url)) {
+                    UIDialogs.showSingleButtonDialog(
+                        this,
+                        R.drawable.ic_play,
+                        getString(R.string.unknown_polycentric_format) + " [${url}]",
+                        "Ok",
+                        { });
+                }
+            }
+            "fcast" -> {
+                if(!handleFCast(url)) {
+                    UIDialogs.showSingleButtonDialog(
+                        this,
+                        R.drawable.ic_cast,
+                        "Unknown FCast format [${url}]",
+                        "Ok",
+                        { });
+                }
+            }
+            else -> {
+                if (!handleUrl(url)) {
+                    UIDialogs.showSingleButtonDialog(
+                        this,
+                        R.drawable.ic_play,
+                        getString(R.string.unknown_url_format) + " [${url}]",
+                        "Ok",
+                        { });
+                }
+            }
         }
     }
 
@@ -716,6 +767,20 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         startActivity(Intent(this, PolycentricImportProfileActivity::class.java).apply { putExtra("url", url) })
         return true;
     }
+
+    fun handleFCast(url: String): Boolean {
+        Logger.i(TAG, "handleFCast");
+
+        try {
+            StateCasting.instance.handleUrl(this, url)
+            return true;
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to parse FCast URL '${url}'.", e)
+        }
+
+        return false
+    }
+
     private fun readSharedContent(contentPath: String): ByteArray {
         return contentResolver.openInputStream(Uri.parse(contentPath))?.use {
             return it.readBytes();
@@ -916,6 +981,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             GeneralTopBarFragment::class -> _fragTopBarGeneral as T;
             SearchTopBarFragment::class -> _fragTopBarSearch as T;
             CreatorsFragment::class -> _fragMainSubscriptions as T;
+            CommentsFragment::class -> _fragMainComments as T;
             SubscriptionsFeedFragment::class -> _fragMainSubscriptionsFeed as T;
             PlaylistSearchResultsFragment::class -> _fragMainPlaylistSearchResults as T;
             ChannelFragment::class -> _fragMainChannel as T;

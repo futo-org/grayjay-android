@@ -41,7 +41,7 @@ class MonetizationView : LinearLayout {
 
     private val _textMerchandise: TextView;
     private val _recyclerMerchandise: RecyclerView;
-    private val _loaderMerchandise: Loader;
+    private val _loaderViewMerchandise: LoaderView;
     private val _layoutMerchandise: FrameLayout;
     private var _merchandiseAdapterView: AnyAdapterView<StoreItem, StoreItemViewHolder>? = null;
 
@@ -81,7 +81,7 @@ class MonetizationView : LinearLayout {
 
         _textMerchandise = findViewById(R.id.text_merchandise);
         _recyclerMerchandise = findViewById(R.id.recycler_merchandise);
-        _loaderMerchandise = findViewById(R.id.loader_merchandise);
+        _loaderViewMerchandise = findViewById(R.id.loader_merchandise);
         _layoutMerchandise = findViewById(R.id.layout_merchandise);
 
         _root = findViewById(R.id.root);
@@ -108,7 +108,7 @@ class MonetizationView : LinearLayout {
     }
 
     private fun setMerchandise(items: List<StoreItem>?) {
-        _loaderMerchandise.stop();
+        _loaderViewMerchandise.stop();
 
         if (items == null) {
             _textMerchandise.visibility = View.GONE;
@@ -147,7 +147,7 @@ class MonetizationView : LinearLayout {
                     val uri = Uri.parse(storeData);
                     if (uri.isAbsolute) {
                         _taskLoadMerchandise.run(storeData);
-                        _loaderMerchandise.start();
+                        _loaderViewMerchandise.start();
                     } else {
                         Logger.i(TAG, "Merchandise not loaded, not URL nor JSON")
                     }

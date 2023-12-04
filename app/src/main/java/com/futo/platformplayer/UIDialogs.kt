@@ -1,8 +1,11 @@
 package com.futo.platformplayer
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -15,7 +18,6 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.*
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -91,6 +93,50 @@ class UIDialogs {
                 }.toTypedArray());
         }
 
+        fun showUrlHandlingPrompt(context: Context, onYes: (() -> Unit)? = null) {
+            val builder = AlertDialog.Builder(context)
+            val view = LayoutInflater.from(context).inflate(R.layout.dialog_url_handling, null)
+            builder.setView(view)
+
+            val dialog = builder.create()
+            registerDialogOpened(dialog)
+
+            view.findViewById<TextView>(R.id.button_no).apply {
+                this.setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
+
+            view.findViewById<LinearLayout>(R.id.button_yes).apply {
+                this.setOnClickListener {
+                    if (BuildConfig.IS_PLAYSTORE_BUILD) {
+                        dialog.dismiss()
+                        showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.play_store_version_does_not_support_default_url_handling)) {
+                            onYes?.invoke()
+                        }
+                    } else {
+                        try {
+                            val intent =
+                                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            val uri = Uri.fromParts("package", context.packageName, null)
+                            intent.data = uri
+                            context.startActivity(intent)
+                        } catch (e: Throwable) {
+                            toast(context, context.getString(R.string.failed_to_show_settings))
+                        }
+
+                        onYes?.invoke()
+                        dialog.dismiss()
+                    }
+                }
+            }
+
+            dialog.setOnDismissListener {
+                registerDialogClosed(dialog)
+            }
+
+            dialog.show()
+        }
 
         fun showAutomaticBackupDialog(context: Context, skipRestoreCheck: Boolean = false, onClosed: (()->Unit)? = null) {
             val dialogAction: ()->Unit = {
@@ -107,7 +153,8 @@ class UIDialogs {
                     }, UIDialogs.ActionStyle.DANGEROUS),
                     UIDialogs.Action(context.getString(R.string.restore), {
                         UIDialogs.showAutomaticRestoreDialog(context, StateApp.instance.scope);
-                    }, UIDialogs.ActionStyle.PRIMARY));
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
             else {
                 dialogAction();
             }
@@ -291,9 +338,20 @@ class UIDialogs {
             } else {
                 val dialog = ConnectCastingDialog(context);
                 registerDialogOpened(dialog);
+                val c = context
+                if (c is Activity) {
+                    dialog.setOwnerActivity(c);
+                }
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             }
+        }
+
+        fun showCastingTutorialDialog(context: Context) {
+            val dialog = CastingHelpDialog(context);
+            registerDialogOpened(dialog);
+            dialog.setOnDismissListener { registerDialogClosed(dialog) };
+            dialog.show();
         }
 
         fun showCastingAddDialog(context: Context) {

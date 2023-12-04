@@ -84,6 +84,9 @@ class SubscriptionViewHolder : ViewHolder {
         val cachedProfile = PolycentricCache.instance.getCachedProfile(sub.channel.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(sub, cachedProfile, false);
+            if (cachedProfile.expired) {
+                _taskLoadProfile.run(sub.channel.id);
+            }
         } else {
             _creatorThumbnail.setThumbnail(sub.channel.thumbnail, false);
             _taskLoadProfile.run(sub.channel.id);

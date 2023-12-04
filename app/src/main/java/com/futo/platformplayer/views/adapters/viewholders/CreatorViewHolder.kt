@@ -68,6 +68,9 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
         val cachedProfile = PolycentricCache.instance.getCachedProfile(authorLink.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
+            if (cachedProfile.expired) {
+                _taskLoadProfile.run(authorLink.id);
+            }
         } else {
             _creatorThumbnail.setThumbnail(authorLink.thumbnail, false);
             _taskLoadProfile.run(authorLink.id);

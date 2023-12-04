@@ -11,17 +11,12 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
-import com.futo.platformplayer.api.media.models.contents.PlatformContentPlaceholder
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.api.media.structures.PlaceholderPager
-import com.futo.platformplayer.api.media.structures.RefreshChronoContentPager
-import com.futo.platformplayer.api.media.structures.RefreshDedupContentPager
-import com.futo.platformplayer.api.media.structures.RefreshDistributionContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -218,6 +213,67 @@ class StatePolycentric {
         }
     }
 
+    fun getSystemComments(context: Context, system: PublicKey): List<IPlatformComment> {
+        val dp_25 = 25.dp(context.resources)
+        val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
+        val author = system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable())
+        val posts = arrayListOf<PolycentricPlatformComment>()
+        Store.instance.enumerateSignedEvents(system, ContentType.POST) { se ->
+            val ev = se.event
+            val post = Protocol.Post.parseFrom(ev.content)
+
+            posts.add(PolycentricPlatformComment(
+                contextUrl = author,
+                author = PlatformAuthorLink(
+                    id = PlatformID("polycentric", author, null, ClaimType.POLYCENTRIC.value.toInt()),
+                    name = systemState.username,
+                    url = author,
+                    thumbnail = systemState.avatar?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                    subscribers = null
+                ),
+                msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
+                rating = RatingLikeDislikes(0, 0),
+                date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
+                replyCount = 0,
+                eventPointer = se.toPointer()
+            ))
+        }
+
+        return posts
+    }
+
+    data class LikesDislikesReplies(
+        var likes: Long,
+        var dislikes: Long,
+        var replyCount: Long
+    )
+
+    suspend fun getLikesDislikesReplies(reference: Protocol.Reference): LikesDislikesReplies {
+        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
+            null,
+            listOf(
+                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                    .setFromType(ContentType.OPINION.value)
+                    .setValue(ByteString.copyFrom(Opinion.like.data))
+                    .build(),
+                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                    .setFromType(ContentType.OPINION.value)
+                    .setValue(ByteString.copyFrom(Opinion.dislike.data))
+                    .build()
+            ),
+            listOf(
+                Protocol.QueryReferencesRequestCountReferences.newBuilder()
+                    .setFromType(ContentType.POST.value)
+                    .build()
+            )
+        );
+
+        val likes = response.countsList[0];
+        val dislikes = response.countsList[1];
+        val replyCount = response.countsList[2];
+        return LikesDislikesReplies(likes, dislikes, replyCount)
+    }
+
     suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference): IPager<IPlatformComment> {
         val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
             Protocol.QueryReferencesRequestEvents.newBuilder()
@@ -284,7 +340,7 @@ class StatePolycentric {
         };
     }
 
-    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<IPlatformComment> {
+    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<PolycentricPlatformComment> {
         return response.itemsList.mapNotNull {
             val sev = SignedEvent.fromProto(it.event);
             val ev = sev.event;
@@ -294,7 +350,6 @@ class StatePolycentric {
 
             try {
                 val post = Protocol.Post.parseFrom(ev.content);
-                val id = ev.system.toProto().key.toByteArray().toBase64();
                 val likes = it.countsList[0];
                 val dislikes = it.countsList[1];
                 val replies = it.countsList[2];
@@ -338,7 +393,7 @@ class StatePolycentric {
                     rating = RatingLikeDislikes(likes, dislikes),
                     date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
                     replyCount = replies.toInt(),
-                    reference = sev.toPointer().toReference()
+                    eventPointer = sev.toPointer()
                 );
             } catch (e: Throwable) {
                 return@mapNotNull null;

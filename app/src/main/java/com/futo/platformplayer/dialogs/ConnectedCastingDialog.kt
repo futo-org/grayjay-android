@@ -16,9 +16,7 @@ import com.futo.platformplayer.casting.*
 import com.futo.platformplayer.states.StateApp
 import com.google.android.material.slider.Slider
 import com.google.android.material.slider.Slider.OnChangeListener
-import com.google.android.material.slider.Slider.OnSliderTouchListener
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
@@ -105,7 +103,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         } else if (d is AirPlayCastingDevice) {
             _imageDevice.setImageResource(R.drawable.ic_airplay);
             _textType.text = "AirPlay";
-        } else if (d is FastCastCastingDevice) {
+        } else if (d is FCastCastingDevice) {
             _imageDevice.setImageResource(R.drawable.ic_fc);
             _textType.text = "FastCast";
         }

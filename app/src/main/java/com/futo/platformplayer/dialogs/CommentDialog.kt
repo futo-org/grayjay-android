@@ -118,7 +118,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
                 msg = comment,
                 rating = RatingLikeDislikes(0, 0),
                 date = OffsetDateTime.now(),
-                reference = eventPointer.toReference()
+                eventPointer = eventPointer
             ));
 
             dismiss();

@@ -17,8 +17,8 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     var onSettings = Event1<Subscription>();
     var sortBy: Int = 3
         set(value) {
-            field = value;
-            updateDataset();
+            field = value
+            updateDataset()
         }
 
     constructor(inflater: LayoutInflater, confirmationMessage: String) : super() {

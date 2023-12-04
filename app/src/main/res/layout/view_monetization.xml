@@ -120,7 +120,7 @@
             android:orientation="horizontal"
             android:layout_gravity="center" />
 
-        <com.futo.platformplayer.views.Loader
+        <com.futo.platformplayer.views.LoaderView
             android:id="@+id/loader_merchandise"
             android:layout_width="64dp"
             android:layout_height="64dp"

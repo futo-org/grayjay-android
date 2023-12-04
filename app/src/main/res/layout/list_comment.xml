@@ -70,7 +70,7 @@
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_body"
@@ -136,6 +136,30 @@
             app:pillIcon="@drawable/ic_forum"
             app:pillText="55 Replies"
             android:layout_marginStart="15dp" />
+
+        <Space android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <FrameLayout
+            android:id="@+id/button_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/background_pill_pred"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+            <TextView
+                android:id="@+id/pill_text"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="@color/white"
+                android:textSize="13dp"
+                android:gravity="center_vertical"
+                android:fontFamily="@font/inter_light"
+                android:text="@string/delete" />
+        </FrameLayout>
     </LinearLayout>
 
 
