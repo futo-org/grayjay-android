@@ -413,6 +413,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.default_comment_section, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.comment_sections)
         var defaultCommentSection: Int = 0;
+
+        @FormField(R.string.bad_reputation_comments_fading, FieldForm.TOGGLE, R.string.bad_reputation_comments_fading_description, 0)
+        var badReputationCommentsFading: Boolean = true;
     }
 
     @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 7)

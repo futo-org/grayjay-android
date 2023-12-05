@@ -190,8 +190,10 @@ class UIDialogs {
             view.findViewById<TextView>(R.id.dialog_text_code).apply {
                 if(code == null)
                     this.visibility = View.GONE;
-                else
+                else {
                     this.text = code;
+                    this.visibility = View.VISIBLE;
+                }
             };
             view.findViewById<LinearLayout>(R.id.dialog_buttons).apply {
                 val buttons = actions.map<Action, TextView> { act ->

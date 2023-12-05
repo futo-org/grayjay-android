@@ -6,8 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Spinner
+import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
@@ -21,9 +23,13 @@ class CreatorsFragment : MainFragment() {
 
     private var _spinnerSortBy: Spinner? = null;
     private var _overlayContainer: FrameLayout? = null;
+    private var _containerSearch: FrameLayout? = null;
+    private var _editSearch: EditText? = null;
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_creators, container, false);
+        _containerSearch = view.findViewById(R.id.container_search);
+        _editSearch = view.findViewById(R.id.edit_search);
 
         val adapter = SubscriptionAdapter(inflater, getString(R.string.confirm_delete_subscription));
         adapter.onClick.subscribe { platformUser -> navigate<ChannelFragment>(platformUser) };
@@ -44,6 +50,10 @@ class CreatorsFragment : MainFragment() {
 
         _spinnerSortBy = spinnerSortBy;
 
+        _editSearch?.addTextChangedListener {
+            adapter.query = it.toString();
+        }
+
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_subscriptions);
         recyclerView.adapter = adapter;
         recyclerView.layoutManager = LinearLayoutManager(view.context);
@@ -54,6 +64,8 @@ class CreatorsFragment : MainFragment() {
         super.onDestroyMainView();
         _spinnerSortBy = null;
         _overlayContainer = null;
+        _editSearch = null;
+        _containerSearch = null;
     }
 
     companion object {
