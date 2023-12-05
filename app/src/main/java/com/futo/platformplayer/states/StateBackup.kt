@@ -8,17 +8,21 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.copyTo
 import com.futo.platformplayer.encryption.GPasswordEncryptionProvider
 import com.futo.platformplayer.encryption.GPasswordEncryptionProviderV0
+import com.futo.platformplayer.fragment.mainactivity.main.ImportSubscriptionsFragment
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.writeBytes
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,15 +56,6 @@ class StateBackup {
             val secondaryBackupFile = dir.findFile("GrayjayBackup.ezip.old") ?: if(create) dir.createFile("grayjay/ezip", "GrayjayBackup.ezip.old") else null;
             return Pair(mainBackupFile, secondaryBackupFile);
         }
-        /*
-        private fun getAutomaticBackupFiles(): Pair<File, File> {
-            val dir = StateApp.instance.getExternalRootDirectory();
-            if(dir == null)
-                throw IllegalStateException("Can't access external files");
-            return Pair(File(dir, "GrayjayBackup.ezip"), File(dir, "GrayjayBackup.ezip.old"))
-        }*/
-
-
         fun getAllMigrationStores(): List<ManagedStore<*>> = listOf(
             StateSubscriptions.instance.toMigrateCheck(),
             StatePlaylists.instance.toMigrateCheck()
@@ -192,7 +187,19 @@ class StateBackup {
             importZipBytes(context, scope, backupBytes);
         }
 
-        fun startExternalBackup() {
+        fun saveExternalBackup(activity: IWithResultLauncher) {
+            val data = export();
+            if(activity is Context)
+                StateApp.instance.requestFileCreateAccess(activity, null, "application/zip") {
+                    if(it == null) {
+                        UIDialogs.toast("Cancelled");
+                        return@requestFileCreateAccess;
+                    }
+                    it.writeBytes(activity, data.asZip());
+                    UIDialogs.toast("Export saved");
+                };
+        }
+        fun shareExternalBackup() {
             val data = export();
             val now = OffsetDateTime.now();
             val exportFile = File(
@@ -400,6 +407,46 @@ class StateBackup {
                     }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
                 ).withCondition { doImport } else null
             );
+        }
+
+        fun importTxt(context: MainActivity, text: String, allowFailure: Boolean = false): Boolean {
+            if(text.startsWith("@/Subscription") || text.startsWith("Subscriptions")) {
+                val lines = text.split("\n").map { it.trim() }.drop(1).filter { it.isNotEmpty() };
+                context.navigate(context.getFragment<ImportSubscriptionsFragment>(), lines);
+                return true;
+            }
+            else if(allowFailure) {
+                UIDialogs.showGeneralErrorDialog(context, "Unknown text header [${text}]");
+            }
+            return false;
+        }
+        fun importNewPipeSubs(context: MainActivity, json: String) {
+            val newPipeSubsParsed = JsonParser.parseString(json).asJsonObject;
+            if (!newPipeSubsParsed.has("subscriptions") || !newPipeSubsParsed["subscriptions"].isJsonArray)
+                UIDialogs.showGeneralErrorDialog(context, "Invalid json");
+            else {
+                importNewPipeSubs(context, newPipeSubsParsed);
+            }
+        }
+        fun importNewPipeSubs(context: MainActivity, obj: JsonObject) {
+            try {
+                val jsonSubs = obj["subscriptions"]
+                val jsonSubsArray = jsonSubs.asJsonArray;
+                val jsonSubsArrayItt = jsonSubsArray.iterator();
+                val subs = mutableListOf<String>()
+                while(jsonSubsArrayItt.hasNext()) {
+                    val jsonSubObj = jsonSubsArrayItt.next().asJsonObject;
+
+                    if(jsonSubObj.has("url"))
+                        subs.add(jsonSubObj["url"].asString);
+                }
+
+                context.navigate(context.getFragment<ImportSubscriptionsFragment>(), subs);
+            }
+            catch(ex: Exception) {
+                Logger.e("StateBackup", ex.message, ex);
+                UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_parse_newpipe_subscriptions), ex);
+            }
         }
     }
 

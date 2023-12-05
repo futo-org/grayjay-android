@@ -50,7 +50,7 @@
             android:layout_width="match_parent"
             android:textColor="#AAAAAA"
             android:fontFamily="monospace"
-            android:text="source.getVideoDetails(...)"
+            android:text=""
             android:textAlignment="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
@@ -58,6 +58,7 @@
             android:padding="5dp"
             android:background="#111111"
             android:textSize="8dp"
+            android:visibility="gone"
             android:layout_height="wrap_content"
             tools:ignore="HardcodedText" />
 

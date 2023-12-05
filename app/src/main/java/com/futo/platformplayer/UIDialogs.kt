@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.*
 import androidx.core.content.ContextCompat
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.*
@@ -189,8 +190,10 @@ class UIDialogs {
             view.findViewById<TextView>(R.id.dialog_text_code).apply {
                 if(code == null)
                     this.visibility = View.GONE;
-                else
+                else {
                     this.text = code;
+                    this.visibility = View.VISIBLE;
+                }
             };
             view.findViewById<LinearLayout>(R.id.dialog_buttons).apply {
                 val buttons = actions.map<Action, TextView> { act ->
@@ -322,6 +325,12 @@ class UIDialogs {
 
         fun showImportDialog(context: Context, store: ManagedStore<*>, name: String, reconstructions: List<String>, onConcluded: () -> Unit) {
             val dialog = ImportDialog(context, store, name, reconstructions, onConcluded);
+            registerDialogOpened(dialog);
+            dialog.setOnDismissListener { registerDialogClosed(dialog) };
+            dialog.show();
+        }
+        fun showImportOptionsDialog(context: MainActivity) {
+            val dialog = ImportOptionsDialog(context);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();

@@ -117,7 +117,8 @@ class CommentViewHolder : ViewHolder {
 
         val rating = comment.rating;
         if (rating is RatingLikeDislikes) {
-            _layoutComment.alpha = if (rating.dislikes > 2 && rating.dislikes.toFloat() / (rating.likes + rating.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
+            _layoutComment.alpha = if (Settings.instance.comments.badReputationCommentsFading &&
+                rating.dislikes > 2 && rating.dislikes.toFloat() / (rating.likes + rating.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
         } else {
             _layoutComment.alpha = 1.0f;
         }
