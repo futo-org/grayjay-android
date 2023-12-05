@@ -34,13 +34,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import userpackage.Protocol
-import java.lang.Exception
-import java.lang.Thread.State
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import kotlin.Exception
 
 class StatePolycentric {
     private data class LikeDislikeEntry(val unixMilliseconds: Long, val hasLiked: Boolean, val hasDisliked: Boolean);
@@ -49,7 +47,7 @@ class StatePolycentric {
     private var _likeDislikeMap = hashMapOf<String, LikeDislikeEntry>()
     private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
     private var _transientEnabled = true
-    val enabled = _transientEnabled && Settings.instance.other.polycentricEnabled
+    val enabled get() = _transientEnabled && Settings.instance.other.polycentricEnabled
 
     fun load(context: Context) {
         if (!enabled) {
@@ -62,12 +60,21 @@ class StatePolycentric {
 
             val activeProcessHandleString = _activeProcessHandle.value;
             if (activeProcessHandleString.isNotEmpty()) {
-                val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+                try {
+                    val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                    setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+                } catch (e: Throwable) {
+                    db.upgradeOldSecrets(db.writableDatabase);
+
+                    val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                    setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+
+                    Log.i(TAG, "Failed to initialize Polycentric.", e)
+                }
             }
         } catch (e: Throwable) {
             _transientEnabled = false
-            UIDialogs.toast(context, "Polycentric failed to initialize due to an error.")
+            UIDialogs.showGeneralErrorDialog(context, "Failed to initialize Polycentric.", e);
             Log.i(TAG, "Failed to initialize Polycentric.", e)
         }
     }
