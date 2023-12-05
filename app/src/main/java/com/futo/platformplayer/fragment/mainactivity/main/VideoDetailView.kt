@@ -72,6 +72,7 @@ import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.views.MonetizationView
 import com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
 import com.futo.platformplayer.views.casting.CastView
@@ -122,6 +123,7 @@ class VideoDetailView : ConstraintLayout {
         private set;
     var videoLocal: VideoLocal? = null;
     private var _playbackTracker: IPlaybackTracker? = null;
+    private var _historyIndex: DBHistory.Index? = null;
 
     val currentUrl get() = video?.url ?: _searchVideo?.url ?: _url;
 
@@ -769,6 +771,15 @@ class VideoDetailView : ConstraintLayout {
             }
         }
     }
+    suspend fun getHistoryIndex(video: IPlatformVideo): DBHistory.Index = withContext(Dispatchers.IO){
+        val current = _historyIndex;
+        if(current == null || current.url != video.url) {
+            val index = StateHistory.instance.getHistoryByVideo(video, true)!!;
+            _historyIndex = index;
+            return@withContext index;
+        }
+        return@withContext current;
+    }
 
 
     //Lifecycle
@@ -1117,7 +1128,7 @@ class VideoDetailView : ConstraintLayout {
 
         _player.setMetadata(video.name, video.author.name);
 
-        _toggleCommentType.setValue(Settings.instance.comments.defaultCommentSection == 1, false);
+        _toggleCommentType.setValue(!Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1, false);
         updateCommentType(true);
 
         //UI
@@ -1271,24 +1282,30 @@ class VideoDetailView : ConstraintLayout {
 
         updateQueueState();
 
-        _historicalPosition = StatePlaylists.instance.updateHistoryPosition(video, false, (toResume.toFloat() / 1000.0f).toLong());
-        Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
-        if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
-            _layoutResume.visibility = View.VISIBLE;
-            _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}";
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            val historyItem = getHistoryIndex(videoDetail);
 
-            _jobHideResume = fragment.lifecycleScope.launch(Dispatchers.Main) {
-                try {
-                    delay(8000);
+            withContext(Dispatchers.Main) {
+                _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
+                Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
+                if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
+                    _layoutResume.visibility = View.VISIBLE;
+                    _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}";
+
+                    _jobHideResume = fragment.lifecycleScope.launch(Dispatchers.Main) {
+                        try {
+                            delay(8000);
+                            _layoutResume.visibility = View.GONE;
+                            _textResume.text = "";
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to set resume changes.", e);
+                        }
+                    }
+                } else {
                     _layoutResume.visibility = View.GONE;
                     _textResume.text = "";
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to set resume changes.", e);
                 }
             }
-        } else {
-            _layoutResume.visibility = View.GONE;
-            _textResume.text = "";
         }
 
 
@@ -2084,7 +2101,10 @@ class VideoDetailView : ConstraintLayout {
         val v = video ?: return;
         val currentTime = System.currentTimeMillis();
         if (updateHistory && (_lastPositionSaveTime == -1L || currentTime - _lastPositionSaveTime > 5000)) {
-            StatePlaylists.instance.updateHistoryPosition(v, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                val history = getHistoryIndex(v);
+                StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+            }
             _lastPositionSaveTime = currentTime;
         }
 

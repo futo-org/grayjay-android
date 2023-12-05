@@ -8,7 +8,6 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
@@ -17,6 +16,7 @@ import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
@@ -157,7 +157,7 @@ class SimpleSubscriptionAlgorithm(
                     val time = measureTimeMillis {
                         pager = StatePlatform.instance.getChannelContent(platformClient, url, true, threadPool.poolSize, toIgnore);
 
-                        pager = ChannelContentCache.cachePagerResults(scope, pager!!) {
+                        pager = StateCache.cachePagerResults(scope, pager!!) {
                             onNewCacheHit.emit(sub, it);
                         };
 
@@ -176,7 +176,7 @@ class SimpleSubscriptionAlgorithm(
                         throw channelEx;
                     else {
                         Logger.i(StateSubscriptions.TAG, "Channel ${sub.channel.name} failed, substituting with cache");
-                        pager = ChannelContentCache.instance.getChannelCachePager(sub.channel.url);
+                        pager = StateCache.instance.getChannelCachePager(sub.channel.url);
                     }
                 }
             }

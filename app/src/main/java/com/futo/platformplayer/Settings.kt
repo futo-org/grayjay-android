@@ -8,7 +8,6 @@ import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.logging.Logger
@@ -49,10 +48,14 @@ class Settings : FragmentedStorageFileJson() {
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
-            if (StatePolycentric.instance.processHandle != null) {
-                it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+            if (StatePolycentric.instance.enabled) {
+                if (StatePolycentric.instance.processHandle != null) {
+                    it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+                } else {
+                    it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                }
             } else {
-                it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                UIDialogs.toast(it, "Polycentric is disabled")
             }
         }
     }
@@ -295,7 +298,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 14)
         fun clearChannelCache() {
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
-            ChannelContentCache.instance.clear();
+            StateCache.instance.clear();
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Finished clearing");
         }
     }
@@ -759,6 +762,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.bypass_rotation_prevention, FieldForm.TOGGLE, R.string.bypass_rotation_prevention_description, 1)
         @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
         var bypassRotationPrevention: Boolean = false;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 1)
+        var polycentricEnabled: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 19)

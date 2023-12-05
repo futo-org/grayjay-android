@@ -81,6 +81,7 @@ class CommentsFragment : MainFragment() {
         private val _llmReplies: LinearLayoutManager;
         private val _spinnerSortBy: Spinner;
         private val _layoutNotLoggedIn: LinearLayout;
+        private val _layoutPolycentricNotEnabled: LinearLayout;
         private val _buttonLogin: LinearLayout;
         private var _loading = false;
         private val _repliesOverlay: RepliesOverlay;
@@ -145,6 +146,9 @@ class CommentsFragment : MainFragment() {
 
             _layoutNotLoggedIn = findViewById(R.id.layout_not_logged_in)
             _layoutNotLoggedIn.visibility = View.GONE
+
+            _layoutPolycentricNotEnabled = findViewById(R.id.layout_polycentric_disabled)
+            _layoutPolycentricNotEnabled.visibility = if (!StatePolycentric.instance.enabled) View.VISIBLE else View.GONE
 
             _buttonLogin = findViewById(R.id.button_login)
             _buttonLogin.setOnClickListener {
@@ -302,6 +306,8 @@ class CommentsFragment : MainFragment() {
         }
 
         fun onShown() {
+            _layoutPolycentricNotEnabled.visibility = if (!StatePolycentric.instance.enabled) View.VISIBLE else View.GONE
+
             val processHandle = StatePolycentric.instance.processHandle
             if (processHandle != null) {
                 _layoutNotLoggedIn.visibility = View.GONE

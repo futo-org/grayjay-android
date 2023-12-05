@@ -12,6 +12,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.others.TagsView
@@ -58,7 +59,7 @@ class HistoryFragment : MainFragment() {
 
         tagsView.onClick.subscribe { timeMinutesToErase ->
             UIDialogs.showConfirmationDialog(requireContext(), getString(R.string.are_you_sure_delete_historical), {
-                StatePlaylists.instance.removeHistoryRange(timeMinutesToErase.second as Long);
+                StateHistory.instance.removeHistoryRange(timeMinutesToErase.second as Long);
                 UIDialogs.toast(view.context, timeMinutesToErase.first + " " + getString(R.string.removed));
                 adapter.updateFilteredVideos();
                 adapter.notifyDataSetChanged();

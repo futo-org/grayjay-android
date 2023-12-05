@@ -90,7 +90,11 @@ class GestureControlView : LinearLayout {
             override fun onDown(p0: MotionEvent): Boolean { return false; }
             override fun onShowPress(p0: MotionEvent) = Unit;
             override fun onSingleTapUp(p0: MotionEvent): Boolean { return false; }
-            override fun onScroll(p0: MotionEvent, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+            override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean { return false; }
+            override fun onScroll(p0: MotionEvent?, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                if(p0 == null)
+                    return false;
+
                 if (_isFullScreen && _adjustingBrightness) {
                     val adjustAmount = (distanceY * 2) / height;
                     _brightnessFactor = (_brightnessFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
@@ -129,8 +133,7 @@ class GestureControlView : LinearLayout {
 
                 return true;
             }
-            override fun onLongPress(p0: MotionEvent) = Unit;
-            override fun onFling(p0: MotionEvent, p1: MotionEvent, p2: Float, p3: Float): Boolean { return false; }
+            override fun onLongPress(p0: MotionEvent) = Unit
         });
 
         _gestureController.setOnDoubleTapListener(object : GestureDetector.OnDoubleTapListener {

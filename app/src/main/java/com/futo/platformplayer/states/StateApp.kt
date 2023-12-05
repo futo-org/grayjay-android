@@ -1,24 +1,19 @@
 package com.futo.platformplayer.states
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.Uri
-import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
-import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.net.toUri
+import android.util.Xml
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -28,12 +23,11 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.media.Serializer
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.background.BackgroundWorker
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
@@ -43,20 +37,23 @@ import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
 import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.receivers.AudioNoisyReceiver
+import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.db.ManagedDBStore
+import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.ManagedStore
-import com.stripe.android.core.utils.encodeToJson
 import kotlinx.coroutines.*
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 /***
  * This class contains global context for unconventional cases where obtaining context is hard.
@@ -65,20 +62,6 @@ import kotlin.time.measureTime
  */
 class StateApp {
     val isMainActive: Boolean get() = contextOrNull != null && contextOrNull is MainActivity; //if context is MainActivity, it means its active
-
-    /*
-    private val externalRootDirectory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Grayjay");
-
-    fun getExternalRootDirectory(): File? {
-        if(!externalRootDirectory.exists()) {
-            val result = externalRootDirectory.mkdirs();
-            if(!result)
-                return null;
-            return externalRootDirectory;
-        }
-        else
-            return externalRootDirectory;
-    }*/
 
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();
@@ -427,7 +410,7 @@ class StateApp {
             try {
                 Logger.i(TAG, "MainApp Started: Initializing [ChannelContentCache]");
                 val time = measureTimeMillis {
-                    ChannelContentCache.instance;
+                    StateCache.instance;
                 }
                 Logger.i(TAG, "ChannelContentCache initialized in ${time}ms");
             } catch (e: Throwable) {
@@ -565,7 +548,34 @@ class StateApp {
         StateAnnouncement.instance.registerDefaultHandlerAnnouncement();
         StateAnnouncement.instance.registerDidYouKnow();
         Logger.i(TAG, "MainApp Started: Finished");
+
+        StatePlaylists.instance.toMigrateCheck();
+
+        if(StateHistory.instance.shouldMigrateLegacyHistory())
+            StateHistory.instance.migrateLegacyHistory();
+
+
+        if(false) {
+            /*
+            Logger.i(TAG, "TEST:--------(200)---------");
+            testHistoryDB(200);
+            Logger.i(TAG, "TEST:--------(1000)---------");
+            testHistoryDB(1000);
+            Logger.i(TAG, "TEST:--------(2000)---------");
+            testHistoryDB(2000);
+            Logger.i(TAG, "TEST:--------(4000)---------");
+            testHistoryDB(4000);
+            Logger.i(TAG, "TEST:--------(6000)---------");
+            testHistoryDB(6000);
+            Logger.i(TAG, "TEST:--------(100000)---------");
+            scope.launch(Dispatchers.Default) {
+                StateHistory.instance.testHistoryDB(100000);
+            }
+            */
+        }
+
     }
+
     fun mainAppStartedWithExternalFiles(context: Context) {
         if(!Settings.instance.didFirstStart) {
             if(StateBackup.hasAutomaticBackup()) {

@@ -117,7 +117,7 @@ class StateNotifications {
             .setContentText("${content.name}")
             .setSubText(content.datetime?.toHumanNowDiffStringMinDay())
             .setSilent(true)
-            .setContentIntent(PendingIntent.getActivity(context, 0, MainActivity.getVideoIntent(context, content.url),
+            .setContentIntent(PendingIntent.getActivity(context, content.hashCode(), MainActivity.getVideoIntent(context, content.url),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             .setChannelId(notificationChannel.id);
         if(thumbnail != null) {

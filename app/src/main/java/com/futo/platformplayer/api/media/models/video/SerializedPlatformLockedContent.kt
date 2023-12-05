@@ -30,7 +30,7 @@ open class SerializedPlatformLockedContent(
     override val unlockUrl: String? = null,
     override val contentThumbnails: Thumbnails
 ) : IPlatformLockedContent, SerializedPlatformContent {
-    final override val contentType: ContentType get() = ContentType.LOCKED;
+    override val contentType: ContentType = ContentType.LOCKED;
 
     override fun toJson() : String {
         return Json.encodeToString(this);

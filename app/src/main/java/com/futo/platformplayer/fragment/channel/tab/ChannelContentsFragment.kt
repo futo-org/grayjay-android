@@ -24,7 +24,6 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.IRefreshPager
 import com.futo.platformplayer.api.media.structures.IReplacerPager
 import com.futo.platformplayer.api.media.structures.MultiPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
@@ -32,6 +31,7 @@ import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
@@ -78,7 +78,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
     private val _taskLoadVideos = TaskHandler<IPlatformChannel, IPager<IPlatformContent>>({lifecycleScope}, {
             val livePager = getContentPager(it);
             return@TaskHandler if(_channel?.let { StateSubscriptions.instance.isSubscribed(it) } == true)
-                ChannelContentCache.cachePagerResults(lifecycleScope, livePager);
+                StateCache.cachePagerResults(lifecycleScope, livePager);
             else livePager;
         }).success { livePager ->
             setLoading(false);
@@ -106,7 +106,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         }
 
         val posBefore = _results.size;
-        val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo };
+        val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo }
         _results.addAll(toAdd);
         _adapterResults?.let { adapterVideo -> adapterVideo.notifyItemRangeInserted(adapterVideo.childToParentPosition(posBefore), toAdd.size); };
     }.exception<Throwable> {

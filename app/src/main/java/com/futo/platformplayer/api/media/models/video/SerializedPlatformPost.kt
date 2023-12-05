@@ -8,6 +8,7 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.polycentric.core.combineHashCodes
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -26,7 +27,7 @@ open class SerializedPlatformPost(
     override val thumbnails: List<Thumbnails?>,
     override val images: List<String>
 ) : IPlatformPost, SerializedPlatformContent {
-    final override val contentType: ContentType get() = ContentType.POST;
+    override val contentType: ContentType = ContentType.POST;
 
     override fun toJson() : String {
         return Json.encodeToString(this);

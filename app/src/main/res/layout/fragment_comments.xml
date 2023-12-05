@@ -77,7 +77,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Login to view your comments"
+            android:text="@string/login_to_view_your_comments"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -97,7 +97,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Login"
+                android:text="@string/login"
                 android:textSize="14dp"
                 android:textColor="@color/white"
                 android:fontFamily="@font/inter_regular"
@@ -108,4 +108,24 @@
         </LinearLayout>
     </LinearLayout>
 
+    <LinearLayout android:id="@+id/layout_polycentric_disabled"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="@color/black">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/polycentric_is_disabled"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp"
+            android:layout_marginBottom="20dp"/>
+    </LinearLayout>
 </FrameLayout>

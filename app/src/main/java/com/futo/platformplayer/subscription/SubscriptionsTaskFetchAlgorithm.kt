@@ -11,7 +11,6 @@ import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
@@ -21,6 +20,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragm
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
@@ -108,7 +108,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 val sub = if(!entry.value.isEmpty()) entry.value[0].task.sub else null;
                 val liveTasks = entry.value.filter { !it.task.fromCache };
                 val cachedTasks = entry.value.filter { it.task.fromCache };
-                val livePager = if(!liveTasks.isEmpty()) ChannelContentCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }, {
+                val livePager = if(!liveTasks.isEmpty()) StateCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }, {
                     onNewCacheHit.emit(sub!!, it);
                 }) else null;
                 val cachedPager = if(!cachedTasks.isEmpty()) MultiChronoContentPager(cachedTasks.map { it.pager!! }, true).apply { this.initialize() } else null;
@@ -142,7 +142,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                             return@submit SubscriptionTaskResult(task, null, null);
                         else {
                             cachedChannels.add(task.url);
-                            return@submit SubscriptionTaskResult(task, ChannelContentCache.instance.getChannelCachePager(task.url), null);
+                            return@submit SubscriptionTaskResult(task, StateCache.instance.getChannelCachePager(task.url), null);
                         }
                     }
                 }
@@ -197,7 +197,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                         throw channelEx;
                     else {
                         Logger.i(StateSubscriptions.TAG, "Channel ${task.sub.channel.name} failed, substituting with cache");
-                        pager = ChannelContentCache.instance.getChannelCachePager(task.sub.channel.url);
+                        pager = StateCache.instance.getChannelCachePager(task.sub.channel.url);
                         taskEx = ex;
                         return@submit SubscriptionTaskResult(task, pager, taskEx);
                     }
