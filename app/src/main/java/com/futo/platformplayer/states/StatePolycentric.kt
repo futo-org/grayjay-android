@@ -62,20 +62,19 @@ class StatePolycentric {
 
             val activeProcessHandleString = _activeProcessHandle.value;
             if (activeProcessHandleString.isNotEmpty()) {
-                val system =
-                    PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
                 setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
             }
         } catch (e: Throwable) {
             _transientEnabled = false
-            UIDialogs.toast(context, "Polycentric failed to initialize.")
+            UIDialogs.toast(context, "Polycentric failed to initialize due to an error.")
             Log.i(TAG, "Failed to initialize Polycentric.", e)
         }
     }
 
     fun ensureEnabled() {
         if (!enabled) {
-            throw Exception("Cannot set process handle when Polycentric is disdabled")
+            throw Exception("Polycentric is disabled")
         }
     }
 
