@@ -1,6 +1,7 @@
 package com.futo.platformplayer
 
 import androidx.test.platform.app.InstrumentationRegistry
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.stores.db.ManagedDBDescriptor
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.testing.DBTOs
@@ -286,6 +287,24 @@ class ManagedDBStoreTests {
         }) {
             val results = it.queryBetween(DBTOs.TestIndex::someNum, 30, 65);
             Assert.assertEquals(34, results.size);
+        }
+    }
+    @Test
+    fun queryIn() {
+        val ids = mutableListOf<String>()
+        testQuery(1100, { i, testObject ->
+            testObject.someNum = i;
+            ids.add(testObject.someStr);
+        }) {
+            val pager = it.queryInPager(DBTOs.TestIndex::someString, ids.take(1000), 65);
+            val list = mutableListOf<Any>();
+            list.addAll(pager.getResults());
+            while(pager.hasMorePages())
+            {
+                pager.nextPage();
+                list.addAll(pager.getResults());
+            }
+            Assert.assertEquals(1000, list.size);
         }
     }
 

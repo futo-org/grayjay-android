@@ -39,11 +39,22 @@ class StateCache {
     }
 
     fun getChannelCachePager(channelUrl: String): IPager<IPlatformContent> {
-        return _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) {
-            if(it.objOrNull?.contentType == ContentType.POST)
-                Logger.i(TAG, "FOUND CACHED POST\n (${it.objOrNull?.name})");
-            it.obj;
+        val result: IPager<IPlatformContent>;
+        val time = measureTimeMillis {
+            result = _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) {
+                it.obj;
+            }
         }
+        return result;
+    }
+    fun getAllChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
+        val result: IPager<IPlatformContent>;
+        val time = measureTimeMillis {
+            result = _subscriptionCache.queryInPager(DBSubscriptionCache.Index::channelUrl, channelUrls, 20) {
+                it.obj;
+            }
+        }
+        return result;
     }
     fun getChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
         val pagers = MultiChronoContentPager(channelUrls.map { _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, it, 20) {
@@ -64,12 +75,20 @@ class StateCache {
         }.flatten().distinct();
 
         Logger.i(TAG, "Subscriptions CachePager get pagers");
-        val pagers = allUrls.parallelStream()
-            .map { getChannelCachePager(it) }
-            .asSequence()
-            .toList();
+        val pagers: List<IPager<IPlatformContent>>;
 
-        Logger.i(TAG, "Subscriptions CachePager compiling");
+        val timeCacheRetrieving = measureTimeMillis {
+            pagers = listOf(getAllChannelCachePager(allUrls));
+
+                /*allUrls.parallelStream()
+                .map {
+                    getChannelCachePager(it)
+                }
+                .asSequence()
+                .toList();*/
+        }
+
+        Logger.i(TAG, "Subscriptions CachePager compiling (retrieved in ${timeCacheRetrieving}ms)");
         val pager = MultiChronoContentPager(pagers, false, 20);
         pager.initialize();
         Logger.i(TAG, "Subscriptions CachePager compiled");

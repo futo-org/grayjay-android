@@ -40,6 +40,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 class SubscriptionsFeedFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -309,9 +311,12 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         private fun loadCache() {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
+                val cachePager: IPager<IPlatformContent>;
                 Logger.i(TAG, "Subscriptions retrieving cache");
-                val cachePager = StateCache.instance.getSubscriptionCachePager();
-                Logger.i(TAG, "Subscriptions retrieved cache");
+                val time = measureTimeMillis {
+                    cachePager = StateCache.instance.getSubscriptionCachePager();
+                }
+                Logger.i(TAG, "Subscriptions retrieved cache (${time}ms)");
 
                 withContext(Dispatchers.Main) {
                     val results = cachePager.getResults();
