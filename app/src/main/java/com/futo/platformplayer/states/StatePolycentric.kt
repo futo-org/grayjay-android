@@ -2,6 +2,7 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -35,6 +36,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
+import java.lang.Exception
+import java.lang.Thread.State
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -45,23 +48,47 @@ class StatePolycentric {
     var processHandle: ProcessHandle? = null; private set;
     private var _likeDislikeMap = hashMapOf<String, LikeDislikeEntry>()
     private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
+    private var _transientEnabled = true
+    val enabled = _transientEnabled && Settings.instance.other.polycentricEnabled
 
     fun load(context: Context) {
-        val db = SqlLiteDbHelper(context);
-        Store.initializeSqlLiteStore(db);
+        if (!enabled) {
+            return
+        }
 
-        val activeProcessHandleString = _activeProcessHandle.value;
-        if (activeProcessHandleString.isNotEmpty()) {
-            val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-            setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+        try {
+            val db = SqlLiteDbHelper(context);
+            Store.initializeSqlLiteStore(db);
+
+            val activeProcessHandleString = _activeProcessHandle.value;
+            if (activeProcessHandleString.isNotEmpty()) {
+                val system =
+                    PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+            }
+        } catch (e: Throwable) {
+            _transientEnabled = false
+            UIDialogs.toast(context, "Polycentric failed to initialize.")
+            Log.i(TAG, "Failed to initialize Polycentric.", e)
+        }
+    }
+
+    fun ensureEnabled() {
+        if (!enabled) {
+            throw Exception("Cannot set process handle when Polycentric is disdabled")
         }
     }
 
     fun getProcessHandles(): List<ProcessHandle> {
+        if (!enabled) {
+            return listOf()
+        }
+
         return Store.instance.getProcessSecrets().map { it.toProcessHandle(); };
     }
 
     fun setProcessHandle(processHandle: ProcessHandle?) {
+        ensureEnabled()
         this.processHandle = processHandle;
 
         if (processHandle != null) {
@@ -91,20 +118,34 @@ class StatePolycentric {
     }
 
     fun updateLikeMap(ref: Protocol.Reference, hasLiked: Boolean, hasDisliked: Boolean) {
+        ensureEnabled()
         _likeDislikeMap[ref.toByteArray().toBase64()] = LikeDislikeEntry(System.currentTimeMillis(), hasLiked, hasDisliked);
     }
 
     fun hasDisliked(ref: Protocol.Reference): Boolean {
+        if (!enabled) {
+            return false
+        }
+
         val entry = _likeDislikeMap[ref.toByteArray().toBase64()] ?: return false;
         return entry.hasDisliked;
     }
 
     fun hasLiked(ref: Protocol.Reference): Boolean {
+        if (!enabled) {
+            return false
+        }
+
         val entry = _likeDislikeMap[ref.toByteArray().toBase64()] ?: return false;
         return entry.hasLiked;
     }
 
     fun requireLogin(context: Context, text: String, action: (processHandle: ProcessHandle) -> Unit) {
+        if (!enabled) {
+            UIDialogs.toast(context, "Polycentric is disabled")
+            return
+        }
+
         val p = processHandle;
         if (p == null) {
             Logger.i(TAG, "requireLogin preventPictureInPicture.emit()");
@@ -122,24 +163,10 @@ class StatePolycentric {
         }
     }
 
-    fun getChannelContent(profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
-        //TODO: Currently abusing subscription concurrency for parallelism
-        val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
-        val pagers = profile.ownedClaims.groupBy { it.claim.claimType }.mapNotNull {
-            val url = it.value.firstOrNull()?.claim?.resolveChannelUrl() ?: return@mapNotNull null;
-            if (!StatePlatform.instance.hasEnabledChannelClient(url)) {
-                return@mapNotNull null;
-            }
-
-            return@mapNotNull StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency, ignorePlugins);
-        }.toTypedArray();
-
-        val pager = MultiChronoContentPager(pagers);
-        pager.initialize();
-        return DedupContentPager(pager, StatePlatform.instance.getEnabledClients().map { it.id });
-    }
-
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): List<String> {
+        if (!enabled) {
+            return listOf(url);
+        }
 
         var polycentricProfile: PolycentricProfile? = null;
         try {
@@ -167,7 +194,10 @@ class StatePolycentric {
         else
             return listOf(url);
     }
+
     fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent>? {
+        ensureEnabled()
+
         //TODO: Currently abusing subscription concurrency for parallelism
         val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
         val deferred = profile.ownedClaims.groupBy { it.claim.claimType }
@@ -207,13 +237,11 @@ class StatePolycentric {
             StatePlatform.instance.getEnabledClients().map { it.id }
         );*/
     }
-    suspend fun getChannelContent(profile: PolycentricProfile): IPager<IPlatformContent> {
-        return withContext(Dispatchers.IO) {
-            getChannelContent(this, profile) ?: EmptyPager();
-        }
-    }
-
     fun getSystemComments(context: Context, system: PublicKey): List<IPlatformComment> {
+        if (!enabled) {
+            return listOf()
+        }
+
         val dp_25 = 25.dp(context.resources)
         val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
         val author = system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable())
@@ -249,6 +277,8 @@ class StatePolycentric {
     )
 
     suspend fun getLikesDislikesReplies(reference: Protocol.Reference): LikesDislikesReplies {
+        ensureEnabled()
+
         val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
             null,
             listOf(
@@ -275,6 +305,10 @@ class StatePolycentric {
     }
 
     suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference): IPager<IPlatformComment> {
+        if (!enabled) {
+            return EmptyPager()
+        }
+
         val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
             Protocol.QueryReferencesRequestEvents.newBuilder()
                 .setFromType(ContentType.POST.value)

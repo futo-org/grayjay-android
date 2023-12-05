@@ -30,7 +30,6 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.File
 import java.time.OffsetDateTime
-import java.util.Locale
 
 @Serializable
 data class MenuBottomBarSetting(val id: Int, var enabled: Boolean);
@@ -49,10 +48,14 @@ class Settings : FragmentedStorageFileJson() {
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
-            if (StatePolycentric.instance.processHandle != null) {
-                it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+            if (StatePolycentric.instance.enabled) {
+                if (StatePolycentric.instance.processHandle != null) {
+                    it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+                } else {
+                    it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                }
             } else {
-                it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                UIDialogs.toast(it, "Polycentric is disabled")
             }
         }
     }
@@ -754,6 +757,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.bypass_rotation_prevention, FieldForm.TOGGLE, R.string.bypass_rotation_prevention_description, 1)
         @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
         var bypassRotationPrevention: Boolean = false;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 1)
+        var polycentricEnabled: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 19)

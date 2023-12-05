@@ -437,11 +437,12 @@ class ChannelFragment : MainFragment() {
         }
 
         private fun setPolycentricProfileOr(url: String, or: () -> Unit) {
+            setPolycentricProfile(null, animate = false);
+
             val cachedProfile = channel?.let { PolycentricCache.instance.getCachedProfile(it.url) };
             if (cachedProfile != null) {
                 setPolycentricProfile(cachedProfile, animate = false);
             } else {
-                setPolycentricProfile(null, animate = false);
                 or();
             }
         }

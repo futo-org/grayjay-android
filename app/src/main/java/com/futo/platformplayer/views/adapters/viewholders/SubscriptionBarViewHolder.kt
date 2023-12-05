@@ -51,16 +51,16 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
 
         _channel = subscription.channel;
 
+        _creatorThumbnail.setThumbnail(subscription.channel.thumbnail, false);
+        _taskLoadProfile.run(subscription.channel.id);
+        _name.text = subscription.channel.name;
+
         val cachedProfile = PolycentricCache.instance.getCachedProfile(subscription.channel.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
             if (cachedProfile.expired) {
                 _taskLoadProfile.run(subscription.channel.id);
             }
-        } else {
-            _creatorThumbnail.setThumbnail(subscription.channel.thumbnail, false);
-            _taskLoadProfile.run(subscription.channel.id);
-            _name.text = subscription.channel.name;
         }
 
         _subscription = subscription;

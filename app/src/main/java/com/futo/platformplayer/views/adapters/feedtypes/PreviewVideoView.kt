@@ -175,23 +175,23 @@ open class PreviewVideoView : LinearLayout {
 
         stopPreview();
 
+        _imageNeopassChannel?.visibility = View.GONE;
+        _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
+        _imageChannel?.let {
+            Glide.with(_imageChannel)
+                .load(content.author.thumbnail)
+                .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .into(_imageChannel);
+        }
+        _taskLoadProfile.run(content.author.id);
+        _textChannelName.text = content.author.name
+
         val cachedProfile = PolycentricCache.instance.getCachedProfile(content.author.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
             if (cachedProfile.expired) {
                 _taskLoadProfile.run(content.author.id);
             }
-        } else {
-            _imageNeopassChannel?.visibility = View.GONE;
-            _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
-            _imageChannel?.let {
-                Glide.with(_imageChannel)
-                    .load(content.author.thumbnail)
-                    .placeholder(R.drawable.placeholder_channel_thumbnail)
-                    .into(_imageChannel);
-            }
-            _taskLoadProfile.run(content.author.id);
-            _textChannelName.text = content.author.name
         }
 
         _imageChannel?.clipToOutline = true;
