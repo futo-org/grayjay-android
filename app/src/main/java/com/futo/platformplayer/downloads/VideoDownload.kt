@@ -1,11 +1,17 @@
 package com.futo.platformplayer.downloads
 
+import android.content.Context
+import android.util.Log
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
+import com.arthenica.ffmpegkit.StatisticsCallback
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
+import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.*
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -18,22 +24,28 @@ import com.futo.platformplayer.hasAnySource
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.isDownloadable
+import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
-import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.time.OffsetDateTime
+import java.util.UUID
+import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.coroutines.resumeWithException
 
 @kotlinx.serialization.Serializable
 class VideoDownload {
@@ -137,7 +149,7 @@ class VideoDownload {
         return items.joinToString(" • ");
     }
 
-    suspend fun prepare() {
+    suspend fun prepare(client: ManagedHttpClient) {
         Logger.i(TAG, "VideoDownload Prepare [${name}]");
         if(video == null && videoDetails == null)
             throw IllegalStateException("Missing information for download to complete");
@@ -157,24 +169,65 @@ class VideoDownload {
 
             videoDetails = SerializedPlatformVideoDetails.fromVideo(original, if (subtitleSource != null) listOf(subtitleSource!!) else listOf());
             if(videoSource == null && targetPixelCount != null) {
-                val vsource = VideoHelper.selectBestVideoSource(videoDetails!!.video, targetPixelCount!!.toInt(), arrayOf())
+                val videoSources = arrayListOf<IVideoSource>()
+                for (source in original.video.videoSources) {
+                    if (source is IHLSManifestSource) {
+                        try {
+                            val playlistResponse = client.get(source.url)
+                            if (playlistResponse.isOk) {
+                                val playlistContent = playlistResponse.body?.string()
+                                if (playlistContent != null) {
+                                    videoSources.addAll(HLS.parseAndGetVideoSources(source, playlistContent, source.url))
+                                }
+                            }
+                        } catch (e: Throwable) {
+                            Log.i(TAG, "Failed to get HLS video sources", e)
+                        }
+                    } else {
+                        videoSources.add(source)
+                    }
+                }
+
+                val vsource = VideoHelper.selectBestVideoSource(videoSources, targetPixelCount!!.toInt(), arrayOf())
                 //    ?: throw IllegalStateException("Could not find a valid video source for video");
                 if(vsource != null) {
                     if (vsource is IVideoUrlSource)
-                        videoSource = VideoUrlSource.fromUrlSource(vsource);
+                        videoSource = VideoUrlSource.fromUrlSource(vsource)
                     else
                         throw DownloadException("Video source is not supported for downloading (yet)", false);
                 }
             }
 
             if(audioSource == null && targetBitrate != null) {
-                val asource = VideoHelper.selectBestAudioSource(videoDetails!!.video, arrayOf(), null, targetPixelCount)
+                val audioSources = arrayListOf<IAudioSource>()
+                val video = original.video
+                if (video is VideoUnMuxedSourceDescriptor) {
+                    for (source in video.audioSources) {
+                        if (source is IHLSManifestSource) {
+                            try {
+                                val playlistResponse = client.get(source.url)
+                                if (playlistResponse.isOk) {
+                                    val playlistContent = playlistResponse.body?.string()
+                                    if (playlistContent != null) {
+                                        audioSources.addAll(HLS.parseAndGetAudioSources(source, playlistContent, source.url))
+                                    }
+                                }
+                            } catch (e: Throwable) {
+                                Log.i(TAG, "Failed to get HLS audio sources", e)
+                            }
+                        } else {
+                            audioSources.add(source)
+                        }
+                    }
+                }
+
+                val asource = VideoHelper.selectBestAudioSource(audioSources, arrayOf(), null, targetBitrate)
                     ?: if(videoSource != null ) null
                     else throw DownloadException("Could not find a valid video or audio source for download")
                 if(asource == null)
                     audioSource = null;
                 else if(asource is IAudioUrlSource)
-                    audioSource = AudioUrlSource.fromUrlSource(asource);
+                    audioSource = AudioUrlSource.fromUrlSource(asource)
                 else
                     throw DownloadException("Audio source is not supported for downloading (yet)", false);
             }
@@ -183,7 +236,8 @@ class VideoDownload {
                 throw DownloadException("No valid sources found for video/audio");
         }
     }
-    suspend fun download(client: ManagedHttpClient, onProgress: ((Double) -> Unit)? = null) = coroutineScope {
+
+    suspend fun download(context: Context, client: ManagedHttpClient, onProgress: ((Double) -> Unit)? = null) = coroutineScope {
         Logger.i(TAG, "VideoDownload Download [${name}]");
         if(videoDetails == null || (videoSource == null && audioSource == null))
             throw IllegalStateException("Missing information for download to complete");
@@ -199,7 +253,7 @@ class VideoDownload {
             videoFilePath = File(downloadDir, videoFileName!!).absolutePath;
         }
         if(audioSource != null) {
-            audioFileName = "${videoDetails!!.id.value!!} [${audioSource!!.bitrate}].${audioContainerToExtension(audioSource!!.container)}".sanitizeFileName();
+            audioFileName = "${videoDetails!!.id.value!!} [${audioSource!!.language}-${audioSource!!.bitrate}].${audioContainerToExtension(audioSource!!.container)}".sanitizeFileName();
             audioFilePath = File(downloadDir, audioFileName!!).absolutePath;
         }
         if(subtitleSource != null) {
@@ -217,7 +271,8 @@ class VideoDownload {
         if(videoSource != null) {
             sourcesToDownload.add(async {
                 Logger.i(TAG, "Started downloading video");
-                videoFileSize = downloadSource("Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!)) { length, totalRead, speed ->
+
+                val progressCallback = { length: Long, totalRead: Long, speed: Long ->
                     synchronized(progressLock) {
                         lastVideoLength = length;
                         lastVideoRead = totalRead;
@@ -235,12 +290,18 @@ class VideoDownload {
                         }
                     }
                 }
+
+                videoFileSize = when (videoSource!!.container) {
+                    "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                    else -> downloadFileSource("Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                }
             });
         }
         if(audioSource != null) {
             sourcesToDownload.add(async {
                 Logger.i(TAG, "Started downloading audio");
-                audioFileSize = downloadSource("Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!)) { length, totalRead, speed ->
+
+                val progressCallback = { length: Long, totalRead: Long, speed: Long ->
                     synchronized(progressLock) {
                         lastAudioLength = length;
                         lastAudioRead = totalRead;
@@ -257,6 +318,11 @@ class VideoDownload {
                             onProgressChanged.emit(percentage);
                         }
                     }
+                }
+
+                audioFileSize = when (audioSource!!.container) {
+                    "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                    else -> downloadFileSource("Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                 }
             });
         }
@@ -279,7 +345,105 @@ class VideoDownload {
             throw ex;
         }
     }
-    private fun downloadSource(name: String, client: ManagedHttpClient, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+
+    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+        if(targetFile.exists())
+            targetFile.delete();
+
+        var downloadedTotalLength = 0L
+
+        val segmentFiles = arrayListOf<File>()
+        try {
+            val response = client.get(hlsUrl)
+            check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
+
+            val vpContent = response.body?.string()
+                ?: throw Exception("Variant playlist content is empty")
+
+            val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
+            variantPlaylist.segments.forEachIndexed { index, segment ->
+                if (segment !is HLS.MediaSegment) {
+                    return@forEachIndexed
+                }
+
+                Logger.i(TAG, "Download '$name' segment $index Sequential");
+                val segmentFile = File(context.cacheDir, "segment-${UUID.randomUUID()}")
+                segmentFiles.add(segmentFile)
+
+                val segmentLength = downloadSource_Sequential(client, segmentFile.outputStream(), segment.uri) { segmentLength, totalRead, lastSpeed ->
+                    val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
+                    val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
+                    onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
+                }
+
+                downloadedTotalLength += segmentLength
+            }
+
+            Logger.i(TAG, "Combining segments into $targetFile");
+            combineSegments(context, segmentFiles, targetFile)
+
+            Logger.i(TAG, "${name} downloadSource Finished");
+        }
+        catch(ioex: IOException) {
+            if(targetFile.exists() ?: false)
+                targetFile.delete();
+            if(ioex.message?.contains("ENOSPC") ?: false)
+                throw Exception("Not enough space on device", ioex);
+            else
+                throw ioex;
+        }
+        catch(ex: Throwable) {
+            if(targetFile.exists() ?: false)
+                targetFile.delete();
+            throw ex;
+        }
+        finally {
+            for (segmentFile in segmentFiles) {
+                segmentFile.delete()
+            }
+        }
+        return downloadedTotalLength;
+    }
+
+    private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
+        suspendCancellableCoroutine { continuation ->
+            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
+            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
+
+            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+
+            val statisticsCallback = StatisticsCallback { statistics ->
+                //TODO: Show progress?
+            }
+
+            val executorService = Executors.newSingleThreadExecutor()
+            val session = FFmpegKit.executeAsync(cmd,
+                { session ->
+                    if (ReturnCode.isSuccess(session.returnCode)) {
+                        fileList.delete()
+                        continuation.resumeWith(Result.success(Unit))
+                    } else {
+                        val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
+                            "Command cancelled"
+                        } else {
+                            "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
+                        }
+                        fileList.delete()
+                        continuation.resumeWithException(RuntimeException(errorMessage))
+                    }
+                },
+                { Logger.v(TAG, it.message) },
+                statisticsCallback,
+                executorService
+            )
+
+            continuation.invokeOnCancellation {
+                session.cancel()
+            }
+        }
+    }
+
+    private fun downloadFileSource(name: String, client: ManagedHttpClient, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
 
@@ -472,8 +636,10 @@ class VideoDownload {
             val expectedFile = File(videoFilePath!!);
             if(!expectedFile.exists())
                 throw IllegalStateException("Video file missing after download");
-            if(expectedFile.length() != videoFileSize)
-                throw IllegalStateException("Expected size [${videoFileSize}], but found ${expectedFile.length()}");
+            if (videoSource?.container != "application/vnd.apple.mpegurl") {
+                if (expectedFile.length() != videoFileSize)
+                    throw IllegalStateException("Expected size [${videoFileSize}], but found ${expectedFile.length()}");
+            }
         }
         if(audioSource != null) {
             if(audioFilePath == null)
@@ -481,8 +647,10 @@ class VideoDownload {
             val expectedFile = File(audioFilePath!!);
             if(!expectedFile.exists())
                 throw IllegalStateException("Audio file missing after download");
-            if(expectedFile.length() != audioFileSize)
-                throw IllegalStateException("Expected size [${audioFileSize}], but found ${expectedFile.length()}");
+            if (audioSource?.container != "application/vnd.apple.mpegurl") {
+                if (expectedFile.length() != audioFileSize)
+                    throw IllegalStateException("Expected size [${audioFileSize}], but found ${expectedFile.length()}");
+            }
         }
         if(subtitleSource != null) {
             if(subtitleFilePath == null)
@@ -560,7 +728,7 @@ class VideoDownload {
         const val GROUP_PLAYLIST = "Playlist";
 
         fun videoContainerToExtension(container: String): String? {
-            if (container.contains("video/mp4"))
+            if (container.contains("video/mp4") || container == "application/vnd.apple.mpegurl")
                 return "mp4";
             else if (container.contains("application/x-mpegURL"))
                 return "m3u8";
@@ -585,6 +753,8 @@ class VideoDownload {
                 return "mp3";
             else if (container.contains("audio/webm"))
                 return "webma";
+            else if (container == "application/vnd.apple.mpegurl")
+                return "mp4";
             else
                 return "audio";
         }

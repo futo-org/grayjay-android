@@ -1,10 +1,14 @@
 package com.futo.platformplayer.views.segments
 
 import android.content.Context
+import android.graphics.Color
 import android.util.AttributeSet
+import android.view.Gravity
+import android.view.KeyCharacterMap.UnavailableException
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,22 +23,33 @@ import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
+import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
+import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.UnknownHostException
 
 class CommentsList : ConstraintLayout {
     private val _llmReplies: LinearLayoutManager;
+    private val _textMessage: TextView;
     private val _taskLoadComments = if(!isInEditMode) TaskHandler<suspend () -> IPager<IPlatformComment>, IPager<IPlatformComment>>(StateApp.instance.scopeGetter, { it(); })
         .success { pager -> onCommentsLoaded(pager); }
         .exception<UnknownHostException> {
-            UIDialogs.toast("Failed to load comments");
+            setMessage("UnknownHostException: " + it.message);
+            Logger.e(TAG, "Failed to load comments.", it);
+            setLoading(false);
+        }
+        .exception<ScriptUnavailableException> {
+            setMessage(it.message);
+            Logger.e(TAG, "Failed to load comments.", it);
             setLoading(false);
         }
         .exception<Throwable> {
+            setMessage("Throwable: " + it.message);
             Logger.e(TAG, "Failed to load comments.", it);
-            UIDialogs.toast(context, context.getString(R.string.failed_to_load_comments) + "\n" + (it.message ?: ""));
             //UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_comments) + (it.message ?: ""), it, ::fetchComments);
             setLoading(false);
         } else TaskHandler(IPlatformVideoDetails::class.java, StateApp.instance.scopeGetter);
@@ -69,23 +84,35 @@ class CommentsList : ConstraintLayout {
     private val _prependedView: FrameLayout;
     private var _readonly: Boolean = false;
 
-    var onClick = Event1<IPlatformComment>();
+    var onRepliesClick = Event1<IPlatformComment>();
     var onCommentsLoaded = Event1<Int>();
+
+
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_comments_list, this, true);
 
         _recyclerComments = findViewById(R.id.recycler_comments);
+        _textMessage = TextView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(0, 30, 0, 0)
+            }
+            textSize = 12.0f
+            setTextColor(Color.WHITE)
+            typeface = resources.getFont(R.font.inter_regular)
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
 
         _prependedView = FrameLayout(context);
         _prependedView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
 
-        _adapterComments = InsertedViewAdapterWithLoader(context, arrayListOf(_prependedView), arrayListOf(),
+        _adapterComments = InsertedViewAdapterWithLoader(context, arrayListOf(_prependedView, _textMessage), arrayListOf(),
             childCountGetter = { _comments.size },
             childViewHolderBinder = { viewHolder, position -> viewHolder.bind(_comments[position], _readonly); },
             childViewHolderFactory = { viewGroup, _ ->
                 val holder = CommentViewHolder(viewGroup);
-                holder.onClick.subscribe { c -> onClick.emit(c) };
+                holder.onRepliesClick.subscribe { c -> onRepliesClick.emit(c) };
+                holder.onDelete.subscribe(::onDelete);
                 return@InsertedViewAdapterWithLoader holder;
             }
         );
@@ -96,6 +123,16 @@ class CommentsList : ConstraintLayout {
         _recyclerComments.addOnScrollListener(_scrollListener);
     }
 
+    private fun setMessage(message: String?) {
+        Logger.i(TAG, "setMessage " + message)
+        if (message != null) {
+            _textMessage.visibility = View.VISIBLE
+            _textMessage.text = message
+        } else {
+            _textMessage.visibility = View.GONE
+        }
+    }
+
     fun addComment(comment: IPlatformComment) {
         _comments.add(0, comment);
         _adapterComments.notifyItemRangeInserted(_adapterComments.childToParentPosition(0), 1);
@@ -104,6 +141,38 @@ class CommentsList : ConstraintLayout {
     fun setPrependedView(view: View) {
         _prependedView.removeAllViews();
         _prependedView.addView(view);
+    }
+
+    private fun onDelete(comment: IPlatformComment) {
+        UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete this comment?", {
+            val processHandle = StatePolycentric.instance.processHandle ?: return@showConfirmationDialog
+            if (comment !is PolycentricPlatformComment) {
+                return@showConfirmationDialog
+            }
+
+            val index = _comments.indexOf(comment)
+            if (index != -1) {
+                _comments.removeAt(index)
+                _adapterComments.notifyItemRemoved(_adapterComments.childToParentPosition(index))
+
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    try {
+                        processHandle.delete(comment.eventPointer.process, comment.eventPointer.logicalClock)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to delete event.", e);
+                        return@launch;
+                    }
+
+                    try {
+                        Logger.i(TAG, "Started backfill");
+                        processHandle.fullyBackfillServersAnnounceExceptions();
+                        Logger.i(TAG, "Finished backfill");
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to fully backfill servers.", e);
+                    }
+                }
+            }
+        })
     }
 
     private fun onScrolled() {
@@ -147,6 +216,7 @@ class CommentsList : ConstraintLayout {
 
     fun load(readonly: Boolean, loader: suspend () -> IPager<IPlatformComment>) {
         cancel();
+        setMessage(null);
 
         _readonly = readonly;
         setLoading(true);
@@ -177,6 +247,7 @@ class CommentsList : ConstraintLayout {
         _comments.clear();
         _commentsPager = null;
         _adapterComments.notifyDataSetChanged();
+        setMessage(null);
     }
 
     fun cancel() {

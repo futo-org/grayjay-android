@@ -1,0 +1,18 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+package com.futo.platformplayer.protos;
+
+message CastMessage {
+  enum ProtocolVersion { CASTV2_1_0 = 0; }
+  required ProtocolVersion protocol_version = 1;
+  required string source_id = 2;
+  required string destination_id = 3;
+  required string namespace = 4;
+  enum PayloadType {
+    STRING = 0;
+    BINARY = 1;
+  }
+  required PayloadType payload_type = 5;
+  optional string payload_utf8 = 6;
+  optional bytes payload_binary = 7;
+}

@@ -6,7 +6,6 @@ import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.drawable.Animatable
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -63,10 +62,14 @@ class GestureControlView : LinearLayout {
     private var _fullScreenFactorUp = 1.0f;
     private var _fullScreenFactorDown = 1.0f;
 
+    private val _gestureController: GestureDetectorCompat;
+
     val onSeek = Event1<Long>();
     val onBrightnessAdjusted = Event1<Float>();
     val onSoundAdjusted = Event1<Float>();
     val onToggleFullscreen = Event0();
+
+    var fullScreenGestureEnabled = true
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_gesture_controls, this, true);
@@ -82,13 +85,8 @@ class GestureControlView : LinearLayout {
         _layoutControlsBrightness = findViewById(R.id.layout_controls_brightness);
         _progressBrightness = findViewById(R.id.progress_brightness);
         _layoutControlsFullscreen = findViewById(R.id.layout_controls_fullscreen);
-    }
 
-    fun setupTouchArea(view: View, layoutControls: ViewGroup? = null, background: View? = null) {
-        _layoutControls = layoutControls;
-        _background = background;
-
-        val gestureController = GestureDetectorCompat(context, object : GestureDetector.OnGestureListener {
+        _gestureController = GestureDetectorCompat(context, object : GestureDetector.OnGestureListener {
             override fun onDown(p0: MotionEvent): Boolean { return false; }
             override fun onShowPress(p0: MotionEvent) = Unit;
             override fun onSingleTapUp(p0: MotionEvent): Boolean { return false; }
@@ -116,15 +114,14 @@ class GestureControlView : LinearLayout {
                     _fullScreenFactorDown = (_fullScreenFactorDown + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _layoutControlsFullscreen.alpha = _fullScreenFactorDown;
                 } else {
-                    val rx = p0.x / width;
-                    val ry = p0.y / height;
-                    Logger.v(TAG, "rx = $rx, ry = $ry, _isFullScreen = $_isFullScreen")
+                    val rx = (p0.x + p1.x) / (2 * width);
+                    val ry = (p0.y + p1.y) / (2 * height);
                     if (ry > 0.1 && ry < 0.9) {
-                        if (_isFullScreen && rx < 0.4) {
+                        if (_isFullScreen && rx < 0.2) {
                             startAdjustingBrightness();
-                        } else if (_isFullScreen && rx > 0.6) {
+                        } else if (_isFullScreen && rx > 0.8) {
                             startAdjustingSound();
-                        } else if (rx >= 0.4 && rx <= 0.6) {
+                        } else if (fullScreenGestureEnabled && rx in 0.3..0.7) {
                             if (_isFullScreen) {
                                 startAdjustingFullscreenDown();
                             } else {
@@ -139,7 +136,7 @@ class GestureControlView : LinearLayout {
             override fun onLongPress(p0: MotionEvent) = Unit
         });
 
-        gestureController.setOnDoubleTapListener(object : GestureDetector.OnDoubleTapListener {
+        _gestureController.setOnDoubleTapListener(object : GestureDetector.OnDoubleTapListener {
             override fun onSingleTapConfirmed(ev: MotionEvent): Boolean {
                 if (_skipping) {
                     return false;
@@ -169,52 +166,58 @@ class GestureControlView : LinearLayout {
             }
         });
 
-        val touchListener = object : OnTouchListener {
-            override fun onTouch(v: View?, ev: MotionEvent): Boolean {
-                cancelHideJob();
+        isClickable = true
+    }
 
-                if (_skipping) {
-                    if (ev.action == MotionEvent.ACTION_UP) {
-                        startExitFastForward();
-                        stopAutoFastForward();
-                    } else if (ev.action == MotionEvent.ACTION_DOWN) {
-                        _jobExitFastForward?.cancel();
-                        _jobExitFastForward = null;
+    fun setupTouchArea(layoutControls: ViewGroup? = null, background: View? = null) {
+        _layoutControls = layoutControls;
+        _background = background;
+    }
 
-                        startAutoFastForward();
-                        fastForwardTick();
-                    }
-                }
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        val ev = event ?: return super.onTouchEvent(event);
 
-                if (_adjustingSound && ev.action == MotionEvent.ACTION_UP) {
-                    stopAdjustingSound();
-                }
+        cancelHideJob();
 
-                if (_adjustingBrightness && ev.action == MotionEvent.ACTION_UP) {
-                    stopAdjustingBrightness();
-                }
+        if (_skipping) {
+            if (ev.action == MotionEvent.ACTION_UP) {
+                startExitFastForward();
+                stopAutoFastForward();
+            } else if (ev.action == MotionEvent.ACTION_DOWN) {
+                _jobExitFastForward?.cancel();
+                _jobExitFastForward = null;
 
-                if (_adjustingFullscreenUp && ev.action == MotionEvent.ACTION_UP) {
-                    if (_fullScreenFactorUp > 0.5) {
-                        onToggleFullscreen.emit();
-                    }
-                    stopAdjustingFullscreenUp();
-                }
-
-                if (_adjustingFullscreenDown && ev.action == MotionEvent.ACTION_UP) {
-                    if (_fullScreenFactorDown > 0.5) {
-                        onToggleFullscreen.emit();
-                    }
-                    stopAdjustingFullscreenDown();
-                }
-
-                startHideJobIfNecessary();
-                return gestureController.onTouchEvent(ev);
+                startAutoFastForward();
+                fastForwardTick();
             }
-        };
+        }
 
-        view.setOnTouchListener(touchListener);
-        view.isClickable = true;
+        if (_adjustingSound && ev.action == MotionEvent.ACTION_UP) {
+            stopAdjustingSound();
+        }
+
+        if (_adjustingBrightness && ev.action == MotionEvent.ACTION_UP) {
+            stopAdjustingBrightness();
+        }
+
+        if (_adjustingFullscreenUp && ev.action == MotionEvent.ACTION_UP) {
+            if (_fullScreenFactorUp > 0.5) {
+                onToggleFullscreen.emit();
+            }
+            stopAdjustingFullscreenUp();
+        }
+
+        if (_adjustingFullscreenDown && ev.action == MotionEvent.ACTION_UP) {
+            if (_fullScreenFactorDown > 0.5) {
+                onToggleFullscreen.emit();
+            }
+            stopAdjustingFullscreenDown();
+        }
+
+        startHideJobIfNecessary();
+
+        _gestureController.onTouchEvent(ev)
+        return true;
     }
 
     fun cancelHideJob() {

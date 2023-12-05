@@ -156,7 +156,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _layoutControls = findViewById(R.id.layout_controls);
         gestureControl = findViewById(R.id.gesture_control);
 
-        _videoView?.videoSurfaceView?.let { gestureControl.setupTouchArea(it, _layoutControls, background); };
+        gestureControl.setupTouchArea(_layoutControls, background);
         gestureControl.onSeek.subscribe { seekFromCurrent(it); };
         gestureControl.onSoundAdjusted.subscribe { setVolume(it) };
         gestureControl.onToggleFullscreen.subscribe { setFullScreen(!isFullScreen) };

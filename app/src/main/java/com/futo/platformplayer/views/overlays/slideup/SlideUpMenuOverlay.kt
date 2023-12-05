@@ -73,8 +73,9 @@ class SlideUpMenuOverlay : RelativeLayout {
                 item.setParentClickListener { hide() };
             else if(item is SlideUpMenuItem)
                 item.setParentClickListener { hide() };
-
         }
+
+        _groupItems = items;
     }
 
     private fun init(animated: Boolean, okText: String?){

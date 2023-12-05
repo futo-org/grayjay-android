@@ -15,7 +15,12 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
 
     var onClick = Event1<Subscription>();
     var onSettings = Event1<Subscription>();
-    var sortBy: Int = 3
+    var sortBy: Int = 5
+        set(value) {
+            field = value
+            updateDataset()
+        }
+    var query: String? = null
         set(value) {
             field = value;
             updateDataset();
@@ -53,6 +58,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     }
 
     private fun updateDataset() {
+        val queryLower = query?.lowercase() ?: "";
         _sortedDataset = when (sortBy) {
             0 -> StateSubscriptions.instance.getSubscriptions().sortedBy({ u -> u.channel.name.lowercase() })
             1 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending({ u -> u.channel.name.lowercase() })
@@ -61,7 +67,9 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
             4 -> StateSubscriptions.instance.getSubscriptions().sortedBy { it.playbackSeconds }
             5 -> StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackSeconds }
             else -> throw IllegalStateException("Invalid sorting algorithm selected.");
-        }.toList();
+        }
+            .filter { (queryLower.isNullOrBlank() || it.channel.name.lowercase().contains(queryLower)) }
+            .toList();
 
         notifyDataSetChanged();
     }

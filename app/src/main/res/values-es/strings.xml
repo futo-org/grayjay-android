@@ -738,4 +738,8 @@
         <item>Información</item>
         <item>Detallado</item>
     </string-array>
+    <string-array name="comments_sortby_array">
+        <item>Newest</item>
+        <item>Oldest</item>
+    </string-array>
 </resources>

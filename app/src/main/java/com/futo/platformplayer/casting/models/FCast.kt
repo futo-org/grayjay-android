@@ -3,7 +3,7 @@ package com.futo.platformplayer.casting.models
 import kotlinx.serialization.Serializable
 
 @kotlinx.serialization.Serializable
-data class FastCastPlayMessage(
+data class FCastPlayMessage(
     val container: String,
     val url: String? = null,
     val content: String? = null,
@@ -11,23 +11,23 @@ data class FastCastPlayMessage(
 ) { }
 
 @kotlinx.serialization.Serializable
-data class FastCastSeekMessage(
+data class FCastSeekMessage(
     val time: Int
 ) { }
 
 @kotlinx.serialization.Serializable
-data class FastCastPlaybackUpdateMessage(
+data class FCastPlaybackUpdateMessage(
     val time: Int,
     val state: Int
 ) { }
 
 
 @Serializable
-data class FastCastVolumeUpdateMessage(
+data class FCastVolumeUpdateMessage(
     val volume: Double
 )
 
 @Serializable
-data class FastCastSetVolumeMessage(
+data class FCastSetVolumeMessage(
     val volume: Double
 )

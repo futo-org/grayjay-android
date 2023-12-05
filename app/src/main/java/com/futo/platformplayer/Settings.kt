@@ -22,6 +22,7 @@ import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,7 +30,6 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.File
 import java.time.OffsetDateTime
-import java.util.Locale
 
 @Serializable
 data class MenuBottomBarSetting(val id: Int, var enabled: Boolean);
@@ -44,19 +44,23 @@ class Settings : FragmentedStorageFileJson() {
     @Transient
     val onTabsChanged = Event0();
 
-    @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -5)
+    @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -6)
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
-            if (StatePolycentric.instance.processHandle != null) {
-                it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+            if (StatePolycentric.instance.enabled) {
+                if (StatePolycentric.instance.processHandle != null) {
+                    it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
+                } else {
+                    it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                }
             } else {
-                it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
+                UIDialogs.toast(it, "Polycentric is disabled")
             }
         }
     }
 
-    @FormField(R.string.show_faq, FieldForm.BUTTON, R.string.get_answers_to_common_questions, -4)
+    @FormField(R.string.show_faq, FieldForm.BUTTON, R.string.get_answers_to_common_questions, -5)
     @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
         try {
@@ -66,7 +70,7 @@ class Settings : FragmentedStorageFileJson() {
             //Ignored
         }
     }
-    @FormField(R.string.show_issues, FieldForm.BUTTON, R.string.a_list_of_user_reported_and_self_reported_issues, -3)
+    @FormField(R.string.show_issues, FieldForm.BUTTON, R.string.a_list_of_user_reported_and_self_reported_issues, -4)
     @FormFieldButton(R.drawable.ic_data_alert)
     fun openIssues() {
         try {
@@ -98,7 +102,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }*/
 
-    @FormField(R.string.manage_tabs, FieldForm.BUTTON, R.string.change_tabs_visible_on_the_home_screen, -2)
+    @FormField(R.string.manage_tabs, FieldForm.BUTTON, R.string.change_tabs_visible_on_the_home_screen, -3)
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
         try {
@@ -111,6 +115,25 @@ class Settings : FragmentedStorageFileJson() {
     }
 
 
+
+    @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, -2)
+    @FormFieldButton(R.drawable.ic_move_up)
+    fun import() {
+        val act = SettingsActivity.getActivity() ?: return;
+        val intent = MainActivity.getImportOptionsIntent(act);
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK;
+        act.startActivity(intent);
+    }
+
+    @FormField(R.string.link_handling, FieldForm.BUTTON, R.string.allow_grayjay_to_handle_links, -1)
+    @FormFieldButton(R.drawable.ic_link)
+    fun manageLinks() {
+        try {
+            SettingsActivity.getActivity()?.let { UIDialogs.showUrlHandlingPrompt(it) }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to show url handling prompt", e)
+        }
+    }
 
     @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();
@@ -376,6 +399,14 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
         var backgroundSwitchToAudio: Boolean = true;
+
+        @FormField(R.string.restart_after_audio_focus_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_audio_focus_after_a_loss, 11)
+        @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
+        var restartPlaybackAfterLoss: Int = 1;
+
+        @FormField(R.string.restart_after_connectivity_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_connectivity_after_a_loss, 12)
+        @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
+        var restartPlaybackAfterConnectivityLoss: Int = 1;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
@@ -385,6 +416,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.default_comment_section, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.comment_sections)
         var defaultCommentSection: Int = 0;
+
+        @FormField(R.string.bad_reputation_comments_fading, FieldForm.TOGGLE, R.string.bad_reputation_comments_fading_description, 0)
+        var badReputationCommentsFading: Boolean = true;
     }
 
     @FormField(R.string.downloads, "group", R.string.configure_downloading_of_videos, 7)
@@ -692,25 +726,16 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.export_data, FieldForm.BUTTON, R.string.creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay, 3)
         fun export() {
-            StateBackup.startExternalBackup();
+            val activity = SettingsActivity.getActivity() ?: return;
+            UISlideOverlays.showOverlay(activity.overlay, "Select export type", null, {},
+                SlideUpMenuItem(activity, R.drawable.ic_share, "Share", "", null, {
+                    StateBackup.shareExternalBackup();
+                }),
+                SlideUpMenuItem(activity, R.drawable.ic_download, "File", "", null, {
+                    StateBackup.saveExternalBackup(activity);
+                })
+            )
         }
-
-
-        /*
-        @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, 4)
-        fun import() {
-            val act = SettingsActivity.getActivity() ?: return;
-            StateApp.instance.requestFileReadAccess(act, null) {
-                if(it != null && it.exists()) {
-                    val name = it.name;
-                    val contents = it.readBytes(act);
-                    if(contents != null) {
-                        if(name != null && name.endsWith(".zip", true))
-                            StateBackup.importZipBytes(act, act.lifecycleScope, contents);
-                    }
-                }
-            }
-        }*/
     }
 
     @FormField(R.string.payment, FieldForm.GROUP, -1, 17)
@@ -737,6 +762,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.bypass_rotation_prevention, FieldForm.TOGGLE, R.string.bypass_rotation_prevention_description, 1)
         @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
         var bypassRotationPrevention: Boolean = false;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 1)
+        var polycentricEnabled: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 19)

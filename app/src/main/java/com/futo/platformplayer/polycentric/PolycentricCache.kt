@@ -7,9 +7,9 @@ import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.resolveChannelUrls
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
+import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.stores.CachedPolycentricProfileStorage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.google.protobuf.ByteString
@@ -19,17 +19,21 @@ import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 
 class PolycentricCache {
-    data class CachedOwnedClaims(val ownedClaims: List<OwnedClaim>?, val creationTime: OffsetDateTime = OffsetDateTime.now());
+    data class CachedOwnedClaims(val ownedClaims: List<OwnedClaim>?, val creationTime: OffsetDateTime = OffsetDateTime.now()) {
+        val expired get() = creationTime.getNowDiffSeconds() > CACHE_EXPIRATION_SECONDS
+    }
     @Serializable
-    data class CachedPolycentricProfile(val profile: PolycentricProfile?, @Serializable(with = OffsetDateTimeSerializer::class) val creationTime: OffsetDateTime = OffsetDateTime.now());
+    data class CachedPolycentricProfile(val profile: PolycentricProfile?, @Serializable(with = OffsetDateTimeSerializer::class) val creationTime: OffsetDateTime = OffsetDateTime.now()) {
+        val expired get() = creationTime.getNowDiffSeconds() > CACHE_EXPIRATION_SECONDS
+    }
 
-    private val _cacheExpirationSeconds = 60 * 60 * 3;
     private val _cache = hashMapOf<PlatformID, CachedOwnedClaims>()
     private val _profileCache = hashMapOf<PublicKey, CachedPolycentricProfile>()
     private val _profileUrlCache = FragmentedStorage.get<CachedPolycentricProfileStorage>("profileUrlCache")
     private val _scope = CoroutineScope(Dispatchers.IO);
 
-    private val _taskGetProfile = BatchedTaskHandler<PublicKey, CachedPolycentricProfile>(_scope, { system ->
+    private val _taskGetProfile = BatchedTaskHandler<PublicKey, CachedPolycentricProfile>(_scope,
+        { system ->
             val signedProfileEvents = ApiMethods.getQueryLatest(
                 SERVER,
                 system.toProto(),
@@ -140,7 +144,7 @@ class PolycentricCache {
         { _, _ -> });
 
     fun getCachedValidClaims(id: PlatformID, ignoreExpired: Boolean = false): CachedOwnedClaims? {
-        if (id.claimType <= 0) {
+        if (!StatePolycentric.instance.enabled || id.claimType <= 0) {
             return CachedOwnedClaims(null);
         }
 
@@ -150,7 +154,7 @@ class PolycentricCache {
                 return null
             }
 
-            if (!ignoreExpired && cached.creationTime.getNowDiffSeconds() > _cacheExpirationSeconds) {
+            if (!ignoreExpired && cached.expired) {
                 return  null;
             }
 
@@ -160,7 +164,7 @@ class PolycentricCache {
 
     //TODO: Review all return null in this file, perhaps it should be CachedX(null) instead
     fun getValidClaimsAsync(id: PlatformID): Deferred<CachedOwnedClaims> {
-        if (id.value == null || id.claimType <= 0) {
+        if (!StatePolycentric.instance.enabled || id.value == null || id.claimType <= 0) {
             return _scope.async { CachedOwnedClaims(null) };
         }
 
@@ -182,13 +186,18 @@ class PolycentricCache {
     }
 
     fun getDataAsync(url: String): Deferred<ByteBuffer> {
+        StatePolycentric.instance.ensureEnabled()
         return _batchTaskGetData.execute(url);
     }
 
     fun getCachedProfile(url: String, ignoreExpired: Boolean = false): CachedPolycentricProfile? {
+        if (!StatePolycentric.instance.enabled) {
+            return CachedPolycentricProfile(null)
+        }
+
         synchronized (_profileCache) {
             val cached = _profileUrlCache.get(url) ?: return null;
-            if (!ignoreExpired && cached.creationTime.getNowDiffSeconds() > _cacheExpirationSeconds) {
+            if (!ignoreExpired && cached.expired) {
                 return  null;
             }
 
@@ -197,9 +206,13 @@ class PolycentricCache {
     }
 
     fun getCachedProfile(system: PublicKey, ignoreExpired: Boolean = false): CachedPolycentricProfile? {
+        if (!StatePolycentric.instance.enabled) {
+            return CachedPolycentricProfile(null)
+        }
+
         synchronized(_profileCache) {
             val cached = _profileCache[system] ?: return null;
-            if (!ignoreExpired && cached.creationTime.getNowDiffSeconds() > _cacheExpirationSeconds) {
+            if (!ignoreExpired && cached.expired) {
                 return null;
             }
 
@@ -208,7 +221,7 @@ class PolycentricCache {
     }
 
     suspend fun getProfileAsync(id: PlatformID): CachedPolycentricProfile? {
-        if (id.claimType <= 0) {
+        if (!StatePolycentric.instance.enabled || id.claimType <= 0) {
             return CachedPolycentricProfile(null);
         }
 
@@ -234,6 +247,10 @@ class PolycentricCache {
     }
 
     fun getProfileAsync(system: PublicKey): Deferred<CachedPolycentricProfile?> {
+        if (!StatePolycentric.instance.enabled) {
+            return _scope.async { CachedPolycentricProfile(null) };
+        }
+
         Logger.i(TAG, "getProfileAsync (system: ${system})")
         val def = _taskGetProfile.execute(system);
         def.invokeOnCompletion {
@@ -281,6 +298,7 @@ class PolycentricCache {
         private const val TAG = "PolycentricCache"
         const val SERVER = "https://srv1-stg.polycentric.io"
         private var _instance: PolycentricCache? = null;
+        private val CACHE_EXPIRATION_SECONDS = 60 * 60 * 3;
 
         @JvmStatic
         val instance: PolycentricCache

@@ -3,7 +3,6 @@ package com.futo.platformplayer.casting
 import android.os.Looper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.casting.models.FastCastSetVolumeMessage
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.toInetAddress
@@ -49,7 +48,7 @@ class AirPlayCastingDevice : CastingDevice {
             return;
         }
 
-        Logger.i(FastCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        Logger.i(FCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
 
         time = resumePosition;
         if (resumePosition > 0.0) {

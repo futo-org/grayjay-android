@@ -3,6 +3,7 @@ package com.futo.platformplayer.views.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -37,8 +38,10 @@ class CommentViewHolder : ViewHolder {
     private val _layoutRating: LinearLayout;
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
     private val _layoutComment: ConstraintLayout;
+    private val _buttonDelete: FrameLayout;
 
-    var onClick = Event1<IPlatformComment>();
+    var onRepliesClick = Event1<IPlatformComment>();
+    var onDelete = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
@@ -55,6 +58,7 @@ class CommentViewHolder : ViewHolder {
         _buttonReplies = itemView.findViewById(R.id.button_replies);
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
+        _buttonDelete = itemView.findViewById(R.id.button_delete);
 
         _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
@@ -87,7 +91,12 @@ class CommentViewHolder : ViewHolder {
 
         _buttonReplies.onClick.subscribe {
             val c = comment ?: return@subscribe;
-            onClick.emit(c);
+            onRepliesClick.emit(c);
+        }
+
+        _buttonDelete.setOnClickListener {
+            val c = comment ?: return@setOnClickListener;
+            onDelete.emit(c);
         }
 
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
@@ -108,7 +117,8 @@ class CommentViewHolder : ViewHolder {
 
         val rating = comment.rating;
         if (rating is RatingLikeDislikes) {
-            _layoutComment.alpha = if (rating.dislikes > 2 && rating.dislikes.toFloat() / (rating.likes + rating.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
+            _layoutComment.alpha = if (Settings.instance.comments.badReputationCommentsFading &&
+                rating.dislikes > 2 && rating.dislikes.toFloat() / (rating.likes + rating.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
         } else {
             _layoutComment.alpha = 1.0f;
         }
@@ -165,6 +175,13 @@ class CommentViewHolder : ViewHolder {
             _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
         } else {
             _buttonReplies.visibility = View.GONE;
+        }
+
+        val processHandle = StatePolycentric.instance.processHandle
+        if (processHandle != null && comment is PolycentricPlatformComment && processHandle.system == comment.eventPointer.system) {
+            _buttonDelete.visibility = View.VISIBLE
+        } else {
+            _buttonDelete.visibility = View.GONE
         }
 
         this.comment = comment;

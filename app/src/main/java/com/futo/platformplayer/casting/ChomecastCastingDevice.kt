@@ -2,18 +2,16 @@ package com.futo.platformplayer.casting
 
 import android.os.Looper
 import android.util.Log
-import com.futo.platformplayer.casting.models.FastCastSetVolumeMessage
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.models.CastingDeviceInfo
-import com.futo.platformplayer.protos.DeviceAuthMessageOuterClass
+import com.futo.platformplayer.protos.ChromeCast
 import com.futo.platformplayer.toHexString
 import com.futo.platformplayer.toInetAddress
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.io.IOException
 import java.net.InetAddress
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
@@ -376,7 +374,7 @@ class ChromecastCastingDevice : CastingDevice {
                         //TODO: In the future perhaps this size-1 will cause issues, why is there a 0 on the end?
                         val messageBytes = buffer.sliceArray(IntRange(0, size - 1));
                         Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
-                        val message = DeviceAuthMessageOuterClass.CastMessage.parseFrom(messageBytes);
+                        val message = ChromeCast.CastMessage.parseFrom(messageBytes);
                         if (message.namespace != "urn:x-cast:com.google.cast.tp.heartbeat") {
                             Logger.i(TAG, "Received message: $message");
                         }
@@ -429,12 +427,12 @@ class ChromecastCastingDevice : CastingDevice {
 
     private fun sendChannelMessage(sourceId: String, destinationId: String, namespace: String, json: String) {
         try {
-            val castMessage = DeviceAuthMessageOuterClass.CastMessage.newBuilder()
-                .setProtocolVersion(DeviceAuthMessageOuterClass.CastMessage.ProtocolVersion.CASTV2_1_0)
+            val castMessage = ChromeCast.CastMessage.newBuilder()
+                .setProtocolVersion(ChromeCast.CastMessage.ProtocolVersion.CASTV2_1_0)
                 .setSourceId(sourceId)
                 .setDestinationId(destinationId)
                 .setNamespace(namespace)
-                .setPayloadType(DeviceAuthMessageOuterClass.CastMessage.PayloadType.STRING)
+                .setPayloadType(ChromeCast.CastMessage.PayloadType.STRING)
                 .setPayloadUtf8(json)
                 .build();
 
@@ -448,8 +446,8 @@ class ChromecastCastingDevice : CastingDevice {
         }
     }
 
-    private fun handleMessage(message: DeviceAuthMessageOuterClass.CastMessage) {
-        if (message.payloadType == DeviceAuthMessageOuterClass.CastMessage.PayloadType.STRING) {
+    private fun handleMessage(message: ChromeCast.CastMessage) {
+        if (message.payloadType == ChromeCast.CastMessage.PayloadType.STRING) {
             val jsonObject = JSONObject(message.payloadUtf8);
             val type = jsonObject.getString("type");
             if (type == "RECEIVER_STATUS") {

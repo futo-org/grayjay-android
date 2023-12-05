@@ -1,24 +1,33 @@
 package com.futo.platformplayer.dialogs
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Animatable
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.AddSourceActivity
+import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.QRCaptureActivity
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.CastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.DeviceAdapter
+import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -28,6 +37,7 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
     private lateinit var _imageLoader: ImageView;
     private lateinit var _buttonClose: Button;
     private lateinit var _buttonAdd: Button;
+    private lateinit var _buttonScanQR: Button;
     private lateinit var _textNoDevicesFound: TextView;
     private lateinit var _textNoDevicesRemembered: TextView;
     private lateinit var _recyclerDevices: RecyclerView;
@@ -44,6 +54,7 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
         _imageLoader = findViewById(R.id.image_loader);
         _buttonClose = findViewById(R.id.button_close);
         _buttonAdd = findViewById(R.id.button_add);
+        _buttonScanQR = findViewById(R.id.button_scan_qr);
         _recyclerDevices = findViewById(R.id.recycler_devices);
         _recyclerRememberedDevices = findViewById(R.id.recycler_remembered_devices);
         _textNoDevicesFound = findViewById(R.id.text_no_devices_found);
@@ -77,6 +88,17 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
             UIDialogs.showCastingAddDialog(context);
             dismiss();
         };
+
+        val c = ownerActivity
+        if (c is MainActivity) {
+            _buttonScanQR.visibility = View.VISIBLE
+            _buttonScanQR.setOnClickListener {
+                c.showUrlQrCodeScanner()
+                dismiss()
+            };
+        } else {
+            _buttonScanQR.visibility = View.GONE
+        }
     }
 
     override fun show() {

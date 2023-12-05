@@ -74,9 +74,9 @@ class DeviceViewHolder : ViewHolder {
         } else if (d is AirPlayCastingDevice) {
             _imageDevice.setImageResource(R.drawable.ic_airplay);
             _textType.text = "AirPlay";
-        } else if (d is FastCastCastingDevice) {
+        } else if (d is FCastCastingDevice) {
             _imageDevice.setImageResource(R.drawable.ic_fc);
-            _textType.text = "FastCast";
+            _textType.text = "FCast";
         }
 
         _textName.text = d.name;

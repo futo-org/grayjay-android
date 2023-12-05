@@ -224,7 +224,7 @@ class PostDetailFragment : MainFragment {
                 updateCommentType(false);
             };
 
-            _commentsList.onClick.subscribe { c ->
+            _commentsList.onRepliesClick.subscribe { c ->
                 val replyCount = c.replyCount ?: 0;
                 var metadata = "";
                 if (replyCount > 0) {
@@ -233,7 +233,7 @@ class PostDetailFragment : MainFragment {
 
                 if (c is PolycentricPlatformComment) {
                     var parentComment: PolycentricPlatformComment = c;
-                    _repliesOverlay.load(_toggleCommentType.value, metadata, c.contextUrl, c.reference,
+                    _repliesOverlay.load(_toggleCommentType.value, metadata, c.contextUrl, c.reference, c,
                         { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
                         {
                             val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
@@ -241,7 +241,7 @@ class PostDetailFragment : MainFragment {
                             parentComment = newComment;
                         });
                 } else {
-                    _repliesOverlay.load(_toggleCommentType.value, metadata, null, null, { StatePlatform.instance.getSubComments(c) });
+                    _repliesOverlay.load(_toggleCommentType.value, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
                 }
 
                 setRepliesOverlayVisible(isVisible = true, animate = true);

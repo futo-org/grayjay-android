@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_comment"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
+    android:layout_marginStart="14dp"
+    android:layout_marginEnd="14dp"
+    android:orientation="vertical"
+    android:background="@drawable/background_comment"
+    android:padding="16dp">
+
+    <com.futo.platformplayer.views.others.CreatorThumbnail
+        android:id="@+id/image_thumbnail"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:contentDescription="@string/channel_image"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/placeholder_channel_thumbnail" />
+
+    <TextView
+        android:id="@+id/text_author"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:fontFamily="@font/inter_regular"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintTop_toTopOf="@id/image_thumbnail"
+        tools:text="ShortCircuit" />
+
+    <TextView
+        android:id="@+id/text_metadata"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:fontFamily="@font/inter_regular"
+        android:textColor="@color/gray_ac"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/text_author"
+        app:layout_constraintLeft_toRightOf="@id/text_author"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/text_author"
+        tools:text=" • 3 years ago" />
+
+    <com.futo.platformplayer.views.behavior.NonScrollingTextView
+        android:id="@+id/text_body"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="5dp"
+        android:layout_marginStart="10dp"
+        android:background="@color/transparent"
+        android:fontFamily="@font/inter_regular"
+        android:isScrollContainer="false"
+        android:textColor="#CCCCCC"
+        android:textSize="13sp"
+        android:maxLines="100"
+        app:layout_constraintTop_toBottomOf="@id/text_metadata"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintRight_toRightOf="parent"
+        tools:text="@string/lorem_ipsum" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintTop_toBottomOf="@id/text_body"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical">
+
+        <com.futo.platformplayer.views.pills.PillRatingLikesDislikes
+            android:id="@+id/rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginStart="10dp" />
+
+        <com.futo.platformplayer.views.pills.PillButton
+            android:id="@+id/button_replies"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:pillIcon="@drawable/ic_forum"
+            app:pillText="55 Replies"
+            android:layout_marginStart="15dp" />
+
+        <Space android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <FrameLayout
+            android:id="@+id/button_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/background_pill_pred"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+            <TextView
+                android:id="@+id/pill_text"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="@color/white"
+                android:textSize="13dp"
+                android:gravity="center_vertical"
+                android:fontFamily="@font/inter_light"
+                android:text="@string/delete" />
+        </FrameLayout>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

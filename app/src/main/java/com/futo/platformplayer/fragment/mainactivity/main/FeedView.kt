@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.IPlatformClient
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.models.JSPager
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.constructs.Event1
@@ -21,7 +20,6 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.others.TagsView
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
@@ -64,6 +62,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     val fragment: TFragment;
 
     private val _scrollListener: RecyclerView.OnScrollListener;
+    private var _automaticNextPageCounter = 0;
 
     constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, LinearLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
         this.fragment = fragment;
@@ -122,7 +121,6 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
 
-        var filteredNextPageCounter = 0;
         _nextPageHandler = TaskHandler<TPager, List<TResult>>({fragment.lifecycleScope}, {
             if (it is IAsyncPager<*>)
                 it.nextPageAsync();
@@ -142,15 +140,8 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             val filteredResults = filterResults(it);
             recyclerData.results.addAll(filteredResults);
             recyclerData.resultsUnfiltered.addAll(it);
-            if(filteredResults.isEmpty()) {
-                filteredNextPageCounter++
-                if(filteredNextPageCounter <= 4)
-                    loadNextPage()
-            }
-            else {
-                filteredNextPageCounter = 0;
-                recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
-            }
+            recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
+            ensureEnoughContentVisible(filteredResults)
         }.exception<Throwable> {
             Logger.w(TAG, "Failed to load next page.", it);
             UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
@@ -170,14 +161,43 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
                 val visibleItemCount = _recyclerResults.childCount;
                 val firstVisibleItem = recyclerData.layoutManager.findFirstVisibleItemPosition();
+                //Logger.i(TAG, "onScrolled loadNextPage visibleItemCount=$visibleItemCount firstVisibleItem=$visibleItemCount")
+
                 if (!_loading && firstVisibleItem + visibleItemCount + visibleThreshold >= recyclerData.results.size && firstVisibleItem > 0) {
-                    //Logger.i(TAG, "loadNextPage(): firstVisibleItem=$firstVisibleItem visibleItemCount=$visibleItemCount visibleThreshold=$visibleThreshold _results.size=${_results.size}")
+                    //Logger.i(TAG, "onScrolled loadNextPage(): firstVisibleItem=$firstVisibleItem visibleItemCount=$visibleItemCount visibleThreshold=$visibleThreshold recyclerData.results.size=${recyclerData.results.size}")
                     loadNextPage();
                 }
             }
         };
 
         _recyclerResults.addOnScrollListener(_scrollListener);
+    }
+
+    private fun ensureEnoughContentVisible(filteredResults: List<TConverted>) {
+        val canScroll = if (recyclerData.results.isEmpty()) false else {
+            val layoutManager = recyclerData.layoutManager
+            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+            if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
+                val firstVisibleView = layoutManager.findViewByPosition(firstVisibleItemPosition)
+                val itemHeight = firstVisibleView?.height ?: 0
+                val occupiedSpace = recyclerData.results.size * itemHeight
+                val recyclerViewHeight = _recyclerResults.height
+                Logger.i(TAG, "ensureEnoughContentVisible loadNextPage occupiedSpace=$occupiedSpace recyclerViewHeight=$recyclerViewHeight")
+                occupiedSpace >= recyclerViewHeight
+            } else {
+                false
+            }
+
+        }
+        Logger.i(TAG, "ensureEnoughContentVisible loadNextPage canScroll=$canScroll _automaticNextPageCounter=$_automaticNextPageCounter")
+        if (!canScroll || filteredResults.isEmpty()) {
+            _automaticNextPageCounter++
+            if(_automaticNextPageCounter <= 4)
+                loadNextPage()
+        } else {
+            _automaticNextPageCounter = 0;
+        }
     }
 
     protected fun setTextCentered(text: String?) {
@@ -370,6 +390,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         recyclerData.resultsUnfiltered.addAll(toAdd);
         recyclerData.adapter.notifyDataSetChanged();
         recyclerData.loadedFeedStyle = feedStyle;
+        ensureEnoughContentVisible(filteredResults)
     }
 
     private fun detachPagerEvents() {

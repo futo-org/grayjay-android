@@ -65,13 +65,16 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
     override fun bind(authorLink: PlatformAuthorLink) {
         _taskLoadProfile.cancel();
 
+        _creatorThumbnail.setThumbnail(authorLink.thumbnail, false);
+        _taskLoadProfile.run(authorLink.id);
+        _textName.text = authorLink.name;
+
         val cachedProfile = PolycentricCache.instance.getCachedProfile(authorLink.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
-        } else {
-            _creatorThumbnail.setThumbnail(authorLink.thumbnail, false);
-            _taskLoadProfile.run(authorLink.id);
-            _textName.text = authorLink.name;
+            if (cachedProfile.expired) {
+                _taskLoadProfile.run(authorLink.id);
+            }
         }
 
         if(authorLink.subscribers == null || (authorLink.subscribers ?: 0) <= 0L)
