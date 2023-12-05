@@ -5,10 +5,10 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.PlatformContentPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.toSafeFileName
@@ -27,13 +27,16 @@ class CachedSubscriptionAlgorithm(pageSize: Int = 150, scope: CoroutineScope, al
     override fun getSubscriptions(subs: Map<Subscription, List<String>>): Result {
         val validSubIds = subs.flatMap { it.value } .map { it.toSafeFileName() }.toHashSet();
 
-        val validStores = ChannelContentCache.instance._channelContents
+        /*
+        val validStores = StateCache.instance._channelContents
             .filter { validSubIds.contains(it.key) }
-            .map { it.value };
+            .map { it.value };*/
 
+        /*
         val items = validStores.flatMap { it.getItems() }
             .sortedByDescending { it.datetime };
+        */
 
-        return Result(DedupContentPager(PlatformContentPager(items, Math.min(_pageSize, items.size)), StatePlatform.instance.getEnabledClients().map { it.id }), listOf());
+        return Result(DedupContentPager(StateCache.instance.getChannelCachePager(subs.flatMap { it.value }.distinct()), StatePlatform.instance.getEnabledClients().map { it.id }), listOf());
     }
 }

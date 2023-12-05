@@ -40,6 +40,8 @@ open class BigButton : LinearLayout {
         _root.apply {
             isClickable = true;
             setOnClickListener {
+                if(!isEnabled)
+                    return@setOnClickListener;
                 action();
                 onClick.emit();
             };
@@ -54,6 +56,8 @@ open class BigButton : LinearLayout {
         _root.apply {
             isClickable = true;
             setOnClickListener {
+                if(!isEnabled)
+                    return@setOnClickListener;
                 onClick.emit();
             };
         }
@@ -143,5 +147,18 @@ open class BigButton : LinearLayout {
             _root.setBackgroundResource(R.drawable.background_big_button);
 
         return this;
+    }
+
+    fun setButtonEnabled(enabled: Boolean) {
+        if(enabled) {
+            alpha = 1f;
+            isEnabled = true;
+            isClickable = true;
+        }
+        else {
+            alpha = 0.5f;
+            isEnabled = false;
+            isClickable = false;
+        }
     }
 }

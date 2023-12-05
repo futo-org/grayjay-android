@@ -3,6 +3,7 @@ package com.futo.platformplayer.serializers
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformNestedContent
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformPost
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.*
@@ -22,7 +23,7 @@ class PlatformContentSerializer() : JsonContentPolymorphicSerializer<SerializedP
                 "MEDIA" -> SerializedPlatformVideo.serializer();
                 "NESTED_VIDEO" -> SerializedPlatformNestedContent.serializer();
                 "ARTICLE" -> throw NotImplementedError("Articles not yet implemented");
-                "POST" -> throw NotImplementedError("Post not yet implemented");
+                "POST" -> SerializedPlatformPost.serializer();
                 else -> throw NotImplementedError("Unknown Content Type Value: ${obj?.jsonPrimitive?.contentOrNull}")
             };
         else
@@ -30,7 +31,7 @@ class PlatformContentSerializer() : JsonContentPolymorphicSerializer<SerializedP
                 ContentType.MEDIA.value -> SerializedPlatformVideo.serializer();
                 ContentType.NESTED_VIDEO.value -> SerializedPlatformNestedContent.serializer();
                 ContentType.ARTICLE.value -> throw NotImplementedError("Articles not yet implemented");
-                ContentType.POST.value -> throw NotImplementedError("Post not yet implemented");
+                ContentType.POST.value -> SerializedPlatformPost.serializer();
                 else -> throw NotImplementedError("Unknown Content Type Value: ${obj?.jsonPrimitive?.int}")
             };
     }

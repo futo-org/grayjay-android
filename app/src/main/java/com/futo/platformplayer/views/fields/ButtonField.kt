@@ -57,6 +57,8 @@ class ButtonField : BigButton, IField {
         };
 
         super.onClick.subscribe {
+            if(!isEnabled)
+                return@subscribe;
             if(_method?.parameterCount == 1)
                 _method?.invoke(_obj, context);
             else if(_method?.parameterCount == 2)

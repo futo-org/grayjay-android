@@ -18,6 +18,7 @@ import com.futo.platformplayer.engine.internal.V8BindObject
 import com.futo.platformplayer.getOrThrow
 import kotlinx.coroutines.CoroutineScope
 import java.net.SocketTimeoutException
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 
 class PackageHttp: V8Package {
@@ -171,7 +172,9 @@ class PackageHttp: V8Package {
                     return@map it.first.requestWithBody(it.second.method, it.second.url, it.second.body!!, it.second.headers);
                 else
                     return@map it.first.request(it.second.method, it.second.url, it.second.headers);
-            }.toList();
+            }
+                .asSequence()
+                .toList();
         }
     }
 

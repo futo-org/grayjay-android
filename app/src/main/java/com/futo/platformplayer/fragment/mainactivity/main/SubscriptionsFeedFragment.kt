@@ -15,13 +15,13 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -40,6 +40,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 class SubscriptionsFeedFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -132,8 +134,10 @@ class SubscriptionsFeedFragment : MainFragment() {
 
                 if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5 && Settings.instance.subscriptions.fetchOnTabOpen)
                     loadResults(false);
-                else if(recyclerData.results.size == 0)
+                else if(recyclerData.results.size == 0) {
                     loadCache();
+                    setLoading(false);
+                }
             }
 
             val announcementsView = _announcementsView;
@@ -306,12 +310,21 @@ class SubscriptionsFeedFragment : MainFragment() {
 
 
         private fun loadCache() {
-            Logger.i(TAG, "Subscriptions load cache");
-            val cachePager = ChannelContentCache.instance.getSubscriptionCachePager();
-            val results = cachePager.getResults();
-            Logger.i(TAG, "Subscriptions show cache (${results.size})");
-            setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
-            setPager(cachePager);
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                val cachePager: IPager<IPlatformContent>;
+                Logger.i(TAG, "Subscriptions retrieving cache");
+                val time = measureTimeMillis {
+                    cachePager = StateCache.instance.getSubscriptionCachePager();
+                }
+                Logger.i(TAG, "Subscriptions retrieved cache (${time}ms)");
+
+                withContext(Dispatchers.Main) {
+                    val results = cachePager.getResults();
+                    Logger.i(TAG, "Subscriptions show cache (${results.size})");
+                    setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+                    setPager(cachePager);
+                }
+            }
         }
         private fun loadResults(withRefetch: Boolean = false) {
             setLoading(true);
