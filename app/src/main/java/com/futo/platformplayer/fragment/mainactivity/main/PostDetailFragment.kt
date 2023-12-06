@@ -596,9 +596,12 @@ class PostDetailFragment : MainFragment {
 
         private fun fetchPolycentricProfile() {
             val author = _post?.author ?: _postOverview?.author ?: return;
-            val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(author.url);
+            val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(author.url, true);
             if (cachedPolycentricProfile != null) {
                 setPolycentricProfile(cachedPolycentricProfile, animate = false);
+                if (cachedPolycentricProfile.expired) {
+                    _taskLoadPolycentricProfile.run(author.id);
+                }
             } else {
                 setPolycentricProfile(null, animate = false);
                 _taskLoadPolycentricProfile.run(author.id);

@@ -992,14 +992,17 @@ class VideoDetailView : ConstraintLayout {
             _descriptionContainer.visibility = View.GONE;
 
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
+        _channelName.text = video.author.name;
 
-        val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url);
+        val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url, true);
         if (cachedPolycentricProfile != null) {
             setPolycentricProfile(cachedPolycentricProfile, animate = false);
+            if (cachedPolycentricProfile.expired) {
+                _taskLoadPolycentricProfile.run(video.author.id);
+            }
         } else {
             setPolycentricProfile(null, animate = false);
             _taskLoadPolycentricProfile.run(video.author.id);
-            _channelName.text = video.author.name;
         }
 
         _player.clear();
@@ -1146,7 +1149,7 @@ class VideoDetailView : ConstraintLayout {
         setDescription(video.description.fixHtmlLinks());
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
 
-        val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url);
+        val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url, true);
         if (cachedPolycentricProfile != null) {
             setPolycentricProfile(cachedPolycentricProfile, animate = false);
         } else {
@@ -2167,6 +2170,11 @@ class VideoDetailView : ConstraintLayout {
         } else {
             _creatorThumbnail.setThumbnail(video?.author?.thumbnail, animate);
             _creatorThumbnail.setHarborAvailable(profile != null, animate);
+        }
+
+        val username = cachedPolycentricProfile?.profile?.systemState?.username
+        if (username != null) {
+            _channelName.text = username
         }
 
         _monetization.setPolycentricProfile(cachedPolycentricProfile, animate);

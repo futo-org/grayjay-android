@@ -50,7 +50,9 @@ class PolycentricCache {
                     ContentType.MEMBERSHIP_URLS.value,
                     ContentType.DONATION_DESTINATIONS.value
                 )
-            ).eventsList.map { e -> SignedEvent.fromProto(e) };
+            ).eventsList.map { e -> SignedEvent.fromProto(e) }
+                .groupBy { e -> e.event.contentType }
+                .map { (_, events) -> events.maxBy { it.event.unixMilliseconds ?: 0 } };
 
             val storageSystemState = StorageTypeSystemState.create()
             for (signedEvent in signedProfileEvents) {

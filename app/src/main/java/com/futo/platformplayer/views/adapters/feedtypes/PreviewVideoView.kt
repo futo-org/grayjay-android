@@ -183,7 +183,7 @@ open class PreviewVideoView : LinearLayout {
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
                 .into(_imageChannel);
         }
-        _taskLoadProfile.run(content.author.id);
+
         _textChannelName.text = content.author.name
 
         val cachedProfile = PolycentricCache.instance.getCachedProfile(content.author.url, true);
@@ -192,6 +192,8 @@ open class PreviewVideoView : LinearLayout {
             if (cachedProfile.expired) {
                 _taskLoadProfile.run(content.author.id);
             }
+        } else {
+            _taskLoadProfile.run(content.author.id);
         }
 
         _imageChannel?.clipToOutline = true;

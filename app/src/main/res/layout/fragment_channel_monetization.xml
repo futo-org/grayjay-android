@@ -3,11 +3,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.futo.platformplayer.views.SupportView
-        android:id="@+id/support"
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
+        android:layout_height="match_parent">
+
+        <com.futo.platformplayer.views.SupportView
+            android:id="@+id/support"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+
+    </androidx.core.widget.NestedScrollView>
 
     <TextView
         android:id="@+id/text_monetization"

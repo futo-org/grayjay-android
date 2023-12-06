@@ -82,7 +82,6 @@ class SubscriptionViewHolder : ViewHolder {
         this.subscription = sub;
 
         _creatorThumbnail.setThumbnail(sub.channel.thumbnail, false);
-        _taskLoadProfile.run(sub.channel.id);
         _textName.text = sub.channel.name;
         bindViewMetrics(sub);
         _platformIndicator.setPlatformFromClientID(sub.channel.id.pluginId);
@@ -93,6 +92,8 @@ class SubscriptionViewHolder : ViewHolder {
             if (cachedProfile.expired) {
                 _taskLoadProfile.run(sub.channel.id);
             }
+        } else {
+            _taskLoadProfile.run(sub.channel.id);
         }
     }
 

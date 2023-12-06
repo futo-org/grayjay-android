@@ -54,6 +54,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import okhttp3.internal.platform.Platform
 
 @Serializable
 data class PolycentricProfile(val system: PublicKey, val systemState: SystemState, val ownedClaims: List<OwnedClaim>);
@@ -298,7 +299,7 @@ class ChannelFragment : MainFragment() {
                         Glide.with(_imageBanner)
                             .clear(_imageBanner);
 
-                        _taskLoadPolycentricProfile.run(parameter.id);
+                        loadPolycentricProfile(parameter.id, parameter.url)
                     };
 
                     _url = parameter.url;
@@ -311,7 +312,7 @@ class ChannelFragment : MainFragment() {
                         Glide.with(_imageBanner)
                             .clear(_imageBanner);
 
-                        _taskLoadPolycentricProfile.run(parameter.channel.id);
+                        loadPolycentricProfile(parameter.channel.id, parameter.channel.url)
                     };
 
                     _url = parameter.channel.url;
@@ -325,6 +326,18 @@ class ChannelFragment : MainFragment() {
         fun selectTab(selectedTabIndex: Int) {
             _selectedTabIndex = selectedTabIndex;
             _tabs.selectTab(_tabs.getTabAt(selectedTabIndex));
+        }
+
+        private fun loadPolycentricProfile(id: PlatformID, url: String) {
+            val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(url, true);
+            if (cachedPolycentricProfile != null) {
+                setPolycentricProfile(cachedPolycentricProfile, animate = true)
+                if (cachedPolycentricProfile.expired) {
+                    _taskLoadPolycentricProfile.run(id);
+                }
+            } else {
+                _taskLoadPolycentricProfile.run(id);
+            }
         }
 
         private fun setLoading(isLoading: Boolean) {
@@ -448,8 +461,6 @@ class ChannelFragment : MainFragment() {
         }
 
         private fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-            Log.i(TAG, "setPolycentricProfile(cachedPolycentricProfile = $cachedPolycentricProfile, animate = $animate)")
-
             val dp_35 = 35.dp(resources)
             val profile = cachedPolycentricProfile?.profile;
             val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
