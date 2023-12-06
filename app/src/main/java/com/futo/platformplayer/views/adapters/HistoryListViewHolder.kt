@@ -1,6 +1,8 @@
 package com.futo.platformplayer.views.adapters
 
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -35,26 +37,26 @@ class HistoryListViewHolder : ViewHolder {
     val onClick = Event1<HistoryVideo>();
     val onRemove = Event1<HistoryVideo>();
 
-    constructor(view: View) : super(view) {
-        _root = view.findViewById(R.id.root);
-        _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
-        _imageThumbnail?.clipToOutline = true;
-        _textName = view.findViewById(R.id.text_video_name);
-        _textAuthor = view.findViewById(R.id.text_author);
-        _textMetadata = view.findViewById(R.id.text_video_metadata);
-        _textVideoDuration = view.findViewById(R.id.thumbnail_duration);
-        _containerDuration = view.findViewById(R.id.thumbnail_duration_container);
-        _containerLive = view.findViewById(R.id.thumbnail_live_container);
-        _imageRemove = view.findViewById(R.id.image_trash);
-        _textHeader = view.findViewById(R.id.text_header);
-        _timeBar = view.findViewById(R.id.time_bar);
+    constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_history, viewGroup, false)) {
+        _root = itemView.findViewById(R.id.root);
+        _imageThumbnail = itemView.findViewById(R.id.image_video_thumbnail);
+        _imageThumbnail.clipToOutline = true;
+        _textName = itemView.findViewById(R.id.text_video_name);
+        _textAuthor = itemView.findViewById(R.id.text_author);
+        _textMetadata = itemView.findViewById(R.id.text_video_metadata);
+        _textVideoDuration = itemView.findViewById(R.id.thumbnail_duration);
+        _containerDuration = itemView.findViewById(R.id.thumbnail_duration_container);
+        _containerLive = itemView.findViewById(R.id.thumbnail_live_container);
+        _imageRemove = itemView.findViewById(R.id.image_trash);
+        _textHeader = itemView.findViewById(R.id.text_header);
+        _timeBar = itemView.findViewById(R.id.time_bar);
 
         _root.setOnClickListener {
             val v = video ?: return@setOnClickListener;
             onClick.emit(v);
         };
 
-        _imageRemove?.setOnClickListener {
+        _imageRemove.setOnClickListener {
             val v = video ?: return@setOnClickListener;
             onRemove.emit(v);
         };

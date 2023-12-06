@@ -101,10 +101,6 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         return@TaskHandler it.getResults();
     }).success {
         setLoading(false);
-        if (it.isEmpty()) {
-            return@success;
-        }
-
         val posBefore = _results.size;
         val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo }
         _results.addAll(toAdd);

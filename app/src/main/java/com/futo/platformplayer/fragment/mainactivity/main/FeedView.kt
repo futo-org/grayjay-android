@@ -132,10 +132,6 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }).success {
             setLoading(false);
 
-            if (it.isEmpty()) {
-                return@success;
-            }
-
             val posBefore = recyclerData.results.size;
             val filteredResults = filterResults(it);
             recyclerData.results.addAll(filteredResults);
