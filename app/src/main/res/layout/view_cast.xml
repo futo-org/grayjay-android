@@ -54,6 +54,15 @@
             android:clickable="true"
             android:padding="12dp"
             app:srcCompat="@drawable/ic_cast" />
+
+        <ImageButton
+            android:id="@+id/button_loop"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_loop" />
         <ImageButton
             android:id="@+id/button_settings"
             android:layout_width="50dp"

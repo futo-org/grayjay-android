@@ -37,6 +37,7 @@ class StatePlayer {
 
     //Video Status
     var rotationLock : Boolean = false;
+    var loopVideo : Boolean = false;
 
     val isPlaying: Boolean get() = _exoplayer?.player?.playWhenReady ?: false;
 
@@ -286,6 +287,31 @@ class StatePlayer {
         }
         onQueueChanged.emit(true);
     }
+    fun insertToQueue(video: IPlatformVideo, playNow: Boolean = false) {
+        synchronized(_queue) {
+            if(_queue.isEmpty()) {
+                setQueueType(TYPE_QUEUE);
+                currentVideo?.let {
+                    _queue.add(it);
+                }
+            }
+            if(_queue.isEmpty())
+                _queue.add(video);
+            else
+                _queue.add(_queuePosition.coerceAtLeast(0).coerceAtMost(_queue.size - 1), video);
+
+            if (queueShuffle) {
+                addToShuffledQueue(video);
+            }
+
+            if (_queuePosition < 0) {
+                _queuePosition = 0;
+            }
+        }
+        onQueueChanged.emit(true);
+        if(playNow)
+            setQueuePosition(video);
+    }
     fun setQueuePosition(video: IPlatformVideo) {
           synchronized(_queue) {
               if (getCurrentQueueItem() == video) {
@@ -348,6 +374,8 @@ class StatePlayer {
     }
 
     fun getNextQueueItem() : IPlatformVideo? {
+        if(loopVideo)
+            return currentVideo;
         synchronized(_queue) {
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
@@ -375,6 +403,8 @@ class StatePlayer {
         }
     };
     fun nextQueueItem(withoutRemoval: Boolean = false) : IPlatformVideo? {
+        if(loopVideo)
+            return currentVideo;
         synchronized(_queue) {
             if (_queue.isEmpty())
                 return null;

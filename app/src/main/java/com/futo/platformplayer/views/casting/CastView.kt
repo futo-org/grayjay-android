@@ -26,6 +26,7 @@ class CastView : ConstraintLayout {
     private val _thumbnail: ImageView;
     private val _buttonMinimize: ImageButton;
     private val _buttonSettings: ImageButton;
+    private val _buttonLoop: ImageButton;
     private val _buttonPlay: ImageButton;
     private val _buttonPause: ImageButton;
     private val _buttonCast: CastButton;
@@ -49,6 +50,7 @@ class CastView : ConstraintLayout {
         _thumbnail = findViewById(R.id.image_thumbnail);
         _buttonMinimize = findViewById(R.id.button_minimize);
         _buttonSettings = findViewById(R.id.button_settings);
+        _buttonLoop = findViewById(R.id.button_loop);
         _buttonPlay = findViewById(R.id.button_play);
         _buttonPause = findViewById(R.id.button_pause);
         _buttonCast = findViewById(R.id.button_cast);
@@ -64,6 +66,12 @@ class CastView : ConstraintLayout {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;
             StateCasting.instance.videoSeekTo(d.expectedCurrentTime + it / 1000);
         };
+
+        _buttonLoop.setOnClickListener {
+            StatePlayer.instance.loopVideo = !StatePlayer.instance.loopVideo;
+            _buttonLoop.setImageResource(if(StatePlayer.instance.loopVideo) R.drawable.ic_loop_active else R.drawable.ic_loop);
+        }
+        _buttonLoop.setImageResource(if(StatePlayer.instance.loopVideo) R.drawable.ic_loop_active else R.drawable.ic_loop);
 
         _timeBar.addListener(object : OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
