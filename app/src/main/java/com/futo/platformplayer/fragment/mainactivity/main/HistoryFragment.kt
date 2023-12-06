@@ -26,6 +26,9 @@ import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.others.TagsView
 import com.futo.platformplayer.views.adapters.HistoryListViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class HistoryFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -184,6 +187,8 @@ class HistoryFragment : MainFragment() {
         }
 
         fun setPager(pager: IPager<HistoryVideo>) {
+            Logger.i(TAG, "setPager()");
+
             synchronized(_pagerLock) {
                 loadPagerInternal(pager);
             }
@@ -206,12 +211,6 @@ class HistoryFragment : MainFragment() {
                 return;
             }
 
-            _results.removeAt(index);
-            _results.add(0, v);
-
-            _adapter.notifyItemMoved(index, 0);
-            _adapter.notifyItemRangeChanged(0, 2);
-
             val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager;
             val diff = v.video.duration - v.position;
             val vid: Any = if (diff > 5) { v.video.withTimestamp(v.position) } else { v.video };
@@ -219,6 +218,11 @@ class HistoryFragment : MainFragment() {
             _fragment.navigate<VideoDetailFragment>(vid).maximizeVideoDetail();
             _editSearch.clearFocus();
             inputMethodManager.hideSoftInputFromWindow(_editSearch.windowToken, 0);
+
+            _fragment.lifecycleScope.launch(Dispatchers.Main) {
+                delay(2000)
+                updatePager()
+            }
         }
 
         private fun loadNextPage() {
