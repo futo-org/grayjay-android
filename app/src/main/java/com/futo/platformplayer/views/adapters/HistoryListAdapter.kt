@@ -47,8 +47,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListViewHolder> {
 
     fun updateFilteredVideos() {
         val videos = StateHistory.instance.getHistory();
-        val pager = StateHistory.instance.getHistoryPager();
-        //filtered val pager = StateHistory.instance.getHistorySearchPager("querrryyyyy");
+        //filtered val pager = StateHistory.instance.getHistorySearchPager("querrryyyyy"); TODO: Implement pager
 
         if (_query.isBlank()) {
             _filteredVideos = videos.toMutableList();

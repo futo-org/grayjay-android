@@ -553,27 +553,6 @@ class StateApp {
 
         if(StateHistory.instance.shouldMigrateLegacyHistory())
             StateHistory.instance.migrateLegacyHistory();
-
-
-        if(false) {
-            /*
-            Logger.i(TAG, "TEST:--------(200)---------");
-            testHistoryDB(200);
-            Logger.i(TAG, "TEST:--------(1000)---------");
-            testHistoryDB(1000);
-            Logger.i(TAG, "TEST:--------(2000)---------");
-            testHistoryDB(2000);
-            Logger.i(TAG, "TEST:--------(4000)---------");
-            testHistoryDB(4000);
-            Logger.i(TAG, "TEST:--------(6000)---------");
-            testHistoryDB(6000);
-            Logger.i(TAG, "TEST:--------(100000)---------");
-            scope.launch(Dispatchers.Default) {
-                StateHistory.instance.testHistoryDB(100000);
-            }
-            */
-        }
-
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {

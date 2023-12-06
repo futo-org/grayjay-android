@@ -39,27 +39,16 @@ class StateCache {
     }
 
     fun getChannelCachePager(channelUrl: String): IPager<IPlatformContent> {
-        val result: IPager<IPlatformContent>;
-        val time = measureTimeMillis {
-            result = _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) {
-                it.obj;
-            }
-        }
-        return result;
+        return _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, channelUrl, 20) { it.obj }
     }
     fun getAllChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
-        val result: IPager<IPlatformContent>;
-        val time = measureTimeMillis {
-            result = _subscriptionCache.queryInPager(DBSubscriptionCache.Index::channelUrl, channelUrls, 20) {
-                it.obj;
-            }
-        }
-        return result;
+        return _subscriptionCache.queryInPager(DBSubscriptionCache.Index::channelUrl, channelUrls, 20) { it.obj }
     }
-    fun getChannelCachePager(channelUrls: List<String>): IPager<IPlatformContent> {
-        val pagers = MultiChronoContentPager(channelUrls.map { _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, it, 20) {
+
+    fun getChannelCachePager(channelUrls: List<String>, pageSize: Int = 20): IPager<IPlatformContent> {
+        val pagers = MultiChronoContentPager(channelUrls.map { _subscriptionCache.queryPager(DBSubscriptionCache.Index::channelUrl, it, pageSize) {
             it.obj;
-        } }, false, 20);
+        } }, false, pageSize);
         return DedupContentPager(pagers, StatePlatform.instance.getEnabledClients().map { it.id });
     }
     fun getSubscriptionCachePager(): DedupContentPager {
@@ -67,7 +56,7 @@ class StateCache {
         val subs = StateSubscriptions.instance.getSubscriptions();
         Logger.i(TAG, "Subscriptions CachePager polycentric urls");
         val allUrls = subs.map {
-            val otherUrls =  PolycentricCache.instance.getCachedProfile(it.channel.url)?.profile?.ownedClaims?.mapNotNull { c -> c.claim.resolveChannelUrl() } ?: listOf();
+            val otherUrls = PolycentricCache.instance.getCachedProfile(it.channel.url)?.profile?.ownedClaims?.mapNotNull { c -> c.claim.resolveChannelUrl() } ?: listOf();
             if(!otherUrls.contains(it.channel.url))
                 return@map listOf(listOf(it.channel.url), otherUrls).flatten();
             else
@@ -79,13 +68,6 @@ class StateCache {
 
         val timeCacheRetrieving = measureTimeMillis {
             pagers = listOf(getAllChannelCachePager(allUrls));
-
-                /*allUrls.parallelStream()
-                .map {
-                    getChannelCachePager(it)
-                }
-                .asSequence()
-                .toList();*/
         }
 
         Logger.i(TAG, "Subscriptions CachePager compiling (retrieved in ${timeCacheRetrieving}ms)");

@@ -38,7 +38,7 @@ abstract class SubscriptionFetchAlgorithm(
 
         fun getAlgorithm(algo: SubscriptionFetchAlgorithms, scope: CoroutineScope, allowFailure: Boolean = false, withCacheFallback: Boolean = false, pool: ForkJoinPool? = null): SubscriptionFetchAlgorithm {
             return when(algo) {
-                SubscriptionFetchAlgorithms.CACHE -> CachedSubscriptionAlgorithm(150, scope, allowFailure, withCacheFallback, pool);
+                SubscriptionFetchAlgorithms.CACHE -> CachedSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool, 50);
                 SubscriptionFetchAlgorithms.SIMPLE -> SimpleSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool);
                 SubscriptionFetchAlgorithms.SMART -> SmartSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool);
                 else -> throw IllegalStateException("Unknown algorithm ${algo}");
