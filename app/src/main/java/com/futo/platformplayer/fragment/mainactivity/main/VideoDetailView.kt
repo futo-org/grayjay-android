@@ -465,6 +465,8 @@ class VideoDetailView : ConstraintLayout {
             nextVideo();
         };
         _player.onDatasourceError.subscribe(::onDataSourceError);
+        _player.onNext.subscribe { nextVideo(true) };
+        _player.onPrevious.subscribe { previousVideo(true) };
 
         _minimize_controls_play.setOnClickListener { handlePlay(); };
         _minimize_controls_pause.setOnClickListener { handlePause(); };
@@ -542,7 +544,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
         MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo(true) };
-        MediaControlReceiver.onPreviousReceived.subscribe(this) { prevVideo() };
+        MediaControlReceiver.onPreviousReceived.subscribe(this) { previousVideo(true) };
         MediaControlReceiver.onCloseReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onCloseReceived")
             onClose.emit()
@@ -1532,25 +1534,63 @@ class VideoDetailView : ConstraintLayout {
         _slideUpOverlay = _overlay_quality_selector;
     }
 
-    fun prevVideo() {
-        Logger.i(TAG, "prevVideo")
-        val next = StatePlayer.instance.prevQueueItem(_player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
-        if(next != null) {
-            setVideoOverview(next);
+    private fun getPreviousVideo(withoutRemoval: Boolean, forceLoop: Boolean = false): IPlatformVideo? {
+        if (!StatePlayer.instance.hasQueue) {
+            if (forceLoop) {
+                return StatePlayer.instance.currentVideo
+            } else {
+                return null
+            }
         }
+
+        val shouldNotRemove = _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9
+        var previous = StatePlayer.instance.prevQueueItem(withoutRemoval || shouldNotRemove);
+        if(previous == null && forceLoop)
+            previous = StatePlayer.instance.getQueue().last();
+        return previous;
+    }
+
+    private fun getNextVideo(withoutRemoval: Boolean, forceLoop: Boolean = false): IPlatformVideo? {
+        if (!StatePlayer.instance.hasQueue) {
+            if (forceLoop) {
+                return StatePlayer.instance.currentVideo
+            } else {
+                return null
+            }
+        }
+
+        val shouldNotRemove = _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9
+        var next = StatePlayer.instance.nextQueueItem(withoutRemoval || shouldNotRemove);
+        if(next == null && forceLoop)
+            next = StatePlayer.instance.restartQueue();
+        return next;
+    }
+
+    fun previousVideo(forceLoop: Boolean = false): Boolean {
+        Logger.i(TAG, "previousVideo")
+
+        val previous = getPreviousVideo(false, forceLoop);
+        if(previous != null) {
+            setVideoOverview(previous);
+            return true;
+        } else {
+            StatePlayer.instance.setCurrentlyPlaying(null);
+        }
+
+        return false;
     }
 
     fun nextVideo(forceLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
-        var next = StatePlayer.instance.nextQueueItem(_player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
-        if(next == null && forceLoop)
-            next = StatePlayer.instance.restartQueue();
+
+        val next = getNextVideo(false, forceLoop);
         if(next != null) {
             setVideoOverview(next);
             return true;
-        }
-        else
+        } else {
             StatePlayer.instance.setCurrentlyPlaying(null);
+        }
+
         return false;
     }
 
@@ -1690,6 +1730,10 @@ class VideoDetailView : ConstraintLayout {
 
     private fun updateQueueState() {
         _upNext.update();
+        /*_player.updateNextPrevious(
+            getPreviousVideo(withoutRemoval = true, forceLoop = true) != null,
+            getNextVideo(withoutRemoval = true, forceLoop = true) != null
+        )*/
     }
 
     //Handlers
