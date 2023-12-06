@@ -372,6 +372,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
 
     private fun loadPagerInternal(pager: TPager, cache: ItemCache<TResult>? = null) {
+        Logger.i(TAG, "Setting new internal pager on feed");
         _cache = cache;
 
         detachPagerEvents();
@@ -418,6 +419,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
 
+    var _lastNextPage = false;
     private fun loadNextPage() {
         synchronized(_pager_lock) {
             val pager: TPager = recyclerData.pager ?: return;
@@ -426,8 +428,13 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
             //loadCachedPage();
             if (pager.hasMorePages()) {
+                _lastNextPage = true;
                 setLoading(true);
                 _nextPageHandler.run(pager);
+            }
+            else if(_lastNextPage) {
+                Logger.i(TAG, "End of page reached");
+                _lastNextPage = false;
             }
         }
     }

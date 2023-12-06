@@ -122,7 +122,7 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
             //Only for testing notifications
             val testNotifs = 0;
             if(contentNotifs.size == 0 && testNotifs > 0) {
-                results.first.getResults().filter { it is IPlatformVideo && it.datetime?.let { it < now } == true }
+                results.first.getResults().filter { it is IPlatformVideo }
                     .take(testNotifs).forEach {
                         contentNotifs.add(Pair(StateSubscriptions.instance.getSubscriptions().first(), it));
                     }

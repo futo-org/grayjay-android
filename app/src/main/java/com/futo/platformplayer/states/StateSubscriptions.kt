@@ -10,7 +10,6 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.api.media.structures.ReusablePager.Companion.asReusable
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -39,6 +38,7 @@ import java.util.concurrent.ForkJoinTask
 import kotlin.collections.ArrayList
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
@@ -259,7 +259,9 @@ class StateSubscriptions {
                 Pair(it, StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id));
             else
                 Pair(it, listOf(it.channel.url));
-        }.toList().associate { it };
+        }.asSequence()
+            .toList()
+            .associate { it };
 
         val result = algo.getSubscriptions(subUrls);
         return Pair(result.pager, result.exceptions);

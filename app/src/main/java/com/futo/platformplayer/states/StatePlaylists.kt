@@ -3,6 +3,7 @@ package com.futo.platformplayer.states
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
@@ -11,6 +12,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
@@ -19,6 +21,8 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.db.ManagedDBStore
+import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import kotlinx.serialization.encodeToString
@@ -26,6 +30,8 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 /***
  * Used to maintain playlists
@@ -39,26 +45,17 @@ class StatePlaylists {
                 = SerializedPlatformVideo.fromVideo(StatePlatform.instance.getContentDetails(backup).await() as IPlatformVideoDetails);
         })
         .load();
-    private val _historyStore = FragmentedStorage.storeJson<HistoryVideo>("history")
-        .withRestore(object: ReconstructStore<HistoryVideo>() {
-            override fun toReconstruction(obj: HistoryVideo): String = obj.toReconString();
-            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): HistoryVideo
-                = HistoryVideo.fromReconString(backup, null);
-        })
-        .load();
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
         .load();
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
 
-    var onHistoricVideoChanged = Event2<IPlatformVideo, Long>();
     val onWatchLaterChanged = Event0();
 
     fun toMigrateCheck(): List<ManagedStore<*>> {
-        return listOf(playlistStore, _watchlistStore, _historyStore);
+        return listOf(playlistStore, _watchlistStore);
     }
-
     fun getWatchLater() : List<SerializedPlatformVideo> {
         synchronized(_watchlistStore) {
             return _watchlistStore.getItems();
@@ -99,72 +96,13 @@ class StatePlaylists {
         return playlistStore.findItem { it.id == id };
     }
 
+
     fun didPlay(playlistId: String) {
         val playlist = getPlaylist(playlistId);
         if(playlist != null) {
             playlist.datePlayed = OffsetDateTime.now();
             playlistStore.saveAsync(playlist);
         }
-    }
-
-    fun getHistoryPosition(url: String): Long {
-        val histVideo = _historyStore.findItem { it.video.url == url };
-        if(histVideo != null)
-            return histVideo.position;
-        return 0;
-    }
-    fun updateHistoryPosition(video: IPlatformVideo, updateExisting: Boolean, position: Long = -1L): Long {
-        val pos = if(position < 0) 0 else position;
-        val historyVideo = _historyStore.findItem { it.video.url == video.url };
-        if (historyVideo != null) {
-            val positionBefore = historyVideo.position;
-            if (updateExisting) {
-                var shouldUpdate = false;
-                if (positionBefore < 30) {
-                    shouldUpdate = true;
-                } else {
-                    if (position > 30) {
-                        shouldUpdate = true;
-                    }
-                }
-
-                if (shouldUpdate) {
-
-                    //A unrecovered item
-                    if(historyVideo.video.author.id.value == null && historyVideo.video.duration == 0L)
-                        historyVideo.video = SerializedPlatformVideo.fromVideo(video);
-
-                    historyVideo.position = pos;
-                    historyVideo.date = OffsetDateTime.now();
-                    _historyStore.saveAsync(historyVideo);
-                    onHistoricVideoChanged.emit(video, pos);
-                }
-            }
-
-            return positionBefore;
-        } else {
-            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), pos, OffsetDateTime.now());
-            _historyStore.saveAsync(newHistItem);
-            return 0;
-        }
-    }
-
-    fun getHistory() : List<HistoryVideo> {
-        return _historyStore.getItems().sortedByDescending { it.date };
-    }
-
-    fun removeHistory(url: String) {
-        val hist = _historyStore.findItem { it.video.url == url };
-        if(hist != null)
-            _historyStore.delete(hist);
-    }
-
-    fun removeHistoryRange(minutesToDelete: Long) {
-        val now = OffsetDateTime.now();
-        val toDelete = _historyStore.findItems { minutesToDelete == -1L || ChronoUnit.MINUTES.between(it.date, now) < minutesToDelete };
-
-        for(item in toDelete)
-            _historyStore.delete(item);
     }
 
     suspend fun createPlaylistFromChannel(channelUrl: String, onPage: (Int) -> Unit): Playlist {

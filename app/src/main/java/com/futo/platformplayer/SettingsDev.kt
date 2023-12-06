@@ -2,6 +2,7 @@ package com.futo.platformplayer
 
 import android.content.Context
 import android.webkit.CookieManager
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -12,25 +13,31 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
+import com.futo.platformplayer.activities.DeveloperActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.background.BackgroundWorker
-import com.futo.platformplayer.cache.ChannelContentCache
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
+import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.views.fields.ButtonField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
 import kotlinx.coroutines.CoroutineScope
@@ -39,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream.range
@@ -82,26 +90,153 @@ class SettingsDev : FragmentedStorageFileJson() {
         var backgroundSubscriptionFetching: Boolean = false;
     }
 
+
+    @FormField(R.string.cache, FieldForm.GROUP, -1, 3)
+    val cache: Cache = Cache();
+    @Serializable
+    class Cache {
+
+        @FormField(R.string.subscriptions_cache_5000, FieldForm.BUTTON, -1, 1, "subscription_cache_button")
+        fun subscriptionsCache5000() {
+            Logger.i("SettingsDev", "Started caching 5000 sub items");
+            UIDialogs.toast(
+                SettingsActivity.getActivity()!!,
+                "Started caching 5000 sub items"
+            );
+            val button = DeveloperActivity.getActivity()?.getField("subscription_cache_button");
+            if(button is ButtonField)
+                button.setButtonEnabled(false);
+            StateApp.instance.scope.launch(Dispatchers.IO) {
+                try {
+                    val subsCache =
+                        StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(cacheScope = this)?.first;
+
+                    var total = 0;
+                    var page = 0;
+                    var lastToast = System.currentTimeMillis();
+                    while(subsCache!!.hasMorePages() && total < 5000) {
+                        subsCache!!.nextPage();
+                        total += subsCache!!.getResults().size;
+                        page++;
+
+                        if(page % 10 == 0)
+                            withContext(Dispatchers.Main) {
+                                val diff = System.currentTimeMillis() - lastToast;
+                                lastToast = System.currentTimeMillis();
+                                UIDialogs.toast(
+                                    SettingsActivity.getActivity()!!,
+                                    "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
+                                );
+                            }
+                        Thread.sleep(250);
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(
+                            SettingsActivity.getActivity()!!,
+                            "FINISHED Page: ${page}, Total: ${total}"
+                        );
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e("SettingsDev", ex.message, ex);
+                    Logger.i("SettingsDev", "Failed: ${ex.message}");
+                }
+                finally {
+                    withContext(Dispatchers.Main) {
+                        if(button is ButtonField)
+                            button.setButtonEnabled(true);
+                    }
+                }
+            }
+        }
+
+        @FormField(R.string.history_cache_100, FieldForm.BUTTON, -1, 1, "history_cache_button")
+        fun historyCache100() {
+            Logger.i("SettingsDev", "Started caching 100 history items (from home)");
+            UIDialogs.toast(
+                SettingsActivity.getActivity()!!,
+                "Started caching 100 history items (from home)"
+            );
+            val button = DeveloperActivity.getActivity()?.getField("history_cache_button");
+            if(button is ButtonField)
+                button.setButtonEnabled(false);
+            StateApp.instance.scope.launch(Dispatchers.IO) {
+                try {
+                    val subsCache = StatePlatform.instance.getHome();
+
+                    var num = 0;
+                    for(item in subsCache.getResults().filterIsInstance<IPlatformVideo>()) {
+                        StateHistory.instance.getHistoryByVideo(item, true, OffsetDateTime.now().minusHours(num.toLong() * 4))
+                        num++;
+                    }
+
+                    var total = 0;
+                    var page = 0;
+                    var lastToast = System.currentTimeMillis();
+                    while(subsCache!!.hasMorePages() && total < 5000) {
+                        subsCache!!.nextPage();
+                        total += subsCache!!.getResults().size;
+                        page++;
+
+                        for(item in subsCache.getResults().filterIsInstance<IPlatformVideo>()) {
+                            StateHistory.instance.getHistoryByVideo(item, true, OffsetDateTime.now().minusHours(num.toLong() * 4))
+                            num++;
+                        }
+
+                        if(page % 4 == 0)
+                            withContext(Dispatchers.Main) {
+                                val diff = System.currentTimeMillis() - lastToast;
+                                lastToast = System.currentTimeMillis();
+                                UIDialogs.toast(
+                                    SettingsActivity.getActivity()!!,
+                                    "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
+                                );
+                            }
+                        Thread.sleep(500);
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(
+                            SettingsActivity.getActivity()!!,
+                            "FINISHED Page: ${page}, Total: ${total}"
+                        );
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e("SettingsDev", ex.message, ex);
+                    Logger.i("SettingsDev", "Failed: ${ex.message}");
+                }
+                finally {
+                    withContext(Dispatchers.Main) {
+                        if(button is ButtonField)
+                            button.setButtonEnabled(true);
+                    }
+                }
+            }
+        }
+    }
+
     @FormField(R.string.crash_me, FieldForm.BUTTON,
-        R.string.crashes_the_application_on_purpose, 2)
+        R.string.crashes_the_application_on_purpose, 3)
     fun crashMe() {
         throw java.lang.IllegalStateException("This is an uncaught exception triggered on purpose!");
     }
 
     @FormField(R.string.delete_announcements, FieldForm.BUTTON,
-        R.string.delete_all_announcements, 2)
+        R.string.delete_all_announcements, 3)
     fun deleteAnnouncements() {
         StateAnnouncement.instance.deleteAllAnnouncements();
     }
 
     @FormField(R.string.clear_cookies, FieldForm.BUTTON,
-        R.string.clear_all_cookies_from_the_cookieManager, 2)
+        R.string.clear_all_cookies_from_the_cookieManager, 3)
     fun clearCookies() {
         val cookieManager: CookieManager = CookieManager.getInstance()
         cookieManager.removeAllCookies(null);
     }
     @FormField(R.string.test_background_worker, FieldForm.BUTTON,
-        R.string.test_background_worker_description, 3)
+        R.string.test_background_worker_description, 4)
     fun triggerBackgroundUpdate() {
         val act = SettingsActivity.getActivity()!!;
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
@@ -113,10 +248,10 @@ class SettingsDev : FragmentedStorageFileJson() {
         wm.enqueue(req);
     }
     @FormField(R.string.clear_channel_cache, FieldForm.BUTTON,
-        R.string.test_background_worker_description, 3)
+        R.string.test_background_worker_description, 4)
     fun clearChannelContentCache() {
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Clearing cache");
-        ChannelContentCache.instance.clearToday();
+        StateCache.instance.clearToday();
         UIDialogs.toast(SettingsActivity.getActivity()!!, "Cleared");
     }
 
@@ -361,6 +496,17 @@ class SettingsDev : FragmentedStorageFileJson() {
                 }
             }
         }
+    }
+
+
+    @Contextual
+    @Transient
+    @FormField(R.string.info, FieldForm.GROUP, -1, 19)
+    var info = Info();
+    @Serializable
+    class Info {
+        @FormField(R.string.dev_info_channel_cache_size, FieldForm.READONLYTEXT, -1, 1, "channelCacheSize")
+        var channelCacheStartupCount = StateCache.instance.channelCacheStartupCount;
     }
 
     //region BOILERPLATE

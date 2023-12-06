@@ -42,6 +42,7 @@ import kotlinx.coroutines.*
 import okhttp3.internal.concat
 import java.time.OffsetDateTime
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap.PlatformMutabilityMapping
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 
 /***
@@ -389,6 +390,7 @@ class StatePlatform {
                 }
                 return@map homeResult;
             }
+            .asSequence()
             .toList()
             .associateWith { 1f };
 
@@ -709,6 +711,7 @@ class StatePlatform {
                     }
                     return@map results;
                 }
+                .asSequence()
                 .toList();
 
             val pager = MultiChronoContentPager(pagers.toTypedArray());
