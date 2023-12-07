@@ -100,7 +100,7 @@ class StateHistory {
         return _historyDBStore.getObjectPager();
     }
     fun getHistorySearchPager(query: String): IPager<HistoryVideo> {
-        return _historyDBStore.queryLikeObjectPager(DBHistory.Index::url, "%${query}%", 10);
+        return _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10);
     }
     fun getHistoryIndexByUrl(url: String): DBHistory.Index? {
         return historyIndex[url];

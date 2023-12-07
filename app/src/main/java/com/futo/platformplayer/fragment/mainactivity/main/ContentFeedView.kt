@@ -168,7 +168,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     protected open fun onContentClicked(content: IPlatformContent, time: Long) {
         if(content is IPlatformVideo) {
             if (StatePlayer.instance.hasQueue) {
-                StatePlayer.instance.addToQueue(content)
+                StatePlayer.instance.insertToQueue(content, true);
             } else {
                 if (Settings.instance.playback.shouldResumePreview(time))
                     fragment.navigate<VideoDetailFragment>(content.withTimestamp(time)).maximizeVideoDetail();

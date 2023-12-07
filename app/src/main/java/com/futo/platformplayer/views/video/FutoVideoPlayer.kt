@@ -66,6 +66,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_videosettings: ImageButton;
     private val _control_minimize: ImageButton;
     private val _control_rotate_lock: ImageButton;
+    private val _control_loop: ImageButton;
     private val _control_cast: ImageButton;
     private val _control_play: ImageButton;
     private val _control_chapter: TextView;
@@ -77,6 +78,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_videosettings_fullscreen: ImageButton;
     private val _control_minimize_fullscreen: ImageButton;
     private val _control_rotate_lock_fullscreen: ImageButton;
+    private val _control_loop_fullscreen: ImageButton;
     private val _control_cast_fullscreen: ImageButton;
     private val _control_play_fullscreen: ImageButton;
     private val _time_bar_fullscreen: TimeBar;
@@ -132,6 +134,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_videosettings = videoControls.findViewById(R.id.exo_settings);
         _control_minimize = videoControls.findViewById(R.id.exo_minimize);
         _control_rotate_lock = videoControls.findViewById(R.id.exo_rotate_lock);
+        _control_loop = videoControls.findViewById(R.id.exo_loop);
         _control_cast = videoControls.findViewById(R.id.exo_cast);
         _control_play = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
         _time_bar = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
@@ -144,6 +147,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_minimize_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_minimize);
         _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_settings);
         _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_rotate_lock);
+        _control_loop_fullscreen = videoControls.findViewById(R.id.exo_loop);
         _control_cast_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_cast);
         _control_play_fullscreen = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
         _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
@@ -257,6 +261,16 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             UIDialogs.showCastingDialog(context);
         };
 
+
+        _control_loop.setOnClickListener {
+            StatePlayer.instance.loopVideo = !StatePlayer.instance.loopVideo;
+            updateLoopVideoUI();
+        }
+        _control_loop_fullscreen.setOnClickListener {
+            StatePlayer.instance.loopVideo = !StatePlayer.instance.loopVideo;
+            updateLoopVideoUI();
+        }
+
         _control_minimize_fullscreen.setOnClickListener {
             onMinimize.emit(this);
         };
@@ -285,6 +299,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                     }
                 }
         }
+
+        updateLoopVideoUI();
 
         if(!isInEditMode) {
             gestureControl.hideControls();
@@ -573,6 +589,17 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _control_rotate_lock.setImageResource(R.drawable.ic_screen_lock_rotation);
         }
     }
+    fun updateLoopVideoUI() {
+        if(StatePlayer.instance.loopVideo) {
+            _control_loop.setImageResource(R.drawable.ic_loop_active);
+            _control_loop_fullscreen.setImageResource(R.drawable.ic_loop_active);
+        }
+        else {
+            _control_loop.setImageResource(R.drawable.ic_loop);
+            _control_loop_fullscreen.setImageResource(R.drawable.ic_loop);
+        }
+    }
+
 
     fun setGestureSoundFactor(soundFactor: Float) {
         gestureControl.setSoundFactor(soundFactor);

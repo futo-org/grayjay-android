@@ -74,6 +74,14 @@
             android:padding="12dp"
             app:srcCompat="@drawable/ic_screen_lock_rotation" />
         <ImageButton
+            android:id="@+id/exo_loop"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_loop" />
+        <ImageButton
             android:id="@+id/exo_settings"
             android:layout_width="50dp"
             android:layout_height="50dp"

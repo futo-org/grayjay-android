@@ -40,6 +40,7 @@ import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.*
 import kotlinx.coroutines.*
 import okhttp3.internal.concat
+import java.lang.Thread.sleep
 import java.time.OffsetDateTime
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap.PlatformMutabilityMapping
 import kotlin.streams.asSequence
@@ -405,7 +406,12 @@ class StatePlatform {
         val deferred: List<Pair<IPlatformClient, Deferred<IPager<IPlatformContent>?>>> = clients.map {
             return@map Pair(it, scope.async(Dispatchers.IO) {
                 try {
-                    val searchResult = it.fromPool(_pagerClientPool).getHome();
+                    var searchResult = it.fromPool(_pagerClientPool).getHome();
+                    if(searchResult.getResults().size == 0) {
+                        Logger.i(TAG, "No home results, retrying");
+                        sleep(500);
+                        searchResult = it.fromPool(_pagerClientPool).getHome();
+                    }
                     return@async searchResult;
                 } catch(ex: Throwable) {
                     Logger.e(TAG, "getHomeRefresh", ex);

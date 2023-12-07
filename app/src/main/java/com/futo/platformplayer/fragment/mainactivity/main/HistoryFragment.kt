@@ -18,6 +18,7 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.api.media.structures.PlatformContentPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
@@ -181,6 +182,7 @@ class HistoryFragment : MainFragment() {
             val query = _editSearch.text.toString();
             if (_editSearch.text.isNotEmpty()) {
                 setPager(StateHistory.instance.getHistorySearchPager(query));
+                //setPager(StateHistory.instance.getHistorySearchPager(query));
             } else {
                 setPager(StateHistory.instance.getHistoryPager());
             }

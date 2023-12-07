@@ -181,7 +181,7 @@ class Settings : FragmentedStorageFileJson() {
 
 
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
-        var progressBar: Boolean = false;
+        var progressBar: Boolean = true;
 
 
         @FormField(R.string.clear_hidden, FieldForm.BUTTON, R.string.clear_hidden_description, 8)
@@ -212,7 +212,7 @@ class Settings : FragmentedStorageFileJson() {
         var previewFeedItems: Boolean = true;
 
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
-        var progressBar: Boolean = false;
+        var progressBar: Boolean = true;
 
 
         fun getSearchFeedStyle(): FeedStyle {
@@ -230,7 +230,7 @@ class Settings : FragmentedStorageFileJson() {
     class ChannelSettings {
 
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
-        var progressBar: Boolean = false;
+        var progressBar: Boolean = true;
     }
 
     @FormField(R.string.subscriptions, "group", R.string.configure_how_your_subscriptions_works_and_feels, 4)
@@ -252,7 +252,7 @@ class Settings : FragmentedStorageFileJson() {
         var previewFeedItems: Boolean = true;
 
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
-        var progressBar: Boolean = false;
+        var progressBar: Boolean = true;
 
         @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 7)
         @Serializable(with = FlexibleBooleanSerializer::class)
