@@ -78,7 +78,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private var _moreButtons = arrayListOf<MenuButton>();
 
         private var _buttonsVisible = 0;
-        private var _subscriptionsVisible = false;
+        private var _subscriptionsVisible = true;
 
         var currentButtonDefinitions: List<ButtonDefinition>? = null;
 
@@ -261,11 +261,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
         }
 
         private fun registerUpdateButtonEvents() {
+            /*
             _subscriptionsVisible = StateSubscriptions.instance.getSubscriptionCount() > 0;
             StateSubscriptions.instance.onSubscriptionsChanged.subscribe(this) { subs, _ ->
                 _subscriptionsVisible = subs.isNotEmpty();
                 updateButtonDefinitions()
-            }
+            }*/
 
             StatePayment.instance.hasPaidChanged.subscribe(this) {
                 _fragment.lifecycleScope.launch(Dispatchers.Main) {

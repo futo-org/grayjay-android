@@ -3,6 +3,7 @@ package com.futo.platformplayer.states
 import android.content.Context
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.LoginActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
@@ -52,6 +53,25 @@ class StatePlugins {
         _plugins = FragmentedStorage.storeJson<SourcePluginDescriptor>("plugins")
             .load();
     }
+
+    fun loginPlugin(context: Context, id: String, afterLogin: ()->Unit): Boolean {
+        val descriptor = getPlugin(id) ?: return false;
+        val config = descriptor.config;
+
+        if(config.authentication == null)
+            return false;
+
+        LoginActivity.showLogin(context, config) {
+            StatePlugins.instance.setPluginAuth(config.id, it);
+
+            StateApp.instance.scope.launch(Dispatchers.IO) {
+                StatePlatform.instance.reloadClient(context, id);
+                afterLogin.invoke();
+            }
+        };
+        return true;
+    }
+
 
     private fun getResourceIdFromString(resourceName: String, c: Class<*> = R.drawable::class.java): Int? {
         return try {

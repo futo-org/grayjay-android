@@ -31,6 +31,7 @@ import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.logging.AndroidLogConsumer
@@ -750,6 +751,9 @@ class StateApp {
                 hasCaptchaDialog = false;
             })
         }
+    }
+    fun handleLoginException(client: JSClient, exception: ScriptLoginRequiredException, onSuccess: (client: JSClient)->Unit) {
+
     }
 
     fun getLocaleContext(baseContext: Context?): Context? {

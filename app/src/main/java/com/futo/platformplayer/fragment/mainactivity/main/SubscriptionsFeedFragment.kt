@@ -9,17 +9,18 @@ import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
@@ -28,9 +29,11 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
+import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +44,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
 import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 class SubscriptionsFeedFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -321,7 +323,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 withContext(Dispatchers.Main) {
                     val results = cachePager.getResults();
                     Logger.i(TAG, "Subscriptions show cache (${results.size})");
-                    setTextCentered(if (results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+                    setEmptyPager(results.isEmpty());
                     setPager(cachePager);
                 }
             }
@@ -331,15 +333,14 @@ class SubscriptionsFeedFragment : MainFragment() {
             Logger.i(TAG, "Subscriptions load");
             if(recyclerData.results.size == 0) {
                 loadCache();
-            } else {
-                setTextCentered(null);
-            }
+            } else
+                setEmptyPager(false);
             _taskGetPager.run(withRefetch);
         }
 
         override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
             super.onRestoreCachedData(cachedData);
-            setTextCentered(if (cachedData.results.isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+            setEmptyPager(cachedData.results.isEmpty());
         }
         private fun loadedResult(pager: IPager<IPlatformContent>) {
             Logger.i(TAG, "Subscriptions new pager loaded (${pager.getResults().size})");
@@ -349,7 +350,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                     finishRefreshLayoutLoader();
                     setLoading(false);
                     setPager(pager);
-                    setTextCentered(if (pager.getResults().isEmpty()) context.getString(R.string.no_results_found_swipe_down_to_refresh) else null);
+                    setEmptyPager(pager.getResults().isEmpty());
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to finish loading", e)
                 }
@@ -358,6 +359,22 @@ class SubscriptionsFeedFragment : MainFragment() {
                     setLoading(false);
                 }
             }*/
+        }
+        override fun getEmptyPagerView(): View? {
+            val dp10 = 10.dp(resources);
+            val dp30 = 30.dp(resources);
+            if(StateSubscriptions.instance.getSubscriptions().isEmpty())
+                return NoResultsView(context, "You have no subscriptions", "Subscribe to some creators or import them from elsewhere.", R.drawable.ic_explore, listOf(
+                    BigButton(context, "Search", "Search for creators in your enabled plugins", R.drawable.ic_creators) {
+                        fragment.navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.CREATOR));
+                    }.withMargin(dp10, dp30),
+                    BigButton(context, "Import", "Import your subscriptions from another format", R.drawable.ic_move_up) {
+                        val activity = StateApp.instance.context;
+                        if(activity is MainActivity)
+                            UIDialogs.showImportOptionsDialog(activity);
+                    }.withMargin(dp10, dp30)
+                ));
+            return null;
         }
 
         private fun handleExceptions(exs: List<Throwable>) {

@@ -301,6 +301,7 @@ class V8Plugin {
                 "CriticalException" -> throw ScriptCriticalException(config, msg, innerEx, stack, code);
                 "AgeException" -> throw ScriptAgeException(config, msg, innerEx, stack, code);
                 "UnavailableException" -> throw ScriptUnavailableException(config, msg, innerEx, stack, code);
+                "ScriptLoginRequiredException" -> throw ScriptLoginRequiredException(config, msg, innerEx, stack, code);
                 "ScriptExecutionException" -> throw ScriptExecutionException(config, msg, innerEx, stack, code);
                 "ScriptCompilationException" -> throw ScriptCompilationException(config, msg, innerEx, code);
                 "ScriptImplementationException" -> throw ScriptImplementationException(config, msg, innerEx, null, code);

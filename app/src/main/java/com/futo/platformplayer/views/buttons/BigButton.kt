@@ -76,6 +76,11 @@ open class BigButton : LinearLayout {
         _textSecondary.text = attrTextSecondary;
     }
 
+    fun withMargin(bottom: Int, side: Int = 0): BigButton {
+        setPadding(side, 0, side, bottom)
+        return this;
+    }
+
     fun setSecondaryText(text: String?) {
         _textSecondary.text = text
     }

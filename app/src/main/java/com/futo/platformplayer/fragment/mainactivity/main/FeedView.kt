@@ -38,6 +38,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private val _containerSortBy: LinearLayout;
     private val _tagsView: TagsView;
     private val _textCentered: TextView;
+    private val _emptyPagerContainer: FrameLayout;
 
     protected val _toolbarContentView: LinearLayout;
 
@@ -69,6 +70,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         inflater.inflate(R.layout.fragment_feed, this);
 
         _textCentered = findViewById(R.id.text_centered);
+        _emptyPagerContainer = findViewById(R.id.empty_pager_container);
         _progress_bar = findViewById(R.id.progress_bar);
         _progress_bar.inactiveColor = Color.TRANSPARENT;
 
@@ -198,6 +200,30 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
     protected fun setTextCentered(text: String?) {
         _textCentered.text = text;
+    }
+    protected open fun getEmptyPagerView(): View? {
+        return null;
+    }
+
+    fun setEmptyPager(enable: Boolean) {
+        if(enable) {
+            val viewToShow = getEmptyPagerView();
+            if(viewToShow != null) {
+                _emptyPagerContainer.removeAllViews();
+                _emptyPagerContainer.addView(viewToShow);
+                _emptyPagerContainer.visibility = VISIBLE;
+                setTextCentered(null);
+            }
+            else {
+                setTextCentered(context.getString(R.string.no_results_found_swipe_down_to_refresh));
+                _emptyPagerContainer.visibility = GONE;
+            }
+        }
+        else {
+            setTextCentered(null);
+            _emptyPagerContainer.removeAllViews();
+            _emptyPagerContainer.visibility = GONE;
+        }
     }
 
     fun onResume() {

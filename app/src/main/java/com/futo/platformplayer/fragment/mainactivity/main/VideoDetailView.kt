@@ -51,6 +51,8 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
@@ -62,6 +64,7 @@ import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
+import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.helpers.VideoHelper
@@ -2316,6 +2319,22 @@ class VideoDetailView : ConstraintLayout {
             } else {
                 StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_NOSOURCES", context.getString(R.string.video_without_source), context.getString(R.string.there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
             }
+        }
+        .exception<ScriptLoginRequiredException> {
+            Logger.w(TAG, "exception<ScriptLoginRequiredException>", it);
+
+            UIDialogs.showDialog(context, R.drawable.ic_security, "Authentication", it.message, null, 0,
+                UIDialogs.Action("Cancel", {}),
+                UIDialogs.Action("Login", {
+                    val id = it.config?.let { if(it is SourcePluginConfig) it.id else null };
+                    val didLogin = if(id == null)
+                        false
+                    else StatePlugins.instance.loginPlugin(context, id) {
+                        fetchVideo();
+                    }
+                    if(!didLogin)
+                        UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login");
+                }));
         }
         .exception<ContentNotAvailableYetException> {
             Logger.w(TAG, "exception<ContentNotAvailableYetException>", it)

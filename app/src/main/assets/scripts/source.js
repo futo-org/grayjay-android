@@ -71,6 +71,11 @@ class ScriptException extends Error {
         }
     }
 }
+class ScriptLoginRequiredException extends ScriptException {
+    constructor(msg) {
+        super("ScriptLoginRequiredException", msg);
+    }
+}
 class CaptchaRequiredException extends Error {
     constructor(url, body) {
         super(JSON.stringify({ 'plugin_type': 'CaptchaRequiredException', url, body }));

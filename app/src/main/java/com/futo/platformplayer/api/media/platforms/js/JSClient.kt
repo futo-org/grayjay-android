@@ -34,6 +34,7 @@ import com.futo.platformplayer.engine.exceptions.PluginEngineException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
+import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptValidationException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable

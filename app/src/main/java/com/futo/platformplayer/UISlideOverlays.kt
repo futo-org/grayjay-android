@@ -109,6 +109,10 @@ class UISlideOverlays {
                     menu.onOK.subscribe {
                         subscription.save();
                         menu.hide(true);
+
+                        if(subscription.doNotifications && !originalNotif && Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval == 0) {
+                            UIDialogs.toast(container.context, "Enable 'Background Update' in settings for notifications to work");
+                        }
                     };
                     menu.onCancel.subscribe {
                         subscription.doNotifications = originalNotif;
