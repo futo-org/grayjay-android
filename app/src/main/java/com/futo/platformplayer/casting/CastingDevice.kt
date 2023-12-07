@@ -48,6 +48,7 @@ abstract class CastingDevice {
     abstract var usedRemoteAddress: InetAddress?;
     abstract var localAddress: InetAddress?;
     abstract val canSetVolume: Boolean;
+    abstract val canSetSpeed: Boolean;
 
     var name: String? = null;
     var isPlaying: Boolean = false
@@ -77,6 +78,14 @@ abstract class CastingDevice {
                 onVolumeChanged.emit(value);
             }
         };
+    var speed: Double = 1.0
+        set(value) {
+            val changed = value != field;
+            speed = value;
+            if (changed) {
+                onSpeedChanged.emit(value);
+            }
+        };
     val expectedCurrentTime: Double
         get() {
             val diff = timeReceivedAt.getNowDiffMiliseconds().toDouble() / 1000.0;
@@ -96,6 +105,7 @@ abstract class CastingDevice {
     var onPlayChanged = Event1<Boolean>();
     var onTimeChanged = Event1<Double>();
     var onVolumeChanged = Event1<Double>();
+    var onSpeedChanged = Event1<Double>();
 
     abstract fun stopCasting();
 
@@ -103,9 +113,10 @@ abstract class CastingDevice {
     abstract fun stopVideo();
     abstract fun pauseVideo();
     abstract fun resumeVideo();
-    abstract fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double);
-    abstract fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double);
+    abstract fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double, speed: Double?);
+    abstract fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?);
     open fun changeVolume(volume: Double) { throw NotImplementedError() }
+    open fun changeSpeed(speed: Double) { throw NotImplementedError() }
 
     abstract fun start();
     abstract fun stop();

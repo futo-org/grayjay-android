@@ -395,17 +395,17 @@ class StateCasting {
         } else {
             if (videoSource is IVideoUrlSource) {
                 Logger.i(TAG, "Casting as singular video");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble());
+                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble(), null);
             } else if (audioSource is IAudioUrlSource) {
                 Logger.i(TAG, "Casting as singular audio");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble());
+                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble(), null);
             } else if(videoSource is IHLSManifestSource) {
                 if (ad is ChromecastCastingDevice) {
                     Logger.i(TAG, "Casting as proxied HLS");
                     castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble());
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), null);
                 }
             } else if(audioSource is IHLSManifestAudioSource) {
                 if (ad is ChromecastCastingDevice) {
@@ -413,7 +413,7 @@ class StateCasting {
                     castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied audio HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble());
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), null);
                 }
             } else if (videoSource is LocalVideoSource) {
                 Logger.i(TAG, "Casting as local video");
@@ -480,7 +480,7 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local video (videoUrl: $videoUrl).");
-        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), null);
 
         return listOf(videoUrl);
     }
@@ -499,7 +499,7 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local audio (audioUrl: $audioUrl).");
-        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), null);
 
         return listOf(audioUrl);
     }
@@ -563,7 +563,7 @@ class StateCasting {
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castLocalHls")
 
-            mediaRenditions.add(HLS.MediaRendition("AUDIO", audioVariantPlaylistUrl, "audio", "en", "english", true, true, true))
+            mediaRenditions.add(HLS.MediaRendition("AUDIO", audioVariantPlaylistUrl, "audio", "df", "default", true, true, true))
         }
 
         if (subtitleSource != null) {
@@ -584,7 +584,7 @@ class StateCasting {
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castLocalHls")
 
-            mediaRenditions.add(HLS.MediaRendition("SUBTITLES", subtitleVariantPlaylistUrl, "subtitles", "en", "english", true, true, true))
+            mediaRenditions.add(HLS.MediaRendition("SUBTITLES", subtitleVariantPlaylistUrl, "subtitles", "df", "default", true, true, true))
         }
 
         val masterPlaylist = HLS.MasterPlaylist(variantPlaylistReferences, mediaRenditions, listOf(), true)
@@ -595,7 +595,7 @@ class StateCasting {
         ).withTag("castLocalHls")
 
         Logger.i(TAG, "added new castLocalHls handlers (hlsPath: $hlsPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).")
-        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble())
+        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), null)
 
         return listOf(hlsUrl, videoUrl, audioUrl, subtitleUrl)
     }
@@ -641,7 +641,7 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castLocalDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).");
-        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), null);
 
         return listOf(dashUrl, videoUrl, audioUrl, subtitleUrl);
     }
@@ -686,7 +686,7 @@ class StateCasting {
         val content = DashBuilder.generateOnDemandDash(videoSource, videoUrl, audioSource, audioUrl, subtitleSource, subtitlesUrl);
 
         Logger.i(TAG, "Direct dash cast to casting device (videoUrl: $videoUrl, audioUrl: $audioUrl).");
-        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble());
+        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), null);
 
         return listOf(videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "");
     }
@@ -812,7 +812,7 @@ class StateCasting {
 
         //ChromeCast is sometimes funky with resume position 0
         val hackfixResumePosition = if (ad is ChromecastCastingDevice && !video.isLive && resumePosition == 0.0) 0.1 else resumePosition;
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, hackfixResumePosition, video.duration.toDouble());
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, hackfixResumePosition, video.duration.toDouble(), null);
 
         return listOf(hlsUrl);
     }
@@ -892,7 +892,7 @@ class StateCasting {
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castHlsIndirectVariant");
 
-            mediaRenditions.add(HLS.MediaRendition("AUDIO", audioVariantPlaylistUrl, "audio", "en", "english", true, true, true))
+            mediaRenditions.add(HLS.MediaRendition("AUDIO", audioVariantPlaylistUrl, "audio", "df", "default", true, true, true))
 
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
@@ -942,7 +942,7 @@ class StateCasting {
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castHlsIndirectVariant");
 
-            mediaRenditions.add(HLS.MediaRendition("SUBTITLES", subtitleVariantPlaylistUrl, "subtitles", "en", "english", true, true, true))
+            mediaRenditions.add(HLS.MediaRendition("SUBTITLES", subtitleVariantPlaylistUrl, "subtitles", "df", "default", true, true, true))
         }
 
         if (videoSource != null) {
@@ -986,7 +986,7 @@ class StateCasting {
         ).withTag("castHlsIndirectMaster")
 
         Logger.i(TAG, "added new castHls handlers (hlsPath: $hlsPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), null);
 
         return listOf(hlsUrl, videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
@@ -1061,7 +1061,7 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble());
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), null);
 
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }

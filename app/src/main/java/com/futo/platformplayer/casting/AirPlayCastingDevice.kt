@@ -18,6 +18,7 @@ class AirPlayCastingDevice : CastingDevice {
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
     override val canSetVolume: Boolean get() = false;
+    override val canSetSpeed: Boolean get() = false; //TODO: Implement playback speed for AirPlay
 
     var addresses: Array<InetAddress>? = null;
     var port: Int = 0;
@@ -43,12 +44,12 @@ class AirPlayCastingDevice : CastingDevice {
         return addresses?.toList() ?: listOf();
     }
 
-    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double) {
-        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration) })) {
+    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double, speed: Double?) {
+        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration, speed) })) {
             return;
         }
 
-        Logger.i(FCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        Logger.i(FCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
         time = resumePosition;
         if (resumePosition > 0.0) {
@@ -60,7 +61,7 @@ class AirPlayCastingDevice : CastingDevice {
         }
     }
 
-    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double) {
+    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?) {
         throw NotImplementedError();
     }
 

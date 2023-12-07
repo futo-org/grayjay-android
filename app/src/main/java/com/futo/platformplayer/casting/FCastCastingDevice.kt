@@ -2,6 +2,7 @@ package com.futo.platformplayer.casting
 
 import android.os.Looper
 import android.util.Log
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.models.*
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.getConnectedSocket
@@ -27,7 +28,10 @@ enum class Opcode(val value: Byte) {
     SEEK(5),
     PLAYBACK_UPDATE(6),
     VOLUME_UPDATE(7),
-    SET_VOLUME(8)
+    SET_VOLUME(8),
+    PLAYBACK_ERROR(9),
+    SET_SPEED(10),
+    VERSION(11)
 }
 
 class FCastCastingDevice : CastingDevice {
@@ -38,6 +42,7 @@ class FCastCastingDevice : CastingDevice {
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
     override val canSetVolume: Boolean get() = true;
+    override val canSetSpeed: Boolean get() = true;
 
     var addresses: Array<InetAddress>? = null;
     var port: Int = 0;
@@ -47,6 +52,7 @@ class FCastCastingDevice : CastingDevice {
     private var _inputStream: DataInputStream? = null;
     private var _scopeIO: CoroutineScope? = null;
     private var _started: Boolean = false;
+    private var _version: Long = 1;
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -64,33 +70,45 @@ class FCastCastingDevice : CastingDevice {
         return addresses?.toList() ?: listOf();
     }
 
-    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double) {
-        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration) })) {
+    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double, speed: Double?) {
+        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration, speed) })) {
             return;
         }
 
-        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        //TODO: Remove this later, temporary for the transition
+        if (_version <= 1L) {
+            UIDialogs.toast("Version not received, if you are experiencing issues, try updating FCast")
+        }
+
+        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
         time = resumePosition;
         sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             url = contentId,
-            time = resumePosition.toInt()
+            time = resumePosition,
+            speed = speed
         ));
     }
 
-    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double) {
-        if (invokeInIOScopeIfRequired({ loadContent(contentType, content, resumePosition, duration) })) {
+    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?) {
+        if (invokeInIOScopeIfRequired({ loadContent(contentType, content, resumePosition, duration, speed) })) {
             return;
         }
 
-        Logger.i(TAG, "Start streaming content (contentType: $contentType, resumePosition: $resumePosition, duration: $duration)");
+        //TODO: Remove this later, temporary for the transition
+        if (_version <= 1L) {
+            UIDialogs.toast("Version not received, if you are experiencing issues, try updating FCast")
+        }
+
+        Logger.i(TAG, "Start streaming content (contentType: $contentType, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
         time = resumePosition;
         sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             content = content,
-            time = resumePosition.toInt()
+            time = resumePosition,
+            speed = speed
         ));
     }
 
@@ -103,13 +121,22 @@ class FCastCastingDevice : CastingDevice {
         sendMessage(Opcode.SET_VOLUME, FCastSetVolumeMessage(volume))
     }
 
+    override fun changeSpeed(speed: Double) {
+        if (invokeInIOScopeIfRequired({ changeSpeed(volume) })) {
+            return;
+        }
+
+        this.speed = speed
+        sendMessage(Opcode.SET_SPEED, FCastSetSpeedMessage(volume))
+    }
+
     override fun seekVideo(timeSeconds: Double) {
         if (invokeInIOScopeIfRequired({ seekVideo(timeSeconds) })) {
             return;
         }
 
         sendMessage(Opcode.SEEK, FCastSeekMessage(
-            time = timeSeconds.toInt()
+            time = timeSeconds
         ));
     }
 
@@ -282,8 +309,8 @@ class FCastCastingDevice : CastingDevice {
                     return;
                 }
 
-                val playbackUpdate = Json.decodeFromString<FCastPlaybackUpdateMessage>(json);
-                time = playbackUpdate.time.toDouble();
+                val playbackUpdate = FCastCastingDevice.json.decodeFromString<FCastPlaybackUpdateMessage>(json);
+                time = playbackUpdate.time;
                 isPlaying = when (playbackUpdate.state) {
                     1 -> true
                     else -> false
@@ -295,8 +322,27 @@ class FCastCastingDevice : CastingDevice {
                     return;
                 }
 
-                val volumeUpdate = Json.decodeFromString<FCastVolumeUpdateMessage>(json);
+                val volumeUpdate = FCastCastingDevice.json.decodeFromString<FCastVolumeUpdateMessage>(json);
                 volume = volumeUpdate.volume;
+            }
+            Opcode.PLAYBACK_ERROR -> {
+                if (json == null) {
+                    Logger.w(TAG, "Got playback error without JSON, ignoring.");
+                    return;
+                }
+
+                val playbackError = FCastCastingDevice.json.decodeFromString<FCastPlaybackErrorMessage>(json);
+                Logger.e(TAG, "Remote casting playback error received: $playbackError")
+            }
+            Opcode.VERSION -> {
+                if (json == null) {
+                    Logger.w(TAG, "Got version without JSON, ignoring.");
+                    return;
+                }
+
+                val version = FCastCastingDevice.json.decodeFromString<FCastVersionMessage>(json);
+                _version = version.version;
+                Logger.i(TAG, "Remote version received: $version")
             }
             else -> { }
         }
@@ -333,7 +379,7 @@ class FCastCastingDevice : CastingDevice {
             val data: ByteArray;
             var jsonString: String? = null;
             if (message != null) {
-                jsonString = Json.encodeToString(message);
+                jsonString = json.encodeToString(message);
                 data = jsonString.encodeToByteArray();
             } else {
                 data = ByteArray(0);
@@ -403,5 +449,6 @@ class FCastCastingDevice : CastingDevice {
 
     companion object {
         val TAG = "FastCastCastingDevice";
+        private val json = Json { ignoreUnknownKeys = true }
     }
 }

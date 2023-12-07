@@ -146,7 +146,7 @@ class DashBuilder : XMLBuilder {
                 dashBuilder.withAdaptationSet(
                     mapOf(
                         Pair("mimeType", subtitleSource.format ?: "text/vtt"),
-                        Pair("lang", "en"),
+                        Pair("lang", "df"),
                         Pair("default", "true")
                     )
                 ) {
