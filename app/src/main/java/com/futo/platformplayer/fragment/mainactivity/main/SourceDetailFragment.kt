@@ -280,6 +280,8 @@ class SourceDetailFragment : MainFragment() {
                     if(clientIfExists?.captchaEncrypted != null)
                         BigButton(c, context.getString(R.string.delete_captcha), context.getString(R.string.deletes_stored_captcha_answer_for_this_plugin), R.drawable.ic_block) {
                             clientIfExists.updateCaptcha(null);
+                            updateButtons();
+                            UIDialogs.toast(context, "Captcha data deleted");
                         }.apply {
                             this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                                 setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
