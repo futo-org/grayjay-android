@@ -216,6 +216,7 @@ class VideoDetailFragment : MainFragment {
         }
         _view!!.setTransitionListener(object : MotionLayout.TransitionListener {
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
+                _viewDetail?.stopAllGestures()
 
                 if (state != State.MINIMIZED && progress < 0.1) {
                     state = State.MINIMIZED;

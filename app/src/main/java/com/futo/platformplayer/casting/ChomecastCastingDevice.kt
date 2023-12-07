@@ -27,6 +27,7 @@ class ChromecastCastingDevice : CastingDevice {
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
     override val canSetVolume: Boolean get() = true;
+    override val canSetSpeed: Boolean get() = false; //TODO: Implement
 
     var addresses: Array<InetAddress>? = null;
     var port: Int = 0;
@@ -62,12 +63,12 @@ class ChromecastCastingDevice : CastingDevice {
         return addresses?.toList() ?: listOf();
     }
 
-    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double) {
-        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration) })) {
+    override fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double, speed: Double?) {
+        if (invokeInIOScopeIfRequired({ loadVideo(streamType, contentType, contentId, resumePosition, duration, speed) })) {
             return;
         }
 
-        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration)");
+        Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
         time = resumePosition;
         _streamType = streamType;
@@ -77,7 +78,7 @@ class ChromecastCastingDevice : CastingDevice {
         playVideo();
     }
 
-    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double) {
+    override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?) {
         //TODO: Can maybe be implemented by sending data:contentType,base64...
         throw NotImplementedError();
     }

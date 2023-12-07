@@ -102,6 +102,10 @@ class CastView : ConstraintLayout {
         _updateTimeJob = null;
     }
 
+    fun stopAllGestures() {
+        _gestureControlView.stopAllGestures();
+    }
+
     fun setIsPlaying(isPlaying: Boolean) {
         _updateTimeJob?.cancel();
 

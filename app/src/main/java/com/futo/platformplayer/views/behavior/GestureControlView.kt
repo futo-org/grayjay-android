@@ -330,11 +330,21 @@ class GestureControlView : LinearLayout {
         _controlsVisible = false;
     }
 
+    fun stopAllGestures() {
+        stopAdjustingFullscreenDown()
+        stopAdjustingBrightness()
+        stopAdjustingSound()
+        stopAdjustingFullscreenUp()
+        stopFastForward()
+        stopAutoFastForward()
+    }
+
     fun cleanup() {
         _jobExitFastForward?.cancel();
         _jobExitFastForward = null;
         _jobAutoFastForward?.cancel();
         _jobAutoFastForward = null;
+        stopAllGestures();
         cancelHideJob();
         _scope.cancel();
     }

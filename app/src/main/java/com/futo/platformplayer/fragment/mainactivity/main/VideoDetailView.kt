@@ -686,6 +686,11 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    fun stopAllGestures() {
+        _player.stopAllGestures();
+        _cast.stopAllGestures();
+    }
+
     fun updateMoreButtons() {
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
@@ -1944,6 +1949,7 @@ class VideoDetailView : ConstraintLayout {
 
         video?.let { updateQualitySourcesOverlay(it, videoLocal); };
 
+        val changed = _isCasting != isCasting;
         _isCasting = isCasting;
 
         if(isCasting) {
@@ -1951,8 +1957,7 @@ class VideoDetailView : ConstraintLayout {
             _player.stop();
             _player.hideControls(false);
             _cast.visibility = View.VISIBLE;
-        }
-        else {
+        } else {
             StateCasting.instance.stopVideo();
             _cast.stopTimeJob();
             _cast.visibility = View.GONE;
@@ -1960,6 +1965,10 @@ class VideoDetailView : ConstraintLayout {
             if (video?.isLive == false) {
                 _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
             }
+        }
+
+        if (changed) {
+            stopAllGestures();
         }
     }
 

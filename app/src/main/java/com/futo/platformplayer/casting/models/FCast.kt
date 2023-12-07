@@ -2,32 +2,52 @@ package com.futo.platformplayer.casting.models
 
 import kotlinx.serialization.Serializable
 
-@kotlinx.serialization.Serializable
+@Serializable
 data class FCastPlayMessage(
     val container: String,
     val url: String? = null,
     val content: String? = null,
-    val time: Int? = null
+    val time: Double? = null,
+    val speed: Double? = null
 ) { }
 
-@kotlinx.serialization.Serializable
+@Serializable
 data class FCastSeekMessage(
-    val time: Int
+    val time: Double
 ) { }
 
-@kotlinx.serialization.Serializable
+@Serializable
 data class FCastPlaybackUpdateMessage(
-    val time: Int,
-    val state: Int
+    val generationTime: Long,
+    val time: Double,
+    val duration: Double,
+    val state: Int,
+    val speed: Double
 ) { }
 
 
 @Serializable
 data class FCastVolumeUpdateMessage(
+    val generationTime: Long,
     val volume: Double
 )
 
 @Serializable
 data class FCastSetVolumeMessage(
     val volume: Double
+)
+
+@Serializable
+data class FCastSetSpeedMessage(
+    val speed: Double
+)
+
+@Serializable
+data class FCastPlaybackErrorMessage(
+    val message: String
+)
+
+@Serializable
+data class FCastVersionMessage(
+    val version: Long
 )
