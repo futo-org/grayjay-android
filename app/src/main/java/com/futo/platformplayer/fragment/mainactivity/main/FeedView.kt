@@ -420,7 +420,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         synchronized(_pager_lock) {
             val pager: TPager = recyclerData.pager ?: return;
             val hasMorePages = pager.hasMorePages();
-            Logger.i(TAG, "loadNextPage() hasMorePages=$hasMorePages");
+            Logger.i(TAG, "loadNextPage() hasMorePages=$hasMorePages, page size=${pager.getResults().size}");
 
             //loadCachedPage();
             if (pager.hasMorePages()) {
@@ -429,7 +429,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
                 _nextPageHandler.run(pager);
             }
             else if(_lastNextPage) {
-                Logger.i(TAG, "End of page reached");
+                Logger.i(TAG, "End of page reached (Last page size: ${pager.getResults().size})");
                 _lastNextPage = false;
             }
         }
