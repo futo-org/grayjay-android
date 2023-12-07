@@ -343,6 +343,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _currentChapterLoopActive = false;
     }
 
+    fun stopAllGestures() {
+        gestureControl.stopAllGestures();
+    }
+
     fun attachPlayer() {
         exoPlayer?.attach(_videoView, PLAYER_STATE_NAME);
     }
