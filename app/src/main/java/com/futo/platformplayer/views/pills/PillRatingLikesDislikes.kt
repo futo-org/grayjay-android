@@ -54,10 +54,8 @@ class PillRatingLikesDislikes : LinearLayout {
         _loaderViewLikes = findViewById(R.id.loader_likes)
         _loaderViewDislikes = findViewById(R.id.loader_dislikes)
 
-        _iconLikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
-        _textLikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
-        _iconDislikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
-        _textDislikes.setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+        findViewById<LinearLayout>(R.id.layout_like).setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
+        findViewById<LinearLayout>(R.id.layout_dislike).setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
     }
 
     fun setLoading(loading: Boolean) {
