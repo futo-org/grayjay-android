@@ -150,7 +150,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         Logger.v(TAG, "Attached onConnectionAvailable listener.");
         StateApp.instance.onConnectionAvailable.subscribe(_referenceObject) {
-            Logger.v(TAG, "onConnectionAvailable");
+            Logger.v(TAG, "onConnectionAvailable connectivityLossTime = $_connectivityLossTime_ms, position = $position, duration = $duration");
 
             val pos = position;
             val dur = duration;
@@ -158,18 +158,28 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             if (_shouldPlaybackRestartOnConnectivity && abs(pos - dur) > 2000) {
                 if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 1) {
                     val lossTime_ms = _connectivityLossTime_ms
-                    if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 30) {
-                        shouldRestartPlayback = true
+                    if (lossTime_ms != null) {
+                        val lossDuration_ms = System.currentTimeMillis() - lossTime_ms
+                        Logger.v(TAG, "onConnectionAvailable lossDuration=$lossDuration_ms")
+                        if (lossDuration_ms < 1000 * 10) {
+                            shouldRestartPlayback = true
+                        }
                     }
                 } else if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 2) {
                     val lossTime_ms = _connectivityLossTime_ms
-                    if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 10) {
-                        shouldRestartPlayback = true
+                    if (lossTime_ms != null) {
+                        val lossDuration_ms = System.currentTimeMillis() - lossTime_ms
+                        Logger.v(TAG, "onConnectionAvailable lossDuration=$lossDuration_ms")
+                        if (lossDuration_ms < 1000 * 30) {
+                            shouldRestartPlayback = true
+                        }
                     }
                 } else if (Settings.instance.playback.restartPlaybackAfterConnectivityLoss == 3) {
                     shouldRestartPlayback = true
                 }
             }
+
+            Logger.v(TAG, "onConnectionAvailable shouldRestartPlayback = $shouldRestartPlayback");
 
             if (shouldRestartPlayback) {
                 Logger.i(TAG, "Playback ended due to connection loss, resuming playback since connection is restored.");
@@ -177,6 +187,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 exoPlayer?.player?.prepare();
                 exoPlayer?.player?.play();
             }
+
+            _connectivityLossTime_ms = null;
         };
     }
 
@@ -524,6 +536,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     protected open fun onPlayerError(error: PlaybackException) {
+        Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss");
+
         when (error.errorCode) {
             PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
                 onDatasourceError.emit(error);
@@ -536,9 +550,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             //PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
             //PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
             PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> {
-                Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true");
                 _shouldPlaybackRestartOnConnectivity = true;
                 _connectivityLossTime_ms = System.currentTimeMillis()
+                Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true _connectivityLossTime_ms=$_connectivityLossTime_ms");
             }
         }
     }
