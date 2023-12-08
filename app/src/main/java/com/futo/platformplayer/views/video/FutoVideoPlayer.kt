@@ -35,7 +35,10 @@ import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.StyledPlayerView
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.video.VideoSize
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -300,6 +303,17 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 }
         }
 
+        StatePlayer.instance.onQueueChanged.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                updateNextPrevious();
+            }
+        }
+        StatePlayer.instance.onVideoChanging.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                updateNextPrevious();
+            }
+        }
+
         updateLoopVideoUI();
 
         if(!isInEditMode) {
@@ -307,10 +321,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         }
     }
 
-    /*fun updateNextPrevious(hasNext: Boolean, hasPrevious: Boolean) {
-        _buttonNext.visibility = if (hasNext) View.VISIBLE else View.GONE
-        _buttonPrevious.visibility = if (hasPrevious) View.VISIBLE else View.GONE
-    }*/
+    fun updateNextPrevious() {
+        val vidPrev = StatePlayer.instance.getPrevQueueItem(true);
+        val vidNext = StatePlayer.instance.getNextQueueItem(true);
+        _buttonNext.visibility = if (vidNext != null) View.VISIBLE else View.GONE
+        _buttonPrevious.visibility = if (vidPrev != null) View.VISIBLE else View.GONE
+    }
 
     private val _currentChapterUpdateInterval: Long = 1000L / Settings.instance.playback.getChapterUpdateFrames();
     private var _currentChapterUpdateLastPos = 0L;

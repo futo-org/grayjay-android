@@ -373,7 +373,28 @@ class StatePlayer {
         return null;
     }
 
-    fun getNextQueueItem() : IPlatformVideo? {
+    fun getPrevQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
+        synchronized(_queue) {
+            val shuffledQueue = _queueShuffled;
+            val queue = if (queueShuffle && shuffledQueue != null) {
+                shuffledQueue;
+            } else {
+                _queue;
+            }
+
+            //Init Behavior
+            if(_queuePosition == -1 && queue.isNotEmpty())
+                return queue[0];
+            //Standard Behavior
+            if(_queuePosition - 1 > 0)
+                return queue[_queuePosition - 1];
+            //Repeat Behavior (End of queue)
+            if(_queuePosition - 1 < 0 && queue.isNotEmpty() && (forceLoop || queueRepeat))
+                return queue[_queue.size - 1];
+        }
+        return null;
+    }
+    fun getNextQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         if(loopVideo)
             return currentVideo;
         synchronized(_queue) {
@@ -391,7 +412,7 @@ class StatePlayer {
             if(_queuePosition + 1 < queue.size)
                 return queue[_queuePosition + 1];
             //Repeat Behavior (End of queue)
-            if(_queuePosition + 1 == queue.size && queue.isNotEmpty() && queueRepeat)
+            if(_queuePosition + 1 == queue.size && queue.isNotEmpty() && (forceLoop || queueRepeat))
                 return queue[0];
         }
         return null;
