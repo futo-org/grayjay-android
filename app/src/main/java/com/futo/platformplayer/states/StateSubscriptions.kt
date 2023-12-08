@@ -254,9 +254,17 @@ class StateSubscriptions {
         }
 
         val usePolycentric = true;
+        val lock = Object();
+        var polycentricBudget: Int = 10;
         val subUrls = getSubscriptions().parallelStream().map {
-            if(usePolycentric)
-                Pair(it, StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id));
+            if(usePolycentric) {
+                val result = StatePolycentric.instance.getChannelUrlsWithUpdateResult(it.channel.url, it.channel.id, polycentricBudget <= 0);
+                if(result.first)
+                    synchronized(lock) {
+                        polycentricBudget--;
+                    }
+                Pair(it, result.second);
+            }
             else
                 Pair(it, listOf(it.channel.url));
         }.asSequence()
