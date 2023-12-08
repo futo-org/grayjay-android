@@ -325,7 +325,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         val vidPrev = StatePlayer.instance.getPrevQueueItem(true);
         val vidNext = StatePlayer.instance.getNextQueueItem(true);
         _buttonNext.visibility = if (vidNext != null) View.VISIBLE else View.GONE
+        _buttonNext_fullscreen.visibility = if (vidNext != null) View.VISIBLE else View.GONE
         _buttonPrevious.visibility = if (vidPrev != null) View.VISIBLE else View.GONE
+        _buttonPrevious_fullscreen.visibility = if (vidPrev != null) View.VISIBLE else View.GONE
     }
 
     private val _currentChapterUpdateInterval: Long = 1000L / Settings.instance.playback.getChapterUpdateFrames();
