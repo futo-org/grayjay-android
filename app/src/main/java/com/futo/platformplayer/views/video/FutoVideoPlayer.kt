@@ -305,6 +305,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
             CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                setLoopVisible(!StatePlayer.instance.hasQueue)
                 updateNextPrevious();
             }
         }
@@ -361,6 +362,11 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _currentChapterLoopActive = false;
     }
 
+    fun setLoopVisible(visible: Boolean) {
+        _control_loop.visibility = if (visible) View.VISIBLE else View.GONE;
+        _control_loop_fullscreen.visibility = if (visible) View.VISIBLE else View.GONE;
+    }
+
     fun stopAllGestures() {
         gestureControl.stopAllGestures();
     }
@@ -391,11 +397,11 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     fun setArtwork(drawable: Drawable?) {
         if (drawable != null) {
             _videoView.defaultArtwork = drawable;
-            _videoView.useArtwork = true;
+            _videoView.artworkDisplayMode = StyledPlayerView.ARTWORK_DISPLAY_MODE_FILL;
             fitOrFill(isFullScreen);
         } else {
             _videoView.defaultArtwork = null;
-            _videoView.useArtwork = false;
+            _videoView.artworkDisplayMode = StyledPlayerView.ARTWORK_DISPLAY_MODE_OFF;
         }
     }
 

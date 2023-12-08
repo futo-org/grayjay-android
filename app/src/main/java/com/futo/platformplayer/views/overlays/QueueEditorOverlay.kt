@@ -22,7 +22,10 @@ class QueueEditorOverlay : LinearLayout {
 
         _topbar.onClose.subscribe(this, onClose::emit);
         _editor.onVideoOrderChanged.subscribe { StatePlayer.instance.setQueueWithExisting(it) }
-        _editor.onVideoRemoved.subscribe { v -> StatePlayer.instance.removeFromQueue(v) }
+        _editor.onVideoRemoved.subscribe { v ->
+            StatePlayer.instance.removeFromQueue(v);
+            _topbar.setInfo(context.getString(R.string.queue), "${StatePlayer.instance.queueSize} " + context.getString(R.string.videos));
+        }
         _editor.onVideoClicked.subscribe { v -> StatePlayer.instance.setQueuePosition(v) }
 
         _topbar.setInfo(context.getString(R.string.queue), "");

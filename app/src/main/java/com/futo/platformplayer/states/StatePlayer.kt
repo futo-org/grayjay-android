@@ -57,10 +57,14 @@ class StatePlayer {
     var queueShuffle: Boolean = false
         private set;
 
-    val hasQueue: Boolean get() {
+    val queueSize: Int get() {
         synchronized(_queue) {
-            return _queue.isNotEmpty()
+            return _queue.size
         }
+    }
+
+    val hasQueue: Boolean get() {
+        return queueSize > 1
     }
 
     val queueName: String get() = _queueName ?: _queueType;

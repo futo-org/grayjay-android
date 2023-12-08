@@ -1,0 +1,88 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "eb813d54b9c44d29f1d7bb198a16d4d1",
+    "entities": [
+      {
+        "tableName": "subscription_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `url` TEXT, `channelUrl` TEXT, `datetime` INTEGER, `serialized` BLOB)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "channelUrl",
+            "columnName": "channelUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "datetime",
+            "columnName": "datetime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "serialized",
+            "columnName": "serialized",
+            "affinity": "BLOB",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_subscription_cache_url",
+            "unique": false,
+            "columnNames": [
+              "url"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_subscription_cache_url` ON `${TABLE_NAME}` (`url`)"
+          },
+          {
+            "name": "index_subscription_cache_channelUrl",
+            "unique": false,
+            "columnNames": [
+              "channelUrl"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_subscription_cache_channelUrl` ON `${TABLE_NAME}` (`channelUrl`)"
+          },
+          {
+            "name": "index_subscription_cache_datetime",
+            "unique": false,
+            "columnNames": [
+              "datetime"
+            ],
+            "orders": [
+              "DESC"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_subscription_cache_datetime` ON `${TABLE_NAME}` (`datetime` DESC)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eb813d54b9c44d29f1d7bb198a16d4d1')"
+    ]
+  }
+}

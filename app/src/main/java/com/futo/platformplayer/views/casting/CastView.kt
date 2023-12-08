@@ -106,6 +106,10 @@ class CastView : ConstraintLayout {
         _gestureControlView.stopAllGestures();
     }
 
+    fun setLoopVisible(visible: Boolean) {
+        _buttonLoop.visibility = if (visible) View.VISIBLE else View.GONE;
+    }
+
     fun setIsPlaying(isPlaying: Boolean) {
         _updateTimeJob?.cancel();
 

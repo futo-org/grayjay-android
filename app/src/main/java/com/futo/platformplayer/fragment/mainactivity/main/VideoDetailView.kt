@@ -538,6 +538,7 @@ class VideoDetailView : ConstraintLayout {
             if(!_destroyed) {
                 updateQueueState();
                 StatePlayer.instance.updateMediaSession(null);
+                _cast.setLoopVisible(!StatePlayer.instance.hasQueue);
             }
         };
         StatePlayer.instance.onVideoChanging.subscribe(this) {
