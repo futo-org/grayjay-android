@@ -609,7 +609,7 @@ class StatePlatform {
     //Video
     fun hasEnabledVideoClient(url: String) : Boolean = getEnabledClients().any { it.isContentDetailsUrl(url) };
     fun getContentClient(url: String) : IPlatformClient = getContentClientOrNull(url)
-        ?: throw NoPlatformClientException("No client enabled that supports this channel url (${url})");
+        ?: throw NoPlatformClientException("No client enabled that supports this content url (${url})");
     fun getContentClientOrNull(url: String) : IPlatformClient? = getEnabledClients().find { it.isContentDetailsUrl(url) };
     fun getContentDetails(url: String, forceRefetch: Boolean = false): Deferred<IPlatformContentDetails> {
         Logger.i(TAG, "Platform - getContentDetails (${url})");
