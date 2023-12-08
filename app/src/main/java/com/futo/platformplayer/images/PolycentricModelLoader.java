@@ -59,23 +59,28 @@ public class PolycentricModelLoader implements ModelLoader<String, ByteBuffer> {
 
         @Override
         public void loadData(@NonNull Priority priority, @NonNull DataFetcher.DataCallback<? super ByteBuffer> callback) {
+            Log.i("PolycentricModelLoader", this._model);
             _deferred = PolycentricCache.getInstance().getDataAsync(_model);
             _deferred.invokeOnCompletion(throwable -> {
                 if (throwable != null) {
+                    Log.e("PolycentricModelLoader", "getDataAsync failed throwable: " + throwable.toString());
                     callback.onLoadFailed(new Exception(throwable));
                     return Unit.INSTANCE;
                 }
 
                 Deferred<ByteBuffer> deferred = _deferred;
                 if (deferred == null) {
+                    Log.e("PolycentricModelLoader", "getDataAsync failed deferred is null");
                     callback.onLoadFailed(new Exception("Deferred is null"));
                     return Unit.INSTANCE;
                 }
 
                 ByteBuffer completed = deferred.getCompleted();
                 if (completed != null) {
+                    Log.e("PolycentricModelLoader", "getDataAsync success loaded " + completed.remaining() + " bytes");
                     callback.onDataReady(completed);
                 } else {
+                    Log.e("PolycentricModelLoader", "getDataAsync failed completed is null");
                     callback.onLoadFailed(new Exception("Completed is null"));
                 }
                 return Unit.INSTANCE;
