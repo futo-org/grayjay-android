@@ -341,12 +341,12 @@ class MediaPlaybackService : Service() {
 
                         if (Settings.instance.playback.restartPlaybackAfterLoss == 1) {
                             val lossTime_ms = _audioFocusLossTime_ms
-                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 30) {
+                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 10) {
                                 MediaControlReceiver.onPlayReceived.emit()
                             }
                         } else if (Settings.instance.playback.restartPlaybackAfterLoss == 2) {
                             val lossTime_ms = _audioFocusLossTime_ms
-                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 10) {
+                            if (lossTime_ms != null && System.currentTimeMillis() - lossTime_ms < 1000 * 30) {
                                 MediaControlReceiver.onPlayReceived.emit()
                             }
                         } else if (Settings.instance.playback.restartPlaybackAfterLoss == 3) {
