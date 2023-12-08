@@ -373,6 +373,10 @@ class StatePlayer {
         return null;
     }
 
+    /***
+     * Checks what the prev queue item would without consuming it.
+     * @param forceLoop If start of queue should be ignored and loop around to end without queueRepeat being true
+     */
     fun getPrevQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
             if(_queue.size == 1)
@@ -397,6 +401,10 @@ class StatePlayer {
         }
         return null;
     }
+    /***
+     * Checks what the next queue item would without consuming it.
+     * @param forceLoop If end of queue should be ignored and loop around to start without queueRepeat being true
+     */
     fun getNextQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
             if(_queue.size == 1)
@@ -427,6 +435,12 @@ class StatePlayer {
             return nextQueueItem(false, true);
         }
     };
+
+    /***
+     * Triggers the next queue item, removing it depending on the queue type, should ONLY be used if you're directly consuming this item
+     * @param withoutRemoval Prevents the removal behavior of certain playlists, should be true for manual user actions like next
+     * @param bypassVideoLoop Bypasses any single-video-looping behavior, should be true for manual user actions like next
+     */
     fun nextQueueItem(withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false) : IPlatformVideo? {
         if(loopVideo && !bypassVideoLoop)
             return currentVideo;
@@ -463,6 +477,10 @@ class StatePlayer {
         }
     }
 
+    /***
+     * Triggers the prev queue item, removing it depending on the queue type
+     * @param withoutRemoval Prevents the removal behavior of certain playlists, should be true for manual user actions like next
+     */
     fun prevQueueItem(withoutRemoval: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
             if (_queue.size == 0) {
