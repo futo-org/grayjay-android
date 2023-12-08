@@ -222,7 +222,7 @@ class PolycentricCache {
         }
     }
 
-    suspend fun getProfileAsync(id: PlatformID): CachedPolycentricProfile? {
+    suspend fun getProfileAsync(id: PlatformID, url: String? = null): CachedPolycentricProfile? {
         if (!StatePolycentric.instance.enabled || id.claimType <= 0) {
             return CachedPolycentricProfile(null);
         }
@@ -243,6 +243,8 @@ class PolycentricCache {
                 Logger.v(TAG, "getProfileAsync (id: $id) != null (with retrieved valid claims)")
                 return getProfileAsync(claims.ownedClaims.first().system).await()
             } else {
+                if(url != null)
+                    _profileUrlCache.setAndSave(url, PolycentricCache.CachedPolycentricProfile(null));
                 return null;
             }
         }

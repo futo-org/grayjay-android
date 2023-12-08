@@ -170,17 +170,23 @@ class StatePolycentric {
     }
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): List<String> {
+        return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly).second;
+    }
+    fun getChannelUrlsWithUpdateResult(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): Pair<Boolean, List<String>> {
+        var didUpdate = false;
         if (!enabled) {
-            return listOf(url);
+            return Pair(false, listOf(url));
         }
-
         var polycentricProfile: PolycentricProfile? = null;
         try {
-            polycentricProfile = PolycentricCache.instance.getCachedProfile(url)?.profile;
-            if (polycentricProfile == null && channelId != null) {
+            val polycentricCached = PolycentricCache.instance.getCachedProfile(url, cacheOnly)
+            polycentricProfile = polycentricCached?.profile;
+            if (polycentricCached == null && channelId != null) {
                 Logger.i("StateSubscriptions", "Get polycentric profile not cached");
-                if(!cacheOnly)
-                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId) }?.profile;
+                if(!cacheOnly) {
+                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId, url) }?.profile;
+                    didUpdate = true;
+                }
             } else {
                 Logger.i("StateSubscriptions", "Get polycentric profile cached");
             }
@@ -193,12 +199,12 @@ class StatePolycentric {
             val urls = polycentricProfile.ownedClaims.groupBy { it.claim.claimType }
                 .mapNotNull { it.value.firstOrNull()?.claim?.resolveChannelUrl() }.toMutableList();
             if(urls.any { it.equals(url, true) })
-                return urls;
+                return Pair(didUpdate, urls);
             else
-                return listOf(url) + urls;
+                return Pair(didUpdate, listOf(url) + urls);
         }
         else
-            return listOf(url);
+            return Pair(didUpdate, listOf(url));
     }
 
     fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent>? {
