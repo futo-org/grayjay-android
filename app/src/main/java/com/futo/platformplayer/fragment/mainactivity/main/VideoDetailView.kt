@@ -468,7 +468,7 @@ class VideoDetailView : ConstraintLayout {
             nextVideo();
         };
         _player.onDatasourceError.subscribe(::onDataSourceError);
-        _player.onNext.subscribe { nextVideo(true, true) };
+        _player.onNext.subscribe { nextVideo(true, true, true) };
         _player.onPrevious.subscribe { prevVideo(true) };
 
         _minimize_controls_play.setOnClickListener { handlePlay(); };
@@ -546,7 +546,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
-        MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo(true) };
+        MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo(true, true, true) };
         MediaControlReceiver.onPreviousReceived.subscribe(this) { prevVideo(true) };
         MediaControlReceiver.onCloseReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onCloseReceived")
@@ -1332,6 +1332,7 @@ class VideoDetailView : ConstraintLayout {
         if(video.isLive && video.live == null && !video.video.videoSources.any())
             startLiveTry(video);
 
+        _player.updateNextPrevious();
         updateMoreButtons();
     }
     fun loadLiveChat(video: IPlatformVideoDetails) {
@@ -1551,9 +1552,9 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    fun nextVideo(forceLoop: Boolean = false, withoutRemoval: Boolean = false): Boolean {
+    fun nextVideo(forceLoop: Boolean = false, withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
-        var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
+        var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9, bypassVideoLoop);
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {

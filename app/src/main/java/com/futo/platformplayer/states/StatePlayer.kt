@@ -375,6 +375,9 @@ class StatePlayer {
 
     fun getPrevQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
+            if(_queue.size == 1)
+                return null;
+
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
                 shuffledQueue;
@@ -386,7 +389,7 @@ class StatePlayer {
             if(_queuePosition == -1 && queue.isNotEmpty())
                 return queue[0];
             //Standard Behavior
-            if(_queuePosition - 1 > 0)
+            if(_queuePosition - 1 >= 0)
                 return queue[_queuePosition - 1];
             //Repeat Behavior (End of queue)
             if(_queuePosition - 1 < 0 && queue.isNotEmpty() && (forceLoop || queueRepeat))
@@ -395,9 +398,10 @@ class StatePlayer {
         return null;
     }
     fun getNextQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
-        if(loopVideo)
-            return currentVideo;
         synchronized(_queue) {
+            if(_queue.size == 1)
+                return null;
+
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
                 shuffledQueue;
@@ -420,11 +424,11 @@ class StatePlayer {
     fun restartQueue() : IPlatformVideo? {
         synchronized(_queue) {
             _queuePosition = -1;
-            return nextQueueItem();
+            return nextQueueItem(false, true);
         }
     };
-    fun nextQueueItem(withoutRemoval: Boolean = false) : IPlatformVideo? {
-        if(loopVideo)
+    fun nextQueueItem(withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false) : IPlatformVideo? {
+        if(loopVideo && !bypassVideoLoop)
             return currentVideo;
         synchronized(_queue) {
             if (_queue.isEmpty())
