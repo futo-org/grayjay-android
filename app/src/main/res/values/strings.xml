@@ -537,6 +537,7 @@
     <string name="play_feed_as_queue">Play Feed as Queue</string>
     <string name="play_entire_feed">Play entire feed</string>
     <string name="queued">Queued</string>
+    <string name="already_queued">Already queued</string>
     <string name="used">Used</string>
     <string name="available">Available</string>
     <string name="failed_to_load_next_page">Failed to load next page</string>

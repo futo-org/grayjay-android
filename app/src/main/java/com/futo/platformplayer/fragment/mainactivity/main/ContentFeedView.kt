@@ -79,8 +79,6 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         adapter.onAddToQueueClicked.subscribe(this) {
             if(it is IPlatformVideo) {
                 StatePlayer.instance.addToQueue(it);
-                val name = if (it.name.length > 20) (it.name.subSequence(0, 20).toString() + "...") else it.name;
-                UIDialogs.toast(context, context.getString(R.string.queued) + " [$name]", false);
             }
         };
         adapter.onLongPress.subscribe(this) {

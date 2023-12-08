@@ -207,8 +207,6 @@ class ChannelFragment : MainFragment() {
             adapter.onAddToQueueClicked.subscribe { content ->
                 if(content is IPlatformVideo) {
                     StatePlayer.instance.addToQueue(content);
-                    val name = if (content.name.length > 20) (content.name.subSequence(0, 20).toString() + "...") else content.name;
-                    UIDialogs.toast(context, "Queued [$name]", false);
                 }
             }
             adapter.onUrlClicked.subscribe { url ->

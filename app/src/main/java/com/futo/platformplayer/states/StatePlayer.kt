@@ -2,6 +2,8 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import android.util.Log
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -268,7 +270,12 @@ class StatePlayer {
         setQueueWithPosition(videos, _queueType, index, withFocus);
     }
     fun addToQueue(video: IPlatformVideo) {
+        var didAdd = false;
         synchronized(_queue) {
+            if(_queue.any { it.url == video.url }) {
+                return@synchronized;
+            }
+
             if(_queue.isEmpty()) {
                 setQueueType(TYPE_QUEUE);
                 currentVideo?.let {
@@ -284,8 +291,19 @@ class StatePlayer {
             if (_queuePosition < 0) {
                 _queuePosition = 0;
             }
+            didAdd = true;
         }
-        onQueueChanged.emit(true);
+        if(didAdd) {
+            onQueueChanged.emit(true);
+            StateApp.instance.contextOrNull?.let { context ->
+                val name = if (video.name.length > 20) (video.name.subSequence(0, 20).toString() + "...") else video.name;
+                UIDialogs.toast(context, context.getString(R.string.queued) + " [$name]", false);
+            }
+        }
+        else
+            StateApp.instance.contextOrNull?.let { context ->
+                UIDialogs.toast(context, context.getString(R.string.already_queued), false);
+            }
     }
     fun insertToQueue(video: IPlatformVideo, playNow: Boolean = false) {
         synchronized(_queue) {
