@@ -259,10 +259,11 @@ class StateSubscriptions {
         val subUrls = getSubscriptions().parallelStream().map {
             if(usePolycentric) {
                 val result = StatePolycentric.instance.getChannelUrlsWithUpdateResult(it.channel.url, it.channel.id, polycentricBudget <= 0);
-                if(result.first)
+                if(result.first) {
                     synchronized(lock) {
                         polycentricBudget--;
                     }
+                }
                 Pair(it, result.second);
             }
             else
