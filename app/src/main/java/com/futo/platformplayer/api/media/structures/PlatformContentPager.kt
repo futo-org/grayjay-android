@@ -2,6 +2,8 @@ package com.futo.platformplayer.api.media.structures
 
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.assume
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 
 /**
@@ -28,6 +30,7 @@ class PlatformContentPager : IPager<IPlatformContent> {
         _page++;
         _currentItems = _items.stream()
             .skip((_page * _pageSize).toLong())
+            .asSequence()
             .toList()
             .take(_pageSize)
             .toList();

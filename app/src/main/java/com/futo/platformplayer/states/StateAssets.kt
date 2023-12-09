@@ -1,6 +1,7 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import kotlin.streams.asSequence
 import kotlin.streams.toList
 
 /***
@@ -26,7 +27,7 @@ class StateAssets {
                 else
                     break;
             }
-            return (parts1 + parts2.stream().skip(toSkip.toLong()).toList()).joinToString("/");
+            return (parts1 + parts2.stream().skip(toSkip.toLong()).asSequence().toList()).joinToString("/");
         }
 
         /**

@@ -555,7 +555,7 @@ class Settings : FragmentedStorageFileJson() {
             val cookieManager: CookieManager = CookieManager.getInstance();
             cookieManager.removeAllCookies(null);
         }
-        @FormField(R.string.reinstall_embedded_plugins, FieldForm.BUTTON, R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1)
+        /*@FormField(R.string.reinstall_embedded_plugins, FieldForm.BUTTON, R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1)
         fun reinstallEmbedded() {
             StateApp.instance.scopeOrNull!!.launch(Dispatchers.IO) {
                 try {
@@ -574,7 +574,7 @@ class Settings : FragmentedStorageFileJson() {
                     }
                 }
             }
-        }
+        }*/
     }
 
 
