@@ -264,6 +264,31 @@ class SourceDetailFragment : MainFragment() {
                             }
                         )
                     );
+
+                    val migrationButtons = mutableListOf<BigButton>();
+                    if (isEnabled && source.capabilities.hasGetUserSubscriptions) {
+                        migrationButtons.add(
+                            BigButton(c, context.getString(R.string.import_subscriptions), context.getString(R.string.login_required), R.drawable.ic_subscriptions) {
+
+                            }.apply { this.alpha = 0.5f }
+                        );
+                    }
+
+                    if (isEnabled && source.capabilities.hasGetUserPlaylists && source.capabilities.hasGetPlaylist) {
+                        val bigButton = BigButton(c, context.getString(R.string.import_playlists), context.getString(R.string.login_required), R.drawable.ic_playlist) {
+
+                        }.apply { this.alpha = 0.5f };
+
+                        bigButton.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                        };
+
+                        migrationButtons.add(bigButton);
+                    }
+
+                    if (migrationButtons.size > 0) {
+                        groups.add(BigButtonGroup(c, context.getString(R.string.migration), *migrationButtons.toTypedArray()));
+                    }
                 }
             }
 

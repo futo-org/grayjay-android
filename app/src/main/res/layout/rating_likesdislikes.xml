@@ -29,7 +29,7 @@
             android:textColor="@color/white"
             android:textSize="13dp"
             android:gravity="center_vertical"
-            tools:text="500K" />
+            tools:text="50K" />
 
         <com.futo.platformplayer.views.LoaderView
             android:id="@+id/loader_likes"
@@ -42,6 +42,8 @@
         android:id="@+id/pill_seperator"
         android:layout_width="1dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:layout_marginBottom="7dp"
 
         android:background="#808080"/>
 
@@ -68,7 +70,7 @@
             android:textColor="@color/white"
             android:gravity="center_vertical"
             android:textSize="13dp"
-            tools:text="500K" />
+            tools:text="50K" />
         <com.futo.platformplayer.views.LoaderView
             android:id="@+id/loader_dislikes"
             android:layout_width="14dp"

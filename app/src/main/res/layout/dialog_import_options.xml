@@ -72,6 +72,16 @@
             android:layout_marginTop="5dp"
             android:layout_marginBottom="10dp">
             <com.futo.platformplayer.views.buttons.BigButton
+                android:id="@+id/button_import_platform"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scaleY="0.9"
+                android:scaleX="0.9"
+                app:buttonIcon="@drawable/ic_sources_filled"
+                app:buttonText="Import from Platform"
+                app:buttonBackground="@drawable/background_big_button_black"
+                app:buttonSubText="Import your data from a specific source" />
+            <com.futo.platformplayer.views.buttons.BigButton
                 android:id="@+id/button_import_zip"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

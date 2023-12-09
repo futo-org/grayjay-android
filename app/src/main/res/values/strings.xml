@@ -577,6 +577,7 @@
     <string name="import_your_subscriptions_from_this_source">Import your subscriptions from this source</string>
     <string name="import_your_playlists_from_this_source">Import your playlists from this source</string>
     <string name="login">Login</string>
+    <string name="login_required">Login Required</string>
     <string name="sign_into_the_platform_of_this_source">Sign into the platform of this source</string>
     <string name="management">Management</string>
     <string name="uninstall">Uninstall</string>

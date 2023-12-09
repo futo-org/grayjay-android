@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.widget.Button
 import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
 import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
@@ -19,6 +20,7 @@ class ImportOptionsDialog: AlertDialog {
     private lateinit var _button_import_ezip: BigButton;
     private lateinit var _button_import_txt: BigButton;
     private lateinit var _button_import_newpipe_subs: BigButton;
+    private lateinit var _button_import_platform: BigButton;
     private lateinit var _button_close: Button;
 
 
@@ -33,6 +35,7 @@ class ImportOptionsDialog: AlertDialog {
         _button_import_ezip = findViewById(R.id.button_import_ezip);
         _button_import_txt = findViewById(R.id.button_import_txt);
         _button_import_newpipe_subs = findViewById(R.id.button_import_newpipe_subs);
+        _button_import_platform = findViewById(R.id.button_import_platform);
         _button_close = findViewById(R.id.button_cancel);
 
         _button_import_zip.onClick.subscribe {
@@ -60,6 +63,10 @@ class ImportOptionsDialog: AlertDialog {
                 val json = String(jsonBytes);
                 StateBackup.importNewPipeSubs(_context, json);
             };
+        };
+        _button_import_platform.onClick.subscribe  {
+            dismiss();
+            _context.navigate(_context.getFragment<SourcesFragment>());
         };
         _button_close.setOnClickListener {
             dismiss();

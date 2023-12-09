@@ -70,10 +70,11 @@
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintLeft_toLeftOf="@id/text_body"
         app:layout_constraintTop_toBottomOf="@id/text_body"
+        android:layout_marginLeft="-10dp"
         android:layout_marginTop="8dp"
         android:gravity="center_vertical">
 
@@ -83,7 +84,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginStart="10dp" />
+            android:layout_marginStart="9dp" />
 
         <LinearLayout
             android:id="@+id/layout_rating"
