@@ -17,6 +17,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 import java.time.OffsetDateTime
+import kotlin.system.measureTimeMillis
 
 class PolycentricCache {
     data class CachedOwnedClaims(val ownedClaims: List<OwnedClaim>?, val creationTime: OffsetDateTime = OffsetDateTime.now()) {
@@ -29,8 +30,15 @@ class PolycentricCache {
 
     private val _cache = hashMapOf<PlatformID, CachedOwnedClaims>()
     private val _profileCache = hashMapOf<PublicKey, CachedPolycentricProfile>()
-    private val _profileUrlCache = FragmentedStorage.get<CachedPolycentricProfileStorage>("profileUrlCache")
+    private val _profileUrlCache: CachedPolycentricProfileStorage;
     private val _scope = CoroutineScope(Dispatchers.IO);
+    init {
+        Logger.i(TAG, "Initializing Polycentric cache");
+        val time = measureTimeMillis {
+            _profileUrlCache = FragmentedStorage.get<CachedPolycentricProfileStorage>("profileUrlCache")
+        }
+        Logger.i(TAG, "Initialized Polycentric cache (${_profileUrlCache.map.size}, ${time}ms)");
+    }
 
     private val _taskGetProfile = BatchedTaskHandler<PublicKey, CachedPolycentricProfile>(_scope,
         { system ->
@@ -222,7 +230,7 @@ class PolycentricCache {
         }
     }
 
-    suspend fun getProfileAsync(id: PlatformID, url: String? = null): CachedPolycentricProfile? {
+    suspend fun getProfileAsync(id: PlatformID, urlNullCache: String? = null): CachedPolycentricProfile? {
         if (!StatePolycentric.instance.enabled || id.claimType <= 0) {
             return CachedPolycentricProfile(null);
         }
@@ -243,8 +251,8 @@ class PolycentricCache {
                 Logger.v(TAG, "getProfileAsync (id: $id) != null (with retrieved valid claims)")
                 return getProfileAsync(claims.ownedClaims.first().system).await()
             } else {
-                if(url != null)
-                    _profileUrlCache.setAndSave(url, PolycentricCache.CachedPolycentricProfile(null));
+                if(urlNullCache != null)
+                    _profileUrlCache.setAndSave(urlNullCache, PolycentricCache.CachedPolycentricProfile(null));
                 return null;
             }
         }

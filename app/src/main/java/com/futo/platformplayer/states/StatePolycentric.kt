@@ -169,10 +169,10 @@ class StatePolycentric {
         }
     }
 
-    fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): List<String> {
-        return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly).second;
+    fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {
+        return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly, doCacheNull).second;
     }
-    fun getChannelUrlsWithUpdateResult(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false): Pair<Boolean, List<String>> {
+    fun getChannelUrlsWithUpdateResult(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): Pair<Boolean, List<String>> {
         var didUpdate = false;
         if (!enabled) {
             return Pair(false, listOf(url));
@@ -184,7 +184,7 @@ class StatePolycentric {
             if (polycentricCached == null && channelId != null) {
                 Logger.i("StateSubscriptions", "Get polycentric profile not cached");
                 if(!cacheOnly) {
-                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId, url) }?.profile;
+                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId, if(doCacheNull) url else null) }?.profile;
                     didUpdate = true;
                 }
             } else {

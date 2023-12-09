@@ -99,7 +99,7 @@ class StateCache {
 
         if(existing != null && doUpdate) {
             _subscriptionCache.update(existing.id!!, serialized);
-            return true;
+            return false;
         }
         else if(existing == null) {
             _subscriptionCache.insert(serialized);
