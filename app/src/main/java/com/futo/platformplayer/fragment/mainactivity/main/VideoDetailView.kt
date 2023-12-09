@@ -566,9 +566,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         _upNext.onNextItem.subscribe {
-            val item = StatePlayer.instance.nextQueueItem();
-            if(item != null)
-                setVideoOverview(item, true);
+            nextVideo(true, true, true);
         };
         _upNext.onOpenQueueClick.subscribe {
             _container_content_queue.updateQueue();
