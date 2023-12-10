@@ -12,6 +12,7 @@
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <application
         android:allowBackup="true"
@@ -36,9 +37,11 @@
             android:enabled="true"
             android:foregroundServiceType="mediaPlayback" />
         <service android:name=".services.DownloadService"
-            android:enabled="true" />
+            android:enabled="true"
+            android:foregroundServiceType="dataSync" />
         <service android:name=".services.ExportingService"
-            android:enabled="true" />
+            android:enabled="true"
+            android:foregroundServiceType="dataSync" />
 
         <receiver android:name=".receivers.MediaControlReceiver" />
         <receiver android:name=".receivers.AudioNoisyReceiver" />
