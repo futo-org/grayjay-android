@@ -1,19 +1,22 @@
 package com.futo.platformplayer.others
 
 import android.net.Uri
-import android.webkit.*
+import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.Serializer
-import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.matchesDomain
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class LoginWebViewClient : WebViewClient {
     private val LOG_VERBOSE = false;
@@ -30,9 +33,9 @@ class LoginWebViewClient : WebViewClient {
         _pluginConfig = config;
         _authConfig = config.authentication!!;
         Logger.i(TAG, "Login [${config.name}]" +
-                "\nRequired Headers: ${config.authentication?.headersToFind?.joinToString(", ")}" +
-                "\nRequired Domain Headers: ${Serializer.json.encodeToString(config.authentication?.domainHeadersToFind)}" +
-                "\nRequired Cookies: ${Serializer.json.encodeToString(config.authentication?.cookiesToFind)}",);
+                "\nRequired Headers: ${config.authentication.headersToFind?.joinToString(", ")}" +
+                "\nRequired Domain Headers: ${Serializer.json.encodeToString(config.authentication.domainHeadersToFind)}" +
+                "\nRequired Cookies: ${Serializer.json.encodeToString(config.authentication.cookiesToFind)}",);
     }
     constructor(auth: SourcePluginAuthConfig) : super() {
         _pluginConfig = null;

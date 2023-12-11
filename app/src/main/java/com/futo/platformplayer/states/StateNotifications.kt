@@ -16,7 +16,6 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
-import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.PlannedNotificationReceiver
 import com.futo.platformplayer.serializers.PlatformContentSerializer
@@ -54,7 +53,7 @@ class StateNotifications {
                 _plannedContent.delete(existing);
                 existing = null;
             }
-            if(existing == null && content.datetime != null) {
+            if(content.datetime != null) {
                 val item = SerializedPlatformContent.fromContent(content);
                 _plannedContent.saveAsync(item);
 
@@ -92,7 +91,7 @@ class StateNotifications {
     }
 
     fun notifyNewContentWithThumbnail(context: Context, manager: NotificationManager, notificationChannel: NotificationChannel, id: Int, content: IPlatformContent) {
-        val thumbnail = if(content is IPlatformVideo) (content as IPlatformVideo).thumbnails.getHQThumbnail()
+        val thumbnail = if(content is IPlatformVideo) content.thumbnails.getHQThumbnail()
         else null;
         if(thumbnail != null)
             Glide.with(context).asBitmap()

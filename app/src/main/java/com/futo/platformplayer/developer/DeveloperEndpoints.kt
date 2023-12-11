@@ -80,11 +80,11 @@ class DeveloperEndpoints(private val context: Context) {
 
     //Files
     @HttpGET("/dev", "text/html")
-    val devTestHtml = StateAssets.readAsset(context, "devportal/index.html", true);
+    val devTestHtml = StateAssets.readAsset(context, "devportal/index.html");
     @HttpGET("/source.js", "application/javascript")
-    val devSourceJS = StateAssets.readAsset(context, "scripts/source.js", true);
+    val devSourceJS = StateAssets.readAsset(context, "scripts/source.js");
     @HttpGET("/dev_bridge.js", "application/javascript")
-    val devBridgeJS = StateAssets.readAsset(context, "devportal/dev_bridge.js", true);
+    val devBridgeJS = StateAssets.readAsset(context, "devportal/dev_bridge.js");
     @HttpGET("/source_docs.json", "application/json")
     val devSourceDocsJson = Json.encodeToString(JSClient.getJSDocs());
     @HttpGET("/source_docs.js", "application/javascript")
@@ -98,7 +98,7 @@ class DeveloperEndpoints(private val context: Context) {
     //@HttpGET("/dependencies/vuetify.min.css", "text/css")
     //val depVuetifyCss = StateAssets.readAsset(context, "devportal/dependencies/vuetify.min.css", true);
     @HttpGET("/dependencies/FutoMainLogo.svg", "image/svg+xml")
-    val depFutoLogo = StateAssets.readAsset(context, "devportal/dependencies/FutoMainLogo.svg", true);
+    val depFutoLogo = StateAssets.readAsset(context, "devportal/dependencies/FutoMainLogo.svg");
 
     @HttpGET("/reference_plugin.d.ts", "text/plain")
     fun devSourceTSWithRefs(httpContext: HttpContext) {
@@ -107,7 +107,7 @@ class DeveloperEndpoints(private val context: Context) {
         builder.appendLine("//Reference Scriptfile");
         builder.appendLine("//Intended exclusively for auto-complete in your IDE, not for execution");
 
-        builder.appendLine(StateAssets.readAsset(context, "devportal/plugin.d.ts", true));
+        builder.appendLine(StateAssets.readAsset(context, "devportal/plugin.d.ts"));
 
         httpContext.respondCode(200, builder.toString(), "text/plain");
     }
@@ -119,7 +119,7 @@ class DeveloperEndpoints(private val context: Context) {
         builder.appendLine("//Reference Scriptfile");
         builder.appendLine("//Intended exclusively for auto-complete in your IDE, not for execution");
 
-        builder.appendLine(StateAssets.readAsset(context, "scripts/source.js", true));
+        builder.appendLine(StateAssets.readAsset(context, "scripts/source.js"));
 
         for(pack in testPluginOrThrow.getPackages()) {
             builder.appendLine();
@@ -194,7 +194,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondJson(200, testPluginOrThrow.getPackageVariables());
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
     @HttpPOST("/plugin/cleanTestPlugin")
@@ -204,7 +204,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200);
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
     @HttpPOST("/plugin/captchaTestPlugin")
@@ -226,7 +226,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200, "Captcha started");
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
     @HttpGET("/plugin/loginTestPlugin")
@@ -246,7 +246,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200, "Login started");
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
     @HttpGET("/plugin/logoutTestPlugin")
@@ -258,7 +258,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200, "Logged out");
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
 
@@ -269,7 +269,7 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200, if(isLoggedIn) "true" else "false", "application/json");
         }
         catch(ex: Throwable) {
-            context.respondCode(500, (ex::class.simpleName + ":" + ex.message) ?: "", "text/plain")
+            context.respondCode(500, (ex::class.simpleName + ":" + ex.message), "text/plain")
         }
     }
 
@@ -319,7 +319,7 @@ class DeveloperEndpoints(private val context: Context) {
         catch(invocation: InvocationTargetException) {
             val innerException = invocation.targetException;
             Logger.e("DeveloperEndpoints", innerException.message, innerException);
-            context.respondCode(500, innerException::class.simpleName + ":" + innerException.message ?: "", "text/plain")
+            context.respondCode(500, innerException::class.simpleName + ":" + innerException.message, "text/plain")
         }
         catch(ilEx: IllegalArgumentException) {
             if(ilEx.message?.contains("does not exist") ?: false) {
@@ -327,12 +327,12 @@ class DeveloperEndpoints(private val context: Context) {
             }
             else {
                 Logger.e("DeveloperEndpoints", ilEx.message, ilEx);
-                context.respondCode(500, ilEx::class.simpleName + ":" + ilEx.message ?: "", "text/plain")
+                context.respondCode(500, ilEx::class.simpleName + ":" + ilEx.message, "text/plain")
             }
         }
         catch(ex: Throwable) {
             Logger.e("DeveloperEndpoints", ex.message, ex);
-            context.respondCode(500, ex::class.simpleName + ":" + ex.message ?: "", "text/plain")
+            context.respondCode(500, ex::class.simpleName + ":" + ex.message, "text/plain")
         }
     }
     @HttpGET("/plugin/remoteProp")
@@ -362,12 +362,12 @@ class DeveloperEndpoints(private val context: Context) {
             }
             else {
                 Logger.e("DeveloperEndpoints", ilEx.message, ilEx);
-                context.respondCode(500, ilEx::class.simpleName + ":" + ilEx.message ?: "", "text/plain")
+                context.respondCode(500, ilEx::class.simpleName + ":" + ilEx.message, "text/plain")
             }
         }
         catch(ex: Throwable) {
             Logger.e("DeveloperEndpoints", ex.message, ex);
-            context.respondCode(500, ex::class.simpleName + ":" + ex.message ?: "", "text/plain")
+            context.respondCode(500, ex::class.simpleName + ":" + ex.message, "text/plain")
         }
     }
 
@@ -398,7 +398,7 @@ class DeveloperEndpoints(private val context: Context) {
     fun pluginLoadDevPlugin(context: HttpContext) {
         val config = context.readContentJson<SourcePluginConfig>()
         try {
-            val script = _client.get(config.absoluteScriptUrl!!);
+            val script = _client.get(config.absoluteScriptUrl);
             if(!script.isOk)
                 throw IllegalStateException("URL ${config.scriptUrl} return code ${script.code}");
             if(script.body == null)
@@ -409,7 +409,7 @@ class DeveloperEndpoints(private val context: Context) {
         }
         catch(ex: Exception) {
             Logger.e("DeveloperEndpoints", ex.message, ex);
-            context.respondCode(500, ex::class.simpleName + ":" + ex.message ?: "", "text/plain")
+            context.respondCode(500, ex::class.simpleName + ":" + ex.message, "text/plain")
         }
     }
 

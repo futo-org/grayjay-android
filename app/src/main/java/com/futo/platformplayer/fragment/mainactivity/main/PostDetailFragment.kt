@@ -40,15 +40,15 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
-import com.futo.platformplayer.views.comments.AddCommentView
-import com.futo.platformplayer.views.segments.CommentsList
-import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.platformplayer.views.platform.PlatformIndicator
-import com.futo.platformplayer.views.subscriptions.SubscribeButton
-import com.futo.platformplayer.views.others.Toggle
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
+import com.futo.platformplayer.views.comments.AddCommentView
+import com.futo.platformplayer.views.others.CreatorThumbnail
+import com.futo.platformplayer.views.others.Toggle
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
+import com.futo.platformplayer.views.platform.PlatformIndicator
+import com.futo.platformplayer.views.segments.CommentsList
+import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -220,7 +220,7 @@ class PostDetailFragment : MainFragment {
             root.removeView(layoutTop);
             _commentsList.setPrependedView(layoutTop);
 
-            _commentsList.onCommentsLoaded.subscribe { count ->
+            _commentsList.onCommentsLoaded.subscribe {
                 updateCommentType(false);
             };
 

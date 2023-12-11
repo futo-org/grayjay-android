@@ -2,7 +2,8 @@ package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.content.Context
 import android.util.Log
-import android.view.*
+import android.view.View
+import android.view.ViewGroup
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -44,7 +45,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         val stopwatch = Stopwatch()
         val contentDetails = StatePlatform.instance.getContentDetails(video.url).await();
         stopwatch.logAndNext(TAG, "Retrieving video detail (IO thread)")
-        return@TaskHandler Pair(viewHolder, contentDetails!!)
+        return@TaskHandler Pair(viewHolder, contentDetails)
     }).success { previewContentDetails(it.first, it.second) }
 
     constructor(context: Context, feedStyle : FeedStyle, dataSet: ArrayList<IPlatformContent>, exoPlayer: PlayerManager? = null,
@@ -111,15 +112,16 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
     };
 
-    override fun bindChild(viewHolder: ContentPreviewViewHolder, position: Int) {
-        val value = _dataSet[position];
+    override fun bindChild(holder: ContentPreviewViewHolder, pos: Int) {
+        val value = _dataSet[pos];
 
-        viewHolder.bind(value);
-        if (_initialPlay && position == 0) {
+        holder.bind(value);
+        if (_initialPlay && pos == 0) {
             _initialPlay = false;
 
-            if (_feedStyle != FeedStyle.THUMBNAIL)
-                preview(viewHolder);
+            if (_feedStyle != FeedStyle.THUMBNAIL) {
+                preview(holder);
+            }
         }
     }
 

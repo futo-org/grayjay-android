@@ -1,8 +1,10 @@
 package com.futo.platformplayer.constructs
 
-import android.provider.Settings.Global
-import com.futo.platformplayer.states.StateApp
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 
 class BatchedTaskHandler<TParameter, TResult> {
 
@@ -25,14 +27,14 @@ class BatchedTaskHandler<TParameter, TResult> {
     }
 
     fun execute(para : TParameter) : Deferred<TResult> {
-        var result: TResult? = null;
+        var result: TResult?;
         var taskResult: Deferred<TResult>? = null;
 
         synchronized(_batchLock) {
             result = _taskGetCache?.invoke(para);
             if(result == null) {
                 taskResult = _batchRequest[para];
-                if(taskResult?.isCancelled ?: false) {
+                if(taskResult?.isCancelled == true) {
                     _batchRequest.remove(para);
                     taskResult = null;
                 }

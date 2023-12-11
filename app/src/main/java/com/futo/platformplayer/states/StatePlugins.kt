@@ -12,14 +12,15 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
-import com.futo.platformplayer.stores.*
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.PluginIconStorage
+import com.futo.platformplayer.stores.PluginScriptsDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 /***
@@ -134,12 +135,12 @@ class StatePlugins {
             if(embeddedConfig != null) {
                 val existing = getPlugin(embedded.key);
                 if(existing != null && (existing.config.version < embeddedConfig.version || (force || FORCE_REINSTALL_EMBEDDED))) {
-                    Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig?.version}), reinstalling");
-                    //deletePlugin(embedded.key);
+                    Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig.version}), reinstalling");
                     installEmbeddedPlugin(context, embedded.value)
                 }
-                else if(existing != null && _isFirstEmbedUpdate)
-                    Logger.i(TAG, "Embedded plugin [${existing.config.id}] ${existing.config.name}, up to date (${existing.config.version} >= ${embeddedConfig?.version})");
+                else if(existing != null && _isFirstEmbedUpdate) {
+                    Logger.i(TAG, "Embedded plugin [${existing.config.id}] ${existing.config.name}, up to date (${existing.config.version} >= ${embeddedConfig.version})");
+                }
             }
         }
         _isFirstEmbedUpdate = false;
@@ -156,20 +157,18 @@ class StatePlugins {
         }
     }
     fun getEmbeddedPluginConfig(context: Context, assetConfigPath: String): SourcePluginConfig? {
-        val configJson = StateAssets.readAsset(context, assetConfigPath, false) ?: null;
-        if(configJson == null)
-            return null;
+        val configJson = StateAssets.readAsset(context, assetConfigPath) ?: return null;
         return SourcePluginConfig.fromJson(configJson, "");
     }
     fun installEmbeddedPlugin(context: Context, assetConfigPath: String, id: String? = null): Boolean {
         try {
-            val configJson = StateAssets.readAsset(context, assetConfigPath, false) ?:
+            val configJson = StateAssets.readAsset(context, assetConfigPath) ?:
                 throw IllegalStateException("Plugin config asset [${assetConfigPath}] not found");
             val config = SourcePluginConfig.fromJson(configJson, "");
             if(id != null && config.id != id)
                 throw IllegalStateException("Attempted to install embedded plugin with different id [${config.id}]");
 
-            val script = StateAssets.readAssetRelative(context, assetConfigPath, config.scriptUrl, false);
+            val script = StateAssets.readAssetRelative(context, assetConfigPath, config.scriptUrl);
             if(script.isNullOrEmpty())
                 throw IllegalStateException("Plugin script asset [${config.scriptUrl}] could not be found in assets");
 
@@ -222,9 +221,9 @@ class StatePlugins {
             catch(ex: Exception) {
                 Logger.e(TAG, "Failed fetch config", ex);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.showGeneralErrorDialog(context, "Failed to install plugin\n(${sourceUrl})", ex, "Ok", {
+                    UIDialogs.showGeneralErrorDialog(context, "Failed to install plugin\n(${sourceUrl})", ex, "Ok") {
                         handler?.invoke(false);
-                    });
+                    };
                 };
                 return@launch;
             }

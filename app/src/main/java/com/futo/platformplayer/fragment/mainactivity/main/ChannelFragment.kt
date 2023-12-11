@@ -3,8 +3,6 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.annotation.SuppressLint
 import android.graphics.drawable.Animatable
 import android.os.Bundle
-import android.text.Html
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,9 +28,9 @@ import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
@@ -43,10 +41,10 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.adapters.ChannelViewPagerAdapter
+import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
+import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.polycentric.core.*
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -54,7 +52,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import okhttp3.internal.platform.Platform
 
 @Serializable
 data class PolycentricProfile(val system: PublicKey, val systemState: SystemState, val ownedClaims: List<OwnedClaim>);
@@ -450,7 +447,7 @@ class ChannelFragment : MainFragment() {
         private fun setPolycentricProfileOr(url: String, or: () -> Unit) {
             setPolycentricProfile(null, animate = false);
 
-            val cachedProfile = channel?.let { PolycentricCache.instance.getCachedProfile(it.url) };
+            val cachedProfile = channel?.let { PolycentricCache.instance.getCachedProfile(url) };
             if (cachedProfile != null) {
                 setPolycentricProfile(cachedProfile, animate = false);
             } else {
@@ -492,10 +489,10 @@ class ChannelFragment : MainFragment() {
             }
 
             (_viewPager.adapter as ChannelViewPagerAdapter?)?.let {
-                it.getFragment<ChannelAboutFragment>().setPolycentricProfile(profile, animate);
-                it.getFragment<ChannelMonetizationFragment>().setPolycentricProfile(profile, animate);
-                it.getFragment<ChannelListFragment>().setPolycentricProfile(profile, animate);
-                it.getFragment<ChannelContentsFragment>().setPolycentricProfile(profile, animate);
+                it.getFragment<ChannelAboutFragment>().setPolycentricProfile(profile);
+                it.getFragment<ChannelMonetizationFragment>().setPolycentricProfile(profile);
+                it.getFragment<ChannelListFragment>().setPolycentricProfile(profile);
+                it.getFragment<ChannelContentsFragment>().setPolycentricProfile(profile);
                 //TODO: Call on other tabs as needed
             }
         }

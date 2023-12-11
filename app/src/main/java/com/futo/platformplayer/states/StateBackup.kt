@@ -27,19 +27,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
-import java.lang.Exception
 import java.time.OffsetDateTime
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import kotlin.IllegalStateException
 
 class StateBackup {
     companion object {
@@ -102,7 +99,7 @@ class StateBackup {
                             val backupFiles = getAutomaticBackupDocumentFiles(context, true);
                             val exportFile = backupFiles.first;
                             if (exportFile?.exists() == true && backupFiles.second != null)
-                                exportFile!!.copyTo(context, backupFiles.second!!);
+                                exportFile.copyTo(context, backupFiles.second!!);
                             exportFile!!.writeBytes(context, encryptedZip);
 
                             Settings.instance.backup.lastAutoBackupTime = OffsetDateTime.now(); //OffsetDateTime.now();
@@ -488,11 +485,11 @@ class StateBackup {
 
         companion object {
             fun fromZip(zipStream: ZipInputStream): ExportStructure {
-                var entry: ZipEntry? = null
+                var entry: ZipEntry?
 
                 var exportInfo: Map<String, String> = mapOf();
                 var settings: String? = null;
-                var stores: MutableMap<String, List<String>> = mutableMapOf();
+                val stores: MutableMap<String, List<String>> = mutableMapOf();
                 var plugins: Map<String, String> = mapOf();
                 var pluginSettings: Map<String, Map<String, String?>> = mapOf();
 

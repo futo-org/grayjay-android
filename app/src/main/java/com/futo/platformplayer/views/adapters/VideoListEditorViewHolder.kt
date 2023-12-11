@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.adapters
 
+import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -11,8 +12,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event1
@@ -43,6 +42,7 @@ class VideoListEditorViewHolder : ViewHolder {
     val onClick = Event1<IPlatformVideo>();
     val onRemove = Event1<IPlatformVideo>();
 
+    @SuppressLint("ClickableViewAccessibility")
     constructor(view: View, touchHelper: ItemTouchHelper) : super(view) {
         _root = view.findViewById(R.id.root);
         _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
@@ -58,12 +58,12 @@ class VideoListEditorViewHolder : ViewHolder {
         _platformIndicator = view.findViewById(R.id.thumbnail_platform);
         _layoutDownloaded = view.findViewById(R.id.layout_downloaded);
 
-        _imageDragDrop.setOnTouchListener(View.OnTouchListener { v, event ->
+        _imageDragDrop.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 touchHelper.startDrag(this);
             }
             false
-        });
+        };
 
         _root.setOnClickListener {
             val v = video ?: return@setOnClickListener;

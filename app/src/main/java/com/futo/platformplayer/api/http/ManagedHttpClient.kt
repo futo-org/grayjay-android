@@ -13,8 +13,6 @@ import okhttp3.Response
 import okhttp3.ResponseBody
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import java.util.Dictionary
-import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 open class ManagedHttpClient {
@@ -60,7 +58,7 @@ open class ManagedHttpClient {
 
         val requestBuilder: okhttp3.Request.Builder = okhttp3.Request.Builder()
             .url(url);
-        if(user_agent != null && !user_agent.isEmpty() && !headers.any { it.key.lowercase() == "user-agent" })
+        if(user_agent.isNotEmpty() && !headers.any { it.key.lowercase() == "user-agent" })
             requestBuilder.addHeader("User-Agent", user_agent)
 
         for (pair in headers.entries)
@@ -137,7 +135,7 @@ open class ManagedHttpClient {
         val requestBuilder: okhttp3.Request.Builder = okhttp3.Request.Builder()
             .method(request.method, requestBody)
             .url(request.url);
-        if(user_agent != null && !user_agent.isEmpty() && !request.headers.any { it.key.lowercase() == "user-agent" })
+        if(user_agent.isNotEmpty() && !request.headers.any { it.key.lowercase() == "user-agent" })
             requestBuilder.addHeader("User-Agent", user_agent)
 
         for (pair in request.headers.entries)
@@ -148,7 +146,7 @@ open class ManagedHttpClient {
 
         val time = measureTimeMillis {
             val call = client.newCall(requestBuilder.build());
-            request.onCallCreated?.emit(call);
+            request.onCallCreated.emit(call);
             response = call.execute()
             resp = Response(
                 response.code,

@@ -2,15 +2,10 @@ package com.futo.platformplayer.views.overlays.slideup
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.TypedValue
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import com.futo.platformplayer.R
-import com.futo.platformplayer.constructs.Event1
 
 class SlideUpMenuTitle : LinearLayout {
     private val _title: TextView;

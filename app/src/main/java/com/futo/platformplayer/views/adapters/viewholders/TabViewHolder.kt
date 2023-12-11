@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -7,16 +8,17 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
-import com.futo.platformplayer.views.others.Toggle
 import com.futo.platformplayer.views.adapters.AnyAdapter
+import com.futo.platformplayer.views.others.Toggle
 
 data class TabViewHolderData(val buttonDefinition: MenuBottomBarFragment.ButtonDefinition, var enabled: Boolean);
 
-class TabViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<TabViewHolderData>(
-    LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_tab, _viewGroup, false)) {
+@SuppressLint("ClickableViewAccessibility")
+class TabViewHolder(viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<TabViewHolderData>(
+    LayoutInflater.from(viewGroup.context).inflate(R.layout.list_tab, viewGroup, false)) {
     var data: TabViewHolderData? = null;
 
     private val _imageDragDrop: ImageView = _view.findViewById(R.id.image_drag_drop);
@@ -41,18 +43,18 @@ class TabViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<TabViewHol
             _toggleTab.setValue(d.enabled, true);
             onEnableChanged.emit(d.enabled);
         };
-        _imageDragDrop.setOnTouchListener(View.OnTouchListener { v, event ->
+        _imageDragDrop.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 onDragDrop.emit(this);
             }
             false
-        });
+        };
     }
 
-    override fun bind(i: TabViewHolderData) {
-        _textTabName.text = _view.context.resources.getString(i.buttonDefinition.string);
-        _toggleTab.visibility = if (i.buttonDefinition.canToggle) View.VISIBLE else View.GONE;
-        _toggleTab.setValue(i.enabled, false);
-        data = i;
+    override fun bind(value: TabViewHolderData) {
+        _textTabName.text = _view.context.resources.getString(value.buttonDefinition.string);
+        _toggleTab.visibility = if (value.buttonDefinition.canToggle) View.VISIBLE else View.GONE;
+        _toggleTab.setValue(value.enabled, false);
+        data = value;
     }
 }

@@ -1,12 +1,11 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.video
 
-import android.media.MediaPlayer
 import android.media.session.PlaybackState
 import android.support.v4.media.session.PlaybackStateCompat
-import com.futo.platformplayer.constructs.Event1
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.ui.StyledPlayerView
 
 class PlayerManager {
@@ -102,7 +101,5 @@ class PlayerManager {
         var volume: Float = 1f;
 
         var listener: Player.Listener? = null;
-
-        var resizMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT;
     }
 }

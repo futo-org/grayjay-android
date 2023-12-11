@@ -1,10 +1,7 @@
 package com.futo.platformplayer.subscription
 
 import com.futo.platformplayer.api.media.models.ResultCapabilities
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
@@ -28,35 +25,37 @@ class SmartSubscriptionAlgorithm(
             //For every platform, get all sub-queries associated with that platform
             return@flatMap allPlatforms
                 .filter { it.value != null }
-                .flatMap {
-                    val url = it.key;
-                    val client = it.value!! as JSClient;
+                .flatMap innerFlatMap@ { pair ->
+                    val url = pair.key;
+                    val client = pair.value!! as JSClient;
                     val capabilities = client.getChannelCapabilities();
 
                     if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
-                        return@flatMap listOf(SubscriptionTask(client, sub, it.key, ResultCapabilities.TYPE_MIXED));
+                        return@innerFlatMap listOf(SubscriptionTask(client, sub, pair.key, ResultCapabilities.TYPE_MIXED));
                     else if(capabilities.hasType(ResultCapabilities.TYPE_SUBSCRIPTIONS))
-                        return@flatMap listOf(SubscriptionTask(client, sub, it.key, ResultCapabilities.TYPE_SUBSCRIPTIONS))
+                        return@innerFlatMap listOf(SubscriptionTask(client, sub, pair.key, ResultCapabilities.TYPE_SUBSCRIPTIONS))
                     else {
-                        val types = listOf(
-                              if(sub.shouldFetchVideos()) ResultCapabilities.TYPE_VIDEOS else null,
-                              if(sub.shouldFetchStreams()) ResultCapabilities.TYPE_STREAMS else null,
-                              if(sub.shouldFetchPosts()) ResultCapabilities.TYPE_POSTS else null,
-                              if(sub.shouldFetchLiveStreams()) ResultCapabilities.TYPE_LIVE else null
-                        ).filterNotNull().filter { capabilities.hasType(it) };
+                        val types = listOfNotNull(
+                            if (sub.shouldFetchVideos()) ResultCapabilities.TYPE_VIDEOS else null,
+                            if (sub.shouldFetchStreams()) ResultCapabilities.TYPE_STREAMS else null,
+                            if (sub.shouldFetchPosts()) ResultCapabilities.TYPE_POSTS else null,
+                            if (sub.shouldFetchLiveStreams()) ResultCapabilities.TYPE_LIVE else null
+                        ).filter { capabilities.hasType(it) };
 
-                        if(!types.isEmpty())
-                            return@flatMap types.map {
+                        if(types.isNotEmpty()) {
+                            return@innerFlatMap types.map {
                                 SubscriptionTask(client, sub, url, it);
                             };
-                        else
+                        } else {
                             listOf(SubscriptionTask(client, sub, url, ResultCapabilities.TYPE_VIDEOS, true))
+                        }
                     }
                 };
         };
 
-        for(task in allTasks)
+        for(task in allTasks) {
             task.urgency = calculateUpdateUrgency(task.sub, task.type);
+        }
 
         val ordering = allTasks.groupBy { it.client }
             .map { Pair(it.key, it.value.sortedBy { it.urgency }) };
@@ -66,16 +65,16 @@ class SmartSubscriptionAlgorithm(
 
         for(clientTasks in ordering) {
             val limit = clientTasks.first.getSubscriptionRateLimit();
-            if(limit == null || limit <= 0)
+            if(limit == null || limit <= 0) {
                 finalTasks.addAll(clientTasks.second);
-            else {
+            } else {
                 val fetchTasks = mutableListOf<SubscriptionTask>();
                 val cacheTasks = mutableListOf<SubscriptionTask>();
 
                 for(task in clientTasks.second) {
-                    if(!task.fromCache && fetchTasks.size < limit)
+                    if (!task.fromCache && fetchTasks.size < limit) {
                         fetchTasks.add(task);
-                    else {
+                    } else {
                         task.fromCache = true;
                         cacheTasks.add(task);
                     }

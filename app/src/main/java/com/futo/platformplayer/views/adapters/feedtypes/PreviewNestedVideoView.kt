@@ -22,6 +22,7 @@ import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 class PreviewNestedVideoView : PreviewVideoView {
@@ -50,29 +51,33 @@ class PreviewNestedVideoView : PreviewVideoView {
         _textChannelName.setOnClickListener { _contentNested?.let { onChannelClicked.emit(it.author) }  };
         _textVideoMetadata.setOnClickListener { _contentNested?.let { onChannelClicked.emit(it.author) }  };
         _button_add_to.setOnClickListener {
-            if(_contentNested is IPlatformVideo)
+            if(_contentNested is IPlatformVideo) {
                 _contentNested?.let { onAddToClicked.emit(it as IPlatformVideo) }
-            else _content?.let {
-                if(it is IPlatformNestedContent)
-                    loadNested(it) {
-                        if(it is IPlatformVideo)
+            } else _content?.let { c ->
+                if(c is IPlatformNestedContent) {
+                    loadNested(c) {
+                        if (it is IPlatformVideo) {
                             onAddToClicked.emit(it);
-                        else
+                        } else {
                             UIDialogs.toast(context, "Content is not a video");
+                        }
                     }
+                }
             }
         };
         _button_add_to_queue.setOnClickListener {
-            if(_contentNested is IPlatformVideo)
+            if(_contentNested is IPlatformVideo) {
                 _contentNested?.let { onAddToQueueClicked.emit(it as IPlatformVideo) }
-            else _content?.let {
-                if(it is IPlatformNestedContent)
-                    loadNested(it) {
-                        if(it is IPlatformVideo)
+            } else _content?.let { c ->
+                if(c is IPlatformNestedContent) {
+                    loadNested(c) {
+                        if (it is IPlatformVideo) {
                             onAddToQueueClicked.emit(it);
-                        else
+                        } else {
                             UIDialogs.toast(context, "Content is not a video");
+                        }
                     }
+                }
             }
         };
     }
@@ -85,9 +90,9 @@ class PreviewNestedVideoView : PreviewVideoView {
     }
 
     override fun onOpenClicked() {
-        if(_contentNested is IPlatformVideoDetails)
+        if(_contentNested is IPlatformVideoDetails) {
             super.onOpenClicked();
-        else if(_content is IPlatformNestedContent) {
+        } else if(_content is IPlatformNestedContent) {
             (_content as IPlatformNestedContent).let {
                 onContentUrlClicked.emit(it.contentUrl, if(_contentSupported) it.nestedContentType else ContentType.URL);
             };
@@ -111,24 +116,24 @@ class PreviewNestedVideoView : PreviewVideoView {
                     .into(_imageVideo);
             };
 
-
             _contentSupported = content.contentSupported;
             if(!_contentSupported) {
                 _containerUnavailable.visibility = View.VISIBLE;
                 _containerLoader.visibility = View.GONE;
                 _loaderView.stop();
-            }
-            else {
-                if(_feedStyle == FeedStyle.THUMBNAIL)
+            } else {
+                if(_feedStyle == FeedStyle.THUMBNAIL) {
                     _platformIndicator.setPlatformFromClientID(content.contentPlugin);
-                else
+                } else {
                     _platformIndicatorNested.setPlatformFromClientID(content.contentPlugin);
+                }
+
                 _containerUnavailable.visibility = View.GONE;
-                if(_feedStyle == FeedStyle.PREVIEW)
+                if(_feedStyle == FeedStyle.PREVIEW) {
                     loadNested(content);
+                }
             }
-        }
-        else {
+        } else {
             _contentSupported = false;
             _containerUnavailable.visibility = View.VISIBLE;
             _containerLoader.visibility = View.GONE;
@@ -136,6 +141,7 @@ class PreviewNestedVideoView : PreviewVideoView {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadNested(content: IPlatformNestedContent, onCompleted: ((IPlatformContentDetails)->Unit)? = null) {
         Logger.i(TAG, "Loading nested content [${content.contentUrl}]");
         _containerLoader.visibility = View.VISIBLE;
@@ -159,20 +165,20 @@ class PreviewNestedVideoView : PreviewVideoView {
                         _loaderView.stop();
                         val nestedContent = def.getCompleted();
                         _contentNested = nestedContent;
-                        if(nestedContent is IPlatformVideoDetails) {
+                        if (nestedContent is IPlatformVideoDetails) {
                             super.bind(nestedContent);
                             if(_feedStyle == FeedStyle.PREVIEW) {
                                 _platformIndicator.setPlatformFromClientID(content.id.pluginId);
                                 _platformIndicatorNested.setPlatformFromClientID(nestedContent.id.pluginId);
-                            }
-                            else
+                            } else {
                                 _platformIndicatorNested.setPlatformFromClientID(content.id.pluginId);
-                        }
-                        else {
+                            }
+                        } else {
                             _containerUnavailable.visibility = View.VISIBLE;
                         }
-                        if(onCompleted != null)
+                        if (onCompleted != null) {
                             onCompleted(nestedContent);
+                        }
                     }
                 }
             };
@@ -180,9 +186,9 @@ class PreviewNestedVideoView : PreviewVideoView {
     }
 
     override fun preview(video: IPlatformContentDetails?, paused: Boolean) {
-        if(video != null)
+        if(video != null) {
             super.preview(video, paused);
-        else if(_content is IPlatformVideoDetails) _contentNested?.let {
+        } else if(_content is IPlatformVideoDetails) _contentNested?.let {
             super.preview(it, paused);
         };
     }

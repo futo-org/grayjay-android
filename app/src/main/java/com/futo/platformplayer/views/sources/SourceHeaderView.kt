@@ -8,10 +8,11 @@ import android.util.AttributeSet
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
-import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.states.StatePlugins
 
 class SourceHeaderView : LinearLayout {
     private val _sourceImage: ImageView;
@@ -89,8 +90,8 @@ class SourceHeaderView : LinearLayout {
         else
             _sourcePlatformUrlContainer.visibility = GONE;
 
-        if(!config.authorUrl.isNullOrEmpty())
-            _sourceBy.setTextColor(resources.getColor(R.color.colorPrimary));
+        if(config.authorUrl.isNotEmpty())
+            _sourceBy.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
         else
             _sourceBy.setTextColor(Color.WHITE);
 

@@ -52,7 +52,7 @@ abstract class VideoListEditorView : LinearLayout {
             _buttonShare.visibility = View.VISIBLE;
         }
         else
-            _buttonShare?.visibility = View.GONE;
+            _buttonShare.visibility = View.GONE;
 
         buttonPlayAll.setOnClickListener { onPlayAllClick(); };
         buttonShuffle.setOnClickListener { onShuffleClick(); };
@@ -106,11 +106,9 @@ abstract class VideoListEditorView : LinearLayout {
             };
         } else {
             _textMetadata.text = "0 " + context.getString(R.string.videos);
-            if(_imagePlaylistThumbnail != null) {
-                Glide.with(_imagePlaylistThumbnail)
-                    .load(R.drawable.placeholder_video_thumbnail)
-                    .into(_imagePlaylistThumbnail);
-            }
+            Glide.with(_imagePlaylistThumbnail)
+                .load(R.drawable.placeholder_video_thumbnail)
+                .into(_imagePlaylistThumbnail)
         }
 
         _videoListEditorView.setVideos(videos, canEdit);

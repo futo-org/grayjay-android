@@ -3,35 +3,25 @@ package com.futo.platformplayer.states
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
-import androidx.sqlite.db.SimpleSQLiteQuery
 import com.futo.platformplayer.R
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.db.ManagedDBStore
-import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 
 /***
  * Used to maintain playlists
@@ -41,7 +31,7 @@ class StatePlaylists {
         .withUnique { it.url }
         .withRestore(object: ReconstructStore<SerializedPlatformVideo>() {
             override fun toReconstruction(obj: SerializedPlatformVideo): String = obj.url;
-            override suspend fun toObject(id: String, backup: String, builder: Builder): SerializedPlatformVideo
+            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): SerializedPlatformVideo
                 = SerializedPlatformVideo.fromVideo(StatePlatform.instance.getContentDetails(backup).await() as IPlatformVideoDetails);
         })
         .load();
@@ -186,22 +176,25 @@ class StatePlaylists {
             items.addAll(obj.videos.map { it.url });
             return items.map { it.replace("\n","") }.joinToString("\n");
         }
-        override suspend fun toObject(id: String, backup: String, builder: Builder): Playlist {
+        override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): Playlist {
             val items = backup.split("\n");
-            if(items.size <= 0)
+            if(items.size <= 0) {
                 throw IllegalStateException("Cannot reconstructor playlist ${id}");
+            }
 
             val name = items[0];
             val videos = items.drop(1).filter { it.isNotEmpty() }.map {
                 try {
                     val video = StatePlatform.instance.getContentDetails(it).await();
-                    if (video is IPlatformVideoDetails)
+                    if (video is IPlatformVideoDetails) {
                         return@map SerializedPlatformVideo.fromVideo(video);
-                    else return@map null;
+                    } else {
+                        return@map null
+                    }
                 }
                 catch(ex: ScriptUnavailableException) {
                     Logger.w(TAG, "${name}:[${it}] is no longer available");
-                    builder.messages.add("${name}:[${it}] is no longer available");
+                    reconstructionBuilder.messages.add("${name}:[${it}] is no longer available");
                     return@map null;
                 }
                 catch(ex: NoPlatformClientException) {

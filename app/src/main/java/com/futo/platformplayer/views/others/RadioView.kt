@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
@@ -33,7 +34,7 @@ class RadioView : LinearLayout {
         };
 
         _root.setBackgroundResource(R.drawable.background_radio_unselected);
-        _textTag.setTextColor(resources.getColor(R.color.gray_67));
+        _textTag.setTextColor(ContextCompat.getColor(context, R.color.gray_67));
     }
 
     fun setInfo(text: String, selected: Boolean) {
@@ -50,7 +51,7 @@ class RadioView : LinearLayout {
 
         _selected = selected;
         _root.setBackgroundResource(if (selected) R.drawable.background_radio_selected else R.drawable.background_radio_unselected);
-        _textTag.setTextColor(resources.getColor(if (selected) R.color.white else R.color.gray_67));
+        _textTag.setTextColor(ContextCompat.getColor(context, if (selected) R.color.white else R.color.gray_67));
         onSelectedChange.emit(_selected);
     }
 

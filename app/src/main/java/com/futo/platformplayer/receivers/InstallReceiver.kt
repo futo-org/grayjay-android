@@ -4,9 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
-import com.futo.platformplayer.logging.Logger
+import android.os.Build
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.logging.Logger
 
 
 class InstallReceiver : BroadcastReceiver() {
@@ -16,13 +17,19 @@ class InstallReceiver : BroadcastReceiver() {
         val onReceiveResult = Event1<String?>();
     }
 
+    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
         Logger.i(TAG, "Received status $status.");
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                val activityIntent = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                val activityIntent: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+                } else {
+                    intent.getParcelableExtra(Intent.EXTRA_INTENT)
+                }
+
                 if (activityIntent == null) {
                     Logger.w(TAG, "Received STATUS_PENDING_USER_ACTION and activity intent is null.")
                     return;

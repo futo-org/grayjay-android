@@ -13,7 +13,6 @@ import android.net.NetworkRequest
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
-import android.util.Xml
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -23,33 +22,23 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
-import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
-import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
 import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.receivers.AudioNoisyReceiver
-import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.db.ManagedDBStore
-import com.futo.platformplayer.stores.db.types.DBHistory
-import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.ManagedStore
 import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.*
@@ -393,7 +382,7 @@ class StateApp {
             scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     if (it != null) {
-                        UIDialogs.toast("Uploaded " + (it ?: "null"), true);
+                        UIDialogs.toast("Uploaded $it", true);
                     } else {
                         UIDialogs.toast("Failed to upload");
                     }
@@ -751,9 +740,6 @@ class StateApp {
                 hasCaptchaDialog = false;
             })
         }
-    }
-    fun handleLoginException(client: JSClient, exception: ScriptLoginRequiredException, onSuccess: (client: JSClient)->Unit) {
-
     }
 
     fun getLocaleContext(baseContext: Context?): Context? {

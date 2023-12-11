@@ -6,13 +6,20 @@ import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import com.arthenica.ffmpegkit.StatisticsCallback
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StateDownloads
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.SubtitleRawSource
+import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -24,8 +31,11 @@ import com.futo.platformplayer.hasAnySource
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.isDownloadable
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
+import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
 import kotlinx.coroutines.CancellationException
@@ -54,14 +64,9 @@ class VideoDownload {
     var video: SerializedPlatformVideo? = null;
     var videoDetails: SerializedPlatformVideoDetails? = null;
 
-    @kotlinx.serialization.Transient
     val videoEither: IPlatformVideo get() = videoDetails ?: video ?: throw IllegalStateException("Missing video?");
-
-    @kotlinx.serialization.Transient
     val id: PlatformID get() = videoEither.id
-    @kotlinx.serialization.Transient
     val name: String get() = videoEither.name;
-    @kotlinx.serialization.Transient
     val thumbnail: String? get() = videoDetails?.thumbnails?.getHQThumbnail() ?: video?.thumbnails?.getHQThumbnail();
 
     var targetPixelCount: Long? = null;
@@ -385,7 +390,7 @@ class VideoDownload {
             Logger.i(TAG, "${name} downloadSource Finished");
         }
         catch(ioex: IOException) {
-            if(targetFile.exists() ?: false)
+            if(targetFile.exists())
                 targetFile.delete();
             if(ioex.message?.contains("ENOSPC") ?: false)
                 throw Exception("Not enough space on device", ioex);
@@ -393,7 +398,7 @@ class VideoDownload {
                 throw ioex;
         }
         catch(ex: Throwable) {
-            if(targetFile.exists() ?: false)
+            if(targetFile.exists())
                 targetFile.delete();
             throw ex;
         }
@@ -412,7 +417,7 @@ class VideoDownload {
 
             val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
 
-            val statisticsCallback = StatisticsCallback { statistics ->
+            val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?
             }
 
@@ -449,8 +454,7 @@ class VideoDownload {
 
         targetFile.createNewFile();
 
-        var sourceLength: Long? = null;
-
+        val sourceLength: Long?;
         val fileStream = FileOutputStream(targetFile);
 
         try{
@@ -458,17 +462,17 @@ class VideoDownload {
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
                 val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
-                Logger.i(TAG, "Download ${name} ByteRange Parallel (${concurrency})");
+                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency})");
                 sourceLength = head["content-length"]!!.toLong();
                 onProgress(sourceLength, 0, 0);
                 downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
             }
             else {
-                Logger.i(TAG, "Download ${name} Sequential");
+                Logger.i(TAG, "Download $name Sequential");
                 sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
             }
 
-            Logger.i(TAG, "${name} downloadSource Finished");
+            Logger.i(TAG, "$name downloadSource Finished");
         }
         catch(ioex: IOException) {
             if(targetFile.exists() ?: false)
@@ -484,7 +488,7 @@ class VideoDownload {
             throw ex;
         }
         finally {
-            fileStream?.close();
+            fileStream.close();
         }
         return sourceLength!!;
     }
@@ -507,7 +511,7 @@ class VideoDownload {
         val sourceStream = result.body.byteStream();
 
         var totalRead: Long = 0;
-        var read = 0;
+        var read: Int;
 
         val buffer = ByteArray(4096);
 

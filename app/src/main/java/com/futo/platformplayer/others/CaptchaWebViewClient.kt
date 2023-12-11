@@ -3,7 +3,6 @@ package com.futo.platformplayer.others
 import android.webkit.*
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
-import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginCaptchaConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event1
@@ -58,7 +57,7 @@ class CaptchaWebViewClient : WebViewClient {
         if(request == null)
             return super.shouldInterceptRequest(view, request as WebResourceRequest?);
 
-        val extracted = _extractor.handleRequest(view, request);
+        val extracted = _extractor.handleRequest(request);
         if(extracted != null && !_didNotify) {
             _didNotify = true;
             onCaptchaFinished.emit(SourceCaptchaData(

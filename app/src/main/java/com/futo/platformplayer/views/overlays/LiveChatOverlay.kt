@@ -7,8 +7,6 @@ import android.graphics.PointF
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.View
-import android.webkit.CookieManager
-import android.webkit.ValueCallback
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -24,7 +22,6 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
-import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.ILiveEventChatMessage
@@ -38,17 +35,11 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.isHexColor
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanNumber
-import com.futo.platformplayer.views.AnyAdapterView
-import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.livechat.LiveChatDonationPill
 import com.futo.platformplayer.views.livechat.LiveChatListAdapter
-import com.futo.platformplayer.views.livechat.LiveChatMessageListItem
-import com.stripe.android.core.utils.encodeToJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -123,8 +114,7 @@ class LiveChatOverlay : LinearLayout {
 
         _chatContainer = findViewById(R.id.chatContainer);
         _chatLayoutManager = ChatLayoutManager(context);
-        //_chatAdapter = _chatContainer.asAny(_chats);
-        _chatAdapter = LiveChatListAdapter(context, _chats);
+        _chatAdapter = LiveChatListAdapter(_chats);
         _chatContainer.adapter = _chatAdapter;
         _chatContainer.layoutManager = _chatLayoutManager;
 

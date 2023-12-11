@@ -7,8 +7,8 @@ import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.text.method.ScrollingMovementMethod
+import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
@@ -17,12 +17,16 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
+import com.futo.platformplayer.assume
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.v2.ManagedStore
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ImportDialog : AlertDialog {
     companion object {
@@ -99,7 +103,6 @@ class ImportDialog : AlertDialog {
         _textProgress = findViewById(R.id.text_progress);
         _updateSpinner = findViewById(R.id.update_spinner);
 
-        val toMigrateCount = _store.getMissingReconstructionCount();
         _import_type_text.text = _store.name;
         _import_name_text.text = _name;
 

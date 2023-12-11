@@ -169,7 +169,7 @@ private fun parseHextet(ipString: String, start: Int, end: Int): Short {
     var hextet = 0
     for (i in start until end) {
         hextet = hextet shl 4
-        hextet = hextet or ipString[i].digitToIntOrNull(16)!! ?: -1
+        hextet = hextet or ipString[i].digitToIntOrNull(16)!!
     }
     return hextet.toShort()
 }

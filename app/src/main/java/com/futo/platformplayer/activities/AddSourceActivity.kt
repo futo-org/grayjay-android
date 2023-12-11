@@ -5,13 +5,20 @@ import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.view.View
-import android.widget.*
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
@@ -194,7 +201,7 @@ class AddSourceActivity : AppCompatActivity() {
                 config.allowUrls, true)
             )
 
-        val pastelRed = resources.getColor(R.color.pastel_red);
+        val pastelRed = ContextCompat.getColor(this, R.color.pastel_red);
 
         for(warning in config.getWarnings(script))
             _sourceWarnings.addView(

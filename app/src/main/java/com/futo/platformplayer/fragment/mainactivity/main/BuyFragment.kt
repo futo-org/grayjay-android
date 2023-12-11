@@ -63,7 +63,7 @@ class BuyFragment : MainFragment() {
             _overlayLoading = findViewById(R.id.overlay_loading);
             _overlayPaying = findViewById(R.id.overlay_paying);
 
-            _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, purchaseId, exception ->
+            _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, _, exception ->
                 if(success) {
                     UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0,
                         UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY));
@@ -90,7 +90,7 @@ class BuyFragment : MainFragment() {
                     val currencies = StatePayment.instance.getAvailableCurrencies("grayjay");
                     val prices = StatePayment.instance.getAvailableCurrencyPrices("grayjay");
                     val country = StatePayment.instance.getPaymentCountryFromIP()?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
-                    val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id) ?: true) } };
+                    val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id)) } };
 
                     if(currency != null && prices.containsKey(currency.id)) {
                         val price = prices[currency.id]!!;

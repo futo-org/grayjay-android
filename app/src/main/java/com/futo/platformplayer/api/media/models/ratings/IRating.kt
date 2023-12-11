@@ -14,14 +14,13 @@ interface IRating {
 
     companion object {
         fun fromV8OrDefault(config: IV8PluginConfig, obj: V8Value?, default: IRating) = obj.orDefault(default) { fromV8(config, it as V8ValueObject) };
-        fun fromV8(config: IV8PluginConfig, obj: V8ValueObject, contextName: String = "Unknown") : IRating {
-            val contextName = "Rating";
-            val type = RatingType.fromInt(obj.getOrThrow<Int>(config, "type", contextName));
-            return when(type) {
+        fun fromV8(config: IV8PluginConfig, obj: V8ValueObject, contextName: String = "Rating") : IRating {
+            val t = RatingType.fromInt(obj.getOrThrow<Int>(config, "type", contextName));
+            return when(t) {
                 RatingType.LIKES -> RatingLikes.fromV8(config, obj);
                 RatingType.LIKEDISLIKES -> RatingLikeDislikes.fromV8(config, obj);
                 RatingType.SCALE -> RatingScaler.fromV8(config, obj);
-                else -> throw NotImplementedError("Unknown type ${type}");
+                else -> throw NotImplementedError("Unknown type $t");
             }
         }
     }

@@ -7,7 +7,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
-import com.futo.platformplayer.casting.*
+import com.futo.platformplayer.casting.AirPlayCastingDevice
+import com.futo.platformplayer.casting.CastConnectionState
+import com.futo.platformplayer.casting.CastingDevice
+import com.futo.platformplayer.casting.ChromecastCastingDevice
+import com.futo.platformplayer.casting.FCastCastingDevice
+import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 
 class DeviceViewHolder : ViewHolder {
@@ -48,15 +53,15 @@ class DeviceViewHolder : ViewHolder {
         };
 
         _buttonConnect.setOnClickListener {
-            val d = device ?: return@setOnClickListener;
+            val dev = device ?: return@setOnClickListener;
             StateCasting.instance.activeDevice?.stopCasting();
-            StateCasting.instance.connectDevice(d);
+            StateCasting.instance.connectDevice(dev);
             updateButton();
         };
 
         _buttonRemove.setOnClickListener {
-            val d = device ?: return@setOnClickListener;
-            onRemove.emit(d);
+            val dev = device ?: return@setOnClickListener;
+            onRemove.emit(dev);
         };
 
         setIsRememberedDevice(false);

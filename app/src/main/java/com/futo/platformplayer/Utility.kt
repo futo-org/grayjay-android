@@ -143,6 +143,7 @@ fun InputStream.copyToOutputStream(inputStreamLength: Long, outputStream: Output
     }
 }
 
+@Suppress("DEPRECATION")
 fun Activity.setNavigationBarColorAndIcons() {
     window.navigationBarColor = ContextCompat.getColor(this, android.R.color.black);
 

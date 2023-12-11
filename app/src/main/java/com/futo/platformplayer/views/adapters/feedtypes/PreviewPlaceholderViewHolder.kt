@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.contents.PlatformContentPlaceholder
@@ -58,7 +58,7 @@ class PreviewPlaceholderViewHolder : ContentPreviewViewHolder {
         }
     }
 
-    override fun preview(video: IPlatformContentDetails?, paused: Boolean) { }
+    override fun preview(details: IPlatformContentDetails?, paused: Boolean) { }
     override fun stopPreview() { }
     override fun pausePreview() { }
     override fun resumePreview() { }

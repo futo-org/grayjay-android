@@ -1,10 +1,11 @@
 package com.futo.platformplayer.stores
 
-import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import kotlinx.serialization.*
+import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.states.StateSubscriptions
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable()
@@ -18,7 +19,6 @@ class SubscriptionStorage : FragmentedStorageFileJson() {
     }
 
     fun removeSubscription(url : String) {
-        val toRemove = subscriptions.firstOrNull { it.channel.url == url };
         subscriptions.removeIf { it.channel.url == url };
     }
 

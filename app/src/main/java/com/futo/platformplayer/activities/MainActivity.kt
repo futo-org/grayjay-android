@@ -26,7 +26,6 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.dialogs.ConnectCastingDialog
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
@@ -44,7 +43,6 @@ import com.futo.platformplayer.stores.v2.ManagedStore
 import com.google.gson.JsonParser
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.PrintWriter
@@ -649,7 +647,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         if(file.lowercase().endsWith(".json") || mime == "application/json") {
             var recon = String(data);
             if(!recon.trim().startsWith("["))
-                return handleUnknownJson(file, recon);
+                return handleUnknownJson(recon);
 
             val reconLines = Json.decodeFromString<List<String>>(recon);
             recon = reconLines.joinToString("\n");
@@ -671,7 +669,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         if(file.lowercase().endsWith(".json")) {
             val recon = String(readSharedFile(file));
             if(!recon.startsWith("["))
-                return handleUnknownJson(file, recon);
+                return handleUnknownJson(recon);
 
             Logger.i(TAG, "Opened shared playlist reconstruction\n${recon}");
             handleReconstruction(recon);
@@ -723,7 +721,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
         return false;
     }
-    fun handleUnknownJson(name: String?, json: String): Boolean {
+    fun handleUnknownJson(json: String): Boolean {
 
         val context = this;
 
@@ -832,7 +830,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         val isStop: Boolean = lifecycle.currentState == Lifecycle.State.CREATED;
         Logger.v(TAG, "onPictureInPictureModeChanged isInPictureInPictureMode=$isInPictureInPictureMode isStop=$isStop")
-        _fragVideoDetail?.onPictureInPictureModeChanged(isInPictureInPictureMode, isStop, newConfig);
+        _fragVideoDetail.onPictureInPictureModeChanged(isInPictureInPictureMode, isStop, newConfig);
         Logger.v(TAG, "onPictureInPictureModeChanged Ready");
     }
 
@@ -889,7 +887,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
                 transaction = transaction.replace(R.id.fragment_main, segment);
 
-                val extraBottomDP = if(_fragVideoDetail.state == VideoDetailFragment.State.MINIMIZED) HEIGHT_VIDEO_MINIMIZED_DP else 0f
                 if (segment.hasBottomBar) {
                     if (!fragCurrent.hasBottomBar)
                         transaction = transaction.show(_fragBotBarMenu);
@@ -899,8 +896,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                         transaction = transaction.hide(_fragBotBarMenu);
                 }
                 transaction.commitNow();
-            }
-            else {
+            } else {
                 //Special cases
                 if(segment is VideoDetailFragment) {
                     _fragContainerVideoDetail.visibility = View.VISIBLE;

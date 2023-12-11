@@ -8,20 +8,19 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
-import com.futo.polycentric.core.*
+import com.futo.polycentric.core.KeyPair
+import com.futo.polycentric.core.Process
+import com.futo.polycentric.core.ProcessSecret
+import com.futo.polycentric.core.SignedEvent
+import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.base64UrlToByteArray
 import com.google.zxing.integration.android.IntentIntegrator
-import com.journeyapps.barcodescanner.CaptureActivity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import userpackage.Protocol.ExportBundle
 

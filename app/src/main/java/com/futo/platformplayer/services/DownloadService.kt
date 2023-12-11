@@ -7,15 +7,16 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.exceptions.DownloadException
+import com.futo.platformplayer.getNowDiffMinutes
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.Announcement
 import com.futo.platformplayer.states.AnnouncementType
@@ -150,10 +151,16 @@ class DownloadService : Service() {
                 currentVideo.changeState(VideoDownload.State.ERROR);
                 ignore.add(currentVideo);
 
-                if(ex !is CancellationException)
-                    StateAnnouncement.instance.registerAnnouncement(currentVideo?.id?.value?:"" + currentVideo?.id?.pluginId?:"" + "_FailDownload",
+                if(ex !is CancellationException) {
+                    StateAnnouncement.instance.registerAnnouncement(
+                        currentVideo.id.value ?: ("" + currentVideo.id.pluginId),
                         "Download failed",
-                        "Download for [${currentVideo.name}] failed.\nDownloads are automatically retried.\nReason: ${ex.message}", AnnouncementType.SESSION, null, "download");
+                        "Download for [${currentVideo.name}] failed.\nDownloads are automatically retried.\nReason: ${ex.message}",
+                        AnnouncementType.SESSION,
+                        null,
+                        "download"
+                    );
+                }
 
                 //Give it a sec
                 Thread.sleep(500);
@@ -262,7 +269,7 @@ class DownloadService : Service() {
 
     fun closeDownloadSession() {
         Logger.i(TAG, "closeDownloadSession");
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_DETACH);
         _notificationManager?.cancel(DOWNLOAD_NOTIF_ID);
         stopService();
         _started = false;

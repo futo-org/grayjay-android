@@ -3,24 +3,22 @@ package com.futo.platformplayer.activities
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
-import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.LoginWebViewClient
+import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -102,7 +100,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun finish() {
         lifecycleScope.launch(Dispatchers.Main) {
-            _webView?.loadUrl("about:blank");
+            _webView.loadUrl("about:blank");
         }
         _callback?.let {
             _callback = null;

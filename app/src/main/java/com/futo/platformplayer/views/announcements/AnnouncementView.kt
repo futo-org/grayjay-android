@@ -3,7 +3,9 @@ package com.futo.platformplayer.views.announcements
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
-import android.widget.*
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -55,7 +57,6 @@ class AnnouncementView : LinearLayout {
 
         _buttonAction.setOnClickListener {
             val a = _currentAnnouncement ?: return@setOnClickListener;
-            val scope = StateApp.instance.scopeOrNull ?: return@setOnClickListener;
             StateAnnouncement.instance.actionAnnouncement(a);
         };
 
@@ -73,6 +74,7 @@ class AnnouncementView : LinearLayout {
 
         val attrArr = context.obtainStyledAttributes(attrs, R.styleable.AnnouncementView, 0, 0);
         _category = attrArr.getText(R.styleable.AnnouncementView_category)?.toString();
+        attrArr.recycle()
 
         refresh();
     }

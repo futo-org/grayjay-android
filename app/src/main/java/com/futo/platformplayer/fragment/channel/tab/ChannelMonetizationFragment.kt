@@ -32,7 +32,7 @@ class ChannelMonetizationFragment : Fragment, IChannelTabFragment {
 
         _supportView?.visibility = View.GONE;
         _textMonetization?.visibility = View.GONE;
-        setPolycentricProfile(_lastPolycentricProfile, animate = false);
+        setPolycentricProfile(_lastPolycentricProfile);
         return view;
     }
 
@@ -46,14 +46,14 @@ class ChannelMonetizationFragment : Fragment, IChannelTabFragment {
         _lastChannel = channel;
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _lastPolycentricProfile = polycentricProfile
         if (polycentricProfile != null) {
-            _supportView?.setPolycentricProfile(polycentricProfile, animate)
+            _supportView?.setPolycentricProfile(polycentricProfile)
             _supportView?.visibility = View.VISIBLE
             _textMonetization?.visibility = View.GONE
         } else {
-            _supportView?.setPolycentricProfile(null, animate)
+            _supportView?.setPolycentricProfile(null)
             _supportView?.visibility = View.GONE
             _textMonetization?.visibility = View.VISIBLE
         }

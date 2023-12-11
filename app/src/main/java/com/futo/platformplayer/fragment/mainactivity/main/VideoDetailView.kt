@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.app.PictureInPictureParams
@@ -23,16 +25,21 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
-import android.widget.*
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.futo.platformplayer.*
-
-import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
@@ -46,12 +53,17 @@ import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
@@ -61,21 +73,41 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.downloads.VideoLocal
+import com.futo.platformplayer.dp
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
+import com.futo.platformplayer.fixHtmlLinks
+import com.futo.platformplayer.fixHtmlWhitespace
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
+import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.receivers.MediaControlReceiver
-import com.futo.platformplayer.states.*
+import com.futo.platformplayer.selectBestImage
+import com.futo.platformplayer.states.AnnouncementType
+import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StatePlugins
+import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.toHumanBitrate
+import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.MonetizationView
 import com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
 import com.futo.platformplayer.views.casting.CastView
@@ -87,7 +119,11 @@ import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.platformplayer.views.overlays.SupportOverlay
-import com.futo.platformplayer.views.overlays.slideup.*
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuButtonList
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTitle
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
@@ -97,17 +133,25 @@ import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.videometa.UpNextView
-import com.futo.polycentric.core.*
+import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.ContentType
+import com.futo.polycentric.core.Models
+import com.futo.polycentric.core.Opinion
+import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Format
 import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException
 import com.google.protobuf.ByteString
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -336,7 +380,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         _monetization.onSupportTap.subscribe {
-            _container_content_support.setPolycentricProfile(_polycentricProfile?.profile, false);
+            _container_content_support.setPolycentricProfile(_polycentricProfile?.profile);
             switchContentView(_container_content_support);
         };
 
@@ -484,7 +528,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         if (!isInEditMode) {
-            StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { d, connectionState ->
+            StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
                 if (_onPauseCalled) {
                     return@subscribe;
                 }
@@ -530,7 +574,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         _playerProgress.player = _player.exoPlayer?.player;
-        _playerProgress.setProgressUpdateListener { position, bufferedPosition ->
+        _playerProgress.setProgressUpdateListener { position, _ ->
             StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, position);
         }
 
@@ -658,7 +702,7 @@ class VideoDetailView : ConstraintLayout {
                     _trackingLastVideoSubscription?.let {
                         Logger.i(TAG, "Subscription [${it.channel.name}] watch time delta [${delta}]" +
                                 "(${"%.2f".format((_trackingTotalWatched / 1000) / currentVideo.duration.toDouble().coerceAtLeast(1.0))})");
-                        it.updatePlayback(currentVideo, (delta / 1000).toInt());
+                        it.updatePlayback((delta / 1000).toInt());
                         _trackingTotalWatched += delta;
                         if(!_trackingDidCountView && currentVideo.duration > 0) {
                             val percentage = (_trackingTotalWatched / 1000) / currentVideo.duration.toDouble();
@@ -1048,6 +1092,7 @@ class VideoDetailView : ConstraintLayout {
 
         switchContentView(_container_content_main);
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
 
@@ -1064,8 +1109,8 @@ class VideoDetailView : ConstraintLayout {
             _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
         }
 
-        var videoLocal: VideoLocal? = null;
-        var video: IPlatformVideoDetails? = null;
+        val videoLocal: VideoLocal?;
+        val video: IPlatformVideoDetails?;
 
        if(videoDetail is VideoLocal) {
             videoLocal = videoDetail;
@@ -1077,7 +1122,7 @@ class VideoDetailView : ConstraintLayout {
                     return@invokeOnCompletion;
                 }
                 val result = videoTask.getCompleted();
-                if(this.video == videoDetail && result != null && result is IPlatformVideoDetails) {
+                if(this.video == videoDetail && result is IPlatformVideoDetails) {
                     this.video = result;
                     fragment.lifecycleScope.launch(Dispatchers.Main) {
                         updateQualitySourcesOverlay(result, videoLocal);
@@ -1246,37 +1291,33 @@ class VideoDetailView : ConstraintLayout {
             _rating.visibility = View.GONE;
         }
 
-        if (video.rating != null) {
-            when (video.rating) {
-                is RatingLikeDislikes -> {
-                    val r = video.rating as RatingLikeDislikes;
-                    _layoutRating.visibility = View.VISIBLE;
+        when (video.rating) {
+            is RatingLikeDislikes -> {
+                val r = video.rating as RatingLikeDislikes;
+                _layoutRating.visibility = View.VISIBLE;
 
-                    _textLikes.visibility = View.VISIBLE;
-                    _imageLikeIcon.visibility = View.VISIBLE;
-                    _textLikes.text = r.likes.toHumanNumber();
+                _textLikes.visibility = View.VISIBLE;
+                _imageLikeIcon.visibility = View.VISIBLE;
+                _textLikes.text = r.likes.toHumanNumber();
 
-                    _imageDislikeIcon.visibility = View.VISIBLE;
-                    _textDislikes.visibility = View.VISIBLE;
-                    _textDislikes.text = r.dislikes.toHumanNumber();
-                }
-                is RatingLikes -> {
-                    val r = video.rating as RatingLikes;
-                    _layoutRating.visibility = View.VISIBLE;
-
-                    _textLikes.visibility = View.VISIBLE;
-                    _imageLikeIcon.visibility = View.VISIBLE;
-                    _textLikes.text = r.likes.toHumanNumber();
-
-                    _imageDislikeIcon.visibility = View.GONE;
-                    _textDislikes.visibility = View.GONE;
-                }
-                else -> {
-                    _layoutRating.visibility = View.GONE;
-                }
+                _imageDislikeIcon.visibility = View.VISIBLE;
+                _textDislikes.visibility = View.VISIBLE;
+                _textDislikes.text = r.dislikes.toHumanNumber();
             }
-        } else {
-            _layoutRating.visibility = View.GONE;
+            is RatingLikes -> {
+                val r = video.rating as RatingLikes;
+                _layoutRating.visibility = View.VISIBLE;
+
+                _textLikes.visibility = View.VISIBLE;
+                _imageLikeIcon.visibility = View.VISIBLE;
+                _textLikes.text = r.likes.toHumanNumber();
+
+                _imageDislikeIcon.visibility = View.GONE;
+                _textDislikes.visibility = View.GONE;
+            }
+            else -> {
+                _layoutRating.visibility = View.GONE;
+            }
         }
 
 
@@ -1636,7 +1677,7 @@ class VideoDetailView : ConstraintLayout {
                 SlideUpMenuGroup(this.context, context.getString(R.string.offline_video), "video",
                     *localVideoSources
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it!!.name, "${it.width}x${it.height}", it,
+                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it,
                                 { handleSelectVideoTrack(it) });
                         }.toList().toTypedArray())
             else null,
@@ -1660,7 +1701,7 @@ class VideoDetailView : ConstraintLayout {
                 SlideUpMenuGroup(this.context, context.getString(R.string.stream_video), "video",
                     *liveStreamVideoFormats
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it?.label ?: it.containerMimeType ?: it.bitrate.toString(), "${it.width}x${it.height}", it,
+                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label ?: it.containerMimeType ?: it.bitrate.toString(), "${it.width}x${it.height}", it,
                                 { _player.selectVideoTrack(it.height) });
                         }.toList().toTypedArray())
             else null,
@@ -1668,7 +1709,7 @@ class VideoDetailView : ConstraintLayout {
                 SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio",
                     *liveStreamAudioFormats
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_music, "${it?.label ?: it.containerMimeType} ${it.bitrate}", "", it,
+                            SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", it,
                                 { _player.selectAudioTrack(it.bitrate) });
                         }.toList().toTypedArray())
             else null,
@@ -2216,7 +2257,7 @@ class VideoDetailView : ConstraintLayout {
             _channelName.text = username
         }
 
-        _monetization.setPolycentricProfile(cachedPolycentricProfile, animate);
+        _monetization.setPolycentricProfile(cachedPolycentricProfile);
     }
 
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {
@@ -2292,13 +2333,13 @@ class VideoDetailView : ConstraintLayout {
                 StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_NOSOURCES", context.getString(R.string.video_without_source), context.getString(R.string.there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
             }
         }
-        .exception<ScriptLoginRequiredException> {
-            Logger.w(TAG, "exception<ScriptLoginRequiredException>", it);
+        .exception<ScriptLoginRequiredException> { e ->
+            Logger.w(TAG, "exception<ScriptLoginRequiredException>", e);
 
-            UIDialogs.showDialog(context, R.drawable.ic_security, "Authentication", it.message, null, 0,
+            UIDialogs.showDialog(context, R.drawable.ic_security, "Authentication", e.message, null, 0,
                 UIDialogs.Action("Cancel", {}),
                 UIDialogs.Action("Login", {
-                    val id = it.config?.let { if(it is SourcePluginConfig) it.id else null };
+                    val id = e.config.let { if(it is SourcePluginConfig) it.id else null };
                     val didLogin = if(id == null)
                         false
                     else StatePlugins.instance.loginPlugin(context, id) {

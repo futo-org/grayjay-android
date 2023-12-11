@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.views.video
 
 import android.content.Context
@@ -12,11 +14,12 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import android.widget.ImageButton
-import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
@@ -37,7 +40,6 @@ import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.video.VideoSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
@@ -130,8 +132,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _root = findViewById(R.id.videoview_root);
         _videoView = findViewById(R.id.video_player);
 
-        val subs = _videoView.subtitleView;
-
         videoControls = findViewById(R.id.video_player_controller);
         _control_fullscreen = videoControls.findViewById(R.id.exo_fullscreen);
         _control_videosettings = videoControls.findViewById(R.id.exo_settings);
@@ -192,22 +192,32 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         if(!isInEditMode) {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
             val player = StatePlayer.instance.getPlayerOrCreate(context);
-            //player.modifyState(PLAYER_STATE_NAME, { it.scaleType = MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING})
             changePlayer(player);
 
             videoControls.player = player.player;
             _videoControls_fullscreen.player = player.player;
         }
 
-        val attrShowSettings = if(attrs != null)
-            context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0).getBoolean(R.styleable.FutoVideoPlayer_showSettings, false) ?: false;
-        else false;
-        val attrShowFullScreen = if(attrs != null)
-            context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0).getBoolean(R.styleable.FutoVideoPlayer_showFullScreen, false) ?: false;
-        else false;
-        val attrShowMinimize = if(attrs != null)
-            context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0).getBoolean(R.styleable.FutoVideoPlayer_showMinimize, false) ?: false;
-        else false;
+        val attrShowSettings = if(attrs != null) {
+            val attrArr = context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0)
+            val result = attrArr.getBoolean(R.styleable.FutoVideoPlayer_showSettings, false)
+            attrArr.recycle()
+            result
+        } else false;
+
+        val attrShowFullScreen = if(attrs != null) {
+            val attrArr = context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0)
+            val result = attrArr.getBoolean(R.styleable.FutoVideoPlayer_showFullScreen, false)
+            attrArr.recycle()
+            result
+        } else false;
+
+        val attrShowMinimize = if(attrs != null) {
+            val attrArr = context.obtainStyledAttributes(attrs, R.styleable.FutoVideoPlayer, 0, 0)
+            val result = attrArr.getBoolean(R.styleable.FutoVideoPlayer_showMinimize, false)
+            attrArr.recycle()
+            result
+        } else false;
 
         if (!attrShowSettings)
             _control_videosettings.visibility = View.GONE;
@@ -501,8 +511,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     override fun onPlaybackStateChanged(playbackState: Int) {
         Logger.v(TAG, "onPlaybackStateChanged $playbackState");
-        val timeLeft = abs(position - duration);
-
         if (playbackState == ExoPlayer.STATE_ENDED) {
             if (abs(position - duration) < 2000) {
                 onSourceEnded.emit();
@@ -556,9 +564,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             val maxHeight = deviceHeight * 0.6;
 
             val determinedHeight = if(w > h)
-                ((h * (viewWidth.toDouble() / w)).toInt().toInt())
+                ((h * (viewWidth.toDouble() / w)).toInt())
             else
-                ((h * (viewWidth.toDouble() / w)).toInt().toInt());
+                ((h * (viewWidth.toDouble() / w)).toInt());
             _lastSourceFit = determinedHeight;
             _lastSourceFit = Math.max(_lastSourceFit!!, 250);
             _lastSourceFit = Math.min(_lastSourceFit!!, maxHeight.toInt());
@@ -572,23 +580,20 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         }
 
         val marginBottom = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7f, resources.displayMetrics).toInt();
-        val rootParams = RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, _lastSourceFit!! + marginBottom)
+        val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, _lastSourceFit!! + marginBottom)
         rootParams.bottomMargin = marginBottom;
         _root.layoutParams = rootParams
         isFitMode = true;
     }
     fun fillHeight(){
         Logger.i(TAG, "Video Fill Height");
-        val width = resources.displayMetrics.heightPixels;
-        val height = resources.displayMetrics.widthPixels;
-
         val layoutParams = _videoView.layoutParams as ConstraintLayout.LayoutParams;
         _originalBottomMargin = if(layoutParams.bottomMargin > 0) layoutParams.bottomMargin else _originalBottomMargin;
         layoutParams.setMargins(0);
         _videoView.layoutParams = layoutParams;
         _videoView.invalidate();
 
-        val rootParams = RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         _root.layoutParams = rootParams;
         _root.invalidate();
         isFitMode = false;

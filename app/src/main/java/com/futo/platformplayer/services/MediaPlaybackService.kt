@@ -1,6 +1,10 @@
 package com.futo.platformplayer.services
 
-import android.app.*
+import android.app.ActivityManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -21,14 +25,14 @@ import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.MediaControlReceiver
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.stores.FragmentedStorage
 
 class MediaPlaybackService : Service() {
@@ -148,7 +152,7 @@ class MediaPlaybackService : Service() {
 
     fun closeMediaSession() {
         Logger.v(TAG, "closeMediaSession");
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_DETACH);
 
         val focusRequest = _focusRequest;
         if (focusRequest != null) {
@@ -214,7 +218,7 @@ class MediaPlaybackService : Service() {
         else
             notifyMediaSession(video, null);
     }
-    private fun generateMediaAction(context: Context, icon: Int, title: String, intent: PendingIntent) : NotificationCompat.Action {
+    private fun generateMediaAction(icon: Int, title: String, intent: PendingIntent) : NotificationCompat.Action {
         return NotificationCompat.Action.Builder(icon, title, intent).build();
     }
     private fun notifyMediaSession(video: IPlatformVideo?, desiredBitmap: Bitmap?) {
@@ -259,17 +263,37 @@ class MediaPlaybackService : Service() {
         val playWhenReady = StatePlayer.instance.isPlaying;
 
         if(hasQueue)
-            builder = builder.addAction(generateMediaAction(this, R.drawable.ic_fast_rewind_notif, "Back", MediaControlReceiver.getPrevIntent(this, 3)))
+            builder = builder.addAction(generateMediaAction(
+                R.drawable.ic_fast_rewind_notif,
+                "Back",
+                MediaControlReceiver.getPrevIntent(this, 3)
+            ))
 
         if(playWhenReady)
-            builder = builder.addAction(generateMediaAction(this, R.drawable.ic_pause_notif, "Pause", MediaControlReceiver.getPauseIntent(this, 2)));
+            builder = builder.addAction(generateMediaAction(
+                R.drawable.ic_pause_notif,
+                "Pause",
+                MediaControlReceiver.getPauseIntent(this, 2)
+            ));
         else
-            builder = builder.addAction(generateMediaAction(this, R.drawable.ic_play_notif, "Play", MediaControlReceiver.getPlayIntent(this, 1)));
+            builder = builder.addAction(generateMediaAction(
+                R.drawable.ic_play_notif,
+                "Play",
+                MediaControlReceiver.getPlayIntent(this, 1)
+            ));
 
         if(hasQueue)
-            builder = builder.addAction(generateMediaAction(this, R.drawable.ic_fast_forward_notif, "Forward", MediaControlReceiver.getNextIntent(this, 4)));
+            builder = builder.addAction(generateMediaAction(
+                R.drawable.ic_fast_forward_notif,
+                "Forward",
+                MediaControlReceiver.getNextIntent(this, 4)
+            ));
 
-        builder = builder.addAction(generateMediaAction(this, R.drawable.ic_stop_notif, "Stop", MediaControlReceiver.getCloseIntent(this, 5)));
+        builder = builder.addAction(generateMediaAction(
+            R.drawable.ic_stop_notif,
+            "Stop",
+            MediaControlReceiver.getCloseIntent(this, 5)
+        ));
 
         if(bitmap?.isRecycled ?: false)
             bitmap = null;

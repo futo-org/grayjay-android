@@ -50,15 +50,14 @@ class FieldForm : LinearLayout {
 
     fun updateSettingsVisibility(group: GroupField? = null) {
         val settings = group?.getFields() ?: _fields;
-
         val query = _editSearch.text.toString().lowercase();
 
         var groupVisible = false;
         val isGroupMatch = query.isEmpty() || group?.searchContent?.lowercase()?.contains(query) == true;
         for(field in settings) {
-            if(field is GroupField)
+            if(field is GroupField) {
                 updateSettingsVisibility(field);
-            else if(field is View && field.descriptor != null) {
+            } else if(field is View && field.descriptor != null) {
                 val txt = field.searchContent?.lowercase();
                 if(txt != null) {
                     val visible = isGroupMatch || txt.contains(query);
@@ -67,8 +66,9 @@ class FieldForm : LinearLayout {
                 }
             }
         }
-        if(group != null)
-            group.visibility = if(groupVisible) View.VISIBLE else View.GONE;
+        if(group != null) {
+            group.visibility = if (groupVisible) View.VISIBLE else View.GONE;
+        }
     }
 
     fun setSearchVisible(visible: Boolean) {
@@ -84,11 +84,12 @@ class FieldForm : LinearLayout {
 
             withContext(Dispatchers.Main) {
                 for (field in newFields) {
-                    if (field !is View)
+                    if (field !is View) {
                         throw java.lang.IllegalStateException("Only views can be IFields");
+                    }
 
                     _fieldsContainer.addView(field as View);
-                    field.onChanged.subscribe { a1, a2, oldValue ->
+                    field.onChanged.subscribe { a1, a2, _ ->
                         onChanged.emit(a1, a2);
                     };
                 }
@@ -102,11 +103,12 @@ class FieldForm : LinearLayout {
         _fieldsContainer.removeAllViews();
         val newFields = getFieldsFromObject(context, obj);
         for(field in newFields) {
-            if(field !is View)
+            if(field !is View) {
                 throw java.lang.IllegalStateException("Only views can be IFields");
+            }
 
             _fieldsContainer.addView(field as View);
-            field.onChanged.subscribe { a1, a2, oldValue ->
+            field.onChanged.subscribe { a1, a2, _ ->
                 onChanged.emit(a1, a2);
             };
         }
@@ -121,10 +123,13 @@ class FieldForm : LinearLayout {
 
         if(groupTitle == null) {
             for(field in newFields) {
-                if(field.second !is View)
+                val v = field.second
+                if(v !is View) {
                     throw java.lang.IllegalStateException("Only views can be IFields");
-                finalizePluginSettingField(field.first, field.second, newFields);
-                _fieldsContainer.addView(field as View);
+                }
+
+                finalizePluginSettingField(field.first, v, newFields);
+                _fieldsContainer.addView(v);
             }
             _fields = newFields.map { it.second };
         } else {
@@ -137,34 +142,36 @@ class FieldForm : LinearLayout {
         }
     }
     private fun finalizePluginSettingField(setting: SourcePluginConfig.Setting, field: IField, others: List<Pair<SourcePluginConfig.Setting, IField>>) {
-        field.onChanged.subscribe { field, value, oldValue ->
-            onChanged.emit(field, value);
+        field.onChanged.subscribe { f, value, oldValue ->
+            onChanged.emit(f, value);
 
             setting.warningDialog?.let {
-                if(it.isNotBlank() && IField.isValueTrue(value))
+                if(it.isNotBlank() && IField.isValueTrue(value)) {
                     UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, setting.warningDialog, null, null, 0,
                         UIDialogs.Action("Cancel", {
-                            field.setValue(oldValue);
+                            f.setValue(oldValue);
                         }, UIDialogs.ActionStyle.NONE),
-                        UIDialogs.Action("Ok", {
-
-                        }, UIDialogs.ActionStyle.PRIMARY));
+                        UIDialogs.Action("Ok", { }, UIDialogs.ActionStyle.PRIMARY));
+                }
             }
         }
         if(setting.dependency != null) {
             val dependentField = others.firstOrNull { it.first.variableOrName == setting.dependency };
-            if(dependentField == null || dependentField.second !is View)
+            if (dependentField == null || dependentField.second !is View) {
                 (field as View).visibility = View.GONE;
-            else {
+            } else {
                 val dependencyReady = IField.isValueTrue(dependentField.second.value);
-                if(!dependencyReady)
+                if (!dependencyReady) {
                     (field as View).visibility = View.GONE;
-                dependentField.second.onChanged.subscribe { dependentField, value, oldValue ->
+                }
+
+                dependentField.second.onChanged.subscribe { _, value, _ ->
                     val isValid = IField.isValueTrue(value);
-                    if(isValid)
+                    if (isValid) {
                         (field as View).visibility = View.VISIBLE;
-                    else
+                    } else {
                         (field as View).visibility = View.GONE;
+                    }
                 }
             }
         }
@@ -172,19 +179,20 @@ class FieldForm : LinearLayout {
 
     fun setObjectValues(){
         val fields = _fields;
-        for (field in fields)
+        for (field in fields) {
             field.setField();
+        }
     }
 
     fun findField(id: String) : IField? {
         for(field in _fields) {
-            if(field?.descriptor?.id == id)
+            if(field.descriptor?.id == id) {
                 return field;
-            else if(field is GroupField)
-            {
+            } else if(field is GroupField) {
                 val subField = field.findField(id);
-                if(subField != null)
+                if(subField != null) {
                     return subField;
+                }
             }
         }
         return null;
@@ -198,7 +206,7 @@ class FieldForm : LinearLayout {
         const val TOGGLE = "toggle";
         const val BUTTON = "button";
 
-        private val _json = Json {};
+        private val _json = Json;
 
 
         fun getFieldsFromPluginSettings(context: Context, settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>): List<Pair<SourcePluginConfig.Setting, IField>> {
@@ -216,17 +224,17 @@ class FieldForm : LinearLayout {
                         val field = ToggleField(context).withValue(setting.name,
                             setting.description,
                             value == "true" || value == "1" || value == "True");
-                        field.onChanged.subscribe { field, value, oldValue ->
-                            values[setting.variableOrName] = _json.encodeToString (value == 1 || value == true);
+                        field.onChanged.subscribe { _, v, _ ->
+                            values[setting.variableOrName] = _json.encodeToString (v == 1 || v == true);
                         }
                         field;
                     }
                     "dropdown" -> {
-                        if(setting.options != null && !setting.options.isEmpty()) {
+                        if(!setting.options.isNullOrEmpty()) {
                             var selected = value?.toIntOrNull()?.coerceAtLeast(0) ?: 0;
                             val field = DropdownField(context).withValue(setting.name, setting.description, setting.options, selected);
-                            field.onChanged.subscribe { field, value, oldValue ->
-                                values[setting.variableOrName] = value.toString();
+                            field.onChanged.subscribe { _, v, _ ->
+                                values[setting.variableOrName] = v.toString();
                             }
                             field;
                         }
@@ -235,8 +243,9 @@ class FieldForm : LinearLayout {
                     else -> null;
                 }
 
-                if(field != null)
+                if(field != null) {
                     fields.add(Pair(setting, field));
+                }
             }
             return fields;
         }
@@ -269,11 +278,11 @@ class FieldForm : LinearLayout {
                 if(field.field != null) {
                     val warning = propertyMap[field.field]?.findAnnotation<FormFieldWarning>();
                     if(warning != null) {
-                        field.onChanged.subscribe { field, value, oldValue ->
+                        field.onChanged.subscribe { f, value, oldValue ->
                             if(IField.isValueTrue(value))
                                 UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, context.getString(warning.messageRes), null, null, 0,
                                     UIDialogs.Action("Cancel", {
-                                        field.setValue(oldValue);
+                                        f.setValue(oldValue);
                                     }, UIDialogs.ActionStyle.NONE),
                                     UIDialogs.Action("Ok", {
 
@@ -304,14 +313,18 @@ class FieldForm : LinearLayout {
                 .asSequence()
                 .asStream()
                 .filter { it.getAnnotation(FormField::class.java) != null && !it.name.startsWith("get") && !it.name.startsWith("set") }
-                .map { Pair<Method, FormField>(it, it.getAnnotation(FormField::class.java)) }
+                .map { Pair<Method, FormField?>(it, it.getAnnotation(FormField::class.java)) }
 
             for(meth in objMethods) {
+                if (meth.second == null) {
+                    continue
+                }
+
                 meth.first.isAccessible = true;
 
-                val field = when(meth.second.type) {
+                val field = when(meth.second!!.type) {
                     BUTTON -> ButtonField(context).fromMethod(obj, meth.first);
-                    else -> throw java.lang.IllegalStateException("Unknown method type ${meth.second.type} for ${meth.second.title}")
+                    else -> throw java.lang.IllegalStateException("Unknown method type ${meth.second!!.type} for ${meth.second!!.title}")
                 }
                 fields.add(field as IField);
             }

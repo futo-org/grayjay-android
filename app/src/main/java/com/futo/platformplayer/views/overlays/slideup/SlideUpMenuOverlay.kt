@@ -17,7 +17,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 
 class SlideUpMenuOverlay : RelativeLayout {
-
     private var _container: ViewGroup? = null;
     private lateinit var _textTitle: TextView;
     private lateinit var _textCancel: TextView;
@@ -27,7 +26,7 @@ class SlideUpMenuOverlay : RelativeLayout {
     private lateinit var _viewContainer: LinearLayout;
     private var _animated: Boolean = true;
 
-    private lateinit var _groupItems: List<View>;
+    private var _groupItems: List<View>;
 
     var isVisible = false
         private set;

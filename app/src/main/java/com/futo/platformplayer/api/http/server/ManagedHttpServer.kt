@@ -1,11 +1,11 @@
 package com.futo.platformplayer.api.http.server
 
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.exceptions.EmptyRequestException
 import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpOptionsAllowHandler
+import com.futo.platformplayer.logging.Logger
 import java.io.BufferedInputStream
 import java.io.OutputStream
 import java.lang.reflect.Field
@@ -14,11 +14,10 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.stream.IntStream.range
-import kotlin.collections.HashMap
 
 class ManagedHttpServer(private val _requestedPort: Int = 0) {
     private val _client : ManagedHttpClient = ManagedHttpClient();
@@ -212,13 +211,13 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
                 addHandler(HttpFuntionHandler("GET", getMethod.second.path) { getMethod.first.invoke(obj, it) }).apply {
                     if(!getMethod.second.contentType.isEmpty())
                         this.withContentType(getMethod.second.contentType);
-                }.withContentType(getMethod.second.contentType ?: "");
+                }.withContentType(getMethod.second.contentType);
         for(postMethod in postMethods)
             if(postMethod.first.parameterTypes.firstOrNull() == HttpContext::class.java && postMethod.first.parameterCount == 1)
                 addHandler(HttpFuntionHandler("POST", postMethod.second.path) { postMethod.first.invoke(obj, it) }).apply {
                     if(!postMethod.second.contentType.isEmpty())
                         this.withContentType(postMethod.second.contentType);
-                }.withContentType(postMethod.second.contentType ?: "");
+                }.withContentType(postMethod.second.contentType);
 
         for(getField in getFields) {
             getField.first.isAccessible = true;
@@ -232,13 +231,13 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
                 }
                 else
                     it.respondCode(204);
-            }).withContentType(getField.second.contentType ?: "");
+            }).withContentType(getField.second.contentType);
         }
     }
 
     private fun keepAliveLoop(requestReader: BufferedInputStream, responseStream: OutputStream, requestId: String, handler: (HttpContext)->Unit) {
         val stopCount = _stopCount;
-        var keepAlive = false;
+        var keepAlive: Boolean;
         var requestsMax = 0;
         var requestsTotal = 0;
         do {
@@ -288,11 +287,13 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
             for (intf in NetworkInterface.getNetworkInterfaces()) {
                 for (addr in intf.inetAddresses) {
                     if (!addr.isLoopbackAddress) {
-                        val ipString: String = addr.hostAddress;
-                        val isIPv4 = ipString.indexOf(':') < 0;
-                        if (!isIPv4)
-                            continue;
-                        addresses.add(addr);
+                        val ipString: String = addr.hostAddress ?: continue
+                        val isIPv4 = ipString.indexOf(':') < 0
+                        if (!isIPv4) {
+                            continue
+                        }
+
+                        addresses.add(addr)
                     }
                 }
             }

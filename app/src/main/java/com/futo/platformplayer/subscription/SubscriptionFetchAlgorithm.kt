@@ -1,14 +1,11 @@
 package com.futo.platformplayer.subscription
 
-import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.models.Subscription
 import kotlinx.coroutines.CoroutineScope
-import java.lang.Exception
-import java.lang.IllegalStateException
 import java.util.concurrent.ForkJoinPool
 
 abstract class SubscriptionFetchAlgorithm(
@@ -41,7 +38,6 @@ abstract class SubscriptionFetchAlgorithm(
                 SubscriptionFetchAlgorithms.CACHE -> CachedSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool, 50);
                 SubscriptionFetchAlgorithms.SIMPLE -> SimpleSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool);
                 SubscriptionFetchAlgorithms.SMART -> SmartSubscriptionAlgorithm(scope, allowFailure, withCacheFallback, pool);
-                else -> throw IllegalStateException("Unknown algorithm ${algo}");
             }
         }
     }

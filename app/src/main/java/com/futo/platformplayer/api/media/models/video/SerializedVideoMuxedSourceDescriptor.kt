@@ -8,6 +8,5 @@ import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 class SerializedVideoMuxedSourceDescriptor(
     val _videoSources: Array<VideoUrlSource>
 ): VideoMuxedSourceDescriptor(), ISerializedVideoSourceDescriptor {
-    @kotlinx.serialization.Transient
     override val videoSources: Array<IVideoSource> get() = _videoSources.map { it }.toTypedArray();
 };

@@ -145,7 +145,7 @@ class UpNextView : LinearLayout {
             _layoutQueueBox.visibility = View.VISIBLE;
             _layoutEndOfPlaylist.visibility = View.GONE;
 
-            _textTitle.text = nextItem.name ?: "";
+            _textTitle.text = nextItem.name;
 
             val metadataTokens = mutableListOf<String>();
             if (nextItem.viewCount > 0) {
@@ -157,7 +157,7 @@ class UpNextView : LinearLayout {
             }
 
             _textMetadata.text = metadataTokens.joinToString(" • ");
-            _textChannelName.text = nextItem.author.name ?: "";
+            _textChannelName.text = nextItem.author.name;
             Glide.with(_imageThumbnail)
                 .load(nextItem.thumbnails.getHQThumbnail())
                 .placeholder(R.drawable.placeholder_video_thumbnail)

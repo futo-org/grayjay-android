@@ -1,7 +1,6 @@
 package com.futo.platformplayer.states
 
 import android.content.ContentResolver
-import android.net.Uri
 import android.os.StatFs
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -9,24 +8,28 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.AlreadyQueuedException
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.SubtitleRawSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.downloads.PlaylistDownloadDescriptor
-import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoExport
+import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.DiskUsage
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.PlaylistDownloaded
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.services.ExportingService
-import com.futo.platformplayer.stores.*
+import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
-import okhttp3.internal.platform.Platform
 import java.io.File
 
 /***
@@ -349,17 +352,19 @@ class StateDownloads {
 
     fun cleanupDownloads(): Pair<Int, Long> {
         val expected = getDownloadedVideos();
-        val validFiles = HashSet(expected.flatMap { it.videoSource.map { it.filePath } + it.audioSource.map { it.filePath } });
+        val validFiles = HashSet(expected.flatMap { e -> e.videoSource.map { it.filePath } + e.audioSource.map { it.filePath } });
 
         var totalDeleted: Long = 0;
         var totalDeletedCount = 0;
-        for(file in _downloadsDirectory.listFiles()) {
-            val absUrl = file.absolutePath;
-            if(!validFiles.contains(absUrl)) {
-                Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
-                totalDeletedCount++;
-                totalDeleted += file.length();
-                file.delete();
+        _downloadsDirectory.listFiles()?.let {
+            for(file in it) {
+                val absUrl = file.absolutePath;
+                if(!validFiles.contains(absUrl)) {
+                    Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
+                    totalDeletedCount++;
+                    totalDeleted += file.length();
+                    file.delete();
+                }
             }
         }
         return Pair(totalDeletedCount, totalDeleted);

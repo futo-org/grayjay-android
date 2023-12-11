@@ -9,11 +9,17 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
+import com.futo.platformplayer.dp
+import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.resolveChannelUrl
+import com.futo.platformplayer.selectBestImage
+import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.platform.PlatformLinkView
 import com.futo.polycentric.core.toName
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
@@ -48,7 +54,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
             setChannel(it);
         };
         _lastPolycentricProfile?.also {
-            setPolycentricProfile(it, animate = false);
+            setPolycentricProfile(it);
         }
 
         return view;
@@ -108,7 +114,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
 
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _lastPolycentricProfile = polycentricProfile;
 
         if (polycentricProfile == null) {

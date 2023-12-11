@@ -1,7 +1,5 @@
 package com.futo.platformplayer.polycentric
 
-import com.futo.polycentric.core.*
-import userpackage.Protocol
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -12,9 +10,25 @@ import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.stores.CachedPolycentricProfileStorage
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.ContentType
+import com.futo.polycentric.core.OwnedClaim
+import com.futo.polycentric.core.PublicKey
+import com.futo.polycentric.core.SignedEvent
+import com.futo.polycentric.core.StorageTypeSystemState
+import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.base64ToByteArray
+import com.futo.polycentric.core.base64UrlToByteArray
+import com.futo.polycentric.core.getClaimIfValid
+import com.futo.polycentric.core.getValidClaims
 import com.google.protobuf.ByteString
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.Serializable
+import userpackage.Protocol
 import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import kotlin.system.measureTimeMillis
@@ -251,8 +265,11 @@ class PolycentricCache {
                 Logger.v(TAG, "getProfileAsync (id: $id) != null (with retrieved valid claims)")
                 return getProfileAsync(claims.ownedClaims.first().system).await()
             } else {
-                if(urlNullCache != null)
-                    _profileUrlCache.setAndSave(urlNullCache, PolycentricCache.CachedPolycentricProfile(null));
+                synchronized (_cache) {
+                    if (urlNullCache != null) {
+                        _profileUrlCache.setAndSave(urlNullCache, CachedPolycentricProfile(null))
+                    }
+                }
                 return null;
             }
         }

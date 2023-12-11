@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 
 class WatchLaterFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -19,7 +19,7 @@ class WatchLaterFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown();
     }
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -42,7 +42,7 @@ class WatchLaterFragment : MainFragment() {
 
         }
 
-        fun onShown(parameter: Any ?, isBack: Boolean) {
+        fun onShown() {
             setName("Watch Later");
             setVideos(StatePlaylists.instance.getWatchLater(), true);
         }

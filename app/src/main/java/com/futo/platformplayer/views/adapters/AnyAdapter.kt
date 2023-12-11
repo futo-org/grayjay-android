@@ -3,7 +3,6 @@ package com.futo.platformplayer.views.adapters
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Recycler
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import java.lang.reflect.Constructor
 
@@ -102,7 +101,7 @@ class AnyAdapter<I, T : AnyAdapter.AnyViewHolder<I>> : BaseAnyAdapter<I, T, T> {
     }
 
     abstract class AnyViewHolder<I>(protected val _view: View) : ViewHolder(_view) {
-        abstract fun bind(i: I);
+        abstract fun bind(value: I);
     }
 
     companion object {

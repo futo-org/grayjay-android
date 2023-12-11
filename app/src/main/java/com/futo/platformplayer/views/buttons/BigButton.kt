@@ -64,15 +64,14 @@ open class BigButton : LinearLayout {
 
         val attrArr = context.obtainStyledAttributes(attrs, R.styleable.BigButton, 0, 0);
         val attrIconRef = attrArr.getResourceId(R.styleable.BigButton_buttonIcon, -1);
-        withIcon(attrIconRef);
-
         val attrBackgroundRef = attrArr.getResourceId(R.styleable.BigButton_buttonBackground, -1);
-        withBackground(attrBackgroundRef);
-
         val attrText = attrArr.getText(R.styleable.BigButton_buttonText) ?: "";
-        _textPrimary.text = attrText;
-
         val attrTextSecondary = attrArr.getText(R.styleable.BigButton_buttonSubText) ?: "";
+        attrArr.recycle()
+
+        withIcon(attrIconRef);
+        withBackground(attrBackgroundRef);
+        _textPrimary.text = attrText;
         _textSecondary.text = attrTextSecondary;
     }
 
@@ -123,11 +122,8 @@ open class BigButton : LinearLayout {
 
 
     fun withIcon(bitmap: Bitmap, rounded: Boolean = false): BigButton {
-        if (bitmap != null) {
-            _icon.visibility = View.VISIBLE;
-            _icon.setImageBitmap(bitmap);
-        } else
-            _icon.visibility = View.GONE;
+        _icon.visibility = View.VISIBLE;
+        _icon.setImageBitmap(bitmap);
 
         if (rounded) {
             val shapeAppearanceModel = ShapeAppearanceModel().toBuilder()

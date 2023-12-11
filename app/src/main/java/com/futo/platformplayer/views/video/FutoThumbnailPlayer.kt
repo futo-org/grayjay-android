@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.views.video
 
 import android.content.Context
@@ -7,12 +9,13 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.futo.platformplayer.*
-import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.video.PlayerManager
 import com.google.android.exoplayer2.ui.PlayerControlView
 import com.google.android.exoplayer2.ui.StyledPlayerView
@@ -49,7 +52,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
         containerDuration = videoControls.findViewById(R.id.exo_duration_container);
         containerLive = videoControls.findViewById(R.id.exo_live_container);
 
-        videoControls.setProgressUpdateListener { position, bufferedPosition ->
+        videoControls.setProgressUpdateListener { position, _ ->
             if(position < 0)
                 textDurationInverse.visibility = View.INVISIBLE;
             else

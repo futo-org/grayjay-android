@@ -17,7 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.dialogs.CommentDialog
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
@@ -30,7 +29,6 @@ import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.Synchronization
 import com.futo.polycentric.core.SystemState
-import com.futo.polycentric.core.toURLInfoDataLink
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
 import kotlinx.coroutines.Dispatchers
@@ -250,7 +248,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     }
 
     private fun getMimeType(contentResolver: ContentResolver, uri: Uri): String? {
-        var mimeType: String? = null;
+        var mimeType: String?;
 
         // Try to get MIME type from the content URI
         mimeType = contentResolver.getType(uri);

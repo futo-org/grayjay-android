@@ -1,13 +1,12 @@
 package com.futo.platformplayer.api.media.models.video
 
-import com.futo.platformplayer.api.media.IPlatformClient
-import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
-import com.futo.platformplayer.api.media.structures.IPager
 
 /**
  * A detailed video model with data including video/audio sources

@@ -1,16 +1,12 @@
 package com.futo.platformplayer.views.buttons
 
 import android.content.Context
-import android.graphics.Color
 import android.util.AttributeSet
-import android.view.LayoutInflater
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.constructs.Event1
 
 class DescButton : LinearLayout {
 
@@ -31,6 +27,7 @@ class DescButton : LinearLayout {
         imageIcon.setImageResource(attrArr.getResourceId(R.styleable.DescButton_desc_icon, 0))
         textTitle.text = attrArr.getText(R.styleable.DescButton_desc_title) ?: "";
         textDescription.text = attrArr.getText(R.styleable.DescButton_desc_description) ?: "";
+        attrArr.recycle()
 
         this.setOnClickListener { onClick.emit() }
     }
@@ -40,8 +37,8 @@ class DescButton : LinearLayout {
         textDescription = findViewById(R.id.text_description)
 
         imageIcon.setImageResource(icon);
-        textTitle.text = title ?: "";
-        textDescription.text = description ?: "";
+        textTitle.text = title;
+        textDescription.text = description;
 
         this.setOnClickListener { onClick.emit() }
     }

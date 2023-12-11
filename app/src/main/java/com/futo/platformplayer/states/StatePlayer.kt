@@ -1,16 +1,15 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.states
 
 import android.content.Context
-import android.util.Log
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.services.MediaPlaybackService
 import com.futo.platformplayer.video.PlayerManager
@@ -166,7 +165,7 @@ class StatePlayer {
             queueRepeat = enabled;
         }
     }
-    fun setQueueShuffle(shuffle: Boolean, excludeCurrent: Boolean = true) {
+    fun setQueueShuffle(shuffle: Boolean) {
         synchronized(_queue) {
             queueShuffle = shuffle;
             if (shuffle) {
@@ -317,10 +316,11 @@ class StatePlayer {
                     _queue.add(it);
                 }
             }
-            if(_queue.isEmpty())
+            if(_queue.isEmpty()) {
                 _queue.add(video);
-            else
+            } else {
                 _queue.add(_queuePosition.coerceAtLeast(0).coerceAtMost(_queue.size - 1), video);
+            }
 
             if (queueShuffle) {
                 addToShuffledQueue(video);
@@ -331,8 +331,9 @@ class StatePlayer {
             }
         }
         onQueueChanged.emit(true);
-        if(playNow)
+        if(playNow) {
             setQueuePosition(video);
+        }
     }
     fun setQueuePosition(video: IPlatformVideo) {
           synchronized(_queue) {
@@ -347,10 +348,11 @@ class StatePlayer {
     fun getQueuePosition(video: IPlatformVideo): Int {
         synchronized(_queue) {
             val queueShuffled = _queueShuffled;
-            return if (queueRepeat && queueShuffled != null)
+            return if (queueRepeat && queueShuffled != null) {
                 queueShuffled.indexOf(video);
-            else
+            } else {
                 _queue.indexOf(video);
+            }
         }
     }
     fun removeFromQueue(video: IPlatformVideo, shouldSwapCurrentItem: Boolean = false) {
@@ -384,10 +386,11 @@ class StatePlayer {
             }
 
             if(adjustIfNegative && queue.isNotEmpty()) {
-                if(_queuePosition == -1)
+                if(_queuePosition == -1) {
                     return queue[0];
-                else if(_queuePosition < queue.size)
+                } else if(_queuePosition < queue.size) {
                     return queue[_queuePosition];
+                }
             } else if(_queuePosition >= 0 && _queuePosition < queue.size) {
                 return queue[_queuePosition];
             }
@@ -401,8 +404,9 @@ class StatePlayer {
      */
     fun getPrevQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
-            if(_queue.size == 1)
+            if(_queue.size == 1) {
                 return null;
+            }
 
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
@@ -412,14 +416,17 @@ class StatePlayer {
             }
 
             //Init Behavior
-            if(_queuePosition == -1 && queue.isNotEmpty())
+            if(_queuePosition == -1 && queue.isNotEmpty()) {
                 return queue[0];
+            }
             //Standard Behavior
-            if(_queuePosition - 1 >= 0)
+            if(_queuePosition - 1 >= 0) {
                 return queue[_queuePosition - 1];
+            }
             //Repeat Behavior (End of queue)
-            if(_queuePosition - 1 < 0 && queue.isNotEmpty() && (forceLoop || queueRepeat))
+            if(queue.isNotEmpty() && (forceLoop || queueRepeat)) {
                 return queue[_queue.size - 1];
+            }
         }
         return null;
     }
@@ -429,8 +436,9 @@ class StatePlayer {
      */
     fun getNextQueueItem(forceLoop: Boolean = false) : IPlatformVideo? {
         synchronized(_queue) {
-            if(_queue.size == 1)
+            if(_queue.size == 1) {
                 return null;
+            }
 
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
@@ -440,14 +448,17 @@ class StatePlayer {
             }
 
             //Init Behavior
-            if(_queuePosition == -1 && queue.isNotEmpty())
+            if(_queuePosition == -1 && queue.isNotEmpty()) {
                 return queue[0];
+            }
             //Standard Behavior
-            if(_queuePosition + 1 < queue.size)
+            if(_queuePosition + 1 < queue.size) {
                 return queue[_queuePosition + 1];
+            }
             //Repeat Behavior (End of queue)
-            if(_queuePosition + 1 == queue.size && queue.isNotEmpty() && (forceLoop || queueRepeat))
+            if(_queuePosition + 1 == queue.size && queue.isNotEmpty() && (forceLoop || queueRepeat)) {
                 return queue[0];
+            }
         }
         return null;
     }
@@ -464,11 +475,14 @@ class StatePlayer {
      * @param bypassVideoLoop Bypasses any single-video-looping behavior, should be true for manual user actions like next
      */
     fun nextQueueItem(withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false) : IPlatformVideo? {
-        if(loopVideo && !bypassVideoLoop)
+        if(loopVideo && !bypassVideoLoop) {
             return currentVideo;
+        }
+
         synchronized(_queue) {
-            if (_queue.isEmpty())
+            if (_queue.isEmpty()) {
                 return null;
+            }
 
             val nextPosition: Int;
             var isRepeat = false;
@@ -510,22 +524,25 @@ class StatePlayer {
             }
 
             val currentPos = _queuePosition;
-
-            if(_queueRemoveOnFinish && !withoutRemoval) {
+            _queuePosition = if(_queueRemoveOnFinish && !withoutRemoval) {
                 _queue.removeAt(currentPos);
-                _queuePosition = (_queuePosition - 1);
+                (_queuePosition - 1);
+            } else {
+                (_queuePosition - 1);
             }
-            else
-                _queuePosition = (_queuePosition - 1);
-            if(_queuePosition < 0)
+
+            if(_queuePosition < 0) {
                 _queuePosition += _queue.size;
-            if(_queuePosition < _queue.size)
+            }
+
+            if(_queuePosition < _queue.size) {
                 return _queue[_queuePosition];
+            }
         }
         return null;
     }
 
-    fun setQueueItem(video: IPlatformVideo) : IPlatformVideo? {
+    fun setQueueItem(video: IPlatformVideo) : IPlatformVideo {
         synchronized(_queue) {
             val index = _queue.indexOf(video);
             if(index >= 0) {

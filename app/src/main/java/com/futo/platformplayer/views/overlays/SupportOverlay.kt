@@ -23,8 +23,8 @@ class SupportOverlay : LinearLayout {
     }
 
 
-    fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
-        _support.setPolycentricProfile(profile, animate)
+    fun setPolycentricProfile(profile: PolycentricProfile?) {
+        _support.setPolycentricProfile(profile)
     }
 
     fun cleanup() {

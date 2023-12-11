@@ -27,12 +27,12 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
+import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
@@ -111,7 +111,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 }
             };
 
-            StateSubscriptions.instance.onSubscriptionsChanged.subscribe(this) { subs, added ->
+            StateSubscriptions.instance.onSubscriptionsChanged.subscribe(this) { _, added ->
                 if(!added)
                     StateSubscriptions.instance.clearSubscriptionFeed();
                 StateApp.instance.scopeOrNull?.let {
@@ -146,7 +146,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             val homeTab = Settings.instance.tabs.find { it.id == 0 };
             val isHomeEnabled = homeTab?.enabled == true;
             if (announcementsView != null && isHomeEnabled) {
-                headerView?.removeView(announcementsView);
+                headerView.removeView(announcementsView);
                 _announcementsView = null;
             }
 
@@ -154,7 +154,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 val c = context;
                 if (c != null) {
                     _announcementsView = AnnouncementView(c, null).apply {
-                        headerView?.addView(this)
+                        headerView.addView(this)
                     };
                 }
             }
@@ -272,17 +272,18 @@ class SubscriptionsFeedFragment : MainFragment() {
         }
         private fun toggleFilterContentType(contentType: ContentType, isTrue: Boolean) {
             synchronized(_filterLock) {
-                if(!isTrue)
+                if(!isTrue) {
                     _filterSettings.allowContentTypes.remove(contentType);
-                else if(!_filterSettings.allowContentTypes.contains(contentType))
+                } else if(!_filterSettings.allowContentTypes.contains(contentType)) {
                     _filterSettings.allowContentTypes.add(contentType)
-                else null;
+                }
                 _filterSettings.save();
             };
-            if(Settings.instance.subscriptions.fetchOnTabOpen) //TODO: Do this different, temporary workaround
+            if(Settings.instance.subscriptions.fetchOnTabOpen) { //TODO: Do this different, temporary workaround
                 loadResults(false);
-            else
+            } else {
                 loadCache();
+            }
         }
 
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
@@ -381,7 +382,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             context?.let {
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        if (exs!!.size <= 8) {
+                        if (exs.size <= 8) {
                             for (ex in exs) {
                                 var toShow = ex;
                                 var channel: String? = null;

@@ -2,13 +2,17 @@ package com.futo.platformplayer.casting
 
 import android.os.Looper
 import android.util.Log
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.getConnectedSocket
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.protos.ChromeCast
 import com.futo.platformplayer.toHexString
 import com.futo.platformplayer.toInetAddress
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -502,10 +506,10 @@ class ChromecastCastingDevice : CastingDevice {
                 }
 
                 val volume = status.getJSONObject("volume");
-                val volumeControlType = volume.getString("controlType");
+                //val volumeControlType = volume.getString("controlType");
                 val volumeLevel = volume.getString("level").toDouble();
                 val volumeMuted = volume.getBoolean("muted");
-                val volumeStepInterval = volume.getString("stepInterval").toFloat();
+                //val volumeStepInterval = volume.getString("stepInterval").toFloat();
                 this.volume = if (volumeMuted) 0.0 else volumeLevel;
 
                 Logger.i(TAG, "Status update received volume (level: $volumeLevel, muted: $volumeMuted)");

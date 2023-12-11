@@ -357,7 +357,7 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
     fun getPage(page: Int, length: Int): List<I> {
         if(_sqlPage == null)
             throw IllegalStateException("DB Store [${name}] does not have ordered fields to provide pages");
-        val query = _sqlPage!!(page, length) ?: throw IllegalStateException("Paged db not setup for ${_name}");
+        val query = _sqlPage!!(page, length);
         return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
     fun getPageObjects(page: Int, length: Int): List<T> = convertObjects(getPage(page, length));

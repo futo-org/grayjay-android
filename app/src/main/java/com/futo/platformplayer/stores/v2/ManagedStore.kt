@@ -10,13 +10,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import java.io.File
 import java.io.FileNotFoundException
-import java.lang.Exception
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
+import java.util.UUID
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.javaType
 
 class ManagedStore<T>{
     private val _class: KType;
@@ -68,8 +64,7 @@ class ManagedStore<T>{
     fun load(): ManagedStore<T> {
         synchronized(_files) {
             _files.clear();
-            val newObjs = _dir.listFiles().map { it.nameWithoutExtension }.distinct().toList().map { fileId ->
-                //Logger.i(TAG, "FILE:" + it.name);
+            val newObjs = _dir.listFiles()?.map { it.nameWithoutExtension }?.distinct()?.toList()?.map { fileId ->
                 val mfile = ManagedFile(fileId, _dir);
                 val obj = mfile.load(this, _withBackup);
                 if(obj == null) {
@@ -82,10 +77,12 @@ class ManagedStore<T>{
                 }
 
                 return@map Pair(obj, mfile);
-            }.filter { it.first != null };
+            }?.filter { it.first != null };
 
-            for (obj in newObjs)
-                _files.put(obj.first!!, obj.second);
+            if (newObjs != null) {
+                for (obj in newObjs)
+                    _files[obj.first!!] = obj.second;
+            }
         }
         _isLoaded = true;
         return this;

@@ -1,7 +1,5 @@
 package com.futo.platformplayer.api.media.platforms.js.internal
 
-import android.net.Uri
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
@@ -47,10 +45,7 @@ class JSHttpClient : ManagedHttpClient {
 
     override fun clone(): ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
-        newClient._currentCookieMap = if(_currentCookieMap != null)
-            HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
-        else
-            hashMapOf();
+        newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
         return newClient;
     }
 
@@ -69,10 +64,10 @@ class JSHttpClient : ManagedHttpClient {
         }
 
         if(doApplyCookies) {
-            if (!_currentCookieMap.isNullOrEmpty()) {
+            if (_currentCookieMap.isNotEmpty()) {
                 val cookiesToApply = hashMapOf<String, String>();
-                synchronized(_currentCookieMap!!) {
-                    for(cookie in _currentCookieMap!!
+                synchronized(_currentCookieMap) {
+                    for(cookie in _currentCookieMap
                         .filter { domain.matchesDomain(it.key) }
                         .flatMap { it.value.toList() })
                         cookiesToApply[cookie.first] = cookie.second;
@@ -92,11 +87,11 @@ class JSHttpClient : ManagedHttpClient {
         }
 
         if(_jsClient != null)
-            _jsClient?.validateUrlOrThrow(request.url.toString());
+            _jsClient.validateUrlOrThrow(request.url.toString());
         else if (_jsConfig != null && !_jsConfig.isUrlAllowed(request.url.toString()))
             throw ScriptImplementationException(_jsConfig, "Attempted to access non-whitelisted url: ${request.url.toString()}\nAdd it to your config");
 
-        return newBuilder?.let { it.build() } ?: request;
+        return newBuilder?.build() ?: request;
     }
 
     override fun afterRequest(resp: okhttp3.Response): okhttp3.Response {
@@ -107,84 +102,48 @@ class JSHttpClient : ManagedHttpClient {
                 "." + domainParts.drop(domainParts.size - 2).joinToString(".");
             for (header in resp.headers) {
                 if ((_auth != null || _currentCookieMap.isNotEmpty()) && header.first.lowercase() == "set-cookie") {
-                    //val newCookies = cookieStringToMap(header.second.split("; "));
                     val cookie = cookieStringToPair(header.second);
-                    //for (cookie in newCookies) {
-                        var cookieValue = cookie.second;
-                        var domainToUse = domain;
+                    var cookieValue = cookie.second;
+                    var domainToUse = domain;
 
-                        if (!cookie.first.isNullOrEmpty() && !cookie.second.isNullOrEmpty()) {
-                            val cookieParts = cookie.second.split(";");
-                            if (cookieParts.size == 0)
-                                continue;
-                            cookieValue = cookieParts[0].trim();
+                    if (cookie.first.isNotEmpty() && cookie.second.isNotEmpty()) {
+                        val cookieParts = cookie.second.split(";");
+                        if (cookieParts.size == 0)
+                            continue;
+                        cookieValue = cookieParts[0].trim();
 
-                            val cookieVariables = cookieParts.drop(1).map {
-                                val splitIndex = it.indexOf("=");
-                                if (splitIndex < 0)
-                                    return@map Pair(it.trim().lowercase(), "");
-                                return@map Pair<String, String>(
-                                    it.substring(0, splitIndex).lowercase().trim(),
-                                    it.substring(splitIndex + 1).trim()
-                                );
-                            }.toMap();
-                            domainToUse = if (cookieVariables.containsKey("domain"))
-                                cookieVariables["domain"]!!.lowercase();
-                            else defaultCookieDomain;
-                        }
+                        val cookieVariables = cookieParts.drop(1).map {
+                            val splitIndex = it.indexOf("=");
+                            if (splitIndex < 0)
+                                return@map Pair(it.trim().lowercase(), "");
+                            return@map Pair<String, String>(
+                                it.substring(0, splitIndex).lowercase().trim(),
+                                it.substring(splitIndex + 1).trim()
+                            );
+                        }.toMap();
+                        domainToUse = if (cookieVariables.containsKey("domain"))
+                            cookieVariables["domain"]!!.lowercase();
+                        else defaultCookieDomain;
+                    }
 
-                        val cookieMap = if (_currentCookieMap!!.containsKey(domainToUse))
-                            _currentCookieMap!![domainToUse]!!;
-                        else {
-                            val newMap = hashMapOf<String, String>();
-                            _currentCookieMap!!.put(domainToUse, newMap)
-                            newMap;
-                        }
-                        if(cookieMap.containsKey(cookie.first) || doAllowNewCookies)
-                            cookieMap.put(cookie.first, cookieValue);
-                    //}
+                    val cookieMap = if (_currentCookieMap.containsKey(domainToUse))
+                        _currentCookieMap[domainToUse]!!;
+                    else {
+                        val newMap = hashMapOf<String, String>();
+                        _currentCookieMap[domainToUse] = newMap
+                        newMap;
+                    }
+                    if(cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                        cookieMap[cookie.first] = cookieValue;
                 }
             }
         }
         return resp;
     }
 
-
-    private fun cookieStringToMap(parts: List<String>): Map<String, String> {
-        val map = hashMapOf<String, String>();
-        for(cookie in parts) {
-            val pair = cookieStringToPair(cookie)
-            map.put(pair.first, pair.second);
-        }
-        return map;
-    }
     private fun cookieStringToPair(cookie: String): Pair<String, String> {
         val cookieKey = cookie.substring(0, cookie.indexOf("="));
         val cookieVal = cookie.substring(cookie.indexOf("=") + 1);
         return Pair(cookieKey.trim(), cookieVal.trim());
     }
-
-    //Prints out code for test reproduction..
-    fun printTestCode(url: String, body: ByteArray?, headers: Map<String, String>, cookieString: String, allHeaders: Map<String, String>? = null) {
-        var code = "Code: \n";
-        code += "\nurl = \"${url}\";";
-        if(body != null)
-            code += "\nbody = \"${String(body).replace("\"", "\\\"")}\";";
-        if(headers != null)
-            for(header in headers) {
-                code += "\nclient.Headers.Add(\"${header.key}\", \"${header.value}\");";
-            }
-        if(cookieString != null)
-            code +=  "\nclient.Headers.Add(\"Cookie\", \"${cookieString}\");";
-
-        if(allHeaders != null) {
-            code += "\n//OTHER HEADERS:"
-            for (header in allHeaders) {
-                code += "\nclient.Headers.Add(\"${header.key}\", \"${header.value}\");";
-            }
-        }
-
-        Logger.i("Testing", code);
-    }
-
 }

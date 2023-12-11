@@ -10,14 +10,30 @@ import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
-import com.futo.platformplayer.*
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.engine.exceptions.*
+import com.futo.platformplayer.engine.exceptions.NoInternetException
+import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
+import com.futo.platformplayer.engine.exceptions.ScriptAgeException
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptCompilationException
+import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
+import com.futo.platformplayer.engine.exceptions.ScriptException
+import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
+import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
+import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptTimeoutException
+import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.engine.internal.V8Converter
-import com.futo.platformplayer.engine.packages.*
+import com.futo.platformplayer.engine.packages.PackageBridge
+import com.futo.platformplayer.engine.packages.PackageDOMParser
+import com.futo.platformplayer.engine.packages.PackageHttp
+import com.futo.platformplayer.engine.packages.PackageUtilities
+import com.futo.platformplayer.engine.packages.V8Package
+import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
+import com.futo.platformplayer.warnIfMainThread
 
 class V8Plugin {
     val config: IV8PluginConfig;
@@ -61,7 +77,7 @@ class V8Plugin {
         withDependency(PackageBridge(this, config));
 
         for(pack in config.packages)
-            withDependency(getPackage(context, pack));
+            withDependency(getPackage(pack));
     }
 
     fun withDependency(context: Context, assetPath: String) : V8Plugin  {
@@ -208,10 +224,10 @@ class V8Plugin {
         }
     }
 
-    private fun getPackage(context: Context, packageName: String): V8Package {
+    private fun getPackage(packageName: String): V8Package {
         //TODO: Auto get all package types?
         return when(packageName) {
-            "DOMParser" -> PackageDOMParser(context, this)
+            "DOMParser" -> PackageDOMParser(this)
             "Http" -> PackageHttp(this, config)
             "Utilities" -> PackageUtilities(this, config)
             else -> throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");

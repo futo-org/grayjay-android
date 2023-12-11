@@ -1,19 +1,15 @@
 package com.futo.platformplayer.states
 
-import android.content.Context
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringHashSetStorage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
 import java.util.Random
@@ -70,9 +66,7 @@ class StateAnnouncement {
         synchronized(_lock) {
             val idActual = id ?: UUID.randomUUID().toString();
             val announcement = SessionAnnouncement(idActual, title, msg, announceType, time, category, actionButton, idActual);
-
-            if(action != null)
-                _sessionActions.put(idActual, action);
+            _sessionActions[idActual] = action;
             registerAnnouncementSession(announcement);
         }
     }
@@ -81,20 +75,21 @@ class StateAnnouncement {
             val idActual = id ?: UUID.randomUUID().toString();
             val announcement = SessionAnnouncement(idActual, title, msg, announceType, time, category, actionButton, idActual, cancelButton, if(cancelAction != null) idActual + "_cancel" else null);
 
-            if(action != null)
-                _sessionActions.put(idActual, action);
-            if(cancelAction != null)
+            _sessionActions.put(idActual, action);
+            if(cancelAction != null) {
                 _sessionActions.put(idActual + "_cancel", cancelAction);
+            }
             registerAnnouncementSession(announcement);
         }
     }
     fun registerAnnouncement(id: String?, title: String, msg: String, announceType: AnnouncementType = AnnouncementType.DELETABLE, time: OffsetDateTime? = null, category: String? = null, actionButton: String? = null, actionId: String? = null) {
-        val newAnnouncement = Announcement(if(id == null) UUID.randomUUID().toString() else id, title, msg, announceType, time, category, actionButton, actionId);
+        val newAnnouncement = Announcement(id ?: UUID.randomUUID().toString(), title, msg, announceType, time, category, actionButton, actionId);
 
-        if(announceType == AnnouncementType.SESSION || announceType == AnnouncementType.SESSION_RECURRING)
+        if(announceType == AnnouncementType.SESSION || announceType == AnnouncementType.SESSION_RECURRING) {
             registerAnnouncementSession(newAnnouncement);
-        else
+        } else {
             registerAnnouncement(newAnnouncement);
+        }
     }
     fun registerAnnouncementSession(announcement: Announcement) {
         synchronized(_lock) {

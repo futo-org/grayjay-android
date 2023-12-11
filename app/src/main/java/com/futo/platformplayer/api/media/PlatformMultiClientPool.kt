@@ -20,7 +20,7 @@ class PlatformMultiClientPool {
         val pool = synchronized(_clientPools) {
             if(!_clientPools.containsKey(parentClient))
                 _clientPools[parentClient] = PlatformClientPool(parentClient, _name).apply {
-                    this.onDead.subscribe { client, pool ->
+                    this.onDead.subscribe { _, pool ->
                         synchronized(_clientPools) {
                             if(_clientPools[parentClient] == pool)
                                 _clientPools.remove(parentClient);

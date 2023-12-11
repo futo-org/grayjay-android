@@ -1,6 +1,5 @@
 package com.futo.platformplayer.states
 
-import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
 import com.futo.platformplayer.api.media.structures.DedupContentPager
@@ -12,15 +11,10 @@ import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBSubscriptionCache
-import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
-import kotlin.streams.asSequence
-import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
 class StateCache {
@@ -140,9 +134,11 @@ class StateCache {
             Logger.i(TAG, "Caching ${results.size} subscription initial results [${pager.hashCode()}]");
             scope.launch(Dispatchers.IO) {
                 try {
-                    val newCacheItems = StateCache.instance.cacheContents(results, true);
-                    if(onNewCacheItem != null)
-                        newCacheItems.forEach { onNewCacheItem!!(it) }
+                    val newCacheItems = instance.cacheContents(results, true);
+
+                    onNewCacheItem?.let { f ->
+                        newCacheItems.forEach { f(it) }
+                    }
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to cache videos.", e);
                 }
@@ -163,10 +159,11 @@ class StateCache {
                     val ms = measureTimeMillis {
                         val newCacheItems = instance.cacheContents(results, true);
                         newCacheItemsCount = newCacheItems.size;
-                        if(onNewCacheItem != null)
-                            newCacheItems.forEach { onNewCacheItem!!(it) }
+                        onNewCacheItem?.let { f ->
+                            newCacheItems.forEach { f(it) }
+                        }
                     }
-                    Logger.i(TAG, "Caching ${results.size} subscription results, updated ${newCacheItemsCount} (${ms}ms)");
+                    Logger.i(TAG, "Caching ${results.size} subscription results, updated $newCacheItemsCount (${ms}ms)");
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to cache ${results.size} videos.", e);
                 }

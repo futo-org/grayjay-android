@@ -11,7 +11,6 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.buttons.BigButton
 import com.google.zxing.integration.android.IntentIntegrator
-import com.journeyapps.barcodescanner.CaptureActivity
 
 class AddSourceOptionsActivity : AppCompatActivity() {
     lateinit var _buttonBack: ImageButton;

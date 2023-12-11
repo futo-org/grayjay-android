@@ -8,8 +8,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -31,13 +29,15 @@ import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateCache
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -215,14 +215,14 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
     fun setPager(pager: IPager<IPlatformContent>, cache: FeedView.ItemCache<IPlatformContent>? = null) {
         if (_pager_parent != null && _pager_parent is IRefreshPager<*>) {
-            (_pager_parent as IRefreshPager<*>).onPagerError?.remove(this);
-            (_pager_parent as IRefreshPager<*>).onPagerChanged?.remove(this);
+            (_pager_parent as IRefreshPager<*>).onPagerError.remove(this);
+            (_pager_parent as IRefreshPager<*>).onPagerChanged.remove(this);
             _pager_parent = null;
         }
         if(_pager is IReplacerPager<*>)
             (_pager as IReplacerPager<*>).onReplaced.remove(this);
 
-        var pagerToSet: IPager<IPlatformContent>? = null;
+        var pagerToSet: IPager<IPlatformContent>?;
         if(pager is IRefreshPager<*>) {
             _pager_parent = pager;
             pagerToSet = pager.getCurrentPager() as IPager<IPlatformContent>;
@@ -305,7 +305,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         _adapterResults?.setLoading(loading);
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         val p = _lastPolycentricProfile;
         if (p != null && polycentricProfile != null && p.system == polycentricProfile.system) {
             Logger.i(TAG, "setPolycentricProfile skipped because previous was same");

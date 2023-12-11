@@ -100,7 +100,7 @@ class SingleAsyncItemPager<T> {
 
     private fun fillDeferredUntil(i: Int): Int {
         val startPos = _requestedPageItems.size;
-        for(i in _requestedPageItems.size..i) {
+        for(v in _requestedPageItems.size..i) {
             _requestedPageItems.add(CompletableDeferred());
         }
         return startPos;

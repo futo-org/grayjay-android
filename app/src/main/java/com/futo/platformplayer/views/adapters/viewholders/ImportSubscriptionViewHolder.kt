@@ -9,9 +9,9 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.others.Checkbox
 import com.futo.platformplayer.views.platform.PlatformIndicator
-import com.futo.platformplayer.views.adapters.AnyAdapter
 
 class ImportSubscriptionViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<SelectableIPlatformChannel>(
     LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_import_subscription, _viewGroup, false)) {
@@ -46,11 +46,11 @@ class ImportSubscriptionViewHolder(private val _viewGroup: ViewGroup) : AnyAdapt
         };
     }
 
-    override fun bind(channel: SelectableIPlatformChannel) {
-        _textName.text = channel.channel.name;
-        _checkbox.value = channel.selected;
+    override fun bind(value: SelectableIPlatformChannel) {
+        _textName.text = value.channel.name;
+        _checkbox.value = value.selected;
 
-        val thumbnail = channel.channel.thumbnail;
+        val thumbnail = value.channel.thumbnail;
         if (thumbnail != null)
             Glide.with(_imageThumbnail)
                 .load(thumbnail)
@@ -59,8 +59,8 @@ class ImportSubscriptionViewHolder(private val _viewGroup: ViewGroup) : AnyAdapt
         else
             Glide.with(_imageThumbnail).clear(_imageThumbnail);
 
-        _platform.setPlatformFromClientID(channel.channel.id.pluginId);
-        _channel = channel;
+        _platform.setPlatformFromClientID(value.channel.id.pluginId);
+        _channel = value;
     }
 }
 

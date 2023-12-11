@@ -1,16 +1,11 @@
 package com.futo.platformplayer.engine.packages
 
-import android.content.Context
-import android.util.Log
-import com.caoccao.javet.annotations.V8Allow
 import com.caoccao.javet.annotations.V8Convert
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
 import com.caoccao.javet.enums.V8ConversionMode
 import com.caoccao.javet.enums.V8ProxyMode
-import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.engine.V8Plugin
-import com.futo.platformplayer.engine.dev.V8RemoteObject
 import com.futo.platformplayer.engine.internal.V8BindObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
@@ -20,8 +15,8 @@ class PackageDOMParser : V8Package {
     override val name: String get() = "DOMParser";
     override val variableName: String = "domParser";
 
-    constructor(context: Context, v8Plugin: V8Plugin): super(v8Plugin) {
-        //v8Plugin.withDependency(context, "/scripts/some/package/path");
+    constructor(v8Plugin: V8Plugin): super(v8Plugin) {
+
     }
 
     @V8Function
@@ -45,8 +40,7 @@ class PackageDOMParser : V8Package {
         @V8Property
         fun childNodes(): List<DOMNode> {
             val results = _element.children().map { DOMNode(_package, it) }.toList();
-            if(results != null)
-                _children.addAll(results);
+            _children.addAll(results);
             return results;
         }
         @V8Property

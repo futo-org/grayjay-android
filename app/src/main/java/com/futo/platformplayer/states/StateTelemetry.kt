@@ -1,6 +1,5 @@
 package com.futo.platformplayer.states
 
-import android.content.Context
 import android.os.Build
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -8,13 +7,12 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Telemetry
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.time.Instant
 import java.util.UUID
 
 class StateTelemetry {
@@ -26,6 +24,7 @@ class StateTelemetry {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun upload() {
         GlobalScope.launch(Dispatchers.IO) {
             try {
@@ -49,7 +48,6 @@ class StateTelemetry {
 
                 val json = Json.encodeToString(telemetry);
                 val url = "https://logs.grayjay.app/telemetry";
-                //val url = "http://10.0.0.5:5413/telemetry";
                 val client = ManagedHttpClient();
                 val response = client.post(url, json, headers);
                 if (response.isOk) {

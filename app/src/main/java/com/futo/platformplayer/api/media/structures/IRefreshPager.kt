@@ -1,6 +1,5 @@
 package com.futo.platformplayer.api.media.structures
 
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.constructs.Event1
 
 /**

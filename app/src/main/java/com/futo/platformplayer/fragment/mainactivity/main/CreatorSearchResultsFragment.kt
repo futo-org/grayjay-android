@@ -6,15 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
 
 class CreatorSearchResultsFragment : MainFragment() {
@@ -26,7 +26,7 @@ class CreatorSearchResultsFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onResume() {
@@ -69,7 +69,7 @@ class CreatorSearchResultsFragment : MainFragment() {
             _taskSearch.cancel();
         }
 
-        fun onShown(parameter: Any?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             if(parameter is String) {
                 setQuery(parameter);
 

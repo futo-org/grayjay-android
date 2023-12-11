@@ -3,16 +3,17 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.view.*
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StatePlayer
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.CastConnectionState
@@ -20,8 +21,10 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.listeners.OrientationManager
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StateSaved
 import com.futo.platformplayer.states.VideoToOpen
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
@@ -269,7 +272,7 @@ class VideoDetailFragment : MainFragment {
         val viewDetail = _viewDetail;
         Logger.i(TAG, "onUserLeaveHint preventPictureInPicture=${viewDetail?.preventPictureInPicture} isCasting=${StateCasting.instance.isCasting} isBackgroundPictureInPicture=${Settings.instance.playback.isBackgroundPictureInPicture()} allowBackground=${viewDetail?.allowBackground}");
 
-        if(viewDetail?.preventPictureInPicture == false && !StateCasting.instance.isCasting && Settings.instance.playback.isBackgroundPictureInPicture() && viewDetail?.allowBackground != true) {
+        if(viewDetail?.preventPictureInPicture == false && !StateCasting.instance.isCasting && Settings.instance.playback.isBackgroundPictureInPicture() && !viewDetail.allowBackground) {
             _leavingPiP = false;
 
             val params = _viewDetail?.getPictureInPictureParams();

@@ -9,8 +9,8 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Playlist
-import com.futo.platformplayer.views.others.Checkbox
 import com.futo.platformplayer.views.adapters.AnyAdapter
+import com.futo.platformplayer.views.others.Checkbox
 
 class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<SelectablePlaylist>(
     LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_import_playlist, _viewGroup, false)) {
@@ -43,12 +43,12 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
         };
     }
 
-    override fun bind(playlist: SelectablePlaylist) {
-        _textName.text = playlist.playlist.name;
-        _textMetadata.text = "${playlist.playlist.videos.size} " + _view.context.getString(R.string.videos);
-        _checkbox.value = playlist.selected;
+    override fun bind(value: SelectablePlaylist) {
+        _textName.text = value.playlist.name;
+        _textMetadata.text = "${value.playlist.videos.size} " + _view.context.getString(R.string.videos);
+        _checkbox.value = value.selected;
 
-        val thumbnail = playlist.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail();
+        val thumbnail = value.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail();
         if (thumbnail != null)
             Glide.with(_imageThumbnail)
                 .load(thumbnail)
@@ -57,7 +57,7 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
         else
             Glide.with(_imageThumbnail).clear(_imageThumbnail);
 
-        _playlist = playlist;
+        _playlist = value;
     }
 }
 

@@ -6,10 +6,8 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
-import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
-import kotlin.reflect.KProperty
 
 class GroupField : LinearLayout, IField {
     override var descriptor : FormField? = null;
@@ -39,7 +37,7 @@ class GroupField : LinearLayout, IField {
 
     override val value: Any? = null;
 
-    override val searchContent: String? get() = "${_title.text} ${_subtitle.text}";
+    override val searchContent: String get() = "${_title.text} ${_subtitle.text}";
 
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.field_group, this);
@@ -59,25 +57,28 @@ class GroupField : LinearLayout, IField {
         _title.text = title;
         _subtitle.text = description ?: "";
 
-        if(!(_title.text?.isEmpty() ?: true))
+        if(_title.text?.isEmpty() == false) {
             _title.visibility = VISIBLE;
-        else
+        } else {
             _title.visibility = GONE;
-        if(!(_subtitle.text?.isEmpty() ?: true))
+        }
+
+        if (_subtitle.text?.isEmpty() == false) {
             _subtitle.visibility = VISIBLE;
-        else
+        } else {
             _subtitle.visibility = GONE;
+        }
     }
 
     fun findField(id: String) : IField? {
         for(field in _fields) {
-            if(field.descriptor?.id == id)
+            if(field.descriptor?.id == id) {
                 return field;
-            else if(field is GroupField)
-            {
+            } else if(field is GroupField) {
                 val subField = field.findField(id);
-                if(subField != null)
+                if(subField != null) {
                     return subField;
+                }
             }
         }
         return null;
@@ -87,7 +88,7 @@ class GroupField : LinearLayout, IField {
         _container.removeAllViews();
         val newFields = mutableListOf<IField>()
         for(field in fields) {
-            if(!(field is View))
+            if(field !is View)
                 throw java.lang.IllegalStateException("Only views can be IFields");
 
             field.onChanged.subscribe(onChanged::emit);
@@ -99,7 +100,7 @@ class GroupField : LinearLayout, IField {
         return this;
     }
 
-    override fun fromField(obj : Any, field : Field, formField: FormField?) : GroupField {
+    override fun fromField(obj: Any, field: Field, formField: FormField?) : GroupField {
         this._field = field;
         this._obj = obj;
 
@@ -116,21 +117,23 @@ class GroupField : LinearLayout, IField {
 
         _container.removeAllViews();
         val newFields = mutableListOf<IField>()
-        for(field in FieldForm.getFieldsFromObject(context, value)) {
-            if(!(field is View))
-                throw java.lang.IllegalStateException("Only views can be IFields");
+        if (value != null) {
+            for (f in FieldForm.getFieldsFromObject(context, value)) {
+                if (f !is View)
+                    throw java.lang.IllegalStateException("Only views can be IFields");
 
-            field.onChanged.subscribe(onChanged::emit);
-            _container.addView(field as View);
-            newFields.add(field);
+                f.onChanged.subscribe(onChanged::emit);
+                _container.addView(f as View);
+                newFields.add(f);
+            }
         }
         _fields = newFields;
 
-        if(!(_title.text?.isEmpty() ?: true))
+        if(_title.text?.isEmpty() == false)
             _title.visibility = VISIBLE;
         else
             _title.visibility = GONE;
-        if(!(_subtitle.text?.isEmpty() ?: true))
+        if(_subtitle.text?.isEmpty() == false)
             _subtitle.visibility = VISIBLE;
         else
             _subtitle.visibility = GONE;

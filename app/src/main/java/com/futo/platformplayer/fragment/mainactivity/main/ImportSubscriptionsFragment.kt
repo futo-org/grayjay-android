@@ -15,13 +15,13 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.viewholders.ImportSubscriptionViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectableIPlatformChannel
-import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StatePlatform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -37,7 +37,7 @@ class ImportSubscriptionsFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onHide() {
@@ -93,7 +93,7 @@ class ImportSubscriptionsFragment : MainFragment() {
             _loadProgress = findViewById(R.id.text_load_progress);
 
             _adapterView = findViewById<RecyclerView>(R.id.recycler_import).asAny( _items) {
-                it.onSelectedChange.subscribe { c ->
+                it.onSelectedChange.subscribe {
                     updateSelected();
                 };
             };
@@ -152,14 +152,14 @@ class ImportSubscriptionsFragment : MainFragment() {
             _taskLoadChannel.cancel();
         }
 
-        fun onShown(parameter: Any ?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             _counter = 0;
             _limitToastShown = false;
             updateSelected();
 
             val itemsRemoved = _items.size;
             _items.clear();
-            _adapterView?.adapter?.notifyItemRangeRemoved(0, itemsRemoved);
+            _adapterView.adapter?.notifyItemRangeRemoved(0, itemsRemoved);
 
             _links = (parameter as List<String>).filter { i -> !StateSubscriptions.instance.isSubscribed(i) }.toList();
             _currentLoadIndex = 0;

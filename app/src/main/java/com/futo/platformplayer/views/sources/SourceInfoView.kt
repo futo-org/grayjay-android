@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.views.others.BulletPointView
@@ -37,7 +38,7 @@ class SourceInfoView : LinearLayout {
         textTitle.text = title;
         textDescription.text = description;
 
-        val primaryColor = resources.getColor(R.color.colorPrimary);
+        val primaryColor = ContextCompat.getColor(context, R.color.colorPrimary);
 
         bulletPoints.removeAllViews();
         for(point in points) {

@@ -16,10 +16,11 @@ open class FragmentedStorageDirectory : IFragmentedStorageDirectory {
     var directory: File? = null;
 
     fun getFiles() : List<String> {
-        return directory!!.listFiles()
-            .filter { it.extension != ".bak" }
-            .map { it.name };
+        return directory?.listFiles()
+            ?.filter { it.extension != ".bak" }
+            ?.map { it.name } ?: listOf();
     }
+
     fun hasFile(name: String) : Boolean {
         return File(directory, name).exists();
     }

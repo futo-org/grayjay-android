@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
 import com.caoccao.javet.values.V8Value

@@ -10,12 +10,9 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
-import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
-import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.models.ImageVariable
-import com.futo.platformplayer.models.Playlist
 
 /**
  * A temporary class that caches video results
@@ -44,8 +41,7 @@ class CachedPlatformClient : IPlatformClient {
         var result = _cache.get(url);
         if(result == null) {
             result = _client.getContentDetails(url);
-            if (result != null)
-                _cache.put(url, result);
+            _cache.put(url, result);
         }
         return result;
     }

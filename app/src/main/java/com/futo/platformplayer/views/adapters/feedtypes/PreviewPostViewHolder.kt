@@ -5,7 +5,6 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 
@@ -19,7 +18,7 @@ class PreviewPostViewHolder : ContentPreviewViewHolder {
 
     private val view: PreviewPostView get() = itemView as PreviewPostView;
 
-    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle, exoPlayer: PlayerManager? = null): super(
+    constructor(viewGroup: ViewGroup, feedStyle : FeedStyle): super(
         PreviewPostView(viewGroup.context, feedStyle)
     ) {
         view.onContentClicked.subscribe(onContentClicked::emit);
@@ -29,7 +28,7 @@ class PreviewPostViewHolder : ContentPreviewViewHolder {
 
     override fun bind(content: IPlatformContent) = view.bind(content);
 
-    override fun preview(video: IPlatformContentDetails?, paused: Boolean) {};
+    override fun preview(details: IPlatformContentDetails?, paused: Boolean) {};
     override fun stopPreview() {};
     override fun pausePreview() {};
     override fun resumePreview() {};

@@ -49,7 +49,7 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         _loaderView = findViewById(R.id.loader);
         overlay = findViewById(R.id.overlay_container);
 
-        _form.onChanged.subscribe { field, value ->
+        _form.onChanged.subscribe { field, _ ->
             Logger.i("SettingsActivity", "Setting [${field.field?.name}] changed, saving");
             _form.setObjectValues();
             Settings.instance.save();

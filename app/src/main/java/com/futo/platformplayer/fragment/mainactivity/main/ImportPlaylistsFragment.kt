@@ -14,12 +14,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
-import com.futo.platformplayer.views.AnyAdapterView
-import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.views.AnyAdapterView
+import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.viewholders.ImportPlaylistsViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectablePlaylist
 
@@ -32,7 +32,7 @@ class ImportPlaylistsFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onHide() {
@@ -79,7 +79,7 @@ class ImportPlaylistsFragment : MainFragment() {
             _spinner = findViewById(R.id.channel_loader);
 
             _adapterView = findViewById<RecyclerView>(R.id.recycler_import).asAny( _items) {
-                it.onSelectedChange.subscribe { c ->
+                it.onSelectedChange.subscribe {
                     updateSelected();
                 };
             };
@@ -123,7 +123,7 @@ class ImportPlaylistsFragment : MainFragment() {
             _taskLoadPlaylist.cancel();
         }
 
-        fun onShown(parameter: Any ?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             updateSelected();
 
             val itemsRemoved = _items.size;

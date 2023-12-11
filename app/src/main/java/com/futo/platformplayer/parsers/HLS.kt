@@ -1,22 +1,12 @@
 package com.futo.platformplayer.parsers
 
-import android.view.View
-import com.futo.platformplayer.R
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantSubtitleUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
-import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
-import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.toYesNo
-import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
-import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.yesNoToBoolean
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.net.URI
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -73,7 +63,7 @@ class HLS {
 
             val segments = mutableListOf<Segment>()
             var currentSegment: MediaSegment? = null
-            lines.forEachIndexed { index, line ->
+            lines.forEach { line ->
                 when {
                     line.startsWith("#EXTINF:") -> {
                         val duration = line.substringAfter(":").substringBefore(",").toDoubleOrNull()

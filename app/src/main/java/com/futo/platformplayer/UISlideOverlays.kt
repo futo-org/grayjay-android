@@ -22,20 +22,25 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.parsers.HLS
-import com.futo.platformplayer.states.*
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateMeta
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.LoaderView
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuFilters
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
-import com.futo.platformplayer.views.overlays.slideup.*
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.IllegalStateException
 
 class UISlideOverlays {
     companion object {
@@ -242,7 +247,7 @@ class UISlideOverlays {
             val audioSources = if(descriptor is VideoUnMuxedSourceDescriptor) descriptor.audioSources else null;
             val subtitleSources = video.subtitles;
 
-            if(videoSources.size == 0 && (audioSources?.size ?: 0) == 0) {
+            if(videoSources.isEmpty() && (audioSources?.size ?: 0) == 0) {
                 UIDialogs.toast(container.context.getString(R.string.no_downloads_available), false);
                 return null;
             }
@@ -263,24 +268,30 @@ class UISlideOverlays {
                 videoSources
                 .filter { it.isDownloadable() }
                 .map {
-                    if (it is IVideoUrlSource) {
-                        SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it, {
-                            selectedVideo = it
-                            menu?.selectOption(videoSources, it);
-                            if(selectedAudio != null || !requiresAudio)
-                                menu?.setOk(container.context.getString(R.string.download));
-                        }, false)
-                    } else if (it is IHLSManifestSource) {
-                        SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS", it, {
-                            showHlsPicker(video, it, it.url, container)
-                        }, false)
-                    } else {
-                        throw Exception("Unhandled source type")
+                    when (it) {
+                        is IVideoUrlSource -> {
+                            SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it, {
+                                selectedVideo = it
+                                menu?.selectOption(videoSources, it);
+                                if(selectedAudio != null || !requiresAudio)
+                                    menu?.setOk(container.context.getString(R.string.download));
+                            }, false)
+                        }
+
+                        is IHLSManifestSource -> {
+                            SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS", it, {
+                                showHlsPicker(video, it, it.url, container)
+                            }, false)
+                        }
+
+                        else -> {
+                            throw Exception("Unhandled source type")
+                        }
                     }
                 }).flatten().toList()
             ));
 
-            if(Settings.instance.downloads.getDefaultVideoQualityPixels() > 0 && videoSources.size > 0) {
+            if(Settings.instance.downloads.getDefaultVideoQualityPixels() > 0 && videoSources.isNotEmpty()) {
                 //TODO: Add HLS support here
                 selectedVideo = VideoHelper.selectBestVideoSource(
                     videoSources.filter { it is IVideoUrlSource && it.isDownloadable() }.asIterable(),
@@ -289,30 +300,30 @@ class UISlideOverlays {
                 ) as IVideoUrlSource;
             }
 
-            audioSources?.let { audioSources ->
+            if (audioSources != null) {
                 items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.audio), audioSources, audioSources
                     .filter { VideoHelper.isDownloadable(it) }
                     .map {
-                        if (it is IAudioUrlSource) {
-                            SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, "${it.bitrate}", it, {
-                                selectedAudio = it
-                                menu?.selectOption(audioSources, it);
-                                menu?.setOk(container.context.getString(R.string.download));
-                            }, false);
-                        } else if (it is IHLSManifestAudioSource) {
-                            SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS Audio", it, {
-                                showHlsPicker(video, it, it.url, container)
-                            }, false)
-                        } else {
-                            throw Exception("Unhandled source type")
+                        when (it) {
+                            is IAudioUrlSource -> {
+                                SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, "${it.bitrate}", it, {
+                                    selectedAudio = it
+                                    menu?.selectOption(audioSources, it);
+                                    menu?.setOk(container.context.getString(R.string.download));
+                                }, false);
+                            }
+
+                            is IHLSManifestAudioSource -> {
+                                SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS Audio", it, {
+                                    showHlsPicker(video, it, it.url, container)
+                                }, false)
+                            }
+
+                            else -> {
+                                throw Exception("Unhandled source type")
+                            }
                         }
                     }));
-                val asources = audioSources;
-                val preferredAudioSource = VideoHelper.selectBestAudioSource(asources.asIterable(),
-                    FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
-                    Settings.instance.playback.getPrimaryLanguage(container.context),
-                    if(Settings.instance.downloads.isHighBitrateDefault()) 99999999 else 1);
-                menu?.selectOption(asources, preferredAudioSource);
 
                 //TODO: Add HLS support here
                 selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioUrlSource && it.isDownloadable() }.asIterable(),
@@ -321,10 +332,8 @@ class UISlideOverlays {
                     if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioUrlSource?;
             }
 
-            //ContentResolver is required for subtitles..
             if(contentResolver != null && subtitleSources.isNotEmpty()) {
-                items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.subtitles), subtitleSources, subtitleSources
-                    .map {
+                items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.subtitles), subtitleSources, subtitleSources.map {
                         SlideUpMenuItem(container.context, R.drawable.ic_edit, it.name, "", it, {
                             if (selectedSubtitle == it) {
                                 selectedSubtitle = null;
@@ -334,7 +343,8 @@ class UISlideOverlays {
                                 menu?.selectOption(subtitleSources, it);
                             }
                         }, false);
-                    }));
+                    })
+                );
             }
 
             menu = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.download_video), null, true, items);
@@ -645,10 +655,11 @@ class UISlideOverlays {
             val visible = buttonGroup.getVisibleButtons().filter { !ignoreTags.contains(it.tagRef) };
             val hidden = buttonGroup.getInvisibleButtons().filter { !ignoreTags.contains(it.tagRef) };
 
-            val views = arrayOf(hidden
-                .map { btn -> SlideUpMenuItem(container.context, btn.iconResource, btn.text.text.toString(), "", "", {
-                    btn.handler?.invoke(btn);
-                }, true) as View  }.toTypedArray() ?: arrayOf(),
+            val views = arrayOf(
+                hidden
+                    .map { btn -> SlideUpMenuItem(container.context, btn.iconResource, btn.text.text.toString(), "", "", {
+                        btn.handler?.invoke(btn);
+                    }, true) as View  }.toTypedArray(),
                 arrayOf(SlideUpMenuItem(container.context, R.drawable.ic_pin, container.context.getString(R.string.change_pins), container.context.getString(R.string.decide_which_buttons_should_be_pinned), "", {
                     showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }) {
                         val selected = it

@@ -26,7 +26,7 @@ class DeveloperActivity : AppCompatActivity() {
         _form = findViewById(R.id.settings_form);
 
         _form.fromObject(SettingsDev.instance);
-        _form.onChanged.subscribe { field, value ->
+        _form.onChanged.subscribe { _, _ ->
             _form.setObjectValues();
             SettingsDev.instance.save();
         };

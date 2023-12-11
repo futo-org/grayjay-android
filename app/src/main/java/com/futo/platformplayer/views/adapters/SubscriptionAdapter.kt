@@ -4,9 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.constructs.Event1
 
 class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     private lateinit var _sortedDataset: List<Subscription>;
@@ -30,7 +30,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         _inflater = inflater;
         _confirmationMessage = confirmationMessage;
 
-        StateSubscriptions.instance.onSubscriptionsChanged.subscribe { subs, added -> updateDataset(); }
+        StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> updateDataset(); }
         updateDataset();
     }
 

@@ -11,7 +11,13 @@ import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.LocalVideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.LocalVideoUnMuxedSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.SubtitleRawSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
@@ -46,7 +52,7 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
     override val shareUrl: String get() = videoSerialized.shareUrl;
 
     @kotlinx.serialization.Transient
-    override val video: IVideoSourceDescriptor get() = if(!audioSource.isEmpty())
+    override val video: IVideoSourceDescriptor get() = if(audioSource.isNotEmpty())
         LocalVideoUnMuxedSourceDescriptor(this)
     else
         LocalVideoMuxedSourceDescriptor(this);

@@ -7,11 +7,8 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -19,7 +16,6 @@ import androidx.core.animation.doOnEnd
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.dp
@@ -31,7 +27,6 @@ import com.futo.platformplayer.states.StatePayment
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.Collections
 import kotlin.math.floor
 import kotlin.math.roundToInt
 

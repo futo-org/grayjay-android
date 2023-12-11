@@ -5,9 +5,8 @@ import com.futo.platformplayer.SignatureProvider
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.states.StatePlugins
-import kotlinx.serialization.decodeFromString
 import java.net.URL
-import java.util.*
+import java.util.UUID
 
 @kotlinx.serialization.Serializable
 class SourcePluginConfig(
@@ -149,7 +148,6 @@ class SourcePluginConfig(
         val warningDialog: String? = null,
         val options: List<String>? = null
     ) {
-        @kotlinx.serialization.Transient
         val variableOrName: String get() = variable ?: name;
     }
 }

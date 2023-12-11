@@ -8,18 +8,15 @@ import com.caoccao.javet.enums.V8ProxyMode
 import com.caoccao.javet.interop.V8Runtime
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.internal.IV8Convertable
 import com.futo.platformplayer.engine.internal.V8BindObject
-import com.futo.platformplayer.getOrThrow
-import kotlinx.coroutines.CoroutineScope
+import com.futo.platformplayer.logging.Logger
 import java.net.SocketTimeoutException
 import kotlin.streams.asSequence
-import kotlin.streams.toList
 
 class PackageHttp: V8Package {
     @Transient
@@ -227,10 +224,10 @@ class PackageHttp: V8Package {
             return logExceptions {
                 return@logExceptions catchHttp {
                     val client = _client;
-                    logRequest(method, url, headers, null);
+                    //logRequest(method, url, headers, null);
                     val resp = client.requestMethod(method, url, headers);
                     val responseBody = resp.body?.string();
-                    logResponse(method, url, resp.code, resp.headers, responseBody);
+                    //logResponse(method, url, resp.code, resp.headers, responseBody);
                     return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
@@ -241,10 +238,10 @@ class PackageHttp: V8Package {
             return logExceptions {
                 catchHttp {
                     val client = _client;
-                    logRequest(method, url, headers, body);
+                    //logRequest(method, url, headers, body);
                     val resp = client.requestMethod(method, url, body, headers);
                     val responseBody = resp.body?.string();
-                    logResponse(method, url, resp.code, resp.headers, responseBody);
+                    //logResponse(method, url, resp.code, resp.headers, responseBody);
                     return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
@@ -256,10 +253,10 @@ class PackageHttp: V8Package {
             return logExceptions {
                 catchHttp {
                     val client = _client;
-                    logRequest("GET", url, headers, null);
+                    //logRequest("GET", url, headers, null);
                     val resp = client.get(url, headers);
                     val responseBody = resp.body?.string();
-                    logResponse("GET", url, resp.code, resp.headers, responseBody);
+                    //logResponse("GET", url, resp.code, resp.headers, responseBody);
                     return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
@@ -270,10 +267,10 @@ class PackageHttp: V8Package {
             return logExceptions {
                 catchHttp {
                     val client = _client;
-                    logRequest("POST", url, headers, body);
+                    //logRequest("POST", url, headers, body);
                     val resp = client.post(url, body, headers);
                     val responseBody = resp.body?.string();
-                    logResponse("POST", url, resp.code, resp.headers, responseBody);
+                    //logResponse("POST", url, resp.code, resp.headers, responseBody);
                     return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
                 }
             };
@@ -283,7 +280,7 @@ class PackageHttp: V8Package {
         fun socket(url: String, headers: Map<String, String>? = null): SocketResult {
             val socketHeaders = headers?.toMutableMap() ?: HashMap();
             applyDefaultHeaders(socketHeaders);
-            return SocketResult(this, _client, url, socketHeaders ?: HashMap());
+            return SocketResult(this, _client, url, socketHeaders);
         }
 
         private fun applyDefaultHeaders(headerMap: MutableMap<String, String>) {
@@ -305,9 +302,7 @@ class PackageHttp: V8Package {
             return result
         }
 
-        private fun logRequest(method: String, url: String, headers: Map<String, String> = HashMap(), body: String?) {
-            return;
-
+        /*private fun logRequest(method: String, url: String, headers: Map<String, String> = HashMap(), body: String?) {
             Logger.v(TAG) {
                 val stringBuilder = StringBuilder();
                 stringBuilder.appendLine("HTTP request (useAuth = )");
@@ -324,11 +319,9 @@ class PackageHttp: V8Package {
 
                 return@v stringBuilder.toString();
             };
-        }
+        }*/
 
-        private fun logResponse(method: String, url: String, responseCode: Int? = null, responseHeaders: Map<String, List<String>> = HashMap(), responseBody: String? = null) {
-            return;
-
+        /*private fun logResponse(method: String, url: String, responseCode: Int? = null, responseHeaders: Map<String, List<String>> = HashMap(), responseBody: String? = null) {
             Logger.v(TAG) {
                 val stringBuilder = StringBuilder();
                 if (responseCode != null) {
@@ -353,7 +346,7 @@ class PackageHttp: V8Package {
 
                 return@v stringBuilder.toString();
             };
-        }
+        }*/
 
         fun <T> logExceptions(handle: ()->T): T {
             try {

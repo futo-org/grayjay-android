@@ -2,15 +2,9 @@ package com.futo.platformplayer
 
 import android.content.Context
 import android.webkit.CookieManager
-import androidx.lifecycle.lifecycleScope
-import androidx.work.Constraints
 import androidx.work.Data
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import androidx.work.WorkerParameters
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.futo.platformplayer.activities.DeveloperActivity
@@ -36,7 +30,6 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
-import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.views.fields.ButtonField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
@@ -44,11 +37,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream.range
 import kotlin.system.measureTimeMillis
 
@@ -109,14 +103,14 @@ class SettingsDev : FragmentedStorageFileJson() {
             StateApp.instance.scope.launch(Dispatchers.IO) {
                 try {
                     val subsCache =
-                        StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(cacheScope = this)?.first;
+                        StateSubscriptions.instance.getSubscriptionsFeedWithExceptions(cacheScope = this).first;
 
                     var total = 0;
                     var page = 0;
                     var lastToast = System.currentTimeMillis();
-                    while(subsCache!!.hasMorePages() && total < 5000) {
-                        subsCache!!.nextPage();
-                        total += subsCache!!.getResults().size;
+                    while(subsCache.hasMorePages() && total < 5000) {
+                        subsCache.nextPage();
+                        total += subsCache.getResults().size;
                         page++;
 
                         if(page % 10 == 0)
@@ -174,9 +168,9 @@ class SettingsDev : FragmentedStorageFileJson() {
                     var total = 0;
                     var page = 0;
                     var lastToast = System.currentTimeMillis();
-                    while(subsCache!!.hasMorePages() && total < 5000) {
-                        subsCache!!.nextPage();
-                        total += subsCache!!.getResults().size;
+                    while(subsCache.hasMorePages() && total < 5000) {
+                        subsCache.nextPage();
+                        total += subsCache.getResults().size;
                         page++;
 
                         for(item in subsCache.getResults().filterIsInstance<IPlatformVideo>()) {
@@ -375,9 +369,9 @@ class SettingsDev : FragmentedStorageFileJson() {
         @FormField(R.string.getHome, FieldForm.BUTTON, R.string.attempts_to_fetch_2_pages_from_getHome, 2)
         fun testV8Home() {
             runTestPlugin(_currentPlugin) {
-                var home: IPager<IPlatformContent>? = null;
-                var resultPage1: String = "";
-                var resultPage2: String = "";
+                var home: IPager<IPlatformContent>?;
+                val resultPage1: String;
+                val resultPage2: String;
                 val page1Time = measureTimeMillis {
                     home = it.getHome();
                     val results = home!!.getResults();

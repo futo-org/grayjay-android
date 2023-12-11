@@ -1,7 +1,9 @@
 package com.futo.platformplayer.dialogs
 
 import android.app.AlertDialog
-import android.app.PendingIntent.*
+import android.app.PendingIntent.FLAG_MUTABLE
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.PendingIntent.getBroadcast
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
@@ -14,12 +16,18 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.futo.platformplayer.*
-import com.futo.platformplayer.receivers.InstallReceiver
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.receivers.InstallReceiver
 import com.futo.platformplayer.states.StateUpdate
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
 
@@ -100,7 +108,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         _text.text = context.resources.getText(R.string.downloading_update);
-        (_updateSpinner?.drawable as Animatable?)?.start();
+        (_updateSpinner.drawable as Animatable?)?.start();
 
         GlobalScope.launch(Dispatchers.IO) {
             var inputStream: InputStream? = null;
@@ -193,7 +201,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         setCancelable(true);
         setCanceledOnTouchOutside(true);
         _buttonClose.visibility = View.VISIBLE;
-        (_updateSpinner?.drawable as Animatable?)?.stop();
+        (_updateSpinner.drawable as Animatable?)?.stop();
 
         if (result == null || result.isBlank()) {
             _updateSpinner.setImageResource(R.drawable.ic_update_success_251dp);

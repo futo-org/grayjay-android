@@ -9,7 +9,6 @@ import com.caverock.androidsvg.SVG
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.live.LiveEventComment
-import com.futo.platformplayer.api.media.models.live.LiveEventDonation
 import com.futo.platformplayer.api.media.models.live.LiveEventEmojis
 import com.futo.platformplayer.api.media.platforms.js.models.JSLiveEventPager
 import com.futo.platformplayer.api.media.structures.IPager
@@ -195,7 +194,7 @@ class LiveChatManager {
 
         fun getEmojiDrawable(emoji: String, cb: (drawable: Drawable?)->Unit) {
             var drawable: Drawable? = null;
-            var url: String? = null;
+            var url: String?;
             synchronized(_cache_lock) {
                 url = _cache_urls[emoji];
                 if(url != null)

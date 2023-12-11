@@ -1,15 +1,10 @@
 package com.futo.platformplayer.views.livechat
 
-import android.content.Context
-import android.view.*
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.api.media.models.contents.ContentType
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.live.LiveEventComment
 import com.futo.platformplayer.api.media.models.live.LiveEventDonation
-import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
-import com.futo.platformplayer.views.adapters.EmptyPreviewViewHolder
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 
 class LiveChatListAdapter : RecyclerView.Adapter<LiveChatListItem> {
@@ -17,7 +12,7 @@ class LiveChatListAdapter : RecyclerView.Adapter<LiveChatListItem> {
     private val _dataSet: ArrayList<LiveChatOverlay.ChatMessage>;
 
 
-    constructor(context: Context, dataSet: ArrayList<LiveChatOverlay.ChatMessage>): super() {
+    constructor(dataSet: ArrayList<LiveChatOverlay.ChatMessage>): super() {
         this._dataSet = dataSet;
     }
 
@@ -28,13 +23,11 @@ class LiveChatListAdapter : RecyclerView.Adapter<LiveChatListItem> {
         }
         val item = _dataSet.getOrNull(position) ?: return -1;
 
-        if(item.event is LiveEventComment)
-            return 1;
-        else if(item.event is LiveEventDonation)
-            return 2;
-        else
-            return -1;
-
+        return when (item.event) {
+            is LiveEventComment -> 1
+            is LiveEventDonation -> 2
+            else -> -1
+        };
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): LiveChatListItem {

@@ -8,32 +8,24 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.futo.platformplayer.*
-import com.futo.platformplayer.activities.CaptchaActivity
-import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
-import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
-import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.others.CaptchaWebViewClient
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.states.StatePlugins
-import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
+import com.futo.platformplayer.views.announcements.AnnouncementView
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -159,8 +151,8 @@ class HomeFragment : MainFragment() {
             loadResults();
         }
 
-        override fun filterResults(contents: List<IPlatformContent>): List<IPlatformContent> {
-            return contents.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) };
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
+            return results.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) };
         }
 
         private fun loadResults() {

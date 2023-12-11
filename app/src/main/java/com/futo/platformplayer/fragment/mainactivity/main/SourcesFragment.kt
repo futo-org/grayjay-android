@@ -1,5 +1,6 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -10,23 +11,23 @@ import android.widget.LinearLayout
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.AddSourceOptionsActivity
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
-import com.futo.platformplayer.views.sources.SourceUnderConstructionView
 import com.futo.platformplayer.views.adapters.DisabledSourceView
 import com.futo.platformplayer.views.adapters.EnabledSourceAdapter
 import com.futo.platformplayer.views.adapters.EnabledSourceViewHolder
 import com.futo.platformplayer.views.adapters.ItemMoveCallback
+import com.futo.platformplayer.views.sources.SourceUnderConstructionView
 import kotlinx.coroutines.runBlocking
-import java.util.*
+import java.util.Collections
 
 class SourcesFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -159,15 +160,15 @@ class SourcesFragment : MainFragment() {
             _didCreateView = true;
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         fun reloadSources() {
             enabledSources.clear();
             disabledSources.clear();
 
             enabledSources.addAll(StatePlatform.instance.getSortedEnabledClient());
             disabledSources.addAll(StatePlatform.instance.getAvailableClients().filter { !enabledSources.contains(it) });
-            _adapterSourcesEnabled?.notifyDataSetChanged();
+            _adapterSourcesEnabled.notifyDataSetChanged();
             setCanRemove(enabledSources.size > 1);
-            //_adapterSourcesDisabled?.notifyDataSetChanged();
             updateDisabledSources();
 
             if(_didCreateView) {
@@ -207,18 +208,15 @@ class SourcesFragment : MainFragment() {
         }
 
         private fun setCanRemove(canRemove: Boolean) {
-            val recyclerSourcesEnabled = _recyclerSourcesEnabled ?: return;
-            var adapterSourcesEnabled = _adapterSourcesEnabled ?: return;
-
-            for (i in 0 until recyclerSourcesEnabled.childCount) {
-                val view: View = recyclerSourcesEnabled.getChildAt(i)
-                val viewHolder = recyclerSourcesEnabled.getChildViewHolder(view)
+            for (i in 0 until _recyclerSourcesEnabled.childCount) {
+                val view: View = _recyclerSourcesEnabled.getChildAt(i)
+                val viewHolder = _recyclerSourcesEnabled.getChildViewHolder(view)
                 if (viewHolder is EnabledSourceViewHolder) {
                     viewHolder.setCanRemove(canRemove);
                 }
             }
 
-            adapterSourcesEnabled.canRemove = canRemove;
+            _adapterSourcesEnabled.canRemove = canRemove;
         }
 
         private fun onPrimaryChanged(client: IPlatformClient) {

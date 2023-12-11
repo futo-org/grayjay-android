@@ -1,8 +1,8 @@
 package com.futo.platformplayer.views.adapters
 
+import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.OnTouchListener
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.IPlatformClient
-import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.constructs.Event1
 
 class EnabledSourceViewHolder : ViewHolder {
@@ -25,6 +24,7 @@ class EnabledSourceViewHolder : ViewHolder {
     var source: IPlatformClient? = null
         private set
 
+    @SuppressLint("ClickableViewAccessibility")
     constructor(view: View, touchHelper: ItemTouchHelper) : super(view) {
         _imageSource = view.findViewById(R.id.image_source);
         _textSource = view.findViewById(R.id.text_source);
@@ -37,12 +37,13 @@ class EnabledSourceViewHolder : ViewHolder {
             source?.let { onClick.emit(it); };
         };
 
-        _imageDragDrop.setOnTouchListener(OnTouchListener { v, event ->
+        _imageDragDrop.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 touchHelper.startDrag(this);
             }
+
             false
-        });
+        };
 
         _buttonRemove.setOnClickListener {
             source?.let { onRemove.emit(it); };

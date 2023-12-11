@@ -64,7 +64,6 @@ class FilterGroup(
     val isMultiSelect: Boolean,
     val id: String? = null
 ) {
-    @kotlinx.serialization.Transient
     val idOrName: String get() = id ?: name;
 
     companion object {

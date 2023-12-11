@@ -8,7 +8,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
-import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.StoreItem
@@ -39,14 +38,14 @@ class StoreItemViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyVie
         }
     }
 
-    override fun bind(storeItem: StoreItem) {
+    override fun bind(value: StoreItem) {
         Glide.with(_image)
-            .load(storeItem.image)
+            .load(value.image)
             .crossfade()
             .into(_image);
 
-        _name.text = storeItem.name;
-        _storeItem = storeItem;
+        _name.text = value.name;
+        _storeItem = value;
     }
 
     companion object {

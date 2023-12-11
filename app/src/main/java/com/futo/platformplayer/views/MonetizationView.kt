@@ -9,10 +9,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.R
 import com.futo.platformplayer.HorizontalSpaceItemDecoration
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
@@ -22,7 +21,6 @@ import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.viewholders.StoreItemViewHolder
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 @Serializable
@@ -122,7 +120,7 @@ class MonetizationView : LinearLayout {
         }
     }
 
-    fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?) {
         val profile = cachedPolycentricProfile?.profile;
         if (profile != null) {
             if (profile.systemState.store.isNotEmpty()) {

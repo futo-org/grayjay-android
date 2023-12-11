@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.views.casting
 
 import android.content.Context
@@ -7,20 +9,29 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.*
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.AirPlayCastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.behavior.GestureControlView
 import com.google.android.exoplayer2.ui.DefaultTimeBar
 import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.exoplayer2.ui.TimeBar.OnScrubListener
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class CastView : ConstraintLayout {
     private val _thumbnail: ImageView;
@@ -39,7 +50,6 @@ class CastView : ConstraintLayout {
     private var _scope: CoroutineScope = CoroutineScope(Dispatchers.Main);
     private var _updateTimeJob: Job? = null;
     private var _inPictureInPicture: Boolean = false;
-    private var _originalBottomMargin: Int = 0;
 
     val onMinimizeClick = Event0();
     val onSettingsClick = Event0();

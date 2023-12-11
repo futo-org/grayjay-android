@@ -3,9 +3,12 @@ package com.futo.platformplayer.views.fields
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
+import android.widget.TableRow
+import android.widget.TextView
 import com.futo.platformplayer.R
-import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.logging.Logger
 import java.lang.reflect.Field
@@ -136,20 +139,19 @@ class DropdownField : TableRow, IField {
             arrayOf("Unset"))
             .toList().toTypedArray();
 
-        if(_options != null){
-            _spinner.adapter = ArrayAdapter<String>(context, R.layout.spinner_item_simple, _options).also {
-                it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
-            };
+        _spinner.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, _options).also {
+            it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
+        };
 
-            if(field.type == Int::class.java)
-                _selected = field.get(obj) as Int;
-            else {
-                val valStr = field.get(obj)?.toString();
-                _selected = if (_options.contains(valStr)) _options.indexOf(valStr) else 0;
-            }
-            _spinner.isSelected = false;
-            _spinner.setSelection(_selected, true);
+        _selected = if(field.type == Int::class.java) {
+            field.get(obj) as Int;
+        } else {
+            val valStr = field.get(obj)?.toString();
+            if (_options.contains(valStr)) _options.indexOf(valStr) else 0;
         }
+
+        _spinner.isSelected = false;
+        _spinner.setSelection(_selected, true);
         return this;
     }
     override fun setField() {

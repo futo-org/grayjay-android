@@ -1,6 +1,6 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
-import android.app.Activity
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -65,26 +65,26 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
         }
     }
 
-    override fun bind(video: VideoLocal) {
-        _video = video;
-        _videoName.text = video.name;
-        _videoDuration.text = video.duration.toHumanTime(false);
-        _videoAuthor.text = video.author.name;
-        _videoSize.text = (video.videoSource.sumOf { it.fileSize } + video.audioSource.sumOf { it.fileSize }).toHumanBytesSize(false);
+    @SuppressLint("SetTextI18n")
+    override fun bind(value: VideoLocal) {
+        _video = value;
+        _videoName.text = value.name;
+        _videoDuration.text = value.duration.toHumanTime(false);
+        _videoAuthor.text = value.author.name;
+        _videoSize.text = (value.videoSource.sumOf { it.fileSize } + value.audioSource.sumOf { it.fileSize }).toHumanBytesSize(false);
 
         val tokens = arrayListOf<String>();
-
-        if(video.videoSource.isNotEmpty()) {
-            tokens.add(video.videoSource.maxBy { it.width * it.height }.let { "${it.width}x${it.height} (${it.container})" });
+        if(value.videoSource.isNotEmpty()) {
+            tokens.add(value.videoSource.maxBy { it.width * it.height }.let { "${it.width}x${it.height} (${it.container})" });
         }
 
-        if (video.audioSource.isNotEmpty()) {
-            tokens.add(video.audioSource.maxBy { it.bitrate }.let { it.bitrate.toHumanBitrate() });
+        if (value.audioSource.isNotEmpty()) {
+            tokens.add(value.audioSource.maxBy { it.bitrate }.let { it.bitrate.toHumanBitrate() });
         }
 
-        _videoInfo.text =tokens.joinToString(" • ");
+        _videoInfo.text = tokens.joinToString(" • ");
 
-        _videoImage.loadThumbnails(video.thumbnails, true) {
+        _videoImage.loadThumbnails(value.thumbnails, true) {
             it.placeholder(R.drawable.placeholder_video_thumbnail)
                 .into(_videoImage);
         };

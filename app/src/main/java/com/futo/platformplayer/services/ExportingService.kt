@@ -6,23 +6,26 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.core.content.FileProvider
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.downloads.VideoExport
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.share
 import com.futo.platformplayer.states.Announcement
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.stores.FragmentedStorage
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -184,7 +187,7 @@ class ExportingService : Service() {
 
     fun closeExportSession() {
         Logger.i(TAG, "closeExportSession");
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_DETACH);
         _notificationManager?.cancel(EXPORT_NOTIF_ID);
         stopService();
         _started = false;

@@ -13,7 +13,9 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.AddSourceActivity
 import com.futo.platformplayer.activities.LoginActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -25,8 +27,8 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.buttons.BigButtonGroup
-import com.futo.platformplayer.views.sources.SourceHeaderView
 import com.futo.platformplayer.views.fields.FieldForm
+import com.futo.platformplayer.views.sources.SourceHeaderView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,7 +42,7 @@ class SourceDetailFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onHide() {
@@ -92,7 +94,7 @@ class SourceDetailFragment : MainFragment() {
             updateSourceViews();
         }
 
-        fun onShown(parameter: Any?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             if (parameter is SourcePluginConfig) {
                 loadConfig(parameter);
                 updateSourceViews();
@@ -135,7 +137,7 @@ class SourceDetailFragment : MainFragment() {
                         try {
                             _settingsAppForm.fromObject(source.descriptor.appSettings);
                             _settingsAppForm.onChanged.clear();
-                            _settingsAppForm.onChanged.subscribe { field, value ->
+                            _settingsAppForm.onChanged.subscribe { _, _ ->
                                 _settingsAppChanged = true;
                             }
                         } catch (e: Throwable) {
@@ -150,7 +152,7 @@ class SourceDetailFragment : MainFragment() {
                                 context.getString(R.string.these_settings_are_defined_by_the_plugin)
                             );
                             _settingsForm.onChanged.clear();
-                            _settingsForm.onChanged.subscribe { field, value ->
+                            _settingsForm.onChanged.subscribe { _, _ ->
                                 _settingsChanged = true;
                             }
                         } catch (e: Throwable) {
@@ -478,8 +480,8 @@ class SourceDetailFragment : MainFragment() {
 
                     Logger.i(TAG, "Update is available (config.version=${config.version}, source.config.version=${c.version}).");
 
-                    val c = context ?: return@launch;
-                    val intent = Intent(c, AddSourceActivity::class.java).apply {
+                    val ctx = context ?: return@launch;
+                    val intent = Intent(ctx, AddSourceActivity::class.java).apply {
                         data = Uri.parse(sourceUrl)
                     };
 

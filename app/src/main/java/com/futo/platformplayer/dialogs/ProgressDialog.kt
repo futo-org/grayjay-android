@@ -1,29 +1,13 @@
 package com.futo.platformplayer.dialogs
 
 import android.app.AlertDialog
-import android.app.PendingIntent.*
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageInstaller
 import android.graphics.drawable.Animatable
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
-import android.widget.Button
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
-import com.futo.platformplayer.receivers.InstallReceiver
 import com.futo.platformplayer.R
-import com.futo.platformplayer.Settings
-import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.states.StateApp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ProgressDialog : AlertDialog {
     companion object {
@@ -50,7 +34,7 @@ class ProgressDialog : AlertDialog {
         setCancelable(false);
         setCanceledOnTouchOutside(false);
         _text.text = "";
-        (_updateSpinner?.drawable as Animatable?)?.start();
+        (_updateSpinner.drawable as Animatable?)?.start();
 
         _handler(this);
     }

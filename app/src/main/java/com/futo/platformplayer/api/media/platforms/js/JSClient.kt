@@ -4,12 +4,9 @@ import android.content.Context
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
-import com.caoccao.javet.values.primitive.V8ValueNull
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
-import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.PlatformClientCapabilities
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -23,23 +20,38 @@ import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
-import com.futo.platformplayer.api.media.platforms.js.internal.*
-import com.futo.platformplayer.api.media.platforms.js.models.*
+import com.futo.platformplayer.api.media.platforms.js.internal.JSCallDocs
+import com.futo.platformplayer.api.media.platforms.js.internal.JSDocs
+import com.futo.platformplayer.api.media.platforms.js.internal.JSDocsParameter
+import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
+import com.futo.platformplayer.api.media.platforms.js.internal.JSOptional
+import com.futo.platformplayer.api.media.platforms.js.internal.JSParameterDocs
+import com.futo.platformplayer.api.media.platforms.js.models.IJSContentDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSChannel
+import com.futo.platformplayer.api.media.platforms.js.models.JSChannelPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSChapter
+import com.futo.platformplayer.api.media.platforms.js.models.JSComment
+import com.futo.platformplayer.api.media.platforms.js.models.JSCommentPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSContentPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSLiveChatWindowDescriptor
+import com.futo.platformplayer.api.media.platforms.js.models.JSLiveEventPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSPlaybackTracker
+import com.futo.platformplayer.api.media.platforms.js.models.JSPlaylistDetails
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.exceptions.PluginEngineException
-import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
-import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptValidationException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
@@ -50,7 +62,7 @@ open class JSClient : IPlatformClient {
     val config: SourcePluginConfig;
     protected val _context: Context;
     private val _plugin: V8Plugin;
-    private val plugin: V8Plugin get() = _plugin ?: throw IllegalStateException("Client not enabled");
+    private val plugin: V8Plugin get() = _plugin
 
     var descriptor: SourcePluginDescriptor
         private set;

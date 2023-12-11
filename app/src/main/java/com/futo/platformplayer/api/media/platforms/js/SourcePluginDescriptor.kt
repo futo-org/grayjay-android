@@ -2,7 +2,6 @@ package com.futo.platformplayer.api.media.platforms.js
 
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
@@ -107,9 +106,9 @@ class SourcePluginDescriptor {
 
         fun loadDefaults(config: SourcePluginConfig) {
             if(tabEnabled.enableHome == null)
-                tabEnabled.enableHome = config.enableInHome ?: true;
+                tabEnabled.enableHome = config.enableInHome
             if(tabEnabled.enableSearch == null)
-                tabEnabled.enableSearch = config.enableInSearch ?: true;
+                tabEnabled.enableSearch = config.enableInSearch
         }
     }
 

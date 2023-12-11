@@ -5,12 +5,23 @@ import android.content.Context
 import android.net.Uri
 import android.os.Looper
 import android.util.Base64
-import com.futo.platformplayer.*
-import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.ManagedHttpServer
-import com.futo.platformplayer.api.http.server.handlers.*
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.http.server.handlers.HttpConstantHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpFileHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpProxyHandler
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.builders.DashBuilder
@@ -21,18 +32,20 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
-import kotlinx.coroutines.*
+import com.futo.platformplayer.stores.CastingDeviceInfoStorage
+import com.futo.platformplayer.stores.FragmentedStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.net.InetAddress
-import java.util.*
+import java.util.UUID
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceListener
-import kotlin.collections.HashMap
-import com.futo.platformplayer.stores.CastingDeviceInfoStorage
-import com.futo.platformplayer.stores.FragmentedStorage
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import javax.jmdns.ServiceTypeListener
 
 class StateCasting {
@@ -213,7 +226,7 @@ class StateCasting {
             }
         }
         _castServer.start();
-        enableDeveloper(context.contentResolver, true);
+        enableDeveloper(true);
 
         Logger.i(TAG, "CastingService started.");
     }
@@ -1077,7 +1090,6 @@ class StateCasting {
             CastProtocolType.FCAST -> {
                 FCastCastingDevice(deviceInfo);
             }
-            else -> throw Exception("${deviceInfo.type} is not a valid casting protocol")
         }
     }
 
@@ -1172,7 +1184,7 @@ class StateCasting {
         invokeEvents?.let { _scopeMain.launch { it(); }; };
     }
 
-    fun enableDeveloper(contentResolver: ContentResolver, enableDev: Boolean){
+    fun enableDeveloper(enableDev: Boolean){
         _castServer.removeAllHandlers("dev");
         if(enableDev) {
             _castServer.addHandler(HttpFuntionHandler("GET", "/dashPlayer") { context ->

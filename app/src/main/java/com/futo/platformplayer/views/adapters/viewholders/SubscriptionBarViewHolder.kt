@@ -4,19 +4,19 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.R
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
-import com.futo.platformplayer.views.others.CreatorThumbnail
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.AnyAdapter
+import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<Subscription>(
@@ -46,25 +46,25 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
         }
     }
 
-    override fun bind(subscription: Subscription) {
+    override fun bind(value: Subscription) {
         _taskLoadProfile.cancel();
 
-        _channel = subscription.channel;
+        _channel = value.channel;
 
-        _creatorThumbnail.setThumbnail(subscription.channel.thumbnail, false);
-        _name.text = subscription.channel.name;
+        _creatorThumbnail.setThumbnail(value.channel.thumbnail, false);
+        _name.text = value.channel.name;
 
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(subscription.channel.url, true);
+        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.channel.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
             if (cachedProfile.expired) {
-                _taskLoadProfile.run(subscription.channel.id);
+                _taskLoadProfile.run(value.channel.id);
             }
         } else {
-            _taskLoadProfile.run(subscription.channel.id);
+            _taskLoadProfile.run(value.channel.id);
         }
 
-        _subscription = subscription;
+        _subscription = value;
     }
 
     private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {

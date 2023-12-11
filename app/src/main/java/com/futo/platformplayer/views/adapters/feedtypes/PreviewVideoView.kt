@@ -2,16 +2,14 @@ package com.futo.platformplayer.views.adapters.feedtypes
 
 import android.animation.ObjectAnimator
 import android.content.Context
-import android.content.res.Resources
 import android.util.Log
-import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -21,17 +19,22 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.dp
+import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.images.GlideHelper.Companion.loadThumbnails
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateHistory
-import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.video.PlayerManager
-import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.video.FutoThumbnailPlayer
@@ -88,26 +91,6 @@ open class PreviewVideoView : LinearLayout {
         inflate(feedStyle);
         _feedStyle = feedStyle;
         this.shouldShowTimeBar = shouldShowTimeBar
-        val playerContainer = findViewById<FrameLayout>(R.id.player_container);
-
-        val displayMetrics = Resources.getSystem().displayMetrics;
-        val width: Double = if (feedStyle == FeedStyle.PREVIEW) {
-            displayMetrics.widthPixels.toDouble();
-        } else {
-            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 177.0f, displayMetrics).toDouble();
-        };
-
-        /*
-        val ar = 16.0 / 9.0;
-        var height = width / ar;
-        height += TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, displayMetrics);
-
-        val layoutParams = playerContainer.layoutParams;
-        layoutParams.height = height.roundToInt();
-        playerContainer.layoutParams = layoutParams;*/
-
-        //Logger.i(TAG, "Player container height calculated to be $height.");
-
 
         _playerContainer = findViewById(R.id.player_container);
         _imageVideo = findViewById(R.id.image_video_thumbnail)
@@ -135,6 +118,7 @@ open class PreviewVideoView : LinearLayout {
         setOnClickListener {
             onOpenClicked()
         };
+
         _imageChannel.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
         _textChannelName.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
         _textVideoMetadata.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
@@ -212,14 +196,12 @@ open class PreviewVideoView : LinearLayout {
                 metadata += "${content.viewCount.toHumanNumber()} ${context.getString(R.string.views)} • ";
         }
 
-        var timeMeta = "";
-        if(isPlanned) {
+        var timeMeta = if(isPlanned) {
             val ago = content.datetime?.toHumanNowDiffString(true) ?: ""
-            timeMeta = context.getString(R.string.available_in) + " ${ago}";
-        }
-        else {
+            context.getString(R.string.available_in) + " $ago";
+        } else {
             val ago = content.datetime?.toHumanNowDiffString() ?: ""
-            timeMeta = if (ago.isNotBlank()) ago + " ago" else ago;
+            if (ago.isNotBlank()) ago + " ago" else ago;
         }
 
         if(content is IPlatformVideo) {

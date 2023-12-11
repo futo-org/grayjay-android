@@ -1,6 +1,5 @@
 package com.futo.platformplayer.subscription
 
-import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
@@ -24,7 +23,6 @@ import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
-import java.lang.IllegalStateException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
@@ -47,8 +45,6 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val tasks = getSubscriptionTasks(subs);
 
         val tasksGrouped = tasks.groupBy { it.client }
-        val taskCount = tasks.filter { !it.fromCache }.size;
-        val cacheCount = tasks.size - taskCount;
 
         Logger.i(TAG, "Starting Subscriptions Fetch:\n" +
             tasksGrouped.map { "   ${it.key.name}: ${it.value.count { !it.fromCache }}, Cached(${it.value.count { it.fromCache } })" }.joinToString("\n"));
@@ -63,7 +59,9 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 }
             }
 
-        } catch (ex: Throwable){}
+        } catch (e: Throwable){
+            Logger.e(TAG, "Error occurred in task.", e)
+        }
 
         val exs: ArrayList<Throwable> = arrayListOf();
 
@@ -78,25 +76,27 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 try {
                     val result = task.get();
                     if(result != null) {
-                        if(result.pager != null)
+                        if(result.pager != null) {
                             taskResults.add(result);
+                        }
+
                         if(result.exception != null) {
                             val ex = result.exception;
-                            if(ex != null) {
-                                val nonRuntimeEx = findNonRuntimeException(ex);
-                                if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
-                                    exs.add(nonRuntimeEx);
-                                else
-                                    throw ex.cause ?: ex;
+                            val nonRuntimeEx = findNonRuntimeException(ex);
+                            if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException)) {
+                                exs.add(nonRuntimeEx);
+                            } else {
+                                throw ex.cause ?: ex;
                             }
                         }
                     }
                 } catch (ex: ExecutionException) {
                     val nonRuntimeEx = findNonRuntimeException(ex.cause);
-                    if(nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
+                    if(nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException)) {
                         exs.add(nonRuntimeEx);
-                    else
+                    } else {
                         throw ex.cause ?: ex;
+                    }
                 };
             }
         }
@@ -108,18 +108,19 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 val sub = if(!entry.value.isEmpty()) entry.value[0].task.sub else null;
                 val liveTasks = entry.value.filter { !it.task.fromCache };
                 val cachedTasks = entry.value.filter { it.task.fromCache };
-                val livePager = if(!liveTasks.isEmpty()) StateCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }, {
+                val livePager = if(liveTasks.isNotEmpty()) StateCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }) {
                     onNewCacheHit.emit(sub!!, it);
-                }) else null;
-                val cachedPager = if(!cachedTasks.isEmpty()) MultiChronoContentPager(cachedTasks.map { it.pager!! }, true).apply { this.initialize() } else null;
-                if(livePager != null && cachedPager == null)
+                } else null;
+                val cachedPager = if(cachedTasks.isNotEmpty()) MultiChronoContentPager(cachedTasks.map { it.pager!! }, true).apply { this.initialize() } else null;
+                if(livePager != null && cachedPager == null) {
                     return@map livePager;
-                else if(cachedPager != null && livePager == null)
+                } else if(cachedPager != null && livePager == null) {
                     return@map cachedPager;
-                else if(cachedPager == null && livePager == null)
+                } else if(cachedPager == null) {
                     return@map EmptyPager();
-                else
-                    return@map MultiChronoContentPager(listOf(livePager!!, cachedPager!!), true).apply { this.initialize() }
+                } else {
+                    return@map MultiChronoContentPager(listOf(livePager!!, cachedPager), true).apply { this.initialize() }
+                }
             }
 
         val pager = MultiChronoContentPager(groupedPagers, allowFailure, 15);
@@ -138,9 +139,9 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     if(task.fromCache) {
                         finished++;
                         onProgress.emit(finished, forkTasks.size);
-                        if(cachedChannels.contains(task.url))
+                        if(cachedChannels.contains(task.url)) {
                             return@submit SubscriptionTaskResult(task, null, null);
-                        else {
+                        } else {
                             cachedChannels.add(task.url);
                             return@submit SubscriptionTaskResult(task, StateCache.instance.getChannelCachePager(task.url), null);
                         }
@@ -148,10 +149,11 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                 }
 
                 val shouldIgnore = synchronized(failedPlugins) { failedPlugins.contains(task.client.id) };
-                if(shouldIgnore)
+                if(shouldIgnore) {
                     return@submit SubscriptionTaskResult(task, null, null); //skipped
+                }
 
-                var taskEx: Throwable? = null;
+                val taskEx: Throwable?;
                 var pager: IPager<IPlatformContent>;
                 try {
                     val time = measureTimeMillis {
@@ -202,7 +204,6 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                         return@submit SubscriptionTaskResult(task, pager, taskEx);
                     }
                 }
-                return@submit SubscriptionTaskResult(task, null, taskEx);
             }
             forkTasks.add(forkTask);
         }
@@ -210,7 +211,6 @@ abstract class SubscriptionsTaskFetchAlgorithm(
     }
 
     abstract fun getSubscriptionTasks(subs: Map<Subscription, List<String>>): List<SubscriptionTask>;
-
 
     class SubscriptionTask(
         val client: JSClient,

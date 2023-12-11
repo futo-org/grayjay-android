@@ -4,31 +4,20 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.android.material.shape.CornerFamily
-import com.google.android.material.shape.ShapeAppearanceModel
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import userpackage.Protocol.ImageManifest
 
 class SupportView : LinearLayout {
     private val _layoutStore: LinearLayout
@@ -141,7 +130,7 @@ class SupportView : LinearLayout {
     private fun createDonationButton(destination: String): BigButton {
         val uri = Uri.parse(destination)
 
-        var action: (() -> Unit)? = null
+        var action: (() -> Unit)?
         val (name, iconDrawableId, cryptoType) = if (uri.scheme == "http" || uri.scheme == "https") {
             val hostName = uri.host ?: ""
 
@@ -202,7 +191,7 @@ class SupportView : LinearLayout {
         }
     }
 
-    fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(profile: PolycentricProfile?) {
         if (_polycentricProfile == profile) {
             return
         }

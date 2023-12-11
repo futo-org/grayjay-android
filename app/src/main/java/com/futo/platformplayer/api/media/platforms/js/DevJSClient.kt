@@ -1,14 +1,14 @@
 package com.futo.platformplayer.api.media.platforms.js
 
 import android.content.Context
-import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.states.StateApp
-import java.util.*
+import com.futo.platformplayer.states.StateDeveloper
+import java.util.UUID
 
 class DevJSClient : JSClient {
     override val id: String
@@ -26,8 +26,8 @@ class DevJSClient : JSClient {
         _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
 
-        onCaptchaException.subscribe { client, captcha ->
-            StateApp.instance.handleCaptchaException(client, captcha);
+        onCaptchaException.subscribe { client, c ->
+            StateApp.instance.handleCaptchaException(client, c);
         }
     }
     //TODO: Misisng auth/captcha pass on purpose?
@@ -37,8 +37,8 @@ class DevJSClient : JSClient {
         _captcha = captcha;
         this.devID = devID ?: UUID.randomUUID().toString().substring(0, 5);
 
-        onCaptchaException.subscribe { client, captcha ->
-            StateApp.instance.handleCaptchaException(client, captcha);
+        onCaptchaException.subscribe { client, c ->
+            StateApp.instance.handleCaptchaException(client, c);
         }
     }
 

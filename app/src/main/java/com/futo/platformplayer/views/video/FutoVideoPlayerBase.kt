@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.futo.platformplayer.views.video
 
 import android.content.Context
@@ -6,20 +8,31 @@ import android.util.AttributeSet
 import android.widget.RelativeLayout
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
-import com.futo.platformplayer.helpers.VideoHelper
-import com.futo.platformplayer.api.media.models.streams.sources.*
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.receivers.MediaControlReceiver
+import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.video.PlayerManager
-import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.MergingMediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -392,10 +405,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
     private fun swapVideoSourceDash(videoSource: IDashManifestSource) {
         Logger.i(TAG, "Loading VideoSource [Dash]");
-        _lastVideoMediaSource = if (videoSource != null) DashMediaSource.Factory(DefaultHttpDataSource.Factory()
+        _lastVideoMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory()
             .setUserAgent(DEFAULT_USER_AGENT))
-            .createMediaSource(MediaItem.fromUri(videoSource.url));
-        else null;
+            .createMediaSource(MediaItem.fromUri(videoSource.url))
     }
     private fun swapVideoSourceHLS(videoSource: IHLSManifestSource) {
         Logger.i(TAG, "Loading VideoSource [HLS]");
@@ -513,7 +525,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             this.onSourceChanged(lastVideoSource, lastAudioSource, resume);
         }
         else
-            player.player?.stop();
+            player.player.stop();
     }
 
     fun clear() {
@@ -535,6 +547,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         exoPlayer?.setVolume(volume);
     }
 
+    @Suppress("DEPRECATION")
     protected open fun onPlayerError(error: PlaybackException) {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss");
 

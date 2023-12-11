@@ -27,7 +27,7 @@ fun <R> V8Value?.orDefault(default: R, handler: (V8Value)->R): R {
 inline fun <reified T> V8Value.expectOrThrow(config: IV8PluginConfig, contextName: String): T  {
     if(this !is T)
         throw ScriptImplementationException(config, "Expected ${contextName} to be of type ${T::class.simpleName}, but found ${this::class.simpleName}");
-    return this as T;
+    return this;
 }
 
 //Singles

@@ -15,10 +15,8 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.adapters.AnyAdapter
-import com.futo.platformplayer.views.adapters.SubscriptionViewHolder
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
@@ -62,31 +60,31 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
         }
     }
 
-    override fun bind(authorLink: PlatformAuthorLink) {
+    override fun bind(value: PlatformAuthorLink) {
         _taskLoadProfile.cancel();
 
-        _creatorThumbnail.setThumbnail(authorLink.thumbnail, false);
-        _textName.text = authorLink.name;
+        _creatorThumbnail.setThumbnail(value.thumbnail, false);
+        _textName.text = value.name;
 
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(authorLink.url, true);
+        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.url, true);
         if (cachedProfile != null) {
             onProfileLoaded(cachedProfile, false);
             if (cachedProfile.expired) {
-                _taskLoadProfile.run(authorLink.id);
+                _taskLoadProfile.run(value.id);
             }
         } else {
-            _taskLoadProfile.run(authorLink.id);
+            _taskLoadProfile.run(value.id);
         }
 
-        if(authorLink.subscribers == null || (authorLink.subscribers ?: 0) <= 0L)
+        if(value.subscribers == null || (value.subscribers ?: 0) <= 0L)
             _textMetadata.visibility = View.GONE;
         else {
-            _textMetadata.text = if((authorLink.subscribers ?: 0) > 0) authorLink.subscribers!!.toHumanNumber() + " " + _view.context.getString(R.string.subscribers) else "";
+            _textMetadata.text = if((value.subscribers ?: 0) > 0) value.subscribers!!.toHumanNumber() + " " + _view.context.getString(R.string.subscribers) else "";
             _textMetadata.visibility = View.VISIBLE;
         }
-        _buttonSubscribe.setSubscribeChannel(authorLink.url);
-        _platformIndicator.setPlatformFromClientID(authorLink.id.pluginId);
-        _authorLink = authorLink;
+        _buttonSubscribe.setSubscribeChannel(value.url);
+        _platformIndicator.setPlatformFromClientID(value.id.pluginId);
+        _authorLink = value;
     }
 
     private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {

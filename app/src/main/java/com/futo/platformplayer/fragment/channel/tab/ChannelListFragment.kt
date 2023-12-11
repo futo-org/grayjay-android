@@ -1,7 +1,6 @@
 package com.futo.platformplayer.fragment.channel.tab
 
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +8,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.constructs.Event1
@@ -18,11 +18,10 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.viewholders.CreatorViewHolder
-import com.futo.polycentric.core.toUrl
-import kotlinx.coroutines.runBlocking
 
 class ChannelListFragment : Fragment, IChannelTabFragment {
     private var _channels: ArrayList<IPlatformChannel> = arrayListOf();
@@ -84,7 +83,7 @@ class ChannelListFragment : Fragment, IChannelTabFragment {
         recyclerCreator.layoutManager = _lm;
         _recyclerCreator = recyclerCreator;
         _lastChannel?.also { setChannel(it); };
-        _lastPolycentricProfile?.also { setPolycentricProfile(it, animate = false); }
+        _lastPolycentricProfile?.also { setPolycentricProfile(it); }
 
         return view;
     }
@@ -125,7 +124,7 @@ class ChannelListFragment : Fragment, IChannelTabFragment {
         }
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
+    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _taskLoadChannel.cancel();
         _lastPolycentricProfile = polycentricProfile;
 

@@ -8,15 +8,20 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.fixHtmlLinks
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
@@ -169,7 +174,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
 
                 _buttonReplies.setLoading(false)
 
-                val replies = likesDislikesReplies.replyCount ?: 0;
+                val replies = likesDislikesReplies.replyCount;
                 _buttonReplies.visibility = View.VISIBLE;
                 _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
             } else {

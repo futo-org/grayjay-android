@@ -5,6 +5,7 @@ import com.futo.platformplayer.api.media.structures.ReusablePager.Companion.asRe
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -25,6 +26,7 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
 
     private val _pending: MutableList<Deferred<IPager<T>?>>;
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     constructor(pagers: List<IPager<T>>, pendingPagers: List<Deferred<IPager<T>?>>, placeholderPagers: List<IPager<T>>? = null) {
         _pagersReusable = pagers.map { ReusablePager(it) }.toMutableList();
         _totalPagers = pagers.size + pendingPagers.size;
@@ -100,7 +102,7 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
     }
 
     private fun getCurrentSubPagers(): List<IPager<T>> {
-        val reusableWindows = _pagersReusable.map { it.getWindow() as IPager<T> };
+        val reusableWindows = _pagersReusable.map { it.getWindow() };
         val placeholderWindows = synchronized(_pending) {
             _placeHolderPagersPaired.filter { _pending.contains(it.key) }.values
         }

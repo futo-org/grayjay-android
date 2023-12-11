@@ -14,21 +14,15 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
-import com.futo.platformplayer.assume
-import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.models.Playlist
-import com.futo.platformplayer.models.SearchType
-import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.adapters.*
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
-import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import com.google.android.material.appbar.AppBarLayout
-import kotlin.collections.ArrayList
 
 
 class PlaylistsFragment : MainFragment() {
@@ -52,7 +46,7 @@ class PlaylistsFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown();
     }
 
     override fun onBackPressed(): Boolean {
@@ -133,11 +127,12 @@ class PlaylistsFragment : MainFragment() {
             StatePlaylists.instance.onWatchLaterChanged.remove(this);
         }
 
-        fun onShown(parameter: Any?, isBack: Boolean) {
+        @SuppressLint("NotifyDataSetChanged")
+        fun onShown() {
             playlists.clear()
             playlists.addAll(
-                StatePlaylists.instance.getPlaylists()
-                    .sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) });
+                StatePlaylists.instance.getPlaylists().sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) }
+            );
             _adapterPlaylist.notifyDataSetChanged();
 
             updateWatchLater();

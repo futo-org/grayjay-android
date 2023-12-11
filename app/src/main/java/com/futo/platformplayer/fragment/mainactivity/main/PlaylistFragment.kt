@@ -41,7 +41,7 @@ class PlaylistFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -150,7 +150,7 @@ class PlaylistFragment : MainFragment() {
                 };
         }
 
-        fun onShown(parameter: Any ?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             _taskLoadPlaylist.cancel();
 
             if (parameter is Playlist?) {

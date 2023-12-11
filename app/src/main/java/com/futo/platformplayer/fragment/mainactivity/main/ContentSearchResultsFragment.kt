@@ -6,10 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -18,6 +16,8 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.isHttpUrl
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,7 +32,7 @@ class ContentSearchResultsFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        _view?.onShown(parameter, isBack);
+        _view?.onShown(parameter);
     }
 
     override fun onHide() {
@@ -110,7 +110,7 @@ class ContentSearchResultsFragment : MainFragment() {
             _taskSearch.cancel();
         }
 
-        fun onShown(parameter: Any?, isBack: Boolean) {
+        fun onShown(parameter: Any?) {
             if(parameter is SuggestionsFragmentData) {
                 setQuery(parameter.query, false);
                 setChannelUrl(parameter.channelUrl, false);
@@ -127,7 +127,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     setFilterButtonVisible(true);
 
                     onFilterClick.subscribe(this) {
-                        _overlayContainer?.let {
+                        _overlayContainer.let {
                             val filterValuesCopy = HashMap(_filterValues);
                             val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy);
                             filtersOverlay.onOK.subscribe { enabledClientIds, changed ->

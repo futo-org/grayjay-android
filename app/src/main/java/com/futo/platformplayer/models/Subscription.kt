@@ -4,7 +4,6 @@ import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
-import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
@@ -74,7 +73,7 @@ class Subscription {
         this.channel = SerializedChannel.fromChannel(channel);
     }
 
-    fun updatePlayback(content: IPlatformContentDetails, seconds: Int) {
+    fun updatePlayback(seconds: Int) {
         playbackSeconds += seconds;
     }
     fun addPlaybackView() {

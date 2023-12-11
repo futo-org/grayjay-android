@@ -3,9 +3,9 @@ package com.futo.platformplayer.views.fields
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
-import android.widget.*
+import android.widget.TableRow
+import android.widget.TextView
 import com.futo.platformplayer.R
-import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.others.Toggle
@@ -94,15 +94,13 @@ class ToggleField : TableRow, IField {
             _description.visibility = View.VISIBLE;
         }
 
-        val value = field.get(obj);
-        val toggleValue =  if(value is Boolean)
-            value;
-        else if(value is Number)
-            (value as Number).toInt() > 0;
-        else if(value == null)
-            false;
-        else
-            false;
+        val toggleValue = when (val value = field.get(obj)) {
+            is Boolean -> value
+            is Number -> value.toInt() > 0
+            null -> false
+            else -> false
+        };
+
         _toggle.setValue(toggleValue, true);
         _lastValue = toggleValue;
 

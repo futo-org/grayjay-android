@@ -1,6 +1,5 @@
 package com.futo.platformplayer.subscription
 
-import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -15,15 +14,10 @@ import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import java.lang.Exception
-import java.lang.IllegalStateException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
@@ -42,14 +36,16 @@ class SimpleSubscriptionAlgorithm(
         for(sub in subs) {
             for(subUrl in sub.value) {
                 val client = StatePlatform.instance.getChannelClientOrNull(sub.key.channel.url);
-                if (client !is JSClient)
+                if (client !is JSClient) {
                     continue;
+                }
 
                 val channelCaps = client.getChannelCapabilities();
-                if (!pluginReqCounts.containsKey(client))
+                if (!pluginReqCounts.containsKey(client)) {
                     pluginReqCounts[client] = 1;
-                else
+                } else {
                     pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
+                }
 
                 if (channelCaps.hasType(ResultCapabilities.TYPE_STREAMS) && sub.key.shouldFetchStreams())
                     pluginReqCounts[client] = pluginReqCounts[client]!! + 1;
@@ -71,7 +67,6 @@ class SimpleSubscriptionAlgorithm(
         val tasks = mutableListOf<ForkJoinTask<Pair<Subscription, IPager<IPlatformContent>?>>>();
         var finished = 0;
         val exceptionMap: HashMap<Subscription, Throwable> = hashMapOf();
-        val concurrency = Settings.instance.subscriptions.getSubscriptionsConcurrency();
         val failedPlugins = arrayListOf<String>();
         for (sub in subs.filter { StatePlatform.instance.hasEnabledChannelClient(it.key.channel.url) })
             tasks.add(getSubscription(sub.key, sub.value, failedPlugins){ channelEx ->
@@ -79,7 +74,6 @@ class SimpleSubscriptionAlgorithm(
                 onProgress.emit(finished, tasks.size);
 
                 val ex = channelEx?.cause;
-
                 if(channelEx != null) {
                     synchronized(exceptionMap) {
                         exceptionMap.put(sub.key, channelEx);
@@ -107,42 +101,46 @@ class SimpleSubscriptionAlgorithm(
 
         val timeTotal = measureTimeMillis {
             val taskResults = arrayListOf<IPager<IPlatformContent>>();
-            for(task in tasks) {
+            for (task in tasks) {
                 try {
                     val result = task.get();
-                    if(result != null) {
-                        if(result.second != null)
+                    if (result != null) {
+                        if(result.second != null) {
                             taskResults.add(result.second!!);
-                        if(exceptionMap.containsKey(result.first)) {
+                        }
+
+                        if (exceptionMap.containsKey(result.first)) {
                             val ex = exceptionMap[result.first];
-                            if(ex != null) {
+                            if (ex != null) {
                                 val nonRuntimeEx = findNonRuntimeException(ex);
-                                if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
+                                if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException)) {
                                     exs.add(nonRuntimeEx);
-                                else
+                                } else {
                                     throw ex.cause ?: ex;
+                                }
                             }
                         }
                     }
                 } catch (ex: ExecutionException) {
                     val nonRuntimeEx = findNonRuntimeException(ex.cause);
-                    if(nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException))
+                    if (nonRuntimeEx != null && (nonRuntimeEx is PluginException || nonRuntimeEx is ChannelException)) {
                         exs.add(nonRuntimeEx);
-                    else
+                    } else {
                         throw ex.cause ?: ex;
+                    }
                 };
             }
             subsPager = taskResults.toTypedArray();
         }
         Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms")
 
-        if(subsPager.size <= 0 && exs.any())
+        if(subsPager.isEmpty() && exs.any()) {
             throw exs.first();
+        }
 
         Logger.i(StateSubscriptions.TAG, "Subscription pager with ${subsPager.size} channels");
         val pager = MultiChronoContentPager(subsPager, allowFailure, 15);
         pager.initialize();
-        //return Pair(pager, exs);
         return Result(DedupContentPager(pager), exs);
     }
 
@@ -156,7 +154,6 @@ class SimpleSubscriptionAlgorithm(
                     val platformClient = StatePlatform.instance.getChannelClientOrNull(url, toIgnore) ?: continue;
                     val time = measureTimeMillis {
                         pager = StatePlatform.instance.getChannelContent(platformClient, url, true, threadPool.poolSize, toIgnore);
-
                         pager = StateCache.cachePagerResults(scope, pager!!) {
                             onNewCacheHit.emit(sub, it);
                         };
@@ -172,16 +169,19 @@ class SimpleSubscriptionAlgorithm(
                     Logger.e(StateSubscriptions.TAG, "Subscription [${sub.channel.name}] failed", ex);
                     val channelEx = ChannelException(sub.channel, ex);
                     onFinished(channelEx);
-                    if(!withCacheFallback)
+                    if(!withCacheFallback) {
                         throw channelEx;
-                    else {
+                    } else {
                         Logger.i(StateSubscriptions.TAG, "Channel ${sub.channel.name} failed, substituting with cache");
                         pager = StateCache.instance.getChannelCachePager(sub.channel.url);
                     }
                 }
             }
-            if(pager == null)
+
+            if(pager == null) {
                 throw IllegalStateException("Uncaught nullable pager");
+            }
+
             return@submit Pair(sub, pager);
         };
     }

@@ -7,7 +7,6 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.IPluginSourced
-import com.futo.platformplayer.api.media.PlatformClientPool
 import com.futo.platformplayer.api.media.PlatformMultiClientPool
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.FilterGroup
@@ -27,7 +26,13 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
-import com.futo.platformplayer.api.media.structures.*
+import com.futo.platformplayer.api.media.structures.EmptyPager
+import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
+import com.futo.platformplayer.api.media.structures.MultiDistributionChannelPager
+import com.futo.platformplayer.api.media.structures.MultiDistributionContentPager
+import com.futo.platformplayer.api.media.structures.PlaceholderPager
+import com.futo.platformplayer.api.media.structures.RefreshDistributionContentPager
 import com.futo.platformplayer.awaitFirstNotNullDeferred
 import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.constructs.Event0
@@ -37,14 +42,21 @@ import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
-import com.futo.platformplayer.stores.*
-import kotlinx.coroutines.*
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.stores.StringStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.internal.concat
 import java.lang.Thread.sleep
 import java.time.OffsetDateTime
-import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap.PlatformMutabilityMapping
 import kotlin.streams.asSequence
-import kotlin.streams.toList
 
 /***
  * Used to interact with sources/clients
@@ -149,20 +161,20 @@ class StatePlatform {
 
 
     suspend fun updateAvailableClients(context: Context, reloadPlugins: Boolean = false) {
-        if(reloadPlugins)
+        if(reloadPlugins) {
             StatePlugins.instance.reloadPluginFile();
+        }
+
         withContext(Dispatchers.IO) {
             var enabled: Array<String>;
             synchronized(_clientsLock) {
-                for(enabled in _enabledClients) {
-                    enabled.disable();
-                    onSourceDisabled.emit(enabled);
+                for(e in _enabledClients) {
+                    e.disable();
+                    onSourceDisabled.emit(e);
                 }
 
                 _enabledClients.clear();
                 _availableClients.clear();
-                //_availableClients.add(YoutubeClient());
-                //_availableClients.add(OdyseeClient());
 
                 _icons.clear();
                 _icons[StateDeveloper.DEV_ID] = ImageVariable(null, R.drawable.ic_security_red);
@@ -170,40 +182,43 @@ class StatePlatform {
                 StatePlugins.instance.updateEmbeddedPlugins(context);
                 StatePlugins.instance.installMissingEmbeddedPlugins(context);
 
-                for(plugin in StatePlugins.instance.getPlugins()) {
-
+                for (plugin in StatePlugins.instance.getPlugins()) {
                     _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
                             ImageVariable(plugin.config.absoluteIconUrl, null);
 
                     val client = JSClient(context, plugin);
-                    client.onCaptchaException.subscribe { client, ex ->
-                        StateApp.instance.handleCaptchaException(client, ex);
+                    client.onCaptchaException.subscribe { c, ex ->
+                        StateApp.instance.handleCaptchaException(c, ex);
                     }
                     _availableClients.add(client);
                 }
 
-                if(_availableClients.distinctBy { it.id }.count() < _availableClients.size)
+                if(_availableClients.distinctBy { it.id }.count() < _availableClients.size) {
                     throw IllegalStateException("Attempted to add 2 clients with the same ID");
+                }
 
                 enabled = _enabledClientsPersistent.getAllValues()
                     .filter { _availableClients.any { ac -> ac.id == it } }
                     .toTypedArray();
-                if(enabled.isEmpty())
+                if(enabled.isEmpty()) {
                     enabled = StatePlugins.instance.getEmbeddedSourcesDefault(context)
                         .filter { id -> _availableClients.any { it.id == id } }
                         .toTypedArray();
+                }
 
 
                 val primary = _primaryClientPersistent.value;
-                if(primary.isNullOrEmpty() || primary == StateDeveloper.DEV_ID)
+                if(primary.isEmpty() || primary == StateDeveloper.DEV_ID) {
                     selectPrimaryClient(enabled.firstOrNull() ?: _availableClients.first().id);
-                else if(!_availableClients.any { it.id == primary })
+                } else if(!_availableClients.any { it.id == primary }) {
                     selectPrimaryClient(_availableClients.firstOrNull()?.id!!);
-                else
+                } else {
                     selectPrimaryClient(primary);
+                }
 
-                if(!enabled.any { it == primaryClient.id })
+                if(!enabled.any { it == primaryClient.id }) {
                     enabled = enabled.concat(primaryClient.id);
+                }
             }
             selectClients(*enabled);
         };
@@ -294,8 +309,8 @@ class StatePlatform {
                     StatePlugins.instance.getPlugin(id)
                         ?: throw IllegalStateException("Client existed, but plugin config didn't")
                 );
-            newClient.onCaptchaException.subscribe { client, ex ->
-                StateApp.instance.handleCaptchaException(client, ex);
+            newClient.onCaptchaException.subscribe { c, ex ->
+                StateApp.instance.handleCaptchaException(c, ex);
             }
 
             synchronized(_clientsLock) {
@@ -654,10 +669,11 @@ class StatePlatform {
     fun getChannel(url: String, updateSubscriptions: Boolean = true): Deferred<IPlatformChannel>  {
         Logger.i(TAG, "Platform - getChannel");
         val channel = StateSubscriptions.instance.getSubscription(url);
-        if(channel != null)
-            return _scope.async { getChannelLive(url, updateSubscriptions) }; //_batchTaskGetChannel.execute(channel);
-        else
-            return _scope.async { getChannelLive(url, updateSubscriptions) };
+        return if(channel != null) {
+            _scope.async { getChannelLive(url, updateSubscriptions) }; //_batchTaskGetChannel.execute(channel);
+        } else {
+            _scope.async { getChannelLive(url, updateSubscriptions) };
+        }
     }
 
     fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
