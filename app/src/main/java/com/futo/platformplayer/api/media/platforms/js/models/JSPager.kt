@@ -4,6 +4,7 @@ import android.os.Looper
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
@@ -12,7 +13,7 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.warnIfMainThread
 
 abstract class JSPager<T> : IPager<T> {
-    protected val plugin: V8Plugin;
+    protected val plugin: JSClient;
     protected val config: SourcePluginConfig;
     protected var pager: V8ValueObject;
 
@@ -21,9 +22,9 @@ abstract class JSPager<T> : IPager<T> {
     private var _hasMorePages: Boolean = false;
     //private var _morePagesWasFalse: Boolean = false;
 
-    val isAvailable get() = plugin._runtime?.let { !it.isClosed && !it.isDead } ?: false;
+    val isAvailable get() = plugin.getUnderlyingPlugin()._runtime?.let { !it.isClosed && !it.isDead } ?: false;
 
-    constructor(config: SourcePluginConfig, plugin: V8Plugin, pager: V8ValueObject) {
+    constructor(config: SourcePluginConfig, plugin: JSClient, pager: V8ValueObject) {
         this.plugin = plugin;
         this.pager = pager;
         this.config = config;
@@ -43,7 +44,7 @@ abstract class JSPager<T> : IPager<T> {
     override fun nextPage() {
         warnIfMainThread("JSPager.nextPage");
 
-        pager = plugin.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
+        pager = plugin.getUnderlyingPlugin().catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
             pager.invoke("nextPage", arrayOf<Any>());
         };
         _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;

@@ -1,12 +1,16 @@
 package com.futo.platformplayer.api.media.platforms.js.internal
 
+import android.net.Uri
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequest
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.matchesDomain
+import java.util.UUID
 
 class JSHttpClient : ManagedHttpClient {
     private val _jsClient: JSClient?;
@@ -14,12 +18,15 @@ class JSHttpClient : ManagedHttpClient {
     private val _auth: SourceAuth?;
     private val _captcha: SourceCaptchaData?;
 
+    val clientId = UUID.randomUUID().toString();
+
     var doUpdateCookies: Boolean = true;
     var doApplyCookies: Boolean = true;
     var doAllowNewCookies: Boolean = true;
     val isLoggedIn: Boolean get() = _auth != null;
 
     private var _currentCookieMap: HashMap<String, HashMap<String, String>>;
+    private var _otherCookieMap: HashMap<String, HashMap<String, String>>;
 
     constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, config: SourcePluginConfig? = null) : super() {
         _jsClient = jsClient;
@@ -28,6 +35,7 @@ class JSHttpClient : ManagedHttpClient {
         _captcha = captcha;
 
         _currentCookieMap = hashMapOf();
+        _otherCookieMap = hashMapOf();
         if(!auth?.cookieMap.isNullOrEmpty()) {
             for(domainCookies in auth!!.cookieMap!!)
                 _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
@@ -47,6 +55,50 @@ class JSHttpClient : ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
         newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
         return newClient;
+    }
+
+    fun applyRequest(req: JSRequestModifier.Request) {
+
+
+    }
+
+    //TODO: Use this in beforeRequest to remove dup code
+    fun applyHeaders(url: Uri, headers: MutableMap<String, String>, applyAuth: Boolean = false, applyOtherCookies: Boolean = false) {
+        val domain = url.host!!.lowercase();
+        val auth = _auth;
+        if (applyAuth && auth != null) {
+            //TODO: Possibly add doApplyHeaders
+            for (header in auth.headers.filter { domain.matchesDomain(it.key) }.flatMap { it.value.entries })
+                headers.put(header.key, header.value);
+        }
+
+        if(doApplyCookies && (applyAuth || applyOtherCookies)) {
+            val cookiesToApply = hashMapOf<String, String>();
+            if(applyOtherCookies)
+                synchronized(_otherCookieMap) {
+                    for(cookie in _otherCookieMap
+                        .filter { domain.matchesDomain(it.key) }
+                        .flatMap { it.value.toList() })
+                        cookiesToApply[cookie.first] = cookie.second;
+                }
+            if(applyAuth)
+                synchronized(_currentCookieMap) {
+                    for(cookie in _currentCookieMap
+                        .filter { domain.matchesDomain(it.key) }
+                        .flatMap { it.value.toList() })
+                        cookiesToApply[cookie.first] = cookie.second;
+                };
+
+            if(cookiesToApply.size > 0) {
+                val cookieString = cookiesToApply.map { it.key + "=" + it.value }.joinToString("; ");
+
+                val existingCookies = headers["Cookie"];
+                if(!existingCookies.isNullOrEmpty())
+                    headers.put("Cookie", existingCookies.trim(';') + "; " + cookieString);
+                else
+                    headers.put("Cookie", cookieString);
+            }
+        }
     }
 
     override fun beforeRequest(request: okhttp3.Request): okhttp3.Request {
@@ -101,10 +153,10 @@ class JSHttpClient : ManagedHttpClient {
             val defaultCookieDomain =
                 "." + domainParts.drop(domainParts.size - 2).joinToString(".");
             for (header in resp.headers) {
-                if ((_auth != null || _currentCookieMap.isNotEmpty()) && header.first.lowercase() == "set-cookie") {
+                if(header.first.lowercase() == "set-cookie") {
+                    var domainToUse = domain;
                     val cookie = cookieStringToPair(header.second);
                     var cookieValue = cookie.second;
-                    var domainToUse = domain;
 
                     if (cookie.first.isNotEmpty() && cookie.second.isNotEmpty()) {
                         val cookieParts = cookie.second.split(";");
@@ -124,17 +176,33 @@ class JSHttpClient : ManagedHttpClient {
                         domainToUse = if (cookieVariables.containsKey("domain"))
                             cookieVariables["domain"]!!.lowercase();
                         else defaultCookieDomain;
+                        //TODO: Make sure this has no negative effect besides apply cookies to root domain
+                        if(!domainToUse.startsWith("."))
+                            domainToUse = ".${domainToUse}";
                     }
 
-                    val cookieMap = if (_currentCookieMap.containsKey(domainToUse))
-                        _currentCookieMap[domainToUse]!!;
-                    else {
-                        val newMap = hashMapOf<String, String>();
-                        _currentCookieMap[domainToUse] = newMap
-                        newMap;
+                    if ((_auth != null || _currentCookieMap.isNotEmpty())) {
+                        val cookieMap = if (_currentCookieMap.containsKey(domainToUse))
+                            _currentCookieMap[domainToUse]!!;
+                        else {
+                            val newMap = hashMapOf<String, String>();
+                            _currentCookieMap[domainToUse] = newMap
+                            newMap;
+                        }
+                        if (cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                            cookieMap[cookie.first] = cookieValue;
                     }
-                    if(cookieMap.containsKey(cookie.first) || doAllowNewCookies)
-                        cookieMap[cookie.first] = cookieValue;
+                    else {
+                        val cookieMap = if (_otherCookieMap.containsKey(domainToUse))
+                            _otherCookieMap[domainToUse]!!;
+                        else {
+                            val newMap = hashMapOf<String, String>();
+                            _otherCookieMap[domainToUse] = newMap
+                            newMap;
+                        }
+                        if (cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                            cookieMap[cookie.first] = cookieValue;
+                    }
                 }
             }
         }

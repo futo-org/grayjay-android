@@ -3,7 +3,9 @@ package com.futo.platformplayer.api.media.platforms.js.models.sources
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 
 class JSAudioUrlRangeSource : JSAudioUrlSource, IStreamMetaDataSource {
@@ -22,8 +24,9 @@ class JSAudioUrlRangeSource : JSAudioUrlSource, IStreamMetaDataSource {
         && indexEnd != null)
         StreamMetaData(initStart, initEnd, indexStart, indexEnd) else null;
 
-    constructor(config: IV8PluginConfig, obj: V8ValueObject) : super(config, obj) {
+    constructor(plugin: JSClient, obj: V8ValueObject) : super(plugin, obj) {
         val contextName = "JSAudioUrlRangeSource";
+        val config = plugin.config;
 
         itagId = _obj.getOrDefault(config, "itagId", contextName, null);
         initStart = _obj.getOrDefault(config, "initStart", contextName, null);

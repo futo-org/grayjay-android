@@ -45,7 +45,12 @@ class PackageHttp: V8Package {
 
     @V8Function
     fun newClient(withAuth: Boolean): PackageHttpClient {
-        return PackageHttpClient(this, if(withAuth) _clientAuth.clone() else _client.clone());
+        val httpClient = if(withAuth) _clientAuth.clone() else _client.clone();
+        if(httpClient is JSHttpClient)
+            _plugin.registerHttpClient(httpClient);
+        val client = PackageHttpClient(this, httpClient);
+
+        return client;
     }
     @V8Function
     fun getDefaultClient(withAuth: Boolean): PackageHttpClient {
@@ -187,10 +192,19 @@ class PackageHttp: V8Package {
 
         @Transient
         private val _defaultHeaders = mutableMapOf<String, String>();
+        @Transient
+        private val _clientId: String?;
+
+        @V8Property
+        fun clientId(): String? {
+            return _clientId;
+        }
+
 
         constructor(pack: PackageHttp, baseClient: ManagedHttpClient): super() {
             _package = pack;
             _client = baseClient;
+            _clientId = if(_client is JSHttpClient) _client.clientId else null;
         }
 
         @V8Function

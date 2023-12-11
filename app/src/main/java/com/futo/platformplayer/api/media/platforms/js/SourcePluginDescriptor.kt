@@ -26,17 +26,19 @@ class SourcePluginDescriptor {
     @kotlinx.serialization.Transient
     val onCaptchaChanged = Event0();
 
-    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null) {
+    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null, settings: HashMap<String, String?>? = null) {
         this.config = config;
         this.authEncrypted = authEncrypted;
         this.captchaEncrypted = captchaEncrypted;
         this.flags = listOf();
+        this.settings = settings ?: hashMapOf();
     }
-    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null, flags: List<String>) {
+    constructor(config :SourcePluginConfig, authEncrypted: String? = null, captchaEncrypted: String? = null, flags: List<String>,  settings: HashMap<String, String?>? = null) {
         this.config = config;
         this.authEncrypted = authEncrypted;
         this.captchaEncrypted = captchaEncrypted;
         this.flags = flags;
+        this.settings = settings ?: hashMapOf();
     }
 
     fun getSettingsWithDefaults(): HashMap<String, String?> {

@@ -20,7 +20,7 @@ class DevJSClient : JSClient {
 
     val devID: String;
 
-    constructor(context: Context, config: SourcePluginConfig, script: String, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, devID: String? = null): super(context, SourcePluginDescriptor(config, auth?.toEncrypted(), captcha?.toEncrypted(), listOf("DEV")), null, script) {
+    constructor(context: Context, config: SourcePluginConfig, script: String, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, devID: String? = null, settings: HashMap<String, String?>? = null): super(context, SourcePluginDescriptor(config, auth?.toEncrypted(), captcha?.toEncrypted(), listOf("DEV"), settings), null, script) {
         _devScript = script;
         _auth = auth;
         _captcha = captcha;
@@ -49,7 +49,7 @@ class DevJSClient : JSClient {
         _auth = auth;
     }
     fun recreate(context: Context): DevJSClient {
-        return DevJSClient(context, config, _devScript, _auth, _captcha, devID);
+        return DevJSClient(context, config, _devScript, _auth, _captcha, devID, descriptor.settings);
     }
 
     override fun getCopy(): JSClient {

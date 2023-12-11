@@ -1,5 +1,6 @@
 package com.futo.platformplayer.states
 
+import android.content.Context
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.server.ManagedHttpServer
 import com.futo.platformplayer.developer.DeveloperEndpoints
@@ -91,6 +92,13 @@ class StateDeveloper {
             val index = _devLogs.indexOfFirst { it.id == startIndex };
             return _devLogs.subList(index + 1, _devLogs.size);
         }
+    }
+
+    fun setDevClientSettings(settings: HashMap<String, String?>) {
+        val client = StatePlatform.instance.getDevClient();
+        client?.let {
+            it.descriptor.settings = settings;
+        };
     }
 
 

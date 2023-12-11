@@ -11,6 +11,7 @@ import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.NoInternetException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
@@ -34,15 +35,24 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
 import com.futo.platformplayer.warnIfMainThread
+import java.util.concurrent.ConcurrentHashMap
 
 class V8Plugin {
     val config: IV8PluginConfig;
     private val _client: ManagedHttpClient;
     private val _clientAuth: ManagedHttpClient;
+    private val _clientOthers: ConcurrentHashMap<String, JSHttpClient> = ConcurrentHashMap();
 
 
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
+    val httpClientOthers: Map<String, JSHttpClient> get() = _clientOthers;
+
+    fun registerHttpClient(client: JSHttpClient) {
+        synchronized(_clientOthers) {
+            _clientOthers.put(client.clientId, client);
+        }
+    }
 
     private val _runtimeLock = Object();
     var _runtime : V8Runtime? = null;
