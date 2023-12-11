@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.app.PictureInPictureParams
@@ -14,7 +12,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
-import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
 import android.util.Log
@@ -32,6 +29,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.ui.PlayerControlView
+import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -138,11 +141,6 @@ import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
 import com.futo.polycentric.core.Opinion
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.TimeBar
-import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -154,7 +152,6 @@ import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
 import kotlin.math.roundToLong
-
 
 class VideoDetailView : ConstraintLayout {
     private val TAG = "VideoDetailView"
@@ -303,7 +300,7 @@ class VideoDetailView : ConstraintLayout {
         Pair(0, 10) //around live, try every 10 seconds
     );
 
-
+    @androidx.annotation.OptIn(UnstableApi::class)
     constructor(context: Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.fragview_video_detail, this);
 
@@ -312,7 +309,7 @@ class VideoDetailView : ConstraintLayout {
         _cast = findViewById(R.id.videodetail_cast);
         _player = findViewById(R.id.videodetail_player);
         _playerProgress = findViewById(R.id.videodetail_progress);
-        _timeBar = _playerProgress.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        _timeBar = _playerProgress.findViewById(androidx.media3.ui.R.id.exo_progress);
         _title = findViewById(R.id.videodetail_title);
         _subTitle = findViewById(R.id.videodetail_meta);
         _platform = findViewById(R.id.videodetail_platform);
@@ -574,8 +571,8 @@ class VideoDetailView : ConstraintLayout {
         }
 
         _playerProgress.player = _player.exoPlayer?.player;
-        _playerProgress.setProgressUpdateListener { position, _ ->
-            StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, position);
+        _playerProgress.setProgressUpdateListener { _, _ ->
+            StatePlayer.instance.updateMediaSessionPlaybackState();
         }
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
@@ -1497,6 +1494,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     //Events
+    @androidx.annotation.OptIn(UnstableApi::class)
     private fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean){
         Logger.i(TAG, "onSourceChanged(videoSource=$videoSource, audioSource=$audioSource, resume=$resume)")
 
@@ -1532,7 +1530,7 @@ class VideoDetailView : ConstraintLayout {
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
-        if(exception.cause != null && exception.cause is InvalidResponseCodeException && (exception.cause!! as InvalidResponseCodeException).responseCode == 403) {
+        if(exception.cause != null && exception.cause is HttpDataSource.InvalidResponseCodeException && (exception.cause!! as HttpDataSource.InvalidResponseCodeException).responseCode == 403) {
             val currentVideo = video
             if(currentVideo == null || currentVideo !is IPluginSourced)
                 return;
@@ -1611,6 +1609,7 @@ class VideoDetailView : ConstraintLayout {
         val v = video ?: return;
         updateQualitySourcesOverlay(v, videoLocal, liveStreamVideoFormats, liveStreamAudioFormats);
     }
+    @androidx.annotation.OptIn(UnstableApi::class)
     private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
         Logger.i(TAG, "updateQualitySourcesOverlay");
 
@@ -1730,7 +1729,7 @@ class VideoDetailView : ConstraintLayout {
                                 { handleSelectAudioTrack(it) });
                         }.toList().toTypedArray())
             else null,
-            if(video?.subtitles?.isNotEmpty() ?: false && video != null)
+            if(video?.subtitles?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",
                     *video.subtitles
                         .map {
@@ -1792,7 +1791,7 @@ class VideoDetailView : ConstraintLayout {
             _cast.setIsPlaying(playing);
         } else {
             StatePlayer.instance.updateMediaSession( null);
-            StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, _player.exoPlayer?.player?.currentPosition ?: 0);
+            StatePlayer.instance.updateMediaSessionPlaybackState();
         }
 
         if(playing) {

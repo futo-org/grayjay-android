@@ -1,10 +1,6 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.views.casting
 
 import android.content.Context
-import android.media.session.PlaybackState
-import android.support.v4.media.session.PlaybackStateCompat
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -13,7 +9,11 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.DefaultTimeBar
+import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -23,9 +23,6 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.behavior.GestureControlView
-import com.google.android.exoplayer2.ui.DefaultTimeBar
-import com.google.android.exoplayer2.ui.TimeBar
-import com.google.android.exoplayer2.ui.TimeBar.OnScrubListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,6 +51,7 @@ class CastView : ConstraintLayout {
     val onMinimizeClick = Event0();
     val onSettingsClick = Event0();
 
+    @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_cast, this, true);
 
@@ -83,7 +81,7 @@ class CastView : ConstraintLayout {
         }
         _buttonLoop.setImageResource(if(StatePlayer.instance.loopVideo) R.drawable.ic_loop_active else R.drawable.ic_loop);
 
-        _timeBar.addListener(object : OnScrubListener {
+        _timeBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
                 StateCasting.instance.videoSeekTo(position.toDouble());
             }
@@ -149,11 +147,9 @@ class CastView : ConstraintLayout {
             _buttonPlay.visibility = View.VISIBLE;
         }
 
-        val position = StateCasting.instance.activeDevice?.expectedCurrentTime?.times(1000.0)?.toLong();
-
         if(StatePlayer.instance.hasMediaSession()) {
             StatePlayer.instance.updateMediaSession(null);
-            StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), (position ?: 0));
+            StatePlayer.instance.updateMediaSessionPlaybackState();
         }
     }
 
@@ -183,6 +179,7 @@ class CastView : ConstraintLayout {
         }
     }
 
+    @OptIn(UnstableApi::class)
     fun setVideoDetails(video: IPlatformVideoDetails, position: Long) {
         Glide.with(_thumbnail)
             .load(video.thumbnails.getHQThumbnail())
@@ -194,10 +191,11 @@ class CastView : ConstraintLayout {
         _timeBar.setDuration(video.duration);
     }
 
+    @OptIn(UnstableApi::class)
     fun setTime(ms: Long) {
         _textPosition.text = ms.toHumanTime(true);
         _timeBar.setPosition(ms / 1000);
-        StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), ms);
+        StatePlayer.instance.updateMediaSessionPlaybackState();
     }
 
     fun cleanup() {
@@ -206,14 +204,5 @@ class CastView : ConstraintLayout {
         _updateTimeJob?.cancel();
         _updateTimeJob = null;
         _scope.cancel();
-    }
-
-    private fun getPlaybackStateCompat(): Int {
-        val d = StateCasting.instance.activeDevice ?: return PlaybackState.STATE_NONE;
-
-        return when(d.isPlaying) {
-            true -> PlaybackStateCompat.STATE_PLAYING;
-            else -> PlaybackStateCompat.STATE_PAUSED;
-        }
     }
 }

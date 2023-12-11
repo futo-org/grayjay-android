@@ -1,15 +1,11 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.video
 
-import android.media.session.PlaybackState
-import android.support.v4.media.session.PlaybackStateCompat
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ui.StyledPlayerView
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 
 class PlayerManager {
-    private var _currentView: StyledPlayerView? = null;
+    private var _currentView: PlayerView? = null;
     private val _stateMap = HashMap<String, PlayerState>();
     private var _currentState: PlayerState? = null;
     val currentState: PlayerState get() {
@@ -25,16 +21,8 @@ class PlayerManager {
         this.player = exoPlayer;
     }
 
-    fun getPlaybackStateCompat() : Int {
-        return when(player.playbackState) {
-            ExoPlayer.STATE_READY -> if(player.playWhenReady) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED;
-            ExoPlayer.STATE_BUFFERING -> PlaybackState.STATE_BUFFERING;
-            else -> PlaybackState.STATE_NONE
-        }
-    }
-
     @Synchronized
-    fun attach(view: StyledPlayerView, stateName: String) {
+    fun attach(view: PlayerView, stateName: String) {
         if(view != _currentView) {
             _currentView?.player = null;
             switchState(stateName);

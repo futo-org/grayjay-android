@@ -1,11 +1,27 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.views.video
 
 import android.content.Context
 import android.net.Uri
 import android.util.AttributeSet
 import android.widget.RelativeLayout
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
+import androidx.media3.common.text.CueGroup
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.source.SingleSampleMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
@@ -28,22 +44,6 @@ import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.video.PlayerManager
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackException
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.MergingMediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.source.SingleSampleMediaSource
-import com.google.android.exoplayer2.source.dash.DashMediaSource
-import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.text.CueGroup
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.upstream.DefaultDataSource
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.video.VideoSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -251,6 +251,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _targetTrackAudioBitrate = bitrate;
         updateTrackSelector();
     }
+    @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
         var builder = DefaultTrackSelector.Parameters.Builder(context);
         if(_targetTrackVideoHeight > 0) {
@@ -298,6 +299,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return loadSelectedSources(play, resume);
     }
 
+    @OptIn(UnstableApi::class)
     fun swapSubtitles(scope: CoroutineScope, subtitles: ISubtitleSource?) {
         if(subtitles == null)
             clearSubtitles();
@@ -369,6 +371,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     //Video loads
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceLocal(videoSource: LocalVideoSource) {
         Logger.i(TAG, "Loading VideoSource [Local]");
         val file = File(videoSource.filePath);
@@ -377,14 +380,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
     }
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrlRange(videoSource: JSVideoUrlRangeSource) {
         Logger.i(TAG, "Loading JSVideoUrlRangeSource");
         if(videoSource.hasItag) {
             //Temporary workaround for Youtube
             try {
                 _lastVideoMediaSource = VideoHelper.convertItagSourceToChunkedDashSource(videoSource);
-                if(_lastVideoMediaSource == null)
-                    throw java.lang.IllegalStateException("Dash manifest workaround failed");
                 return;
             }
             //If it fails to create the dash workaround, fallback to standard progressive
@@ -397,18 +399,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         }
         else throw IllegalArgumentException("source without itag data...");
     }
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrl(videoSource: IVideoUrlSource) {
         Logger.i(TAG, "Loading VideoSource [Url]");
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()
             .setUserAgent(DEFAULT_USER_AGENT))
             .createMediaSource(MediaItem.fromUri(videoSource.getVideoUrl()));
     }
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceDash(videoSource: IDashManifestSource) {
         Logger.i(TAG, "Loading VideoSource [Dash]");
         _lastVideoMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory()
             .setUserAgent(DEFAULT_USER_AGENT))
             .createMediaSource(MediaItem.fromUri(videoSource.url))
     }
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceHLS(videoSource: IHLSManifestSource) {
         Logger.i(TAG, "Loading VideoSource [HLS]");
         _lastVideoMediaSource = HlsMediaSource.Factory(DefaultHttpDataSource.Factory()
@@ -416,7 +421,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             .createMediaSource(MediaItem.fromUri(videoSource.url));
     }
 
+
     //Audio loads
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceLocal(audioSource: LocalAudioSource) {
         Logger.i(TAG, "Loading AudioSource [Local]");
         val file = File(audioSource.filePath);
@@ -425,6 +432,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
     }
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlRange(audioSource: JSAudioUrlRangeSource) {
         Logger.i(TAG, "Loading JSAudioUrlRangeSource");
         if(audioSource.hasItag) {
@@ -444,12 +452,14 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         }
         else throw IllegalArgumentException("source without itag data...")
     }
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrl(audioSource: IAudioUrlSource) {
         Logger.i(TAG, "Loading AudioSource [Url]");
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()
             .setUserAgent(DEFAULT_USER_AGENT))
             .createMediaSource(MediaItem.fromUri(audioSource.getAudioUrl()));
     }
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceHLS(audioSource: IHLSManifestAudioSource) {
         Logger.i(TAG, "Loading AudioSource [HLS]");
         _lastAudioMediaSource = HlsMediaSource.Factory(DefaultHttpDataSource.Factory()
@@ -479,6 +489,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, preferredLanguage);
     }
 
+    @OptIn(UnstableApi::class)
     private fun loadSelectedSources(play: Boolean, resume: Boolean): Boolean {
         val sourceVideo = if(!isAudioMode || _lastAudioMediaSource == null) _lastVideoMediaSource else null;
         val sourceAudio = _lastAudioMediaSource;
@@ -506,11 +517,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return true;
     }
 
+    @OptIn(UnstableApi::class)
     private fun reloadMediaSource(play: Boolean = false, resume: Boolean = true) {
-        val player = exoPlayer
-        if (player == null)
-            return;
-
+        val player = exoPlayer ?: return
         val positionBefore = player.player.currentPosition;
         if(_mediaSource != null) {
             player.player.setMediaSource(_mediaSource!!);

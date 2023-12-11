@@ -17,7 +17,6 @@ class InstallReceiver : BroadcastReceiver() {
         val onReceiveResult = Event1<String?>();
     }
 
-    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
         Logger.i(TAG, "Received status $status.");

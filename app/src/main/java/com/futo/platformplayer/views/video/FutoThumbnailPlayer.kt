@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.views.video
 
 import android.content.Context
@@ -9,6 +7,10 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.PlayerControlView
+import androidx.media3.ui.PlayerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -17,8 +19,6 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.video.PlayerManager
-import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.StyledPlayerView
 
 
 class FutoThumbnailPlayer : FutoVideoPlayerBase {
@@ -28,7 +28,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
     }
 
     //Views
-    private val videoView : StyledPlayerView;
+    private val videoView : PlayerView;
     private val videoControls : PlayerControlView;
     private val buttonMute : ImageButton;
     private val buttonUnMute : ImageButton;
@@ -41,7 +41,8 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
     private val _evMuteChanged = mutableListOf<(FutoThumbnailPlayer, Boolean)->Unit>();
 
 
-    constructor(context : Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
+    @OptIn(UnstableApi::class)
+    constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.thumbnail_video_view, this, true);
 
         videoView = findViewById(R.id.video_player);
@@ -70,7 +71,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
         }
     }
 
-    fun setLive(live : Boolean) {
+    fun setLive(live: Boolean) {
         if(live) {
             containerDuration.visibility = GONE;
             containerLive.visibility = VISIBLE;
@@ -81,7 +82,8 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
         }
     }
 
-    fun setPlayer(player : PlayerManager?){
+    @OptIn(UnstableApi::class)
+    fun setPlayer(player: PlayerManager?){
         changePlayer(player);
         player?.attach(videoView, PLAYER_STATE_NAME);
         videoControls.player = player?.player;

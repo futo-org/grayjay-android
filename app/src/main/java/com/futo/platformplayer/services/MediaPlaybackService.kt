@@ -13,15 +13,14 @@ import android.graphics.drawable.Drawable
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
-import android.media.MediaMetadata
 import android.os.Build
 import android.os.IBinder
-import android.os.SystemClock
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaStyleNotificationHelper
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -51,7 +50,7 @@ class MediaPlaybackService : Service() {
     private var _audioManager: AudioManager? = null;
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
-    private var _mediaSession: MediaSessionCompat? = null;
+    private var _mediaSession: MediaSession? = null;
     private var _hasFocus: Boolean = false;
     private var _focusRequest: AudioFocusRequest? = null;
     private var _audioFocusLossTime_ms: Long? = null
@@ -82,6 +81,7 @@ class MediaPlaybackService : Service() {
 
         return START_STICKY;
     }
+    @OptIn(UnstableApi::class)
     fun setupNotificationRequirements() {
         _audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager;
         _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
@@ -91,47 +91,54 @@ class MediaPlaybackService : Service() {
         };
         _notificationManager!!.createNotificationChannel(_notificationChannel!!);
 
-        _mediaSession = MediaSessionCompat(this, "PlayerState");
-        _mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
+        _mediaSession = MediaSession.Builder(this, StatePlayer.instance.getPlayerOrCreate(this).player)
+
+            .setCallback(object: MediaSession.Callback {
+                override fun onMediaButtonEvent(session: MediaSession, controllerInfo: MediaSession.ControllerInfo, intent: Intent): Boolean {
+                    //TODO: Reimplement
+                    return super.onMediaButtonEvent(session, controllerInfo, intent)
+                }
+
+                /*override fun onSeekTo(pos: Long) {
+                    super.onSeekTo(pos)
+                    Logger.i(TAG, "Media session callback onSeekTo(pos = $pos)");
+                    MediaControlReceiver.onSeekToReceived.emit(pos);
+                }
+
+                override fun onPlay() {
+                    super.onPlay();
+                    Logger.i(TAG, "Media session callback onPlay()");
+                    MediaControlReceiver.onPlayReceived.emit();
+                }
+
+                override fun onPause() {
+                    super.onPause();
+                    Logger.i(TAG, "Media session callback onPause()");
+                    MediaControlReceiver.onPauseReceived.emit();
+                }
+
+                override fun onStop() {
+                    super.onStop();
+                    Logger.i(TAG, "Media session callback onStop()");
+                    MediaControlReceiver.onCloseReceived.emit();
+                }
+
+                override fun onSkipToPrevious() {
+                    super.onSkipToPrevious();
+                    Logger.i(TAG, "Media session callback onSkipToPrevious()");
+                    MediaControlReceiver.onPreviousReceived.emit();
+                }
+
+                override fun onSkipToNext() {
+                    super.onSkipToNext()
+                    Logger.i(TAG, "Media session callback onSkipToNext()");
+                    MediaControlReceiver.onNextReceived.emit();
+                }*/
+            })
+            .build();
+        /*_mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
             .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1f)
-            .build());
-        _mediaSession?.setCallback(object: MediaSessionCompat.Callback() {
-            override fun onSeekTo(pos: Long) {
-                super.onSeekTo(pos)
-                Logger.i(TAG, "Media session callback onSeekTo(pos = $pos)");
-                MediaControlReceiver.onSeekToReceived.emit(pos);
-            }
-
-            override fun onPlay() {
-                super.onPlay();
-                Logger.i(TAG, "Media session callback onPlay()");
-                MediaControlReceiver.onPlayReceived.emit();
-            }
-
-            override fun onPause() {
-                super.onPause();
-                Logger.i(TAG, "Media session callback onPause()");
-                MediaControlReceiver.onPauseReceived.emit();
-            }
-
-            override fun onStop() {
-                super.onStop();
-                Logger.i(TAG, "Media session callback onStop()");
-                MediaControlReceiver.onCloseReceived.emit();
-            }
-
-            override fun onSkipToPrevious() {
-                super.onSkipToPrevious();
-                Logger.i(TAG, "Media session callback onSkipToPrevious()");
-                MediaControlReceiver.onPreviousReceived.emit();
-            }
-
-            override fun onSkipToNext() {
-                super.onSkipToNext()
-                Logger.i(TAG, "Media session callback onSkipToNext()");
-                MediaControlReceiver.onNextReceived.emit();
-            }
-        });
+            .build());*/
     }
 
     override fun onCreate() {
@@ -186,15 +193,7 @@ class MediaPlaybackService : Service() {
         if(_notificationChannel == null || _mediaSession == null)
             setupNotificationRequirements();
 
-        _mediaSession?.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
-                .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
-                .build());
-
         val thumbnail = video.thumbnails.getHQThumbnail();
-
         _notif_last_video = video;
 
         if(isUpdating)
@@ -221,6 +220,7 @@ class MediaPlaybackService : Service() {
     private fun generateMediaAction(icon: Int, title: String, intent: PendingIntent) : NotificationCompat.Action {
         return NotificationCompat.Action.Builder(icon, title, intent).build();
     }
+    @OptIn(UnstableApi::class)
     private fun notifyMediaSession(video: IPlatformVideo?, desiredBitmap: Bitmap?) {
         val channel = _notificationChannel ?: return;
         val session = _mediaSession ?: return;
@@ -249,14 +249,9 @@ class MediaPlaybackService : Service() {
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(PendingIntent.getActivity(this, 5, bringUpIntent, PendingIntent.FLAG_IMMUTABLE))
-            .setStyle(if(hasQueue)
-                    androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(session.sessionToken)
-                        .setShowActionsInCompactView(0, 1, 2)
-                else
-                    androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(session.sessionToken)
-                        .setShowActionsInCompactView(0))
+            .setStyle(
+                if(hasQueue) MediaStyleNotificationHelper.MediaStyle(session)//.setShowActionsInCompactView(0, 1, 2)
+                else MediaStyleNotificationHelper.MediaStyle(session))//.setShowActionsInCompactView(0))
             .setDeleteIntent(deleteIntent)
             .setChannelId(channel.id)
 
@@ -303,7 +298,7 @@ class MediaPlaybackService : Service() {
         val notif = builder.build();
         notif.flags = notif.flags or NotificationCompat.FLAG_ONGOING_EVENT or NotificationCompat.FLAG_NO_CLEAR;
 
-        Logger.i(TAG, "Updating notification bitmap=${if (bitmap != null) "yes" else "no."} channelId=${channel.id} icon=${icon} video=${video?.name ?: ""} playWhenReady=${playWhenReady} session.sessionToken=${session.sessionToken}");
+        Logger.i(TAG, "Updating notification bitmap=${if (bitmap != null) "yes" else "no."} channelId=${channel.id} icon=${icon} video=${video?.name ?: ""} playWhenReady=${playWhenReady} session.sessionToken=${session.token}");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // For API 29 and above
@@ -316,20 +311,7 @@ class MediaPlaybackService : Service() {
         _notif_last_bitmap = bitmap;
     }
 
-    fun updateMediaSessionPlaybackState(state: Int, pos: Long) {
-        _mediaSession?.setPlaybackState(
-            PlaybackStateCompat.Builder()
-            .setActions(
-                PlaybackStateCompat.ACTION_SEEK_TO or
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE
-            )
-            .setState(state, pos, 1f, SystemClock.elapsedRealtime())
-            .build());
-
+    fun updateMediaSessionPlaybackState() {
         if(_focusRequest == null)
             setAudioFocus();
     }

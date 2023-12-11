@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.views.video
 
 import android.content.Context
@@ -15,6 +13,7 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
 import com.futo.platformplayer.R
@@ -31,13 +30,14 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.behavior.GestureControlView
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.PlaybackParameters
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
-import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.StyledPlayerView
-import com.google.android.exoplayer2.ui.TimeBar
-import com.google.android.exoplayer2.video.VideoSize
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerControlView
+import androidx.media3.ui.PlayerView
+import androidx.media3.ui.TimeBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,7 +58,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     //Views
     private val _root: ConstraintLayout;
-    private val _videoView: StyledPlayerView;
+    private val _videoView: PlayerView;
 
     val videoControls: PlayerControlView;
     private val _videoControls_fullscreen: PlayerControlView;
@@ -127,6 +127,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     val onVideoClicked = Event0();
     val onTimeBarChanged = Event2<Long, Long>();
 
+    @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.video_view, this, true);
         _root = findViewById(R.id.videoview_root);
@@ -139,8 +140,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_rotate_lock = videoControls.findViewById(R.id.exo_rotate_lock);
         _control_loop = videoControls.findViewById(R.id.exo_loop);
         _control_cast = videoControls.findViewById(R.id.exo_cast);
-        _control_play = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
-        _time_bar = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        _control_play = videoControls.findViewById(androidx.media3.ui.R.id.exo_play);
+        _time_bar = videoControls.findViewById(androidx.media3.ui.R.id.exo_progress);
         _control_chapter = videoControls.findViewById(R.id.text_chapter_current);
         _buttonNext = videoControls.findViewById(R.id.button_next);
         _buttonPrevious = videoControls.findViewById(R.id.button_previous);
@@ -152,9 +153,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_rotate_lock);
         _control_loop_fullscreen = videoControls.findViewById(R.id.exo_loop);
         _control_cast_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_cast);
-        _control_play_fullscreen = videoControls.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play);
+        _control_play_fullscreen = videoControls.findViewById(androidx.media3.ui.R.id.exo_play);
         _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
-        _time_bar_fullscreen = _videoControls_fullscreen.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        _time_bar_fullscreen = _videoControls_fullscreen.findViewById(androidx.media3.ui.R.id.exo_progress);
         _buttonPrevious_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_previous);
         _buttonNext_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_next);
 
@@ -404,14 +405,15 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         return false;
     }
 
+    @OptIn(UnstableApi::class)
     fun setArtwork(drawable: Drawable?) {
         if (drawable != null) {
             _videoView.defaultArtwork = drawable;
-            _videoView.artworkDisplayMode = StyledPlayerView.ARTWORK_DISPLAY_MODE_FILL;
+            _videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_FILL;
             fitOrFill(isFullScreen);
         } else {
             _videoView.defaultArtwork = null;
-            _videoView.artworkDisplayMode = StyledPlayerView.ARTWORK_DISPLAY_MODE_OFF;
+            _videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_OFF;
         }
     }
 
@@ -436,6 +438,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         return exoPlayer?.player?.playbackParameters?.speed ?: 1.0f;
     }
 
+    @OptIn(UnstableApi::class)
     fun setFullScreen(fullScreen: Boolean) {
         if (isFullScreen == fullScreen) {
             return;
@@ -538,6 +541,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     //Sizing
+    @OptIn(UnstableApi::class)
     fun fitHeight(videoSize : VideoSize? = null){
         Logger.i(TAG, "Video Fit Height");
         if(_originalBottomMargin != 0) {

@@ -1,26 +1,28 @@
 package com.futo.platformplayer.views.video.datasources;
 
-import static com.google.android.exoplayer2.upstream.HttpUtil.buildRangeRequestHeader;
-import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
-import static com.google.android.exoplayer2.util.Util.castNonNull;
+import static androidx.media3.common.util.Assertions.checkNotNull;
+import static androidx.media3.common.util.Util.castNonNull;
+import static androidx.media3.datasource.HttpUtil.buildRangeRequestHeader;
 import static java.lang.Math.min;
 
 import android.net.Uri;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier;
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.upstream.BaseDataSource;
-import com.google.android.exoplayer2.upstream.DataSourceException;
-import com.google.android.exoplayer2.upstream.DataSpec;
-import com.google.android.exoplayer2.upstream.DataSpec.HttpMethod;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
-import com.google.android.exoplayer2.upstream.HttpUtil;
-import com.google.android.exoplayer2.upstream.TransferListener;
-import com.google.android.exoplayer2.util.Log;
-import com.google.android.exoplayer2.util.Util;
+import androidx.media3.common.C;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.common.util.Util;
+import androidx.media3.datasource.BaseDataSource;
+import androidx.media3.datasource.DataSourceException;
+import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.datasource.HttpUtil;
+import androidx.media3.datasource.TransferListener;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
@@ -45,6 +47,7 @@ import java.util.zip.GZIPInputStream;
  * Based on the default ExoPlayer DefaultHttpDataSource
  */
 
+@UnstableApi
 public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
     public static final class Factory implements HttpDataSource.Factory {
 
@@ -142,7 +145,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         /**
          * Sets a content type {@link Predicate}. If a content type is rejected by the predicate then a
          * {@link HttpDataSource.InvalidContentTypeException} is thrown from {@link
-         * JSHttpDataSource#open(com.google.android.exoplayer2.upstream.DataSpec)}.
+         * JSHttpDataSource#open(androidx.media3.datasource.DataSpec)}.
          *
          * <p>The default is {@code null}.
          *
@@ -160,7 +163,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          *
          * <p>The default is {@code null}.
          *
-         * <p>See {@link com.google.android.exoplayer2.upstream.DataSource#addTransferListener(TransferListener)}.
+         * <p>See {@link androidx.media3.datasource.DataSource#addTransferListener(TransferListener)}.
          *
          * @param transferListener The listener that will be used.
          * @return This factory.
@@ -367,12 +370,12 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             if (dataSpec.length != C.LENGTH_UNSET) {
                 bytesToRead = dataSpec.length;
             } else {
-                long contentLength =
-                        HttpUtil.getContentLength(
-                                connection.getHeaderField(HttpHeaders.CONTENT_LENGTH),
-                                connection.getHeaderField(HttpHeaders.CONTENT_RANGE));
-                bytesToRead =
-                        contentLength != C.LENGTH_UNSET ? (contentLength - bytesToSkip) : C.LENGTH_UNSET;
+                long contentLength = HttpUtil.getContentLength(
+                    connection.getHeaderField(HttpHeaders.CONTENT_LENGTH),
+                    connection.getHeaderField(HttpHeaders.CONTENT_RANGE)
+                );
+
+                bytesToRead = contentLength != C.LENGTH_UNSET ? (contentLength - bytesToSkip) : C.LENGTH_UNSET;
             }
         } else {
             // Gzip is enabled. If the server opts to use gzip then the content length in the response
@@ -457,7 +460,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
     /** Establishes a connection, following redirects to do so where permitted. */
     private HttpURLConnection makeConnection(DataSpec dataSpec) throws IOException {
         URL url = new URL(dataSpec.uri.toString());
-        @HttpMethod int httpMethod = dataSpec.httpMethod;
+        @DataSpec.HttpMethod int httpMethod = dataSpec.httpMethod;
         @Nullable byte[] httpBody = dataSpec.httpBody;
         long position = dataSpec.position;
         long length = dataSpec.length;
@@ -543,7 +546,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
      */
     private HttpURLConnection makeConnection(
             URL url,
-            @HttpMethod int httpMethod,
+            @DataSpec.HttpMethod int httpMethod,
             @Nullable byte[] httpBody,
             long position,
             long length,

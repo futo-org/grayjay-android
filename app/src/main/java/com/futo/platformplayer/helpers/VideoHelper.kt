@@ -1,8 +1,7 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.helpers
 
 import android.net.Uri
+import androidx.annotation.OptIn
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -15,11 +14,12 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.logging.Logger
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.dash.DashMediaSource
-import com.google.android.exoplayer2.source.dash.manifest.DashManifestParser
-import com.google.android.exoplayer2.upstream.ResolvingDataSource
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.dash.manifest.DashManifestParser
+import androidx.media3.exoplayer.source.MediaSource
 import kotlin.math.abs
 
 class VideoHelper {
@@ -121,7 +121,7 @@ class VideoHelper {
             return bestSource;
         }
 
-        @Suppress("DEPRECATION")
+        @OptIn(UnstableApi::class)
         fun convertItagSourceToChunkedDashSource(videoSource: JSVideoUrlRangeSource) : MediaSource {
             val urlToUse = videoSource.getVideoUrl();
             val manifestConfig = ProgressiveDashManifestCreator.fromVideoProgressiveStreamingUrl(urlToUse,
@@ -140,14 +140,13 @@ class VideoHelper {
             );
 
             val manifest = DashManifestParser().parse(Uri.parse(""), manifestConfig.byteInputStream());
-
             return DashMediaSource.Factory(ResolvingDataSource.Factory(videoSource.getHttpDataSourceFactory(), ResolvingDataSource.Resolver { dataSpec ->
                 Logger.v("PLAYBACK", "Video REQ Range [" + dataSpec.position + "-" + (dataSpec.position + dataSpec.length) + "](" + dataSpec.length + ")", null);
                 return@Resolver dataSpec;
             })).createMediaSource(manifest, MediaItem.Builder().setUri(Uri.parse(videoSource.getVideoUrl())).build())
         }
 
-        @Suppress("DEPRECATION")
+        @OptIn(UnstableApi::class)
         fun convertItagSourceToChunkedDashSource(audioSource: JSAudioUrlRangeSource) : MediaSource {
             val manifestConfig = ProgressiveDashManifestCreator.fromAudioProgressiveStreamingUrl(audioSource.getAudioUrl(),
                 audioSource.duration?.times(1000) ?: 0,
