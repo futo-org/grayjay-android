@@ -701,20 +701,6 @@
         <item>Nach 10 Sekunden fortsetzen</item>
         <item>Immer fortsetzen</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>Englisch</item>
-        <item>Spanisch</item>
-        <item>Französisch</item>
-        <item>Französisch</item>
-        <item>Koreanisch</item>
-        <item>Thailändisch</item>
-        <item>Vietnamesisch</item>
-        <item>Indonesisch</item>
-        <item>Hindi</item>
-        <item>Arabisch</item>
-        <item>Türkisch</item>
-        <item>Russisch</item>
-    </string-array>
     <string-array name="log_levels">
         <item>Keine</item>
         <item>Fehler</item>

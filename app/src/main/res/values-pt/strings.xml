@@ -701,20 +701,6 @@
         <item>Continuar Após 10s</item>
         <item>Sempre Continuar</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>Inglês</item>
-        <item>Espanhol</item>
-        <item>Francês</item>
-        <item>Francês</item>
-        <item>Coreano</item>
-        <item>Tailandês</item>
-        <item>Vietnamita</item>
-        <item>Indonésio</item>
-        <item>Hindi</item>
-        <item>Árabe</item>
-        <item>Turco</item>
-        <item>Russo</item>
-    </string-array>
     <string-array name="log_levels">
         <item>Nenhum</item>
         <item>Erro</item>

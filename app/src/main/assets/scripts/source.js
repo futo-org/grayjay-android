@@ -43,18 +43,19 @@ let Type = {
 
 let Language = {
     UNKNOWN: "Unknown",
-    ARABIC: "Arabic",
-    SPANISH: "Spanish",
-    FRENCH: "French",
-    HINDI: "Hindi",
-    INDONESIAN: "Indonesian",
-    KOREAN: "Korean",
-    PORTBRAZIL: "Portuguese Brazilian",
-    RUSSIAN: "Russian",
-    THAI: "Thai",
-    TURKISH: "Turkish",
-    VIETNAMESE: "Vietnamese",
-    ENGLISH: "English"
+    ARABIC: "ar",
+    SPANISH: "es",
+    FRENCH: "fr",
+    HINDI: "hi",
+    INDONESIAN: "id",
+    KOREAN: "ko",
+    PORTUGUESE: "pt",
+    PORTBRAZIL: "pt",
+    RUSSIAN: "ru",
+    THAI: "th",
+    TURKISH: "tr",
+    VIETNAMESE: "vi",
+    ENGLISH: "en"
 }
 
 class ScriptException extends Error {

@@ -311,7 +311,28 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
-        fun getPrimaryLanguage(context: Context) = context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
+        fun getPrimaryLanguage(context: Context): String? {
+            return when(primaryLanguage) {
+                0 -> "en";
+                1 -> "es";
+                2 -> "de";
+                3 -> "fr";
+                4 -> "ja";
+                5 -> "ko";
+                6 -> "th";
+                7 -> "vi";
+                8 -> "id";
+                9 -> "hi";
+                10 -> "ar";
+                11 -> "tu";
+                12 -> "ru";
+                13 -> "pt";
+                14 -> "zh";
+                else -> null
+            }
+        }
+
+        //= context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
         @FormField(R.string.default_playback_speed, FieldForm.DROPDOWN, -1, 1)
         @DropdownFieldOptionsId(R.array.playback_speeds)

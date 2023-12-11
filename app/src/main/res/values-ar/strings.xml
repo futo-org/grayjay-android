@@ -701,20 +701,6 @@
         <item>استئناف بعد 10 ثوان</item>
         <item>استئناف دائم</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>الإنجليزية</item>
-        <item>الإسبانية</item>
-        <item>الفرنسية</item>
-        <item>الفرنسية</item>
-        <item>الكورية</item>
-        <item>التايلاندية</item>
-        <item>الفيتنامية</item>
-        <item>الإندونيسية</item>
-        <item>الهندية</item>
-        <item>العربية</item>
-        <item>التركية</item>
-        <item>الروسية</item>
-    </string-array>
     <string-array name="log_levels">
         <item>لا شيء</item>
         <item>خطأ</item>

@@ -701,20 +701,6 @@
         <item>Продолжить после 10 секунд</item>
         <item>Всегда продолжать</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>Английский</item>
-        <item>Испанский</item>
-        <item>Французский</item>
-        <item>Французский</item>
-        <item>Корейский</item>
-        <item>Тайский</item>
-        <item>Вьетнамский</item>
-        <item>Индонезийский</item>
-        <item>Хинди</item>
-        <item>Арабский</item>
-        <item>Турецкий</item>
-        <item>Русский</item>
-    </string-array>
     <string-array name="log_levels">
         <item>Нет</item>
         <item>Ошибка</item>

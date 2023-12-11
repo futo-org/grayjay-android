@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.others.Language
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
@@ -82,13 +83,14 @@ class VideoHelper {
         fun selectBestAudioSource(altSources : Iterable<IAudioSource>, prefContainers : Array<String>, preferredLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
             val languageToFilter = if(preferredLanguage != null && altSources.any { it.language == preferredLanguage }) {
                 preferredLanguage
-            } else if(preferredLanguage == null) {
-                null
             } else {
-                "Unknown"
+                if(altSources.any { it.language == Language.ENGLISH })
+                    Language.ENGLISH
+                else
+                    Language.UNKNOWN;
             }
 
-            var usableSources = if(languageToFilter != null && altSources.any { it.language == languageToFilter }) {
+            var usableSources = if(altSources.any { it.language == languageToFilter }) {
                 altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList();
             } else {
                 altSources.sortedBy { it.bitrate }

@@ -701,20 +701,6 @@
         <item>10秒後から再開</item>
         <item>常に再開</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>英語</item>
-        <item>スペイン語</item>
-        <item>フランス語</item>
-        <item>フランス語</item>
-        <item>韓国語</item>
-        <item>タイ語</item>
-        <item>ベトナム語</item>
-        <item>インドネシア語</item>
-        <item>ヒンディー語</item>
-        <item>アラビア語</item>
-        <item>トルコ語</item>
-        <item>ロシア語</item>
-    </string-array>
     <string-array name="log_levels">
         <item>なし</item>
         <item>エラー</item>
