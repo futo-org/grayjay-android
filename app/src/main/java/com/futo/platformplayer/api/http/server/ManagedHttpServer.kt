@@ -191,7 +191,7 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
         }
     }
     fun addBridgeHandlers(obj: Any, tag: String? = null) {
-        val tagToUse = tag ?: obj.javaClass.name;
+        //val tagToUse = tag ?: obj.javaClass.name;
         val getMethods = obj::class.java.declaredMethods
             .filter { it.getAnnotation(HttpGET::class.java) != null }
             .map { Pair<Method, HttpGET>(it, it.getAnnotation(HttpGET::class.java)!!) }

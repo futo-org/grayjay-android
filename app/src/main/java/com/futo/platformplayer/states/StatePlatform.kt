@@ -676,7 +676,7 @@ class StatePlatform {
         }
     }
 
-    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
+    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0): IPager<IPlatformContent> {
         val clientCapabilities = baseClient.getChannelCapabilities();
         val client = if(usePooledClients > 1)
             _channelClientPool.getClientPooled(baseClient, usePooledClients);
@@ -796,7 +796,7 @@ class StatePlatform {
     fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
         Logger.i(TAG, "Platform - getChannelVideos");
         val baseClient = getChannelClient(channelUrl, ignorePlugins);
-        return getChannelContent(baseClient, channelUrl, isSubscriptionOptimized, usePooledClients, ignorePlugins);
+        return getChannelContent(baseClient, channelUrl, isSubscriptionOptimized, usePooledClients);
     }
     fun getChannelContent(channelUrl: String, type: String?, ordering: String = ResultCapabilities.ORDER_CHONOLOGICAL): IPager<IPlatformContent> {
         val client = getChannelClient(channelUrl);
@@ -899,18 +899,13 @@ class StatePlatform {
             devId = newClient.devID;
             try {
                 StateDeveloper.instance.initializeDev(devId!!);
-                var didEnable = false;
                 if (isPrimary) {
                     _primaryClientObj = newClient;
                     _enabledClients.add(0, newClient);
                     newClient.initialize();
-                    didEnable = true;
                 } else if (isEnabled) {
                     _enabledClients.add(newClient);
-                    if(!didEnable) {
-                        newClient.initialize();
-                        didEnable = true;
-                    }
+                    newClient.initialize();
                 }
                 _availableClients.add(newClient);
             } catch (ex: Exception) {

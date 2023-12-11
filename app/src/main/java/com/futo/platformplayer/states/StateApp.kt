@@ -731,7 +731,6 @@ class StateApp {
                                 StatePlatform.instance.reloadClient(context, client.config.id);
                             } catch (e: Throwable) {
                                 Logger.e(SourceDetailFragment.TAG, "Failed to reload client.", e)
-                                return@launch;
                             }
                         }
                     }

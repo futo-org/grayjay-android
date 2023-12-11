@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -852,6 +853,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
      * Navigate takes a MainFragment, and makes them the current main visible view
      * A parameter can be provided which becomes available in the onShow of said fragment
      */
+    @SuppressLint("CommitTransaction")
     fun navigate(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
         Logger.i(TAG, "Navigate to $segment (parameter=$parameter, withHistory=$withHistory, isBack=$isBack)")
 
@@ -897,11 +899,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 }
                 transaction.commitNow();
             } else {
-                //Special cases
-                if(segment is VideoDetailFragment) {
-                    _fragContainerVideoDetail.visibility = View.VISIBLE;
-                    _fragVideoDetail.maximizeVideoDetail();
-                }
 
                 if(!segment.hasBottomBar) {
                     supportFragmentManager.beginTransaction()
