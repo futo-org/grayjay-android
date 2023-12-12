@@ -69,6 +69,8 @@
     <string name="discover">Discover</string>
     <string name="find_new_video_sources_to_add">Find new video sources to add</string>
     <string name="these_sources_have_been_disabled">These sources have been disabled</string>
+    <string name="these_creators_in_group">These are the creators that are visible for this group.</string>
+    <string name="these_creators_not_in_group">These creators are not in this group.</string>
     <string name="disabled">Disabled</string>
     <string name="watch_later">Watch Later</string>
     <string name="create">Create</string>

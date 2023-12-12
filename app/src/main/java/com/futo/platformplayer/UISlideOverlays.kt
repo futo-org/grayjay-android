@@ -46,7 +46,7 @@ class UISlideOverlays {
     companion object {
         private const val TAG = "UISlideOverlays";
 
-        fun showOverlay(container: ViewGroup, title: String, okButton: String?, onOk: ()->Unit,  vararg views: View) {
+        fun showOverlay(container: ViewGroup, title: String, okButton: String?, onOk: ()->Unit,  vararg views: View): SlideUpMenuOverlay {
             var menu = SlideUpMenuOverlay(container.context, container, title, okButton, true, *views);
 
             menu.onOK.subscribe {
@@ -54,6 +54,7 @@ class UISlideOverlays {
                 onOk.invoke();
             };
             menu.show();
+            return menu;
         }
 
         fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
