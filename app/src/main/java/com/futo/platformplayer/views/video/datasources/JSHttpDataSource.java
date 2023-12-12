@@ -9,6 +9,8 @@ import android.net.Uri;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.futo.platformplayer.api.media.models.modifier.IRequest;
+import com.futo.platformplayer.api.media.models.modifier.IRequestModifier;
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.PlaybackException;
@@ -57,7 +59,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         private int readTimeoutMs;
         private boolean allowCrossProtocolRedirects;
         private boolean keepPostFor302Redirects;
-        @Nullable private JSRequestModifier requestModifier = null;
+        @Nullable private IRequestModifier requestModifier = null;
 
         /** Creates an instance. */
         public Factory() {
@@ -80,7 +82,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          * @param requestModifier The request modifier that will be used, or {@code null} to use no request modifier
          * @return This factory.
          */
-        public Factory setRequestModifier(@Nullable JSRequestModifier requestModifier) {
+        public Factory setRequestModifier(@Nullable IRequestModifier requestModifier) {
             this.requestModifier = requestModifier;
             return this;
         }
@@ -225,7 +227,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
     private int responseCode;
     private long bytesToRead;
     private long bytesRead;
-    @Nullable private JSRequestModifier requestModifier;
+    @Nullable private IRequestModifier requestModifier;
 
     private JSHttpDataSource(
             @Nullable String userAgent,
@@ -235,7 +237,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             @Nullable RequestProperties defaultRequestProperties,
             @Nullable Predicate<String> contentTypePredicate,
             boolean keepPostFor302Redirects,
-            @Nullable JSRequestModifier requestModifier) {
+            @Nullable IRequestModifier requestModifier) {
         super(/* isNetwork= */ true);
         this.userAgent = userAgent;
         this.connectTimeoutMillis = connectTimeoutMillis;
@@ -571,8 +573,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         String requestUrl = url.toString();
         if (requestModifier != null) {
-            JSRequestModifier.IRequest result = requestModifier.modifyRequest(requestUrl, requestHeaders);
-            requestUrl = result.getUrl();
+            IRequest result = requestModifier.modifyRequest(requestUrl, requestHeaders);
+            String modifiedUrl = result.getUrl();
+            requestUrl = (modifiedUrl != null) ? modifiedUrl : requestUrl;
             requestHeaders = result.getHeaders();
         }
 

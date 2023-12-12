@@ -57,11 +57,6 @@ class JSHttpClient : ManagedHttpClient {
         return newClient;
     }
 
-    fun applyRequest(req: JSRequestModifier.Request) {
-
-
-    }
-
     //TODO: Use this in beforeRequest to remove dup code
     fun applyHeaders(url: Uri, headers: MutableMap<String, String>, applyAuth: Boolean = false, applyOtherCookies: Boolean = false) {
         val domain = url.host!!.lowercase();

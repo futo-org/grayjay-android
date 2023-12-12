@@ -4,12 +4,16 @@ package com.futo.platformplayer.api.media.platforms.js.models.sources
 
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.api.media.models.modifier.AdhocRequestModifier
+import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequest
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.orNull
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
@@ -20,6 +24,7 @@ abstract class JSSource {
     protected val _config: IV8PluginConfig;
     protected val _obj: V8ValueObject;
     val hasRequestModifier: Boolean;
+    private val _requestModifier: JSRequest?;
 
     val type : String;
 
@@ -29,10 +34,18 @@ abstract class JSSource {
         this._obj = obj;
         this.type = type;
 
-        hasRequestModifier = obj.has("getRequestModifier");
+        _requestModifier = obj.getOrDefault<V8ValueObject>(_config, "requestModifier", "JSSource.requestModifier", null)?.let {
+            JSRequest(plugin, it, null, null);
+        }
+        hasRequestModifier = _requestModifier != null || obj.has("getRequestModifier");
     }
 
-    fun getRequestModifier(): JSRequestModifier? {
+    fun getRequestModifier(): IRequestModifier? {
+        if(_requestModifier != null)
+            return AdhocRequestModifier { url, headers ->
+                  return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers);
+            };
+
         if (!hasRequestModifier || _obj.isClosed) {
             return null;
         }
