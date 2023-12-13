@@ -564,6 +564,7 @@
     <string name="playlist_copied_as_local_playlist">Playlist copied as local playlist</string>
     <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">Are you sure you want to delete the downloaded videos?</string>
     <string name="create_new_playlist">Create new playlist</string>
+    <string name="create_new_subgroup">Create new subscription group</string>
     <string name="expected_media_content_found">Expected media content, found</string>
     <string name="failed_to_load_post">Failed to load post.</string>
     <string name="replies">replies</string>

@@ -88,6 +88,7 @@
                     android:text="Pick a creator as group image" />
 
                 <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_creators"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 

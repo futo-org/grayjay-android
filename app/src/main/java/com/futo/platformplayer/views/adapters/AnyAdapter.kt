@@ -2,6 +2,9 @@ package com.futo.platformplayer.views.adapters
 
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import java.lang.reflect.Constructor
@@ -115,7 +118,6 @@ class AnyAdapter<I, T : AnyAdapter.AnyViewHolder<I>> : BaseAnyAdapter<I, T, T> {
 
     private class Adapter<I, T : AnyViewHolder<I>> : RecyclerView.Adapter<T> {
         private val _parent: AnyAdapter<I, T>;
-
 
         constructor(parentAdapter: AnyAdapter<I, T>) {
             _parent = parentAdapter;

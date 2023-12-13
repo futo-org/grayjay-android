@@ -36,6 +36,7 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.listeners.OrientationManager
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -100,6 +101,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
     lateinit var _fragImportPlaylists: ImportPlaylistsFragment;
     lateinit var _fragBuy: BuyFragment;
+    lateinit var _fragSubGroup: SubscriptionGroupFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
 
@@ -235,6 +237,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
         _fragImportPlaylists = ImportPlaylistsFragment.newInstance();
         _fragBuy = BuyFragment.newInstance();
+        _fragSubGroup = SubscriptionGroupFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -316,6 +319,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragDownloads.topBar = _fragTopBarGeneral;
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
+        _fragSubGroup.topBar = _fragTopBarNavigation;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -982,6 +986,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             ImportPlaylistsFragment::class -> _fragImportPlaylists as T;
             BrowserFragment::class -> _fragBrowser as T;
             BuyFragment::class -> _fragBuy as T;
+            SubscriptionGroupFragment::class -> _fragSubGroup as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }

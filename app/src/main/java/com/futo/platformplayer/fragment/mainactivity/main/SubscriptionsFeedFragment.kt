@@ -254,6 +254,12 @@ class SubscriptionsFeedFragment : MainFragment() {
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             };
             _subscriptionBar?.onClickChannel?.subscribe { c -> fragment.navigate<ChannelFragment>(c); };
+            _subscriptionBar?.onClickGroup?.subscribe { g ->
+
+            };
+            _subscriptionBar?.onHoldGroup?.subscribe { g ->
+                fragment.navigate<SubscriptionGroupFragment>(g);
+            };
 
             synchronized(_filterLock) {
                 _subscriptionBar?.setToggles(

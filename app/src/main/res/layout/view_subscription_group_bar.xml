@@ -1,0 +1,34 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="75dp"
+    android:layout_height="50dp"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:layout_margin="4dp"
+    android:clickable="true"
+    android:id="@+id/root">
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/xp_book" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/text_sub_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="12dp"
+            android:textAlignment="center"
+            android:text="News" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

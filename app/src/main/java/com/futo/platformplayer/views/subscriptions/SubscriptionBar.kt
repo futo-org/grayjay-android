@@ -4,21 +4,28 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.models.SubscriptionGroup
+import com.futo.platformplayer.states.StateSubscriptionGroups
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.others.ToggleTagView
 import com.futo.platformplayer.views.adapters.viewholders.SubscriptionBarViewHolder
+import com.futo.platformplayer.views.adapters.viewholders.SubscriptionGroupBarViewHolder
 
 class SubscriptionBar : LinearLayout {
     private var _adapterView: AnyAdapterView<Subscription, SubscriptionBarViewHolder>? = null;
+    private var _subGroups: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>
     private val _tagsContainer: LinearLayout;
 
     val onClickChannel = Event1<SerializedChannel>();
+    val onClickGroup = Event1<SubscriptionGroup>();
+    val onHoldGroup = Event1<SubscriptionGroup>();
 
 
 
@@ -31,6 +38,11 @@ class SubscriptionBar : LinearLayout {
                 onClickChannel.emit(c.channel);
             };
         };
+        val subgroups = StateSubscriptionGroups.instance.getSubscriptionGroups();
+        _subGroups = findViewById<RecyclerView>(R.id.recycler_subgroups).asAny(subgroups, orientation = RecyclerView.HORIZONTAL) {
+            it.onClick.subscribe(onClickGroup::emit);
+            it.onClickLong.subscribe(onHoldGroup::emit);
+        }
         _tagsContainer = findViewById(R.id.container_tags);
     }
 
