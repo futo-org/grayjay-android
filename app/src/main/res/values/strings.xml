@@ -342,6 +342,8 @@
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>
     <string name="live_chat_webview">Live Chat Webview</string>
+    <string name="full_screen_portrait">Fullscreen portrait</string>
+    <string name="allow_full_screen_portrait">Allow fullscreen portrait</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
     <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="preview_feed_items">Preview Feed Items</string>
