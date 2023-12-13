@@ -1,5 +1,7 @@
 package com.futo.platformplayer.video
 
+import android.media.session.PlaybackState
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -19,6 +21,15 @@ class PlayerManager {
 
     constructor(exoPlayer: ExoPlayer) {
         this.player = exoPlayer;
+    }
+
+
+    fun getPlaybackStateCompat() : Int {
+        return when(player.playbackState) {
+            ExoPlayer.STATE_READY -> if(player.playWhenReady) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED;
+            ExoPlayer.STATE_BUFFERING -> PlaybackState.STATE_BUFFERING;
+            else -> PlaybackState.STATE_NONE
+        }
     }
 
     @Synchronized

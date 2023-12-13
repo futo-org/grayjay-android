@@ -12,6 +12,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
+import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
 import android.util.Log
@@ -571,9 +572,9 @@ class VideoDetailView : ConstraintLayout {
         }
 
         _playerProgress.player = _player.exoPlayer?.player;
-        _playerProgress.setProgressUpdateListener { _, _ ->
-            StatePlayer.instance.updateMediaSessionPlaybackState();
-        }
+        _playerProgress.setProgressUpdateListener { position, _ ->
+            StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, position);
+        };
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
             if(!_destroyed) {
@@ -1358,10 +1359,8 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
         StatePlayer.instance.setCurrentlyPlaying(video);
-
 
         if(video.isLive && video.live != null) {
             loadLiveChat(video);
@@ -1791,7 +1790,7 @@ class VideoDetailView : ConstraintLayout {
             _cast.setIsPlaying(playing);
         } else {
             StatePlayer.instance.updateMediaSession( null);
-            StatePlayer.instance.updateMediaSessionPlaybackState();
+            StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, _player.exoPlayer?.player?.currentPosition ?: 0);
         }
 
         if(playing) {

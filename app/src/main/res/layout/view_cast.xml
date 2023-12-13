@@ -143,7 +143,7 @@
         app:layout_constraintTop_toTopOf="@id/text_position"
         app:layout_constraintBottom_toBottomOf="@id/text_position"/>
 
-    <com.google.android.exoplayer2.ui.DefaultTimeBar
+    <androidx.media3.ui.DefaultTimeBar
         android:id="@+id/time_progress"
         android:layout_width="match_parent"
         android:layout_height="16dp"

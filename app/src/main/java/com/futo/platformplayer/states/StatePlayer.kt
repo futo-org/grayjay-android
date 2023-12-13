@@ -107,8 +107,8 @@ class StatePlayer {
     fun updateMediaSession(videoUpdated: IPlatformVideoDetails?) {
         MediaPlaybackService.getService()?.updateMediaSession(videoUpdated);
     }
-    fun updateMediaSessionPlaybackState() {
-        MediaPlaybackService.getService()?.updateMediaSessionPlaybackState();
+    fun updateMediaSessionPlaybackState(state: Int, pos: Long) {
+        MediaPlaybackService.getService()?.updateMediaSessionPlaybackState(state, pos);
     }
     fun closeMediaSession() {
         MediaPlaybackService.getService()?.closeMediaSession();

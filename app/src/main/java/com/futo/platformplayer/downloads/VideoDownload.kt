@@ -67,7 +67,7 @@ class VideoDownload {
     val videoEither: IPlatformVideo get() = videoDetails ?: video ?: throw IllegalStateException("Missing video?");
     val id: PlatformID get() = videoEither.id
     val name: String get() = videoEither.name;
-    val thumbnail: String? get() = videoDetails?.thumbnails?.getHQThumbnail() ?: video?.thumbnails?.getHQThumbnail();
+    val thumbnail: String? get() = videoDetails?.thumbnails?.getHQThumbnail();
 
     var targetPixelCount: Long? = null;
     var targetBitrate: Long? = null;

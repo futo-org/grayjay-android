@@ -1,6 +1,8 @@
 package com.futo.platformplayer.views.casting
 
 import android.content.Context
+import android.media.session.PlaybackState
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -147,9 +149,10 @@ class CastView : ConstraintLayout {
             _buttonPlay.visibility = View.VISIBLE;
         }
 
+        val position = StateCasting.instance.activeDevice?.expectedCurrentTime?.times(1000.0)?.toLong();
         if(StatePlayer.instance.hasMediaSession()) {
             StatePlayer.instance.updateMediaSession(null);
-            StatePlayer.instance.updateMediaSessionPlaybackState();
+            StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), (position ?: 0));
         }
     }
 
@@ -195,7 +198,7 @@ class CastView : ConstraintLayout {
     fun setTime(ms: Long) {
         _textPosition.text = ms.toHumanTime(true);
         _timeBar.setPosition(ms / 1000);
-        StatePlayer.instance.updateMediaSessionPlaybackState();
+        StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), ms);
     }
 
     fun cleanup() {
@@ -204,5 +207,14 @@ class CastView : ConstraintLayout {
         _updateTimeJob?.cancel();
         _updateTimeJob = null;
         _scope.cancel();
+    }
+
+    private fun getPlaybackStateCompat(): Int {
+        val d = StateCasting.instance.activeDevice ?: return PlaybackState.STATE_NONE;
+
+        return when(d.isPlaying) {
+            true -> PlaybackStateCompat.STATE_PLAYING;
+            else -> PlaybackStateCompat.STATE_PAUSED;
+        }
     }
 }
