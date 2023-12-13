@@ -20,10 +20,11 @@ class CastingDeviceInfoStorage : FragmentedStorageFileJson() {
     }
 
     @Synchronized
-    fun addDevice(castingDeviceInfo: CastingDeviceInfo): Boolean {
-        if (deviceInfos.any { d -> d.name == castingDeviceInfo.name }) {
+    fun addDevice(castingDeviceInfo: CastingDeviceInfo): CastingDeviceInfo {
+        val foundDeviceInfo = deviceInfos.firstOrNull { d -> d.name == castingDeviceInfo.name }
+        if (foundDeviceInfo != null) {
             Logger.i("CastingDeviceInfoStorage", "Device '${castingDeviceInfo.name}' already existed in device storage.")
-            return false;
+            return foundDeviceInfo;
         }
 
         if (deviceInfos.size >= 5) {
@@ -32,7 +33,7 @@ class CastingDeviceInfoStorage : FragmentedStorageFileJson() {
 
         deviceInfos.add(castingDeviceInfo);
         save();
-        return true;
+        return castingDeviceInfo;
     }
 
     @Synchronized

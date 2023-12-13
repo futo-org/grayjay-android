@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.views.casting
 
 import android.content.Context
@@ -13,7 +11,11 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.DefaultTimeBar
+import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -23,9 +25,6 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.behavior.GestureControlView
-import com.google.android.exoplayer2.ui.DefaultTimeBar
-import com.google.android.exoplayer2.ui.TimeBar
-import com.google.android.exoplayer2.ui.TimeBar.OnScrubListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +38,8 @@ class CastView : ConstraintLayout {
     private val _buttonSettings: ImageButton;
     private val _buttonLoop: ImageButton;
     private val _buttonPlay: ImageButton;
+    private val _buttonPrevious: ImageButton;
+    private val _buttonNext: ImageButton;
     private val _buttonPause: ImageButton;
     private val _buttonCast: CastButton;
     private val _textPosition: TextView;
@@ -53,7 +54,10 @@ class CastView : ConstraintLayout {
 
     val onMinimizeClick = Event0();
     val onSettingsClick = Event0();
+    val onPrevious = Event0();
+    val onNext = Event0();
 
+    @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_cast, this, true);
 
@@ -62,6 +66,8 @@ class CastView : ConstraintLayout {
         _buttonSettings = findViewById(R.id.button_settings);
         _buttonLoop = findViewById(R.id.button_loop);
         _buttonPlay = findViewById(R.id.button_play);
+        _buttonPrevious = findViewById(R.id.button_previous);
+        _buttonNext = findViewById(R.id.button_next);
         _buttonPause = findViewById(R.id.button_pause);
         _buttonCast = findViewById(R.id.button_cast);
         _textPosition = findViewById(R.id.text_position);
@@ -83,7 +89,7 @@ class CastView : ConstraintLayout {
         }
         _buttonLoop.setImageResource(if(StatePlayer.instance.loopVideo) R.drawable.ic_loop_active else R.drawable.ic_loop);
 
-        _timeBar.addListener(object : OnScrubListener {
+        _timeBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
                 StateCasting.instance.videoSeekTo(position.toDouble());
             }
@@ -105,6 +111,29 @@ class CastView : ConstraintLayout {
         if (!isInEditMode) {
             setIsPlaying(false);
         }
+
+        StatePlayer.instance.onQueueChanged.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                setLoopVisible(!StatePlayer.instance.hasQueue)
+                updateNextPrevious();
+            }
+        }
+        StatePlayer.instance.onVideoChanging.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                updateNextPrevious();
+            }
+        }
+
+        updateNextPrevious();
+        _buttonPrevious.setOnClickListener { onPrevious.emit() };
+        _buttonNext.setOnClickListener { onNext.emit() };
+    }
+
+    private fun updateNextPrevious() {
+        val vidPrev = StatePlayer.instance.getPrevQueueItem(true);
+        val vidNext = StatePlayer.instance.getNextQueueItem(true);
+        _buttonNext.visibility = if (vidNext != null) View.VISIBLE else View.GONE
+        _buttonPrevious.visibility = if (vidPrev != null) View.VISIBLE else View.GONE
     }
 
     fun stopTimeJob() {
@@ -150,7 +179,6 @@ class CastView : ConstraintLayout {
         }
 
         val position = StateCasting.instance.activeDevice?.expectedCurrentTime?.times(1000.0)?.toLong();
-
         if(StatePlayer.instance.hasMediaSession()) {
             StatePlayer.instance.updateMediaSession(null);
             StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), (position ?: 0));
@@ -183,6 +211,7 @@ class CastView : ConstraintLayout {
         }
     }
 
+    @OptIn(UnstableApi::class)
     fun setVideoDetails(video: IPlatformVideoDetails, position: Long) {
         Glide.with(_thumbnail)
             .load(video.thumbnails.getHQThumbnail())
@@ -194,6 +223,7 @@ class CastView : ConstraintLayout {
         _timeBar.setDuration(video.duration);
     }
 
+    @OptIn(UnstableApi::class)
     fun setTime(ms: Long) {
         _textPosition.text = ms.toHumanTime(true);
         _timeBar.setPosition(ms / 1000);

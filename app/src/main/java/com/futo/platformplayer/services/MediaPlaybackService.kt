@@ -55,6 +55,7 @@ class MediaPlaybackService : Service() {
     private var _hasFocus: Boolean = false;
     private var _focusRequest: AudioFocusRequest? = null;
     private var _audioFocusLossTime_ms: Long? = null
+    private var _playbackState = PlaybackStateCompat.STATE_NONE;
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Logger.v(TAG, "onStartCommand");
@@ -250,13 +251,13 @@ class MediaPlaybackService : Service() {
             .setSilent(true)
             .setContentIntent(PendingIntent.getActivity(this, 5, bringUpIntent, PendingIntent.FLAG_IMMUTABLE))
             .setStyle(if(hasQueue)
-                    androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(session.sessionToken)
-                        .setShowActionsInCompactView(0, 1, 2)
-                else
-                    androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(session.sessionToken)
-                        .setShowActionsInCompactView(0))
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(session.sessionToken)
+                    .setShowActionsInCompactView(0, 1, 2)
+            else
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(session.sessionToken)
+                    .setShowActionsInCompactView(0))
             .setDeleteIntent(deleteIntent)
             .setChannelId(channel.id)
 
@@ -306,10 +307,8 @@ class MediaPlaybackService : Service() {
         Logger.i(TAG, "Updating notification bitmap=${if (bitmap != null) "yes" else "no."} channelId=${channel.id} icon=${icon} video=${video?.name ?: ""} playWhenReady=${playWhenReady} session.sessionToken=${session.sessionToken}");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // For API 29 and above
             startForeground(MEDIA_NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
         } else {
-            // For API 28 and below
             startForeground(MEDIA_NOTIF_ID, notif);
         }
 
@@ -319,19 +318,21 @@ class MediaPlaybackService : Service() {
     fun updateMediaSessionPlaybackState(state: Int, pos: Long) {
         _mediaSession?.setPlaybackState(
             PlaybackStateCompat.Builder()
-            .setActions(
-                PlaybackStateCompat.ACTION_SEEK_TO or
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE
-            )
-            .setState(state, pos, 1f, SystemClock.elapsedRealtime())
-            .build());
+                .setActions(
+                    PlaybackStateCompat.ACTION_SEEK_TO or
+                            PlaybackStateCompat.ACTION_PLAY or
+                            PlaybackStateCompat.ACTION_PAUSE or
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                            PlaybackStateCompat.ACTION_PLAY_PAUSE
+                )
+                .setState(state, pos, 1f, SystemClock.elapsedRealtime())
+                .build());
 
         if(_focusRequest == null)
             setAudioFocus();
+
+        _playbackState = state;
     }
 
     //TODO: (TBD) This code probably more fitting inside FutoVideoPlayer, as this service is generally only used for global events
@@ -379,14 +380,26 @@ class MediaPlaybackService : Service() {
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                         MediaControlReceiver.onPauseReceived.emit();
-                        _audioFocusLossTime_ms = System.currentTimeMillis()
+                        if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
+                            _playbackState != PlaybackStateCompat.STATE_STOPPED &&
+                            _playbackState != PlaybackStateCompat.STATE_NONE &&
+                            _playbackState != PlaybackStateCompat.STATE_ERROR) {
+                            _audioFocusLossTime_ms = System.currentTimeMillis()
+                        }
+
                         Log.i(TAG, "Audio focus transient loss");
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         Log.i(TAG, "Audio focus transient loss, can duck");
                     }
                     AudioManager.AUDIOFOCUS_LOSS -> {
-                        _audioFocusLossTime_ms = System.currentTimeMillis()
+                        if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
+                            _playbackState != PlaybackStateCompat.STATE_STOPPED &&
+                            _playbackState != PlaybackStateCompat.STATE_NONE &&
+                            _playbackState != PlaybackStateCompat.STATE_ERROR) {
+                            _audioFocusLossTime_ms = System.currentTimeMillis()
+                        }
+
                         _hasFocus = false;
                         MediaControlReceiver.onPauseReceived.emit();
                         Log.i(TAG, "Audio focus lost");

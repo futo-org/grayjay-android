@@ -6,28 +6,41 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.activities.*
+import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.ManageTabsActivity
+import com.futo.platformplayer.activities.PolycentricHomeActivity
+import com.futo.platformplayer.activities.PolycentricProfileActivity
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
-import com.futo.platformplayer.states.*
+import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateBackup
+import com.futo.platformplayer.states.StateCache
+import com.futo.platformplayer.states.StateMeta
+import com.futo.platformplayer.states.StatePayment
+import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
-import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FieldForm
+import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
 
@@ -428,6 +441,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.restart_after_connectivity_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_connectivity_after_a_loss, 12)
         @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
         var restartPlaybackAfterConnectivityLoss: Int = 1;
+
+        @FormField(R.string.full_screen_portrait, FieldForm.TOGGLE, R.string.allow_full_screen_portrait, 13)
+        var fullscreenPortrait: Boolean = false;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

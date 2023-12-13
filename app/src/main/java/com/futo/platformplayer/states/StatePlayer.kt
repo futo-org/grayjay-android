@@ -1,8 +1,12 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.states
 
 import android.content.Context
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
@@ -13,10 +17,6 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.services.MediaPlaybackService
 import com.futo.platformplayer.video.PlayerManager
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.DefaultLoadControl
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.upstream.DefaultAllocator
 import kotlin.random.Random
 
 /***
@@ -557,21 +557,23 @@ class StatePlayer {
     }
 
     //Player Initialization
-    fun getPlayerOrCreate(context : Context) : PlayerManager {
+    fun getPlayerOrCreate(context: Context) : PlayerManager {
         if(_exoplayer == null) {
             val player = createExoPlayer(context);
             _exoplayer = PlayerManager(player);
         }
         return _exoplayer!!;
     }
-    fun getThumbnailPlayerOrCreate(context : Context) : PlayerManager {
+    fun getThumbnailPlayerOrCreate(context: Context) : PlayerManager {
         if(_thumbnailExoPlayer == null) {
             val player = createExoPlayer(context);
             _thumbnailExoPlayer = PlayerManager(player);
         }
         return _thumbnailExoPlayer!!;
     }
-    private fun createExoPlayer(context : Context) : ExoPlayer {
+
+    @OptIn(UnstableApi::class)
+    private fun createExoPlayer(context : Context): ExoPlayer {
         return ExoPlayer.Builder(context)
             .setLoadControl(
                 DefaultLoadControl.Builder()
@@ -588,7 +590,6 @@ class StatePlayer {
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT)
             .build();
     }
-
 
     fun dispose(){
         val player = _exoplayer;

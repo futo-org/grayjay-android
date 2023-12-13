@@ -108,17 +108,22 @@ class VideoDetailFragment : MainFragment {
 
         if(Settings.instance.other.bypassRotationPrevention && orientation == OrientationManager.Orientation.PORTRAIT)
             changeOrientation(OrientationManager.Orientation.PORTRAIT);
+
         if(lastOrientation == newOrientation)
             return;
 
         activity?.let {
             if (isFullscreen) {
-                if(newOrientation == OrientationManager.Orientation.REVERSED_LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-                    changeOrientation(OrientationManager.Orientation.REVERSED_LANDSCAPE);
-                else if(newOrientation == OrientationManager.Orientation.LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
-                    changeOrientation(OrientationManager.Orientation.LANDSCAPE);
-                else if(Settings.instance.playback.isAutoRotate() && (newOrientation == OrientationManager.Orientation.PORTRAIT || newOrientation == OrientationManager.Orientation.REVERSED_PORTRAIT)) {
-                    _viewDetail?.setFullscreen(false);
+                if (Settings.instance.playback.fullscreenPortrait) {
+                    changeOrientation(newOrientation);
+                } else {
+                    if(newOrientation == OrientationManager.Orientation.REVERSED_LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                        changeOrientation(OrientationManager.Orientation.REVERSED_LANDSCAPE);
+                    else if(newOrientation == OrientationManager.Orientation.LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+                        changeOrientation(OrientationManager.Orientation.LANDSCAPE);
+                    else if(Settings.instance.playback.isAutoRotate() && (newOrientation == OrientationManager.Orientation.PORTRAIT || newOrientation == OrientationManager.Orientation.REVERSED_PORTRAIT)) {
+                        _viewDetail?.setFullscreen(false);
+                    }
                 }
             }
             else {
@@ -326,6 +331,8 @@ class VideoDetailFragment : MainFragment {
         Logger.i(TAG, "Real orientation on boot ${realOrientation}, lastOrientation: ${lastOrientation}");
         if(realOrientation != lastOrientation)
             onOrientationChanged(realOrientation);
+
+        StateCasting.instance.onResume();
     }
     override fun onPause() {
         super.onPause();
@@ -403,10 +410,14 @@ class VideoDetailFragment : MainFragment {
     private fun onFullscreenChanged(fullscreen : Boolean) {
         activity?.let {
             if (fullscreen) {
-                var orient = lastOrientation;
-                if(orient == OrientationManager.Orientation.PORTRAIT || orient == OrientationManager.Orientation.REVERSED_PORTRAIT)
-                    orient = OrientationManager.Orientation.LANDSCAPE;
-                changeOrientation(orient);
+                if (Settings.instance.playback.fullscreenPortrait) {
+                    changeOrientation(lastOrientation);
+                } else {
+                    var orient = lastOrientation;
+                    if(orient == OrientationManager.Orientation.PORTRAIT || orient == OrientationManager.Orientation.REVERSED_PORTRAIT)
+                        orient = OrientationManager.Orientation.LANDSCAPE;
+                    changeOrientation(orient);
+                }
             }
             else
                 changeOrientation(OrientationManager.Orientation.PORTRAIT);

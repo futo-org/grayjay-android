@@ -39,7 +39,7 @@
             android:elevation="4dp"
             android:layout_marginBottom="6dp" />
 
-        <com.google.android.exoplayer2.ui.PlayerControlView
+        <androidx.media3.ui.PlayerControlView
             android:id="@+id/videodetail_progress"
             android:layout_width="match_parent"
             android:layout_height="12dp"

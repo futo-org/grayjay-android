@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.app.PictureInPictureParams
@@ -32,6 +30,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.ui.PlayerControlView
+import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -138,11 +142,6 @@ import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
 import com.futo.polycentric.core.Opinion
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.TimeBar
-import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -154,7 +153,6 @@ import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
 import kotlin.math.roundToLong
-
 
 class VideoDetailView : ConstraintLayout {
     private val TAG = "VideoDetailView"
@@ -303,7 +301,7 @@ class VideoDetailView : ConstraintLayout {
         Pair(0, 10) //around live, try every 10 seconds
     );
 
-
+    @androidx.annotation.OptIn(UnstableApi::class)
     constructor(context: Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.fragview_video_detail, this);
 
@@ -312,7 +310,7 @@ class VideoDetailView : ConstraintLayout {
         _cast = findViewById(R.id.videodetail_cast);
         _player = findViewById(R.id.videodetail_player);
         _playerProgress = findViewById(R.id.videodetail_progress);
-        _timeBar = _playerProgress.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+        _timeBar = _playerProgress.findViewById(androidx.media3.ui.R.id.exo_progress);
         _title = findViewById(R.id.videodetail_title);
         _subTitle = findViewById(R.id.videodetail_meta);
         _platform = findViewById(R.id.videodetail_platform);
@@ -514,6 +512,8 @@ class VideoDetailView : ConstraintLayout {
         _player.onDatasourceError.subscribe(::onDataSourceError);
         _player.onNext.subscribe { nextVideo(true, true, true) };
         _player.onPrevious.subscribe { prevVideo(true) };
+        _cast.onPrevious.subscribe { prevVideo(true) };
+        _cast.onNext.subscribe { nextVideo(true, true, true) };
 
         _minimize_controls_play.setOnClickListener { handlePlay(); };
         _minimize_controls_pause.setOnClickListener { handlePause(); };
@@ -576,7 +576,7 @@ class VideoDetailView : ConstraintLayout {
         _playerProgress.player = _player.exoPlayer?.player;
         _playerProgress.setProgressUpdateListener { position, _ ->
             StatePlayer.instance.updateMediaSessionPlaybackState(_player.exoPlayer?.getPlaybackStateCompat() ?: PlaybackStateCompat.STATE_NONE, position);
-        }
+        };
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
             if(!_destroyed) {
@@ -1361,10 +1361,8 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
         StatePlayer.instance.setCurrentlyPlaying(video);
-
 
         if(video.isLive && video.live != null) {
             loadLiveChat(video);
@@ -1472,7 +1470,7 @@ class VideoDetailView : ConstraintLayout {
                 _player.seekTo(resumePositionMs);
             }
             else
-                loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs);
+                loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble());
 
             _lastVideoSource = videoSource;
             _lastAudioSource = audioSource;
@@ -1486,17 +1484,17 @@ class VideoDetailView : ConstraintLayout {
             UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_load_media), ex);
         }
     }
-    private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long) {
+    private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
 
-        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs)) {
+        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)) {
             _cast.setVideoDetails(video, resumePositionMs / 1000);
             setCastEnabled(true);
-        }
-        else throw IllegalStateException("Disconnected cast during loading");
+        } else throw IllegalStateException("Disconnected cast during loading");
     }
 
     //Events
+    @androidx.annotation.OptIn(UnstableApi::class)
     private fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean){
         Logger.i(TAG, "onSourceChanged(videoSource=$videoSource, audioSource=$audioSource, resume=$resume)")
 
@@ -1532,7 +1530,7 @@ class VideoDetailView : ConstraintLayout {
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
-        if(exception.cause != null && exception.cause is InvalidResponseCodeException && (exception.cause!! as InvalidResponseCodeException).responseCode == 403) {
+        if(exception.cause != null && exception.cause is HttpDataSource.InvalidResponseCodeException && (exception.cause!! as HttpDataSource.InvalidResponseCodeException).responseCode == 403) {
             val currentVideo = video
             if(currentVideo == null || currentVideo !is IPluginSourced)
                 return;
@@ -1579,6 +1577,11 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("video", _lastVideoSource);
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
+        val currentPlaybackRate = (if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()) ?: 1.0
+        _overlay_quality_selector?.groupItems?.firstOrNull { it is SlideUpMenuButtonList && it.id == "playback_rate" }?.let {
+            (it as SlideUpMenuButtonList).setSelected(currentPlaybackRate.toString())
+        };
+
         _overlay_quality_selector?.show();
         _slideUpOverlay = _overlay_quality_selector;
     }
@@ -1611,6 +1614,7 @@ class VideoDetailView : ConstraintLayout {
         val v = video ?: return;
         updateQualitySourcesOverlay(v, videoLocal, liveStreamVideoFormats, liveStreamAudioFormats);
     }
+    @androidx.annotation.OptIn(UnstableApi::class)
     private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
         Logger.i(TAG, "updateQualitySourcesOverlay");
 
@@ -1658,18 +1662,26 @@ class VideoDetailView : ConstraintLayout {
             ?.filter { it.container == bestAudioContainer }
             ?.toList() ?: listOf();
 
+        val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
+        val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
         _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, context.getString(
                     R.string.quality), null, true,
-            if (!_isCasting) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
-            if (!_isCasting) SlideUpMenuButtonList(this.context).apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), _player.getPlaybackRate().toString());
+            if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
+            if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
+                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate!!.toString());
                 onClick.subscribe { v ->
                     if (_isCasting) {
-                        return@subscribe;
-                    }
+                        val ad = StateCasting.instance.activeDevice ?: return@subscribe
+                        if (!ad.canSetSpeed) {
+                            return@subscribe
+                        }
 
-                    _player.setPlaybackRate(v.toFloat());
-                    setSelected(v);
+                        ad.changeSpeed(v.toDouble())
+                        setSelected(v);
+                    } else {
+                        _player.setPlaybackRate(v.toFloat());
+                        setSelected(v);
+                    }
                 };
             } else null,
 
@@ -1730,7 +1742,7 @@ class VideoDetailView : ConstraintLayout {
                                 { handleSelectAudioTrack(it) });
                         }.toList().toTypedArray())
             else null,
-            if(video?.subtitles?.isNotEmpty() ?: false && video != null)
+            if(video?.subtitles?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",
                     *video.subtitles
                         .map {
@@ -1831,7 +1843,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
             _player.hideControls(false); //TODO: Disable player?
 
@@ -1846,7 +1858,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else(!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
         _player.hideControls(false); //TODO: Disable player?
 
@@ -1862,7 +1874,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else
             _player.swapSubtitles(fragment.lifecycleScope, toSet);
 

@@ -1,7 +1,7 @@
-@file:Suppress("DEPRECATION")
-
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -11,8 +11,6 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.orNull
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.upstream.HttpDataSource
 
 abstract class JSSource {
     protected val _config: IV8PluginConfig;
