@@ -67,6 +67,14 @@ class VideoDetailFragment : MainFragment {
     constructor() : super() {
     }
 
+    fun nextVideo() {
+        _viewDetail?.nextVideo(true, true, true);
+    }
+
+    fun previousVideo() {
+        _viewDetail?.prevVideo(true);
+    }
+
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
         Logger.i(TAG, "onShownWithView parameter=$parameter")

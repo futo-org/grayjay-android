@@ -92,7 +92,8 @@ class FCastCastingDevice : CastingDevice {
 
         Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
-        time = resumePosition;
+        setTime(resumePosition);
+        setDuration(duration);
         sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             url = contentId,
@@ -100,7 +101,7 @@ class FCastCastingDevice : CastingDevice {
             speed = speed
         ));
 
-        this.speed = speed ?: 1.0
+        setSpeed(speed ?: 1.0);
     }
 
     override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?) {
@@ -115,7 +116,8 @@ class FCastCastingDevice : CastingDevice {
 
         Logger.i(TAG, "Start streaming content (contentType: $contentType, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
-        time = resumePosition;
+        setTime(resumePosition);
+        setDuration(duration);
         sendMessage(Opcode.PLAY, FCastPlayMessage(
             container = contentType,
             content = content,
@@ -123,7 +125,7 @@ class FCastCastingDevice : CastingDevice {
             speed = speed
         ));
 
-        this.speed = speed ?: 1.0
+        setSpeed(speed ?: 1.0);
     }
 
     override fun changeVolume(volume: Double) {
@@ -131,7 +133,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        this.volume = volume
+        setVolume(volume);
         sendMessage(Opcode.SET_VOLUME, FCastSetVolumeMessage(volume))
     }
 
@@ -140,7 +142,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        this.speed = speed
+        setSpeed(speed);
         sendMessage(Opcode.SET_SPEED, FCastSetSpeedMessage(speed))
     }
 
@@ -330,7 +332,8 @@ class FCastCastingDevice : CastingDevice {
                 }
 
                 val playbackUpdate = FCastCastingDevice.json.decodeFromString<FCastPlaybackUpdateMessage>(json);
-                time = playbackUpdate.time;
+                setTime(playbackUpdate.time, playbackUpdate.generationTime);
+                setDuration(playbackUpdate.duration, playbackUpdate.generationTime);
                 isPlaying = when (playbackUpdate.state) {
                     1 -> true
                     else -> false
@@ -343,7 +346,7 @@ class FCastCastingDevice : CastingDevice {
                 }
 
                 val volumeUpdate = FCastCastingDevice.json.decodeFromString<FCastVolumeUpdateMessage>(json);
-                volume = volumeUpdate.volume;
+                setVolume(volumeUpdate.volume, volumeUpdate.generationTime);
             }
             Opcode.PLAYBACK_ERROR -> {
                 if (json == null) {

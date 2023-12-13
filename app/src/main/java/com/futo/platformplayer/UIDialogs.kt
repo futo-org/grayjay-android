@@ -11,12 +11,27 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.*
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.casting.StateCasting
-import com.futo.platformplayer.dialogs.*
+import com.futo.platformplayer.dialogs.AutoUpdateDialog
+import com.futo.platformplayer.dialogs.AutomaticBackupDialog
+import com.futo.platformplayer.dialogs.AutomaticRestoreDialog
+import com.futo.platformplayer.dialogs.CastingAddDialog
+import com.futo.platformplayer.dialogs.CastingHelpDialog
+import com.futo.platformplayer.dialogs.ChangelogDialog
+import com.futo.platformplayer.dialogs.CommentDialog
+import com.futo.platformplayer.dialogs.ConnectCastingDialog
+import com.futo.platformplayer.dialogs.ConnectedCastingDialog
+import com.futo.platformplayer.dialogs.ImportDialog
+import com.futo.platformplayer.dialogs.ImportOptionsDialog
+import com.futo.platformplayer.dialogs.MigrateDialog
+import com.futo.platformplayer.dialogs.ProgressDialog
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
@@ -341,11 +356,17 @@ class UIDialogs {
             val d = StateCasting.instance.activeDevice;
             if (d != null) {
                 val dialog = ConnectedCastingDialog(context);
+                if (context is Activity) {
+                    dialog.setOwnerActivity(context)
+                }
                 registerDialogOpened(dialog);
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             } else {
                 val dialog = ConnectCastingDialog(context);
+                if (context is Activity) {
+                    dialog.setOwnerActivity(context)
+                }
                 registerDialogOpened(dialog);
                 val c = context
                 if (c is Activity) {

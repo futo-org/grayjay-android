@@ -74,7 +74,8 @@ class ChromecastCastingDevice : CastingDevice {
 
         Logger.i(TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
-        time = resumePosition;
+        setTime(resumePosition);
+        setDuration(duration);
         _streamType = streamType;
         _contentType = contentType;
         _contentId = contentId;
@@ -136,7 +137,7 @@ class ChromecastCastingDevice : CastingDevice {
             return;
         }
 
-        this.volume = volume
+        setVolume(volume)
         val setVolumeObject = JSONObject();
         setVolumeObject.put("type", "SET_VOLUME");
 
@@ -490,7 +491,7 @@ class ChromecastCastingDevice : CastingDevice {
                 if (!sessionIsRunning) {
                     _sessionId = null;
                     _mediaSessionId = null;
-                    time = 0.0;
+                    setTime(0.0);
                     _transportId = null;
                     Logger.w(TAG, "Session not found.");
 
@@ -510,7 +511,7 @@ class ChromecastCastingDevice : CastingDevice {
                 val volumeLevel = volume.getString("level").toDouble();
                 val volumeMuted = volume.getBoolean("muted");
                 //val volumeStepInterval = volume.getString("stepInterval").toFloat();
-                this.volume = if (volumeMuted) 0.0 else volumeLevel;
+                setVolume(if (volumeMuted) 0.0 else volumeLevel);
 
                 Logger.i(TAG, "Status update received volume (level: $volumeLevel, muted: $volumeMuted)");
             } else if (type == "MEDIA_STATUS") {
@@ -521,10 +522,16 @@ class ChromecastCastingDevice : CastingDevice {
 
                     val playerState = status.getString("playerState");
                     val currentTime = status.getDouble("currentTime");
+                    if (status.has("media")) {
+                        val media = status.getJSONObject("media")
+                        if (media.has("duration")) {
+                            setDuration(media.getDouble("duration"))
+                        }
+                    }
 
                     isPlaying = playerState == "PLAYING";
                     if (isPlaying) {
-                        time = currentTime;
+                        setTime(currentTime);
                     }
 
                     val playbackRate = status.getInt("playbackRate");

@@ -715,6 +715,7 @@
     <string name="login_to_view_your_comments">Login to view your comments</string>
     <string name="polycentric_is_disabled">Polycentric is disabled</string>
     <string name="play_pause">Play Pause</string>
+    <string name="position">Position</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>

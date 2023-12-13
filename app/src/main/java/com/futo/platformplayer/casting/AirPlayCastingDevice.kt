@@ -56,7 +56,8 @@ class AirPlayCastingDevice : CastingDevice {
 
         Logger.i(FCastCastingDevice.TAG, "Start streaming (streamType: $streamType, contentType: $contentType, contentId: $contentId, resumePosition: $resumePosition, duration: $duration, speed: $speed)");
 
-        time = resumePosition;
+        setTime(resumePosition);
+        setDuration(duration);
         if (resumePosition > 0.0) {
             val pos = resumePosition / duration;
             Logger.i(TAG, "resumePosition: $resumePosition, duration: ${duration}, pos: $pos")
@@ -170,8 +171,16 @@ class AirPlayCastingDevice : CastingDevice {
                         }
 
                         val progress = progressInfo.substring(progressIndex + "position: ".length).toDoubleOrNull() ?: continue;
+                        setTime(progress);
 
-                        time = progress;
+
+                        val durationIndex = progressInfo.lowercase().indexOf("duration: ");
+                        if (durationIndex == -1) {
+                            continue;
+                        }
+
+                        val duration = progressInfo.substring(durationIndex + "duration: ".length).toDoubleOrNull() ?: continue;
+                        setDuration(duration);
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get server info from AirPlay device.", e)
                     }
@@ -196,7 +205,7 @@ class AirPlayCastingDevice : CastingDevice {
     }
 
     override fun changeSpeed(speed: Double) {
-        this.speed = speed
+        setSpeed(speed)
         post("rate?value=$speed")
     }
 

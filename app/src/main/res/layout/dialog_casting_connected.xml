@@ -51,7 +51,8 @@
         android:layout_height="35dp"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
-        android:clickable="true">
+        android:clickable="true"
+        android:layout_marginTop="8dp">
 
         <ImageView
             android:id="@+id/image_device"
@@ -125,11 +126,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginStart="20dp">
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="8dp">
 
         <TextView
             android:id="@+id/text_volume"
-            android:layout_width="wrap_content"
+            android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:text="@string/volume"
             android:textSize="14dp"
@@ -148,6 +150,93 @@
             android:valueTo="1"
             android:layout_marginStart="15dp"
             android:layout_marginEnd="15dp"  />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_position_adjustable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/text_position"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:text="@string/position"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_position"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            app:thumbColor="@color/colorPrimary"
+            app:trackColorActive="@color/colorPrimary"
+            app:trackColorInactive="@color/gray_67"
+            android:value="0.2"
+            android:valueFrom="0"
+            android:valueTo="1"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"  />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:divider="@drawable/divider_transparent_8dp"
+        android:showDividers="middle"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+
+        <ImageButton
+            android:id="@id/button_previous"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="centerCrop"
+            android:clickable="true"
+            android:padding="10dp"
+            app:srcCompat="@drawable/ic_skip_previous" />
+
+        <ImageButton
+            android:id="@+id/button_play"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:padding="20dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_play_white_nopad" />
+
+        <ImageButton
+            android:id="@+id/button_pause"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_pause_white" />
+
+        <ImageButton
+            android:id="@+id/button_stop"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="fitCenter"
+            android:padding="5dp"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_stop_notif" />
+
+        <ImageButton
+            android:id="@id/button_next"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:clickable="true"
+            android:scaleType="centerCrop"
+            android:padding="10dp"
+            app:srcCompat="@drawable/ic_skip_next" />
     </LinearLayout>
 
     <LinearLayout

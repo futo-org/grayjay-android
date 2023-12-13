@@ -66,6 +66,8 @@ class StateCasting {
     val onActiveDeviceConnectionStateChanged = Event2<CastingDevice, CastConnectionState>();
     val onActiveDevicePlayChanged = Event1<Boolean>();
     val onActiveDeviceTimeChanged = Event1<Double>();
+    val onActiveDeviceDurationChanged = Event1<Double>();
+    val onActiveDeviceVolumeChanged = Event1<Double>();
     var activeDevice: CastingDevice? = null;
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
@@ -297,9 +299,11 @@ class StateCasting {
         val ad = activeDevice;
         if (ad != null) {
             Logger.i(TAG, "Stopping previous device because a new one is being connected.")
-            ad.onPlayChanged.clear();
-            ad.onTimeChanged.clear();
-            ad.onConnectionStateChanged.clear();
+            device.onConnectionStateChanged.clear();
+            device.onPlayChanged.clear();
+            device.onTimeChanged.clear();
+            device.onVolumeChanged.clear();
+            device.onDurationChanged.clear();
             ad.stop();
         }
 
@@ -309,9 +313,11 @@ class StateCasting {
             if (castConnectionState == CastConnectionState.DISCONNECTED) {
                 Logger.i(TAG, "Clearing events: $castConnectionState");
 
+                device.onConnectionStateChanged.clear();
                 device.onPlayChanged.clear();
                 device.onTimeChanged.clear();
-                device.onConnectionStateChanged.clear();
+                device.onVolumeChanged.clear();
+                device.onDurationChanged.clear();
                 activeDevice = null;
             }
 
@@ -331,6 +337,12 @@ class StateCasting {
         device.onPlayChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDevicePlayChanged.emit(it) };
         }
+        device.onDurationChanged.subscribe {
+            invokeInMainScopeIfRequired { onActiveDeviceDurationChanged.emit(it) };
+        };
+        device.onVolumeChanged.subscribe {
+            invokeInMainScopeIfRequired { onActiveDeviceVolumeChanged.emit(it) };
+        };
         device.onTimeChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDeviceTimeChanged.emit(it) };
         };
@@ -345,6 +357,8 @@ class StateCasting {
             device.onConnectionStateChanged.clear();
             device.onPlayChanged.clear();
             device.onTimeChanged.clear();
+            device.onVolumeChanged.clear();
+            device.onDurationChanged.clear();
             return;
         }
 
