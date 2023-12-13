@@ -74,6 +74,19 @@
     </LinearLayout>
 
     <ImageButton
+        android:id="@id/button_previous"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:scaleType="centerCrop"
+        android:clickable="true"
+        android:layout_marginRight="40dp"
+        android:padding="5dp"
+        app:srcCompat="@drawable/ic_skip_previous"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/button_play"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <ImageButton
         android:id="@+id/button_play"
         android:layout_width="60dp"
         android:layout_height="60dp"
@@ -84,6 +97,20 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:clickable="true"
         app:srcCompat="@drawable/ic_play_white_nopad" />
+
+    <ImageButton
+        android:id="@id/button_next"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:clickable="true"
+        android:scaleType="centerCrop"
+        android:padding="5dp"
+        android:layout_marginLeft="40dp"
+        app:srcCompat="@drawable/ic_skip_next"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/button_play"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
 
     <ImageButton
         android:id="@+id/button_pause"

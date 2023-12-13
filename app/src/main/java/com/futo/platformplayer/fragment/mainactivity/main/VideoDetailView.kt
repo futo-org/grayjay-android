@@ -512,6 +512,8 @@ class VideoDetailView : ConstraintLayout {
         _player.onDatasourceError.subscribe(::onDataSourceError);
         _player.onNext.subscribe { nextVideo(true, true, true) };
         _player.onPrevious.subscribe { prevVideo(true) };
+        _cast.onPrevious.subscribe { prevVideo(true) };
+        _cast.onNext.subscribe { nextVideo(true, true, true) };
 
         _minimize_controls_play.setOnClickListener { handlePlay(); };
         _minimize_controls_pause.setOnClickListener { handlePause(); };
@@ -1579,7 +1581,7 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.groupItems?.firstOrNull { it is SlideUpMenuButtonList && it.id == "playback_rate" }?.let {
             (it as SlideUpMenuButtonList).setSelected(currentPlaybackRate.toString())
         };
-        
+
         _overlay_quality_selector?.show();
         _slideUpOverlay = _overlay_quality_selector;
     }

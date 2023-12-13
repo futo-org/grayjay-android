@@ -38,6 +38,8 @@ class CastView : ConstraintLayout {
     private val _buttonSettings: ImageButton;
     private val _buttonLoop: ImageButton;
     private val _buttonPlay: ImageButton;
+    private val _buttonPrevious: ImageButton;
+    private val _buttonNext: ImageButton;
     private val _buttonPause: ImageButton;
     private val _buttonCast: CastButton;
     private val _textPosition: TextView;
@@ -52,6 +54,8 @@ class CastView : ConstraintLayout {
 
     val onMinimizeClick = Event0();
     val onSettingsClick = Event0();
+    val onPrevious = Event0();
+    val onNext = Event0();
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -62,6 +66,8 @@ class CastView : ConstraintLayout {
         _buttonSettings = findViewById(R.id.button_settings);
         _buttonLoop = findViewById(R.id.button_loop);
         _buttonPlay = findViewById(R.id.button_play);
+        _buttonPrevious = findViewById(R.id.button_previous);
+        _buttonNext = findViewById(R.id.button_next);
         _buttonPause = findViewById(R.id.button_pause);
         _buttonCast = findViewById(R.id.button_cast);
         _textPosition = findViewById(R.id.text_position);
@@ -105,6 +111,28 @@ class CastView : ConstraintLayout {
         if (!isInEditMode) {
             setIsPlaying(false);
         }
+
+        StatePlayer.instance.onQueueChanged.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                setLoopVisible(!StatePlayer.instance.hasQueue)
+                updateNextPrevious();
+            }
+        }
+        StatePlayer.instance.onVideoChanging.subscribe(this) {
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                updateNextPrevious();
+            }
+        }
+
+        _buttonPrevious.setOnClickListener { onPrevious.emit() };
+        _buttonNext.setOnClickListener { onNext.emit() };
+    }
+
+    private fun updateNextPrevious() {
+        val vidPrev = StatePlayer.instance.getPrevQueueItem(true);
+        val vidNext = StatePlayer.instance.getNextQueueItem(true);
+        _buttonNext.visibility = if (vidNext != null) View.VISIBLE else View.GONE
+        _buttonPrevious.visibility = if (vidPrev != null) View.VISIBLE else View.GONE
     }
 
     fun stopTimeJob() {
