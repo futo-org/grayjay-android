@@ -13,7 +13,6 @@ import java.text.DecimalFormat
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
-import kotlin.time.toDuration
 
 
 //Long
@@ -226,6 +225,14 @@ fun Long.toHumanTime(isMs: Boolean): String {
 //TODO: Determine if below stuff should have its own proper class, seems a bit too complex for a utility method
 fun String.fixHtmlWhitespace(): Spanned {
     return Html.fromHtml(replace("\n", "<br />"), HtmlCompat.FROM_HTML_MODE_LEGACY);
+}
+
+fun Long.formatDuration(): String {
+    val hours = this / 3600000
+    val minutes = (this % 3600000) / 60000
+    val seconds = (this % 60000) / 1000
+
+    return String.format("%02d:%02d:%02d", hours, minutes, seconds)
 }
 
 fun String.fixHtmlLinks(): Spanned {

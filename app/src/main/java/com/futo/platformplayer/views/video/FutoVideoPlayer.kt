@@ -16,6 +16,14 @@ import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerControlView
+import androidx.media3.ui.PlayerView
+import androidx.media3.ui.TimeBar
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -26,18 +34,11 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
+import com.futo.platformplayer.formatDuration
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.behavior.GestureControlView
-import androidx.media3.common.PlaybackParameters
-import androidx.media3.common.VideoSize
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerControlView
-import androidx.media3.ui.PlayerView
-import androidx.media3.ui.TimeBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,7 +75,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_loop: ImageButton;
     private val _control_cast: ImageButton;
     private val _control_play: ImageButton;
+    private val _control_pause: ImageButton;
     private val _control_chapter: TextView;
+    private val _control_time: TextView;
+    private val _control_duration: TextView;
     private val _time_bar: TimeBar;
     private val _buttonPrevious: ImageButton;
     private val _buttonNext: ImageButton;
@@ -91,6 +95,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_chapter_fullscreen: TextView;
     private val _buttonPrevious_fullscreen: ImageButton;
     private val _buttonNext_fullscreen: ImageButton;
+    private val _control_time_fullscreen: TextView;
+    private val _control_duration_fullscreen: TextView;
+    private val _control_pause_fullscreen: ImageButton;
 
     private val _title_fullscreen: TextView;
     private val _author_fullscreen: TextView;
@@ -134,30 +141,36 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _videoView = findViewById(R.id.video_player);
 
         videoControls = findViewById(R.id.video_player_controller);
-        _control_fullscreen = videoControls.findViewById(R.id.exo_fullscreen);
-        _control_videosettings = videoControls.findViewById(R.id.exo_settings);
-        _control_minimize = videoControls.findViewById(R.id.exo_minimize);
-        _control_rotate_lock = videoControls.findViewById(R.id.exo_rotate_lock);
-        _control_loop = videoControls.findViewById(R.id.exo_loop);
-        _control_cast = videoControls.findViewById(R.id.exo_cast);
-        _control_play = videoControls.findViewById(androidx.media3.ui.R.id.exo_play);
-        _time_bar = videoControls.findViewById(androidx.media3.ui.R.id.exo_progress);
+        _control_fullscreen = videoControls.findViewById(R.id.button_fullscreen);
+        _control_videosettings = videoControls.findViewById(R.id.button_settings);
+        _control_minimize = videoControls.findViewById(R.id.button_minimize);
+        _control_rotate_lock = videoControls.findViewById(R.id.button_rotate_lock);
+        _control_loop = videoControls.findViewById(R.id.button_loop);
+        _control_cast = videoControls.findViewById(R.id.button_cast);
+        _control_play = videoControls.findViewById(R.id.button_play);
+        _control_pause = videoControls.findViewById(R.id.button_pause);
+        _time_bar = videoControls.findViewById(R.id.time_progress);
         _control_chapter = videoControls.findViewById(R.id.text_chapter_current);
         _buttonNext = videoControls.findViewById(R.id.button_next);
         _buttonPrevious = videoControls.findViewById(R.id.button_previous);
+        _control_time = videoControls.findViewById(R.id.text_position);
+        _control_duration = videoControls.findViewById(R.id.text_duration);
 
         _videoControls_fullscreen = findViewById(R.id.video_player_controller_fullscreen);
-        _control_fullscreen_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_fullscreen);
-        _control_minimize_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_minimize);
-        _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_settings);
-        _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_rotate_lock);
-        _control_loop_fullscreen = videoControls.findViewById(R.id.exo_loop);
-        _control_cast_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_cast);
-        _control_play_fullscreen = videoControls.findViewById(androidx.media3.ui.R.id.exo_play);
+        _control_fullscreen_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_fullscreen);
+        _control_minimize_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_minimize);
+        _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_settings);
+        _control_rotate_lock_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_rotate_lock);
+        _control_loop_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_loop);
+        _control_cast_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_cast);
+        _control_play_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_play);
         _control_chapter_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_chapter_current);
-        _time_bar_fullscreen = _videoControls_fullscreen.findViewById(androidx.media3.ui.R.id.exo_progress);
+        _time_bar_fullscreen = _videoControls_fullscreen.findViewById(R.id.time_progress);
         _buttonPrevious_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_previous);
         _buttonNext_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_next);
+        _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
+        _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
+        _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
 
         val castVisibility = if (Settings.instance.casting.enabled) View.VISIBLE else View.GONE
         _control_cast.visibility = castVisibility
@@ -167,11 +180,53 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _buttonNext.setOnClickListener { onNext.emit() };
         _buttonPrevious_fullscreen.setOnClickListener { onPrevious.emit() };
         _buttonNext_fullscreen.setOnClickListener { onNext.emit() };
+        _control_play.setOnClickListener {
+            exoPlayer?.player?.let {
+                if (it.contentPosition >= it.duration) {
+                    it.seekTo(0)
+                }
+                exoPlayer?.player?.play();
+            }
+            updatePlayPause();
+        };
+        _control_play_fullscreen.setOnClickListener {
+            exoPlayer?.player?.let {
+                if (it.contentPosition >= it.duration) {
+                    it.seekTo(0)
+                }
+                exoPlayer?.player?.play();
+            }
+            updatePlayPause();
+        };
+        _control_pause.setOnClickListener {
+            exoPlayer?.player?.pause();
+            updatePlayPause();
+        };
+        _control_pause_fullscreen.setOnClickListener {
+            exoPlayer?.player?.pause();
+            updatePlayPause();
+        };
+
+        val scrubListener = object : TimeBar.OnScrubListener {
+            override fun onScrubStart(timeBar: TimeBar, position: Long) {
+                exoPlayer?.player?.seekTo(position);
+            }
+
+            override fun onScrubMove(timeBar: TimeBar, position: Long) {
+                exoPlayer?.player?.seekTo(position);
+            }
+
+            override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
+                exoPlayer?.player?.seekTo(position);
+            }
+        };
+        _time_bar.addListener(scrubListener)
+        _time_bar_fullscreen.addListener(scrubListener)
 
         _overlay_brightness = findViewById(R.id.overlay_brightness);
 
-        _title_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_title);
-        _author_fullscreen = _videoControls_fullscreen.findViewById(R.id.exo_author);
+        _title_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_title);
+        _author_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_author);
 
         background = findViewById(R.id.layout_controls_background);
         _layoutControls = findViewById(R.id.layout_controls);
@@ -303,6 +358,19 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         };
 
         videoControls.setProgressUpdateListener { position, bufferedPosition ->
+            val currentTime = position.formatDuration()
+            val currentDuration = duration.formatDuration()
+            _control_time.text = currentTime;
+            _control_time_fullscreen.text = currentTime;
+            _control_duration.text = currentDuration;
+            _control_duration_fullscreen.text = currentDuration;
+            _time_bar_fullscreen.setDuration(duration);
+            _time_bar.setDuration(duration);
+            _time_bar_fullscreen.setPosition(position);
+            _time_bar.setPosition(position);
+            _time_bar_fullscreen.setBufferedPosition(bufferedPosition);
+            _time_bar.setBufferedPosition(bufferedPosition);
+
             onTimeBarChanged.emit(position, bufferedPosition);
 
             if(!_currentChapterLoopActive)
@@ -512,8 +580,24 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         onSourceChanged.emit(videoSource, audioSource, resume);
     }
 
+    private fun updatePlayPause() {
+        if (exoPlayer?.player?.isPlaying == true) {
+            _control_pause.visibility = View.VISIBLE
+            _control_play.visibility = View.GONE
+            _control_pause_fullscreen.visibility = View.VISIBLE
+            _control_play_fullscreen.visibility = View.GONE
+        } else {
+            _control_pause.visibility = View.GONE
+            _control_play.visibility = View.VISIBLE
+            _control_pause_fullscreen.visibility = View.GONE
+            _control_play_fullscreen.visibility = View.VISIBLE
+        }
+    }
+
     override fun onPlaybackStateChanged(playbackState: Int) {
         Logger.v(TAG, "onPlaybackStateChanged $playbackState");
+        updatePlayPause()
+
         if (playbackState == ExoPlayer.STATE_ENDED) {
             if (abs(position - duration) < 2000) {
                 onSourceEnded.emit();

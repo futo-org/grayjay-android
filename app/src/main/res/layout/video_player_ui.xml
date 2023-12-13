@@ -11,7 +11,7 @@
     tools:targetApi="28">
 
     <ImageButton
-        android:id="@+id/exo_minimize"
+        android:id="@+id/button_minimize"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:scaleType="fitCenter"
@@ -30,7 +30,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent">
         <ImageButton
-            android:id="@+id/exo_cast"
+            android:id="@+id/button_cast"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:scaleType="fitCenter"
@@ -38,7 +38,7 @@
             android:padding="12dp"
             app:srcCompat="@drawable/ic_cast" />
         <ImageButton
-            android:id="@+id/exo_rotate_lock"
+            android:id="@+id/button_rotate_lock"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:scaleType="fitCenter"
@@ -46,7 +46,7 @@
             android:padding="12dp"
             app:srcCompat="@drawable/ic_screen_lock_rotation" />
         <ImageButton
-            android:id="@+id/exo_loop"
+            android:id="@+id/button_loop"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:scaleType="fitCenter"
@@ -54,7 +54,7 @@
             android:padding="12dp"
             app:srcCompat="@drawable/ic_loop" />
         <ImageButton
-            android:id="@+id/exo_settings"
+            android:id="@+id/button_settings"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:scaleType="fitCenter"
@@ -64,7 +64,7 @@
     </LinearLayout>
 
     <ImageButton
-        android:id="@id/button_previous"
+        android:id="@+id/button_previous"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:scaleType="centerCrop"
@@ -86,7 +86,7 @@
         app:layout_constraintRight_toRightOf="parent">
 
         <ImageButton
-            android:id="@id/exo_play"
+            android:id="@+id/button_play"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:padding="10dp"
@@ -94,7 +94,7 @@
             app:srcCompat="@drawable/ic_play_white_nopad" />
 
         <ImageButton
-            android:id="@id/exo_pause"
+            android:id="@+id/button_pause"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:padding="10dp"
@@ -107,7 +107,7 @@
     </FrameLayout>
 
     <ImageButton
-        android:id="@id/button_next"
+        android:id="@+id/button_next"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:clickable="true"
@@ -120,7 +120,7 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <ImageButton
-        android:id="@+id/exo_fullscreen"
+        android:id="@+id/button_fullscreen"
         android:layout_width="55dp"
         android:layout_height="40dp"
         android:clickable="true"
@@ -134,7 +134,7 @@
         android:layout_marginBottom="18dp" />
 
     <TextView
-        android:id="@id/exo_position"
+        android:id="@+id/text_position"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:includeFontPadding="false"
@@ -147,7 +147,7 @@
         android:textStyle="normal"
         android:layout_marginBottom="3dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/exo_progress" />
+        app:layout_constraintBottom_toTopOf="@id/time_progress" />
 
     <TextView
         android:id="@+id/text_divider"
@@ -157,13 +157,13 @@
         android:textSize="13sp"
         android:layout_gravity="bottom"
         android:text="/"
-        app:layout_constraintLeft_toRightOf="@id/exo_position"
-        app:layout_constraintTop_toTopOf="@id/exo_position"
-        app:layout_constraintBottom_toBottomOf="@id/exo_position"
+        app:layout_constraintLeft_toRightOf="@id/text_position"
+        app:layout_constraintTop_toTopOf="@id/text_position"
+        app:layout_constraintBottom_toBottomOf="@id/text_position"
         tools:ignore="HardcodedText" />
 
     <TextView
-        android:id="@id/exo_duration"
+        android:id="@+id/text_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:includeFontPadding="false"
@@ -175,8 +175,8 @@
         android:layout_gravity="bottom"
         android:textStyle="normal"
         app:layout_constraintLeft_toRightOf="@id/text_divider"
-        app:layout_constraintTop_toTopOf="@id/exo_position"
-        app:layout_constraintBottom_toBottomOf="@id/exo_position"/>
+        app:layout_constraintTop_toTopOf="@id/text_position"
+        app:layout_constraintBottom_toBottomOf="@id/text_position"/>
 
     <TextView
         android:id="@+id/text_chapter_current"
@@ -187,24 +187,18 @@
         android:paddingRight="10dp"
         android:textSize="11sp"
         android:gravity="left"
-        app:layout_constraintLeft_toRightOf="@id/exo_duration"
-        app:layout_constraintTop_toTopOf="@id/exo_duration"
-        app:layout_constraintBottom_toBottomOf="@id/exo_duration"
-        app:layout_constraintRight_toLeftOf="@id/exo_fullscreen"
+        app:layout_constraintLeft_toRightOf="@id/text_duration"
+        app:layout_constraintTop_toTopOf="@id/text_duration"
+        app:layout_constraintBottom_toBottomOf="@id/text_duration"
+        app:layout_constraintRight_toLeftOf="@id/button_fullscreen"
         android:ellipsize="end"
         android:maxLines="1"
         android:text="">
 
     </TextView>
 
-
-    <androidx.media3.ui.SubtitleView
-        android:id="@id/exo_subtitles"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <androidx.media3.ui.DefaultTimeBar
-        android:id="@id/exo_progress"
+        android:id="@+id/time_progress"
         android:layout_width="match_parent"
         android:layout_height="16dp"
         android:layout_marginBottom="-2dp"
