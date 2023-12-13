@@ -331,6 +331,8 @@ class VideoDetailFragment : MainFragment {
         Logger.i(TAG, "Real orientation on boot ${realOrientation}, lastOrientation: ${lastOrientation}");
         if(realOrientation != lastOrientation)
             onOrientationChanged(realOrientation);
+
+        StateCasting.instance.onResume();
     }
     override fun onPause() {
         super.onPause();

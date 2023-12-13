@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Looper
 import android.util.Base64
+import android.util.Log
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -67,6 +68,7 @@ class StateCasting {
     val onActiveDeviceTimeChanged = Event1<Double>();
     var activeDevice: CastingDevice? = null;
     private val _client = ManagedHttpClient();
+    var _resumeCastingDevice: CastingDeviceInfo? = null;
 
     val isCasting: Boolean get() = activeDevice != null;
 
@@ -194,8 +196,19 @@ class StateCasting {
 
     fun onStop() {
         val ad = activeDevice ?: return;
+        _resumeCastingDevice = ad.getDeviceInfo()
+        Log.i(TAG, "_resumeCastingDevice set to '${ad.name}'")
         Logger.i(TAG, "Stopping active device because of onStop.");
         ad.stop();
+    }
+
+    fun onResume() {
+        val resumeCastingDevice = _resumeCastingDevice
+        if (resumeCastingDevice != null) {
+            connectDevice(deviceFromCastingDeviceInfo(resumeCastingDevice))
+            _resumeCastingDevice = null
+            Log.i(TAG, "_resumeCastingDevice set to null onResume")
+        }
     }
 
     @Synchronized
@@ -203,6 +216,9 @@ class StateCasting {
         if (_started)
             return;
         _started = true;
+
+        Log.i(TAG, "_resumeCastingDevice set null start")
+        _resumeCastingDevice = null;
 
         Logger.i(TAG, "CastingService starting...");
 
