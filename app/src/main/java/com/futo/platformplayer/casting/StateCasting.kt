@@ -182,14 +182,14 @@ class StateCasting {
         val networkConfig = Json.decodeFromString<FCastNetworkConfig>(json)
         val tcpService = networkConfig.services.first { v -> v.type == 0 }
 
-        addRememberedDevice(CastingDeviceInfo(
+        val foundInfo = addRememberedDevice(CastingDeviceInfo(
             name = networkConfig.name,
             type = CastProtocolType.FCAST,
             addresses = networkConfig.addresses.toTypedArray(),
             port = tcpService.port
         ))
 
-        UIDialogs.toast(context,"FCast device '${networkConfig.name}' added")
+        connectDevice(deviceFromCastingDeviceInfo(foundInfo))
     }
 
     fun onStop() {
@@ -335,15 +335,20 @@ class StateCasting {
         Logger.i(TAG, "Connect to device ${device.name}");
     }
 
-    fun addRememberedDevice(deviceInfo: CastingDeviceInfo) {
+    fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo {
         val device = deviceFromCastingDeviceInfo(deviceInfo);
-        addRememberedDevice(device);
+        return addRememberedDevice(device);
     }
 
-    fun addRememberedDevice(device: CastingDevice) {
-        if (_storage.addDevice(device.getDeviceInfo())) {
+    fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
+        val deviceInfo = device.getDeviceInfo()
+        val foundInfo = _storage.addDevice(deviceInfo)
+        if (foundInfo == deviceInfo) {
             rememberedDevices.add(device);
+            return foundInfo;
         }
+
+        return foundInfo;
     }
 
     fun removeRememberedDevice(device: CastingDevice) {
