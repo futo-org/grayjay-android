@@ -153,7 +153,7 @@ class SimpleSubscriptionAlgorithm(
                 try {
                     val platformClient = StatePlatform.instance.getChannelClientOrNull(url, toIgnore) ?: continue;
                     val time = measureTimeMillis {
-                        pager = StatePlatform.instance.getChannelContent(platformClient, url, true, threadPool.poolSize, toIgnore);
+                        pager = StatePlatform.instance.getChannelContent(platformClient, url, true, threadPool.poolSize);
                         pager = StateCache.cachePagerResults(scope, pager!!) {
                             onNewCacheHit.emit(sub, it);
                         };

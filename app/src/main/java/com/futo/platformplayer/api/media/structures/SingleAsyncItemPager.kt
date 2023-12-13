@@ -41,7 +41,7 @@ class SingleAsyncItemPager<T> {
     fun getCurrentItem(scope: CoroutineScope) : Deferred<T?>? {
         synchronized(_requestedPageItems) {
             if (_currentResultPos >= _requestedPageItems.size) {
-                val startPos = fillDeferredUntil(_currentResultPos);
+                fillDeferredUntil(_currentResultPos);
                 if(!_pager.hasMorePages()) {
                     Logger.i("SingleAsyncItemPager", "end of async page reached");
                     completeRemainder { it?.complete(null) };
@@ -49,7 +49,7 @@ class SingleAsyncItemPager<T> {
                 if(_isRequesting)
                     return _requestedPageItems[_currentResultPos];
                 _isRequesting = true;
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                scope.launch(Dispatchers.IO) {
                     try {
                         Logger.i("SingleAsyncItemPager", "Started Pager");
                         val timeForPage = measureTimeMillis { _pager.nextPage() };

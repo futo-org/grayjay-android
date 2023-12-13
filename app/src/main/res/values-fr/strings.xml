@@ -701,20 +701,6 @@
         <item>Reprendre après 10s</item>
         <item>Toujours reprendre</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>Anglais</item>
-        <item>Espagnol</item>
-        <item>Français</item>
-        <item>Français</item>
-        <item>Coréen</item>
-        <item>Thaï</item>
-        <item>Vietnamien</item>
-        <item>Indonésien</item>
-        <item>Hindi</item>
-        <item>Arabe</item>
-        <item>Turc</item>
-        <item>Russe</item>
-    </string-array>
     <string-array name="log_levels">
         <item>Aucun</item>
         <item>Erreur</item>

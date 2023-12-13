@@ -269,7 +269,7 @@ class V8Plugin {
                         throwExceptionFromV8(
                             config,
                             result.getOrThrow(config, "plugin_type", "V8Plugin"),
-                            result.getOrThrow(config, "message", "V8Plugin"),
+                            context + ":" + result.getOrThrow(config, "message", "V8Plugin"),
                             null,
                             null,
                             codeStripped
@@ -280,7 +280,7 @@ class V8Plugin {
                 return result;
             }
             catch(scriptEx: JavetCompilationException) {
-                throw ScriptCompilationException(config, "Compilation: ${scriptEx.message}\n(${scriptEx.scriptingError.lineNumber})[${scriptEx.scriptingError.startColumn}-${scriptEx.scriptingError.endColumn}]: ${scriptEx.scriptingError.sourceLine}", null, codeStripped);
+                throw ScriptCompilationException(config, "Compilation: [${context}]: ${scriptEx.message}\n(${scriptEx.scriptingError.lineNumber})[${scriptEx.scriptingError.startColumn}-${scriptEx.scriptingError.endColumn}]: ${scriptEx.scriptingError.sourceLine}", null, codeStripped);
             }
             catch(executeEx: JavetExecutionException) {
                 if(executeEx.scriptingError?.context?.containsKey("plugin_type") == true) {

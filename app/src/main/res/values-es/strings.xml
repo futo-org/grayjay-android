@@ -717,20 +717,6 @@
         <item>Reanudar Después de 10s</item>
         <item>Siempre Reanudar</item>
     </string-array>
-    <string-array name="audio_languages">
-        <item>Inglés</item>
-        <item>Español</item>
-        <item>Francés</item>
-        <item>Francés</item>
-        <item>Coreano</item>
-        <item>Tailandés</item>
-        <item>Vietnamita</item>
-        <item>Indonesio</item>
-        <item>Hindi</item>
-        <item>Árabe</item>
-        <item>Turco</item>
-        <item>Ruso</item>
-    </string-array>
     <string-array name="log_levels">
         <item>Ninguno</item>
         <item>Error</item>
