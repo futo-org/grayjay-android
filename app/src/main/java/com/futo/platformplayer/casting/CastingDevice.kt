@@ -81,7 +81,7 @@ abstract class CastingDevice {
     var speed: Double = 1.0
         set(value) {
             val changed = value != field;
-            speed = value;
+            field = value;
             if (changed) {
                 onSpeedChanged.emit(value);
             }

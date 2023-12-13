@@ -1,12 +1,17 @@
 package com.futo.platformplayer.casting
 
 import android.os.Looper
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.getConnectedSocket
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.toInetAddress
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.net.InetAddress
 import java.util.UUID
 
@@ -18,7 +23,7 @@ class AirPlayCastingDevice : CastingDevice {
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
     override val canSetVolume: Boolean get() = false;
-    override val canSetSpeed: Boolean get() = false; //TODO: Implement playback speed for AirPlay
+    override val canSetSpeed: Boolean get() = true;
 
     var addresses: Array<InetAddress>? = null;
     var port: Int = 0;
@@ -58,6 +63,10 @@ class AirPlayCastingDevice : CastingDevice {
             post("play", "text/parameters", "Content-Location: $contentId\r\nStart-Position: $pos");
         } else {
             post("play", "text/parameters", "Content-Location: $contentId\r\nStart-Position: 0");
+        }
+
+        if (speed != null) {
+            changeSpeed(speed)
         }
     }
 
@@ -184,6 +193,11 @@ class AirPlayCastingDevice : CastingDevice {
         _started = false;
         _scopeIO?.cancel();
         _scopeIO = null;
+    }
+
+    override fun changeSpeed(speed: Double) {
+        this.speed = speed
+        post("rate?value=$speed")
     }
 
     override fun getDeviceInfo(): CastingDeviceInfo {

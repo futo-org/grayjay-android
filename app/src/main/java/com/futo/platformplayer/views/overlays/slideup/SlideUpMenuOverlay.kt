@@ -26,7 +26,7 @@ class SlideUpMenuOverlay : RelativeLayout {
     private lateinit var _viewContainer: LinearLayout;
     private var _animated: Boolean = true;
 
-    private var _groupItems: List<View>;
+    var groupItems: List<View>;
 
     var isVisible = false
         private set;
@@ -36,7 +36,7 @@ class SlideUpMenuOverlay : RelativeLayout {
 
     constructor(context: Context, attrs: AttributeSet? = null): super(context, attrs) {
         init(false, null);
-        _groupItems = listOf();
+        groupItems = listOf();
     }
 
     constructor(context: Context, parent: ViewGroup, titleText: String, okText: String?, animated: Boolean, items: List<View>, hideButtons: Boolean = false): super(context){
@@ -47,7 +47,7 @@ class SlideUpMenuOverlay : RelativeLayout {
             _container!!.addView(this);
         }
         _textTitle.text = titleText;
-        _groupItems = items;
+        groupItems = items;
 
         if(hideButtons) {
             _textCancel.visibility = GONE;
@@ -74,7 +74,7 @@ class SlideUpMenuOverlay : RelativeLayout {
                 item.setParentClickListener { hide() };
         }
 
-        _groupItems = items;
+        groupItems = items;
     }
 
     private fun init(animated: Boolean, okText: String?){
@@ -116,12 +116,12 @@ class SlideUpMenuOverlay : RelativeLayout {
 
     fun selectOption(groupTag: Any?, itemTag: Any?, multiSelect: Boolean = false, toggle: Boolean = false): Boolean {
         var didSelect = false;
-        for(view in _groupItems) {
+        for(view in groupItems) {
             if(view is SlideUpMenuGroup && view.groupTag == groupTag)
                 didSelect = didSelect || view.selectItem(itemTag);
         }
         if(groupTag == null)
-            for(item in _groupItems)
+            for(item in groupItems)
                 if(item is SlideUpMenuItem) {
                     if(multiSelect) {
                         if(item.itemTag == itemTag)

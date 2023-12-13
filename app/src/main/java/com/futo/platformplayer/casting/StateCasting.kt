@@ -262,6 +262,7 @@ class StateCasting {
                 try {
                     jmDNS.removeServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
                     jmDNS.removeServiceListener("_airplay._tcp", _airPlayServiceListener);
+                    jmDNS.removeServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
 
                     if (BuildConfig.DEBUG) {
                         jmDNS.removeServiceTypeListener(_serviceTypeListener);
@@ -382,7 +383,7 @@ class StateCasting {
         action();
     }
 
-    fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1): Boolean {
+    fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?): Boolean {
         val ad = activeDevice ?: return false;
         if (ad.connectionState != CastConnectionState.CONNECTED) {
             return false;
@@ -403,23 +404,23 @@ class StateCasting {
             if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
                 if (ad is AirPlayCastingDevice) {
                     Logger.i(TAG, "Casting as local HLS");
-                    castLocalHls(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition);
+                    castLocalHls(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
                 } else {
                     Logger.i(TAG, "Casting as local DASH");
-                    castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition);
+                    castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
                 }
             } else {
                 StateApp.instance.scope.launch(Dispatchers.IO) {
                     try {
                         if (ad is FCastCastingDevice) {
                             Logger.i(TAG, "Casting as DASH direct");
-                            castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition);
+                            castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         } else if (ad is AirPlayCastingDevice) {
                             Logger.i(TAG, "Casting as HLS indirect");
-                            castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition);
+                            castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         } else {
                             Logger.i(TAG, "Casting as DASH indirect");
-                            castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition);
+                            castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to start casting DASH videoSource=${videoSource} audioSource=${audioSource}.", e);
@@ -429,32 +430,32 @@ class StateCasting {
         } else {
             if (videoSource is IVideoUrlSource) {
                 Logger.i(TAG, "Casting as singular video");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble(), null);
+                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.getVideoUrl(), resumePosition, video.duration.toDouble(), speed);
             } else if (audioSource is IAudioUrlSource) {
                 Logger.i(TAG, "Casting as singular audio");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble(), null);
+                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.getAudioUrl(), resumePosition, video.duration.toDouble(), speed);
             } else if(videoSource is IHLSManifestSource) {
                 if (ad is ChromecastCastingDevice) {
                     Logger.i(TAG, "Casting as proxied HLS");
-                    castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition);
+                    castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), null);
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed);
                 }
             } else if(audioSource is IHLSManifestAudioSource) {
                 if (ad is ChromecastCastingDevice) {
                     Logger.i(TAG, "Casting as proxied audio HLS");
-                    castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition);
+                    castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed);
                 } else {
                     Logger.i(TAG, "Casting as non-proxied audio HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), null);
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed);
                 }
             } else if (videoSource is LocalVideoSource) {
                 Logger.i(TAG, "Casting as local video");
-                castLocalVideo(video, videoSource, resumePosition);
+                castLocalVideo(video, videoSource, resumePosition, speed);
             } else if (audioSource is LocalAudioSource) {
                 Logger.i(TAG, "Casting as local audio");
-                castLocalAudio(video, audioSource, resumePosition);
+                castLocalAudio(video, audioSource, resumePosition, speed);
             } else {
                 var str = listOf(
                     if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
@@ -492,15 +493,7 @@ class StateCasting {
         return true;
     }
 
-    private fun castVideoIndirect() {
-
-    }
-
-    private fun castAudioIndirect() {
-
-    }
-
-    private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double) : List<String> {
+    private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
@@ -514,12 +507,12 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local video (videoUrl: $videoUrl).");
-        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), null);
+        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(videoUrl);
     }
 
-    private fun castLocalAudio(video: IPlatformVideoDetails, audioSource: LocalAudioSource, resumePosition: Double) : List<String> {
+    private fun castLocalAudio(video: IPlatformVideoDetails, audioSource: LocalAudioSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
@@ -533,12 +526,12 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local audio (audioUrl: $audioUrl).");
-        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), null);
+        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(audioUrl);
     }
 
-    private fun castLocalHls(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double): List<String> {
+    private fun castLocalHls(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?): List<String> {
         val ad = activeDevice ?: return listOf()
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}"
@@ -629,12 +622,12 @@ class StateCasting {
         ).withTag("castLocalHls")
 
         Logger.i(TAG, "added new castLocalHls handlers (hlsPath: $hlsPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).")
-        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), null)
+        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed)
 
         return listOf(hlsUrl, videoUrl, audioUrl, subtitleUrl)
     }
 
-    private fun castLocalDash(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double) : List<String> {
+    private fun castLocalDash(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
@@ -675,12 +668,12 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castLocalDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).");
-        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), null);
+        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(dashUrl, videoUrl, audioUrl, subtitleUrl);
     }
 
-    private suspend fun castDashDirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
+    private suspend fun castDashDirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
@@ -720,12 +713,12 @@ class StateCasting {
         val content = DashBuilder.generateOnDemandDash(videoSource, videoUrl, audioSource, audioUrl, subtitleSource, subtitlesUrl);
 
         Logger.i(TAG, "Direct dash cast to casting device (videoUrl: $videoUrl, audioUrl: $audioUrl).");
-        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), null);
+        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "");
     }
 
-    private fun castProxiedHls(video: IPlatformVideoDetails, sourceUrl: String, codec: String?, resumePosition: Double): List<String> {
+    private fun castProxiedHls(video: IPlatformVideoDetails, sourceUrl: String, codec: String?, resumePosition: Double, speed: Double?): List<String> {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
         val ad = activeDevice ?: return listOf();
@@ -846,7 +839,7 @@ class StateCasting {
 
         //ChromeCast is sometimes funky with resume position 0
         val hackfixResumePosition = if (ad is ChromecastCastingDevice && !video.isLive && resumePosition == 0.0) 0.1 else resumePosition;
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, hackfixResumePosition, video.duration.toDouble(), null);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, hackfixResumePosition, video.duration.toDouble(), speed);
 
         return listOf(hlsUrl);
     }
@@ -897,7 +890,7 @@ class StateCasting {
         }
     }
 
-    private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
+    private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
         val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
@@ -1020,12 +1013,12 @@ class StateCasting {
         ).withTag("castHlsIndirectMaster")
 
         Logger.i(TAG, "added new castHls handlers (hlsPath: $hlsPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), null);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(hlsUrl, videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
-    private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double) : List<String> {
+    private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = ad !is FCastCastingDevice;
 
@@ -1095,7 +1088,7 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), null);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }

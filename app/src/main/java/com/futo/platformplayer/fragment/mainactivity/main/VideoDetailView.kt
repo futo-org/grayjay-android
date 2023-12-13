@@ -1468,7 +1468,7 @@ class VideoDetailView : ConstraintLayout {
                 _player.seekTo(resumePositionMs);
             }
             else
-                loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs);
+                loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble());
 
             _lastVideoSource = videoSource;
             _lastAudioSource = audioSource;
@@ -1482,14 +1482,13 @@ class VideoDetailView : ConstraintLayout {
             UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_load_media), ex);
         }
     }
-    private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long) {
+    private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
 
-        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs)) {
+        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)) {
             _cast.setVideoDetails(video, resumePositionMs / 1000);
             setCastEnabled(true);
-        }
-        else throw IllegalStateException("Disconnected cast during loading");
+        } else throw IllegalStateException("Disconnected cast during loading");
     }
 
     //Events
@@ -1576,6 +1575,11 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("video", _lastVideoSource);
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
+        val currentPlaybackRate = (if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()) ?: 1.0
+        _overlay_quality_selector?.groupItems?.firstOrNull { it is SlideUpMenuButtonList && it.id == "playback_rate" }?.let {
+            (it as SlideUpMenuButtonList).setSelected(currentPlaybackRate.toString())
+        };
+        
         _overlay_quality_selector?.show();
         _slideUpOverlay = _overlay_quality_selector;
     }
@@ -1656,18 +1660,26 @@ class VideoDetailView : ConstraintLayout {
             ?.filter { it.container == bestAudioContainer }
             ?.toList() ?: listOf();
 
+        val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
+        val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
         _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, context.getString(
                     R.string.quality), null, true,
-            if (!_isCasting) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
-            if (!_isCasting) SlideUpMenuButtonList(this.context).apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), _player.getPlaybackRate().toString());
+            if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
+            if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
+                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate!!.toString());
                 onClick.subscribe { v ->
                     if (_isCasting) {
-                        return@subscribe;
-                    }
+                        val ad = StateCasting.instance.activeDevice ?: return@subscribe
+                        if (!ad.canSetSpeed) {
+                            return@subscribe
+                        }
 
-                    _player.setPlaybackRate(v.toFloat());
-                    setSelected(v);
+                        ad.changeSpeed(v.toDouble())
+                        setSelected(v);
+                    } else {
+                        _player.setPlaybackRate(v.toFloat());
+                        setSelected(v);
+                    }
                 };
             } else null,
 
@@ -1829,7 +1841,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
             _player.hideControls(false); //TODO: Disable player?
 
@@ -1844,7 +1856,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else(!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
         _player.hideControls(false); //TODO: Disable player?
 
@@ -1860,7 +1872,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong());
+            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else
             _player.swapSubtitles(fragment.lifecycleScope, toSet);
 

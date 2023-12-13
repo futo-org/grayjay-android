@@ -3,14 +3,24 @@ package com.futo.platformplayer.casting
 import android.os.Looper
 import android.util.Log
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.casting.models.*
-import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.casting.models.FCastPlayMessage
+import com.futo.platformplayer.casting.models.FCastPlaybackErrorMessage
+import com.futo.platformplayer.casting.models.FCastPlaybackUpdateMessage
+import com.futo.platformplayer.casting.models.FCastSeekMessage
+import com.futo.platformplayer.casting.models.FCastSetSpeedMessage
+import com.futo.platformplayer.casting.models.FCastSetVolumeMessage
+import com.futo.platformplayer.casting.models.FCastVersionMessage
+import com.futo.platformplayer.casting.models.FCastVolumeUpdateMessage
 import com.futo.platformplayer.getConnectedSocket
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.toHexString
 import com.futo.platformplayer.toInetAddress
-import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.DataInputStream
@@ -89,6 +99,8 @@ class FCastCastingDevice : CastingDevice {
             time = resumePosition,
             speed = speed
         ));
+
+        this.speed = speed ?: 1.0
     }
 
     override fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?) {
@@ -110,6 +122,8 @@ class FCastCastingDevice : CastingDevice {
             time = resumePosition,
             speed = speed
         ));
+
+        this.speed = speed ?: 1.0
     }
 
     override fun changeVolume(volume: Double) {
@@ -122,12 +136,12 @@ class FCastCastingDevice : CastingDevice {
     }
 
     override fun changeSpeed(speed: Double) {
-        if (invokeInIOScopeIfRequired({ changeSpeed(volume) })) {
+        if (invokeInIOScopeIfRequired({ changeSpeed(speed) })) {
             return;
         }
 
         this.speed = speed
-        sendMessage(Opcode.SET_SPEED, FCastSetSpeedMessage(volume))
+        sendMessage(Opcode.SET_SPEED, FCastSetSpeedMessage(speed))
     }
 
     override fun seekVideo(timeSeconds: Double) {

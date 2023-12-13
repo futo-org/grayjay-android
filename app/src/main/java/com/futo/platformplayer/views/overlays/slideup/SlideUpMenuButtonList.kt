@@ -18,8 +18,11 @@ class SlideUpMenuButtonList : LinearLayout {
     val onClick = Event1<String>();
     val buttons: HashMap<String, LinearLayout> = hashMapOf();
     var _activeText: String? = null;
+    val id: String?
 
-    constructor(context: Context, attrs: AttributeSet? = null): super(context, attrs) {
+    constructor(context: Context, attrs: AttributeSet? = null, id: String? = null): super(context, attrs) {
+        this.id = id
+
         LayoutInflater.from(context).inflate(R.layout.overlay_slide_up_menu_button_list, this, true);
 
         _root = findViewById(R.id.root);
