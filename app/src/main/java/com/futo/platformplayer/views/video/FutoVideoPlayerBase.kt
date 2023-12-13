@@ -573,7 +573,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             //PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
             PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> {
                 _shouldPlaybackRestartOnConnectivity = true;
-                _connectivityLossTime_ms = System.currentTimeMillis()
+                if (playing) {
+                    _connectivityLossTime_ms = System.currentTimeMillis()
+                }
+
                 Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true _connectivityLossTime_ms=$_connectivityLossTime_ms");
             }
         }
