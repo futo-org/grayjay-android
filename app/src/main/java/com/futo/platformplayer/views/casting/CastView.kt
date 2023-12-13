@@ -124,6 +124,7 @@ class CastView : ConstraintLayout {
             }
         }
 
+        updateNextPrevious();
         _buttonPrevious.setOnClickListener { onPrevious.emit() };
         _buttonNext.setOnClickListener { onNext.emit() };
     }

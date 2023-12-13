@@ -261,7 +261,8 @@ class FCastCastingDevice : CastingDevice {
                 val buffer = ByteArray(4096);
 
                 Logger.i(TAG, "Started receiving.");
-                while (_scopeIO?.isActive == true) {
+                var exceptionOccurred = false;
+                while (_scopeIO?.isActive == true && !exceptionOccurred) {
                     try {
                         val inputStream = _inputStream ?: break;
                         Log.d(TAG, "Receiving next packet...");
@@ -289,20 +290,25 @@ class FCastCastingDevice : CastingDevice {
                         }
 
                         try {
-                            handleMessage(Opcode.values().first { it.value == opcode }, json);
+                            handleMessage(Opcode.entries.first { it.value == opcode }, json);
                         } catch (e:Throwable) {
                             Logger.w(TAG, "Failed to handle message.", e);
                         }
                     } catch (e: java.net.SocketException) {
                         Logger.e(TAG, "Socket exception while receiving.", e);
-                        break;
+                        exceptionOccurred = true;
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Exception while receiving.", e);
-                        break;
+                        exceptionOccurred = true;
                     }
                 }
-                _socket?.close();
-                Logger.i(TAG, "Socket disconnected.");
+
+                try {
+                    _socket?.close();
+                    Logger.i(TAG, "Socket disconnected.");
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to close socket.", e)
+                }
 
                 connectionState = CastConnectionState.CONNECTING;
                 Thread.sleep(3000);
