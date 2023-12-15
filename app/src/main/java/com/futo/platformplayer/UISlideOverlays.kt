@@ -103,14 +103,14 @@ class UISlideOverlays {
                             }, false) else null,
                         if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
                             subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
-                        }, false) else null,
+                        }, false) else null/*,,
 
                         SlideUpMenuGroup(container.context, "Actions",
                             "Various things you can do with this subscription",
-                            -1, listOf()),
+                            -1, listOf())
                         SlideUpMenuItem(container.context, R.drawable.ic_list, "Add to Group", "", "btnAddToGroup", {
                             showCreateSubscriptionGroup(container, subscription.channel);
-                        }, false)
+                        }, false)*/
                         ).filterNotNull());
 
                     menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
@@ -531,7 +531,7 @@ class UISlideOverlays {
             return overlay;
         }
 
-        fun showCreateSubscriptionGroup(container: ViewGroup, initialChannel: IPlatformChannel?, onCreate: ((String) -> Unit)? = null): SlideUpMenuOverlay {
+        fun showCreateSubscriptionGroup(container: ViewGroup, initialChannel: IPlatformChannel? = null, onCreate: ((String) -> Unit)? = null): SlideUpMenuOverlay {
             val nameInput = SlideUpMenuTextInput(container.context, container.context.getString(R.string.name));
             val addSubGroupOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.create_new_subgroup), container.context.getString(R.string.ok), false, nameInput);
 

@@ -26,8 +26,24 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
+            <LinearLayout
+                android:id="@+id/gallery_selected_container"
+                android:layout_width="150dp"
+                android:layout_height="100dp"
+                android:gravity="center_horizontal"
+                android:padding="2dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp">
+                <ImageView
+                    android:id="@+id/gallery_selected"
+                    android:layout_width="150dp"
+                    android:layout_height="100dp"
+                    android:scaleType="centerCrop"  />
+            </LinearLayout>
             <com.futo.platformplayer.views.buttons.BigButton
                 android:id="@+id/button_gallery"
                 android:layout_width="match_parent"
@@ -41,6 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
                 android:layout_marginBottom="10dp"
                 android:orientation="vertical">
                 <TextView
@@ -71,6 +88,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
                 android:layout_marginBottom="10dp"
                 android:orientation="vertical">
                 <TextView

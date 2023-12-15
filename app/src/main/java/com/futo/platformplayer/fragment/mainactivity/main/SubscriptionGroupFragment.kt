@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -48,7 +49,7 @@ class SubscriptionGroupFragment : MainFragment() {
         super.onShownWithView(parameter, isBack);
 
         if(parameter is SubscriptionGroup)
-            _view?.setGroup(parameter);
+            _view?.setGroup(StateSubscriptionGroups.instance.getSubscriptionGroup(parameter.id) ?: parameter);
         else
             _view?.setGroup(null);
     }
@@ -77,7 +78,8 @@ class SubscriptionGroupFragment : MainFragment() {
 
         private val _textGroupMeta: TextView;
 
-        private val _buttonSettings: ImageView;
+        private val _buttonSettings: ImageButton;
+        private val _buttonDelete: ImageButton;
 
         private val _enabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
         private val _disabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
@@ -107,6 +109,7 @@ class SubscriptionGroupFragment : MainFragment() {
             _buttonEditImage = findViewById(R.id.button_edit_image);
             _textGroupMeta = findViewById(R.id.text_group_meta);
             _buttonSettings = findViewById(R.id.button_settings);
+            _buttonDelete = findViewById(R.id.button_delete);
             _imageGroup.setBackgroundColor(Color.GRAY);
 
             val dp6 = 6.dp(resources);
@@ -147,6 +150,16 @@ class SubscriptionGroupFragment : MainFragment() {
             _buttonEditImage.setOnClickListener {
                 _group?.let { editImage(it) }
             };
+            _buttonSettings.setOnClickListener {
+
+            }
+            _buttonDelete.setOnClickListener {
+                _group?.let {
+                    StateSubscriptionGroups.instance.deleteSubscriptionGroup(it.id);
+                };
+                fragment.close(true);
+            }
+            _buttonSettings.visibility = View.GONE;
 
             _searchBar.onSearchChanged.subscribe {
                 filterCreators();
@@ -255,8 +268,10 @@ class SubscriptionGroupFragment : MainFragment() {
                 _recyclerCreatorsEnabled.adapter.notifyItemInserted(_enabledCreatorsFiltered.size - 1);
 
                 _group?.let {
-                    it.urls.remove(channel.url);
-                    save();
+                    if(!it.urls.contains(channel.url)) {
+                        it.urls.add(channel.url);
+                        save();
+                    }
                 }
                 updateMeta();
             }

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.adapters
 
+import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -50,6 +51,7 @@ open class BaseAnyAdapter<I, T : AnyAdapter.AnyViewHolder<I>, IT : ViewHolder> {
             cb(item);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun notifyContentChanged() {
         adapter.notifyDataSetChanged();
     }

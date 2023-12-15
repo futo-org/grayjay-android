@@ -133,6 +133,7 @@ class StateApp {
 
     //Files
     private var _tempDirectory: File? = null;
+    private var _persistentDirectory: File? = null;
 
 
     //AutoRotate
@@ -163,6 +164,16 @@ class StateApp {
                     "";
 
         return File(_tempDirectory, name);
+    }
+
+    fun getPersistFile(extension: String? = null): File {
+        val name = UUID.randomUUID().toString() +
+                if(extension != null)
+                    ".${extension}"
+                else
+                    "";
+
+        return File(_persistentDirectory, name);
     }
 
     fun getCurrentSystemAutoRotate(): Boolean {
@@ -290,6 +301,10 @@ class StateApp {
                 _tempDirectory?.deleteRecursively();
             }
             _tempDirectory?.mkdirs();
+            _persistentDirectory = File(context.filesDir, "persist");
+            if(_persistentDirectory?.exists() == false) {
+                _persistentDirectory?.mkdirs();
+            }
         }
     }
 

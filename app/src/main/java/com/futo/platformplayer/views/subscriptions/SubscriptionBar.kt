@@ -3,9 +3,11 @@ package com.futo.platformplayer.views.subscriptions
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.LinearLayout
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Subscription
@@ -17,33 +19,95 @@ import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.others.ToggleTagView
 import com.futo.platformplayer.views.adapters.viewholders.SubscriptionBarViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SubscriptionGroupBarViewHolder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SubscriptionBar : LinearLayout {
     private var _adapterView: AnyAdapterView<Subscription, SubscriptionBarViewHolder>? = null;
     private var _subGroups: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>
     private val _tagsContainer: LinearLayout;
 
+    private val _groups: ArrayList<SubscriptionGroup>;
+    private var _group: SubscriptionGroup? = null;
+
     val onClickChannel = Event1<SerializedChannel>();
-    val onClickGroup = Event1<SubscriptionGroup>();
+    val onToggleGroup = Event1<SubscriptionGroup?>();
     val onHoldGroup = Event1<SubscriptionGroup>();
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow();
+        StateSubscriptionGroups.instance.onGroupsChanged.subscribe(this) {
+            findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.Main) {
+                reloadGroups();
+            }
+        }
+    }
 
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        StateSubscriptionGroups.instance.onGroupsChanged.remove(this);
+    }
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_subscription_bar, this);
 
-        val subscriptions = StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackSeconds };
+        val subscriptions = ArrayList(StateSubscriptions.instance.getSubscriptions().sortedByDescending { it.playbackSeconds });
         _adapterView = findViewById<RecyclerView>(R.id.recycler_creators).asAny(subscriptions, orientation = RecyclerView.HORIZONTAL) {
             it.onClick.subscribe { c ->
                 onClickChannel.emit(c.channel);
             };
         };
-        val subgroups = StateSubscriptionGroups.instance.getSubscriptionGroups();
-        _subGroups = findViewById<RecyclerView>(R.id.recycler_subgroups).asAny(subgroups, orientation = RecyclerView.HORIZONTAL) {
-            it.onClick.subscribe(onClickGroup::emit);
-            it.onClickLong.subscribe(onHoldGroup::emit);
+        _groups = ArrayList(getGroups());
+        _subGroups = findViewById<RecyclerView>(R.id.recycler_subgroups).asAny(_groups, orientation = RecyclerView.HORIZONTAL) {
+            it.onClick.subscribe(::groupClicked);
+            it.onClickLong.subscribe { g ->
+                onHoldGroup.emit(g);
+            }
         }
         _tagsContainer = findViewById(R.id.container_tags);
+    }
+
+    private fun groupClicked(g: SubscriptionGroup) {
+        if(g is SubscriptionGroup.Add) {
+            onToggleGroup.emit(g);
+            return;
+        }
+        val isSame = _group == g;
+            _group?.let {
+                if (it is SubscriptionGroup.Selectable) {
+                    it.selected = false;
+                    val index = _groups.indexOf(it);
+                    if (index >= 0)
+                        _subGroups.notifyContentChanged(index);
+                }
+            }
+
+        if(isSame) {
+            _group = null;
+            onToggleGroup.emit(null);
+        }
+        else {
+            _group = g;
+            if(g is SubscriptionGroup.Selectable)
+                g.selected = true;
+            _subGroups.notifyContentChanged(_groups.indexOf(g));
+            onToggleGroup.emit(g);
+        }
+    }
+
+    private fun reloadGroups() {
+        val results = getGroups();
+        _groups.clear();
+        _groups.addAll(results);
+        _subGroups.notifyContentChanged();
+    }
+    private fun getGroups(): List<SubscriptionGroup> {
+        return if(Settings.instance.subscriptions.showSubscriptionGroups)
+            (StateSubscriptionGroups.instance.getSubscriptionGroups()
+                .sortedBy { it.priority }
+                .map {  SubscriptionGroup.Selectable(it, it.id == _group?.id) } +
+                    listOf(SubscriptionGroup.Add()));
+        else listOf();
     }
 
 

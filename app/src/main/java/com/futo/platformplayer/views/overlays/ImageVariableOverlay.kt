@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.overlays
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -12,12 +13,16 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
@@ -31,13 +36,17 @@ import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.viewholders.CreatorBarViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectableCreatorBarViewHolder
 import com.futo.platformplayer.views.buttons.BigButton
+import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.ShapeAppearanceModel
+import java.io.File
 
 class ImageVariableOverlay: ConstraintLayout {
     private val _buttonGallery: BigButton;
+    private val _imageGallerySelected: ImageView;
+    private val _imageGallerySelectedContainer: LinearLayout;
     private val _buttonSelect: Button;
     private val _topbar: OverlayTopbar;
     private val _recyclerPresets: AnyAdapterView<PresetImage, PresetViewHolder>;
@@ -53,6 +62,7 @@ class ImageVariableOverlay: ConstraintLayout {
     );
 
     private var _selected: ImageVariable? = null;
+    private var _selectedFile: String? = null;
 
     val onSelected = Event1<ImageVariable>();
     val onClose = Event0();
@@ -74,6 +84,8 @@ class ImageVariableOverlay: ConstraintLayout {
         inflate(context, R.layout.overlay_image_variable, this);
         _topbar = findViewById(R.id.topbar);
         _buttonGallery = findViewById(R.id.button_gallery);
+        _imageGallerySelected = findViewById(R.id.gallery_selected);
+        _imageGallerySelectedContainer = findViewById(R.id.gallery_selected_container);
         _buttonSelect = findViewById(R.id.button_select);
         _recyclerPresets = findViewById<RecyclerView>(R.id.recycler_presets).asAny(_presets, RecyclerView.HORIZONTAL) {
             it.onClick.subscribe {
@@ -97,23 +109,37 @@ class ImageVariableOverlay: ConstraintLayout {
             this.orientation = LinearLayoutManager.VERTICAL;
         };
 
-        _buttonGallery.setOnClickListener {
+        _buttonGallery.onClick.subscribe {
             val context = StateApp.instance.contextOrNull;
-            if(context is IWithResultLauncher) {
-                val intent = Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-
-                context.launchForResult(intent, 888) {
-                    if(it.resultCode == 888) {
-                        val url = it.data?.data ?: return@launchForResult;
-                        //TODO: Write to local storage
-                        _selected = ImageVariable(url.toString());
-                        updateSelected();
-                    }
-                };
+            if(context is IWithResultLauncher && context is MainActivity) {
+                ImagePicker.with(context)
+                    .compress(512)
+                    .maxResultSize(750, 500)
+                    .createIntent {
+                        context.launchForResult(it, 888) {
+                            if(it.resultCode == Activity.RESULT_OK) {
+                                cleanupLastFile();
+                                val fileUri = it.data?.data;
+                                if(fileUri != null) {
+                                    val file = fileUri.toFile();
+                                    val ext = file.extension;
+                                    val persistFile = StateApp.instance.getPersistFile(ext);
+                                    file.copyTo(persistFile);
+                                    _selectedFile = persistFile.toUri().toString();
+                                    _selected = ImageVariable(_selectedFile);
+                                    updateSelected();
+                                }
+                            }
+                        };
+                    };
             }
         };
+        _imageGallerySelectedContainer.setOnClickListener {
+            if(_selectedFile != null) {
+                _selected = ImageVariable(_selectedFile);
+                updateSelected();
+            }
+        }
         _buttonSelect.setOnClickListener {
             _selected?.let {
                 select(it);
@@ -133,13 +159,38 @@ class ImageVariableOverlay: ConstraintLayout {
         _creators.forEach { p -> p.active = p.channel.thumbnail == url };
         _recyclerCreators.notifyContentChanged();
 
+        if(_selectedFile != null) {
+            _imageGallerySelectedContainer.visibility = View.VISIBLE;
+            Glide.with(_imageGallerySelected)
+                .load(_selectedFile)
+                .into(_imageGallerySelected);
+        }
+        else
+            _imageGallerySelectedContainer.visibility = View.GONE;
+
+        if(_selected?.url == _selectedFile)
+            _imageGallerySelectedContainer.setBackgroundColor(resources.getColor(R.color.colorPrimary, null));
+        else
+            _imageGallerySelectedContainer.setBackgroundColor(resources.getColor(R.color.transparent, null));
+
         if(_selected != null)
             _buttonSelect.alpha = 1f;
         else
             _buttonSelect.alpha = 0.5f;
     }
+    fun cleanupLastFile() {
+        _selectedFile?.let {
+            val file = File(it);
+            if(file.exists())
+                file.delete();
+            _selectedFile = null;
+        }
+    }
+
 
     fun select(variable: ImageVariable) {
+        if(_selected?.url != _selectedFile)
+            cleanupLastFile();
         onSelected.emit(variable);
         onClose.emit();
     }

@@ -55,10 +55,10 @@ class ManageTabsActivity : AppCompatActivity() {
             Settings.instance.save()
         }
 
-        val items = Settings.instance.tabs.mapNotNull {
+        val items = ArrayList(Settings.instance.tabs.mapNotNull {
             val buttonDefinition = MenuBottomBarFragment.buttonDefinitions.find { d -> it.id == d.id } ?: return@mapNotNull null
             TabViewHolderData(buttonDefinition, it.enabled)
-        };
+        });
 
         _listTabs = _recyclerTabs.asAny(items) {
             it.onDragDrop.subscribe { vh ->

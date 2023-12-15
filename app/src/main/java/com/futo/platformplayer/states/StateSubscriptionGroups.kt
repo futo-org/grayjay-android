@@ -51,19 +51,25 @@ class StateSubscriptionGroups {
         .withUnique { it.id }
         .load();
 
+    val onGroupsChanged = Event0();
+
     fun getSubscriptionGroup(id: String): SubscriptionGroup? {
         return _subGroups.findItem { it.id == id };
     }
     fun getSubscriptionGroups(): List<SubscriptionGroup> {
         return _subGroups.getItems();
     }
-    fun updateSubscriptionGroup(subGroup: SubscriptionGroup) {
+    fun updateSubscriptionGroup(subGroup: SubscriptionGroup, preventNotify: Boolean = false) {
         _subGroups.save(subGroup);
+        if(!preventNotify)
+            onGroupsChanged.emit();
     }
     fun deleteSubscriptionGroup(id: String){
         val group = getSubscriptionGroup(id);
-        if(group != null)
+        if(group != null) {
             _subGroups.delete(group);
+            onGroupsChanged.emit();
+        }
     }
 
 

@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragImportPlaylists: ImportPlaylistsFragment;
     lateinit var _fragBuy: BuyFragment;
     lateinit var _fragSubGroup: SubscriptionGroupFragment;
+    lateinit var _fragSubGroupList: SubscriptionGroupListFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
 
@@ -238,6 +239,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragImportPlaylists = ImportPlaylistsFragment.newInstance();
         _fragBuy = BuyFragment.newInstance();
         _fragSubGroup = SubscriptionGroupFragment.newInstance();
+        _fragSubGroupList = SubscriptionGroupListFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -320,6 +322,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
         _fragSubGroup.topBar = _fragTopBarNavigation;
+        _fragSubGroupList.topBar = _fragTopBarAdd;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -987,6 +990,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             BrowserFragment::class -> _fragBrowser as T;
             BuyFragment::class -> _fragBuy as T;
             SubscriptionGroupFragment::class -> _fragSubGroup as T;
+            SubscriptionGroupListFragment::class -> _fragSubGroupList as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }

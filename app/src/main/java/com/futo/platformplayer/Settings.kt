@@ -248,20 +248,23 @@ class Settings : FragmentedStorageFileJson() {
                 return FeedStyle.THUMBNAIL;
         }
 
-        @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
+        @FormField(R.string.show_subscription_group, FieldForm.TOGGLE, R.string.show_subscription_group_description, 5)
+        var showSubscriptionGroups: Boolean = true;
+
+        @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
 
-        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
+        @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 7)
         var progressBar: Boolean = true;
 
-        @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 7)
+        @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 8)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var fetchOnAppBoot: Boolean = true;
 
-        @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 8)
+        @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 9)
         var fetchOnTabOpen: Boolean = true;
 
-        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 9)
+        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 10)
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
 
@@ -277,7 +280,7 @@ class Settings : FragmentedStorageFileJson() {
         };
 
 
-        @FormField(R.string.subscription_concurrency, FieldForm.DROPDOWN, R.string.specify_how_many_threads_are_used_to_fetch_channels, 10)
+        @FormField(R.string.subscription_concurrency, FieldForm.DROPDOWN, R.string.specify_how_many_threads_are_used_to_fetch_channels, 11)
         @DropdownFieldOptionsId(R.array.thread_count)
         var subscriptionConcurrency: Int = 3;
 
@@ -285,17 +288,17 @@ class Settings : FragmentedStorageFileJson() {
             return threadIndexToCount(subscriptionConcurrency);
         }
 
-        @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 11)
+        @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 12)
         var showWatchMetrics: Boolean = false;
 
-        @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 12)
+        @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 13)
         var allowPlaytimeTracking: Boolean = true;
 
 
-        @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 13)
+        @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 14)
         var alwaysReloadFromCache: Boolean = false;
 
-        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 14)
+        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 15)
         fun clearChannelCache() {
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
             StateCache.instance.clear();

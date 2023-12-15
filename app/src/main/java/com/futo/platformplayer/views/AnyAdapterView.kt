@@ -46,9 +46,10 @@ class AnyAdapterView<I, T>(view: RecyclerView, adapter: BaseAnyAdapter<I, T, T>,
         where T : AnyAdapter.AnyViewHolder<I>{
 
     companion object {
+        /*
         inline fun <I, reified T : AnyAdapter.AnyViewHolder<I>> RecyclerView.asAny(list: List<I>, orientation: Int = RecyclerView.VERTICAL, reversed: Boolean = false, noinline onCreate: ((T)->Unit)? = null): AnyAdapterView<I, T> {
             return asAny(ArrayList(list), orientation, reversed, onCreate);
-        }
+        }*/
         inline fun <I, reified T : AnyAdapter.AnyViewHolder<I>> RecyclerView.asAny(list: ArrayList<I>, orientation: Int = RecyclerView.VERTICAL, reversed: Boolean = false, noinline onCreate: ((T)->Unit)? = null): AnyAdapterView<I, T> {
             return AnyAdapterView(this, AnyAdapter.create(list, onCreate), orientation, reversed);
         }
