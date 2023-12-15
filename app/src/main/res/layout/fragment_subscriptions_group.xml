@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:animateLayoutChanges="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:background="#AAAAAA">
+            <ImageView
+                android:id="@+id/group_image_background"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/xp_book"
+                android:scaleType="centerCrop" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#AA000000">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:orientation="horizontal">
+                    <ImageButton
+                        android:id="@+id/button_delete"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="0dp"
+                        android:src="@drawable/ic_trash"
+                        app:tint="#CC0000"
+                        android:padding="10dp"
+                        android:background="@color/transparent"
+                        android:visibility="visible"
+                        android:scaleType="fitCenter" />
+
+                    <ImageButton
+                        android:id="@+id/button_settings"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="5dp"
+                        android:src="@drawable/ic_settings"
+                        android:padding="10dp"
+                        android:background="@color/transparent"
+                        android:visibility="visible"
+                        android:scaleType="fitCenter" />
+                </LinearLayout>
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/image_group"
+                    android:layout_width="110dp"
+                    android:layout_height="70dp"
+                    android:adjustViewBounds="true"
+                    app:circularflow_defaultRadius="10dp"
+                    android:layout_marginLeft="30dp"
+                    android:src="@drawable/xp_book"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:scaleType="centerCrop"
+                    app:layout_constraintBottom_toBottomOf="parent"  />
+
+                <LinearLayout
+                    android:id="@+id/button_edit_image"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    app:layout_constraintBottom_toTopOf="@id/image_group"
+                    app:layout_constraintLeft_toRightOf="@id/image_group"
+                    android:layout_marginLeft="-15dp"
+                    android:layout_marginBottom="-15dp"
+                    android:background="@drawable/background_pill">
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="5dp"
+                        android:clickable="false"
+                        android:scaleType="fitCenter"
+                        android:background="@color/transparent"
+                        android:src="@drawable/ic_edit"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintLeft_toRightOf="@id/image_group"
+                    app:layout_constraintTop_toTopOf="@id/image_group"
+                    app:layout_constraintBottom_toBottomOf="@id/image_group"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:layout_marginStart="25dp"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/text_group_title_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:id="@+id/text_group_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/inter_bold"
+                            android:textSize="15dp"
+                            android:text="News" />
+                        <ImageButton
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginBottom="-5dp"
+                            android:scaleType="fitCenter"
+                            android:background="@color/transparent"
+                            android:src="@drawable/ic_edit"/>
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/text_group_meta"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/inter_light"
+                        android:textSize="12dp"
+                        android:text="42 creators" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </FrameLayout>
+
+        <com.futo.platformplayer.views.SearchView
+            android:id="@+id/search_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp">
+                <LinearLayout
+                    android:id="@+id/container_enabled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16dp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginRight="20dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_light"
+                        android:text="@string/enabled" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12dp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginRight="20dp"
+                        android:textColor="@color/gray_ac"
+                        android:fontFamily="@font/inter_extra_light"
+                        android:text="@string/these_creators_in_group" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_creators_enabled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="5dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/container_disabled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16dp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginRight="20dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_light"
+                        android:text="@string/disabled" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12dp"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginRight="20dp"
+                        android:textColor="@color/gray_ac"
+                        android:fontFamily="@font/inter_extra_light"
+                        android:text="@string/these_creators_not_in_group" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_creators_disabled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

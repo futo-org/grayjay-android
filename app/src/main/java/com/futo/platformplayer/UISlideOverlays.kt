@@ -3,8 +3,10 @@ package com.futo.platformplayer
 import android.content.ContentResolver
 import android.view.View
 import android.view.ViewGroup
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.ResultCapabilities
+import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
@@ -17,10 +19,13 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.downloads.VideoLocal
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
@@ -46,7 +51,7 @@ class UISlideOverlays {
     companion object {
         private const val TAG = "UISlideOverlays";
 
-        fun showOverlay(container: ViewGroup, title: String, okButton: String?, onOk: ()->Unit,  vararg views: View) {
+        fun showOverlay(container: ViewGroup, title: String, okButton: String?, onOk: ()->Unit,  vararg views: View): SlideUpMenuOverlay {
             var menu = SlideUpMenuOverlay(container.context, container, title, okButton, true, *views);
 
             menu.onOK.subscribe {
@@ -54,6 +59,7 @@ class UISlideOverlays {
                 onOk.invoke();
             };
             menu.show();
+            return menu;
         }
 
         fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
@@ -78,6 +84,7 @@ class UISlideOverlays {
                         SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
                             subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
                         }, false),
+
                         SlideUpMenuGroup(container.context, "Fetch Settings",
                             "Depending on the platform you might not need to enable a type for it to be available.",
                             -1, listOf()),
@@ -96,7 +103,15 @@ class UISlideOverlays {
                             }, false) else null,
                         if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
                             subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
-                        }, false) else null).filterNotNull());
+                        }, false) else null/*,,
+
+                        SlideUpMenuGroup(container.context, "Actions",
+                            "Various things you can do with this subscription",
+                            -1, listOf())
+                        SlideUpMenuItem(container.context, R.drawable.ic_list, "Add to Group", "", "btnAddToGroup", {
+                            showCreateSubscriptionGroup(container, subscription.channel);
+                        }, false)*/
+                        ).filterNotNull());
 
                     menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
 
@@ -132,6 +147,10 @@ class UISlideOverlays {
                     menu.show();
                 }
             }
+        }
+
+        fun showAddToGroupOverlay(channel: IPlatformVideo, container: ViewGroup) {
+
         }
 
         fun showHlsPicker(video: IPlatformVideoDetails, source: Any, sourceUrl: String, container: ViewGroup): SlideUpMenuOverlay {
@@ -512,6 +531,48 @@ class UISlideOverlays {
             return overlay;
         }
 
+        fun showCreateSubscriptionGroup(container: ViewGroup, initialChannel: IPlatformChannel? = null, onCreate: ((String) -> Unit)? = null): SlideUpMenuOverlay {
+            val nameInput = SlideUpMenuTextInput(container.context, container.context.getString(R.string.name));
+            val addSubGroupOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.create_new_subgroup), container.context.getString(R.string.ok), false, nameInput);
+
+            addSubGroupOverlay.onOK.subscribe {
+                val text = nameInput.text;
+                if (text.isBlank()) {
+                    return@subscribe;
+                }
+
+                addSubGroupOverlay.hide();
+                nameInput.deactivate();
+                nameInput.clear();
+                if(onCreate == null)
+                {
+                    //TODO: Do this better, temp
+                    StateApp.instance.contextOrNull?.let {
+                        if(it is MainActivity) {
+                            val subGroup = SubscriptionGroup(text);
+                            if(initialChannel != null) {
+                                subGroup.urls.add(initialChannel.url);
+                                if(initialChannel.thumbnail != null)
+                                    subGroup.image = ImageVariable(initialChannel.thumbnail);
+                            }
+                            it.navigate(it.getFragment<SubscriptionGroupFragment>(), subGroup);
+                        }
+                    }
+                }
+                else
+                    onCreate(text)
+            };
+
+            addSubGroupOverlay.onCancel.subscribe {
+                nameInput.deactivate();
+                nameInput.clear();
+            };
+
+            addSubGroupOverlay.show();
+            nameInput.activate();
+
+            return addSubGroupOverlay
+        }
         fun showCreatePlaylistOverlay(container: ViewGroup, onCreate: (String) -> Unit): SlideUpMenuOverlay {
             val nameInput = SlideUpMenuTextInput(container.context, container.context.getString(R.string.name));
             val addPlaylistOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.create_new_playlist), container.context.getString(R.string.ok), false, nameInput);

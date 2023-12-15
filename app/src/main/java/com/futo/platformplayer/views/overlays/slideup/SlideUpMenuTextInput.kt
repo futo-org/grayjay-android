@@ -18,7 +18,8 @@ class SlideUpMenuTextInput : LinearLayout {
     private lateinit var _editText: EditText;
     private lateinit var _inputMethodManager: InputMethodManager;
 
-    val text: String get() = _editText.text.toString();
+    var text: String get() = _editText.text.toString()
+        set(v: String) = _editText.setText(v);
 
     constructor(context: Context, attrs: AttributeSet? = null): super(context, attrs) {
         init();
