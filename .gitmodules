@@ -61,6 +61,3 @@
 [submodule "dep/futopay"]
 	path = dep/futopay
 	url = ../futopayclientlibraries.git
-[submodule "app/src/unstable/assets/sources/niconico"]
-	path = app/src/unstable/assets/sources/niconico
-	url = git@gitlab.futo.org:videostreaming/plugins/niconico.git
