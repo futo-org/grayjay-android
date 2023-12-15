@@ -38,8 +38,10 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.getHttpDataSourceFactory
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
@@ -402,22 +404,31 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrl(videoSource: IVideoUrlSource) {
         Logger.i(TAG, "Loading VideoSource [Url]");
-        _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()
-            .setUserAgent(DEFAULT_USER_AGENT))
+        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+            videoSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        _lastVideoMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(videoSource.getVideoUrl()));
     }
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceDash(videoSource: IDashManifestSource) {
         Logger.i(TAG, "Loading VideoSource [Dash]");
-        _lastVideoMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory()
-            .setUserAgent(DEFAULT_USER_AGENT))
+        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+            videoSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(videoSource.url))
     }
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceHLS(videoSource: IHLSManifestSource) {
         Logger.i(TAG, "Loading VideoSource [HLS]");
-        _lastVideoMediaSource = HlsMediaSource.Factory(DefaultHttpDataSource.Factory()
-            .setUserAgent(DEFAULT_USER_AGENT))
+        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+            videoSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        _lastVideoMediaSource = HlsMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(videoSource.url));
     }
 
@@ -455,15 +466,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrl(audioSource: IAudioUrlSource) {
         Logger.i(TAG, "Loading AudioSource [Url]");
-        _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()
-            .setUserAgent(DEFAULT_USER_AGENT))
+        val dataSource = if(audioSource is JSSource && audioSource.hasRequestModifier)
+            audioSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(audioSource.getAudioUrl()));
     }
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceHLS(audioSource: IHLSManifestAudioSource) {
         Logger.i(TAG, "Loading AudioSource [HLS]");
-        _lastAudioMediaSource = HlsMediaSource.Factory(DefaultHttpDataSource.Factory()
-            .setUserAgent(DEFAULT_USER_AGENT))
+        val dataSource = if(audioSource is JSSource && audioSource.hasRequestModifier)
+            audioSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        _lastAudioMediaSource = HlsMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(audioSource.url));
     }
 

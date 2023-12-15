@@ -2,7 +2,9 @@ package com.futo.platformplayer.api.media.platforms.js.models.sources
 
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -19,8 +21,9 @@ open class JSAudioUrlSource : IAudioUrlSource, JSSource {
 
     override var priority: Boolean = false;
 
-    constructor(config: IV8PluginConfig, obj: V8ValueObject) : super(TYPE_AUDIOURL, config, obj) {
+    constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_AUDIOURL, plugin, obj) {
         val contextName = "AudioUrlSource";
+        val config = plugin.config;
 
         bitrate = _obj.getOrThrow(config, "bitrate", contextName);
         container = _obj.getOrThrow(config, "container", contextName);

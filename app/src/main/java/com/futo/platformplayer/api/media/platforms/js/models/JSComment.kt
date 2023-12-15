@@ -5,6 +5,7 @@ import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.IRating
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
@@ -60,6 +61,7 @@ class JSComment : IPlatformComment {
             return null;
 
         val obj = _comment!!.invoke<V8ValueObject>("getReplies", arrayOf<Any>());
-        return JSCommentPager(_config!!, _plugin!!, obj);
+        val plugin = if(client is JSClient) client else throw NotImplementedError("Only implemented for JSClient");
+        return JSCommentPager(_config!!, plugin, obj);
     }
 }

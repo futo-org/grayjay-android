@@ -44,13 +44,14 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     override val subtitles: List<ISubtitleSource>;
 
 
-    constructor(config: SourcePluginConfig, obj: V8ValueObject) : super(config, obj) {
+    constructor(plugin: JSClient, obj: V8ValueObject) : super(plugin.config, obj) {
         val contextName = "VideoDetails";
+        val config = plugin.config;
         description = _content.getOrThrow(config, "description", contextName);
-        video = JSVideoSourceDescriptor.fromV8(config, _content.getOrThrow(config, "video", contextName));
-        dash =  JSSource.fromV8DashNullable(config, _content.getOrThrowNullable<V8ValueObject>(config, "dash", contextName));
-        hls = JSSource.fromV8HLSNullable(config, _content.getOrThrowNullable<V8ValueObject>(config, "hls", contextName));
-        live = JSSource.fromV8VideoNullable(config, _content.getOrThrowNullable<V8ValueObject>(config, "live", contextName));
+        video = JSVideoSourceDescriptor.fromV8(plugin, _content.getOrThrow(config, "video", contextName));
+        dash =  JSSource.fromV8DashNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "dash", contextName));
+        hls = JSSource.fromV8HLSNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "hls", contextName));
+        live = JSSource.fromV8VideoNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "live", contextName));
         rating = IRating.fromV8OrDefault(config, _content.getOrDefault<V8ValueObject>(config, "rating", contextName, null), RatingLikes(0));
 
         if(!_content.has("subtitles"))
@@ -105,6 +106,6 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
         if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
             return null;
 
-        return JSCommentPager(_pluginConfig, client.getUnderlyingPlugin(), commentPager);
+        return JSCommentPager(_pluginConfig, client, commentPager);
     }
 }

@@ -54,6 +54,6 @@ class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
         val commentPager = _content.invoke<V8ValueObject>("getComments", arrayOf<Any>());
-        return JSCommentPager(_pluginConfig, client.getUnderlyingPlugin(), commentPager);
+        return JSCommentPager(_pluginConfig, client, commentPager);
     }
 }

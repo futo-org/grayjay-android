@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
+import com.futo.platformplayer.developer.DeveloperEndpoints
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -411,6 +412,16 @@ class StatePlugins {
 
     fun setPluginSettings(id: String, map: Map<String, String?>) {
         val newSettings = HashMap(map);
+        if(id == StateDeveloper.DEV_ID)
+        {
+            val decConfig = StatePlatform.instance.getDevClient()?.config ?: return;
+            for(setting in decConfig.settings) {
+                if(!newSettings.containsKey(setting.variableOrName) || newSettings[setting.variableOrName] == null)
+                    newSettings[setting.variableOrName] = setting.default;
+            }
+            StateDeveloper.instance.setDevClientSettings(newSettings);
+            return;
+        }
         val plugin = getPlugin(id);
 
         if(plugin != null) {
