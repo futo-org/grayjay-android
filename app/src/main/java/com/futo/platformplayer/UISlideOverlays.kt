@@ -42,6 +42,7 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
+import isDownloadable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

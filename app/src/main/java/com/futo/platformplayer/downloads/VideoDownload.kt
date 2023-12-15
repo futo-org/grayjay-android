@@ -27,10 +27,8 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.exceptions.DownloadException
-import com.futo.platformplayer.hasAnySource
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
-import com.futo.platformplayer.isDownloadable
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
@@ -38,6 +36,8 @@ import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
+import hasAnySource
+import isDownloadable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
