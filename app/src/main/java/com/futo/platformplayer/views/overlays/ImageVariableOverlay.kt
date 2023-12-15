@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.futo.platformplayer.PresetImages
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
@@ -53,13 +54,8 @@ class ImageVariableOverlay: ConstraintLayout {
     private val _recyclerCreators: AnyAdapterView<SelectableCreatorBarViewHolder.Selectable, SelectableCreatorBarViewHolder>;
 
     private val _creators: ArrayList<SelectableCreatorBarViewHolder.Selectable> = arrayListOf();
-    private val _presets: ArrayList<PresetImage> = arrayListOf(
-        PresetImage(R.drawable.xp_book, false),
-        PresetImage(R.drawable.xp_forest, false),
-        PresetImage(R.drawable.xp_laptop, false),
-        PresetImage(R.drawable.xp_controller, false),
-        PresetImage(R.drawable.xp_code, false),
-    );
+    private val _presets: ArrayList<PresetImage> =
+        ArrayList(PresetImages.images.map { PresetImage(it.value, it.key, false) });
 
     private var _selected: ImageVariable? = null;
     private var _selectedFile: String? = null;
@@ -89,7 +85,7 @@ class ImageVariableOverlay: ConstraintLayout {
         _buttonSelect = findViewById(R.id.button_select);
         _recyclerPresets = findViewById<RecyclerView>(R.id.recycler_presets).asAny(_presets, RecyclerView.HORIZONTAL) {
             it.onClick.subscribe {
-                _selected = ImageVariable(null, it.id);
+                _selected = ImageVariable.fromPresetName(it.name);
                 updateSelected();
             };
         };
@@ -153,8 +149,9 @@ class ImageVariableOverlay: ConstraintLayout {
 
     fun updateSelected() {
         val id = _selected?.resId;
+        val name = _selected?.presetName;
         val url = _selected?.url;
-        _presets.forEach { p -> p.active = p.id == id };
+        _presets.forEach { p -> p.active = p.name == name };
         _recyclerPresets.notifyContentChanged();
         _creators.forEach { p -> p.active = p.channel.thumbnail == url };
         _recyclerCreators.notifyContentChanged();
@@ -199,7 +196,7 @@ class ImageVariableOverlay: ConstraintLayout {
         private val view = _view as LinearLayout;
         private val imageView = ShapeableImageView(viewGroup.context);
 
-        private var value: PresetImage = PresetImage(0, false);
+        private var value: PresetImage = PresetImage(0, "", false);
 
         val onClick = Event1<PresetImage>();
         init {
@@ -233,5 +230,5 @@ class ImageVariableOverlay: ConstraintLayout {
         }
     }
 
-    data class PresetImage(var id: Int, var active: Boolean);
+    data class PresetImage(var id: Int, var name: String, var active: Boolean);
 }
