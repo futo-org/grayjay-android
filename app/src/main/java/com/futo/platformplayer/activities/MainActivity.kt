@@ -321,7 +321,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragDownloads.topBar = _fragTopBarGeneral;
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
-        _fragSubGroup.topBar = _fragTopBarNavigation;
         _fragSubGroupList.topBar = _fragTopBarAdd;
 
         _fragBrowser.topBar = _fragTopBarNavigation;

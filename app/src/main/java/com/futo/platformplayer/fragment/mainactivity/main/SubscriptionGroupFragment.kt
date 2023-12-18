@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.dp
@@ -32,7 +34,9 @@ import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.viewholders.CreatorBarViewHolder
+import com.futo.platformplayer.views.overlays.CreatorSelectOverlay
 import com.futo.platformplayer.views.overlays.ImageVariableOverlay
+import com.futo.platformplayer.views.overlays.OverlayTopbar
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
@@ -69,6 +73,7 @@ class SubscriptionGroupFragment : MainFragment() {
     private class SubscriptionGroupView: ConstraintLayout {
         private val _fragment: SubscriptionGroupFragment;
 
+        private val _topbar: OverlayTopbar;
         private val _textGroupTitleContainer: LinearLayout;
         private val _textGroupTitle: TextView;
         private val _imageGroup: ShapeableImageView;
@@ -81,16 +86,12 @@ class SubscriptionGroupFragment : MainFragment() {
         private val _buttonSettings: ImageButton;
         private val _buttonDelete: ImageButton;
 
-        private val _enabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
-        private val _disabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
-        private val _enabledCreatorsFiltered: ArrayList<IPlatformChannel> = arrayListOf();
-        private val _disabledCreatorsFiltered: ArrayList<IPlatformChannel> = arrayListOf();
+        private val _buttonAddCreator: Button;
 
-        private val _containerEnabled: LinearLayout;
-        private val _containerDisabled: LinearLayout;
+        private val _enabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
+        private val _enabledCreatorsFiltered: ArrayList<IPlatformChannel> = arrayListOf();
 
         private val _recyclerCreatorsEnabled: AnyAdapterView<IPlatformChannel, CreatorBarViewHolder>;
-        private val _recyclerCreatorsDisabled: AnyAdapterView<IPlatformChannel, CreatorBarViewHolder>;
 
         private val _overlay: FrameLayout;
 
@@ -101,6 +102,7 @@ class SubscriptionGroupFragment : MainFragment() {
             _fragment = fragment;
 
             _overlay = findViewById(R.id.overlay);
+            _topbar = findViewById(R.id.topbar);
             _searchBar = findViewById(R.id.search_bar);
             _textGroupTitleContainer = findViewById(R.id.text_group_title_container);
             _textGroupTitle = findViewById(R.id.text_group_title);
@@ -110,33 +112,50 @@ class SubscriptionGroupFragment : MainFragment() {
             _textGroupMeta = findViewById(R.id.text_group_meta);
             _buttonSettings = findViewById(R.id.button_settings);
             _buttonDelete = findViewById(R.id.button_delete);
+            _buttonAddCreator = findViewById(R.id.button_creator_add);
             _imageGroup.setBackgroundColor(Color.GRAY);
+
+            _topbar.onClose.subscribe {
+                fragment.close(true);
+            }
+
+            _buttonAddCreator.setOnClickListener {
+                addCreators();
+            }
 
             val dp6 = 6.dp(resources);
             _imageGroup.shapeAppearanceModel = ShapeAppearanceModel.builder()
                 .setAllCorners(CornerFamily.ROUNDED, dp6.toFloat())
                 .build()
 
-            _containerEnabled = findViewById(R.id.container_enabled);
-            _containerDisabled = findViewById(R.id.container_disabled);
             _recyclerCreatorsEnabled = findViewById<RecyclerView>(R.id.recycler_creators_enabled).asAny(_enabledCreatorsFiltered) {
                 it.itemView.setPadding(0, dp6, 0, dp6);
                 it.onClick.subscribe { channel ->
-                    disableCreator(channel);
+                    //disableCreator(channel);
+                    UIDialogs.showDialog(context, R.drawable.ic_trash, "Delete", "Are you sure you want to delete\n[${channel.name}]?", null, 0,
+                        UIDialogs.Action("Cancel", {}),
+                        UIDialogs.Action("Delete", {
+                            _group?.let {
+                                it.urls.remove(channel.url);
+                                reloadCreators(it);
+                            }
+                        }, UIDialogs.ActionStyle.DANGEROUS))
                 };
             }
+            /*
             _recyclerCreatorsDisabled = findViewById<RecyclerView>(R.id.recycler_creators_disabled).asAny(_disabledCreatorsFiltered) {
                 it.itemView.setPadding(0, dp6, 0, dp6);
                 it.onClick.subscribe { channel ->
                     enableCreator(channel);
                 };
-            }
+            }*/
             _recyclerCreatorsEnabled.view.layoutManager = GridLayoutManager(context, 5).apply {
                 this.orientation = LinearLayoutManager.VERTICAL;
             };
+            /*
             _recyclerCreatorsDisabled.view.layoutManager = GridLayoutManager(context, 5).apply {
                 this.orientation = LinearLayoutManager.VERTICAL;
-            };
+            };*/
 
             _textGroupTitleContainer.setOnClickListener {
                 _group?.let { editName(it) };
@@ -154,10 +173,14 @@ class SubscriptionGroupFragment : MainFragment() {
 
             }
             _buttonDelete.setOnClickListener {
-                _group?.let {
-                    StateSubscriptionGroups.instance.deleteSubscriptionGroup(it.id);
+                _group?.let { g ->
+                    UIDialogs.showDialog(context, R.drawable.ic_trash, "Delete Group", "Are you sure you want to this group?\n[${g.name}]?", null, 0,
+                        UIDialogs.Action("Cancel", {}),
+                        UIDialogs.Action("Delete", {
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id);
+                            fragment.close(true);
+                        }, UIDialogs.ActionStyle.DANGEROUS))
                 };
-                fragment.close(true);
             }
             _buttonSettings.visibility = View.GONE;
 
@@ -208,6 +231,28 @@ class SubscriptionGroupFragment : MainFragment() {
                 overlay.removeAllViews();
             }
         }
+        fun addCreators() {
+            val overlay = CreatorSelectOverlay(context, _enabledCreators.map { it.url });
+            _overlay.removeAllViews();
+            _overlay.addView(overlay);
+            _overlay.alpha = 0f
+            _overlay.visibility = View.VISIBLE;
+            _overlay.animate().alpha(1f).setDuration(300).start();
+            overlay.onSelected.subscribe {
+                _group?.let { g ->
+                    for(url in it) {
+                        if(!g.urls.contains(url))
+                            g.urls.add(url);
+                    }
+                    save();
+                    reloadCreators(g);
+                }
+            };
+            overlay.onClose.subscribe {
+                _overlay.visibility = View.GONE;
+                overlay.removeAllViews();
+            }
+        }
 
 
         fun setGroup(group: SubscriptionGroup?) {
@@ -230,73 +275,30 @@ class SubscriptionGroupFragment : MainFragment() {
         @SuppressLint("NotifyDataSetChanged")
         private fun reloadCreators(group: SubscriptionGroup?) {
             _enabledCreators.clear();
-            _disabledCreators.clear();
+            //_disabledCreators.clear();
 
             if(group != null) {
                 val urls = group.urls.toList();
                 val subs = StateSubscriptions.instance.getSubscriptions().map { it.channel }
                 _enabledCreators.addAll(subs.filter { urls.contains(it.url) });
-                _disabledCreators.addAll(subs.filter { !urls.contains(it.url) });
             }
+            updateMeta();
             filterCreators();
         }
 
         private fun filterCreators() {
             val query = _searchBar.textSearch.text.toString().lowercase();
             val filteredEnabled = _enabledCreators.filter { it.name.lowercase().contains(query) };
-            val filteredDisabled = _disabledCreators.filter { it.name.lowercase().contains(query) };
 
             //Optimize
             _enabledCreatorsFiltered.clear();
             _enabledCreatorsFiltered.addAll(filteredEnabled);
-            _disabledCreatorsFiltered.clear();
-            _disabledCreatorsFiltered.addAll(filteredDisabled);
 
             _recyclerCreatorsEnabled.notifyContentChanged();
-            _recyclerCreatorsDisabled.notifyContentChanged();
-        }
-
-        private fun enableCreator(channel: IPlatformChannel) {
-            val index = _disabledCreatorsFiltered.indexOf(channel);
-            if (index >= 0) {
-                _disabledCreators.remove(channel)
-                _disabledCreatorsFiltered.remove(channel);
-                _recyclerCreatorsDisabled.adapter.notifyItemRangeRemoved(index);
-
-                _enabledCreators.add(channel);
-                _enabledCreatorsFiltered.add(channel);
-                _recyclerCreatorsEnabled.adapter.notifyItemInserted(_enabledCreatorsFiltered.size - 1);
-
-                _group?.let {
-                    if(!it.urls.contains(channel.url)) {
-                        it.urls.add(channel.url);
-                        save();
-                    }
-                }
-                updateMeta();
-            }
-        }
-        private fun disableCreator(channel: IPlatformChannel) {
-            val index = _enabledCreatorsFiltered.indexOf(channel);
-            if (index >= 0) {
-                _enabledCreators.remove(channel)
-                _enabledCreatorsFiltered.removeAt(index);
-                _recyclerCreatorsEnabled.adapter.notifyItemRangeRemoved(index);
-
-                _disabledCreators.add(channel);
-                _disabledCreatorsFiltered.add(channel);
-                _recyclerCreatorsDisabled.adapter.notifyItemInserted(_disabledCreatorsFiltered.size - 1);
-
-                _group?.let {
-                    it.urls.remove(channel.url);
-                    save();
-                }
-                updateMeta();
-            }
         }
 
         private fun updateMeta() {
-            _textGroupMeta.text = "${_enabledCreators.size} creators";
+            _textGroupMeta.text = "${_group?.urls?.size} creators";
         }
     }
 }
