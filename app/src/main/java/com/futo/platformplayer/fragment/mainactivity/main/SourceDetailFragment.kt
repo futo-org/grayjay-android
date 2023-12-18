@@ -23,6 +23,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.views.buttons.BigButton
@@ -294,7 +295,9 @@ class SourceDetailFragment : MainFragment() {
                 }
             }
 
-            val clientIfExists = StatePlugins.instance.getPlugin(config.id);
+            val clientIfExists = if(config.id != StateDeveloper.DEV_ID)
+                StatePlugins.instance.getPlugin(config.id);
+            else null;
             groups.add(
                 BigButtonGroup(c, context.getString(R.string.management),
                     BigButton(c, context.getString(R.string.uninstall), context.getString(R.string.removes_the_plugin_from_the_app), R.drawable.ic_block) {

@@ -7,6 +7,7 @@ import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.PlatformClientCapabilities
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -67,8 +68,8 @@ open class JSClient : IPlatformClient {
     var descriptor: SourcePluginDescriptor
         private set;
 
-    private val _client: JSHttpClient;
-    private val _clientAuth: JSHttpClient?;
+    private val _httpClient: JSHttpClient;
+    private val _httpClientAuth: JSHttpClient?;
     private var _searchCapabilities: ResultCapabilities? = null;
     private var _searchChannelContentsCapabilities: ResultCapabilities? = null;
     private var _channelCapabilities: ResultCapabilities? = null;
@@ -131,9 +132,9 @@ open class JSClient : IPlatformClient {
         _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _client = JSHttpClient(this, null, _captcha);
-        _clientAuth = JSHttpClient(this, _auth, _captcha);
-        _plugin = V8Plugin(context, descriptor.config, null, _client, _clientAuth);
+        _httpClient = JSHttpClient(this, null, _captcha);
+        _httpClientAuth = JSHttpClient(this, _auth, _captcha);
+        _plugin = V8Plugin(context, descriptor.config, null, _httpClient, _httpClientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
 
@@ -160,9 +161,9 @@ open class JSClient : IPlatformClient {
         _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _client = JSHttpClient(this, null, _captcha);
-        _clientAuth = JSHttpClient(this, _auth, _captcha);
-        _plugin = V8Plugin(context, descriptor.config, script, _client, _clientAuth);
+        _httpClient = JSHttpClient(this, null, _captcha);
+        _httpClientAuth = JSHttpClient(this, _auth, _captcha);
+        _plugin = V8Plugin(context, descriptor.config, script, _httpClient, _httpClientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
         _plugin.withScript(script);
@@ -180,6 +181,13 @@ open class JSClient : IPlatformClient {
 
     fun getUnderlyingPlugin(): V8Plugin {
         return _plugin;
+    }
+    fun getHttpClientById(id: String): JSHttpClient? {
+        if(_httpClient.clientId == id)
+            return _httpClient;
+        if(_httpClientAuth?.clientId == id)
+            return _httpClientAuth;
+        return plugin.httpClientOthers[id];
     }
 
     override fun initialize() {
@@ -254,7 +262,7 @@ open class JSClient : IPlatformClient {
     @JSDocs(2, "source.getHome()", "Gets the HomeFeed of the platform")
     override fun getHome(): IPager<IPlatformContent> = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSContentPager(config, plugin,
+        return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.getHome()"));
     }
 
@@ -292,7 +300,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("channelId", "(optional) Channel id to search in")
     override fun search(query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSContentPager(config, plugin,
+        return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.search(${Json.encodeToString(query)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
     }
 
@@ -316,7 +324,7 @@ open class JSClient : IPlatformClient {
         if(!capabilities.hasSearchChannelContents)
             throw IllegalStateException("This plugin does not support channel search");
 
-        return@isBusyWith JSContentPager(config, plugin,
+        return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.searchChannelContents(${Json.encodeToString(channelUrl)}, ${Json.encodeToString(query)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
     }
 
@@ -325,7 +333,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("query", "Query that channels should match")
     override fun searchChannels(query: String): IPager<PlatformAuthorLink> = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSChannelPager(config, plugin,
+        return@isBusyWith JSChannelPager(config, this,
             plugin.executeTyped("source.searchChannels(${Json.encodeToString(query)})"));
     }
 
@@ -372,7 +380,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("filters", "(optional) Filters to apply on contents")
     override fun getChannelContents(channelUrl: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSContentPager(config, plugin,
+        return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.getChannelContents(${Json.encodeToString(channelUrl)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
     }
 
@@ -438,7 +446,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("url", "A content url (this platform)")
     override fun getContentDetails(url: String): IPlatformContentDetails = isBusyWith {
         ensureEnabled();
-        return@isBusyWith IJSContentDetails.fromV8(config,
+        return@isBusyWith IJSContentDetails.fromV8(this,
             plugin.executeTyped("source.getContentDetails(${Json.encodeToString(url)})"));
     }
 
@@ -476,13 +484,13 @@ open class JSClient : IPlatformClient {
         if (pager !is V8ValueObject) { //TODO: Maybe solve this better
             return@isBusyWith EmptyPager<IPlatformComment>();
         }
-        return@isBusyWith JSCommentPager(config, plugin, pager);
+        return@isBusyWith JSCommentPager(config, this, pager);
     }
     @JSDocs(17, "source.getSubComments(comment)", "Gets replies for a given comment")
     @JSDocsParameter("comment", "Comment object that was returned by getComments")
     override fun getSubComments(comment: IPlatformComment): IPager<IPlatformComment> {
         ensureEnabled();
-        return comment.getReplies(this) ?: JSCommentPager(config, plugin,
+        return comment.getReplies(this) ?: JSCommentPager(config, this,
                 plugin.executeTyped("source.getSubComments(${Json.encodeToString(comment as JSComment)})"));
     }
 
@@ -501,7 +509,7 @@ open class JSClient : IPlatformClient {
         if(!capabilities.hasGetLiveEvents)
             return@isBusyWith null;
         ensureEnabled();
-        return@isBusyWith JSLiveEventPager(config, plugin,
+        return@isBusyWith JSLiveEventPager(config, this,
             plugin.executeTyped("source.getLiveEvents(${Json.encodeToString(url)})"));
     }
     @JSDocs(19, "source.searchPlaylists(query)", "Searches for playlists on the platform")
@@ -514,7 +522,7 @@ open class JSClient : IPlatformClient {
         ensureEnabled();
         if(!capabilities.hasSearchPlaylists)
             throw IllegalStateException("This plugin does not support playlist search");
-        return@isBusyWith JSContentPager(config, plugin, plugin.executeTyped("source.searchPlaylists(${Json.encodeToString(query)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
+        return@isBusyWith JSContentPager(config, this, plugin.executeTyped("source.searchPlaylists(${Json.encodeToString(query)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
     }
     @JSOptional
     @JSDocs(20, "source.isPlaylistUrl(url)", "Validates if a playlist url is for this platform")
@@ -530,7 +538,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("url", "Url of playlist")
     override fun getPlaylist(url: String): IPlatformPlaylistDetails = isBusyWith {
         ensureEnabled();
-        return@isBusyWith JSPlaylistDetails(plugin, plugin.config as SourcePluginConfig, plugin.executeTyped("source.getPlaylist(${Json.encodeToString(url)})"));
+        return@isBusyWith JSPlaylistDetails(this, plugin.config as SourcePluginConfig, plugin.executeTyped("source.getPlaylist(${Json.encodeToString(url)})"));
     }
 
     @JSOptional

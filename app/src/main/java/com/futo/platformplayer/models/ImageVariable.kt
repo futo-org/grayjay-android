@@ -1,14 +1,26 @@
 package com.futo.platformplayer.models
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.widget.ImageView
 import com.bumptech.glide.Glide
+import com.futo.platformplayer.PresetImages
 import com.futo.platformplayer.R
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Transient
 import java.io.File
 
-data class ImageVariable(val url: String? = null, val resId: Int? = null, val bitmap: Bitmap? = null) {
+@kotlinx.serialization.Serializable
+data class ImageVariable(
+    val url: String? = null,
+    val resId: Int? = null,
+    @Transient
+    @Contextual
+    private val bitmap: Bitmap? = null,
+    val presetName: String? = null) {
 
+    @SuppressLint("DiscouragedApi")
     fun setImageView(imageView: ImageView, fallbackResId: Int = -1) {
         if(bitmap != null) {
             Glide.with(imageView)
@@ -23,6 +35,9 @@ data class ImageVariable(val url: String? = null, val resId: Int? = null, val bi
                 .load(url)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
                 .into(imageView);
+        } else if(!presetName.isNullOrEmpty()) {
+            val resId = PresetImages.getPresetResIdByName(presetName);
+            imageView.setImageResource(resId);
         } else if (fallbackResId != -1) {
             Glide.with(imageView)
                 .load(fallbackResId)
@@ -43,6 +58,9 @@ data class ImageVariable(val url: String? = null, val resId: Int? = null, val bi
         }
         fun fromBitmap(bitmap: Bitmap): ImageVariable {
             return ImageVariable(null, null, bitmap);
+        }
+        fun fromPresetName(str: String): ImageVariable {
+            return ImageVariable(null, null, null, str);
         }
         fun fromFile(file: File): ImageVariable {
             return ImageVariable.fromBitmap(BitmapFactory.decodeFile(file.absolutePath));

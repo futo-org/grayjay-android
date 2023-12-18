@@ -21,6 +21,7 @@ import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.SearchType
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
@@ -98,6 +99,8 @@ class SubscriptionsFeedFragment : MainFragment() {
     @SuppressLint("ViewConstructor")
     class SubscriptionsFeedView : ContentFeedView<SubscriptionsFeedFragment> {
         override val shouldShowTimeBar: Boolean get() = Settings.instance.subscriptions.progressBar
+
+        private var _subGroup: SubscriptionGroup? = null;
 
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
@@ -254,6 +257,18 @@ class SubscriptionsFeedFragment : MainFragment() {
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             };
             _subscriptionBar?.onClickChannel?.subscribe { c -> fragment.navigate<ChannelFragment>(c); };
+            _subscriptionBar?.onToggleGroup?.subscribe { g ->
+                if(g is SubscriptionGroup.Add)
+                    UISlideOverlays.showCreateSubscriptionGroup(_overlayContainer);
+                else {
+                    _subGroup = g;
+                    loadCache(); //TODO: Proper subset update
+                }
+            };
+            _subscriptionBar?.onHoldGroup?.subscribe { g ->
+                if(g !is SubscriptionGroup.Add)
+                    fragment.navigate<SubscriptionGroupFragment>(g);
+            };
 
             synchronized(_filterLock) {
                 _subscriptionBar?.setToggles(
@@ -288,8 +303,14 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
             val nowSoon = OffsetDateTime.now().plusMinutes(5);
+            val filterGroup = _subGroup;
             return results.filter {
                 val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
+
+                //TODO: Check against a sub cache
+                if(filterGroup != null && !filterGroup.urls.contains(it.author.url))
+                    return@filter false;
+
 
                 if(it.datetime?.isAfter(nowSoon) == true) {
                     if(!_filterSettings.allowPlanned)

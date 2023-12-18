@@ -1,7 +1,11 @@
 package com.futo.platformplayer.views.adapters
 
+import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import java.lang.reflect.Constructor
@@ -47,6 +51,7 @@ open class BaseAnyAdapter<I, T : AnyAdapter.AnyViewHolder<I>, IT : ViewHolder> {
             cb(item);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun notifyContentChanged() {
         adapter.notifyDataSetChanged();
     }
@@ -115,7 +120,6 @@ class AnyAdapter<I, T : AnyAdapter.AnyViewHolder<I>> : BaseAnyAdapter<I, T, T> {
 
     private class Adapter<I, T : AnyViewHolder<I>> : RecyclerView.Adapter<T> {
         private val _parent: AnyAdapter<I, T>;
-
 
         constructor(parentAdapter: AnyAdapter<I, T>) {
             _parent = parentAdapter;

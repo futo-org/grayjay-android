@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
-    android:layout_height="27dp"
+    android:layout_height="32dp"
     android:paddingStart="15dp"
     android:paddingEnd="15dp"
     android:background="@drawable/background_pill"

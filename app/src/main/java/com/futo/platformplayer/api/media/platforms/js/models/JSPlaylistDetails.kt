@@ -4,6 +4,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
@@ -13,7 +14,7 @@ import com.futo.platformplayer.models.Playlist
 class JSPlaylistDetails: JSPlaylist, IPlatformPlaylistDetails {
     override val contents: IPager<IPlatformVideo>;
 
-    constructor(plugin: V8Plugin, config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
+    constructor(plugin: JSClient, config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
         contents = JSVideoPager(config, plugin, obj.getOrThrow(config, "contents", "PlaylistDetails"));
     }
 
