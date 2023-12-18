@@ -458,7 +458,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         val currentChapter = getCurrentChapter(chaptPos);
         if(_currentChapter != currentChapter) {
             _currentChapter = currentChapter;
-            runBlocking(Dispatchers.Main) {
+
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 if (currentChapter != null) {
                     _control_chapter.text = " • " + currentChapter.name;
                     _control_chapter_fullscreen.text = " • " + currentChapter.name;

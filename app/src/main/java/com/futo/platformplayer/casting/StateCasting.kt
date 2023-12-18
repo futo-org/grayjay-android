@@ -205,11 +205,20 @@ class StateCasting {
     }
 
     fun onResume() {
-        val resumeCastingDevice = _resumeCastingDevice
-        if (resumeCastingDevice != null) {
-            connectDevice(deviceFromCastingDeviceInfo(resumeCastingDevice))
-            _resumeCastingDevice = null
-            Log.i(TAG, "_resumeCastingDevice set to null onResume")
+        val ad = activeDevice
+        if (ad != null) {
+            if (ad is FCastCastingDevice) {
+                ad.ensureThreadStarted()
+            } else if (ad is ChromecastCastingDevice) {
+                ad.ensureThreadsStarted()
+            }
+        } else {
+            val resumeCastingDevice = _resumeCastingDevice
+            if (resumeCastingDevice != null) {
+                connectDevice(deviceFromCastingDeviceInfo(resumeCastingDevice))
+                _resumeCastingDevice = null
+                Log.i(TAG, "_resumeCastingDevice set to null onResume")
+            }
         }
     }
 

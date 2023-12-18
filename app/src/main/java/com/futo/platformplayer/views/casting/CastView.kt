@@ -18,10 +18,12 @@ import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.AirPlayCastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.behavior.GestureControlView
@@ -51,7 +53,10 @@ class CastView : ConstraintLayout {
     private var _scope: CoroutineScope = CoroutineScope(Dispatchers.Main);
     private var _updateTimeJob: Job? = null;
     private var _inPictureInPicture: Boolean = false;
+    private var _chapters: List<IChapter>? = null;
+    private var _currentChapter: IChapter? = null;
 
+    val onChapterChanged = Event2<IChapter?, Boolean>();
     val onMinimizeClick = Event0();
     val onSettingsClick = Event0();
     val onPrevious = Event0();
@@ -127,6 +132,36 @@ class CastView : ConstraintLayout {
         updateNextPrevious();
         _buttonPrevious.setOnClickListener { onPrevious.emit() };
         _buttonNext.setOnClickListener { onNext.emit() };
+    }
+
+    private fun updateCurrentChapter(chaptPos: Long, isScrub: Boolean = false): Boolean {
+        val currentChapter = getCurrentChapter(chaptPos);
+        if(_currentChapter != currentChapter) {
+            _currentChapter = currentChapter;
+            /*runBlocking(Dispatchers.Main) {
+                if (currentChapter != null) {
+                    //TODO: Add chapter controls
+                    //_control_chapter.text = " • " + currentChapter.name;
+                    //_control_chapter_fullscreen.text = " • " + currentChapter.name;
+                } else {
+                    //TODO: Add chapter controls
+                    //_control_chapter.text = "";
+                    //_control_chapter_fullscreen.text = "";
+                }
+            }*/
+
+            onChapterChanged.emit(currentChapter, isScrub);
+            return true;
+        }
+        return false;
+    }
+
+    fun setChapters(chapters: List<IChapter>?) {
+        _chapters = chapters;
+    }
+
+    fun getCurrentChapter(pos: Long): IChapter? {
+        return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd } };
     }
 
     private fun updateNextPrevious() {
@@ -225,6 +260,7 @@ class CastView : ConstraintLayout {
 
     @OptIn(UnstableApi::class)
     fun setTime(ms: Long) {
+        updateCurrentChapter(ms);
         _textPosition.text = ms.toHumanTime(true);
         _timeBar.setPosition(ms / 1000);
         StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), ms);

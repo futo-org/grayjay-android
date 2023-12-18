@@ -1,8 +1,12 @@
 package com.futo.platformplayer.casting
 
 import android.os.Looper
+import android.util.Base64
 import android.util.Log
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.casting.models.FCastDecryptedMessage
+import com.futo.platformplayer.casting.models.FCastEncryptedMessage
+import com.futo.platformplayer.casting.models.FCastKeyExchangeMessage
 import com.futo.platformplayer.casting.models.FCastPlayMessage
 import com.futo.platformplayer.casting.models.FCastPlaybackErrorMessage
 import com.futo.platformplayer.casting.models.FCastPlaybackUpdateMessage
@@ -26,22 +30,44 @@ import kotlinx.serialization.json.Json
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import java.math.BigInteger
 import java.net.InetAddress
 import java.net.Socket
+import java.security.KeyFactory
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.MessageDigest
+import java.security.PrivateKey
+import java.security.spec.X509EncodedKeySpec
+import javax.crypto.Cipher
+import javax.crypto.KeyAgreement
+import javax.crypto.spec.DHParameterSpec
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 enum class Opcode(val value: Byte) {
-    NONE(0),
-    PLAY(1),
-    PAUSE(2),
-    RESUME(3),
-    STOP(4),
-    SEEK(5),
-    PLAYBACK_UPDATE(6),
-    VOLUME_UPDATE(7),
-    SET_VOLUME(8),
-    PLAYBACK_ERROR(9),
-    SET_SPEED(10),
-    VERSION(11)
+    None(0),
+    Play(1),
+    Pause(2),
+    Resume(3),
+    Stop(4),
+    Seek(5),
+    PlaybackUpdate(6),
+    VolumeUpdate(7),
+    SetVolume(8),
+    PlaybackError(9),
+    SetSpeed(10),
+    Version(11),
+    KeyExchange(12),
+    Encrypted(13),
+    Ping(14),
+    Pong(15),
+    StartEncryption(16);
+
+    companion object {
+        private val _map = entries.associateBy { it.value }
+        fun find(value: Byte): Opcode = _map[value] ?: Opcode.None
+    }
 }
 
 class FCastCastingDevice : CastingDevice {
@@ -63,17 +89,26 @@ class FCastCastingDevice : CastingDevice {
     private var _scopeIO: CoroutineScope? = null;
     private var _started: Boolean = false;
     private var _version: Long = 1;
+    private val _keyPair: KeyPair
+    private var _aesKey: SecretKeySpec? = null
+    private val _queuedEncryptedMessages = arrayListOf<FCastEncryptedMessage>()
+    private var _encryptionStarted = false
+    private var _thread: Thread? = null
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
         this.addresses = addresses;
         this.port = port;
+
+        _keyPair = generateKeyPair()
     }
 
     constructor(deviceInfo: CastingDeviceInfo) : super() {
         this.name = deviceInfo.name;
         this.addresses = deviceInfo.addresses.map { a -> a.toInetAddress() }.filterNotNull().toTypedArray();
         this.port = deviceInfo.port;
+
+        _keyPair = generateKeyPair()
     }
 
     override fun getAddresses(): List<InetAddress> {
@@ -94,7 +129,7 @@ class FCastCastingDevice : CastingDevice {
 
         setTime(resumePosition);
         setDuration(duration);
-        sendMessage(Opcode.PLAY, FCastPlayMessage(
+        send(Opcode.Play, FCastPlayMessage(
             container = contentType,
             url = contentId,
             time = resumePosition,
@@ -118,7 +153,7 @@ class FCastCastingDevice : CastingDevice {
 
         setTime(resumePosition);
         setDuration(duration);
-        sendMessage(Opcode.PLAY, FCastPlayMessage(
+        send(Opcode.Play, FCastPlayMessage(
             container = contentType,
             content = content,
             time = resumePosition,
@@ -134,7 +169,7 @@ class FCastCastingDevice : CastingDevice {
         }
 
         setVolume(volume);
-        sendMessage(Opcode.SET_VOLUME, FCastSetVolumeMessage(volume))
+        send(Opcode.SetVolume, FCastSetVolumeMessage(volume))
     }
 
     override fun changeSpeed(speed: Double) {
@@ -143,7 +178,7 @@ class FCastCastingDevice : CastingDevice {
         }
 
         setSpeed(speed);
-        sendMessage(Opcode.SET_SPEED, FCastSetSpeedMessage(speed))
+        send(Opcode.SetSpeed, FCastSetSpeedMessage(speed))
     }
 
     override fun seekVideo(timeSeconds: Double) {
@@ -151,7 +186,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        sendMessage(Opcode.SEEK, FCastSeekMessage(
+        send(Opcode.Seek, FCastSeekMessage(
             time = timeSeconds
         ));
     }
@@ -161,7 +196,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        sendMessage(Opcode.RESUME);
+        send(Opcode.Resume);
     }
 
     override fun pauseVideo() {
@@ -169,7 +204,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        sendMessage(Opcode.PAUSE);
+        send(Opcode.Pause);
     }
 
     override fun stopVideo() {
@@ -177,7 +212,7 @@ class FCastCastingDevice : CastingDevice {
             return;
         }
 
-        sendMessage(Opcode.STOP);
+        send(Opcode.Stop);
     }
 
     private fun invokeInIOScopeIfRequired(action: () -> Unit): Boolean {
@@ -201,7 +236,6 @@ class FCastCastingDevice : CastingDevice {
     }
 
     override fun start() {
-        val adrs = addresses ?: return;
         if (_started) {
             return;
         }
@@ -209,123 +243,137 @@ class FCastCastingDevice : CastingDevice {
         _started = true;
         Logger.i(TAG, "Starting...");
 
-        _scopeIO?.cancel();
-        Logger.i(TAG, "Cancelled previous scopeIO because a new one is starting.")
-        _scopeIO = CoroutineScope(Dispatchers.IO);
+        ensureThreadStarted();
+        Logger.i(TAG, "Started.");
+    }
 
-        Thread {
-            connectionState = CastConnectionState.CONNECTING;
+    fun ensureThreadStarted() {
+        val adrs = addresses ?: return;
 
-            while (_scopeIO?.isActive == true) {
-                try {
-                    val connectedSocket = getConnectedSocket(adrs.toList(), port);
-                    if (connectedSocket == null) {
+        val thread = _thread
+        if (thread == null || !thread.isAlive) {
+            Log.i(TAG, "Restarting thread because the thread has died")
+
+            _scopeIO?.cancel();
+            Logger.i(TAG, "Cancelled previous scopeIO because a new one is starting.")
+            _scopeIO = CoroutineScope(Dispatchers.IO);
+
+            _thread = Thread {
+                connectionState = CastConnectionState.CONNECTING;
+
+                while (_scopeIO?.isActive == true) {
+                    try {
+                        val connectedSocket = getConnectedSocket(adrs.toList(), port);
+                        if (connectedSocket == null) {
+                            Thread.sleep(3000);
+                            continue;
+                        }
+
+                        usedRemoteAddress = connectedSocket.inetAddress;
+                        localAddress = connectedSocket.localAddress;
+                        connectedSocket.close();
+                        break;
+                    } catch (e: Throwable) {
+                        Logger.w(ChromecastCastingDevice.TAG, "Failed to get setup initial connection to FastCast device.", e)
+                    }
+                }
+
+                //Connection loop
+                while (_scopeIO?.isActive == true) {
+                    Logger.i(TAG, "Connecting to FastCast.");
+                    connectionState = CastConnectionState.CONNECTING;
+
+                    try {
+                        _socket = Socket(usedRemoteAddress, port);
+                        Logger.i(TAG, "Successfully connected to FastCast at $usedRemoteAddress:$port");
+
+                        _outputStream = DataOutputStream(_socket?.outputStream);
+                        _inputStream = DataInputStream(_socket?.inputStream);
+                    } catch (e: IOException) {
+                        _socket?.close();
+                        Logger.i(TAG, "Failed to connect to FastCast.", e);
+
+                        connectionState = CastConnectionState.CONNECTING;
                         Thread.sleep(3000);
                         continue;
                     }
 
-                    usedRemoteAddress = connectedSocket.inetAddress;
-                    localAddress = connectedSocket.localAddress;
-                    connectedSocket.close();
-                    break;
-                } catch (e: Throwable) {
-                    Logger.w(ChromecastCastingDevice.TAG, "Failed to get setup initial connection to FastCast device.", e)
-                }
-            }
+                    localAddress = _socket?.localAddress;
+                    connectionState = CastConnectionState.CONNECTED;
 
-            //Connection loop
-            while (_scopeIO?.isActive == true) {
-                Logger.i(TAG, "Connecting to FastCast.");
-                connectionState = CastConnectionState.CONNECTING;
+                    Logger.i(TAG, "Sending KeyExchange.")
+                    send(Opcode.KeyExchange, getKeyExchangeMessage(_keyPair))
 
-                try {
-                    _socket = Socket(usedRemoteAddress, port);
-                    Logger.i(TAG, "Successfully connected to FastCast at $usedRemoteAddress:$port");
+                    val buffer = ByteArray(4096);
+
+                    Logger.i(TAG, "Started receiving.");
+                    var exceptionOccurred = false;
+                    while (_scopeIO?.isActive == true && !exceptionOccurred) {
+                        try {
+                            val inputStream = _inputStream ?: break;
+                            Log.d(TAG, "Receiving next packet...");
+                            val b1 = inputStream.readUnsignedByte();
+                            val b2 = inputStream.readUnsignedByte();
+                            val b3 = inputStream.readUnsignedByte();
+                            val b4 = inputStream.readUnsignedByte();
+                            val size = ((b4.toLong() shl 24) or (b3.toLong() shl 16) or (b2.toLong() shl 8) or b1.toLong()).toInt();
+                            if (size > buffer.size) {
+                                Logger.w(TAG, "Skipping packet that is too large $size bytes.")
+                                inputStream.skip(size.toLong());
+                                continue;
+                            }
+
+                            Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
+                            inputStream.read(buffer, 0, size);
+
+                            val messageBytes = buffer.sliceArray(IntRange(0, size));
+                            Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
+
+                            val opcode = messageBytes[0];
+                            var json: String? = null;
+                            if (size > 1) {
+                                json = messageBytes.sliceArray(IntRange(1, size - 1)).decodeToString();
+                            }
+
+                            try {
+                                handleMessage(Opcode.find(opcode), json);
+                            } catch (e: Throwable) {
+                                Logger.w(TAG, "Failed to handle message.", e);
+                            }
+                        } catch (e: java.net.SocketException) {
+                            Logger.e(TAG, "Socket exception while receiving.", e);
+                            exceptionOccurred = true;
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Exception while receiving.", e);
+                            exceptionOccurred = true;
+                        }
+                    }
 
                     try {
-                        _outputStream = DataOutputStream(_socket?.outputStream);
-                        _inputStream = DataInputStream(_socket?.inputStream);
+                        _socket?.close();
+                        Logger.i(TAG, "Socket disconnected.");
                     } catch (e: Throwable) {
-                        Logger.i(TAG, "Failed to authenticate to FastCast.", e);
+                        Logger.e(TAG, "Failed to close socket.", e)
                     }
-                } catch (e: IOException) {
-                    _socket?.close();
-                    Logger.i(TAG, "Failed to connect to FastCast.", e);
 
                     connectionState = CastConnectionState.CONNECTING;
                     Thread.sleep(3000);
-                    continue;
                 }
 
-                localAddress = _socket?.localAddress;
-                connectionState = CastConnectionState.CONNECTED;
-
-                val buffer = ByteArray(4096);
-
-                Logger.i(TAG, "Started receiving.");
-                var exceptionOccurred = false;
-                while (_scopeIO?.isActive == true && !exceptionOccurred) {
-                    try {
-                        val inputStream = _inputStream ?: break;
-                        Log.d(TAG, "Receiving next packet...");
-                        val b1 = inputStream.readUnsignedByte();
-                        val b2 = inputStream.readUnsignedByte();
-                        val b3 = inputStream.readUnsignedByte();
-                        val b4 = inputStream.readUnsignedByte();
-                        val size = ((b4.toLong() shl 24) or (b3.toLong() shl 16) or (b2.toLong() shl 8) or b1.toLong()).toInt();
-                        if (size > buffer.size) {
-                            Logger.w(TAG, "Skipping packet that is too large $size bytes.")
-                            inputStream.skip(size.toLong());
-                            continue;
-                        }
-
-                        Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
-                        inputStream.read(buffer, 0, size);
-
-                        val messageBytes = buffer.sliceArray(IntRange(0, size));
-                        Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
-
-                        val opcode = messageBytes[0];
-                        var json: String? = null;
-                        if (size > 1) {
-                            json = messageBytes.sliceArray(IntRange(1, size - 1)).decodeToString();
-                        }
-
-                        try {
-                            handleMessage(Opcode.entries.first { it.value == opcode }, json);
-                        } catch (e:Throwable) {
-                            Logger.w(TAG, "Failed to handle message.", e);
-                        }
-                    } catch (e: java.net.SocketException) {
-                        Logger.e(TAG, "Socket exception while receiving.", e);
-                        exceptionOccurred = true;
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Exception while receiving.", e);
-                        exceptionOccurred = true;
-                    }
-                }
-
-                try {
-                    _socket?.close();
-                    Logger.i(TAG, "Socket disconnected.");
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to close socket.", e)
-                }
-
-                connectionState = CastConnectionState.CONNECTING;
-                Thread.sleep(3000);
-            }
-
-            Logger.i(TAG, "Stopped connection loop.");
-            connectionState = CastConnectionState.DISCONNECTED;
-        }.start();
-
-        Logger.i(TAG, "Started.");
+                Logger.i(TAG, "Stopped connection loop.");
+                connectionState = CastConnectionState.DISCONNECTED;
+                _thread = null;
+            }.apply { start() };
+        } else {
+            Log.i(TAG, "Thread was still alive, not restarted")
+        }
     }
 
     private fun handleMessage(opcode: Opcode, json: String? = null) {
+        Log.i(TAG, "Processing packet (opcode: $opcode, size: ${json?.length ?: 0})")
+
         when (opcode) {
-            Opcode.PLAYBACK_UPDATE -> {
+            Opcode.PlaybackUpdate -> {
                 if (json == null) {
                     Logger.w(TAG, "Got playback update without JSON, ignoring.");
                     return;
@@ -339,7 +387,7 @@ class FCastCastingDevice : CastingDevice {
                     else -> false
                 }
             }
-            Opcode.VOLUME_UPDATE -> {
+            Opcode.VolumeUpdate -> {
                 if (json == null) {
                     Logger.w(TAG, "Got volume update without JSON, ignoring.");
                     return;
@@ -348,7 +396,7 @@ class FCastCastingDevice : CastingDevice {
                 val volumeUpdate = FCastCastingDevice.json.decodeFromString<FCastVolumeUpdateMessage>(json);
                 setVolume(volumeUpdate.volume, volumeUpdate.generationTime);
             }
-            Opcode.PLAYBACK_ERROR -> {
+            Opcode.PlaybackError -> {
                 if (json == null) {
                     Logger.w(TAG, "Got playback error without JSON, ignoring.");
                     return;
@@ -357,7 +405,7 @@ class FCastCastingDevice : CastingDevice {
                 val playbackError = FCastCastingDevice.json.decodeFromString<FCastPlaybackErrorMessage>(json);
                 Logger.e(TAG, "Remote casting playback error received: $playbackError")
             }
-            Opcode.VERSION -> {
+            Opcode.Version -> {
                 if (json == null) {
                     Logger.w(TAG, "Got version without JSON, ignoring.");
                     return;
@@ -367,72 +415,100 @@ class FCastCastingDevice : CastingDevice {
                 _version = version.version;
                 Logger.i(TAG, "Remote version received: $version")
             }
+            Opcode.KeyExchange -> {
+                if (json == null) {
+                    Logger.w(TAG, "Got KeyExchange without JSON, ignoring.");
+                    return;
+                }
+
+                val keyExchangeMessage: FCastKeyExchangeMessage = FCastCastingDevice.json.decodeFromString(json)
+                Logger.i(TAG, "Received public key: ${keyExchangeMessage.publicKey}")
+                _aesKey = computeSharedSecret(_keyPair.private, keyExchangeMessage)
+
+                synchronized(_queuedEncryptedMessages) {
+                    for (queuedEncryptedMessages in _queuedEncryptedMessages) {
+                        val decryptedMessage = decryptMessage(_aesKey!!, queuedEncryptedMessages)
+                        val o = Opcode.find(decryptedMessage.opcode.toByte())
+                        handleMessage(o, decryptedMessage.message)
+                    }
+
+                    _queuedEncryptedMessages.clear()
+                }
+            }
+            Opcode.Ping -> send(Opcode.Pong)
+            Opcode.Encrypted -> {
+                if (json == null) {
+                    Logger.w(TAG, "Got Encrypted without JSON, ignoring.");
+                    return;
+                }
+
+                val encryptedMessage: FCastEncryptedMessage = FCastCastingDevice.json.decodeFromString(json)
+                if (_aesKey != null) {
+                    val decryptedMessage = decryptMessage(_aesKey!!, encryptedMessage)
+                    val o = Opcode.find(decryptedMessage.opcode.toByte())
+                    handleMessage(o, decryptedMessage.message)
+                } else {
+                    synchronized(_queuedEncryptedMessages) {
+                        if (_queuedEncryptedMessages.size == 15) {
+                            _queuedEncryptedMessages.removeAt(0)
+                        }
+
+                        _queuedEncryptedMessages.add(encryptedMessage)
+                    }
+                }
+            }
+            Opcode.StartEncryption -> {
+                _encryptionStarted = true
+                //TODO: Send decrypted messages waiting for encryption to be established
+            }
             else -> { }
         }
     }
 
-    private fun sendMessage(opcode: Opcode) {
+    private fun send(opcode: Opcode, message: String? = null) {
+        val aesKey = _aesKey
+        if (_encryptionStarted && aesKey != null && opcode != Opcode.Encrypted && opcode != Opcode.KeyExchange && opcode != Opcode.StartEncryption) {
+            send(Opcode.Encrypted, encryptMessage(aesKey, FCastDecryptedMessage(opcode.value.toLong(), message)))
+            return
+        }
+
         try {
-            val size = 1;
-            val outputStream = _outputStream;
+            val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
+            val size = 1 + data.size
+            val outputStream = _outputStream
             if (outputStream == null) {
-                Logger.w(TAG, "Failed to send $size bytes, output stream is null.");
-                return;
+                Log.w(TAG, "Failed to send $size bytes, output stream is null.")
+                return
             }
 
-            val serializedSizeLE = ByteArray(4);
-            serializedSizeLE[0] = (size and 0xff).toByte();
-            serializedSizeLE[1] = (size shr 8 and 0xff).toByte();
-            serializedSizeLE[2] = (size shr 16 and 0xff).toByte();
-            serializedSizeLE[3] = (size shr 24 and 0xff).toByte();
-            outputStream.write(serializedSizeLE);
+            val serializedSizeLE = ByteArray(4)
+            serializedSizeLE[0] = (size and 0xff).toByte()
+            serializedSizeLE[1] = (size shr 8 and 0xff).toByte()
+            serializedSizeLE[2] = (size shr 16 and 0xff).toByte()
+            serializedSizeLE[3] = (size shr 24 and 0xff).toByte()
+            outputStream.write(serializedSizeLE)
 
-            val opcodeBytes = ByteArray(1);
-            opcodeBytes[0] = opcode.value;
-            outputStream.write(opcodeBytes);
+            val opcodeBytes = ByteArray(1)
+            opcodeBytes[0] = opcode.value
+            outputStream.write(opcodeBytes)
 
-            Log.d(TAG, "Sent $size bytes.");
+            if (data.isNotEmpty()) {
+                outputStream.write(data)
+            }
+
+            Log.d(TAG, "Sent $size bytes: (opcode: $opcode, body: $message).")
         } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to send message.", e);
+            Log.i(TAG, "Failed to send message.", e)
+            throw e
         }
     }
 
-    private inline fun <reified T> sendMessage(opcode: Opcode, message: T) {
+    private inline fun <reified T> send(opcode: Opcode, message: T) {
         try {
-            val data: ByteArray;
-            var jsonString: String? = null;
-            if (message != null) {
-                jsonString = json.encodeToString(message);
-                data = jsonString.encodeToByteArray();
-            } else {
-                data = ByteArray(0);
-            }
-
-            val size = 1 + data.size;
-            val outputStream = _outputStream;
-            if (outputStream == null) {
-                Logger.w(TAG, "Failed to send $size bytes, output stream is null.");
-                return;
-            }
-
-            val serializedSizeLE = ByteArray(4);
-            serializedSizeLE[0] = (size and 0xff).toByte();
-            serializedSizeLE[1] = (size shr 8 and 0xff).toByte();
-            serializedSizeLE[2] = (size shr 16 and 0xff).toByte();
-            serializedSizeLE[3] = (size shr 24 and 0xff).toByte();
-            outputStream.write(serializedSizeLE);
-
-            val opcodeBytes = ByteArray(1);
-            opcodeBytes[0] = opcode.value;
-            outputStream.write(opcodeBytes);
-
-            if (data.isNotEmpty()) {
-                outputStream.write(data);
-            }
-
-            Log.d(TAG, "Sent $size bytes: '$jsonString'.");
+            send(opcode, message?.let { Json.encodeToString(it) })
         } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to send message.", e);
+            Log.i(TAG, "Failed to encode message to string.", e)
+            throw e
         }
     }
 
@@ -441,6 +517,8 @@ class FCastCastingDevice : CastingDevice {
         usedRemoteAddress = null;
         localAddress = null;
         _started = false;
+        //TODO: Kill and/or join thread?
+        _thread = null;
 
         val socket = _socket;
         val scopeIO = _scopeIO;
@@ -471,7 +549,65 @@ class FCastCastingDevice : CastingDevice {
     }
 
     companion object {
-        val TAG = "FastCastCastingDevice";
+        val TAG = "FCastCastingDevice";
         private val json = Json { ignoreUnknownKeys = true }
+
+        fun getKeyExchangeMessage(keyPair: KeyPair): FCastKeyExchangeMessage {
+            return FCastKeyExchangeMessage(1, Base64.encodeToString(keyPair.public.encoded, Base64.NO_WRAP))
+        }
+
+        fun generateKeyPair(): KeyPair {
+            //modp14
+            val p = BigInteger("ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3be39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf6955817183995497cea956ae515d2261898fa051015728e5a8aacaa68ffffffffffffffff", 16)
+            val g = BigInteger("2", 16)
+            val dhSpec = DHParameterSpec(p, g)
+
+            val keyGen = KeyPairGenerator.getInstance("DH")
+            keyGen.initialize(dhSpec)
+
+            return keyGen.generateKeyPair()
+        }
+
+        fun computeSharedSecret(privateKey: PrivateKey, keyExchangeMessage: FCastKeyExchangeMessage): SecretKeySpec {
+            val keyFactory = KeyFactory.getInstance("DH")
+            val receivedPublicKeyBytes = Base64.decode(keyExchangeMessage.publicKey, Base64.NO_WRAP)
+            val receivedPublicKeySpec = X509EncodedKeySpec(receivedPublicKeyBytes)
+            val receivedPublicKey = keyFactory.generatePublic(receivedPublicKeySpec)
+
+            val keyAgreement = KeyAgreement.getInstance("DH")
+            keyAgreement.init(privateKey)
+            keyAgreement.doPhase(receivedPublicKey, true)
+
+            val sharedSecret = keyAgreement.generateSecret()
+            Log.i(TAG, "sharedSecret ${Base64.encodeToString(sharedSecret, Base64.NO_WRAP)}")
+            val sha256 = MessageDigest.getInstance("SHA-256")
+            val hashedSecret = sha256.digest(sharedSecret)
+            Log.i(TAG, "hashedSecret ${Base64.encodeToString(hashedSecret, Base64.NO_WRAP)}")
+
+            return SecretKeySpec(hashedSecret, "AES")
+        }
+
+        fun encryptMessage(aesKey: SecretKeySpec, decryptedMessage: FCastDecryptedMessage): FCastEncryptedMessage {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey)
+            val iv = cipher.iv
+            val json = Json.encodeToString(decryptedMessage)
+            val encrypted = cipher.doFinal(json.toByteArray(Charsets.UTF_8))
+            return FCastEncryptedMessage(
+                version = 1,
+                iv = Base64.encodeToString(iv, Base64.NO_WRAP),
+                blob = Base64.encodeToString(encrypted, Base64.NO_WRAP)
+            )
+        }
+
+        fun decryptMessage(aesKey: SecretKeySpec, encryptedMessage: FCastEncryptedMessage): FCastDecryptedMessage {
+            val iv = Base64.decode(encryptedMessage.iv, Base64.NO_WRAP)
+            val encrypted = Base64.decode(encryptedMessage.blob, Base64.NO_WRAP)
+
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            cipher.init(Cipher.DECRYPT_MODE, aesKey, IvParameterSpec(iv))
+            val decryptedJson = cipher.doFinal(encrypted)
+            return Json.decodeFromString(String(decryptedJson, Charsets.UTF_8))
+        }
     }
 }

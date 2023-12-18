@@ -50,6 +50,7 @@ import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetExcept
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
+import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
@@ -459,20 +460,29 @@ class VideoDetailView : ConstraintLayout {
         _cast.onSettingsClick.subscribe { showVideoSettings() };
         _player.onVideoSettings.subscribe { showVideoSettings() };
         _player.onToggleFullScreen.subscribe(::handleFullScreen);
-        _player.onChapterChanged.subscribe { chapter, isScrub ->
+
+        val onChapterChanged = { chapter: IChapter?, isScrub: Boolean ->
             if(_layoutSkip.visibility == VISIBLE && chapter?.type != ChapterType.SKIPPABLE)
                 _layoutSkip.visibility = GONE;
 
             if(!isScrub) {
                 if(chapter?.type == ChapterType.SKIPPABLE) {
                     _layoutSkip.visibility = VISIBLE;
-                }
-                else if(chapter?.type == ChapterType.SKIP) {
-                    _player.seekTo((chapter.timeEnd * 1000).toLong());
+                } else if(chapter?.type == ChapterType.SKIP) {
+                    val ad = StateCasting.instance.activeDevice
+                    if (ad != null) {
+                        ad.seekVideo(chapter.timeEnd)
+                    } else {
+                        _player.seekTo((chapter.timeEnd * 1000).toLong());
+                    }
+
                     UIDialogs.toast(context, "Skipped chapter [${chapter.name}]", false);
                 }
             }
-        }
+        };
+
+        _player.onChapterChanged.subscribe(onChapterChanged);
+        _cast.onChapterChanged.subscribe(onChapterChanged);
 
         _cast.onMinimizeClick.subscribe {
             _player.setFullScreen(false);
@@ -667,9 +677,17 @@ class VideoDetailView : ConstraintLayout {
         };
 
         _layoutSkip.setOnClickListener {
-            val currentChapter = _player.getCurrentChapter(_player.position);
-            if(currentChapter?.type == ChapterType.SKIPPABLE) {
-                _player.seekTo((currentChapter.timeEnd * 1000).toLong());
+            val ad = StateCasting.instance.activeDevice;
+            if (ad != null) {
+                val currentChapter = _cast.getCurrentChapter((ad.time * 1000).toLong());
+                if(currentChapter?.type == ChapterType.SKIPPABLE) {
+                    ad.seekVideo(currentChapter.timeEnd);
+                }
+            } else {
+                val currentChapter = _player.getCurrentChapter(_player.position);
+                if(currentChapter?.type == ChapterType.SKIPPABLE) {
+                    _player.seekTo((currentChapter.timeEnd * 1000).toLong());
+                }
             }
         }
     }
@@ -1145,10 +1163,12 @@ class VideoDetailView : ConstraintLayout {
                     //TODO: Implement video.getContentChapters()
                     val chapters = null ?: StatePlatform.instance.getContentChapters(video.url);
                     _player.setChapters(chapters);
+                    _cast.setChapters(chapters);
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Failed to get chapters", ex);
                     _player.setChapters(null);
+                    _cast.setChapters(null);
 
                     /*withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);
