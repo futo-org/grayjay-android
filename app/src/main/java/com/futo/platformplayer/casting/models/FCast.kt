@@ -51,3 +51,22 @@ data class FCastPlaybackErrorMessage(
 data class FCastVersionMessage(
     val version: Long
 )
+
+@Serializable
+data class FCastKeyExchangeMessage(
+    val version: Long,
+    val publicKey: String
+)
+
+@Serializable
+data class FCastDecryptedMessage(
+    val opcode: Long,
+    val message: String?
+)
+
+@Serializable
+data class FCastEncryptedMessage(
+    val version: Long,
+    val iv: String?,
+    val blob: String
+)
