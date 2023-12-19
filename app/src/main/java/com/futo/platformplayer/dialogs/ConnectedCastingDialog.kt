@@ -152,6 +152,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         setLoading(!isConnected);
         StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) { setLoading(connectionState != CastConnectionState.CONNECTED); };
+            updateDevice();
         };
 
         updateDevice();
@@ -194,6 +195,44 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
             _layoutVolumeAdjustable.visibility = View.GONE;
             _layoutVolumeFixed.visibility = View.VISIBLE;
         }
+
+        val interactiveControls = listOf(
+            _sliderPosition,
+            _sliderVolume,
+            _buttonPrevious,
+            _buttonPlay,
+            _buttonPause,
+            _buttonStop,
+            _buttonNext
+        )
+
+        when (d.connectionState) {
+            CastConnectionState.CONNECTED -> {
+                enableControls(interactiveControls)
+            }
+            CastConnectionState.CONNECTING,
+            CastConnectionState.DISCONNECTED -> {
+                disableControls(interactiveControls)
+            }
+        }
+    }
+
+    private fun enableControls(views: List<View>) {
+        views.forEach { enableControl(it) }
+    }
+
+    private fun enableControl(view: View) {
+        view.alpha = 1.0f
+        view.isEnabled = true
+    }
+
+    private fun disableControls(views: List<View>) {
+        views.forEach { disableControl(it) }
+    }
+
+    private fun disableControl(view: View) {
+        view.alpha = 0.4f
+        view.isEnabled = false
     }
 
     private fun setLoading(isLoading: Boolean) {
