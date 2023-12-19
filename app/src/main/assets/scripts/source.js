@@ -37,7 +37,8 @@ let Type = {
         NORMAL: 0,
 
         SKIPPABLE: 5,
-        SKIP: 6
+        SKIP: 6,
+        SKIPONCE: 7
     }
 };
 

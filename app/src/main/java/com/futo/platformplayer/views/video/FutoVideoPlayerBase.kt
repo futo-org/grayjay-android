@@ -72,6 +72,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private val _referenceObject = Object();
     private var _connectivityLossTime_ms: Long? = null
 
+    private var _ignoredChapters: ArrayList<IChapter> = arrayListOf();
     private var _chapters: List<IChapter>? = null;
 
     var exoPlayer: PlayerManager? = null
@@ -273,13 +274,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun setChapters(chapters: List<IChapter>?) {
+        _ignoredChapters = arrayListOf();
         _chapters = chapters;
     }
     fun getChapters(): List<IChapter> {
         return _chapters?.let { it.toList() } ?: listOf();
     }
+    fun ignoreChapter(chapter: IChapter) {
+        synchronized(_ignoredChapters) {
+            if(!_ignoredChapters.contains(chapter))
+                _ignoredChapters.add(chapter);
+        }
+    }
     fun getCurrentChapter(pos: Long): IChapter? {
-        return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd } };
+        val toIgnore = synchronized(_ignoredChapters){ _ignoredChapters.toList() };
+        return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd && (toIgnore.isEmpty() || !toIgnore.contains(it)) } };
     }
 
     fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false) {

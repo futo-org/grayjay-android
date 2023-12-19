@@ -27,6 +27,7 @@ import androidx.media3.ui.TimeBar
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
@@ -471,6 +472,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                     _control_chapter_fullscreen.text = "";
                 }
                 onChapterChanged.emit(currentChapter, isScrub);
+                val chapt = _currentChapter;
+
+                if(chapt?.type == ChapterType.SKIPONCE)
+                    ignoreChapter(chapt);
             }
             return true;
         }
