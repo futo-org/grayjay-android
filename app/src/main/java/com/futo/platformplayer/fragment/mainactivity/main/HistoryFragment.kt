@@ -15,18 +15,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.api.media.structures.PlatformContentPager
 import com.futo.platformplayer.constructs.TaskHandler
+import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.views.others.TagsView
 import com.futo.platformplayer.views.adapters.HistoryListViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import com.futo.platformplayer.views.others.TagsView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -52,6 +51,7 @@ class HistoryFragment : MainFragment() {
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack)
         _view?.setPager(StateHistory.instance.getHistoryPager());
+        (topBar as NavigationTopBarFragment?)?.onShown("History");
     }
 
     @SuppressLint("ViewConstructor")

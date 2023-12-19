@@ -1,37 +1,27 @@
 package com.futo.platformplayer.dialogs
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
 import android.graphics.drawable.Animatable
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.activities.AddSourceActivity
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.QRCaptureActivity
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.CastingDevice
 import com.futo.platformplayer.casting.StateCasting
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.DeviceAdapter
-import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
     private lateinit var _imageLoader: ImageView;
@@ -80,6 +70,14 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
             _textNoDevicesRemembered.visibility = if (_rememberedDevices.isEmpty()) View.VISIBLE else View.GONE;
             _recyclerRememberedDevices.visibility = if (_rememberedDevices.isNotEmpty()) View.VISIBLE else View.GONE;
         };
+        _rememberedAdapter.onConnect.subscribe { _ ->
+            dismiss()
+            UIDialogs.showCastingDialog(context)
+        }
+        _adapter.onConnect.subscribe { _ ->
+            dismiss()
+            UIDialogs.showCastingDialog(context)
+        }
         _recyclerRememberedDevices.adapter = _rememberedAdapter;
         _recyclerRememberedDevices.layoutManager = LinearLayoutManager(context);
 

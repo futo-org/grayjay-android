@@ -40,7 +40,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.listeners.OrientationManager
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -96,6 +95,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainSubscriptionsFeed: SubscriptionsFeedFragment;
     lateinit var _fragMainChannel: ChannelFragment;
     lateinit var _fragMainSources: SourcesFragment;
+    lateinit var _fragMainTutorial: TutorialFragment;
     lateinit var _fragMainPlaylists: PlaylistsFragment;
     lateinit var _fragMainPlaylist: PlaylistFragment;
     lateinit var _fragWatchlist: WatchLaterFragment;
@@ -223,6 +223,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         //Main
         _fragMainHome = HomeFragment.newInstance();
+        _fragMainTutorial = TutorialFragment.newInstance()
         _fragMainSuggestions = SuggestionsFragment.newInstance();
         _fragMainVideoSearchResults = ContentSearchResultsFragment.newInstance();
         _fragMainCreatorSearchResults = CreatorSearchResultsFragment.newInstance();
@@ -314,6 +315,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainCreatorSearchResults.topBar = _fragTopBarSearch;
         _fragMainPlaylistSearchResults.topBar = _fragTopBarSearch;
         _fragMainChannel.topBar = _fragTopBarNavigation;
+        _fragMainTutorial.topBar = _fragTopBarNavigation;
         _fragMainSubscriptionsFeed.topBar = _fragTopBarGeneral;
         _fragMainSources.topBar = _fragTopBarAdd;
         _fragMainPlaylists.topBar = _fragTopBarGeneral;
@@ -328,7 +330,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragSubGroupList.topBar = _fragTopBarAdd;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
-
+        
         fragCurrent = _fragMainHome;
 
         val defaultTab = Settings.instance.tabs.mapNotNull {
@@ -410,6 +412,16 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStartedWithExternalFiles(this);
 
         //startActivity(Intent(this, TestActivity::class.java));
+
+        val sharedPreferences = getSharedPreferences("GrayjayFirstBoot", Context.MODE_PRIVATE)
+        val isFirstBoot = sharedPreferences.getBoolean("IsFirstBoot", true)
+        if (isFirstBoot) {
+            UIDialogs.showConfirmationDialog(this, getString(R.string.do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button), {
+                navigate(_fragMainTutorial)
+            })
+
+            sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
+        }
     }
 
 
@@ -968,6 +980,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     inline fun <reified T : Fragment> getFragment() : T {
         return when(T::class) {
             HomeFragment::class -> _fragMainHome as T;
+            TutorialFragment::class -> _fragMainTutorial as T;
             ContentSearchResultsFragment::class -> _fragMainVideoSearchResults as T;
             CreatorSearchResultsFragment::class -> _fragMainCreatorSearchResults as T;
             SuggestionsFragment::class -> _fragMainSuggestions as T;

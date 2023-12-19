@@ -6,11 +6,9 @@ import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.engine.IV8PluginConfig
-import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
 
-class JSVideoSourceDescriptor: VideoMuxedSourceDescriptor {
+class JSVideoSourceDescriptor : VideoMuxedSourceDescriptor {
     protected val _obj: V8ValueObject;
 
     override val isUnMuxed: Boolean;

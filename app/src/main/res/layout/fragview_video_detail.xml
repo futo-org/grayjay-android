@@ -488,22 +488,28 @@
                         android:layout_weight="1"
                         android:layout_height="match_parent" />
 
-                    <TextView
-                        android:id="@+id/text_comment_type"
+                    <LinearLayout
+                        android:id="@+id/layout_toggle_comment_section"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/inter_extra_light"
-                        android:textSize="14dp"
-                        android:textColor="@color/white"
-                        android:text="@string/polycentric"
-                        android:layout_marginEnd="8dp" />
+                        android:layout_height="wrap_content">
 
-                    <com.futo.platformplayer.views.others.Toggle
-                        android:id="@+id/toggle_comment_type"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:toggleEnabled="false"
-                        android:layout_marginEnd="14dp" />
+                        <TextView
+                            android:id="@+id/text_comment_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/inter_extra_light"
+                            android:textSize="14dp"
+                            android:textColor="@color/white"
+                            android:text="@string/polycentric"
+                            android:layout_marginEnd="8dp" />
+
+                        <com.futo.platformplayer.views.others.Toggle
+                            android:id="@+id/toggle_comment_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:toggleEnabled="false"
+                            android:layout_marginEnd="14dp" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <com.futo.platformplayer.views.comments.AddCommentView

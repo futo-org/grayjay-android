@@ -31,6 +31,7 @@ class DeviceViewHolder : ViewHolder {
         private set
 
     var onRemove = Event1<CastingDevice>();
+    val onConnect = Event1<CastingDevice>();
 
     constructor(view: View) : super(view) {
         _imageDevice = view.findViewById(R.id.image_device);
@@ -56,13 +57,17 @@ class DeviceViewHolder : ViewHolder {
             val dev = device ?: return@setOnClickListener;
             StateCasting.instance.activeDevice?.stopCasting();
             StateCasting.instance.connectDevice(dev);
-            updateButton();
+            onConnect.emit(dev);
         };
 
         _buttonRemove.setOnClickListener {
             val dev = device ?: return@setOnClickListener;
             onRemove.emit(dev);
         };
+
+        StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, _ ->
+            updateButton();
+        }
 
         setIsRememberedDevice(false);
     }

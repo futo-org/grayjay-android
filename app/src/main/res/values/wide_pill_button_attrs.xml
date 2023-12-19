@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WidePillButton">
+        <attr name="widePillIconPrefix" format="reference" />
+        <attr name="widePilllText" format="string" />
+        <attr name="widePillIconSuffix" format="reference" />
+    </declare-styleable>
+</resources>

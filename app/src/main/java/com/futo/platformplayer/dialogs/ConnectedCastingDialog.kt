@@ -133,17 +133,17 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
 
         StateCasting.instance.onActiveDeviceVolumeChanged.remove(this);
         StateCasting.instance.onActiveDeviceVolumeChanged.subscribe {
-            _sliderVolume.value = it.toFloat();
+            _sliderVolume.value = it.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderVolume.valueTo);
         };
 
         StateCasting.instance.onActiveDeviceTimeChanged.remove(this);
         StateCasting.instance.onActiveDeviceTimeChanged.subscribe {
-            _sliderPosition.value = it.toFloat();
+            _sliderPosition.value = it.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderPosition.valueTo);
         };
 
         StateCasting.instance.onActiveDeviceDurationChanged.remove(this);
         StateCasting.instance.onActiveDeviceDurationChanged.subscribe {
-            _sliderPosition.valueTo = it.toFloat();
+            _sliderPosition.valueTo = it.toFloat().coerceAtLeast(1.0f);
         };
 
         _device = StateCasting.instance.activeDevice;
@@ -152,6 +152,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         setLoading(!isConnected);
         StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) { setLoading(connectionState != CastConnectionState.CONNECTED); };
+            updateDevice();
         };
 
         updateDevice();
@@ -181,10 +182,11 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         }
 
         _textName.text = d.name;
-        _sliderVolume.value = d.volume.toFloat();
         _sliderPosition.valueFrom = 0.0f;
-        _sliderPosition.valueTo = d.duration.toFloat();
-        _sliderPosition.value = d.time.toFloat();
+        _sliderVolume.valueFrom = 0.0f;
+        _sliderVolume.value = d.volume.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderVolume.valueTo);
+        _sliderPosition.valueTo = d.duration.toFloat().coerceAtLeast(1.0f);
+        _sliderPosition.value = d.time.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderVolume.valueTo);
 
         if (d.canSetVolume) {
             _layoutVolumeAdjustable.visibility = View.VISIBLE;
@@ -193,6 +195,44 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
             _layoutVolumeAdjustable.visibility = View.GONE;
             _layoutVolumeFixed.visibility = View.VISIBLE;
         }
+
+        val interactiveControls = listOf(
+            _sliderPosition,
+            _sliderVolume,
+            _buttonPrevious,
+            _buttonPlay,
+            _buttonPause,
+            _buttonStop,
+            _buttonNext
+        )
+
+        when (d.connectionState) {
+            CastConnectionState.CONNECTED -> {
+                enableControls(interactiveControls)
+            }
+            CastConnectionState.CONNECTING,
+            CastConnectionState.DISCONNECTED -> {
+                disableControls(interactiveControls)
+            }
+        }
+    }
+
+    private fun enableControls(views: List<View>) {
+        views.forEach { enableControl(it) }
+    }
+
+    private fun enableControl(view: View) {
+        view.alpha = 1.0f
+        view.isEnabled = true
+    }
+
+    private fun disableControls(views: List<View>) {
+        views.forEach { disableControl(it) }
+    }
+
+    private fun disableControl(view: View) {
+        view.alpha = 0.4f
+        view.isEnabled = false
     }
 
     private fun setLoading(isLoading: Boolean) {
