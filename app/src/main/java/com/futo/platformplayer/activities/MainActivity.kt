@@ -1,10 +1,12 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
@@ -17,6 +19,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -1006,6 +1010,33 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             paddingBottom += HEIGHT_VIDEO_MINIMIZED_DP;
 
         _fragContainerMain.setPadding(0,0,0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingBottom, resources.displayMetrics).toInt());
+    }
+
+
+    val notifPermission = "android.permission.POST_NOTIFICATIONS";
+    val requestPermissionLauncher =  registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted)
+            UIDialogs.toast(this, "Notification permission granted");
+        else
+            UIDialogs.toast(this, "Notification permission denied");
+    }
+    fun requestNotificationPermissions(reason: String) {
+        when {
+            ContextCompat.checkSelfPermission(this, notifPermission) == PackageManager.PERMISSION_GRANTED -> {
+
+            }
+            ActivityCompat.shouldShowRequestPermissionRationale(this, notifPermission) -> {
+                UIDialogs.showDialog(this, R.drawable.ic_notifications, "Notifications Required",
+                    reason, null, 0,
+                    UIDialogs.Action("Cancel", {}),
+                    UIDialogs.Action("Enable", {
+                        requestPermissionLauncher.launch(notifPermission);
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            }
+            else -> {
+                requestPermissionLauncher.launch(notifPermission);
+            }
+        }
     }
 
 

@@ -71,6 +71,10 @@ class FieldForm : LinearLayout {
         }
     }
 
+    fun setSearchQuery(query: String) {
+        _editSearch.setText(query);
+        updateSettingsVisibility();
+    }
     fun setSearchVisible(visible: Boolean) {
         _containerSearch.visibility = if(visible) View.VISIBLE else View.GONE;
         _editSearch.setText("");

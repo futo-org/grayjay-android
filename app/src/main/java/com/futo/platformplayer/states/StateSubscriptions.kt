@@ -9,6 +9,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.api.media.structures.ReusablePager.Companion.asReusable
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.functional.CentralizedFeed
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
@@ -50,7 +51,7 @@ class StateSubscriptions {
 
     val global: CentralizedFeed = CentralizedFeed();
     val feeds: HashMap<String, CentralizedFeed> = hashMapOf();
-
+    val onFeedProgress = Event3<String, Int, Int>();
 
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
@@ -70,6 +71,9 @@ class StateSubscriptions {
                 var f = feeds[id];
                 if(f == null && createIfNew) {
                     f = CentralizedFeed();
+                    f.onUpdateProgress.subscribe { progress, total ->
+                        onFeedProgress.emit(id, progress, total)
+                    };
                     feeds[id] = f;
                 }
                 return@synchronized f;

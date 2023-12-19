@@ -1,8 +1,10 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
@@ -12,6 +14,8 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.logging.Logger
@@ -32,6 +36,14 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
     private var _isFinished = false;
 
     lateinit var overlay: FrameLayout;
+
+    val notifPermission = "android.permission.POST_NOTIFICATIONS";
+    val requestPermissionLauncher =  registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted)
+            UIDialogs.toast(this, "Notification permission granted");
+        else
+            UIDialogs.toast(this, "Notification permission denied");
+    }
 
     override fun attachBaseContext(newBase: Context?) {
         Logger.i("SettingsActivity", "SettingsActivity.attachBaseContext")
@@ -58,6 +70,33 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
                 Logger.i("SettingsActivity", "App language change detected, propogating to shared preferences");
                 StateApp.instance.setLocaleSetting(this, Settings.instance.language.getAppLanguageLocaleString());
             }
+
+            if(field.descriptor?.id == "background_update") {
+                Logger.i("SettingsActivity", "Detected change in background work ${field.value}");
+                if(Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval > 0) {
+                    val notifManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
+                    if(!notifManager.areNotificationsEnabled()) {
+                        UIDialogs.toast(this, "Notifications aren't enabled");
+
+                        when {
+                            ContextCompat.checkSelfPermission(this, notifPermission) == PackageManager.PERMISSION_GRANTED -> {
+
+                            }
+                            ActivityCompat.shouldShowRequestPermissionRationale(this, notifPermission) -> {
+                                UIDialogs.showDialog(this, R.drawable.ic_notifications, "Notifications Required",
+                                    "Notifications need to be enabled for background updating to function", null, 0,
+                                    UIDialogs.Action("Cancel", {}),
+                                    UIDialogs.Action("Enable", {
+                                        requestPermissionLauncher.launch(notifPermission);
+                                    }, UIDialogs.ActionStyle.PRIMARY));
+                            }
+                            else -> {
+                                requestPermissionLauncher.launch(notifPermission);
+                            }
+                        }
+                    }
+                }
+            }
         };
         _buttonBack.setOnClickListener {
             finish();
@@ -72,7 +111,10 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         reloadSettings();
     }
 
+    var isFirstLoad = true;
     fun reloadSettings() {
+        val firstLoad = isFirstLoad;
+        isFirstLoad = false;
         _form.setSearchVisible(false);
         _loaderView.start();
         _form.fromObject(lifecycleScope, Settings.instance) {
@@ -90,6 +132,13 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
                     UIDialogs.toast(this, getString(R.string.you_are_now_in_developer_mode));
                 }
             };
+
+            if(firstLoad) {
+                val query = intent.getStringExtra("query");
+                if(!query.isNullOrEmpty()) {
+                    _form.setSearchQuery(query);
+                }
+            }
         };
     }
 
@@ -134,6 +183,7 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         requestCode = code;
         resultLauncher.launch(intent);
     }
+
 
     companion object {
         //TODO: Temporary for solving Settings issues
