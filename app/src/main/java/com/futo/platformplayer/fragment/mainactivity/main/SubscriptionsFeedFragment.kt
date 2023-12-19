@@ -104,7 +104,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
-            StateSubscriptions.instance.onGlobalSubscriptionsUpdateProgress.subscribe(this) { progress, total ->
+            StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
                         setProgress(progress, total);
@@ -162,14 +162,14 @@ class SubscriptionsFeedFragment : MainFragment() {
                 }
             }
 
-            if (!StateSubscriptions.instance.isGlobalUpdating) {
+            if (!StateSubscriptions.instance.global.isGlobalUpdating) {
                 finishRefreshLayoutLoader();
             }
         }
 
         override fun cleanup() {
             super.cleanup()
-            StateSubscriptions.instance.onGlobalSubscriptionsUpdateProgress.remove(this);
+            StateSubscriptions.instance.global.onUpdateProgress.remove(this);
             StateSubscriptions.instance.onSubscriptionsChanged.remove(this);
         }
 
@@ -194,8 +194,9 @@ class SubscriptionsFeedFragment : MainFragment() {
         private var _bypassRateLimit = false;
         private val _lastExceptions: List<Throwable>? = null;
         private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({StateApp.instance.scope}, { withRefresh ->
+            val group = _subGroup;
             if(!_bypassRateLimit) {
-                val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
+                val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount(group);
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
                 val rateLimitPlugins = subRequestCounts.filter { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true }
                 Logger.w(TAG, "Trying to refreshing subscriptions with requests:\n" + reqCountStr);
@@ -203,9 +204,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }
             _bypassRateLimit = false;
-            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh);
+            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh, group);
+            val feed = StateSubscriptions.instance.getFeed(group?.id);
 
-            val currentExs = StateSubscriptions.instance.globalSubscriptionExceptions;
+            val currentExs = feed?.exceptions ?: listOf();
             if(currentExs != _lastExceptions && currentExs.any())
                 handleExceptions(currentExs);
 

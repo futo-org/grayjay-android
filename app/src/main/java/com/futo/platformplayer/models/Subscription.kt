@@ -48,9 +48,14 @@ class Subscription {
     var playbackSeconds: Int = 0;
     var playbackViews: Int = 0;
 
+    var isOther = false;
 
     constructor(channel : SerializedChannel) {
         this.channel = channel;
+    }
+
+    fun isChannel(url: String): Boolean {
+        return channel.url == url || channel.urlAlternatives.contains(url);
     }
 
     fun shouldFetchVideos() = doFetchVideos &&
@@ -63,10 +68,16 @@ class Subscription {
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
 
     fun save() {
-        StateSubscriptions.instance.saveSubscription(this);
+        if(isOther)
+            StateSubscriptions.instance.saveSubscriptionOther(this);
+        else
+            StateSubscriptions.instance.saveSubscription(this);
     }
     fun saveAsync() {
-        StateSubscriptions.instance.saveSubscription(this);
+        if(isOther)
+            StateSubscriptions.instance.saveSubscriptionOtherAsync(this);
+        else
+            StateSubscriptions.instance.saveSubscriptionAsync(this);
     }
 
     fun updateChannel(channel: IPlatformChannel) {
