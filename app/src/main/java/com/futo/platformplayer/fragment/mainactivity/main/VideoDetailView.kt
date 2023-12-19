@@ -252,6 +252,7 @@ class VideoDetailView : ConstraintLayout {
     private val _layoutRating: LinearLayout;
     private val _imageDislikeIcon: ImageView;
     private val _imageLikeIcon: ImageView;
+    private val _layoutToggleCommentSection: LinearLayout;
 
     private val _monetization: MonetizationView;
 
@@ -328,6 +329,7 @@ class VideoDetailView : ConstraintLayout {
         _upNext = findViewById(R.id.up_next);
         _textCommentType = findViewById(R.id.text_comment_type);
         _toggleCommentType = findViewById(R.id.toggle_comment_type);
+        _layoutToggleCommentSection = findViewById(R.id.layout_toggle_comment_section);
 
         _overlayContainer = findViewById(R.id.overlay_container);
         _overlay_quality_container = findViewById(R.id.videodetail_quality_overview);
@@ -434,7 +436,7 @@ class VideoDetailView : ConstraintLayout {
         _buttonPins.alwaysShowLastButton = true;
 
         var buttonMore: RoundButton? = null;
-        buttonMore = RoundButton(context, R.drawable.ic_menu, "More", TAG_MORE) {
+        buttonMore = RoundButton(context, R.drawable.ic_menu, context.getString(R.string.more), TAG_MORE) {
             _slideUpOverlay = UISlideOverlays.showMoreButtonOverlay(_overlayContainer, _buttonPins, listOf(TAG_MORE)) {selected ->
                 _buttonPins.setButtons(*(selected + listOf(buttonMore!!)).toTypedArray());
                 _buttonPinStore.set(*selected.filter { it.tagRef is String }.map{ it.tagRef as String }.toTypedArray())
@@ -443,7 +445,6 @@ class VideoDetailView : ConstraintLayout {
         };
         _buttonMore = buttonMore;
         updateMoreButtons();
-
 
         _channelButton.setOnClickListener {
             (video?.author ?: _searchVideo?.author)?.let {
@@ -1205,7 +1206,12 @@ class VideoDetailView : ConstraintLayout {
 
         _player.setMetadata(video.name, video.author.name);
 
-        _toggleCommentType.setValue(!Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1, false);
+        if (video !is TutorialFragment.TutorialVideo) {
+            _toggleCommentType.setValue(false, false);
+        } else {
+            _toggleCommentType.setValue(!Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1, false);
+        }
+
         updateCommentType(true);
 
         //UI
@@ -1392,6 +1398,20 @@ class VideoDetailView : ConstraintLayout {
 
         _player.updateNextPrevious();
         updateMoreButtons();
+
+        if (videoDetail is TutorialFragment.TutorialVideo) {
+            _buttonSubscribe.visibility = View.GONE
+            _buttonMore.visibility = View.GONE
+            _buttonPins.visibility = View.GONE
+            _layoutRating.visibility = View.GONE
+            _layoutToggleCommentSection.visibility = View.GONE
+        } else {
+            _buttonSubscribe.visibility = View.VISIBLE
+            _buttonMore.visibility = View.VISIBLE
+            _buttonPins.visibility = View.VISIBLE
+            _layoutRating.visibility = View.VISIBLE
+            _layoutToggleCommentSection.visibility = View.VISIBLE
+        }
     }
     fun loadLiveChat(video: IPlatformVideoDetails) {
         _liveChat?.stop();

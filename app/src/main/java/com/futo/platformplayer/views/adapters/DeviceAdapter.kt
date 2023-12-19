@@ -5,7 +5,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.casting.CastingDevice
-import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 
 class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
@@ -13,6 +12,7 @@ class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
     private val _isRememberedDevice: Boolean;
 
     var onRemove = Event1<CastingDevice>();
+    var onConnect = Event1<CastingDevice>();
 
     constructor(devices: ArrayList<CastingDevice>, isRememberedDevice: Boolean) : super() {
         _devices = devices;
@@ -26,6 +26,7 @@ class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
         val holder = DeviceViewHolder(view);
         holder.setIsRememberedDevice(_isRememberedDevice);
         holder.onRemove.subscribe { d -> onRemove.emit(d); };
+        holder.onConnect.subscribe { d -> onConnect.emit(d); }
         return holder;
     }
 

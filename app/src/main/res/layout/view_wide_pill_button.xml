@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="7dp"
+    android:paddingStart="7dp"
+    android:paddingEnd="12dp"
+    android:background="@drawable/background_pill"
+    android:id="@+id/root"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/image_prefix"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginLeft="12dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_thumb_up" />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:gravity="center_vertical"
+        android:fontFamily="@font/inter_light"
+        tools:text="500K" />
+
+    <Space android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_weight="1" />
+
+    <ImageView
+        android:id="@+id/image_suffix"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginLeft="12dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/ic_thumb_up" />
+
+</LinearLayout>

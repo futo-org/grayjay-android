@@ -420,7 +420,6 @@ class ChromecastCastingDevice : CastingDevice {
 
                 Logger.i(TAG, "Stopped connection loop.");
                 connectionState = CastConnectionState.DISCONNECTED;
-                _thread = null;
             }.apply { start() };
 
             //Start ping loop
@@ -440,7 +439,6 @@ class ChromecastCastingDevice : CastingDevice {
                 }
 
                 Logger.i(TAG, "Stopped ping loop.");
-                _pingThread = null;
             }.apply { start() };
         } else {
             Log.i(TAG, "Threads still alive, not restarted")

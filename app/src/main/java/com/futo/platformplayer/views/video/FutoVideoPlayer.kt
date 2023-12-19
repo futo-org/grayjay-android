@@ -357,7 +357,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             UIDialogs.showCastingDialog(context);
         };
 
-        videoControls.setProgressUpdateListener { position, bufferedPosition ->
+        val progressUpdateListener = { position: Long, bufferedPosition: Long ->
             val currentTime = position.formatDuration()
             val currentDuration = duration.formatDuration()
             _control_time.text = currentTime;
@@ -380,7 +380,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                         updateChaptersLoop(++_currentChapterLoopId);
                     }
                 }
-        }
+        };
+
+        _videoControls_fullscreen.setProgressUpdateListener(progressUpdateListener);
+        videoControls.setProgressUpdateListener(progressUpdateListener);
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
             CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {

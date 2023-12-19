@@ -58,11 +58,8 @@ enum class Opcode(val value: Byte) {
     PlaybackError(9),
     SetSpeed(10),
     Version(11),
-    KeyExchange(12),
-    Encrypted(13),
-    Ping(14),
-    Pong(15),
-    StartEncryption(16);
+    Ping(12),
+    Pong(13);
 
     companion object {
         private val _map = entries.associateBy { it.value }
@@ -89,26 +86,18 @@ class FCastCastingDevice : CastingDevice {
     private var _scopeIO: CoroutineScope? = null;
     private var _started: Boolean = false;
     private var _version: Long = 1;
-    private val _keyPair: KeyPair
-    private var _aesKey: SecretKeySpec? = null
-    private val _queuedEncryptedMessages = arrayListOf<FCastEncryptedMessage>()
-    private var _encryptionStarted = false
     private var _thread: Thread? = null
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
         this.addresses = addresses;
         this.port = port;
-
-        _keyPair = generateKeyPair()
     }
 
     constructor(deviceInfo: CastingDeviceInfo) : super() {
         this.name = deviceInfo.name;
         this.addresses = deviceInfo.addresses.map { a -> a.toInetAddress() }.filterNotNull().toTypedArray();
         this.port = deviceInfo.port;
-
-        _keyPair = generateKeyPair()
     }
 
     override fun getAddresses(): List<InetAddress> {
@@ -301,9 +290,6 @@ class FCastCastingDevice : CastingDevice {
                     localAddress = _socket?.localAddress;
                     connectionState = CastConnectionState.CONNECTED;
 
-                    Logger.i(TAG, "Sending KeyExchange.")
-                    send(Opcode.KeyExchange, getKeyExchangeMessage(_keyPair))
-
                     val buffer = ByteArray(4096);
 
                     Logger.i(TAG, "Started receiving.");
@@ -362,7 +348,6 @@ class FCastCastingDevice : CastingDevice {
 
                 Logger.i(TAG, "Stopped connection loop.");
                 connectionState = CastConnectionState.DISCONNECTED;
-                _thread = null;
             }.apply { start() };
         } else {
             Log.i(TAG, "Thread was still alive, not restarted")
@@ -415,63 +400,12 @@ class FCastCastingDevice : CastingDevice {
                 _version = version.version;
                 Logger.i(TAG, "Remote version received: $version")
             }
-            Opcode.KeyExchange -> {
-                if (json == null) {
-                    Logger.w(TAG, "Got KeyExchange without JSON, ignoring.");
-                    return;
-                }
-
-                val keyExchangeMessage: FCastKeyExchangeMessage = FCastCastingDevice.json.decodeFromString(json)
-                Logger.i(TAG, "Received public key: ${keyExchangeMessage.publicKey}")
-                _aesKey = computeSharedSecret(_keyPair.private, keyExchangeMessage)
-
-                synchronized(_queuedEncryptedMessages) {
-                    for (queuedEncryptedMessages in _queuedEncryptedMessages) {
-                        val decryptedMessage = decryptMessage(_aesKey!!, queuedEncryptedMessages)
-                        val o = Opcode.find(decryptedMessage.opcode.toByte())
-                        handleMessage(o, decryptedMessage.message)
-                    }
-
-                    _queuedEncryptedMessages.clear()
-                }
-            }
             Opcode.Ping -> send(Opcode.Pong)
-            Opcode.Encrypted -> {
-                if (json == null) {
-                    Logger.w(TAG, "Got Encrypted without JSON, ignoring.");
-                    return;
-                }
-
-                val encryptedMessage: FCastEncryptedMessage = FCastCastingDevice.json.decodeFromString(json)
-                if (_aesKey != null) {
-                    val decryptedMessage = decryptMessage(_aesKey!!, encryptedMessage)
-                    val o = Opcode.find(decryptedMessage.opcode.toByte())
-                    handleMessage(o, decryptedMessage.message)
-                } else {
-                    synchronized(_queuedEncryptedMessages) {
-                        if (_queuedEncryptedMessages.size == 15) {
-                            _queuedEncryptedMessages.removeAt(0)
-                        }
-
-                        _queuedEncryptedMessages.add(encryptedMessage)
-                    }
-                }
-            }
-            Opcode.StartEncryption -> {
-                _encryptionStarted = true
-                //TODO: Send decrypted messages waiting for encryption to be established
-            }
             else -> { }
         }
     }
 
     private fun send(opcode: Opcode, message: String? = null) {
-        val aesKey = _aesKey
-        if (_encryptionStarted && aesKey != null && opcode != Opcode.Encrypted && opcode != Opcode.KeyExchange && opcode != Opcode.StartEncryption) {
-            send(Opcode.Encrypted, encryptMessage(aesKey, FCastDecryptedMessage(opcode.value.toLong(), message)))
-            return
-        }
-
         try {
             val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
             val size = 1 + data.size
