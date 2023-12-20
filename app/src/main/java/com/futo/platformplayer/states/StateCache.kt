@@ -49,13 +49,17 @@ class StateCache {
         Logger.i(TAG, "Subscriptions CachePager get subscriptions");
         val subs = StateSubscriptions.instance.getSubscriptions();
         Logger.i(TAG, "Subscriptions CachePager polycentric urls");
-        val allUrls = subs.map {
+        val allUrls = subs
+            .map {
             val otherUrls = PolycentricCache.instance.getCachedProfile(it.channel.url)?.profile?.ownedClaims?.mapNotNull { c -> c.claim.resolveChannelUrl() } ?: listOf();
             if(!otherUrls.contains(it.channel.url))
                 return@map listOf(listOf(it.channel.url), otherUrls).flatten();
             else
                 return@map otherUrls;
-        }.flatten().distinct();
+        }
+            .flatten()
+            .distinct()
+            .filter { StatePlatform.instance.hasEnabledChannelClient(it) };
 
         Logger.i(TAG, "Subscriptions CachePager get pagers");
         val pagers: List<IPager<IPlatformContent>>;
