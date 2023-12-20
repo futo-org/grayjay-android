@@ -783,12 +783,9 @@ class VideoDetailView : ConstraintLayout {
                 }
             },
             RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
-                fragment.lifecycleScope.launch(Dispatchers.Main) {
-                    delay(500)
-                    video?.let {
-                        _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
-                    };
-                }
+                video?.let {
+                    _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
+                };
             },
             RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
                 video?.let {
