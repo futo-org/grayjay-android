@@ -126,7 +126,8 @@ class CommentWithReferenceViewHolder : ViewHolder {
         _taskGetLiveComment.cancel()
 
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
-        _creatorThumbnail.setHarborAvailable(comment is PolycentricPlatformComment,false);
+        val polycentricComment = if (comment is PolycentricPlatformComment) comment else null
+        _creatorThumbnail.setHarborAvailable(polycentricComment != null,false, polycentricComment?.eventPointer?.system?.toProto());
         _textAuthor.text = comment.author.name;
 
         val date = comment.date;
@@ -168,8 +169,8 @@ class CommentWithReferenceViewHolder : ViewHolder {
             if (likesDislikesReplies != null) {
                 Log.i(TAG, "updateLikesDislikesReplies set")
 
-                val hasLiked = StatePolycentric.instance.hasLiked(c.reference);
-                val hasDisliked = StatePolycentric.instance.hasDisliked(c.reference);
+                val hasLiked = StatePolycentric.instance.hasLiked(c.reference.toByteArray());
+                val hasDisliked = StatePolycentric.instance.hasDisliked(c.reference.toByteArray());
                 _pillRatingLikesDislikes.setRating(RatingLikeDislikes(likesDislikesReplies.likes, likesDislikesReplies.dislikes), hasLiked, hasDisliked);
 
                 _buttonReplies.setLoading(false)

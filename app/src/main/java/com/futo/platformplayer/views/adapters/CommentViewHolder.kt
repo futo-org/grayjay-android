@@ -9,15 +9,21 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.fixHtmlLinks
+import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
@@ -104,7 +110,8 @@ class CommentViewHolder : ViewHolder {
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
-        _creatorThumbnail.setHarborAvailable(comment is PolycentricPlatformComment,false);
+        val polycentricComment = if (comment is PolycentricPlatformComment) comment else null
+        _creatorThumbnail.setHarborAvailable(polycentricComment != null,false, polycentricComment?.eventPointer?.system?.toProto());
         _textAuthor.text = comment.author.name;
 
         val date = comment.date;
@@ -161,8 +168,8 @@ class CommentViewHolder : ViewHolder {
             _pillRatingLikesDislikes.visibility = View.VISIBLE;
 
             if (comment is PolycentricPlatformComment) {
-                val hasLiked = StatePolycentric.instance.hasLiked(comment.reference);
-                val hasDisliked = StatePolycentric.instance.hasDisliked(comment.reference);
+                val hasLiked = StatePolycentric.instance.hasLiked(comment.reference.toByteArray());
+                val hasDisliked = StatePolycentric.instance.hasDisliked(comment.reference.toByteArray());
                 _pillRatingLikesDislikes.setRating(comment.rating, hasLiked, hasDisliked);
             } else {
                 _pillRatingLikesDislikes.setRating(comment.rating);

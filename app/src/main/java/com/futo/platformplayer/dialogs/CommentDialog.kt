@@ -6,11 +6,12 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.PlatformID
@@ -25,7 +26,11 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
-import com.futo.polycentric.core.*
+import com.futo.polycentric.core.ClaimType
+import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
+import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,7 +98,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
 
             val comment = _editComment.text.toString();
             val processHandle = StatePolycentric.instance.processHandle!!
-            val eventPointer = processHandle.post(comment, null, ref)
+            val eventPointer = processHandle.post(comment, ref)
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 try {

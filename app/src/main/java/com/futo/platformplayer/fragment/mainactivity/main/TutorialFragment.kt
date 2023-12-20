@@ -129,8 +129,8 @@ class TutorialFragment : MainFragment() {
         override val dash: IDashManifestSource? = null
         override val hls: IHLSManifestSource? = null
         override val subtitles: List<ISubtitleSource> = emptyList()
-        override val shareUrl: String = ""
-        override val url: String = ""
+        override val shareUrl: String = videoUrl
+        override val url: String = videoUrl
         override val datetime: OffsetDateTime? = OffsetDateTime.parse("2023-12-18T00:00:00Z")
         override val thumbnails: Thumbnails = Thumbnails(arrayOf(Thumbnail(thumbnailUrl)))
         override val author: PlatformAuthorLink = PlatformAuthorLink(PlatformID("tutorial", "f422ced6-b551-4b62-818e-27a4f5f4918a"), "Grayjay", "", "https://releases.grayjay.app/tutorials/author.jpeg")

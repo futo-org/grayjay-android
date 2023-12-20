@@ -7,6 +7,18 @@
     android:layout_height="wrap_content"
     android:id="@+id/root">
 
+    <com.futo.platformplayer.views.IdenticonView
+        android:id="@+id/identicon"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:srcCompat="@drawable/ic_futo_logo"
+        android:background="@drawable/rounded_outline"
+        android:contentDescription="@string/channel_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
     <ImageView
         android:id="@+id/image_channel_thumbnail"
         android:layout_width="match_parent"

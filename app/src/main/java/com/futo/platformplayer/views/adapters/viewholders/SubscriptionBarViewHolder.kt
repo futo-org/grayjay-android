@@ -77,7 +77,7 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(_channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         if (profile != null) {

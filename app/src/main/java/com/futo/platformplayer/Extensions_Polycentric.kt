@@ -1,11 +1,13 @@
 package com.futo.platformplayer
 
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.polycentric.core.ProcessHandle
+import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.SystemState
 import userpackage.Protocol
 import kotlin.math.abs
 import kotlin.math.min
@@ -47,6 +49,15 @@ fun Protocol.Claim.resolveChannelUrls(): List<String> {
 }
 
 suspend fun ProcessHandle.fullyBackfillServersAnnounceExceptions() {
+    val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
+    if (!systemState.servers.contains(PolycentricCache.STAGING_SERVER)) {
+        removeServer(PolycentricCache.STAGING_SERVER)
+    }
+
+    if (!systemState.servers.contains(PolycentricCache.SERVER)) {
+        removeServer(PolycentricCache.SERVER)
+    }
+
     val exceptions = fullyBackfillServers()
     for (pair in exceptions) {
         val server = pair.key

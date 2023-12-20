@@ -1201,9 +1201,9 @@ class VideoDetailView : ConstraintLayout {
             };
         }
 
-        val ref = video.id.value?.let { Models.referenceFromBuffer(it.toByteArray()) };
-        _addCommentView.setContext(video.url, ref);
-
+        val ref = Models.referenceFromBuffer(video.url.toByteArray())
+        val extraBytesRef = video.id.value?.toByteArray()
+        _addCommentView.setContext(video.url, ref)
         _player.setMetadata(video.name, video.author.name);
 
         if (video !is TutorialFragment.TutorialVideo) {
@@ -1264,57 +1264,54 @@ class VideoDetailView : ConstraintLayout {
 
         _rating.onLikeDislikeUpdated.remove(this);
 
-        if (ref != null) {
-            _rating.visibility = View.GONE;
+        _rating.visibility = View.GONE;
 
-            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    val queryReferencesResponse = ApiMethods.getQueryReferences(PolycentricCache.SERVER, ref, null,null,
-                        arrayListOf(
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(ContentType.OPINION.value).setValue(
-                                ByteString.copyFrom(Opinion.like.data)).build(),
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(ContentType.OPINION.value).setValue(
-                                ByteString.copyFrom(Opinion.dislike.data)).build()
-                        )
-                    );
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val queryReferencesResponse = ApiMethods.getQueryReferences(PolycentricCache.SERVER, ref, null,null,
+                    arrayListOf(
+                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(ContentType.OPINION.value).setValue(
+                            ByteString.copyFrom(Opinion.like.data)).build(),
+                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(ContentType.OPINION.value).setValue(
+                            ByteString.copyFrom(Opinion.dislike.data)).build()
+                    ),
+                    extraByteReferences = listOfNotNull(extraBytesRef)
+                );
 
-                    val likes = queryReferencesResponse.countsList[0];
-                    val dislikes = queryReferencesResponse.countsList[1];
-                    val hasLiked = StatePolycentric.instance.hasLiked(ref);
-                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref);
+                val likes = queryReferencesResponse.countsList[0];
+                val dislikes = queryReferencesResponse.countsList[1];
+                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
+                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
-                    withContext(Dispatchers.Main) {
-                        _rating.visibility = View.VISIBLE;
-                        _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
-                            if (args.hasLiked) {
-                                args.processHandle.opinion(ref, Opinion.like);
-                            } else if (args.hasDisliked) {
-                                args.processHandle.opinion(ref, Opinion.dislike);
-                            } else {
-                                args.processHandle.opinion(ref, Opinion.neutral);
+                withContext(Dispatchers.Main) {
+                    _rating.visibility = View.VISIBLE;
+                    _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
+                    _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                        if (args.hasLiked) {
+                            args.processHandle.opinion(ref, Opinion.like);
+                        } else if (args.hasDisliked) {
+                            args.processHandle.opinion(ref, Opinion.dislike);
+                        } else {
+                            args.processHandle.opinion(ref, Opinion.neutral);
+                        }
+
+                        fragment.lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                Logger.i(TAG, "Started backfill");
+                                args.processHandle.fullyBackfillServersAnnounceExceptions();
+                                Logger.i(TAG, "Finished backfill");
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to backfill servers", e)
                             }
+                        }
 
-                            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                try {
-                                    Logger.i(TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
-                                    Logger.i(TAG, "Finished backfill");
-                                } catch (e: Throwable) {
-                                    Logger.e(TAG, "Failed to backfill servers", e)
-                                }
-                            }
-
-                            StatePolycentric.instance.updateLikeMap(ref, args.hasLiked, args.hasDisliked)
-                        };
-                    }
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
-                    _rating.visibility = View.GONE;
+                        StatePolycentric.instance.updateLikeMap(ref, args.hasLiked, args.hasDisliked)
+                    };
                 }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
+                _rating.visibility = View.GONE;
             }
-        } else {
-            _rating.visibility = View.GONE;
         }
 
         when (video.rating) {
@@ -1361,28 +1358,30 @@ class VideoDetailView : ConstraintLayout {
 
         updateQueueState();
 
-        fragment.lifecycleScope.launch(Dispatchers.IO) {
-            val historyItem = getHistoryIndex(videoDetail);
+        if (video !is TutorialFragment.TutorialVideo) {
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                val historyItem = getHistoryIndex(videoDetail);
 
-            withContext(Dispatchers.Main) {
-                _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
-                Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
-                if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
-                    _layoutResume.visibility = View.VISIBLE;
-                    _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}";
+                withContext(Dispatchers.Main) {
+                    _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
+                    Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
+                    if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
+                        _layoutResume.visibility = View.VISIBLE;
+                        _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}";
 
-                    _jobHideResume = fragment.lifecycleScope.launch(Dispatchers.Main) {
-                        try {
-                            delay(8000);
-                            _layoutResume.visibility = View.GONE;
-                            _textResume.text = "";
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to set resume changes.", e);
+                        _jobHideResume = fragment.lifecycleScope.launch(Dispatchers.Main) {
+                            try {
+                                delay(8000);
+                                _layoutResume.visibility = View.GONE;
+                                _textResume.text = "";
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to set resume changes.", e);
+                            }
                         }
+                    } else {
+                        _layoutResume.visibility = View.GONE;
+                        _textResume.text = "";
                     }
-                } else {
-                    _layoutResume.visibility = View.GONE;
-                    _textResume.text = "";
                 }
             }
         }
@@ -1954,7 +1953,9 @@ class VideoDetailView : ConstraintLayout {
             return
         }
 
-        _commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, Models.referenceFromBuffer(idValue.toByteArray())); };
+        val ref = Models.referenceFromBuffer(video.url.toByteArray())
+        val extraBytesRef = video.id.value?.toByteArray()
+        _commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); };
     }
     private fun fetchVideo() {
         Logger.i(TAG, "fetchVideo")
@@ -2216,9 +2217,11 @@ class VideoDetailView : ConstraintLayout {
         val v = video ?: return;
         val currentTime = System.currentTimeMillis();
         if (updateHistory && (_lastPositionSaveTime == -1L || currentTime - _lastPositionSaveTime > 5000)) {
-            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                val history = getHistoryIndex(v);
-                StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+            if (v !is TutorialFragment.TutorialVideo) {
+                fragment.lifecycleScope.launch(Dispatchers.IO) {
+                    val history = getHistoryIndex(v);
+                    StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+                }
             }
             _lastPositionSaveTime = currentTime;
         }
@@ -2301,7 +2304,7 @@ class VideoDetailView : ConstraintLayout {
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(video?.author?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         val username = cachedPolycentricProfile?.profile?.systemState?.username

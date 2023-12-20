@@ -6,8 +6,8 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.structures.IPager
@@ -102,7 +102,8 @@ class RepliesOverlay : LinearLayout {
             }
 
             _creatorThumbnail.setThumbnail(parentComment.author.thumbnail, false);
-            _creatorThumbnail.setHarborAvailable(parentComment is PolycentricPlatformComment,false);
+            val polycentricPlatformComment = if (parentComment is PolycentricPlatformComment) parentComment else null
+            _creatorThumbnail.setHarborAvailable(polycentricPlatformComment != null,false, polycentricPlatformComment?.eventPointer?.system?.toProto());
         }
 
         _topbar.setInfo(context.getString(R.string.Replies), metadata);

@@ -314,8 +314,8 @@ class PostDetailFragment : MainFragment {
         private fun updatePolycentricRating() {
             _rating.visibility = View.GONE;
 
-            val value = _post?.id?.value ?: _postOverview?.id?.value ?: return;
-            val ref = Models.referenceFromBuffer(value.toByteArray());
+            val ref = Models.referenceFromBuffer((_post?.url ?: _postOverview?.url)?.toByteArray() ?: return)
+            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.toByteArray()
             val version = _version;
 
             _rating.onLikeDislikeUpdated.remove(this);
@@ -333,7 +333,8 @@ class PostDetailFragment : MainFragment {
                             Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(
                                 ContentType.OPINION.value).setValue(
                                 ByteString.copyFrom(Opinion.dislike.data)).build()
-                        )
+                        ),
+                        extraByteReferences = listOfNotNull(extraBytesRef)
                     );
 
                     if (version != _version) {
@@ -342,8 +343,8 @@ class PostDetailFragment : MainFragment {
 
                     val likes = queryReferencesResponse.countsList[0];
                     val dislikes = queryReferencesResponse.countsList[1];
-                    val hasLiked = StatePolycentric.instance.hasLiked(ref);
-                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref);
+                    val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
+                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
                     withContext(Dispatchers.Main) {
                         if (version != _version) {
@@ -468,9 +469,7 @@ class PostDetailFragment : MainFragment {
             if (_postOverview == null) {
                 fetchPolycentricProfile();
                 updatePolycentricRating();
-
-                val ref = value.id.value?.let { Models.referenceFromBuffer(it.toByteArray()); };
-                _addCommentView.setContext(value.url, ref);
+                _addCommentView.setContext(value.url, Models.referenceFromBuffer(value.url.toByteArray()));
             }
 
             updateCommentType(true);
@@ -489,9 +488,7 @@ class PostDetailFragment : MainFragment {
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
             _textContent.text = value.description.fixHtmlWhitespace();
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
-
-            val ref = value.id.value?.let { Models.referenceFromBuffer(it.toByteArray()); };
-            _addCommentView.setContext(value.url, ref);
+            _addCommentView.setContext(value.url, Models.referenceFromBuffer(value.url.toByteArray()));
 
             updatePolycentricRating();
             fetchPolycentricProfile();
@@ -636,12 +633,12 @@ class PostDetailFragment : MainFragment {
 
             if (cachedPolycentricProfile?.profile == null) {
                 _layoutMonetization.visibility = View.GONE;
-                _creatorThumbnail.setHarborAvailable(false, animate);
+                _creatorThumbnail.setHarborAvailable(false, animate, null);
                 return;
             }
 
             _layoutMonetization.visibility = View.VISIBLE;
-            _creatorThumbnail.setHarborAvailable(true, animate);
+            _creatorThumbnail.setHarborAvailable(true, animate, cachedPolycentricProfile.profile.system.toProto());
         }
 
         private fun fetchPost() {
@@ -665,14 +662,16 @@ class PostDetailFragment : MainFragment {
         private fun fetchPolycentricComments() {
             Logger.i(TAG, "fetchPolycentricComments")
             val post = _post;
-            val idValue = post?.id?.value
-            if (idValue == null) {
-                Logger.w(TAG, "Failed to fetch polycentric comments because id was null")
+            val ref = (_post?.url ?: _postOverview?.url)?.toByteArray()?.let { Models.referenceFromBuffer(it) }
+            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.toByteArray()
+
+            if (ref == null) {
+                Logger.w(TAG, "Failed to fetch polycentric comments because url was not set null")
                 _commentsList.clear();
                 return
             }
 
-            _commentsList.load(false) { StatePolycentric.instance.getCommentPager(post.url, Models.referenceFromBuffer(idValue.toByteArray())); };
+            _commentsList.load(false) { StatePolycentric.instance.getCommentPager(post!!.url, ref, listOfNotNull(extraBytesRef)); };
         }
 
         private fun updateCommentType(reloadComments: Boolean) {

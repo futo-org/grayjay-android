@@ -8,12 +8,15 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.views.overlays.LoaderOverlay
 import com.futo.polycentric.core.KeyPair
 import com.futo.polycentric.core.Process
 import com.futo.polycentric.core.ProcessSecret
@@ -21,6 +24,9 @@ import com.futo.polycentric.core.SignedEvent
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.base64UrlToByteArray
 import com.google.zxing.integration.android.IntentIntegrator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import userpackage.Protocol.ExportBundle
 
@@ -29,6 +35,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
     private lateinit var _buttonScanProfile: LinearLayout;
     private lateinit var _buttonImportProfile: LinearLayout;
     private lateinit var _editProfile: EditText;
+    private lateinit var _loaderOverlay: LoaderOverlay;
 
     private val _qrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -52,6 +59,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
         _buttonHelp = findViewById(R.id.button_help);
         _buttonScanProfile = findViewById(R.id.button_scan_profile);
         _buttonImportProfile = findViewById(R.id.button_import_profile);
+        _loaderOverlay = findViewById(R.id.loader_overlay);
         _editProfile = findViewById(R.id.edit_profile);
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             finish();
@@ -94,42 +102,57 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
             return;
         }
 
-        try {
-            val data = url.substring("polycentric://".length).base64UrlToByteArray();
-            val urlInfo = Protocol.URLInfo.parseFrom(data);
-            if (urlInfo.urlType != 3L) {
-                throw Exception("Expected urlInfo struct of type ExportBundle")
-            }
+        _loaderOverlay.show()
 
-            val exportBundle = ExportBundle.parseFrom(urlInfo.body);
-            val keyPair = KeyPair.fromProto(exportBundle.keyPair);
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val data = url.substring("polycentric://".length).base64UrlToByteArray();
+                val urlInfo = Protocol.URLInfo.parseFrom(data);
+                if (urlInfo.urlType != 3L) {
+                    throw Exception("Expected urlInfo struct of type ExportBundle")
+                }
 
-            val existingProcessSecret = Store.instance.getProcessSecret(keyPair.publicKey);
-            if (existingProcessSecret != null) {
-                UIDialogs.toast(this, getString(R.string.this_profile_is_already_imported));
-                return;
-            }
+                val exportBundle = ExportBundle.parseFrom(urlInfo.body);
+                val keyPair = KeyPair.fromProto(exportBundle.keyPair);
 
-            val processSecret = ProcessSecret(keyPair, Process.random());
-            Store.instance.addProcessSecret(processSecret);
+                val existingProcessSecret = Store.instance.getProcessSecret(keyPair.publicKey);
+                if (existingProcessSecret != null) {
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(this@PolycentricImportProfileActivity, getString(R.string.this_profile_is_already_imported));
+                    }
+                    return@launch;
+                }
 
-            val processHandle = processSecret.toProcessHandle();
+                val processSecret = ProcessSecret(keyPair, Process.random());
+                Store.instance.addProcessSecret(processSecret);
 
-            for (e in exportBundle.events.eventsList) {
-                try {
-                    val se = SignedEvent.fromProto(e);
-                    Store.instance.putSignedEvent(se);
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Ignored invalid event", e);
+                val processHandle = processSecret.toProcessHandle();
+
+                for (e in exportBundle.events.eventsList) {
+                    try {
+                        val se = SignedEvent.fromProto(e);
+                        Store.instance.putSignedEvent(se);
+                    } catch (e: Throwable) {
+                        Logger.w(TAG, "Ignored invalid event", e);
+                    }
+                }
+
+                StatePolycentric.instance.setProcessHandle(processHandle);
+                processHandle.fullyBackfillClient(PolycentricCache.SERVER);
+                withContext(Dispatchers.Main) {
+                    startActivity(Intent(this@PolycentricImportProfileActivity, PolycentricProfileActivity::class.java));
+                    finish();
+                }
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to import profile", e);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(this@PolycentricImportProfileActivity, getString(R.string.failed_to_import_profile) + " '${e.message}'");
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    _loaderOverlay.hide();
                 }
             }
-
-            StatePolycentric.instance.setProcessHandle(processHandle);
-            startActivity(Intent(this@PolycentricImportProfileActivity, PolycentricProfileActivity::class.java));
-            finish();
-        } catch (e: Throwable) {
-            Logger.w(TAG, "Failed to import profile", e);
-            UIDialogs.toast(this, getString(R.string.failed_to_import_profile) + " '${e.message}'");
         }
     }
 
