@@ -437,11 +437,11 @@ class VideoDetailView : ConstraintLayout {
 
         var buttonMore: RoundButton? = null;
         buttonMore = RoundButton(context, R.drawable.ic_menu, context.getString(R.string.more), TAG_MORE) {
-            _slideUpOverlay = UISlideOverlays.showMoreButtonOverlay(_overlayContainer, _buttonPins, listOf(TAG_MORE)) {selected ->
+            _slideUpOverlay = UISlideOverlays.showMoreButtonOverlay(_overlayContainer, _buttonPins, listOf(TAG_MORE), false) {selected ->
                 _buttonPins.setButtons(*(selected + listOf(buttonMore!!)).toTypedArray());
                 _buttonPinStore.set(*selected.filter { it.tagRef is String }.map{ it.tagRef as String }.toTypedArray())
                 _buttonPinStore.save();
-            }
+            };
         };
         _buttonMore = buttonMore;
         updateMoreButtons();
@@ -769,6 +769,7 @@ class VideoDetailView : ConstraintLayout {
                             Logger.e(TAG, "Failed to reopen live chat", ex);
                         }
                     }
+                    _slideUpOverlay?.hide();
                 } else null,
             RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
                 if(!allowBackground) {
@@ -781,6 +782,7 @@ class VideoDetailView : ConstraintLayout {
                     allowBackground = false;
                     it.text.text = resources.getString(R.string.background);
                 }
+                _slideUpOverlay?.hide();
             },
             RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
                 video?.let {
@@ -793,11 +795,13 @@ class VideoDetailView : ConstraintLayout {
                     preventPictureInPicture = true;
                     shareVideo();
                 };
+                _slideUpOverlay?.hide();
             },
             RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
                 this.startPictureInPicture();
                 fragment.forcePictureInPicture();
                 //PiPActivity.startPiP(context);
+                _slideUpOverlay?.hide();
             },
             RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
                 video?.let {
@@ -805,9 +809,11 @@ class VideoDetailView : ConstraintLayout {
                     fragment.navigate<BrowserFragment>(url);
                     fragment.minimizeVideoDetail();
                 };
+                _slideUpOverlay?.hide();
             },
             RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
                 reloadVideo();
+                _slideUpOverlay?.hide();
             }).filterNotNull();
         if(!_buttonPinStore.getAllValues().any())
             _buttonPins.setButtons(*(buttons + listOf(_buttonMore)).toTypedArray());
