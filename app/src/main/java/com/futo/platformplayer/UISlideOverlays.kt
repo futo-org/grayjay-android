@@ -1,9 +1,14 @@
 package com.futo.platformplayer
 
+import android.app.Activity
+import android.app.NotificationManager
 import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -131,8 +136,29 @@ class UISlideOverlays {
                         subscription.save();
                         menu.hide(true);
 
-                        if(subscription.doNotifications && !originalNotif && Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval == 0) {
-                            UIDialogs.toast(container.context, "Enable 'Background Update' in settings for notifications to work");
+                        if(subscription.doNotifications && !originalNotif) {
+                            val mainContext = StateApp.instance.contextOrNull;
+                            if(Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval == 0) {
+                                UIDialogs.toast(container.context, "Enable 'Background Update' in settings for notifications to work");
+
+                                if(mainContext is MainActivity) {
+                                    UIDialogs.showDialog(mainContext, R.drawable.ic_settings, "Background Updating Required",
+                                        "You need to set a Background Updating interval for notifications", null, 0,
+                                        UIDialogs.Action("Cancel", {}),
+                                        UIDialogs.Action("Configure", {
+                                            val intent = Intent(mainContext, SettingsActivity::class.java);
+                                            intent.putExtra("query", mainContext.getString(R.string.background_update));
+                                            mainContext.startActivity(intent);
+                                        }, UIDialogs.ActionStyle.PRIMARY));
+                                }
+                                return@subscribe;
+                            }
+                            else if(!(mainContext?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).areNotificationsEnabled()) {
+                                UIDialogs.toast(container.context, "Android notifications are disabled");
+                                if(mainContext is MainActivity) {
+                                    mainContext.requestNotificationPermissions("Notifications are required for subscription updating and notifications to work");
+                                }
+                            }
                         }
                     };
                     menu.onCancel.subscribe {

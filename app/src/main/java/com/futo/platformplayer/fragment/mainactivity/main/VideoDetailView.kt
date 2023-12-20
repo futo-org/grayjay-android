@@ -469,7 +469,7 @@ class VideoDetailView : ConstraintLayout {
             if(!isScrub) {
                 if(chapter?.type == ChapterType.SKIPPABLE) {
                     _layoutSkip.visibility = VISIBLE;
-                } else if(chapter?.type == ChapterType.SKIP) {
+                } else if(chapter?.type == ChapterType.SKIP || chapter?.type == ChapterType.SKIPONCE) {
                     val ad = StateCasting.instance.activeDevice
                     if (ad != null) {
                         ad.seekVideo(chapter.timeEnd)

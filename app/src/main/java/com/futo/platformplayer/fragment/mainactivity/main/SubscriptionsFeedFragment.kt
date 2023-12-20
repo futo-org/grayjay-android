@@ -104,14 +104,17 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
-            StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
-                fragment.lifecycleScope.launch(Dispatchers.Main) {
-                    try {
-                        setProgress(progress, total);
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to set progress", e);
+            StateSubscriptions.instance.onFeedProgress.subscribe(this) { id, progress, total ->
+                if(_subGroup?.id == id)
+                    fragment.lifecycleScope.launch(Dispatchers.Main) {
+                        try {
+                            setProgress(progress, total);
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to set progress", e);
+                        }
                     }
-                }
+            }
+            StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
             };
 
             StateSubscriptions.instance.onSubscriptionsChanged.subscribe(this) { _, added ->
@@ -264,7 +267,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                     UISlideOverlays.showCreateSubscriptionGroup(_overlayContainer);
                 else {
                     _subGroup = g;
-                    loadCache(); //TODO: Proper subset update
+                    setProgress(0, 0);
+                    if(Settings.instance.subscriptions.fetchOnTabOpen)
+                        loadResults(false);
+                    else loadCache();
                 }
             };
             _subscriptionBar?.onHoldGroup?.subscribe { g ->

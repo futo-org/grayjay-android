@@ -277,7 +277,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 9)
         var fetchOnTabOpen: Boolean = true;
 
-        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 10)
+        @FormField(R.string.background_update, FieldForm.DROPDOWN, R.string.experimental_background_update_for_subscriptions_cache, 10, "background_update")
         @DropdownFieldOptionsId(R.array.background_interval)
         var subscriptionsBackgroundUpdateInterval: Int = 0;
 
