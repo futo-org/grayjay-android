@@ -18,12 +18,20 @@ import android.widget.TextView
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
 import androidx.core.view.GestureDetectorCompat
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.others.CircularProgressBar
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class GestureControlView : LinearLayout {
     private val _scope = CoroutineScope(Dispatchers.Main);
@@ -95,22 +103,23 @@ class GestureControlView : LinearLayout {
                 if(p0 == null)
                     return false;
 
+                val minDistance = Math.min(width, height)
                 if (_isFullScreen && _adjustingBrightness) {
-                    val adjustAmount = (distanceY * 2) / height;
+                    val adjustAmount = (distanceY * 2) / minDistance;
                     _brightnessFactor = (_brightnessFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _progressBrightness.progress = _brightnessFactor;
                     onBrightnessAdjusted.emit(_brightnessFactor);
                 } else if (_isFullScreen && _adjustingSound) {
-                    val adjustAmount = (distanceY * 2) / height;
+                    val adjustAmount = (distanceY * 2) / minDistance;
                     _soundFactor = (_soundFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _progressSound.progress = _soundFactor;
                     onSoundAdjusted.emit(_soundFactor);
                 } else if (_adjustingFullscreenUp) {
-                    val adjustAmount = (distanceY * 2) / height;
+                    val adjustAmount = (distanceY * 2) / minDistance;
                     _fullScreenFactorUp = (_fullScreenFactorUp + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _layoutControlsFullscreen.alpha = _fullScreenFactorUp;
                 } else if (_adjustingFullscreenDown) {
-                    val adjustAmount = (-distanceY * 2) / height;
+                    val adjustAmount = (-distanceY * 2) / minDistance;
                     _fullScreenFactorDown = (_fullScreenFactorDown + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
                     _layoutControlsFullscreen.alpha = _fullScreenFactorDown;
                 } else {
