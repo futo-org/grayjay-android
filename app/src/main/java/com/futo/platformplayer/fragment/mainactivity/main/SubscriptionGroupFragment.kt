@@ -188,6 +188,12 @@ class SubscriptionGroupFragment : MainFragment() {
                 filterCreators();
             }
 
+            _topbar.setButtons(
+                Pair(R.drawable.ic_share) {
+                    UIDialogs.toast(context, "Coming soon");
+                }
+            );
+
             setGroup(null);
         }
 

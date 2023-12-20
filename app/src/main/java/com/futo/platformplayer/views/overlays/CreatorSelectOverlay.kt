@@ -33,6 +33,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
+import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.viewholders.CreatorBarViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectableCreatorBarViewHolder
@@ -47,9 +48,12 @@ import java.io.File
 class CreatorSelectOverlay: ConstraintLayout {
     private val _buttonSelect: Button;
     private val _topbar: OverlayTopbar;
+
+    private val _searchBar: SearchView;
     private val _recyclerCreators: AnyAdapterView<SelectableCreatorBarViewHolder.Selectable, SelectableCreatorBarViewHolder>;
 
     private val _creators: ArrayList<SelectableCreatorBarViewHolder.Selectable> = arrayListOf();
+    private val _creatorsFiltered: ArrayList<SelectableCreatorBarViewHolder.Selectable> = arrayListOf();
 
     private var _selected: MutableList<String> = mutableListOf();
 
@@ -66,7 +70,7 @@ class CreatorSelectOverlay: ConstraintLayout {
         else
             _creators.addAll(subs
                 .map { SelectableCreatorBarViewHolder.Selectable(it.channel, false) });
-        _recyclerCreators.notifyContentChanged();
+        filterCreators();
     }
     constructor(context: Context, attrs: AttributeSet?): super(context, attrs) { }
     init {
@@ -74,7 +78,8 @@ class CreatorSelectOverlay: ConstraintLayout {
         _topbar = findViewById(R.id.topbar);
         _buttonSelect = findViewById(R.id.button_select);
         val dp6 = 6.dp(resources);
-        _recyclerCreators = findViewById<RecyclerView>(R.id.recycler_creators).asAny(_creators, RecyclerView.HORIZONTAL) { creatorView ->
+        _searchBar = findViewById(R.id.search_bar);
+        _recyclerCreators = findViewById<RecyclerView>(R.id.recycler_creators).asAny(_creatorsFiltered, RecyclerView.HORIZONTAL) { creatorView ->
             creatorView.itemView.setPadding(0, dp6, 0, dp6);
             creatorView.onClick.subscribe {
                 if(it.channel.thumbnail == null) {
@@ -99,7 +104,11 @@ class CreatorSelectOverlay: ConstraintLayout {
         _topbar.onClose.subscribe {
             onClose.emit();
         }
+        _searchBar.onSearchChanged.subscribe {
+            filterCreators();
+        };
         updateSelected();
+        filterCreators();
     }
 
     fun updateSelected() {
@@ -112,6 +121,17 @@ class CreatorSelectOverlay: ConstraintLayout {
             _buttonSelect.alpha = 0.5f;
     }
 
+
+    private fun filterCreators(withUpdate: Boolean = true) {
+        val query = _searchBar.textSearch.text.toString().lowercase();
+        val filteredEnabled = _creators.filter { query.isNullOrEmpty() || it.channel.name.lowercase().contains(query) };
+
+        //Optimize
+        _creatorsFiltered.clear();
+        _creatorsFiltered.addAll(filteredEnabled);
+        if(withUpdate)
+            _recyclerCreators.notifyContentChanged();
+    }
 
     fun select() {
         if(_creators.isEmpty())

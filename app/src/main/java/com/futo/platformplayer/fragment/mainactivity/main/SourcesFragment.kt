@@ -39,10 +39,12 @@ class SourcesFragment : MainFragment() {
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack)
 
-        if(topBar is AddTopBarFragment)
+        if(topBar is AddTopBarFragment) {
+            (topBar as AddTopBarFragment).onAdd.clear();
             (topBar as AddTopBarFragment).onAdd.subscribe {
                 startActivity(Intent(requireContext(), AddSourceOptionsActivity::class.java));
             };
+        }
 
         _view?.reloadSources();
     }

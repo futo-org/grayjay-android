@@ -77,7 +77,7 @@ class SubscriptionBar : LinearLayout {
                     Settings.instance.subscriptions.showSubscriptionGroups = false;
                     Settings.instance.save();
                     reloadGroups();
-                    
+
                     UIDialogs.showDialogOk(context, R.drawable.ic_quiz, "Subscription groups can be re-enabled in settings")
                 }),
                 UIDialogs.Action("Create", {

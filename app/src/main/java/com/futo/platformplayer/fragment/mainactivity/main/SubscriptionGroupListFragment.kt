@@ -107,12 +107,14 @@ class SubscriptionGroupListFragment : MainFragment() {
             updateGroups();
         }
 
-        if(topBar is AddTopBarFragment)
+        if(topBar is AddTopBarFragment) {
+            (topBar as AddTopBarFragment).onAdd.clear();
             (topBar as AddTopBarFragment).onAdd.subscribe {
                 _overlay?.let {
                     UISlideOverlays.showCreateSubscriptionGroup(it)
                 }
             };
+        }
     }
 
     private fun updateGroups() {
