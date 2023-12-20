@@ -51,9 +51,15 @@ class StateSubscriptions {
 
     val global: CentralizedFeed = CentralizedFeed();
     val feeds: HashMap<String, CentralizedFeed> = hashMapOf();
-    val onFeedProgress = Event3<String, Int, Int>();
+    val onFeedProgress = Event3<String?, Int, Int>();
 
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
+
+    init {
+        global.onUpdateProgress.subscribe { progress, total ->
+            onFeedProgress.emit(null, progress, total);
+        }
+    }
 
     fun getOldestUpdateTime(): OffsetDateTime {
         val subs = getSubscriptions();

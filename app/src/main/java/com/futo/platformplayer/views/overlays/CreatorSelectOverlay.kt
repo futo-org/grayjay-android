@@ -112,8 +112,18 @@ class CreatorSelectOverlay: ConstraintLayout {
     }
 
     fun updateSelected() {
-        _creators.forEach { p -> p.active = _selected.contains(p.channel.url) };
-        _recyclerCreators.notifyContentChanged();
+        val changed = arrayListOf<SelectableCreatorBarViewHolder.Selectable>()
+        for(creator in _creators) {
+            val act = _selected.contains(creator.channel.url);
+            if(creator.active != act) {
+                creator.active = act;
+                changed.add(creator);
+            }
+        }
+        for(change in changed) {
+            val index = _creatorsFiltered.indexOf(change);
+            _recyclerCreators.notifyContentChanged(index);
+        }
 
         if(_selected.isNotEmpty())
             _buttonSelect.alpha = 1f;

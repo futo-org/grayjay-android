@@ -141,8 +141,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                 recyclerData.lastLoad.getNowDiffSeconds() > 60 ) {
                 recyclerData.lastLoad = OffsetDateTime.now();
 
-                if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5 && Settings.instance.subscriptions.fetchOnTabOpen)
+                if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5 && Settings.instance.subscriptions.fetchOnTabOpen) {
+                    loadCache();
                     loadResults(false);
+                }
                 else if(recyclerData.results.size == 0) {
                     loadCache();
                     setLoading(false);
