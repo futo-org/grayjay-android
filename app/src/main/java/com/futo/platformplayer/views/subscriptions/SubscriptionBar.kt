@@ -2,12 +2,14 @@ package com.futo.platformplayer.views.subscriptions
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
 import android.widget.LinearLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Subscription
@@ -24,7 +26,8 @@ import kotlinx.coroutines.launch
 
 class SubscriptionBar : LinearLayout {
     private var _adapterView: AnyAdapterView<Subscription, SubscriptionBarViewHolder>? = null;
-    private var _subGroups: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>
+    private var _subGroups: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>;
+    private var _subGroupsExplore: SubscriptionExploreButton;
     private val _tagsContainer: LinearLayout;
 
     private val _groups: ArrayList<SubscriptionGroup>;
@@ -64,7 +67,25 @@ class SubscriptionBar : LinearLayout {
                 onHoldGroup.emit(g);
             }
         }
+        _subGroupsExplore = findViewById(R.id.subgroup_explore);
         _tagsContainer = findViewById(R.id.container_tags);
+
+        _subGroupsExplore.onClick.subscribe {
+            UIDialogs.showDialog(context, R.drawable.ic_subscriptions, "Subscription Groups",
+                "Subscription groups are an easy way to navigate your subscriptions.\n\nDefine your own subsets, and in the near future share them with others.", null, 0,
+                UIDialogs.Action("Hide Bar", {
+                    Settings.instance.subscriptions.showSubscriptionGroups = false;
+                    Settings.instance.save();
+                    reloadGroups();
+                    
+                    UIDialogs.showDialogOk(context, R.drawable.ic_quiz, "Subscription groups can be re-enabled in settings")
+                }),
+                UIDialogs.Action("Create", {
+                    onToggleGroup.emit(SubscriptionGroup.Add()); //Shortcut..
+                }, UIDialogs.ActionStyle.PRIMARY))
+        };
+
+        updateExplore();
     }
 
     private fun groupClicked(g: SubscriptionGroup) {
@@ -100,6 +121,8 @@ class SubscriptionBar : LinearLayout {
         _groups.clear();
         _groups.addAll(results);
         _subGroups.notifyContentChanged();
+
+        updateExplore();
     }
     private fun getGroups(): List<SubscriptionGroup> {
         return if(Settings.instance.subscriptions.showSubscriptionGroups)
@@ -110,6 +133,18 @@ class SubscriptionBar : LinearLayout {
         else listOf();
     }
 
+    fun updateExplore() {
+        val show = Settings.instance.subscriptions.showSubscriptionGroups &&
+                _groups.all { it is SubscriptionGroup.Add };
+        if(show) {
+            _subGroupsExplore.visibility = View.VISIBLE;
+            _subGroups.view.visibility = View.GONE;
+        }
+        else {
+            _subGroupsExplore.visibility = View.GONE;
+            _subGroups.view.visibility = View.VISIBLE;
+        }
+    }
 
     fun setToggles(vararg buttons: Toggle) {
         _tagsContainer.removeAllViews();
