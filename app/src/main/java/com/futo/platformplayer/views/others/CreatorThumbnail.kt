@@ -34,6 +34,7 @@ class CreatorThumbnail : ConstraintLayout {
         _imageChannelThumbnail = findViewById(R.id.image_channel_thumbnail);
         _identicon = findViewById(R.id.identicon);
         _imageChannelThumbnail.clipToOutline = true;
+        _identicon.clipToOutline = true;
         _imageChannelThumbnail.visibility = View.GONE
         _imageNewActivity = findViewById(R.id.image_new_activity);
         _imageNeoPass = findViewById(R.id.image_neopass);
