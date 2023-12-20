@@ -289,6 +289,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 buttonDefinitions.find { d -> d.id == it.id }
             }.toMutableList()
 
+            //Add unconfigured tabs with default values
+            buttonDefinitions.forEach { buttonDefinition ->
+                if (!Settings.instance.tabs.any { it.id == buttonDefinition.id }) {
+                    newCurrentButtonDefinitions.add(buttonDefinition)
+                }
+            }
+
             if (!StatePayment.instance.hasPaid) {
                 newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
             }
