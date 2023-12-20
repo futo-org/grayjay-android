@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
+import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger

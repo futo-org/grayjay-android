@@ -28,4 +28,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal" />
+    <com.futo.platformplayer.views.subscriptions.SubscriptionExploreButton
+        android:id="@+id/subgroup_explore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
 </LinearLayout>

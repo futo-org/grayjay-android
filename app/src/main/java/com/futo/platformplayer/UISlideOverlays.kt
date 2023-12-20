@@ -739,7 +739,7 @@ class UISlideOverlays {
         }
 
 
-        fun showMoreButtonOverlay(container: ViewGroup, buttonGroup: RoundButtonGroup, ignoreTags: List<Any> = listOf(), onPinnedbuttons: ((List<RoundButton>)->Unit)? = null): SlideUpMenuOverlay {
+        fun showMoreButtonOverlay(container: ViewGroup, buttonGroup: RoundButtonGroup, ignoreTags: List<Any> = listOf(), invokeParents: Boolean = true, onPinnedbuttons: ((List<RoundButton>)->Unit)? = null): SlideUpMenuOverlay {
             val visible = buttonGroup.getVisibleButtons().filter { !ignoreTags.contains(it.tagRef) };
             val hidden = buttonGroup.getInvisibleButtons().filter { !ignoreTags.contains(it.tagRef) };
 
@@ -747,7 +747,7 @@ class UISlideOverlays {
                 hidden
                     .map { btn -> SlideUpMenuItem(container.context, btn.iconResource, btn.text.text.toString(), "", "", {
                         btn.handler?.invoke(btn);
-                    }, true) as View  }.toTypedArray(),
+                    }, invokeParents) as View  }.toTypedArray(),
                 arrayOf(SlideUpMenuItem(container.context, R.drawable.ic_pin, container.context.getString(R.string.change_pins), container.context.getString(R.string.decide_which_buttons_should_be_pinned), "", {
                     showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }) {
                         val selected = it
