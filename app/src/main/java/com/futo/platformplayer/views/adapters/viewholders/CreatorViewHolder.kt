@@ -98,7 +98,7 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(_authorLink?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         if (profile != null) {

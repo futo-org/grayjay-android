@@ -1,6 +1,5 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -8,12 +7,10 @@ import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
@@ -76,7 +73,7 @@ class CreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyVi
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(_channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         if (profile != null) {
@@ -148,7 +145,7 @@ class SelectableCreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAda
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(_channel?.channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         if (profile != null) {

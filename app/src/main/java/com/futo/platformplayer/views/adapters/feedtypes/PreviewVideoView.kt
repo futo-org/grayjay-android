@@ -334,7 +334,7 @@ open class PreviewVideoView : LinearLayout {
                 _creatorThumbnail.setThumbnail(avatar, animate);
             } else {
                 _creatorThumbnail.setThumbnail(content?.author?.thumbnail, animate);
-                _creatorThumbnail.setHarborAvailable(profile != null, animate);
+                _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
             }
         } else if (_imageChannel != null) {
             val dp_28 = 28.dp(context.resources);

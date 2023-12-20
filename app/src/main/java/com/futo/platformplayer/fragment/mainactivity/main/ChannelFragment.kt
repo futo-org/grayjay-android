@@ -465,7 +465,7 @@ class ChannelFragment : MainFragment() {
                 _creatorThumbnail.setThumbnail(avatar, animate);
             } else {
                 _creatorThumbnail.setThumbnail(channel?.thumbnail, animate);
-                _creatorThumbnail.setHarborAvailable(profile != null, animate);
+                _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
             }
 
             val banner = profile?.systemState?.banner?.selectHighestResolutionImage()

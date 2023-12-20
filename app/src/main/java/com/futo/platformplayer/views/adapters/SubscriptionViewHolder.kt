@@ -6,21 +6,18 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
-import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.toHumanBytesSpeed
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanTimeIndicator
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
@@ -107,7 +104,7 @@ class SubscriptionViewHolder : ViewHolder {
             _creatorThumbnail.setThumbnail(avatar, animate);
         } else {
             _creatorThumbnail.setThumbnail(this.subscription?.channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate);
+            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
         if (profile != null) {

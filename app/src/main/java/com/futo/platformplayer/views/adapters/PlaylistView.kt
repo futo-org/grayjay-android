@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -18,8 +18,8 @@ import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
 
 
@@ -149,7 +149,8 @@ open class PlaylistView : LinearLayout {
         _neopassAnimator?.cancel();
         _neopassAnimator = null;
 
-        val harborAvailable = claims != null && !claims.ownedClaims.isNullOrEmpty();
+        val firstClaim = claims?.ownedClaims?.firstOrNull();
+        val harborAvailable = firstClaim != null
         if (harborAvailable) {
             _imageNeopassChannel?.visibility = View.VISIBLE
             if (animate) {
@@ -160,7 +161,7 @@ open class PlaylistView : LinearLayout {
             _imageNeopassChannel?.visibility = View.GONE
         }
 
-        _creatorThumbnail?.setHarborAvailable(harborAvailable, animate)
+        _creatorThumbnail?.setHarborAvailable(harborAvailable, animate, firstClaim?.system?.toProto())
     }
 
     companion object {

@@ -27,7 +27,20 @@ import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
-import com.futo.polycentric.core.*
+import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.ClaimType
+import com.futo.polycentric.core.ContentType
+import com.futo.polycentric.core.Opinion
+import com.futo.polycentric.core.ProcessHandle
+import com.futo.polycentric.core.PublicKey
+import com.futo.polycentric.core.SignedEvent
+import com.futo.polycentric.core.SqlLiteDbHelper
+import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.base64ToByteArray
+import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
+import com.futo.polycentric.core.toBase64
+import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -38,7 +51,6 @@ import userpackage.Protocol
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import kotlin.Exception
 
 class StatePolycentric {
     private data class LikeDislikeEntry(val unixMilliseconds: Long, val hasLiked: Boolean, val hasDisliked: Boolean);
@@ -128,21 +140,21 @@ class StatePolycentric {
         _likeDislikeMap[ref.toByteArray().toBase64()] = LikeDislikeEntry(System.currentTimeMillis(), hasLiked, hasDisliked);
     }
 
-    fun hasDisliked(ref: Protocol.Reference): Boolean {
+    fun hasDisliked(data: ByteArray): Boolean {
         if (!enabled) {
             return false
         }
 
-        val entry = _likeDislikeMap[ref.toByteArray().toBase64()] ?: return false;
+        val entry = _likeDislikeMap[data.toBase64()] ?: return false;
         return entry.hasDisliked;
     }
 
-    fun hasLiked(ref: Protocol.Reference): Boolean {
+    fun hasLiked(data: ByteArray): Boolean {
         if (!enabled) {
             return false
         }
 
-        val entry = _likeDislikeMap[ref.toByteArray().toBase64()] ?: return false;
+        val entry = _likeDislikeMap[data.toBase64()] ?: return false;
         return entry.hasLiked;
     }
 
@@ -316,7 +328,7 @@ class StatePolycentric {
         return LikesDislikesReplies(likes, dislikes, replyCount)
     }
 
-    suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference): IPager<IPlatformComment> {
+    suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference, extraByteReferences: List<ByteArray>? = null): IPager<IPlatformComment> {
         if (!enabled) {
             return EmptyPager()
         }
@@ -338,7 +350,8 @@ class StatePolycentric {
                     Protocol.QueryReferencesRequestCountReferences.newBuilder()
                     .setFromType(ContentType.POST.value)
                     .build())
-                .build()
+                .build(),
+            extraByteReferences = extraByteReferences
         );
 
         val results = mapQueryReferences(contextUrl, response);
@@ -407,7 +420,8 @@ class StatePolycentric {
                         ContentType.AVATAR.value,
                         ContentType.USERNAME.value
                     )
-                ).eventsList.map { e -> SignedEvent.fromProto(e) };
+                ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
+                    .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
 
                 val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
                 val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };

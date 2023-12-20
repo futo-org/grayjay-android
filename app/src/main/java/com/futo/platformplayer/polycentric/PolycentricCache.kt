@@ -56,7 +56,7 @@ class PolycentricCache {
 
     private val _taskGetProfile = BatchedTaskHandler<PublicKey, CachedPolycentricProfile>(_scope,
         { system ->
-            val signedProfileEvents = ApiMethods.getQueryLatest(
+            val signedEventsList = ApiMethods.getQueryLatest(
                 SERVER,
                 system.toProto(),
                 listOf(
@@ -72,8 +72,9 @@ class PolycentricCache {
                     ContentType.MEMBERSHIP_URLS.value,
                     ContentType.DONATION_DESTINATIONS.value
                 )
-            ).eventsList.map { e -> SignedEvent.fromProto(e) }
-                .groupBy { e -> e.event.contentType }
+            ).eventsList.map { e -> SignedEvent.fromProto(e) };
+
+            val signedProfileEvents = signedEventsList.groupBy { e -> e.event.contentType }
                 .map { (_, events) -> events.maxBy { it.event.unixMilliseconds ?: 0 } };
 
             val storageSystemState = StorageTypeSystemState.create()
@@ -151,17 +152,7 @@ class PolycentricCache {
 
     private val _batchTaskGetData = BatchedTaskHandler<String, ByteBuffer>(_scope,
         {
-            val urlData = if (it.startsWith("polycentric://")) {
-                it.substring("polycentric://".length)
-            } else it;
-
-            val urlBytes = urlData.base64UrlToByteArray();
-            val urlInfo = Protocol.URLInfo.parseFrom(urlBytes);
-            if (urlInfo.urlType != 4L) {
-                throw Exception("Only URLInfoDataLink is supported");
-            }
-
-            val dataLink = Protocol.URLInfoDataLink.parseFrom(urlInfo.body);
+            val dataLink = getDataLinkFromUrl(it) ?: throw Exception("Only URLInfoDataLink is supported");
             return@BatchedTaskHandler ApiMethods.getDataFromServerAndReassemble(dataLink);
         },
         { return@BatchedTaskHandler null },
@@ -325,9 +316,10 @@ class PolycentricCache {
             .build();
 
         private const val TAG = "PolycentricCache"
-        const val SERVER = "https://srv1-stg.polycentric.io"
+        const val STAGING_SERVER = "https://srv1-stg.polycentric.io"
+        const val SERVER = "https://srv1-prod.polycentric.io"
         private var _instance: PolycentricCache? = null;
-        private val CACHE_EXPIRATION_SECONDS = 60 * 60 * 3;
+        private val CACHE_EXPIRATION_SECONDS = 60 * 5;
 
         @JvmStatic
         val instance: PolycentricCache
@@ -342,6 +334,21 @@ class PolycentricCache {
                 _instance = null;
                 it._scope.cancel("PolycentricCache finished");
             }
+        }
+
+        fun getDataLinkFromUrl(it: String): Protocol.URLInfoDataLink? {
+            val urlData = if (it.startsWith("polycentric://")) {
+                it.substring("polycentric://".length)
+            } else it;
+
+            val urlBytes = urlData.base64UrlToByteArray();
+            val urlInfo = Protocol.URLInfo.parseFrom(urlBytes);
+            if (urlInfo.urlType != 4L) {
+                return null
+            }
+
+            val dataLink = Protocol.URLInfoDataLink.parseFrom(urlInfo.body);
+            return dataLink
         }
     }
 }

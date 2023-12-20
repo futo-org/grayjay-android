@@ -1,6 +1,8 @@
 package com.futo.platformplayer.activities
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +14,7 @@ import android.webkit.MimeTypeMap
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -21,14 +24,16 @@ import com.futo.platformplayer.dp
 import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
+import com.futo.platformplayer.views.overlays.LoaderOverlay
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.Synchronization
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.toBase64Url
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +51,8 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonDelete: BigButton;
     private lateinit var _username: String;
     private lateinit var _imagePolycentric: ImageView;
+    private lateinit var _loaderOverlay: LoaderOverlay;
+    private lateinit var _textSystem: TextView;
     private var _avatarUri: Uri? = null;
 
     override fun attachBaseContext(newBase: Context?) {
@@ -63,27 +70,12 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _buttonExport = findViewById(R.id.button_export);
         _buttonLogout = findViewById(R.id.button_logout);
         _buttonDelete = findViewById(R.id.button_delete);
+        _loaderOverlay = findViewById(R.id.loader_overlay);
+        _textSystem = findViewById(R.id.text_system)
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             saveIfRequired();
             finish();
         };
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val processHandle = StatePolycentric.instance.processHandle!!;
-                Synchronization.fullyBackFillClient(processHandle, processHandle.system, "https://srv1-stg.polycentric.io");
-
-                withContext(Dispatchers.Main) {
-                    updateUI();
-                }
-            } catch (e: Throwable) {
-                withContext(Dispatchers.Main) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_backfill_client));
-                }
-            }
-        }
-
-        updateUI();
 
         _imagePolycentric.setOnClickListener {
             ImagePicker.with(this)
@@ -120,6 +112,37 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 finish();
             });
         }
+
+        _textSystem.setOnLongClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip: ClipData = ClipData.newPlainText("system", _textSystem.text)
+            clipboard.setPrimaryClip(clip)
+            return@setOnLongClickListener true
+        }
+
+        updateUI()
+
+        StatePolycentric.instance.processHandle?.let { processHandle ->
+            _loaderOverlay.show()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    processHandle.fullyBackfillClient(PolycentricCache.SERVER)
+
+                    withContext(Dispatchers.Main) {
+                        updateUI();
+                    }
+                } catch (e: Throwable) {
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_backfill_client));
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        _loaderOverlay.hide()
+                    }
+                }
+            }
+        }
     }
 
     private fun saveIfRequired() {
@@ -128,13 +151,17 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 var hasChanges = false;
                 val username = _editName.text.toString();
                 if (username.length < 3) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.name_must_be_at_least_3_characters_long));
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.name_must_be_at_least_3_characters_long));
+                    }
                     return@launch;
                 }
 
                 val processHandle = StatePolycentric.instance.processHandle;
                 if (processHandle == null) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.process_handle_unset));
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.process_handle_unset));
+                    }
                     return@launch;
                 }
 
@@ -219,6 +246,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private fun updateUI() {
         val processHandle = StatePolycentric.instance.processHandle!!;
         val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(processHandle.system))
+        _textSystem.text = processHandle.system.key.toBase64Url()
         _username = systemState.username;
         _editName.text.clear();
         _editName.text.append(_username);
