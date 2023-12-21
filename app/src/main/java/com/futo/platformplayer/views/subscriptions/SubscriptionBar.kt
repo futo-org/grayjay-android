@@ -88,6 +88,13 @@ class SubscriptionBar : LinearLayout {
         updateExplore();
     }
 
+    fun selectGroup(group: SubscriptionGroup) {
+        val relevantGroup = _groups.find { it.id == group.id };
+        if(relevantGroup != null && _group != relevantGroup) {
+            groupClicked(relevantGroup);
+        }
+    }
+
     private fun groupClicked(g: SubscriptionGroup) {
         if(g is SubscriptionGroup.Add) {
             onToggleGroup.emit(g);
