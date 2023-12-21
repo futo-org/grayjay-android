@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -87,7 +86,7 @@ class SubscriptionGroupFragment : MainFragment() {
         private val _buttonSettings: ImageButton;
         private val _buttonDelete: ImageButton;
 
-        private val _buttonAddCreator: Button;
+        private val _buttonAddCreator: FrameLayout;
 
         private val _enabledCreators: ArrayList<IPlatformChannel> = arrayListOf();
         private val _enabledCreatorsFiltered: ArrayList<IPlatformChannel> = arrayListOf();
