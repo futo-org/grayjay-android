@@ -81,43 +81,38 @@
 
         <TextView
             android:id="@+id/text_remembered_devices"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="3"
             android:layout_height="wrap_content"
             android:text="@string/remembered_devices"
             android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:textSize="14dp"
+            android:ellipsize="end"
             android:textColor="@color/white"
+            android:maxLines="1"
             android:fontFamily="@font/inter_regular" />
 
-        <Button
+        <ImageButton
             android:id="@+id/button_scan_qr"
-            android:layout_width="0dp"
-            android:layout_weight="1.7"
-            android:layout_height="wrap_content"
-            android:text="@string/scan_qr"
-            android:textSize="14dp"
-            android:textAlignment="center"
-            android:layout_marginEnd="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:fontFamily="@font/inter_regular"
-            android:textColor="@color/colorPrimary"
-            android:background="@color/transparent" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/ic_qr"
+            app:tint="@color/primary" />
 
-        <Button
+        <Space android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <ImageButton
             android:id="@+id/button_add"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="@string/add"
-            android:textSize="14dp"
-            android:textAlignment="textEnd"
-            android:layout_marginEnd="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:fontFamily="@font/inter_regular"
-            android:textColor="@color/colorPrimary"
-            android:background="@color/transparent" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/ic_add"
+            app:tint="@color/primary"
+            android:layout_marginEnd="20dp"/>
     </LinearLayout>
 
     <LinearLayout
