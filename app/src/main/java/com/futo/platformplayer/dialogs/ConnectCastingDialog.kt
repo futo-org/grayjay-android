@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,8 +27,8 @@ import kotlinx.coroutines.launch
 class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
     private lateinit var _imageLoader: ImageView;
     private lateinit var _buttonClose: Button;
-    private lateinit var _buttonAdd: Button;
-    private lateinit var _buttonScanQR: Button;
+    private lateinit var _buttonAdd: ImageButton;
+    private lateinit var _buttonScanQR: ImageButton;
     private lateinit var _textNoDevicesFound: TextView;
     private lateinit var _textNoDevicesRemembered: TextView;
     private lateinit var _recyclerDevices: RecyclerView;
