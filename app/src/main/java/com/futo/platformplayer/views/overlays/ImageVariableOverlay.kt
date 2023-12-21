@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.net.toFile
@@ -48,7 +49,7 @@ class ImageVariableOverlay: ConstraintLayout {
     private val _buttonGallery: BigButton;
     private val _imageGallerySelected: ImageView;
     private val _imageGallerySelectedContainer: LinearLayout;
-    private val _buttonSelect: Button;
+    private val _buttonSelect: TextView;
     private val _topbar: OverlayTopbar;
     private val _recyclerPresets: AnyAdapterView<PresetImage, PresetViewHolder>;
     private val _recyclerCreators: AnyAdapterView<SelectableCreatorBarViewHolder.Selectable, SelectableCreatorBarViewHolder>;
