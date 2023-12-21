@@ -17,7 +17,6 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
-import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
 import com.futo.platformplayer.logging.Logger
@@ -53,6 +52,7 @@ class SubscriptionsFeedFragment : MainFragment() {
     override val hasBottomBar: Boolean get() = true;
 
     private var _view: SubscriptionsFeedView? = null;
+    private var _group: SubscriptionGroup? = null;
     private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -73,6 +73,8 @@ class SubscriptionsFeedFragment : MainFragment() {
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = SubscriptionsFeedView(this, inflater, _cachedRecyclerData);
         _view = view;
+        if(_group != null)
+            view.selectSubgroup(_group);
         return view;
     }
 
@@ -81,6 +83,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         val view = _view;
         if (view != null) {
             _cachedRecyclerData = view.recyclerData;
+            _group = view.subGroup;
             view.cleanup();
             _view = null;
         }
@@ -101,12 +104,12 @@ class SubscriptionsFeedFragment : MainFragment() {
     class SubscriptionsFeedView : ContentFeedView<SubscriptionsFeedFragment> {
         override val shouldShowTimeBar: Boolean get() = Settings.instance.subscriptions.progressBar
 
-        private var _subGroup: SubscriptionGroup? = null;
+        var subGroup: SubscriptionGroup? = null;
 
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.onFeedProgress.subscribe(this) { id, progress, total ->
-                if(_subGroup?.id == id)
+                if(subGroup?.id == id)
                     fragment.lifecycleScope.launch(Dispatchers.Main) {
                         try {
                             setProgress(progress, total);
@@ -142,7 +145,6 @@ class SubscriptionsFeedFragment : MainFragment() {
                 recyclerData.lastLoad = OffsetDateTime.now();
 
                 if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5 && Settings.instance.subscriptions.fetchOnTabOpen) {
-                    loadCache();
                     loadResults(false);
                 }
                 else if(recyclerData.results.size == 0) {
@@ -200,7 +202,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         private var _bypassRateLimit = false;
         private val _lastExceptions: List<Throwable>? = null;
         private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({StateApp.instance.scope}, { withRefresh ->
-            val group = _subGroup;
+            val group = subGroup;
             if(!_bypassRateLimit) {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount(group);
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
@@ -260,6 +262,11 @@ class SubscriptionsFeedFragment : MainFragment() {
                 }
             };
 
+        fun selectSubgroup(g: SubscriptionGroup?) {
+            if(g != null)
+                _subscriptionBar?.selectGroup(g);
+        }
+
         private fun initializeToolbarContent() {
             _subscriptionBar = SubscriptionBar(context).apply {
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -269,11 +276,17 @@ class SubscriptionsFeedFragment : MainFragment() {
                 if(g is SubscriptionGroup.Add)
                     UISlideOverlays.showCreateSubscriptionGroup(_overlayContainer);
                 else {
-                    _subGroup = g;
+                    subGroup = g;
                     setProgress(0, 0);
-                    if(Settings.instance.subscriptions.fetchOnTabOpen)
+                    if(Settings.instance.subscriptions.fetchOnTabOpen) {
+                        loadCache();
                         loadResults(false);
-                    else loadCache();
+                    }
+                    else if(g != null && StateSubscriptions.instance.getFeed(g.id) != null) {
+                        loadResults(false);
+                    }
+                    else
+                        loadCache();
                 }
             };
             _subscriptionBar?.onHoldGroup?.subscribe { g ->
@@ -314,7 +327,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
             val nowSoon = OffsetDateTime.now().plusMinutes(5);
-            val filterGroup = _subGroup;
+            val filterGroup = subGroup;
             return results.filter {
                 val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
 

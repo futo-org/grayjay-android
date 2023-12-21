@@ -22,6 +22,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.dp
+import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.states.StateSubscriptionGroups
 import com.futo.platformplayer.states.StateSubscriptions
@@ -59,6 +60,11 @@ class SubscriptionGroupFragment : MainFragment() {
         return view;
     }
 
+    override fun onHide() {
+        super.onHide();
+        _view?.onHide();
+    }
+
     companion object {
         private const val TAG = "SourcesFragment";
         fun newInstance() = SubscriptionGroupFragment().apply {}
@@ -91,6 +97,8 @@ class SubscriptionGroupFragment : MainFragment() {
         private val _overlay: FrameLayout;
 
         private var _group: SubscriptionGroup? = null;
+
+        private var _didDelete: Boolean = false;
 
         constructor(context: Context, fragment: SubscriptionGroupFragment): super(context) {
             inflate(context, R.layout.fragment_subscriptions_group, this);
@@ -132,6 +140,7 @@ class SubscriptionGroupFragment : MainFragment() {
                         UIDialogs.Action("Delete", {
                             _group?.let {
                                 it.urls.remove(channel.url);
+                                save();
                                 reloadCreators(it);
                             }
                         }, UIDialogs.ActionStyle.DANGEROUS))
@@ -173,6 +182,7 @@ class SubscriptionGroupFragment : MainFragment() {
                         UIDialogs.Action("Cancel", {}),
                         UIDialogs.Action("Delete", {
                             StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id);
+                            _didDelete = true;
                             fragment.close(true);
                         }, UIDialogs.ActionStyle.DANGEROUS))
                 };
@@ -241,6 +251,18 @@ class SubscriptionGroupFragment : MainFragment() {
             _overlay.animate().alpha(1f).setDuration(300).start();
             overlay.onSelected.subscribe {
                 _group?.let { g ->
+                    if(g.urls.isEmpty() && g.image == null) {
+                        //Obtain image
+                        for(sub in it) {
+                            val sub = StateSubscriptions.instance.getSubscription(sub);
+                            if(sub != null && sub.channel.thumbnail != null) {
+                                g.image = ImageVariable.fromUrl(sub.channel.thumbnail!!);
+                                g.image?.setImageView(_imageGroup);
+                                g.image?.setImageView(_imageGroupBackground);
+                                break;
+                            }
+                        }
+                    }
                     for(url in it) {
                         if(!g.urls.contains(url))
                             g.urls.add(url);
@@ -257,6 +279,7 @@ class SubscriptionGroupFragment : MainFragment() {
 
 
         fun setGroup(group: SubscriptionGroup?) {
+            _didDelete = false;
             _group = group;
             _textGroupTitle.text = group?.name;
 
@@ -271,6 +294,12 @@ class SubscriptionGroupFragment : MainFragment() {
             }
             updateMeta();
             reloadCreators(group);
+        }
+
+        fun onHide() {
+            if(!_didDelete && _group != null && StateSubscriptionGroups.instance.getSubscriptionGroup(_group!!.id) === null) {
+                UIDialogs.toast(context, "Group creation cancelled");
+            }
         }
 
         @SuppressLint("NotifyDataSetChanged")
