@@ -1,36 +1,38 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="78dp"
     android:layout_height="54dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:padding="2dp"
     android:layout_margin="2dp"
     android:clickable="true"
-    android:id="@+id/root">
+    android:id="@+id/root"
+    android:background="@drawable/background_primary_round_6dp">
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/xp_book" />
-    <LinearLayout
+        android:src="@drawable/xp_book"
+        app:shapeAppearanceOverlay="@style/roundedCorners_6dp"
+        android:layout_margin="2dp" />
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#99000000"
-        android:gravity="center">
-        <TextView
-            android:id="@+id/text_sub_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:textSize="12dp"
-            android:textAlignment="center"
-            android:text="News" />
-    </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:background="@drawable/background_dark_round_6dp"
+        android:gravity="center"
+        android:layout_margin="2dp" />
+    <TextView
+        android:id="@+id/text_sub_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textSize="12dp"
+        android:textAlignment="center"
+        android:layout_gravity="center"
+        tools:text="News" />
+</FrameLayout>

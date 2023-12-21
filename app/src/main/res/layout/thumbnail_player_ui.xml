@@ -107,7 +107,7 @@
             android:id="@id/exo_progress"
             android:layout_width="match_parent"
             android:layout_height="16dp"
-            android:layout_marginBottom="-1dp"
+            android:layout_marginBottom="-2dp"
             android:paddingStart="0dp"
             app:scrubber_drawable="@drawable/player_thumb"
             app:bar_height="2dp"

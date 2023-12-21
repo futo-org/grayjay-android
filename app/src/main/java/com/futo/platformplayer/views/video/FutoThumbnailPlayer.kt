@@ -1,6 +1,9 @@
 package com.futo.platformplayer.views.video
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +14,9 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -39,6 +45,14 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
 
     //Events
     private val _evMuteChanged = mutableListOf<(FutoThumbnailPlayer, Boolean)->Unit>();
+    private val _loadArtwork = object: CustomTarget<Bitmap>() {
+        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+            setArtwork(BitmapDrawable(resources, resource));
+        }
+        override fun onLoadCleared(placeholder: Drawable?) {
+            setArtwork(null);
+        }
+    }
 
 
     @OptIn(UnstableApi::class)
@@ -113,11 +127,38 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
     }
 
     fun setPreview(video: IPlatformVideoDetails) {
-        val videoSource = VideoHelper.selectBestVideoSource(video.video, Settings.instance.playback.getPreferredPreviewQualityPixelCount(), PREFERED_VIDEO_CONTAINERS);
-        val audioSource = VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, Settings.instance.playback.getPrimaryLanguage(context));
-        setSource(videoSource, audioSource,true, false);
+        if (video.live != null) {
+            setSource(video.live, null,true, false);
+        } else {
+            val videoSource = VideoHelper.selectBestVideoSource(video.video, Settings.instance.playback.getPreferredPreviewQualityPixelCount(), PREFERED_VIDEO_CONTAINERS);
+            val audioSource = VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, Settings.instance.playback.getPrimaryLanguage(context));
+            if (videoSource == null && audioSource != null) {
+                val thumbnail = video.thumbnails.getHQThumbnail();
+                if (!thumbnail.isNullOrBlank()) {
+                    Glide.with(videoView).asBitmap().load(thumbnail).into(_loadArtwork);
+                } else {
+                    Glide.with(videoView).clear(_loadArtwork);
+                    setArtwork(null);
+                }
+            } else {
+                Glide.with(videoView).clear(_loadArtwork);
+            }
+
+            setSource(videoSource, audioSource,true, false);
+        }
     }
     override fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean) {
 
+    }
+
+    @OptIn(UnstableApi::class)
+    fun setArtwork(drawable: Drawable?) {
+        if (drawable != null) {
+            videoView.defaultArtwork = drawable;
+            videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_FILL;
+        } else {
+            videoView.defaultArtwork = null;
+            videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_OFF;
+        }
     }
 }
