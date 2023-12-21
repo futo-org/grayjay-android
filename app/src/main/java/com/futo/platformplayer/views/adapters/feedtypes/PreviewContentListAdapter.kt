@@ -15,6 +15,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.debug.Stopwatch
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
@@ -46,7 +47,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         val contentDetails = StatePlatform.instance.getContentDetails(video.url).await();
         stopwatch.logAndNext(TAG, "Retrieving video detail (IO thread)")
         return@TaskHandler Pair(viewHolder, contentDetails)
-    }).success { previewContentDetails(it.first, it.second) }
+    }).exception<Throwable> { Logger.e(TAG, "Failed to retrieve preview content.", it) }.success { previewContentDetails(it.first, it.second) }
 
     constructor(context: Context, feedStyle : FeedStyle, dataSet: ArrayList<IPlatformContent>, exoPlayer: PlayerManager? = null,
                 initialPlay: Boolean = false, viewsToPrepend: ArrayList<View> = arrayListOf(),
