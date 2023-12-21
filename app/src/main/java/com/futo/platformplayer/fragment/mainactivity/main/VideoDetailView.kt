@@ -1144,6 +1144,7 @@ class VideoDetailView : ConstraintLayout {
        if(videoDetail is VideoLocal) {
             videoLocal = videoDetail;
             video = videoDetail;
+            this.video = video;
             val videoTask = StatePlatform.instance.getContentDetails(videoDetail.url);
             videoTask.invokeOnCompletion { ex ->
                 if(ex != null) {
