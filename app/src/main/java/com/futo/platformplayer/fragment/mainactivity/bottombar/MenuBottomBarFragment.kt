@@ -297,9 +297,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
             }
 
             if (!StatePayment.instance.hasPaid) {
-                newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
+                newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid_filled, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
             }
-            newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz, R.string.faq, canToggle = false, { false }, {
+            newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = false, { false }, {
                 it.navigate<BrowserFragment>(Settings.URL_FAQ);
             }))
 
@@ -356,8 +356,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(6, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigate<DownloadsFragment>() }),
             ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigate<CommentsFragment>() }),
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>() }),
-            ButtonDefinition(10, R.drawable.ic_quiz, R.drawable.ic_quiz, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>() }),
-            ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings, R.string.settings, canToggle = false, { false }, {
+            ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>() }),
+            ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { false }, {
                 val c = it.context ?: return@ButtonDefinition;
                 Logger.i(TAG, "settings preventPictureInPicture()");
                 it.requireFragment<VideoDetailFragment>().preventPictureInPicture();
