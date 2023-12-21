@@ -128,7 +128,7 @@
                 android:layout_marginTop="2dp"
                 android:gravity="top"
                 android:orientation="horizontal"
-                android:paddingBottom="5dp">
+                android:paddingBottom="0dp">
 
                 <com.futo.platformplayer.views.others.CreatorThumbnail
                     android:id="@+id/creator_thumbnail"
@@ -179,6 +179,7 @@
                         android:gravity="center_vertical"
                         android:maxLines="1"
                         android:textColor="@color/gray_e0"
+                        android:layout_marginBottom="5dp"
                         android:textSize="12dp"
                         tools:text="57K views • 1 day ago" />
                 </LinearLayout>

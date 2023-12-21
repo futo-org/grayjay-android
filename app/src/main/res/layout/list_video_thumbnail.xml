@@ -140,37 +140,22 @@
             android:layout_marginStart="6dp"
             android:layout_marginEnd="6dp">
 
-            <ImageButton
-                android:id="@+id/button_add_to_queue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="1dp"
-                android:paddingTop="7dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="5dp"
-                android:paddingBottom="3dp"
-                app:srcCompat="@drawable/ic_queue_16dp"
-                android:background="@drawable/edit_text_background"
-                android:contentDescription="@string/add_to_queue"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
             <LinearLayout
                 android:id="@+id/button_add_to"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="27dp"
                 android:orientation="horizontal"
                 android:background="@drawable/edit_text_background"
-                android:layout_marginStart="4dp"
                 android:gravity="center_vertical"
-                android:padding="4dp"
-                app:layout_constraintLeft_toRightOf="@id/button_add_to_queue"
+                android:padding="5dp"
+                app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
                 <ImageButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     app:srcCompat="@drawable/ic_add_white_8dp"
+                    android:background="@color/transparent"
                     android:layout_marginStart="4dp"
                     android:contentDescription="@string/options" />
 
@@ -185,6 +170,23 @@
                     android:layout_marginEnd="4dp"/>
             </LinearLayout>
 
+
+            <ImageButton
+                android:id="@+id/button_add_to_queue"
+                android:layout_width="wrap_content"
+                android:layout_height="27dp"
+                android:src="@drawable/ic_queue"
+                android:paddingTop="4dp"
+                android:paddingBottom="2dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="7dp"
+                android:layout_marginLeft="7dp"
+                android:scaleType="fitCenter"
+                android:background="@drawable/edit_text_background"
+                android:contentDescription="@string/add_to_queue"
+                app:layout_constraintLeft_toRightOf="@id/button_add_to"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
             <TextView
                 android:id="@+id/text_video_name"
                 android:layout_width="fill_parent"
@@ -195,8 +197,9 @@
                 android:textSize="13dp"
                 android:textColor="@color/white"
                 android:fontFamily="@font/inter_light"
-                tools:text="Legendary grant recipient: Marvin Wißfeld of MicroG Very loong title"
+                tools:text="Legendary grant recipient: Marvin Wißfeld of MicroG Very loong title fff"
                 android:maxLines="2"
+                android:ellipsize="end"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintRight_toRightOf="parent" />
