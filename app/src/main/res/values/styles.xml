@@ -11,6 +11,10 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">4dp</item>
     </style>
+    <style name="roundedCorners_6dp" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">6dp</item>
+    </style>
     <style name="roundedCorners_10dp" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">10dp</item>
