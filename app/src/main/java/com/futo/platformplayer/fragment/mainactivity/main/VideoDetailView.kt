@@ -447,6 +447,10 @@ class VideoDetailView : ConstraintLayout {
         updateMoreButtons();
 
         _channelButton.setOnClickListener {
+            if (video is TutorialFragment.TutorialVideo) {
+                return@setOnClickListener
+            }
+
             (video?.author ?: _searchVideo?.author)?.let {
                 fragment.navigate<ChannelFragment>(it);
                 fragment.lifecycleScope.launch {
