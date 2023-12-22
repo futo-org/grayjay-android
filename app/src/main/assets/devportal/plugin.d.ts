@@ -1,13 +1,37 @@
 
 declare class ScriptException extends Error {
+    //If only one parameter is provided, acts as msg
     constructor(type: string, msg: string);
 }
-declare class TimeoutException extends ScriptException {
+
+declare class LoginRequiredException extends ScriptException {
     constructor(msg: string);
 }
+//Alias
+declare class ScriptLoginRequiredException extends ScriptException {
+    constructor(msg: string);
+}
+
+declare class CaptchaRequiredException extends ScriptException {
+    constructor(url: string, body: string);
+}
+
+declare class CriticalException extends ScriptException {
+    constructor(msg: string);
+}
+
 declare class UnavailableException extends ScriptException {
     constructor(msg: string);
 }
+
+declare class AgeException extends ScriptException {
+    constructor(msg: string);
+}
+
+declare class TimeoutException extends ScriptException {
+    constructor(msg: string);
+}
+
 declare class ScriptImplementationException extends ScriptException {
     constructor(msg: string);
 }
@@ -38,16 +62,23 @@ declare class FilterCapability {
 
 
 declare class PlatformAuthorLink {
-    constructor(id: PlatformID, name: string, url: string, thumbnail: string, subscribers: integer?);
+    constructor(id: PlatformID, name: string, url: string, thumbnail: string, subscribers: integer?, membershipUrl: string?);
+}
+
+declare class PlatformAuthorMembershipLink {
+    constructor(id: PlatformID, name: string, url: string, thumbnail: string, subscribers: integer?, membershipUrl: string?);
 }
 
 declare interface PlatformContentDef {
     id: PlatformID,
     name: string,
+    thumbnails: Thumbnails,
     author: PlatformAuthorLink,
     datetime: integer,
     url: string
 }
+declare interface PlatformContent {}
+
 declare interface PlatformNestedMediaContentDef extends PlatformContentDef {
     contentUrl: string,
     contentName: string?,
@@ -59,16 +90,26 @@ declare class PlatformNestedMediaContent {
     constructor(obj: PlatformNestedMediaContentDef);
 }
 
+declare interface PlatformLockedContentDef extends PlatformContentDef {
+    contentName: string?,
+    contentThumbnails: Thumbnails?,
+    unlockUrl: string,
+    lockDescription: string?,
+}
+declare class PlatformLockedContent {
+    constructor(obj: PlatformLockedContentDef);
+}
+
+
 declare interface PlatformVideoDef extends PlatformContentDef {
     thumbnails: Thumbnails,
     author: PlatformAuthorLink,
 
     duration: int,
     viewCount: long,
-    isLive: boolean
+    isLive: boolean,
+    shareUrl: string?
 }
-declare interface PlatformContent {}
-
 declare class PlatformVideo implements PlatformContent {
     constructor(obj: PlatformVideoDef);
 }
@@ -77,14 +118,15 @@ declare class PlatformVideo implements PlatformContent {
 declare interface PlatformVideoDetailsDef extends PlatformVideoDef {
     description: string,
     video: VideoSourceDescriptor,
-    live: SubtitleSource[],
-    rating: IRating
+    live: IVideoSource,
+    rating: IRating,
+    subtitles: SubtitleSource[]
 }
 declare class PlatformVideoDetails extends PlatformVideo {
     constructor(obj: PlatformVideoDetailsDef);
 }
 
-declare class PlatformPostDef extends PlatformContentDef {
+declare interface PlatformPostDef extends PlatformContentDef {
     thumbnails: string[],
     images: string[],
     description: string
@@ -93,7 +135,7 @@ declare class PlatformPost extends PlatformContent {
     constructor(obj: PlatformPostDef)
 }
 
-declare class PlatformPostDetailsDef extends PlatformPostDef {
+declare interface PlatformPostDetailsDef extends PlatformPostDef {
     rating: IRating,
     textType: int,
     content: String
@@ -110,8 +152,8 @@ declare interface MuxVideoSourceDescriptorDef {
     isUnMuxed: boolean,
     videoSources: VideoSource[]
 }
-declare class MuxVideoSourceDescriptor implements IVideoSourceDescriptor {
-    constructor(obj: VideoSourceDescriptorDef);
+declare class VideoSourceDescriptor implements IVideoSourceDescriptor {
+    constructor(videoSourcesOrObj: VideoSource[]);
 }
 
 declare interface UnMuxVideoSourceDescriptorDef {
@@ -129,7 +171,7 @@ declare interface IVideoSource {
 declare interface IAudioSource {
 
 }
-interface VideoUrlSourceDef implements IVideoSource {
+declare interface VideoUrlSourceDef implements IVideoSource {
     width: integer,
     height: integer,
     container: string,
@@ -139,22 +181,22 @@ interface VideoUrlSourceDef implements IVideoSource {
     duration: integer,
     url: string
 }
-class VideoUrlSource {
+declare class VideoUrlSource {
     constructor(obj: VideoUrlSourceDef);
 
     getRequestModifier(): RequestModifier?;
 }
-interface VideoUrlRangeSourceDef extends VideoUrlSource {
+declare interface VideoUrlRangeSourceDef extends VideoUrlSource {
     itagId: integer,
     initStart: integer,
     initEnd: integer,
     indexStart: integer,
     indexEnd: integer,
 }
-class VideoUrlRangeSource extends VideoUrlSource {
+declare class VideoUrlRangeSource extends VideoUrlSource {
     constructor(obj: YTVideoSourceDef);
 }
-interface AudioUrlSourceDef {
+declare interface AudioUrlSourceDef {
     name: string,
     bitrate: integer,
     container: string,
@@ -163,24 +205,12 @@ interface AudioUrlSourceDef {
     url: string,
     language: string
 }
-class AudioUrlSource implements IAudioSource {
+declare class AudioUrlSource implements IAudioSource {
     constructor(obj: AudioUrlSourceDef);
 
     getRequestModifier(): RequestModifier?;
 }
-interface IRequest {
-    url: string,
-    headers: Map<string, string>
-}
-interface IRequestModifierDef {
-    allowByteSkip: boolean
-}
-class RequestModifier {
-    constructor(obj: IRequestModifierDef) { }
-
-    modifyRequest(url: string, headers: Map<string, string>): IRequest;
-}
-interface AudioUrlRangeSourceDef extends AudioUrlSource {
+declare interface AudioUrlRangeSourceDef extends AudioUrlSource {
     itagId: integer,
     initStart: integer,
     initEnd: integer,
@@ -188,28 +218,44 @@ interface AudioUrlRangeSourceDef extends AudioUrlSource {
     indexEnd: integer,
     audioChannels: integer
 }
-class AudioUrlRangeSource extends AudioUrlSource {
+declare class AudioUrlRangeSource extends AudioUrlSource {
     constructor(obj: AudioUrlRangeSourceDef);
 }
-interface HLSSourceDef {
+declare interface HLSSourceDef {
     name: string,
     duration: integer,
-    url: string
+    url: string,
+    priority: boolean?,
+    language: string?
 }
-class HLSSource implements IVideoSource {
+declare class HLSSource implements IVideoSource {
     constructor(obj: HLSSourceDef);
 }
-interface DashSourceDef {
+declare interface DashSourceDef {
     name: string,
     duration: integer,
-    url: string
+    url: string,
+    language: string?
 }
-class DashSource implements IVideoSource {
+declare class DashSource implements IVideoSource {
     constructor(obj: DashSourceDef)
 }
 
+declare interface IRequest {
+    url: string,
+    headers: Map<string, string>
+}
+declare interface IRequestModifierDef {
+    allowByteSkip: boolean
+}
+declare class RequestModifier {
+    constructor(obj: IRequestModifierDef) { }
+
+    modifyRequest(url: string, headers: Map<string, string>): IRequest;
+}
+
 //Channel
-interface PlatformChannelDef {
+declare interface PlatformChannelDef {
     id: PlatformID,
     name: string,
     thumbnail: string,
@@ -217,11 +263,28 @@ interface PlatformChannelDef {
     subscribers: integer,
     description: string,
     url: string,
+    urlAlternatives: string[],
     links: Map<string>?
 }
-class PlatformChannel {
+declare class PlatformChannel {
     constructor(obj: PlatformChannelDef);
 }
+
+//Playlist
+declare interface PlatformPlaylistDef implements PlatformContent {
+    videoCount: integer,
+    thumbnail: string
+}
+declare class PlatformPlaylist extends PlatformContent {
+    constructor(obj: PlatformPlaylistDef);
+}
+declare interface PlatformPlaylistDetailsDef implements PlatformPlaylistDef {
+    contents: ContentPager
+}
+declare class PlatformPlaylistDetails extends PlatformContent {
+    constructor(obj: PlatformPlaylistDetailsDef);
+}
+
 
 //Ratings
 interface IRating {
@@ -250,7 +313,11 @@ declare class PlatformComment {
     constructor(obj: CommentDef);
 }
 
+declare class PlaybackTracker {
+    constructor(interval: integer);
 
+    setProgress(seconds: integer);
+}
 
 declare class LiveEventPager {
     nextRequest = 4000;
@@ -261,8 +328,8 @@ declare class LiveEventPager {
     nextPage(): LiveEventPager; //Could be self
 }
 
-class LiveEvent {
-    type: String
+declare class LiveEvent {
+    constructor(type: integer);
 }
 declare class LiveEventComment extends LiveEvent {
     constructor(name: string, message: string, thumbnail: string?, colorName: string?, badges: string[]);
@@ -287,25 +354,31 @@ declare class ContentPager {
     constructor(results: PlatformContent[], hasMore: boolean);
 
     hasMorePagers(): boolean
-    nextPage(): VideoPager; //Could be self
+    nextPage(): ContentPager?; //Could be self
 }
 declare class VideoPager {
     constructor(results: PlatformVideo[], hasMore: boolean);
 
     hasMorePagers(): boolean
-    nextPage(): VideoPager; //Could be self
+    nextPage(): VideoPager?; //Could be self
 }
 declare class ChannelPager {
     constructor(results: PlatformChannel[], hasMore: boolean);
 
     hasMorePagers(): boolean;
-    nextPage(): ChannelPager; //Could be self
+    nextPage(): ChannelPager?; //Could be self
+}
+declare class PlaylistPager {
+    constructor(results: PlatformPlaylist[], hasMore: boolean);
+
+    hasMorePagers(): boolean;
+    nextPage(): PlaylistPager?;
 }
 declare class CommentPager {
     constructor(results: PlatformComment[], hasMore: boolean);
 
     hasMorePagers(): boolean
-    nextPage(): CommentPager; //Could be self
+    nextPage(): CommentPager?; //Could be self
 }
 
 interface Map<T> {
@@ -341,8 +414,9 @@ interface Source {
     getChannelCapabilities(): ResultCapabilities;
 
     isContentDetailsUrl(url: string): boolean;
-    getContentDetails(url: string): PlatformVideoDetails;
+    getContentDetails(url: string): PlatformContentDetails;
 
+    //Optional
     getLiveEvents(url: string): LiveEventPager;
 
     //Optional
