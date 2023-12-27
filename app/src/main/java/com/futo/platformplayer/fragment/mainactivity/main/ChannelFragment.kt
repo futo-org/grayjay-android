@@ -418,6 +418,7 @@ class ChannelFragment : MainFragment() {
 
             _buttonSubscribe.setSubscribeChannel(channel);
             _buttonSubscriptionSettings.visibility = if(_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE;
+            _textChannel.text = channel.name;
             _textChannelSub.text = if(channel.subscribers > 0) "${channel.subscribers.toHumanNumber()} " + context.getString(R.string.subscribers).lowercase() else "";
 
             //TODO: Find a better way to access the adapter fragments..

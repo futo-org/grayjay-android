@@ -726,7 +726,7 @@
     <string name="position">Position</string>
     <string name="tutorials">Tutorials</string>
     <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Do you want to see the tutorials? You can find them at any time through the more button.</string>
-    <string name="add_creator">Add More</string>
+    <string name="add_creator">Add Creators</string>
     <string name="select">Select</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>

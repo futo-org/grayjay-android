@@ -116,20 +116,29 @@
         </LinearLayout>
     </ScrollView>
 
-    <LinearLayout
+
+    <FrameLayout
         android:id="@+id/container_select"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="10dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
+        android:background="@drawable/background_button_primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
-        <Button
+
+        <TextView
             android:id="@+id/button_select"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:background="@drawable/background_button_primary"
-            android:text="Select" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:fontFamily="@font/inter_regular"
+            android:text="@string/select"
+            android:textSize="16dp"
+            android:gravity="center"
+            android:layout_gravity="center" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

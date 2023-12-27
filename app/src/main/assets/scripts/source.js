@@ -78,6 +78,11 @@ class ScriptLoginRequiredException extends ScriptException {
         super("ScriptLoginRequiredException", msg);
     }
 }
+class LoginRequiredException extends ScriptException {
+    constructor(msg) {
+        super("ScriptLoginRequiredException", msg);
+    }
+}
 class CaptchaRequiredException extends Error {
     constructor(url, body) {
         super(JSON.stringify({ 'plugin_type': 'CaptchaRequiredException', url, body }));
@@ -249,8 +254,8 @@ class PlatformVideoDetails extends PlatformVideo {
 
         this.description = obj.description ?? "";//String
         this.video = obj.video ?? {}; //VideoSourceDescriptor
-        this.dash = obj.dash ?? null; //DashSource
-        this.hls = obj.hls ?? null; //HLSSource
+        this.dash = obj.dash ?? null; //DashSource, deprecated
+        this.hls = obj.hls ?? null; //HLSSource, deprecated
         this.live = obj.live ?? null; //VideoSource
 
         this.rating = obj.rating ?? null; //IRating
@@ -388,7 +393,7 @@ class DashSource {
 class RequestModifier {
     constructor(obj) {
         obj = obj ?? {};
-        this.allowByteSkip = obj.allowByteSkip;
+        this.allowByteSkip = obj.allowByteSkip; //Kinda deprecated.. wip
     }
 }
 
