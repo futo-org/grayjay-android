@@ -2,15 +2,15 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import android.os.Build
-import android.os.Environment
-import com.futo.platformplayer.*
+import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -155,47 +155,45 @@ class StateUpdate {
         }
     }
 
-    fun checkForUpdates(context: Context, showUpToDateToast: Boolean) {
-        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            try {
-                val client = ManagedHttpClient();
-                val latestVersion = downloadVersionCode(client);
+    suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean) = withContext(Dispatchers.IO) {
+        try {
+            val client = ManagedHttpClient();
+            val latestVersion = downloadVersionCode(client);
 
-                if (latestVersion != null) {
-                    val currentVersion = BuildConfig.VERSION_CODE;
-                    Logger.i(TAG, "Current version ${currentVersion} latest version ${latestVersion}.");
+            if (latestVersion != null) {
+                val currentVersion = BuildConfig.VERSION_CODE;
+                Logger.i(TAG, "Current version ${currentVersion} latest version ${latestVersion}.");
 
-                    if (latestVersion > currentVersion) {
-                        withContext(Dispatchers.Main) {
-                            try {
-                                UIDialogs.showUpdateAvailableDialog(context, latestVersion);
-                            } catch (e: Throwable) {
-                                UIDialogs.toast(context, "Failed to show update dialog");
-                                Logger.w(TAG, "Error occurred in update dialog.");
-                            }
-                        }
-                    } else {
-                        if (showUpToDateToast) {
-                            withContext(Dispatchers.Main) {
-                                UIDialogs.toast(context, "Already on latest version");
-                            }
+                if (latestVersion > currentVersion) {
+                    withContext(Dispatchers.Main) {
+                        try {
+                            UIDialogs.showUpdateAvailableDialog(context, latestVersion);
+                        } catch (e: Throwable) {
+                            UIDialogs.toast(context, "Failed to show update dialog");
+                            Logger.w(TAG, "Error occurred in update dialog.");
                         }
                     }
                 } else {
-                    Logger.w(TAG, "Failed to retrieve version from version URL.");
-
-                    withContext(Dispatchers.Main) {
-                        UIDialogs.toast(context, "Failed to retrieve version");
+                    if (showUpToDateToast) {
+                        withContext(Dispatchers.Main) {
+                            UIDialogs.toast(context, "Already on latest version");
+                        }
                     }
                 }
-            } catch (e: Throwable) {
-                Logger.w(TAG, "Failed to check for updates.", e);
+            } else {
+                Logger.w(TAG, "Failed to retrieve version from version URL.");
 
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context, "Failed to check for updates");
+                    UIDialogs.toast(context, "Failed to retrieve version");
                 }
             }
-        };
+        } catch (e: Throwable) {
+            Logger.w(TAG, "Failed to check for updates.", e);
+
+            withContext(Dispatchers.Main) {
+                UIDialogs.toast(context, "Failed to check for updates");
+            }
+        }
     }
 
     private fun downloadApkToFile(client: ManagedHttpClient, destinationFile: File, isCancelled: (() -> Boolean)? = null) {

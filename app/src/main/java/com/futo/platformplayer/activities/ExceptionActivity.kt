@@ -9,9 +9,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.*
+import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.R
 import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logging
+import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

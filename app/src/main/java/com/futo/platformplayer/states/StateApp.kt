@@ -460,7 +460,9 @@ class StateApp {
 
             //Foreground download
             autoUpdateEnabled -> {
-                StateUpdate.instance.checkForUpdates(context, false);
+                scopeOrNull?.launch(Dispatchers.IO) {
+                    StateUpdate.instance.checkForUpdates(context, false)
+                }
             }
 
             else -> {
@@ -558,6 +560,23 @@ class StateApp {
 
         if(StateHistory.instance.shouldMigrateLegacyHistory())
             StateHistory.instance.migrateLegacyHistory();
+
+        StateAnnouncement.instance.deleteAnnouncement("plugin-update")
+
+        scopeOrNull?.launch(Dispatchers.IO) {
+            val updateAvailableCount = StatePlatform.instance.checkForUpdates()
+
+            withContext(Dispatchers.Main) {
+                if (updateAvailableCount > 0) {
+                    StateAnnouncement.instance.registerAnnouncement(
+                        "plugin-update",
+                        "Plugin updates available",
+                        "There are $updateAvailableCount plugin updates available.",
+                        AnnouncementType.SESSION_RECURRING
+                    )
+                }
+            }
+        }
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {
