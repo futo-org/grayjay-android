@@ -1,17 +1,15 @@
 package com.futo.platformplayer.views.adapters
 
 import android.content.Context
-import android.view.LayoutInflater
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.states.StatePlatform
 
 class DisabledSourceView : LinearLayout {
     private val _root: LinearLayout;
@@ -38,7 +36,16 @@ class DisabledSourceView : LinearLayout {
         client.icon?.setImageView(_imageSource);
 
         _textSource.text = client.name;
-        _textSourceSubtitle.text = context.getString(R.string.tap_to_open);
+
+        if (client is JSClient && StatePlatform.instance.hasUpdateAvailable(client.config)) {
+            _textSourceSubtitle.text = context.getString(R.string.update_available_exclamation)
+            _textSourceSubtitle.setTextColor(context.getColor(R.color.light_blue_400))
+            _textSourceSubtitle.typeface = resources.getFont(R.font.inter_regular)
+        } else {
+            _textSourceSubtitle.text = context.getString(R.string.tap_to_open)
+            _textSourceSubtitle.setTextColor(context.getColor(R.color.gray_ac))
+            _textSourceSubtitle.typeface = resources.getFont(R.font.inter_extra_light)
+        }
 
         _buttonAdd.setOnClickListener { onAdd.emit(source) }
         _root.setOnClickListener { onClick.emit(); };

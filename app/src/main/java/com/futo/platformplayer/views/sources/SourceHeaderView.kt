@@ -25,6 +25,7 @@ class SourceHeaderView : LinearLayout {
     private val _sourcePlatformUrl: TextView;
     private val _sourceRepositoryUrl: TextView;
     private val _sourceScriptUrl: TextView;
+    private val _sourceScriptConfig: TextView;
     private val _sourceSignature: TextView;
 
     private val _sourcePlatformUrlContainer: LinearLayout;
@@ -45,6 +46,7 @@ class SourceHeaderView : LinearLayout {
         _sourcePlatformUrl = findViewById(R.id.source_platform);
         _sourcePlatformUrlContainer = findViewById(R.id.source_platform_container);
         _sourceScriptUrl = findViewById(R.id.source_script);
+        _sourceScriptConfig = findViewById(R.id.source_config);
         _sourceSignature = findViewById(R.id.source_signature);
 
         _sourceBy.setOnClickListener {
@@ -59,6 +61,10 @@ class SourceHeaderView : LinearLayout {
             if(!_config?.absoluteScriptUrl.isNullOrEmpty())
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(_config?.absoluteScriptUrl)));
         };
+        _sourceScriptConfig.setOnClickListener {
+            if(!_config?.sourceUrl.isNullOrEmpty())
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(_config?.sourceUrl)));
+        }
         _sourcePlatformUrl.setOnClickListener {
             if(!_config?.platformUrl.isNullOrEmpty())
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(_config?.platformUrl)));
@@ -82,6 +88,7 @@ class SourceHeaderView : LinearLayout {
         _sourceVersion.text = config.version.toString();
         _sourceScriptUrl.text = config.absoluteScriptUrl;
         _sourceRepositoryUrl.text = config.repositoryUrl;
+        _sourceScriptConfig.text = config.sourceUrl
         _sourceAuthorID.text = "";
 
         _sourcePlatformUrl.text = config.platformUrl ?: "";

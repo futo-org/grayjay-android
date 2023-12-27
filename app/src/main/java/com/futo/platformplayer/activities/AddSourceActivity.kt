@@ -216,8 +216,10 @@ class AddSourceActivity : AppCompatActivity() {
 
     fun install(config: SourcePluginConfig, script: String) {
         StatePlugins.instance.installPlugin(this, lifecycleScope, config, script) {
-            if(it)
+            if(it) {
+                StatePlatform.instance.clearUpdateAvailable(config)
                 backToSources();
+            }
         }
     }
 

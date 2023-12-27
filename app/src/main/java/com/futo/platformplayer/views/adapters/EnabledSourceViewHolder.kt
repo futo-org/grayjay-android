@@ -10,7 +10,9 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.IPlatformClient
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.states.StatePlatform
 
 class EnabledSourceViewHolder : ViewHolder {
     private val _imageSource: ImageView;
@@ -57,8 +59,18 @@ class EnabledSourceViewHolder : ViewHolder {
     fun bind(client: IPlatformClient) {
         client.icon?.setImageView(_imageSource);
 
-        _textSource.text = client.name;
-        _textSourceSubtitle.text = itemView.context.getString(R.string.tap_to_open);
+        _textSource.text = client.name
+
+        if (client is JSClient && StatePlatform.instance.hasUpdateAvailable(client.config)) {
+            _textSourceSubtitle.text = itemView.context.getString(R.string.update_available_exclamation)
+            _textSourceSubtitle.setTextColor(itemView.context.getColor(R.color.light_blue_400))
+            _textSourceSubtitle.typeface = itemView.resources.getFont(R.font.inter_regular)
+        } else {
+            _textSourceSubtitle.text = itemView.context.getString(R.string.tap_to_open)
+            _textSourceSubtitle.setTextColor(itemView.context.getColor(R.color.gray_ac))
+            _textSourceSubtitle.typeface = itemView.resources.getFont(R.font.inter_extra_light)
+        }
+
         source = client
     }
 }

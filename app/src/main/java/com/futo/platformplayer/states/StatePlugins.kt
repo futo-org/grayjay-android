@@ -10,7 +10,6 @@ import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
-import com.futo.platformplayer.developer.DeveloperEndpoints
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -466,7 +465,6 @@ class StatePlugins {
         descriptor.updateAuth(auth);
         _plugins.save(descriptor);
     }
-
 
     @Serializable
     private data class PluginConfig(

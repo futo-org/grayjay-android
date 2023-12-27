@@ -685,7 +685,9 @@ class Settings : FragmentedStorageFileJson() {
         fun manualCheck() {
             if (!BuildConfig.IS_PLAYSTORE_BUILD) {
                 SettingsActivity.getActivity()?.let {
-                    StateUpdate.instance.checkForUpdates(it, true);
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                        StateUpdate.instance.checkForUpdates(it, true)
+                    }
                 }
             } else {
                 SettingsActivity.getActivity()?.let {

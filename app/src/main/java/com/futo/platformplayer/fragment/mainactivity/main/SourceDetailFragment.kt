@@ -454,6 +454,7 @@ class SourceDetailFragment : MainFragment() {
                 }
             });
         }
+
         private fun checkForUpdatesSource() {
             val c = _config ?: return;
             val sourceUrl = c.sourceUrl ?: return;
