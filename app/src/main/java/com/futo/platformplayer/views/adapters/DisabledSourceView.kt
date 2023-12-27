@@ -36,12 +36,15 @@ class DisabledSourceView : LinearLayout {
         client.icon?.setImageView(_imageSource);
 
         _textSource.text = client.name;
+
         if (client is JSClient && StatePlatform.instance.hasUpdateAvailable(client.config)) {
             _textSourceSubtitle.text = context.getString(R.string.update_available_exclamation)
             _textSourceSubtitle.setTextColor(context.getColor(R.color.light_blue_400))
+            _textSourceSubtitle.typeface = resources.getFont(R.font.inter_regular)
         } else {
             _textSourceSubtitle.text = context.getString(R.string.tap_to_open)
             _textSourceSubtitle.setTextColor(context.getColor(R.color.gray_ac))
+            _textSourceSubtitle.typeface = resources.getFont(R.font.inter_extra_light)
         }
 
         _buttonAdd.setOnClickListener { onAdd.emit(source) }
