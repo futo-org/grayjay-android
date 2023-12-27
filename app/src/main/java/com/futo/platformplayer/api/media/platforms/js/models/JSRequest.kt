@@ -23,21 +23,31 @@ class JSRequest : IRequest {
         _v8Options = options;
         initialize(plugin, originalUrl, originalHeaders);
     }
-    constructor(plugin: JSClient, obj: V8ValueObject, originalUrl: String?, originalHeaders: Map<String, String>?) {
+    constructor(plugin: JSClient, obj: V8ValueObject, originalUrl: String?, originalHeaders: Map<String, String>?, applyOtherHeadersByDefault: Boolean = false) {
         val contextName = "ModifyRequestResponse";
         val config = plugin.config;
         _v8Url = obj.getOrDefault<String>(config, "url", contextName, null);
         _v8Headers = obj.getOrDefault<Map<String, String>>(config, "headers", contextName, null);
         _v8Options = obj.getOrDefault<V8ValueObject>(config, "options", "JSRequestModifier.options", null)?.let {
-            Options(config, it);
-        }
+            Options(config, it, applyOtherHeadersByDefault);
+        } ?: Options(null, null, applyOtherHeadersByDefault);
         initialize(plugin, originalUrl, originalHeaders);
     }
 
     private fun initialize(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?) {
         val config = plugin.config;
         url = _v8Url ?: originalUrl;
-        headers = _v8Headers ?: originalHeaders ?: mapOf();
+
+        if(_v8Options?.applyOtherHeaders ?: false) {
+            val headersToSet = _v8Headers?.toMutableMap() ?: mutableMapOf();
+            if (originalHeaders != null)
+                for (head in originalHeaders)
+                    if (!headersToSet.containsKey(head.key))
+                        headersToSet[head.key] = head.value;
+            headers = headersToSet;
+        }
+        else
+            headers = _v8Headers ?: originalHeaders ?: mapOf();
 
         if(_v8Options != null) {
             if(_v8Options.applyCookieClient != null && url != null) {
@@ -68,10 +78,18 @@ class JSRequest : IRequest {
     class Options: IModifierOptions {
         override val applyAuthClient: String?;
         override val applyCookieClient: String?;
+        override val applyOtherHeaders: Boolean;
 
-        constructor(config: IV8PluginConfig, obj: V8ValueObject) {
+
+        constructor(config: IV8PluginConfig, obj: V8ValueObject, applyOtherHeadersByDefault: Boolean = false) {
             applyAuthClient = obj.getOrDefault(config, "applyAuthClient", "JSRequestModifier.options.applyAuthClient", null);
             applyCookieClient = obj.getOrDefault(config, "applyCookieClient", "JSRequestModifier.options.applyCookieClient", null);
+            applyOtherHeaders = obj.getOrDefault(config, "applyOtherHeaders", "JSRequestModifier.options.applyOtherHeaders", applyOtherHeadersByDefault) ?: applyOtherHeadersByDefault;
+        }
+        constructor(applyAuthClient: String? = null, applyCookieClient: String? = null, applyOtherHeaders: Boolean = false) {
+            this.applyAuthClient = applyAuthClient;
+            this.applyCookieClient = applyCookieClient;
+            this.applyOtherHeaders = applyOtherHeaders;
         }
     }
 

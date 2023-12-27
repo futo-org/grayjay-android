@@ -326,6 +326,8 @@ class VideoUrlSource {
         this.bitrate = obj.bitrate ?? 0;
         this.duration = obj.duration ?? 0;
         this.url = obj.url;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
     }
 }
 class VideoUrlRangeSource extends VideoUrlSource {
@@ -351,6 +353,8 @@ class AudioUrlSource {
         this.duration = obj.duration ?? 0;
         this.url = obj.url;
         this.language = obj.language ?? Language.UNKNOWN;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
     }
 }
 class AudioUrlRangeSource extends AudioUrlSource {
@@ -376,6 +380,8 @@ class HLSSource {
         this.priority = obj.priority ?? false;
         if(obj.language)
             this.language = obj.language;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
     }
 }
 class DashSource {
@@ -387,6 +393,8 @@ class DashSource {
         this.url = obj.url;
         if(obj.language)
             this.language = obj.language;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
     }
 }
 

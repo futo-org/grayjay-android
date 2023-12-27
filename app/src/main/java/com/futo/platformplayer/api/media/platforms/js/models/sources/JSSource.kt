@@ -33,7 +33,7 @@ abstract class JSSource {
         this.type = type;
 
         _requestModifier = obj.getOrDefault<V8ValueObject>(_config, "requestModifier", "JSSource.requestModifier", null)?.let {
-            JSRequest(plugin, it, null, null);
+            JSRequest(plugin, it, null, null, true);
         }
         hasRequestModifier = _requestModifier != null || obj.has("getRequestModifier");
     }
