@@ -9,7 +9,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 
 
 private const val IPV4_PART_COUNT = 4;
@@ -216,13 +215,15 @@ private fun ByteArray.toInetAddress(): InetAddress {
 }
 
 fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
+    val timeout = 5000
+
     if (addresses.isEmpty()) {
         return null;
     }
 
     if (addresses.size == 1) {
         try {
-            return Socket(addresses[0], port);
+            return Socket().apply { this.connect(InetSocketAddress(addresses[0], port), timeout) };
         } catch (e: Throwable) {
             //Ignored.
         }
@@ -249,7 +250,7 @@ fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
                     }
                 }
 
-                socket.connect(InetSocketAddress(address, port));
+                socket.connect(InetSocketAddress(address, port), timeout);
 
                 synchronized(syncObject) {
                     if (connectedSocket == null) {

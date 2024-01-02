@@ -307,7 +307,7 @@ class ChromecastCastingDevice : CastingDevice {
                     try {
                         val connectedSocket = getConnectedSocket(adrs.toList(), port);
                         if (connectedSocket == null) {
-                            Thread.sleep(3000);
+                            Thread.sleep(1000);
                             continue;
                         }
 
@@ -347,7 +347,7 @@ class ChromecastCastingDevice : CastingDevice {
                         Logger.i(TAG, "Failed to connect to Chromecast.", e);
 
                         connectionState = CastConnectionState.CONNECTING;
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                         continue;
                     }
 
@@ -363,7 +363,7 @@ class ChromecastCastingDevice : CastingDevice {
                         _socket?.close();
 
                         connectionState = CastConnectionState.CONNECTING;
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                         continue;
                     }
 
@@ -415,7 +415,7 @@ class ChromecastCastingDevice : CastingDevice {
                     Logger.i(TAG, "Socket disconnected.");
 
                     connectionState = CastConnectionState.CONNECTING;
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                 }
 
                 Logger.i(TAG, "Stopped connection loop.");
