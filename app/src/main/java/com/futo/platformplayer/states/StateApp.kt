@@ -387,6 +387,10 @@ class StateApp {
         displayMetrics = context.resources.displayMetrics;
         ensureConnectivityManager(context);
 
+        Logger.i(TAG, "MainApp Starting: Cleaning up unused downloads");
+        StateDownloads.instance.cleanupDownloads();
+
+
         Logger.i(TAG, "MainApp Starting: Initializing [Telemetry]");
         if (!BuildConfig.DEBUG) {
             StateTelemetry.instance.initialize();

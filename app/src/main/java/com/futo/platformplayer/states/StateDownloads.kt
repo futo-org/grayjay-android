@@ -352,7 +352,10 @@ class StateDownloads {
 
     fun cleanupDownloads(): Pair<Int, Long> {
         val expected = getDownloadedVideos();
-        val validFiles = HashSet(expected.flatMap { e -> e.videoSource.map { it.filePath } + e.audioSource.map { it.filePath } });
+        val validFiles = HashSet(expected.flatMap { e ->
+            e.videoSource.map { it.filePath } +
+            e.audioSource.map { it.filePath } +
+            e.subtitlesSources.map { it.filePath }});
 
         var totalDeleted: Long = 0;
         var totalDeletedCount = 0;

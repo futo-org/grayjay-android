@@ -1484,12 +1484,12 @@ class VideoDetailView : ConstraintLayout {
     private fun loadCurrentVideo(resumePositionMs: Long = 0) {
         _didStop = false;
 
-        val video = video ?: return;
+        val video = (videoLocal ?: video) ?: return;
 
         try {
             val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount());
             val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, Settings.instance.playback.getPrimaryLanguage(context));
-            val subtitleSource = _lastSubtitleSource;
+            val subtitleSource = _lastSubtitleSource ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if(videoSource == null && audioSource == null) {
@@ -1517,6 +1517,8 @@ class VideoDetailView : ConstraintLayout {
                     _player.setArtwork(null);
 
                 _player.setSource(videoSource, audioSource, _playWhenReady, false);
+                if(subtitleSource != null)
+                    _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);
             }
             else
@@ -1524,6 +1526,7 @@ class VideoDetailView : ConstraintLayout {
 
             _lastVideoSource = videoSource;
             _lastAudioSource = audioSource;
+            _lastSubtitleSource = subtitleSource;
         }
         catch(ex: UnsupportedCastException) {
             Logger.e(TAG, "Failed to load cast media", ex);

@@ -337,8 +337,10 @@ class VideoDownload {
             });
         }
 
+        var wasSuccesful = false;
         try {
             awaitAll(*sourcesToDownload.toTypedArray());
+            wasSuccesful = true;
         }
         catch(runtimeEx: RuntimeException) {
             if(runtimeEx.cause != null)
@@ -348,6 +350,29 @@ class VideoDownload {
         }
         catch(ex: Throwable) {
             throw ex;
+        }
+        finally {
+            if(!wasSuccesful) {
+                try {
+                    if(videoFilePath != null) {
+                        val remainingVideo = File(videoFilePath!!);
+                        if (remainingVideo.exists()) {
+                            Logger.i(TAG, "Deleting remaining video file");
+                            remainingVideo.delete();
+                        }
+                    }
+                    if(audioFilePath != null) {
+                        val remainingAudio = File(audioFilePath!!);
+                        if (remainingAudio.exists()) {
+                            Logger.i(TAG, "Deleting remaining audio file");
+                            remainingAudio.delete();
+                        }
+                    }
+                }
+                catch(iex: Throwable) {
+                    Logger.e(TAG, "Failed to delete files after failure:\n${iex.message}", iex);
+                }
+            }
         }
     }
 
