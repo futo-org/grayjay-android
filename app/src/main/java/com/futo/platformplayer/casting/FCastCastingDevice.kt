@@ -32,6 +32,7 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.math.BigInteger
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.security.KeyFactory
 import java.security.KeyPair
@@ -241,29 +242,40 @@ class FCastCastingDevice : CastingDevice {
 
         val thread = _thread
         if (thread == null || !thread.isAlive) {
-            Log.i(TAG, "Restarting thread because the thread has died")
+            Log.i(TAG, "(Re)starting thread because the thread has died")
 
-            _scopeIO?.cancel();
-            Logger.i(TAG, "Cancelled previous scopeIO because a new one is starting.")
+            _scopeIO?.let {
+                it.cancel()
+                Logger.i(TAG, "Cancelled previous scopeIO because a new one is starting.")
+            }
+
             _scopeIO = CoroutineScope(Dispatchers.IO);
 
             _thread = Thread {
                 connectionState = CastConnectionState.CONNECTING;
+                Log.i(TAG, "Connection thread started.")
 
+                var connectedSocket: Socket? = null
                 while (_scopeIO?.isActive == true) {
                     try {
-                        val connectedSocket = getConnectedSocket(adrs.toList(), port);
-                        if (connectedSocket == null) {
-                            Thread.sleep(3000);
+                        Log.i(TAG, "getConnectedSocket.")
+
+                        val resultSocket = getConnectedSocket(adrs.toList(), port);
+
+                        if (resultSocket == null) {
+                            Log.i(TAG, "Connection failed, waiting 1 seconds.")
+                            Thread.sleep(1000);
                             continue;
                         }
 
-                        usedRemoteAddress = connectedSocket.inetAddress;
-                        localAddress = connectedSocket.localAddress;
-                        connectedSocket.close();
+                        Log.i(TAG, "Connection succeeded.")
+
+                        connectedSocket = resultSocket
+                        usedRemoteAddress = connectedSocket.inetAddress
+                        localAddress = connectedSocket.localAddress
                         break;
                     } catch (e: Throwable) {
-                        Logger.w(ChromecastCastingDevice.TAG, "Failed to get setup initial connection to FastCast device.", e)
+                        Logger.w(TAG, "Failed to get setup initial connection to FastCast device.", e)
                     }
                 }
 
@@ -273,7 +285,14 @@ class FCastCastingDevice : CastingDevice {
                     connectionState = CastConnectionState.CONNECTING;
 
                     try {
-                        _socket = Socket(usedRemoteAddress, port);
+                        if (connectedSocket != null) {
+                            Logger.i(TAG, "Using connected socket.");
+                            _socket = connectedSocket
+                            connectedSocket = null
+                        } else {
+                            Logger.i(TAG, "Using new socket.");
+                            _socket = Socket().apply { this.connect(InetSocketAddress(usedRemoteAddress, port), 5000) };
+                        }
                         Logger.i(TAG, "Successfully connected to FastCast at $usedRemoteAddress:$port");
 
                         _outputStream = DataOutputStream(_socket?.outputStream);
@@ -283,7 +302,7 @@ class FCastCastingDevice : CastingDevice {
                         Logger.i(TAG, "Failed to connect to FastCast.", e);
 
                         connectionState = CastConnectionState.CONNECTING;
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                         continue;
                     }
 
@@ -343,7 +362,7 @@ class FCastCastingDevice : CastingDevice {
                     }
 
                     connectionState = CastConnectionState.CONNECTING;
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                 }
 
                 Logger.i(TAG, "Stopped connection loop.");
