@@ -40,6 +40,7 @@ class JSRequestModifier: IRequestModifier {
         } as V8ValueObject;
 
         val req = JSRequest(_plugin, result, url, headers);
+        result.close();
         return req;
     }
 

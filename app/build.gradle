@@ -169,7 +169,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1' //Used for complex/anonymous cases like during development conversions (eg. V8RemoteObject)
 
     //JS
-    implementation("com.caoccao.javet:javet-android:2.2.1")
+    implementation("com.caoccao.javet:javet-android:3.0.2")
 
     //Exoplayer
     implementation 'androidx.media3:media3-exoplayer:1.2.0'
