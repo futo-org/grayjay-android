@@ -1217,7 +1217,7 @@ class VideoDetailView : ConstraintLayout {
         _addCommentView.setContext(video.url, ref)
         _player.setMetadata(video.name, video.author.name);
 
-        if (video !is TutorialFragment.TutorialVideo) {
+        if (video is TutorialFragment.TutorialVideo) {
             _toggleCommentType.setValue(false, false);
         } else {
             _toggleCommentType.setValue(!Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1, false);
