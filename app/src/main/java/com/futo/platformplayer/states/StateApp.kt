@@ -568,14 +568,23 @@ class StateApp {
         StateAnnouncement.instance.deleteAnnouncement("plugin-update")
 
         scopeOrNull?.launch(Dispatchers.IO) {
-            val updateAvailableCount = StatePlatform.instance.checkForUpdates()
+            val updateAvailable = StatePlatform.instance.checkForUpdates()
 
             withContext(Dispatchers.Main) {
-                if (updateAvailableCount > 0) {
+                if (updateAvailable.isNotEmpty()) {
+                    UIDialogs.appToast(
+                        ToastView.Toast(updateAvailable
+                            .map { " - " + it.name }
+                            .joinToString("\n"),
+                            true,
+                            null,
+                            "Plugin updates available"
+                        ));
+
                     StateAnnouncement.instance.registerAnnouncement(
                         "plugin-update",
                         "Plugin updates available",
-                        "There are $updateAvailableCount plugin updates available.",
+                        "There are ${updateAvailable.size} plugin updates available.",
                         AnnouncementType.SESSION_RECURRING
                     )
                 }
