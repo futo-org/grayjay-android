@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -38,6 +39,7 @@ import com.futo.platformplayer.receivers.AudioNoisyReceiver
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.*
 import java.io.File
 import java.time.OffsetDateTime
@@ -380,8 +382,6 @@ class StateApp {
 
         Logger.i(TAG, "MainApp Starting: Initializing [Polycentric]");
         StatePolycentric.instance.load(context);
-        Logger.i(TAG, "MainApp Starting: Initializing [Saved]");
-        StateSaved.instance.load();
 
         Logger.i(TAG, "MainApp Starting: Initializing [Connectivity]");
         displayMetrics = context.resources.displayMetrics;
@@ -581,6 +581,14 @@ class StateApp {
                 }
             }
         }
+
+        /*
+        UIDialogs.appToast("This is a test", false);
+        UIDialogs.appToast("This is a test 2", false);
+        UIDialogs.appToastError("This is a test 3 (Error)", false);
+        UIDialogs.appToast(ToastView.Toast("This is a test 4, with title", false, Color.WHITE, "Test title"));
+        UIDialogs.appToast("This is a test 5 Long text\nWith enters\nasdh asfh fds h rwe h fxh sdfh sdf h dsfh sdf hasdfhsdhg ads as", true);
+        */
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {
