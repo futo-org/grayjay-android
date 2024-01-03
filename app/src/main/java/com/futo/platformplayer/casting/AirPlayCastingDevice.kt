@@ -138,7 +138,7 @@ class AirPlayCastingDevice : CastingDevice {
                     try {
                         val connectedSocket = getConnectedSocket(adrs.toList(), port);
                         if (connectedSocket == null) {
-                            delay(3000);
+                            delay(1000);
                             continue;
                         }
 

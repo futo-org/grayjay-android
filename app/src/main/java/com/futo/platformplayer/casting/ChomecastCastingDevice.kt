@@ -17,6 +17,8 @@ import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
@@ -303,17 +305,18 @@ class ChromecastCastingDevice : CastingDevice {
             _thread = Thread {
                 connectionState = CastConnectionState.CONNECTING;
 
+                var connectedSocket: Socket? = null
                 while (_scopeIO?.isActive == true) {
                     try {
-                        val connectedSocket = getConnectedSocket(adrs.toList(), port);
-                        if (connectedSocket == null) {
+                        val resultSocket = getConnectedSocket(adrs.toList(), port);
+                        if (resultSocket == null) {
                             Thread.sleep(1000);
                             continue;
                         }
 
+                        connectedSocket = resultSocket
                         usedRemoteAddress = connectedSocket.inetAddress;
                         localAddress = connectedSocket.localAddress;
-                        connectedSocket.close();
                         break;
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get setup initial connection to ChromeCast device.", e)
@@ -332,7 +335,16 @@ class ChromecastCastingDevice : CastingDevice {
 
                     try {
                         _socket?.close()
-                        _socket = factory.createSocket(usedRemoteAddress, port) as SSLSocket;
+                        if (connectedSocket != null) {
+                            Logger.i(TAG, "Using connected socket.")
+                            _socket = factory.createSocket(connectedSocket, connectedSocket.inetAddress.hostAddress, connectedSocket.port, true) as SSLSocket
+                            connectedSocket = null
+                        } else {
+                            Logger.i(TAG, "Using new socket.")
+                            val s = Socket().apply { this.connect(InetSocketAddress(usedRemoteAddress, port), 5000) }
+                            _socket = factory.createSocket(s, s.inetAddress.hostAddress, s.port, true) as SSLSocket
+                        }
+
                         _socket?.startHandshake();
                         Logger.i(TAG, "Successfully connected to Chromecast at $usedRemoteAddress:$port");
 
