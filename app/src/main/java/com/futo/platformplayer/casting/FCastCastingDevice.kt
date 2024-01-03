@@ -285,6 +285,7 @@ class FCastCastingDevice : CastingDevice {
                     connectionState = CastConnectionState.CONNECTING;
 
                     try {
+                        _socket?.close()
                         if (connectedSocket != null) {
                             Logger.i(TAG, "Using connected socket.");
                             _socket = connectedSocket
