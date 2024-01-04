@@ -149,6 +149,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
@@ -853,14 +855,19 @@ class VideoDetailView : ConstraintLayout {
             }
         }
     }
+
+
+    private val _historyIndexLock = Mutex(false);
     suspend fun getHistoryIndex(video: IPlatformVideo): DBHistory.Index = withContext(Dispatchers.IO){
-        val current = _historyIndex;
-        if(current == null || current.url != video.url) {
-            val index = StateHistory.instance.getHistoryByVideo(video, true)!!;
-            _historyIndex = index;
-            return@withContext index;
+        _historyIndexLock.withLock {
+            val current = _historyIndex;
+            if(current == null || current.url != video.url) {
+                val index = StateHistory.instance.getHistoryByVideo(video, true)!!;
+                _historyIndex = index;
+                return@withContext index;
+            }
+            return@withContext current;
         }
-        return@withContext current;
     }
 
 
@@ -1121,7 +1128,7 @@ class VideoDetailView : ConstraintLayout {
 
         switchContentView(_container_content_main);
     }
-    @OptIn(ExperimentalCoroutinesApi::class)
+    //@OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
 

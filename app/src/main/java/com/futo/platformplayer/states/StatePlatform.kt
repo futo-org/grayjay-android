@@ -941,8 +941,8 @@ class StatePlatform {
         }
     }
 
-    suspend fun checkForUpdates(): Int = withContext(Dispatchers.IO) {
-        var updateAvailableCount = 0
+    suspend fun checkForUpdates(): List<SourcePluginConfig> = withContext(Dispatchers.IO) {
+        var configs = mutableListOf<SourcePluginConfig>()
         val updatesAvailableFor = hashSetOf<String>()
         for (availableClient in getAvailableClients()) {
             if (availableClient !is JSClient) {
@@ -950,13 +950,13 @@ class StatePlatform {
             }
 
             if (checkForUpdates(availableClient.config)) {
-                updateAvailableCount++
+                configs.add(availableClient.config);
                 updatesAvailableFor.add(availableClient.config.id)
             }
         }
 
         _updatesAvailableMap = updatesAvailableFor
-        return@withContext updateAvailableCount
+        return@withContext configs;
     }
 
     fun clearUpdateAvailable(c: SourcePluginConfig) {

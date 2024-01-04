@@ -37,6 +37,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -398,10 +399,25 @@ class UIDialogs {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     StateApp.withContext {
-                        Toast.makeText(it, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show();
+                        toast(it, text, long);
                     }
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to show toast.", e);
+                }
+            }
+        }
+        fun appToast(text: String, long: Boolean = false) {
+            appToast(ToastView.Toast(text, long))
+        }
+        fun appToastError(text: String, long: Boolean) {
+            StateApp.withContext {
+                appToast(ToastView.Toast(text, long, it.getColor(R.color.pastel_red)));
+            };
+        }
+        fun appToast(toast: ToastView.Toast) {
+            StateApp.withContext {
+                if(it is MainActivity) {
+                    it.showAppToast(toast);
                 }
             }
         }

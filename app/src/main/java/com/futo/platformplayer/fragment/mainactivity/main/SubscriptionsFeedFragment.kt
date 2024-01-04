@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -427,7 +428,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             context?.let {
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        if (exs.size <= 8) {
+                        if (exs.size <= 3) {
                             for (ex in exs) {
                                 var toShow = ex;
                                 var channel: String? = null;
@@ -437,12 +438,11 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 }
                                 Logger.e(TAG, "Channel [${channel}] failed", ex);
                                 if (toShow is PluginException)
-                                    UIDialogs.toast(
-                                        it,
+                                    UIDialogs.appToast(
                                         context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", toShow.config.name).replace("{message}", toShow.message ?: "")
                                     );
                                 else
-                                    UIDialogs.toast(it, ex.message ?: "");
+                                    UIDialogs.appToast(ex.message ?: "");
                             }
                         }
                         else {
@@ -453,7 +453,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 .map { it!! }
                                 .toList();
                             for(distinctPluginFail in failedPlugins)
-                                UIDialogs.toast(it, context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", distinctPluginFail.config.name).replace("{message}", distinctPluginFail.message ?: ""));
+                                UIDialogs.appToast(context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", distinctPluginFail.config.name).replace("{message}", distinctPluginFail.message ?: ""));
                         }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to handle exceptions", e)

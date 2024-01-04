@@ -70,4 +70,13 @@
         android:visibility="gone"
         android:elevation="15dp">
     </FrameLayout>
+    <com.futo.platformplayer.views.ToastView
+        android:id="@+id/toast_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="50dp"
+        android:elevation="30dp"
+        app:layout_constraintLeft_toLeftOf="@id/fragment_main"
+        app:layout_constraintRight_toRightOf="@id/fragment_main"
+        app:layout_constraintBottom_toBottomOf="@id/fragment_main" />
 </androidx.constraintlayout.motion.widget.MotionLayout>

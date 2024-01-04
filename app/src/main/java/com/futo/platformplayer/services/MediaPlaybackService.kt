@@ -143,7 +143,7 @@ class MediaPlaybackService : Service() {
     override fun onDestroy() {
         Logger.v(TAG, "onDestroy");
         _instance = null;
-        MediaControlReceiver.onCloseReceived.emit();
+        MediaControlReceiver.onPauseReceived.emit();
         super.onDestroy();
     }
 

@@ -25,8 +25,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.states.StateSaved
-import com.futo.platformplayer.states.VideoToOpen
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
 
 class VideoDetailFragment : MainFragment {
@@ -372,11 +370,6 @@ class VideoDetailFragment : MainFragment {
 
         Logger.v(TAG, "shouldStop: $shouldStop");
         if(shouldStop) {
-            _viewDetail?.let {
-                val v = it.video ?: return@let;
-                StateSaved.instance.setVideoToOpenBlocking(VideoToOpen(v.url, (it.lastPositionMilliseconds / 1000.0f).toLong()));
-            }
-
             _viewDetail?.onStop();
             StateCasting.instance.onStop();
             Logger.v(TAG, "called onStop() shouldStop: $shouldStop");

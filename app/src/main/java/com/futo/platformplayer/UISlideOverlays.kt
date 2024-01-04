@@ -343,7 +343,7 @@ class UISlideOverlays {
                     videoSources.filter { it is IVideoUrlSource && it.isDownloadable() }.asIterable(),
                     Settings.instance.downloads.getDefaultVideoQualityPixels(),
                     FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS
-                ) as IVideoUrlSource;
+                ) as IVideoUrlSource?;
             }
 
             if (audioSources != null) {
