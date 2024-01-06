@@ -27,9 +27,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.math.BigInteger
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -82,12 +82,13 @@ class FCastCastingDevice : CastingDevice {
     var port: Int = 0;
 
     private var _socket: Socket? = null;
-    private var _outputStream: DataOutputStream? = null;
-    private var _inputStream: DataInputStream? = null;
+    private var _outputStream: OutputStream? = null;
+    private var _inputStream: InputStream? = null;
     private var _scopeIO: CoroutineScope? = null;
     private var _started: Boolean = false;
     private var _version: Long = 1;
     private var _thread: Thread? = null
+    private var _pingThread: Thread? = null
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -241,7 +242,8 @@ class FCastCastingDevice : CastingDevice {
         val adrs = addresses ?: return;
 
         val thread = _thread
-        if (thread == null || !thread.isAlive) {
+        val pingThread = _pingThread
+        if (thread == null || !thread.isAlive || pingThread == null || !pingThread.isAlive) {
             Log.i(TAG, "(Re)starting thread because the thread has died")
 
             _scopeIO?.let {
@@ -258,7 +260,7 @@ class FCastCastingDevice : CastingDevice {
                 var connectedSocket: Socket? = null
                 while (_scopeIO?.isActive == true) {
                     try {
-                        Log.i(TAG, "getConnectedSocket.")
+                        Log.i(TAG, "getConnectedSocket (adrs = [ ${adrs.joinToString(", ")} ], port = ${port}).")
 
                         val resultSocket = getConnectedSocket(adrs.toList(), port);
 
@@ -279,6 +281,8 @@ class FCastCastingDevice : CastingDevice {
                     }
                 }
 
+                val address = InetSocketAddress(usedRemoteAddress, port)
+
                 //Connection loop
                 while (_scopeIO?.isActive == true) {
                     Logger.i(TAG, "Connecting to FastCast.");
@@ -292,12 +296,12 @@ class FCastCastingDevice : CastingDevice {
                             connectedSocket = null
                         } else {
                             Logger.i(TAG, "Using new socket.");
-                            _socket = Socket().apply { this.connect(InetSocketAddress(usedRemoteAddress, port), 5000) };
+                            _socket = Socket().apply { this.connect(address, 2000) };
                         }
                         Logger.i(TAG, "Successfully connected to FastCast at $usedRemoteAddress:$port");
 
-                        _outputStream = DataOutputStream(_socket?.outputStream);
-                        _inputStream = DataInputStream(_socket?.inputStream);
+                        _outputStream = _socket?.outputStream;
+                        _inputStream = _socket?.inputStream;
                     } catch (e: IOException) {
                         _socket?.close();
                         Logger.i(TAG, "Failed to connect to FastCast.", e);
@@ -318,11 +322,13 @@ class FCastCastingDevice : CastingDevice {
                         try {
                             val inputStream = _inputStream ?: break;
                             Log.d(TAG, "Receiving next packet...");
-                            val b1 = inputStream.readUnsignedByte();
-                            val b2 = inputStream.readUnsignedByte();
-                            val b3 = inputStream.readUnsignedByte();
-                            val b4 = inputStream.readUnsignedByte();
-                            val size = ((b4.toLong() shl 24) or (b3.toLong() shl 16) or (b2.toLong() shl 8) or b1.toLong()).toInt();
+
+                            var headerBytesRead = 0
+                            while (headerBytesRead < 4) {
+                                headerBytesRead += inputStream.read(buffer, headerBytesRead, 4 - headerBytesRead)
+                            }
+
+                            val size = ((buffer[3].toLong() shl 24) or (buffer[2].toLong() shl 16) or (buffer[1].toLong() shl 8) or buffer[0].toLong()).toInt();
                             if (size > buffer.size) {
                                 Logger.w(TAG, "Skipping packet that is too large $size bytes.")
                                 inputStream.skip(size.toLong());
@@ -330,7 +336,10 @@ class FCastCastingDevice : CastingDevice {
                             }
 
                             Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
-                            inputStream.read(buffer, 0, size);
+                            var bytesRead = 0
+                            while (bytesRead < size) {
+                                bytesRead += inputStream.read(buffer, bytesRead, size - bytesRead)
+                            }
 
                             val messageBytes = buffer.sliceArray(IntRange(0, size));
                             Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
@@ -368,7 +377,23 @@ class FCastCastingDevice : CastingDevice {
 
                 Logger.i(TAG, "Stopped connection loop.");
                 connectionState = CastConnectionState.DISCONNECTED;
-            }.apply { start() };
+            }.apply { start() }
+
+            _pingThread = Thread {
+                Logger.i(TAG, "Started ping loop.")
+
+                while (_scopeIO?.isActive == true) {
+                    try {
+                        send(Opcode.Ping)
+                    } catch (e: Throwable) {
+                        Log.w(TAG, "Failed to send ping.");
+                    }
+
+                    Thread.sleep(5000);
+                }
+
+                Logger.i(TAG, "Stopped ping loop.");
+            }.apply { start() }
         } else {
             Log.i(TAG, "Thread was still alive, not restarted")
         }
@@ -473,6 +498,7 @@ class FCastCastingDevice : CastingDevice {
         _started = false;
         //TODO: Kill and/or join thread?
         _thread = null;
+        _pingThread = null;
 
         val socket = _socket;
         val scopeIO = _scopeIO;

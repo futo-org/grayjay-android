@@ -1,5 +1,6 @@
 package com.futo.platformplayer
 
+import android.util.Log
 import com.google.common.base.CharMatcher
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -215,17 +216,20 @@ private fun ByteArray.toInetAddress(): InetAddress {
 }
 
 fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
-    val timeout = 5000
+    val timeout = 2000
 
     if (addresses.isEmpty()) {
         return null;
     }
 
     if (addresses.size == 1) {
+        val socket = Socket()
+
         try {
-            return Socket().apply { this.connect(InetSocketAddress(addresses[0], port), timeout) };
+            return socket.apply { this.connect(InetSocketAddress(addresses[0], port), timeout) }
         } catch (e: Throwable) {
-            //Ignored.
+            Log.i("getConnectedSocket", "Failed to connect to: ${addresses[0]}", e)
+            socket.close()
         }
 
         return null;
@@ -264,7 +268,7 @@ fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
                     }
                 }
             } catch (e: Throwable) {
-                //Ignore
+                Log.i("getConnectedSocket", "Failed to connect to: $address", e)
             }
         };
 
