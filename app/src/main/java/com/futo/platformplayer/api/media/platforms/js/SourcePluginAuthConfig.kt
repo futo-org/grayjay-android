@@ -11,4 +11,5 @@ class SourcePluginAuthConfig(
     val userAgent: String? = null,
     val loginButton: String? = null,
     val domainHeadersToFind: Map<String, List<String>>? = null,
+    val loginWarning: String? = null
 ) { }

@@ -109,16 +109,6 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
-            StateSubscriptions.instance.onFeedProgress.subscribe(this) { id, progress, total ->
-                if(subGroup?.id == id)
-                    fragment.lifecycleScope.launch(Dispatchers.Main) {
-                        try {
-                            setProgress(progress, total);
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to set progress", e);
-                        }
-                    }
-            }
             StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
             };
 
@@ -174,12 +164,24 @@ class SubscriptionsFeedFragment : MainFragment() {
             if (!StateSubscriptions.instance.global.isGlobalUpdating) {
                 finishRefreshLayoutLoader();
             }
+
+            StateSubscriptions.instance.onFeedProgress.subscribe(this) { id, progress, total ->
+                if(subGroup?.id == id)
+                    fragment.lifecycleScope.launch(Dispatchers.Main) {
+                        try {
+                            setProgress(progress, total);
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to set progress", e);
+                        }
+                    }
+            }
         }
 
         override fun cleanup() {
             super.cleanup()
             StateSubscriptions.instance.global.onUpdateProgress.remove(this);
             StateSubscriptions.instance.onSubscriptionsChanged.remove(this);
+            StateSubscriptions.instance.onFeedProgress.remove(this);
         }
 
         override val feedStyle: FeedStyle get() = Settings.instance.subscriptions.getSubscriptionsFeedStyle();

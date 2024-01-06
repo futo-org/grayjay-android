@@ -354,11 +354,22 @@ class SourceDetailFragment : MainFragment() {
             if(config.authentication == null)
                 return;
 
-            LoginActivity.showLogin(StateApp.instance.context, config) {
-                StatePlugins.instance.setPluginAuth(config.id, it);
-
-                reloadSource(config.id);
-            };
+            if(config.authentication.loginWarning != null) {
+                UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, "Login Warning",
+                    config.authentication.loginWarning, null, 0,
+                    UIDialogs.Action("Cancel", {}, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action("Login", {
+                        LoginActivity.showLogin(StateApp.instance.context, config) {
+                            StatePlugins.instance.setPluginAuth(config.id, it);
+                            reloadSource(config.id);
+                        };
+                    }, UIDialogs.ActionStyle.PRIMARY))
+            }
+            else
+                LoginActivity.showLogin(StateApp.instance.context, config) {
+                    StatePlugins.instance.setPluginAuth(config.id, it);
+                    reloadSource(config.id);
+                };
         }
         private fun logoutSource(clear: Boolean = true) {
             val config = _config ?: return;
