@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -39,6 +40,7 @@ class LoginActivity : AppCompatActivity() {
         _textUrl = findViewById(R.id.text_url);
         _buttonClose = findViewById(R.id.button_close);
         _buttonClose.setOnClickListener {
+            UIDialogs.toast("Login cancelled", false);
             finish();
         }
 
