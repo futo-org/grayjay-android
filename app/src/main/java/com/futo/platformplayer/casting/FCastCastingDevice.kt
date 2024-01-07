@@ -252,7 +252,7 @@ class FCastCastingDevice : CastingDevice {
 
         val thread = _thread
         val pingThread = _pingThread
-        if (thread == null || !thread.isAlive || pingThread == null || !pingThread.isAlive) {
+        if (_started && (thread == null || !thread.isAlive || pingThread == null || !pingThread.isAlive)) {
             Log.i(TAG, "(Re)starting thread because the thread has died")
 
             _scopeIO?.let {
