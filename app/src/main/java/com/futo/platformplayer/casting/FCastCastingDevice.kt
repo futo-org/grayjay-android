@@ -15,6 +15,7 @@ import com.futo.platformplayer.casting.models.FCastSetSpeedMessage
 import com.futo.platformplayer.casting.models.FCastSetVolumeMessage
 import com.futo.platformplayer.casting.models.FCastVersionMessage
 import com.futo.platformplayer.casting.models.FCastVolumeUpdateMessage
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
@@ -298,6 +299,8 @@ class FCastCastingDevice : CastingDevice {
 
                     try {
                         _socket?.close()
+                        _inputStream?.close()
+                        _outputStream?.close()
                         if (connectedSocket != null) {
                             Logger.i(TAG, "Using connected socket.");
                             _socket = connectedSocket
@@ -311,7 +314,9 @@ class FCastCastingDevice : CastingDevice {
                         _outputStream = _socket?.outputStream;
                         _inputStream = _socket?.inputStream;
                     } catch (e: IOException) {
-                        _socket?.close();
+                        _socket?.close()
+                        _inputStream?.close()
+                        _outputStream?.close()
                         Logger.i(TAG, "Failed to connect to FastCast.", e);
 
                         connectionState = CastConnectionState.CONNECTING;
@@ -333,7 +338,10 @@ class FCastCastingDevice : CastingDevice {
 
                             var headerBytesRead = 0
                             while (headerBytesRead < 4) {
-                                headerBytesRead += inputStream.read(buffer, headerBytesRead, 4 - headerBytesRead)
+                                val read = inputStream.read(buffer, headerBytesRead, 4 - headerBytesRead)
+                                if (read == -1)
+                                    throw Exception("Stream closed")
+                                headerBytesRead += read
                             }
 
                             val size = ((buffer[3].toLong() shl 24) or (buffer[2].toLong() shl 16) or (buffer[1].toLong() shl 8) or buffer[0].toLong()).toInt();
@@ -345,7 +353,10 @@ class FCastCastingDevice : CastingDevice {
                             Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
                             var bytesRead = 0
                             while (bytesRead < size) {
-                                bytesRead += inputStream.read(buffer, bytesRead, size - bytesRead)
+                                val read = inputStream.read(buffer, bytesRead, size - bytesRead)
+                                if (read == -1)
+                                    throw Exception("Stream closed")
+                                bytesRead += read
                             }
 
                             val messageBytes = buffer.sliceArray(IntRange(0, size));
@@ -374,7 +385,8 @@ class FCastCastingDevice : CastingDevice {
 
                     try {
                         _socket?.close()
-                        _socket = null
+                        _inputStream?.close()
+                        _outputStream?.close()
                         Logger.i(TAG, "Socket disconnected.");
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to close socket.", e)
@@ -399,6 +411,8 @@ class FCastCastingDevice : CastingDevice {
 
                         try {
                             _socket?.close()
+                            _inputStream?.close()
+                            _outputStream?.close()
                         } catch (e: Throwable) {
                             Log.w(TAG, "Failed to close socket.", e)
                         }
@@ -477,6 +491,8 @@ class FCastCastingDevice : CastingDevice {
     }
 
     private fun send(opcode: Opcode, message: String? = null) {
+        ensureNotMainThread()
+
         synchronized (_outputStreamLock) {
             try {
                 val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
@@ -536,6 +552,8 @@ class FCastCastingDevice : CastingDevice {
 
             scopeIO.launch {
                 socket.close();
+                _inputStream?.close()
+                _outputStream?.close()
                 connectionState = CastConnectionState.DISCONNECTED;
                 scopeIO.cancel();
                 Logger.i(TAG, "Cancelled scopeIO with open socket.")
