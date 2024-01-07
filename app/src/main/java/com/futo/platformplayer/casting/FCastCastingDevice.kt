@@ -90,6 +90,7 @@ class FCastCastingDevice : CastingDevice {
     private var _thread: Thread? = null
     private var _pingThread: Thread? = null
     private var _lastPongTime = -1L
+    private var _outputStreamLock = Object()
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -476,34 +477,36 @@ class FCastCastingDevice : CastingDevice {
     }
 
     private fun send(opcode: Opcode, message: String? = null) {
-        try {
-            val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
-            val size = 1 + data.size
-            val outputStream = _outputStream
-            if (outputStream == null) {
-                Log.w(TAG, "Failed to send $size bytes, output stream is null.")
-                return
+        synchronized (_outputStreamLock) {
+            try {
+                val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
+                val size = 1 + data.size
+                val outputStream = _outputStream
+                if (outputStream == null) {
+                    Log.w(TAG, "Failed to send $size bytes, output stream is null.")
+                    return
+                }
+
+                val serializedSizeLE = ByteArray(4)
+                serializedSizeLE[0] = (size and 0xff).toByte()
+                serializedSizeLE[1] = (size shr 8 and 0xff).toByte()
+                serializedSizeLE[2] = (size shr 16 and 0xff).toByte()
+                serializedSizeLE[3] = (size shr 24 and 0xff).toByte()
+                outputStream.write(serializedSizeLE)
+
+                val opcodeBytes = ByteArray(1)
+                opcodeBytes[0] = opcode.value
+                outputStream.write(opcodeBytes)
+
+                if (data.isNotEmpty()) {
+                    outputStream.write(data)
+                }
+
+                Log.d(TAG, "Sent $size bytes: (opcode: $opcode, body: $message).")
+            } catch (e: Throwable) {
+                Log.i(TAG, "Failed to send message.", e)
+                throw e
             }
-
-            val serializedSizeLE = ByteArray(4)
-            serializedSizeLE[0] = (size and 0xff).toByte()
-            serializedSizeLE[1] = (size shr 8 and 0xff).toByte()
-            serializedSizeLE[2] = (size shr 16 and 0xff).toByte()
-            serializedSizeLE[3] = (size shr 24 and 0xff).toByte()
-            outputStream.write(serializedSizeLE)
-
-            val opcodeBytes = ByteArray(1)
-            opcodeBytes[0] = opcode.value
-            outputStream.write(opcodeBytes)
-
-            if (data.isNotEmpty()) {
-                outputStream.write(data)
-            }
-
-            Log.d(TAG, "Sent $size bytes: (opcode: $opcode, body: $message).")
-        } catch (e: Throwable) {
-            Log.i(TAG, "Failed to send message.", e)
-            throw e
         }
     }
 
