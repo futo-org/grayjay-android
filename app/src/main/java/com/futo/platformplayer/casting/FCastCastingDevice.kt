@@ -89,6 +89,7 @@ class FCastCastingDevice : CastingDevice {
     private var _version: Long = 1;
     private var _thread: Thread? = null
     private var _pingThread: Thread? = null
+    private var _lastPongTime = -1L
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -208,7 +209,13 @@ class FCastCastingDevice : CastingDevice {
 
     private fun invokeInIOScopeIfRequired(action: () -> Unit): Boolean {
         if(Looper.getMainLooper().thread == Thread.currentThread()) {
-            _scopeIO?.launch { action(); }
+            _scopeIO?.launch {
+                try {
+                    action();
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to invoke in IO scope.", e)
+                }
+            }
             return true;
         }
 
@@ -313,12 +320,12 @@ class FCastCastingDevice : CastingDevice {
 
                     localAddress = _socket?.localAddress;
                     connectionState = CastConnectionState.CONNECTED;
+                    _lastPongTime = -1L
 
                     val buffer = ByteArray(4096);
 
                     Logger.i(TAG, "Started receiving.");
-                    var exceptionOccurred = false;
-                    while (_scopeIO?.isActive == true && !exceptionOccurred) {
+                    while (_scopeIO?.isActive == true) {
                         try {
                             val inputStream = _inputStream ?: break;
                             Log.d(TAG, "Receiving next packet...");
@@ -330,9 +337,8 @@ class FCastCastingDevice : CastingDevice {
 
                             val size = ((buffer[3].toLong() shl 24) or (buffer[2].toLong() shl 16) or (buffer[1].toLong() shl 8) or buffer[0].toLong()).toInt();
                             if (size > buffer.size) {
-                                Logger.w(TAG, "Skipping packet that is too large $size bytes.")
-                                inputStream.skip(size.toLong());
-                                continue;
+                                Logger.w(TAG, "Packets larger than $size bytes are not supported.")
+                                break
                             }
 
                             Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
@@ -353,19 +359,21 @@ class FCastCastingDevice : CastingDevice {
                             try {
                                 handleMessage(Opcode.find(opcode), json);
                             } catch (e: Throwable) {
-                                Logger.w(TAG, "Failed to handle message.", e);
+                                Logger.w(TAG, "Failed to handle message.", e)
+                                break
                             }
                         } catch (e: java.net.SocketException) {
                             Logger.e(TAG, "Socket exception while receiving.", e);
-                            exceptionOccurred = true;
+                            break
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Exception while receiving.", e);
-                            exceptionOccurred = true;
+                            break
                         }
                     }
 
                     try {
-                        _socket?.close();
+                        _socket?.close()
+                        _socket = null
                         Logger.i(TAG, "Socket disconnected.");
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to close socket.", e)
@@ -386,10 +394,26 @@ class FCastCastingDevice : CastingDevice {
                     try {
                         send(Opcode.Ping)
                     } catch (e: Throwable) {
-                        Log.w(TAG, "Failed to send ping.");
+                        Log.w(TAG, "Failed to send ping.")
+
+                        try {
+                            _socket?.close()
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "Failed to close socket.", e)
+                        }
                     }
 
-                    Thread.sleep(5000);
+                    if (_lastPongTime != -1L && System.currentTimeMillis() - _lastPongTime > 6000) {
+                        Logger.w(TAG, "Closing socket due to last pong time being larger than 6 seconds.")
+
+                        try {
+                            _socket?.close()
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "Failed to close socket.", e)
+                        }
+                    }
+
+                    Thread.sleep(2000)
                 }
 
                 Logger.i(TAG, "Stopped ping loop.");
@@ -446,6 +470,7 @@ class FCastCastingDevice : CastingDevice {
                 Logger.i(TAG, "Remote version received: $version")
             }
             Opcode.Ping -> send(Opcode.Pong)
+            Opcode.Pong -> _lastPongTime = System.currentTimeMillis()
             else -> { }
         }
     }
