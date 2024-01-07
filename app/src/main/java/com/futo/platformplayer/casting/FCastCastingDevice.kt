@@ -404,7 +404,7 @@ class FCastCastingDevice : CastingDevice {
                         }
                     }
 
-                    if (_lastPongTime != -1L && System.currentTimeMillis() - _lastPongTime > 6000) {
+                    /*if (_lastPongTime != -1L && System.currentTimeMillis() - _lastPongTime > 6000) {
                         Logger.w(TAG, "Closing socket due to last pong time being larger than 6 seconds.")
 
                         try {
@@ -412,7 +412,7 @@ class FCastCastingDevice : CastingDevice {
                         } catch (e: Throwable) {
                             Log.w(TAG, "Failed to close socket.", e)
                         }
-                    }
+                    }*/
 
                     Thread.sleep(2000)
                 }
