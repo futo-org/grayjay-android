@@ -346,10 +346,15 @@
     <string name="info">Info</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
+    <string name="volume_slider_descr">Enable slide gesture to change volume</string>
     <string name="brightness_slider">Brightness slider</string>
-    <string name="toggle_full_screen">Toogle full screen</string>
+    <string name="brightness_slider_descr">Enable slide gesture to change brightness</string>
+    <string name="toggle_full_screen">Toggle full screen</string>
+    <string name="toggle_full_screen_descr">Enable swipe gesture to toggle fullscreen</string>
     <string name="system_brightness">System brightness</string>
+    <string name="system_brightness_descr">Gesture controls adjust system brightness</string>
     <string name="system_volume">System volume</string>
+    <string name="system_volume_descr">Gesture controls adjust system volume</string>
     <string name="live_chat_webview">Live Chat Webview</string>
     <string name="full_screen_portrait">Fullscreen portrait</string>
     <string name="allow_full_screen_portrait">Allow fullscreen portrait</string>

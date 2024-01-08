@@ -813,20 +813,20 @@ class Settings : FragmentedStorageFileJson() {
     var gestureControls = GestureControls();
     @Serializable
     class GestureControls {
-        @FormField(R.string.volume_slider, FieldForm.TOGGLE, -1, 1)
+        @FormField(R.string.volume_slider, FieldForm.TOGGLE, R.string.volume_slider_descr, 1)
         var volumeSlider: Boolean = true;
 
-        @FormField(R.string.brightness_slider, FieldForm.TOGGLE, -1, 2)
+        @FormField(R.string.brightness_slider, FieldForm.TOGGLE, R.string.brightness_slider_descr, 2)
         var brightnessSlider: Boolean = true;
 
-        @FormField(R.string.toggle_full_screen, FieldForm.TOGGLE, -1, 3)
+        @FormField(R.string.toggle_full_screen, FieldForm.TOGGLE, R.string.toggle_full_screen_descr, 3)
         var toggleFullscreen: Boolean = true;
 
-        @FormField(R.string.system_brightness, FieldForm.TOGGLE, -1, 4)
-        var useSystemBrightness: Boolean = false;
+        @FormField(R.string.system_brightness, FieldForm.TOGGLE, R.string.system_brightness_descr, 4)
+        var useSystemBrightness: Boolean = true;
 
-        @FormField(R.string.system_brightness, FieldForm.TOGGLE, -1, 4)
-        var useSystemVolume: Boolean = false;
+        @FormField(R.string.system_volume, FieldForm.TOGGLE, R.string.system_volume_descr, 5)
+        var useSystemVolume: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 20)

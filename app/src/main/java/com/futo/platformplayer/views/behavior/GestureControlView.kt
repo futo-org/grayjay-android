@@ -3,8 +3,10 @@ package com.futo.platformplayer.views.behavior
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.Animatable
+import android.media.AudioManager
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.LayoutInflater
@@ -60,6 +62,7 @@ class GestureControlView : LinearLayout {
     private val _progressSound: CircularProgressBar;
     private var _animatorSound: ObjectAnimator? = null;
     private var _brightnessFactor = 1.0f;
+    private var _originalBrightnessFactor = 1.0f;
     private var _adjustingBrightness: Boolean = false;
     private val _layoutControlsBrightness: FrameLayout;
     private val _progressBrightness: CircularProgressBar;
@@ -560,10 +563,34 @@ class GestureControlView : LinearLayout {
 
     fun setFullscreen(isFullScreen: Boolean) {
         if (isFullScreen) {
+            val c = context
+            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+                _brightnessFactor = c.window.attributes.screenBrightness
+                if (_brightnessFactor == -1.0f) {
+                    _brightnessFactor = android.provider.Settings.System.getInt(
+                        context.contentResolver,
+                        android.provider.Settings.System.SCREEN_BRIGHTNESS
+                    ) / 255.0f;
+                }
+                _originalBrightnessFactor = _brightnessFactor
+            }
+
+            if (Settings.instance.gestureControls.useSystemVolume) {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                _soundFactor = currentVolume.toFloat() / maxVolume.toFloat()
+            }
+
             onBrightnessAdjusted.emit(_brightnessFactor);
             onSoundAdjusted.emit(_soundFactor);
         } else {
-            onBrightnessAdjusted.emit(1.0f);
+            val c = context
+            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+                onBrightnessAdjusted.emit(_originalBrightnessFactor);
+            } else {
+                onBrightnessAdjusted.emit(1.0f);
+            }
             //onSoundAdjusted.emit(1.0f);
             stopAdjustingBrightness();
             stopAdjustingSound();
