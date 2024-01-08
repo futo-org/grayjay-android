@@ -549,7 +549,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
 
             _videoControls_fullscreen.show();
-            videoControls.hide();
+            videoControls.hideImmediately();
         }
         else {
             val lp = background.layoutParams as ConstraintLayout.LayoutParams;
@@ -561,7 +561,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
 
             videoControls.show();
-            _videoControls_fullscreen.hide();
+            _videoControls_fullscreen.hideImmediately();
         }
 
         fitOrFill(fullScreen);
