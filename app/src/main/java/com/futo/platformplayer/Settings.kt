@@ -809,7 +809,27 @@ class Settings : FragmentedStorageFileJson() {
         var polycentricEnabled: Boolean = true;
     }
 
-    @FormField(R.string.info, FieldForm.GROUP, -1, 19)
+    @FormField(R.string.gesture_controls, FieldForm.GROUP, -1, 19)
+    var gestureControls = GestureControls();
+    @Serializable
+    class GestureControls {
+        @FormField(R.string.volume_slider, FieldForm.TOGGLE, -1, 1)
+        var volumeSlider: Boolean = true;
+
+        @FormField(R.string.brightness_slider, FieldForm.TOGGLE, -1, 2)
+        var brightnessSlider: Boolean = true;
+
+        @FormField(R.string.toggle_full_screen, FieldForm.TOGGLE, -1, 3)
+        var toggleFullscreen: Boolean = true;
+
+        @FormField(R.string.system_brightness, FieldForm.TOGGLE, -1, 4)
+        var useSystemBrightness: Boolean = false;
+
+        @FormField(R.string.system_brightness, FieldForm.TOGGLE, -1, 4)
+        var useSystemVolume: Boolean = false;
+    }
+
+    @FormField(R.string.info, FieldForm.GROUP, -1, 20)
     var info = Info();
     @Serializable
     class Info {

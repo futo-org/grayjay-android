@@ -19,6 +19,7 @@ import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
 import androidx.core.view.GestureDetectorCompat
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
@@ -126,11 +127,11 @@ class GestureControlView : LinearLayout {
                     val rx = (p0.x + p1.x) / (2 * width);
                     val ry = (p0.y + p1.y) / (2 * height);
                     if (ry > 0.1 && ry < 0.9) {
-                        if (_isFullScreen && rx < 0.2) {
+                        if (Settings.instance.gestureControls.brightnessSlider && _isFullScreen && rx < 0.2) {
                             startAdjustingBrightness();
-                        } else if (_isFullScreen && rx > 0.8) {
+                        } else if (Settings.instance.gestureControls.volumeSlider && _isFullScreen && rx > 0.8) {
                             startAdjustingSound();
-                        } else if (fullScreenGestureEnabled && rx in 0.3..0.7) {
+                        } else if (Settings.instance.gestureControls.toggleFullscreen && fullScreenGestureEnabled && rx in 0.3..0.7) {
                             if (_isFullScreen) {
                                 startAdjustingFullscreenDown();
                             } else {
