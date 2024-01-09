@@ -1,15 +1,18 @@
 package com.futo.platformplayer.views.video
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.media.AudioManager
 import android.util.AttributeSet
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
@@ -235,14 +238,29 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         gestureControl.setupTouchArea(_layoutControls, background);
         gestureControl.onSeek.subscribe { seekFromCurrent(it); };
-        gestureControl.onSoundAdjusted.subscribe { setVolume(it) };
+        gestureControl.onSoundAdjusted.subscribe {
+            if (Settings.instance.gestureControls.useSystemVolume) {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (it * maxVolume).toInt(), 0)
+            } else {
+                setVolume(it)
+            }
+        };
         gestureControl.onToggleFullscreen.subscribe { setFullScreen(!isFullScreen) };
         gestureControl.onBrightnessAdjusted.subscribe {
-            if (it == 1.0f) {
-                _overlay_brightness.visibility = View.GONE;
+            if (context is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+                val window = context.window
+                val layout: WindowManager.LayoutParams = window.attributes
+                layout.screenBrightness = it
+                window.attributes = layout
             } else {
-                _overlay_brightness.visibility = View.VISIBLE;
-                _overlay_brightness.setBackgroundColor(Color.valueOf(0.0f, 0.0f, 0.0f, (1.0f - it)).toArgb());
+                if (it == 1.0f) {
+                    _overlay_brightness.visibility = View.GONE;
+                } else {
+                    _overlay_brightness.visibility = View.VISIBLE;
+                    _overlay_brightness.setBackgroundColor(Color.valueOf(0.0f, 0.0f, 0.0f, (1.0f - it)).toArgb());
+                }
             }
         };
 
@@ -531,7 +549,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
 
             _videoControls_fullscreen.show();
-            videoControls.hide();
+            videoControls.hideImmediately();
         }
         else {
             val lp = background.layoutParams as ConstraintLayout.LayoutParams;
@@ -543,7 +561,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
 
             videoControls.show();
-            _videoControls_fullscreen.hide();
+            _videoControls_fullscreen.hideImmediately();
         }
 
         fitOrFill(fullScreen);
@@ -729,7 +747,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _control_loop_fullscreen.setImageResource(R.drawable.ic_loop);
         }
     }
-
 
     fun setGestureSoundFactor(soundFactor: Float) {
         gestureControl.setSoundFactor(soundFactor);

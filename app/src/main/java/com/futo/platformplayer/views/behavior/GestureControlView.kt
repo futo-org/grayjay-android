@@ -3,8 +3,10 @@ package com.futo.platformplayer.views.behavior
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.Animatable
+import android.media.AudioManager
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.LayoutInflater
@@ -19,6 +21,7 @@ import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
 import androidx.core.view.GestureDetectorCompat
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
@@ -59,6 +62,7 @@ class GestureControlView : LinearLayout {
     private val _progressSound: CircularProgressBar;
     private var _animatorSound: ObjectAnimator? = null;
     private var _brightnessFactor = 1.0f;
+    private var _originalBrightnessFactor = 1.0f;
     private var _adjustingBrightness: Boolean = false;
     private val _layoutControlsBrightness: FrameLayout;
     private val _progressBrightness: CircularProgressBar;
@@ -126,11 +130,11 @@ class GestureControlView : LinearLayout {
                     val rx = (p0.x + p1.x) / (2 * width);
                     val ry = (p0.y + p1.y) / (2 * height);
                     if (ry > 0.1 && ry < 0.9) {
-                        if (_isFullScreen && rx < 0.2) {
+                        if (Settings.instance.gestureControls.brightnessSlider && _isFullScreen && rx < 0.2) {
                             startAdjustingBrightness();
-                        } else if (_isFullScreen && rx > 0.8) {
+                        } else if (Settings.instance.gestureControls.volumeSlider && _isFullScreen && rx > 0.8) {
                             startAdjustingSound();
-                        } else if (fullScreenGestureEnabled && rx in 0.3..0.7) {
+                        } else if (Settings.instance.gestureControls.toggleFullscreen && fullScreenGestureEnabled && rx in 0.3..0.7) {
                             if (_isFullScreen) {
                                 startAdjustingFullscreenDown();
                             } else {
@@ -559,10 +563,34 @@ class GestureControlView : LinearLayout {
 
     fun setFullscreen(isFullScreen: Boolean) {
         if (isFullScreen) {
+            val c = context
+            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+                _brightnessFactor = c.window.attributes.screenBrightness
+                if (_brightnessFactor == -1.0f) {
+                    _brightnessFactor = android.provider.Settings.System.getInt(
+                        context.contentResolver,
+                        android.provider.Settings.System.SCREEN_BRIGHTNESS
+                    ) / 255.0f;
+                }
+                _originalBrightnessFactor = _brightnessFactor
+            }
+
+            if (Settings.instance.gestureControls.useSystemVolume) {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                _soundFactor = currentVolume.toFloat() / maxVolume.toFloat()
+            }
+
             onBrightnessAdjusted.emit(_brightnessFactor);
             onSoundAdjusted.emit(_soundFactor);
         } else {
-            onBrightnessAdjusted.emit(1.0f);
+            val c = context
+            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+                onBrightnessAdjusted.emit(_originalBrightnessFactor);
+            } else {
+                onBrightnessAdjusted.emit(1.0f);
+            }
             //onSoundAdjusted.emit(1.0f);
             stopAdjustingBrightness();
             stopAdjustingSound();

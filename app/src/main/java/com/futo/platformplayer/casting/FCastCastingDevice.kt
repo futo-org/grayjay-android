@@ -15,6 +15,7 @@ import com.futo.platformplayer.casting.models.FCastSetSpeedMessage
 import com.futo.platformplayer.casting.models.FCastSetVolumeMessage
 import com.futo.platformplayer.casting.models.FCastVersionMessage
 import com.futo.platformplayer.casting.models.FCastVolumeUpdateMessage
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
@@ -27,9 +28,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.math.BigInteger
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -82,12 +83,15 @@ class FCastCastingDevice : CastingDevice {
     var port: Int = 0;
 
     private var _socket: Socket? = null;
-    private var _outputStream: DataOutputStream? = null;
-    private var _inputStream: DataInputStream? = null;
+    private var _outputStream: OutputStream? = null;
+    private var _inputStream: InputStream? = null;
     private var _scopeIO: CoroutineScope? = null;
     private var _started: Boolean = false;
     private var _version: Long = 1;
     private var _thread: Thread? = null
+    private var _pingThread: Thread? = null
+    private var _lastPongTime = -1L
+    private var _outputStreamLock = Object()
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -207,7 +211,13 @@ class FCastCastingDevice : CastingDevice {
 
     private fun invokeInIOScopeIfRequired(action: () -> Unit): Boolean {
         if(Looper.getMainLooper().thread == Thread.currentThread()) {
-            _scopeIO?.launch { action(); }
+            _scopeIO?.launch {
+                try {
+                    action();
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to invoke in IO scope.", e)
+                }
+            }
             return true;
         }
 
@@ -241,7 +251,8 @@ class FCastCastingDevice : CastingDevice {
         val adrs = addresses ?: return;
 
         val thread = _thread
-        if (thread == null || !thread.isAlive) {
+        val pingThread = _pingThread
+        if (_started && (thread == null || !thread.isAlive || pingThread == null || !pingThread.isAlive)) {
             Log.i(TAG, "(Re)starting thread because the thread has died")
 
             _scopeIO?.let {
@@ -258,7 +269,7 @@ class FCastCastingDevice : CastingDevice {
                 var connectedSocket: Socket? = null
                 while (_scopeIO?.isActive == true) {
                     try {
-                        Log.i(TAG, "getConnectedSocket.")
+                        Log.i(TAG, "getConnectedSocket (adrs = [ ${adrs.joinToString(", ")} ], port = ${port}).")
 
                         val resultSocket = getConnectedSocket(adrs.toList(), port);
 
@@ -279,6 +290,8 @@ class FCastCastingDevice : CastingDevice {
                     }
                 }
 
+                val address = InetSocketAddress(usedRemoteAddress, port)
+
                 //Connection loop
                 while (_scopeIO?.isActive == true) {
                     Logger.i(TAG, "Connecting to FastCast.");
@@ -286,20 +299,24 @@ class FCastCastingDevice : CastingDevice {
 
                     try {
                         _socket?.close()
+                        _inputStream?.close()
+                        _outputStream?.close()
                         if (connectedSocket != null) {
                             Logger.i(TAG, "Using connected socket.");
                             _socket = connectedSocket
                             connectedSocket = null
                         } else {
                             Logger.i(TAG, "Using new socket.");
-                            _socket = Socket().apply { this.connect(InetSocketAddress(usedRemoteAddress, port), 5000) };
+                            _socket = Socket().apply { this.connect(address, 2000) };
                         }
                         Logger.i(TAG, "Successfully connected to FastCast at $usedRemoteAddress:$port");
 
-                        _outputStream = DataOutputStream(_socket?.outputStream);
-                        _inputStream = DataInputStream(_socket?.inputStream);
+                        _outputStream = _socket?.outputStream;
+                        _inputStream = _socket?.inputStream;
                     } catch (e: IOException) {
-                        _socket?.close();
+                        _socket?.close()
+                        _inputStream?.close()
+                        _outputStream?.close()
                         Logger.i(TAG, "Failed to connect to FastCast.", e);
 
                         connectionState = CastConnectionState.CONNECTING;
@@ -309,28 +326,38 @@ class FCastCastingDevice : CastingDevice {
 
                     localAddress = _socket?.localAddress;
                     connectionState = CastConnectionState.CONNECTED;
+                    _lastPongTime = -1L
 
                     val buffer = ByteArray(4096);
 
                     Logger.i(TAG, "Started receiving.");
-                    var exceptionOccurred = false;
-                    while (_scopeIO?.isActive == true && !exceptionOccurred) {
+                    while (_scopeIO?.isActive == true) {
                         try {
                             val inputStream = _inputStream ?: break;
                             Log.d(TAG, "Receiving next packet...");
-                            val b1 = inputStream.readUnsignedByte();
-                            val b2 = inputStream.readUnsignedByte();
-                            val b3 = inputStream.readUnsignedByte();
-                            val b4 = inputStream.readUnsignedByte();
-                            val size = ((b4.toLong() shl 24) or (b3.toLong() shl 16) or (b2.toLong() shl 8) or b1.toLong()).toInt();
+
+                            var headerBytesRead = 0
+                            while (headerBytesRead < 4) {
+                                val read = inputStream.read(buffer, headerBytesRead, 4 - headerBytesRead)
+                                if (read == -1)
+                                    throw Exception("Stream closed")
+                                headerBytesRead += read
+                            }
+
+                            val size = ((buffer[3].toLong() shl 24) or (buffer[2].toLong() shl 16) or (buffer[1].toLong() shl 8) or buffer[0].toLong()).toInt();
                             if (size > buffer.size) {
-                                Logger.w(TAG, "Skipping packet that is too large $size bytes.")
-                                inputStream.skip(size.toLong());
-                                continue;
+                                Logger.w(TAG, "Packets larger than $size bytes are not supported.")
+                                break
                             }
 
                             Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
-                            inputStream.read(buffer, 0, size);
+                            var bytesRead = 0
+                            while (bytesRead < size) {
+                                val read = inputStream.read(buffer, bytesRead, size - bytesRead)
+                                if (read == -1)
+                                    throw Exception("Stream closed")
+                                bytesRead += read
+                            }
 
                             val messageBytes = buffer.sliceArray(IntRange(0, size));
                             Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
@@ -344,19 +371,22 @@ class FCastCastingDevice : CastingDevice {
                             try {
                                 handleMessage(Opcode.find(opcode), json);
                             } catch (e: Throwable) {
-                                Logger.w(TAG, "Failed to handle message.", e);
+                                Logger.w(TAG, "Failed to handle message.", e)
+                                break
                             }
                         } catch (e: java.net.SocketException) {
                             Logger.e(TAG, "Socket exception while receiving.", e);
-                            exceptionOccurred = true;
+                            break
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Exception while receiving.", e);
-                            exceptionOccurred = true;
+                            break
                         }
                     }
 
                     try {
-                        _socket?.close();
+                        _socket?.close()
+                        _inputStream?.close()
+                        _outputStream?.close()
                         Logger.i(TAG, "Socket disconnected.");
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to close socket.", e)
@@ -368,7 +398,41 @@ class FCastCastingDevice : CastingDevice {
 
                 Logger.i(TAG, "Stopped connection loop.");
                 connectionState = CastConnectionState.DISCONNECTED;
-            }.apply { start() };
+            }.apply { start() }
+
+            _pingThread = Thread {
+                Logger.i(TAG, "Started ping loop.")
+
+                while (_scopeIO?.isActive == true) {
+                    try {
+                        send(Opcode.Ping)
+                    } catch (e: Throwable) {
+                        Log.w(TAG, "Failed to send ping.")
+
+                        try {
+                            _socket?.close()
+                            _inputStream?.close()
+                            _outputStream?.close()
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "Failed to close socket.", e)
+                        }
+                    }
+
+                    /*if (_lastPongTime != -1L && System.currentTimeMillis() - _lastPongTime > 6000) {
+                        Logger.w(TAG, "Closing socket due to last pong time being larger than 6 seconds.")
+
+                        try {
+                            _socket?.close()
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "Failed to close socket.", e)
+                        }
+                    }*/
+
+                    Thread.sleep(2000)
+                }
+
+                Logger.i(TAG, "Stopped ping loop.");
+            }.apply { start() }
         } else {
             Log.i(TAG, "Thread was still alive, not restarted")
         }
@@ -421,39 +485,44 @@ class FCastCastingDevice : CastingDevice {
                 Logger.i(TAG, "Remote version received: $version")
             }
             Opcode.Ping -> send(Opcode.Pong)
+            Opcode.Pong -> _lastPongTime = System.currentTimeMillis()
             else -> { }
         }
     }
 
     private fun send(opcode: Opcode, message: String? = null) {
-        try {
-            val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
-            val size = 1 + data.size
-            val outputStream = _outputStream
-            if (outputStream == null) {
-                Log.w(TAG, "Failed to send $size bytes, output stream is null.")
-                return
+        ensureNotMainThread()
+
+        synchronized (_outputStreamLock) {
+            try {
+                val data: ByteArray = message?.encodeToByteArray() ?: ByteArray(0)
+                val size = 1 + data.size
+                val outputStream = _outputStream
+                if (outputStream == null) {
+                    Log.w(TAG, "Failed to send $size bytes, output stream is null.")
+                    return
+                }
+
+                val serializedSizeLE = ByteArray(4)
+                serializedSizeLE[0] = (size and 0xff).toByte()
+                serializedSizeLE[1] = (size shr 8 and 0xff).toByte()
+                serializedSizeLE[2] = (size shr 16 and 0xff).toByte()
+                serializedSizeLE[3] = (size shr 24 and 0xff).toByte()
+                outputStream.write(serializedSizeLE)
+
+                val opcodeBytes = ByteArray(1)
+                opcodeBytes[0] = opcode.value
+                outputStream.write(opcodeBytes)
+
+                if (data.isNotEmpty()) {
+                    outputStream.write(data)
+                }
+
+                Log.d(TAG, "Sent $size bytes: (opcode: $opcode, body: $message).")
+            } catch (e: Throwable) {
+                Log.i(TAG, "Failed to send message.", e)
+                throw e
             }
-
-            val serializedSizeLE = ByteArray(4)
-            serializedSizeLE[0] = (size and 0xff).toByte()
-            serializedSizeLE[1] = (size shr 8 and 0xff).toByte()
-            serializedSizeLE[2] = (size shr 16 and 0xff).toByte()
-            serializedSizeLE[3] = (size shr 24 and 0xff).toByte()
-            outputStream.write(serializedSizeLE)
-
-            val opcodeBytes = ByteArray(1)
-            opcodeBytes[0] = opcode.value
-            outputStream.write(opcodeBytes)
-
-            if (data.isNotEmpty()) {
-                outputStream.write(data)
-            }
-
-            Log.d(TAG, "Sent $size bytes: (opcode: $opcode, body: $message).")
-        } catch (e: Throwable) {
-            Log.i(TAG, "Failed to send message.", e)
-            throw e
         }
     }
 
@@ -473,6 +542,7 @@ class FCastCastingDevice : CastingDevice {
         _started = false;
         //TODO: Kill and/or join thread?
         _thread = null;
+        _pingThread = null;
 
         val socket = _socket;
         val scopeIO = _scopeIO;
@@ -482,6 +552,8 @@ class FCastCastingDevice : CastingDevice {
 
             scopeIO.launch {
                 socket.close();
+                _inputStream?.close()
+                _outputStream?.close()
                 connectionState = CastConnectionState.DISCONNECTED;
                 scopeIO.cancel();
                 Logger.i(TAG, "Cancelled scopeIO with open socket.")

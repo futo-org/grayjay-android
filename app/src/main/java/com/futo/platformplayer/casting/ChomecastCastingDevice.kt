@@ -328,6 +328,8 @@ class ChromecastCastingDevice : CastingDevice {
 
                 val factory = sslContext.socketFactory;
 
+                val address = InetSocketAddress(usedRemoteAddress, port)
+
                 //Connection loop
                 while (_scopeIO?.isActive == true) {
                     Logger.i(TAG, "Connecting to Chromecast.");
@@ -341,7 +343,7 @@ class ChromecastCastingDevice : CastingDevice {
                             connectedSocket = null
                         } else {
                             Logger.i(TAG, "Using new socket.")
-                            val s = Socket().apply { this.connect(InetSocketAddress(usedRemoteAddress, port), 5000) }
+                            val s = Socket().apply { this.connect(address, 2000) }
                             _socket = factory.createSocket(s, s.inetAddress.hostAddress, s.port, true) as SSLSocket
                         }
 
@@ -444,10 +446,11 @@ class ChromecastCastingDevice : CastingDevice {
                 while (_scopeIO?.isActive == true) {
                     try {
                         sendChannelMessage("sender-0", "receiver-0", "urn:x-cast:com.google.cast.tp.heartbeat", pingObject.toString());
-                        Thread.sleep(5000);
                     } catch (e: Throwable) {
                         Log.w(TAG, "Failed to send ping.");
                     }
+
+                    Thread.sleep(5000);
                 }
 
                 Logger.i(TAG, "Stopped ping loop.");

@@ -24,8 +24,8 @@ import com.futo.platformplayer.casting.AirPlayCastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.formatDuration
 import com.futo.platformplayer.states.StatePlayer
-import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.behavior.GestureControlView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -252,8 +252,8 @@ class CastView : ConstraintLayout {
             .load(video.thumbnails.getHQThumbnail())
             .placeholder(R.drawable.placeholder_video_thumbnail)
             .into(_thumbnail);
-        _textPosition.text = position.toHumanTime(false);
-        _textDuration.text = video.duration.toHumanTime(false);
+        _textPosition.text = (position * 1000).formatDuration();
+        _textDuration.text = (video.duration * 1000).formatDuration();
         _timeBar.setPosition(position);
         _timeBar.setDuration(video.duration);
     }
@@ -261,7 +261,7 @@ class CastView : ConstraintLayout {
     @OptIn(UnstableApi::class)
     fun setTime(ms: Long) {
         updateCurrentChapter(ms);
-        _textPosition.text = ms.toHumanTime(true);
+        _textPosition.text = ms.formatDuration();
         _timeBar.setPosition(ms / 1000);
         StatePlayer.instance.updateMediaSessionPlaybackState(getPlaybackStateCompat(), ms);
     }

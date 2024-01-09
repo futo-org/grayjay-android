@@ -143,7 +143,9 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
 
         StateCasting.instance.onActiveDeviceDurationChanged.remove(this);
         StateCasting.instance.onActiveDeviceDurationChanged.subscribe {
-            _sliderPosition.valueTo = it.toFloat().coerceAtLeast(1.0f);
+            val dur = it.toFloat().coerceAtLeast(1.0f)
+            _sliderPosition.value = _sliderPosition.value.coerceAtLeast(0.0f).coerceAtMost(dur);
+            _sliderPosition.valueTo = dur
         };
 
         _device = StateCasting.instance.activeDevice;
@@ -185,8 +187,10 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         _sliderPosition.valueFrom = 0.0f;
         _sliderVolume.valueFrom = 0.0f;
         _sliderVolume.value = d.volume.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderVolume.valueTo);
-        _sliderPosition.valueTo = d.duration.toFloat().coerceAtLeast(1.0f);
-        _sliderPosition.value = d.time.toFloat().coerceAtLeast(0.0f).coerceAtMost(_sliderVolume.valueTo);
+
+        val dur = d.duration.toFloat().coerceAtLeast(1.0f)
+        _sliderPosition.value = d.time.toFloat().coerceAtLeast(0.0f).coerceAtMost(dur)
+        _sliderPosition.valueTo = dur
 
         if (d.canSetVolume) {
             _layoutVolumeAdjustable.visibility = View.VISIBLE;

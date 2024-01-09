@@ -145,7 +145,6 @@ import com.futo.polycentric.core.Opinion
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -1372,7 +1371,9 @@ class VideoDetailView : ConstraintLayout {
         val toResume = _videoResumePositionMilliseconds;
         _videoResumePositionMilliseconds = 0;
         loadCurrentVideo(toResume);
-        _player.setGestureSoundFactor(1.0f);
+        if (!Settings.instance.gestureControls.useSystemVolume) {
+            _player.setGestureSoundFactor(1.0f);
+        }
 
         updateQueueState();
 
