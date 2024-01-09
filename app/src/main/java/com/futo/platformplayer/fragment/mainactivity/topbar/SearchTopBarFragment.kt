@@ -13,17 +13,17 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.R
-import com.futo.platformplayer.stores.SearchHistoryStorage
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.fragment.mainactivity.main.*
+import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragmentData
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.SearchType
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.SearchHistoryStorage
 
 class SearchTopBarFragment : TopFragment() {
     private val TAG = "SearchTopBarFragment"
@@ -54,11 +54,12 @@ class SearchTopBarFragment : TopFragment() {
 
     private val _searchDoneListener = object : TextView.OnEditorActionListener {
         override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
-            if (actionId != EditorInfo.IME_ACTION_DONE)
+            val isEnterPress = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
+            if (actionId != EditorInfo.IME_ACTION_DONE && !isEnterPress)
                 return false
 
-            onDone();
-            return true;
+            onDone()
+            return true
         }
     };
 
