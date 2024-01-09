@@ -27,6 +27,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
+import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
@@ -336,8 +337,11 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
                 context?.let {
                     lifecycleScope.launch(Dispatchers.Main) {
                         try {
+                            val channel = if(kv.value is ChannelException) (kv.value as ChannelException).channelNameOrUrl else null;
                             if(jsVideoPager != null)
-                                UIDialogs.toast(it, "Plugin ${jsVideoPager.getPluginConfig().name} failed:\n${kv.value.message}", false);
+                                UIDialogs.toast(it, "Plugin ${jsVideoPager.getPluginConfig().name} failed:\n" +
+                                        (if(!channel.isNullOrEmpty()) "(${channel}) " else "") +
+                                        "${kv.value.message}", false);
                             else
                                 UIDialogs.toast(it, kv.value.message ?: "", false);
                         } catch (e: Throwable) {
