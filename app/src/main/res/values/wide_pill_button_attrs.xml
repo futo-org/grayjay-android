@@ -2,7 +2,8 @@
 <resources>
     <declare-styleable name="WidePillButton">
         <attr name="widePillIconPrefix" format="reference" />
-        <attr name="widePilllText" format="string" />
+        <attr name="widePillText" format="string" />
+        <attr name="widePillDescription" format="string" />
         <attr name="widePillIconSuffix" format="reference" />
     </declare-styleable>
 </resources>

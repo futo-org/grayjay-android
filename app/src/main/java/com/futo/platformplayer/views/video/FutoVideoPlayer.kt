@@ -263,6 +263,14 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 }
             }
         };
+        gestureControl.onPan.subscribe { x, y ->
+            _videoView.translationX = x
+            _videoView.translationY = y
+        }
+        gestureControl.onZoom.subscribe {
+            _videoView.scaleX = it
+            _videoView.scaleY = it
+        }
 
         if(!isInEditMode) {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
