@@ -14,6 +14,7 @@ class WidePillButton : LinearLayout {
     private val _iconPrefix: ImageView
     private val _iconSuffix: ImageView
     private val _text: TextView
+    private val _textDescription: TextView
     val onClick = Event0()
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
@@ -21,11 +22,13 @@ class WidePillButton : LinearLayout {
         _iconPrefix = findViewById(R.id.image_prefix)
         _iconSuffix = findViewById(R.id.image_suffix)
         _text = findViewById(R.id.text)
+        _textDescription = findViewById(R.id.text_description)
 
         val attrArr = context.obtainStyledAttributes(attrs, R.styleable.WidePillButton, 0, 0)
         setIconPrefix(attrArr.getResourceId(R.styleable.WidePillButton_widePillIconPrefix, -1))
         setIconSuffix(attrArr.getResourceId(R.styleable.WidePillButton_widePillIconSuffix, -1))
-        setText(attrArr.getText(R.styleable.PillButton_pillText) ?: "")
+        setText(attrArr.getText(R.styleable.WidePillButton_widePillText) ?: "")
+        setDescription(attrArr.getText(R.styleable.WidePillButton_widePillDescription))
         attrArr.recycle()
 
         findViewById<LinearLayout>(R.id.root).setOnClickListener {
@@ -53,5 +56,14 @@ class WidePillButton : LinearLayout {
 
     fun setText(t: CharSequence) {
         _text.text = t
+    }
+
+    fun setDescription(t: CharSequence?) {
+        if (!t.isNullOrEmpty()) {
+            _textDescription.visibility = View.VISIBLE
+            _textDescription.text = t
+        } else {
+            _textDescription.visibility= View.GONE
+        }
     }
 }

@@ -11,6 +11,7 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -24,6 +25,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.others.CircularProgressBar
 import kotlinx.coroutines.CancellationException
@@ -74,10 +76,19 @@ class GestureControlView : LinearLayout {
     private var _fullScreenFactorUp = 1.0f;
     private var _fullScreenFactorDown = 1.0f;
 
+    private var _scaleGestureDetector: ScaleGestureDetector
+    private var _scaleFactor = 1.0f
+    private var _translationX = 0.0f
+    private var _translationY = 0.0f
+    private val _layoutControlsZoom: FrameLayout
+    private val _textZoom: TextView
+
     private val _gestureController: GestureDetectorCompat;
 
     val onSeek = Event1<Long>();
     val onBrightnessAdjusted = Event1<Float>();
+    val onPan = Event2<Float, Float>();
+    val onZoom = Event1<Float>();
     val onSoundAdjusted = Event1<Float>();
     val onToggleFullscreen = Event0();
 
@@ -95,8 +106,26 @@ class GestureControlView : LinearLayout {
         _layoutControlsSound = findViewById(R.id.layout_controls_sound);
         _progressSound = findViewById(R.id.progress_sound);
         _layoutControlsBrightness = findViewById(R.id.layout_controls_brightness);
+        _layoutControlsZoom = findViewById(R.id.layout_controls_zoom)
+        _textZoom = findViewById(R.id.text_zoom)
         _progressBrightness = findViewById(R.id.progress_brightness);
         _layoutControlsFullscreen = findViewById(R.id.layout_controls_fullscreen);
+
+        _scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                Logger.i(TAG, "onScale _scaleFactor $_scaleFactor sf " + detector.scaleFactor.toString())
+                _scaleFactor = (_scaleFactor + detector.scaleFactor - 1.0f).coerceAtLeast(1.0f).coerceAtMost(5.0f)
+                onZoom.emit(_scaleFactor)
+
+                _translationX = _translationX.coerceAtLeast(-height / _scaleFactor)
+                _translationY = _translationY.coerceAtLeast(-width / _scaleFactor)
+                onPan.emit(_translationX, _translationY)
+
+                _layoutControlsZoom.visibility = View.VISIBLE
+                _textZoom.text = "${String.format("%.1f", _scaleFactor)}x"
+                return true
+            }
+        })
 
         _gestureController = GestureDetectorCompat(context, object : GestureDetector.OnGestureListener {
             override fun onDown(p0: MotionEvent): Boolean { return false; }
@@ -107,41 +136,53 @@ class GestureControlView : LinearLayout {
                 if(p0 == null)
                     return false;
 
-                val minDistance = Math.min(width, height)
-                if (_isFullScreen && _adjustingBrightness) {
-                    val adjustAmount = (distanceY * 2) / minDistance;
-                    _brightnessFactor = (_brightnessFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
-                    _progressBrightness.progress = _brightnessFactor;
-                    onBrightnessAdjusted.emit(_brightnessFactor);
-                } else if (_isFullScreen && _adjustingSound) {
-                    val adjustAmount = (distanceY * 2) / minDistance;
-                    _soundFactor = (_soundFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
-                    _progressSound.progress = _soundFactor;
-                    onSoundAdjusted.emit(_soundFactor);
-                } else if (_adjustingFullscreenUp) {
-                    val adjustAmount = (distanceY * 2) / minDistance;
-                    _fullScreenFactorUp = (_fullScreenFactorUp + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
-                    _layoutControlsFullscreen.alpha = _fullScreenFactorUp;
-                } else if (_adjustingFullscreenDown) {
-                    val adjustAmount = (-distanceY * 2) / minDistance;
-                    _fullScreenFactorDown = (_fullScreenFactorDown + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
-                    _layoutControlsFullscreen.alpha = _fullScreenFactorDown;
-                } else {
-                    val rx = (p0.x + p1.x) / (2 * width);
-                    val ry = (p0.y + p1.y) / (2 * height);
-                    if (ry > 0.1 && ry < 0.9) {
-                        if (Settings.instance.gestureControls.brightnessSlider && _isFullScreen && rx < 0.2) {
-                            startAdjustingBrightness();
-                        } else if (Settings.instance.gestureControls.volumeSlider && _isFullScreen && rx > 0.8) {
-                            startAdjustingSound();
-                        } else if (Settings.instance.gestureControls.toggleFullscreen && fullScreenGestureEnabled && rx in 0.3..0.7) {
-                            if (_isFullScreen) {
-                                startAdjustingFullscreenDown();
-                            } else {
-                                startAdjustingFullscreenUp();
+                Logger.i(TAG, "p0.pointerCount: " + p0.pointerCount)
+
+                if (p1.pointerCount == 1) {
+                    val minDistance = Math.min(width, height)
+                    if (_isFullScreen && _adjustingBrightness) {
+                        val adjustAmount = (distanceY * 2) / minDistance;
+                        _brightnessFactor = (_brightnessFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                        _progressBrightness.progress = _brightnessFactor;
+                        onBrightnessAdjusted.emit(_brightnessFactor);
+                    } else if (_isFullScreen && _adjustingSound) {
+                        val adjustAmount = (distanceY * 2) / minDistance;
+                        _soundFactor = (_soundFactor + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                        _progressSound.progress = _soundFactor;
+                        onSoundAdjusted.emit(_soundFactor);
+                    } else if (_adjustingFullscreenUp) {
+                        val adjustAmount = (distanceY * 2) / minDistance;
+                        _fullScreenFactorUp = (_fullScreenFactorUp + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                        _layoutControlsFullscreen.alpha = _fullScreenFactorUp;
+                    } else if (_adjustingFullscreenDown) {
+                        val adjustAmount = (-distanceY * 2) / minDistance;
+                        _fullScreenFactorDown = (_fullScreenFactorDown + adjustAmount).coerceAtLeast(0.0f).coerceAtMost(1.0f);
+                        _layoutControlsFullscreen.alpha = _fullScreenFactorDown;
+                    } else if (p0.pointerCount == 1) {
+                        val rx = (p0.x + p1.x) / (2 * width);
+                        val ry = (p0.y + p1.y) / (2 * height);
+                        if (ry > 0.1 && ry < 0.9) {
+                            if (Settings.instance.gestureControls.brightnessSlider && _isFullScreen && rx < 0.2) {
+                                startAdjustingBrightness();
+                            } else if (Settings.instance.gestureControls.volumeSlider && _isFullScreen && rx > 0.8) {
+                                startAdjustingSound();
+                            } else if (Settings.instance.gestureControls.toggleFullscreen && fullScreenGestureEnabled && rx in 0.3..0.7) {
+                                if (_isFullScreen) {
+                                    startAdjustingFullscreenDown();
+                                } else {
+                                    startAdjustingFullscreenUp();
+                                }
                             }
                         }
                     }
+                } else if (_isFullScreen) {
+                    stopAllGestures()
+
+                    _translationX = (_translationX - distanceX).coerceAtLeast(-height / _scaleFactor)
+                    _translationY = (_translationY - distanceY).coerceAtLeast(-width / _scaleFactor)
+
+                    Logger.i(TAG, "onPan " + _translationX.toString() + ", " + _translationY.toString())
+                    onPan.emit(_translationX, _translationY)
                 }
 
                 return true;
@@ -227,9 +268,14 @@ class GestureControlView : LinearLayout {
             stopAdjustingFullscreenDown();
         }
 
+        if (_layoutControlsZoom.visibility == View.VISIBLE && ev.action == MotionEvent.ACTION_UP) {
+            _layoutControlsZoom.visibility = View.GONE
+        }
+
         startHideJobIfNecessary();
 
         _gestureController.onTouchEvent(ev)
+        _scaleGestureDetector.onTouchEvent(ev)
         return true;
     }
 
@@ -562,6 +608,12 @@ class GestureControlView : LinearLayout {
     }
 
     fun setFullscreen(isFullScreen: Boolean) {
+        _scaleFactor = 1.0f
+        onZoom.emit(_scaleFactor)
+        _translationX = 0f
+        _translationY = 0f
+        onPan.emit(_translationX, _translationY)
+
         if (isFullScreen) {
             val c = context
             if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {

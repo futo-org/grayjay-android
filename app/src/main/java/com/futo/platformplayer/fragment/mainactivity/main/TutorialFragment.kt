@@ -67,7 +67,7 @@ class TutorialFragment : MainFragment() {
 
             addView(createHeader("Initial setup"))
             initialSetupVideos.forEach {
-                addView(createTutorialPill(R.drawable.ic_movie, it.name).apply {
+                addView(createTutorialPill(R.drawable.ic_movie, it.name, it.description).apply {
                     onClick.subscribe {
                         fragment.navigate<VideoDetailFragment>(it)
                     }
@@ -76,7 +76,7 @@ class TutorialFragment : MainFragment() {
 
             addView(createHeader("Features"))
             featuresVideos.forEach {
-                addView(createTutorialPill(R.drawable.ic_movie, it.name).apply {
+                addView(createTutorialPill(R.drawable.ic_movie, it.name, it.description).apply {
                     onClick.subscribe {
                         fragment.navigate<VideoDetailFragment>(it)
                     }
@@ -95,10 +95,11 @@ class TutorialFragment : MainFragment() {
             }
         }
 
-        private fun createTutorialPill(iconPrefix: Int, t: String): WidePillButton {
+        private fun createTutorialPill(iconPrefix: Int, t: String, d: String): WidePillButton {
             return WidePillButton(context).apply {
                 setIconPrefix(iconPrefix)
                 setText(t)
+                setDescription(d)
                 setIconSuffix(R.drawable.ic_play_notif)
                 layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
                     setMargins(15.dp(resources), 0, 15.dp(resources), 12.dp(resources))
@@ -107,9 +108,9 @@ class TutorialFragment : MainFragment() {
         }
     }
 
-    class TutorialVideoSourceDescriptor(url: String, duration: Long) : VideoUnMuxedSourceDescriptor() {
+    class TutorialVideoSourceDescriptor(url: String, duration: Long, width: Int, height: Int) : VideoUnMuxedSourceDescriptor() {
         override val videoSources: Array<IVideoSource> = arrayOf(
-            VideoUrlSource("1080p", url, 1920, 1080, duration, "video/mp4")
+            VideoUrlSource("Original", url, width, height, duration, "video/mp4")
         )
         override val audioSources: Array<IAudioSource> = arrayOf()
     }
@@ -120,7 +121,9 @@ class TutorialFragment : MainFragment() {
         override val description: String,
         thumbnailUrl: String,
         videoUrl: String,
-        override val duration: Long
+        override val duration: Long,
+        width: Int = 1920,
+        height: Int = 1080
     ) : IPlatformVideoDetails {
         override val id: PlatformID = PlatformID("tutorial", uuid)
         override val contentType: ContentType = ContentType.MEDIA
@@ -137,7 +140,7 @@ class TutorialFragment : MainFragment() {
         override val isLive: Boolean = false
         override val rating: IRating = RatingLikes(-1)
         override val viewCount: Long = -1
-        override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration)
+        override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration, width, height)
         override fun getComments(client: IPlatformClient): IPager<IPlatformComment> {
             return EmptyPager()
         }
@@ -163,7 +166,7 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "3b99ebfe-2640-4643-bfe0-a0cf04261fc5",
                 name = "Getting started",
-                description = "Learn how to get started with Grayjay.",
+                description = "Learn how to get started with Grayjay. How do you install plugins?",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/getting-started.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/getting-started.mp4",
                 duration = 50
@@ -171,7 +174,7 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "793aa009-516c-4581-b82f-a8efdfef4c27",
                 name = "Is Grayjay free?",
-                description = "Learn how Grayjay is monetized.",
+                description = "Learn how Grayjay is monetized. How do we make money?",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/pay.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/pay.mp4",
                 duration = 52
@@ -182,7 +185,7 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "d2238d88-4252-4a91-a12d-b90c049bb7cf",
                 name = "Searching",
-                description = "Learn about searching in Grayjay.",
+                description = "Learn about searching in Grayjay. How can I find channels, videos or playlists?",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/search.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/search.mp4",
                 duration = 39
@@ -198,10 +201,20 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "94d36959-e3fc-4c24-a988-89147067a179",
                 name = "Casting",
-                description = "Learn about casting in Grayjay.",
+                description = "Learn about casting in Grayjay. How do I show video on my TV?",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/how-to-cast.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/how-to-cast.mp4",
                 duration = 79
+            ),
+            TutorialVideo(
+                uuid = "5128c2e3-852b-4281-869b-efea2ec82a0e",
+                name = "Monetization",
+                description = "How can I monetize as a creator?",
+                thumbnailUrl = "https://releases.grayjay.app/tutorials/monetization.jpg",
+                videoUrl = "https://releases.grayjay.app/tutorials/monetization.mp4",
+                duration = 47,
+                1080,
+                1920
             )
         )
     }
