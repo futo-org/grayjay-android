@@ -108,9 +108,9 @@ class TutorialFragment : MainFragment() {
         }
     }
 
-    class TutorialVideoSourceDescriptor(url: String, duration: Long) : VideoUnMuxedSourceDescriptor() {
+    class TutorialVideoSourceDescriptor(url: String, duration: Long, width: Int, height: Int) : VideoUnMuxedSourceDescriptor() {
         override val videoSources: Array<IVideoSource> = arrayOf(
-            VideoUrlSource("1080p", url, 1920, 1080, duration, "video/mp4")
+            VideoUrlSource("Original", url, width, height, duration, "video/mp4")
         )
         override val audioSources: Array<IAudioSource> = arrayOf()
     }
@@ -121,7 +121,9 @@ class TutorialFragment : MainFragment() {
         override val description: String,
         thumbnailUrl: String,
         videoUrl: String,
-        override val duration: Long
+        override val duration: Long,
+        width: Int = 1920,
+        height: Int = 1080
     ) : IPlatformVideoDetails {
         override val id: PlatformID = PlatformID("tutorial", uuid)
         override val contentType: ContentType = ContentType.MEDIA
@@ -138,7 +140,7 @@ class TutorialFragment : MainFragment() {
         override val isLive: Boolean = false
         override val rating: IRating = RatingLikes(-1)
         override val viewCount: Long = -1
-        override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration)
+        override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration, width, height)
         override fun getComments(client: IPlatformClient): IPager<IPlatformComment> {
             return EmptyPager()
         }
@@ -210,7 +212,9 @@ class TutorialFragment : MainFragment() {
                 description = "How can I monetize as a creator?",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/monetization.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/monetization.mp4",
-                duration = 47
+                duration = 47,
+                1080,
+                1920
             )
         )
     }
