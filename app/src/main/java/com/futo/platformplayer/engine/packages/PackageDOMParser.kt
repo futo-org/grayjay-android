@@ -5,8 +5,11 @@ import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
 import com.caoccao.javet.enums.V8ConversionMode
 import com.caoccao.javet.enums.V8ProxyMode
+import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.internal.V8BindObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -65,7 +68,7 @@ class PackageDOMParser : V8Package {
             return result;
         }
         @V8Property
-        fun attributes(): Map<String, String> = _element.attributes().dataset();
+        fun attributes(): Map<String, String> = _element.attributes().associate { Pair(it.key, it.value) }
         @V8Property
         fun innerHTML(): String = _element.html();
         @V8Property
@@ -138,10 +141,32 @@ class PackageDOMParser : V8Package {
             super.dispose();
         }
 
+        @V8Function
+        fun toNodeTree(): SerializedNode {
+            return SerializedNode(
+                childNodes().map { it.toNodeTree() },
+                _element.tagName(),
+                _element.text(),
+                attributes()
+            );
+        }
+        @V8Function
+        fun toNodeTreeJson(): String {
+            return Json.encodeToString(SerializedNode.serializer(), toNodeTree());
+        }
+
         companion object {
             fun parse(parser: PackageDOMParser, str: String): DOMNode {
                 return DOMNode(parser, Jsoup.parse(str));
             }
         }
+
+        @Serializable
+        class SerializedNode(
+            val children: List<SerializedNode>,
+            val name: String,
+            val value: String,
+            val attributes: Map<String, String>
+        );
     }
 }

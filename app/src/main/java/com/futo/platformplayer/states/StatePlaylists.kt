@@ -16,6 +16,7 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import kotlinx.serialization.encodeToString
@@ -35,6 +36,8 @@ class StatePlaylists {
                 = SerializedPlatformVideo.fromVideo(StatePlatform.instance.getContentDetails(backup).await() as IPlatformVideoDetails);
         })
         .load();
+    private val _watchlistOrderStore = FragmentedStorage.get<StringArrayStorage>("watchListOrder"); //Temporary workaround to add order..
+
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
         .load();
@@ -48,26 +51,32 @@ class StatePlaylists {
     }
     fun getWatchLater() : List<SerializedPlatformVideo> {
         synchronized(_watchlistStore) {
-            return _watchlistStore.getItems();
+            val order = _watchlistOrderStore.getAllValues();
+            return _watchlistStore.getItems().sortedBy { order.indexOf(it.url) };
         }
     }
     fun updateWatchLater(updated: List<SerializedPlatformVideo>) {
         synchronized(_watchlistStore) {
             _watchlistStore.deleteAll();
             _watchlistStore.saveAllAsync(updated);
+            _watchlistOrderStore.set(*updated.map { it.url }.toTypedArray());
+            _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
     }
     fun removeFromWatchLater(video: SerializedPlatformVideo) {
         synchronized(_watchlistStore) {
             _watchlistStore.delete(video);
+            _watchlistOrderStore.set(*_watchlistOrderStore.values.filter { it != video.url }.toTypedArray());
+            _watchlistOrderStore.save();
         }
-
         onWatchLaterChanged.emit();
     }
     fun addToWatchLater(video: SerializedPlatformVideo) {
         synchronized(_watchlistStore) {
             _watchlistStore.saveAsync(video);
+            _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+            _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
     }

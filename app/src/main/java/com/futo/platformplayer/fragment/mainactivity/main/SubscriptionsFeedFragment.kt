@@ -31,6 +31,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
+import com.futo.platformplayer.views.ToastView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
@@ -44,6 +45,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.nio.channels.Channel
 import java.time.OffsetDateTime
 import kotlin.system.measureTimeMillis
 
@@ -440,14 +442,17 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 }
                                 Logger.e(TAG, "Channel [${channel}] failed", ex);
                                 if (toShow is PluginException)
-                                    UIDialogs.appToast(
-                                        context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", toShow.config.name).replace("{message}", toShow.message ?: "")
+                                    UIDialogs.appToast(ToastView.Toast(
+                                                toShow.message +
+                                                (if(channel != null) "\nChannel: " + channel else ""), false, null,
+                                        "Plugin ${toShow.config.name} failed")
                                     );
                                 else
                                     UIDialogs.appToast(ex.message ?: "");
                             }
                         }
                         else {
+                            val failedChannels = exs.filterIsInstance<ChannelException>().map { it.channelNameOrUrl }.distinct().toList();
                             val failedPlugins = exs.filter { it is PluginException || (it is ChannelException && it.cause is PluginException) }
                                 .map { if(it is ChannelException) (it.cause as PluginException) else if(it is PluginException) it else null  }
                                 .filter { it != null }
@@ -456,6 +461,9 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 .toList();
                             for(distinctPluginFail in failedPlugins)
                                 UIDialogs.appToast(context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", distinctPluginFail.config.name).replace("{message}", distinctPluginFail.message ?: ""));
+                            if(failedChannels.isNotEmpty())
+                                UIDialogs.appToast(ToastView.Toast(failedChannels.take(3).map { "- ${it}" }.joinToString("\n") +
+                                        (if(failedChannels.size >= 3) "\nAnd ${failedChannels.size - 3} more" else ""), false, null, "Failed Channels"));
                         }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to handle exceptions", e)

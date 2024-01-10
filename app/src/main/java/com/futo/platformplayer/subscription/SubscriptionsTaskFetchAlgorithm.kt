@@ -13,6 +13,7 @@ import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
+import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
@@ -68,7 +69,6 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val failedPlugins = mutableListOf<String>();
         val cachedChannels = mutableListOf<String>()
         val forkTasks = executeSubscriptionTasks(tasks, failedPlugins, cachedChannels);
-
 
         val taskResults = arrayListOf<SubscriptionTaskResult>();
         val timeTotal = measureTimeMillis {
@@ -200,7 +200,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     else {
                         Logger.i(StateSubscriptions.TAG, "Channel ${task.sub.channel.name} failed, substituting with cache");
                         pager = StateCache.instance.getChannelCachePager(task.sub.channel.url);
-                        taskEx = ex;
+                        taskEx = channelEx;
                         return@submit SubscriptionTaskResult(task, pager, taskEx);
                     }
                 }
