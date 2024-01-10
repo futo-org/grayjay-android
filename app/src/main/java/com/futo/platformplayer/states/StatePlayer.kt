@@ -361,6 +361,12 @@ class StatePlayer {
             if (queueShuffle)  {
                 removeFromShuffledQueue(video);
             }
+            if(currentVideo != null) {
+                val newPos = _queue.indexOfFirst { it.url == currentVideo?.url };
+                if(newPos >= 0)
+                    _queuePosition = newPos;
+            }
+
         }
 
         onQueueChanged.emit(shouldSwapCurrentItem);
@@ -407,6 +413,12 @@ class StatePlayer {
             if(_queue.size == 1) {
                 return null;
             }
+            if(_queue.size <= _queuePosition && currentVideo != null) {
+                //Out of sync position
+                val newPos = _queue.indexOfFirst { it.url == currentVideo?.url }
+                if(newPos != -1)
+                    _queuePosition = newPos;
+            }
 
             val shuffledQueue = _queueShuffled;
             val queue = if (queueShuffle && shuffledQueue != null) {
@@ -421,6 +433,8 @@ class StatePlayer {
             }
             //Standard Behavior
             if(_queuePosition - 1 >= 0) {
+                if(queue.size <= _queuePosition)
+                    return null;
                 return queue[_queuePosition - 1];
             }
             //Repeat Behavior (End of queue)

@@ -841,6 +841,7 @@ class StatePlatform {
         return urls;
     }
 
+    fun hasEnabledPlaylistClient(url: String) : Boolean = getEnabledClients().any { it.isPlaylistUrl(url) };
     fun getPlaylistClientOrNull(url: String): IPlatformClient? = getEnabledClients().find { it.isPlaylistUrl(url) }
     fun getPlaylistClient(url: String): IPlatformClient = getEnabledClients().find { it.isPlaylistUrl(url) }
         ?: throw NoPlatformClientException("No client enabled that supports this playlist url (${url})");

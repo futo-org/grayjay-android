@@ -649,6 +649,14 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             };
             return true;
         }
+        else if(StatePlatform.instance.hasEnabledPlaylistClient(url)) {
+            navigate(_fragMainPlaylist, url);
+            lifecycleScope.launch {
+                delay(100);
+                _fragVideoDetail.minimizeVideoDetail();
+            };
+            return true;
+        }
         return false;
     }
     fun handleContent(file: String, mime: String? = null): Boolean {
