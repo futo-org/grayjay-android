@@ -827,6 +827,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.system_volume, FieldForm.TOGGLE, R.string.system_volume_descr, 5)
         var useSystemVolume: Boolean = true;
+
+        @FormField(R.string.restore_system_brightness, FieldForm.TOGGLE, R.string.restore_system_brightness_descr, 6)
+        var restoreSystemBrightness: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 20)
