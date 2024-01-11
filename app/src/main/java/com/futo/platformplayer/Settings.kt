@@ -830,6 +830,12 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.restore_system_brightness, FieldForm.TOGGLE, R.string.restore_system_brightness_descr, 6)
         var restoreSystemBrightness: Boolean = true;
+
+        @FormField(R.string.zoom_option, FieldForm.TOGGLE, R.string.zoom_option_descr, 7)
+        var zoom: Boolean = true;
+
+        @FormField(R.string.pan_option, FieldForm.TOGGLE, R.string.pan_option_descr, 8)
+        var pan: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 20)

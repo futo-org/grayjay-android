@@ -116,7 +116,7 @@ class GestureControlView : LinearLayout {
 
         _scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                if (!_isFullScreen) {
+                if (!_isFullScreen || !Settings.instance.gestureControls.zoom) {
                     return false
                 }
 
@@ -201,7 +201,7 @@ class GestureControlView : LinearLayout {
                             }
                         }
                     }
-                } else if (_isFullScreen && !_isZooming) {
+                } else if (_isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
                     stopAllGestures()
                     pan(_translationX - distanceX, _translationY - distanceY)
                 }

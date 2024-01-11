@@ -355,6 +355,10 @@
     <string name="system_brightness_descr">Gesture controls adjust system brightness</string>
     <string name="restore_system_brightness">Restore system brightness</string>
     <string name="restore_system_brightness_descr">Restore system brightness when exiting fullscreen</string>
+    <string name="zoom_option">Enable zoom</string>
+    <string name="zoom_option_descr">Enable two finger pinch zoom gesture</string>
+    <string name="pan_option">Enable pan</string>
+    <string name="pan_option_descr">Enable two finger pan gesture</string>
     <string name="system_volume">System volume</string>
     <string name="system_volume_descr">Gesture controls adjust system volume</string>
     <string name="live_chat_webview">Live Chat Webview</string>
