@@ -1857,7 +1857,7 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private fun handlePlayChanged(playing: Boolean) {
+    private fun c(playing: Boolean) {
         Logger.i(TAG, "handlePlayChanged(playing=$playing)")
 
         val ad = StateCasting.instance.activeDevice;

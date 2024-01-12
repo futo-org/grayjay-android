@@ -100,6 +100,15 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _toResume = false;
 
     private val _playerEventListener = object: Player.Listener {
+        override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+            super.onPlaybackSuppressionReasonChanged(playbackSuppressionReason)
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying);
+            updatePlaying();
+        }
+
         //TODO: Figure out why this is deprecated, and what the alternative is.
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)

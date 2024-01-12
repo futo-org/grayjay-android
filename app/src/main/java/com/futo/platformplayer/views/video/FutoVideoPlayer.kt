@@ -629,6 +629,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         }
     }
 
+    override fun onPlay
     override fun onPlaybackStateChanged(playbackState: Int) {
         Logger.v(TAG, "onPlaybackStateChanged $playbackState");
         updatePlayPause()
