@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
@@ -17,15 +18,20 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.announcements.AnnouncementView
+import com.futo.platformplayer.views.buttons.BigButton
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -147,6 +153,34 @@ class HomeFragment : MainFragment() {
             finishRefreshLayoutLoader();
         }
 
+        override fun getEmptyPagerView(): View? {
+            val dp10 = 10.dp(resources);
+            val dp30 = 30.dp(resources);
+
+            if(!StatePlatform.instance.getEnabledClients().isEmpty())
+                //Initial setup
+                return NoResultsView(context, "You have no Sources", "Enable or install some sources", R.drawable.ic_sources,
+                    listOf(BigButton(context, "Browse Online Sources", "View official sources online", R.drawable.ic_explore) {
+                        fragment.navigate<BrowserFragment>(BrowserFragment.NavigateOptions("https://plugins.grayjay.app/", mapOf(
+                            Pair("grayjay") { req ->
+                                StateApp.instance.contextOrNull?.let {
+                                    if(it is MainActivity) {
+                                        it.handleUrlAll(req.url.toString());
+                                    }
+                                };
+                            }
+                        )));
+                    }.withMargin(dp10, dp30).withBackground(R.drawable.background_big_primary))
+                );
+            else
+                return NoResultsView(context, "Nothing to see here", "The enabled sources do not have any results.", R.drawable.ic_help,
+                    listOf(BigButton(context, "Sources", "Go to the sources tab", R.drawable.ic_creators) {
+                        fragment.navigate<SourcesFragment>();
+                    }.withMargin(dp10, dp30))
+                );
+            return null;
+        }
+
         override fun reload() {
             loadResults();
         }
@@ -161,13 +195,15 @@ class HomeFragment : MainFragment() {
         }
         private fun loadedResult(pager : IPager<IPlatformContent>) {
             if (pager is EmptyPager<IPlatformContent>) {
-                StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), context.getString(R.string.no_home_available), context.getString(R.string.no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh), AnnouncementType.SESSION);
+                //StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), context.getString(R.string.no_home_available), context.getString(R.string.no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh), AnnouncementType.SESSION);
             }
 
             Logger.i(TAG, "Got new home pager ${pager}");
             finishRefreshLayoutLoader();
             setLoading(false);
             setPager(pager);
+            if(pager.getResults().isEmpty() && !pager.hasMorePages())
+                setEmptyPager(true);
         }
     }
 
