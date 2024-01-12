@@ -126,7 +126,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val pager = MultiChronoContentPager(groupedPagers, allowFailure, 15);
         pager.initialize();
 
-        return Result(DedupContentPager(pager), exs);
+        return Result(DedupContentPager(pager, StatePlatform.instance.getEnabledClients().map { it.id }), exs);
     }
 
     fun executeSubscriptionTasks(tasks: List<SubscriptionTask>, failedPlugins: MutableList<String>, cachedChannels: MutableList<String>): List<ForkJoinTask<SubscriptionTaskResult>> {

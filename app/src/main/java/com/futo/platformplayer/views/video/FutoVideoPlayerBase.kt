@@ -106,6 +106,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             super.onIsPlayingChanged(isPlaying);
+            this@FutoVideoPlayerBase.onIsPlayingChanged(isPlaying);
             updatePlaying();
         }
 
@@ -625,6 +626,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
     protected open fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource? = null, resume: Boolean = true) { }
 
+    protected open fun onIsPlayingChanged(playing: Boolean) {
+
+    }
     protected open fun onPlaybackStateChanged(playbackState: Int) {
         if (_shouldPlaybackRestartOnConnectivity && playbackState == ExoPlayer.STATE_READY) {
             Logger.i(TAG, "_shouldPlaybackRestartOnConnectivity=false");
