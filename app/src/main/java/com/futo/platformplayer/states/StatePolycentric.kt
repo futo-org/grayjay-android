@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import userpackage.Protocol
+import userpackage.Protocol.Reference
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -287,7 +288,8 @@ class StatePolycentric {
                 rating = RatingLikeDislikes(0, 0),
                 date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
                 replyCount = 0,
-                eventPointer = se.toPointer()
+                eventPointer = se.toPointer(),
+                parentReference = se.event.references.getOrNull(0)
             ))
         }
 
@@ -326,6 +328,77 @@ class StatePolycentric {
         val dislikes = response.countsList[1];
         val replyCount = response.countsList[2];
         return LikesDislikesReplies(likes, dislikes, replyCount)
+    }
+
+    suspend fun getComment(contextUrl: String, reference: Reference): PolycentricPlatformComment {
+        ensureEnabled()
+
+        if (reference.referenceType != 2L) {
+            throw Exception("Not a pointer")
+        }
+
+        val pointer = Protocol.Pointer.parseFrom(reference.reference)
+        val events = ApiMethods.getEvents(PolycentricCache.SERVER, pointer.system, Protocol.RangesForSystem.newBuilder()
+            .addRangesForProcesses(Protocol.RangesForProcess.newBuilder()
+                .setProcess(pointer.process)
+                .addRanges(Protocol.Range.newBuilder()
+                    .setLow(pointer.logicalClock)
+                    .setHigh(pointer.logicalClock)
+                    .build())
+                .build())
+            .build())
+
+        val sev = SignedEvent.fromProto(events.getEvents(0))
+        val ev = sev.event
+
+        if (ev.contentType != ContentType.POST.value) {
+            throw Exception("This is not a comment")
+        }
+
+        val post = Protocol.Post.parseFrom(ev.content);
+        val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(PolycentricCache.SERVER));
+        val dp_25 = 25.dp(StateApp.instance.context.resources)
+
+        val profileEvents = ApiMethods.getQueryLatest(
+            PolycentricCache.SERVER,
+            ev.system.toProto(),
+            listOf(
+                ContentType.AVATAR.value,
+                ContentType.USERNAME.value
+            )
+        ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
+            .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
+
+        val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
+        val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };
+        val imageBundle = if (avatarEvent != null) {
+            val lwwElementValue = avatarEvent.event.lwwElement?.value;
+            if (lwwElementValue != null) {
+                Protocol.ImageBundle.parseFrom(lwwElementValue)
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+
+        val ldr = getLikesDislikesReplies(reference)
+        return PolycentricPlatformComment(
+            contextUrl = contextUrl,
+            author = PlatformAuthorLink(
+                id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
+                name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
+                url = systemLinkUrl,
+                thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                subscribers = null
+            ),
+            msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
+            rating = RatingLikeDislikes(ldr.likes, ldr.dislikes),
+            date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
+            replyCount = ldr.replyCount.toInt(),
+            eventPointer = sev.toPointer(),
+            parentReference = sev.event.references.getOrNull(0)
+        )
     }
 
     suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference, extraByteReferences: List<ByteArray>? = null): IPager<IPlatformComment> {
@@ -453,7 +526,8 @@ class StatePolycentric {
                     rating = RatingLikeDislikes(likes, dislikes),
                     date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
                     replyCount = replies.toInt(),
-                    eventPointer = sev.toPointer()
+                    eventPointer = sev.toPointer(),
+                    parentReference = sev.event.references.getOrNull(0)
                 );
             } catch (e: Throwable) {
                 return@mapNotNull null;

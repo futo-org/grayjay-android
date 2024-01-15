@@ -810,10 +810,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         if(_fragBotBarMenu.onBackPressed())
             return;
 
-        if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED &&
-            _fragVideoDetail.onBackPressed())
+        if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED && _fragVideoDetail.onBackPressed())
             return;
-
 
         if(!fragCurrent.onBackPressed())
             closeSegment();

@@ -50,7 +50,7 @@
             android:textSize="14sp"
             app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
             app:layout_constraintTop_toTopOf="@id/image_thumbnail"
-            android:text="ShortCircuit" />
+            tools:text="ShortCircuit" />
 
         <TextView
             android:id="@+id/text_metadata"
@@ -66,7 +66,7 @@
             app:layout_constraintLeft_toRightOf="@id/text_author"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="@id/text_author"
-            android:text=" • 3 years ago" />
+            tools:text=" • 3 years ago" />
 
         <com.futo.platformplayer.views.behavior.NonScrollingTextView
             android:id="@+id/text_body"
@@ -84,7 +84,7 @@
             app:layout_constraintTop_toBottomOf="@id/text_metadata"
             app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
             app:layout_constraintRight_toRightOf="parent"
-            android:text="@string/lorem_ipsum" />
+            tools:text="@string/lorem_ipsum" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -106,5 +106,12 @@
         app:layout_constraintTop_toBottomOf="@id/add_comment_view"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="12dp" />
+
+    <com.futo.platformplayer.views.overlays.LoaderOverlay
+        android:id="@+id/loader_overlay"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

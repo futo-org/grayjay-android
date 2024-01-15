@@ -55,6 +55,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
 
     var onRepliesClick = Event1<IPlatformComment>();
     var onDelete = Event1<IPlatformComment>();
+    var onClick = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
@@ -106,6 +107,11 @@ class CommentWithReferenceViewHolder : ViewHolder {
         _buttonDelete.setOnClickListener {
             val c = comment ?: return@setOnClickListener;
             onDelete.emit(c);
+        }
+
+        _layoutComment.setOnClickListener {
+            val c = comment ?: return@setOnClickListener;
+            onClick.emit(c);
         }
 
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);

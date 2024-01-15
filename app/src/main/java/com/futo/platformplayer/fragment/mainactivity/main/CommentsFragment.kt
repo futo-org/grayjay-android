@@ -117,6 +117,7 @@ class CommentsFragment : MainFragment() {
                     val holder = CommentWithReferenceViewHolder(viewGroup, _cache);
                     holder.onDelete.subscribe(::onDelete);
                     holder.onRepliesClick.subscribe(::onRepliesClick);
+                    holder.onClick.subscribe(::onClick);
                     return@InsertedViewAdapterWithLoader holder;
                 }
             );
@@ -198,6 +199,17 @@ class CommentsFragment : MainFragment() {
             }
 
             return false
+        }
+
+        private fun onClick(c: IPlatformComment) {
+            if (c !is PolycentricPlatformComment) {
+                return
+            }
+
+            val parentRef = c.parentReference
+            if (parentRef != null && _repliesOverlay.handleParentClick(c.contextUrl, parentRef)) {
+                setRepliesOverlayVisible(true, true)
+            }
         }
 
         private fun onRepliesClick(c: IPlatformComment) {
