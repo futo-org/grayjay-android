@@ -22,15 +22,17 @@ class BrowserFragment : MainFragment() {
     override val hasBottomBar: Boolean get() = true;
 
     private var _webview: WebView? = null;
+    private val _webviewWithoutHandling = object: WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+            return false;
+        }
+    };
+
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_browser, container, false);
         _webview = view.findViewById<WebView?>(R.id.webview).apply {
-            this.webViewClient = object: WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    return false;
-                }
-            };
+            this.webViewClient = _webviewWithoutHandling;
             this.settings.javaScriptEnabled = true;
             CookieManager.getInstance().setAcceptCookie(true);
             this.settings.domStorageEnabled = true;
@@ -41,8 +43,26 @@ class BrowserFragment : MainFragment() {
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack)
 
-        if(parameter is String)
+        if(parameter is String) {
+            _webview?.webViewClient = _webviewWithoutHandling;
             _webview?.loadUrl(parameter);
+        }
+        else if(parameter is NavigateOptions) {
+            if(parameter.urlHandlers != null && parameter.urlHandlers.isNotEmpty())
+                _webview?.webViewClient = object: WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        val schema = request?.url?.scheme;
+                        if(schema != null && parameter.urlHandlers.containsKey(schema)) {
+                            parameter.urlHandlers[schema]?.invoke(request);
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+            else
+                _webview?.webViewClient = _webviewWithoutHandling;
+            _webview?.loadUrl(parameter.url);
+        }
         else
             _webview?.loadUrl("about:blank");
     }
@@ -59,4 +79,9 @@ class BrowserFragment : MainFragment() {
     companion object {
         fun newInstance() = BrowserFragment().apply {}
     }
+
+    class NavigateOptions(
+        val url: String,
+        val urlHandlers: Map<String, (WebResourceRequest)->Unit>? = null
+    )
 }
