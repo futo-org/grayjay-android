@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.encryption.GEncryptionProvider
 import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
@@ -17,11 +18,10 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.Synchronization
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class PolycentricCreateProfileActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
@@ -71,6 +71,20 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                     try {
                         processHandle = ProcessHandle.create();
                         Store.instance.addProcessSecret(processHandle.processSecret);
+
+                        try {
+                            val encryptedSecret = GEncryptionProvider.instance.encrypt(processHandle.processSecret.toProto().toByteArray())
+                            val fileName = "polycentricProcessSecrets/${UUID.randomUUID()}"
+
+                            val fileOutput = openFileOutput(fileName, Context.MODE_PRIVATE)
+                            fileOutput.write(encryptedSecret)
+                            fileOutput.close()
+
+                            Logger.i(TAG, "Process secret saved to file: $fileName")
+                        } catch (e: Exception) {
+                            Logger.e(TAG, "Error saving process secret to file", e)
+                        }
+
                         processHandle.addServer("https://srv1-stg.polycentric.io");
                         processHandle.setUsername(username);
                         StatePolycentric.instance.setProcessHandle(processHandle);
