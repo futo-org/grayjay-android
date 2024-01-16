@@ -9,7 +9,6 @@ import android.graphics.Matrix
 import android.graphics.drawable.Animatable
 import android.media.AudioManager
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -291,8 +290,6 @@ class GestureControlView : LinearLayout {
         _translationY = translationY.coerceAtLeast(ymin).coerceAtMost(ymax)
 
         onPan.emit(_translationX, _translationY)
-
-        Log.i(TAG, "surfaceView (width: ${_surfaceView?.width}, height: ${_surfaceView?.height}, x: ${_surfaceView?.x}, y: ${_surfaceView?.y}")
     }
 
     fun setupTouchArea(layoutControls: ViewGroup? = null, background: View? = null) {
@@ -382,11 +379,10 @@ class GestureControlView : LinearLayout {
     }
 
     private fun willSnapFill(): Boolean {
-        //TODO: Make sure pan is not too far away from 0, 0
         val surfaceView = _surfaceView
         if (surfaceView != null) {
             val zoomScaleFactor = calculateZoomScaleFactor()
-            if (Math.abs(_scaleFactor - zoomScaleFactor) < 0.05f) {
+            if (Math.abs(_scaleFactor - zoomScaleFactor) < 0.05f && Math.abs(_translationX) / width < 0.03f && Math.abs(_translationY) / height < 0.03f) {
                 return true
             }
         }
@@ -395,8 +391,7 @@ class GestureControlView : LinearLayout {
     }
 
     private fun willSnapFit(): Boolean {
-        //TODO: Make sure pan is not too far away from 0, 0
-        return Math.abs(_scaleFactor - 1.0f) < 0.05f
+        return Math.abs(_scaleFactor - 1.0f) < 0.05f && Math.abs(_translationX) / width < 0.03f && Math.abs(_translationY) / height < 0.03f
     }
 
     fun cancelHideJob() {
