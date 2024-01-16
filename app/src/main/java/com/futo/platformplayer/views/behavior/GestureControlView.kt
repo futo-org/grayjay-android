@@ -378,11 +378,14 @@ class GestureControlView : LinearLayout {
         return Math.max(width / w, height / h)
     }
 
+    private val _snapTranslationTolerance = 0.04f;
+    private val _snapZoomTolerance = 0.04f;
+
     private fun willSnapFill(): Boolean {
         val surfaceView = _surfaceView
         if (surfaceView != null) {
             val zoomScaleFactor = calculateZoomScaleFactor()
-            if (Math.abs(_scaleFactor - zoomScaleFactor) < 0.05f && Math.abs(_translationX) / width < 0.03f && Math.abs(_translationY) / height < 0.03f) {
+            if (Math.abs(_scaleFactor - zoomScaleFactor) < _snapZoomTolerance && Math.abs(_translationX) / width < _snapTranslationTolerance && Math.abs(_translationY) / height < _snapTranslationTolerance) {
                 return true
             }
         }
@@ -391,7 +394,7 @@ class GestureControlView : LinearLayout {
     }
 
     private fun willSnapFit(): Boolean {
-        return Math.abs(_scaleFactor - 1.0f) < 0.05f && Math.abs(_translationX) / width < 0.03f && Math.abs(_translationY) / height < 0.03f
+        return Math.abs(_scaleFactor - 1.0f) < _snapZoomTolerance && Math.abs(_translationX) / width < _snapTranslationTolerance && Math.abs(_translationY) / height < _snapTranslationTolerance
     }
 
     fun cancelHideJob() {
