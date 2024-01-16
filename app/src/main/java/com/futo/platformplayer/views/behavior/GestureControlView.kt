@@ -9,6 +9,7 @@ import android.graphics.Matrix
 import android.graphics.drawable.Animatable
 import android.media.AudioManager
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -85,6 +86,10 @@ class GestureControlView : LinearLayout {
     private val _layoutControlsZoom: FrameLayout
     private val _textZoom: TextView
     private var _isZooming = false
+    private var _isZoomPanEnabled = false
+    private var _surfaceView: View? = null
+    private var _layoutIndicatorFill: FrameLayout;
+    private var _layoutIndicatorFit: FrameLayout;
 
     private val _gestureController: GestureDetectorCompat;
 
@@ -113,20 +118,16 @@ class GestureControlView : LinearLayout {
         _textZoom = findViewById(R.id.text_zoom)
         _progressBrightness = findViewById(R.id.progress_brightness);
         _layoutControlsFullscreen = findViewById(R.id.layout_controls_fullscreen);
+        _layoutIndicatorFill = findViewById(R.id.layout_indicator_fill);
+        _layoutIndicatorFit = findViewById(R.id.layout_indicator_fit);
 
         _scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                if (!_isFullScreen || !Settings.instance.gestureControls.zoom) {
+                if (!_isZoomPanEnabled || !_isFullScreen || !Settings.instance.gestureControls.zoom) {
                     return false
                 }
 
-                var newScaleFactor = (_scaleFactor * detector.scaleFactor).coerceAtLeast(1.0f).coerceAtMost(5.0f)
-
-                //Make original zoom sticky
-                if (newScaleFactor - 1.0f < 0.01f) {
-                    newScaleFactor = 1.0f
-                }
-
+                val newScaleFactor = (_scaleFactor * detector.scaleFactor).coerceAtLeast(1.0f).coerceAtMost(10.0f)
                 val scaleFactorChange = newScaleFactor / _scaleFactor
                 _scaleFactor = newScaleFactor
                 onZoom.emit(_scaleFactor)
@@ -149,6 +150,25 @@ class GestureControlView : LinearLayout {
                 _layoutControlsZoom.visibility = View.VISIBLE
                 _textZoom.text = "${String.format("%.1f", _scaleFactor)}x"
                 _isZooming = true
+
+                if (willSnapFill()) {
+                    _layoutIndicatorFill.visibility = View.VISIBLE
+                    _layoutIndicatorFit.visibility = View.GONE
+                } else if (willSnapFit()) {
+                    _layoutIndicatorFill.visibility = View.GONE
+                    _layoutIndicatorFit.visibility = View.VISIBLE
+
+                    _surfaceView?.let {
+                        val lp = _layoutIndicatorFit.layoutParams
+                        lp.width = it.width
+                        lp.height = it.height
+                        _layoutIndicatorFit.layoutParams = lp
+                    }
+                } else {
+                    _layoutIndicatorFill.visibility = View.GONE
+                    _layoutIndicatorFit.visibility = View.GONE
+                }
+
                 return true
             }
         })
@@ -201,7 +221,7 @@ class GestureControlView : LinearLayout {
                             }
                         }
                     }
-                } else if (_isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
+                } else if (_isZoomPanEnabled && _isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
                     stopAllGestures()
                     pan(_translationX - distanceX, _translationY - distanceY)
                 }
@@ -244,6 +264,19 @@ class GestureControlView : LinearLayout {
         isClickable = true
     }
 
+    fun setZoomPanEnabled(view: View) {
+        _isZoomPanEnabled = true
+        _surfaceView = view
+    }
+
+    fun resetZoomPan() {
+        _scaleFactor = 1.0f
+        onZoom.emit(_scaleFactor)
+        _translationX = 0f
+        _translationY = 0f
+        onPan.emit(_translationX, _translationY)
+    }
+
     private fun pan(translationX: Float, translationY: Float) {
         val xc = width / 2.0f
         val yc = height / 2.0f
@@ -258,6 +291,8 @@ class GestureControlView : LinearLayout {
         _translationY = translationY.coerceAtLeast(ymin).coerceAtMost(ymax)
 
         onPan.emit(_translationX, _translationY)
+
+        Log.i(TAG, "surfaceView (width: ${_surfaceView?.width}, height: ${_surfaceView?.height}, x: ${_surfaceView?.x}, y: ${_surfaceView?.y}")
     }
 
     fun setupTouchArea(layoutControls: ViewGroup? = null, background: View? = null) {
@@ -306,7 +341,26 @@ class GestureControlView : LinearLayout {
         }
 
         if (_isZooming && ev.action == MotionEvent.ACTION_UP) {
+            val surfaceView = _surfaceView
+            if (surfaceView != null && willSnapFill()) {
+                _scaleFactor = calculateZoomScaleFactor()
+                onZoom.emit(_scaleFactor)
+
+                _translationX = 0f
+                _translationY = 0f
+                onPan.emit(_translationX, _translationY)
+            } else if (willSnapFit()) {
+                _scaleFactor = 1f
+                onZoom.emit(_scaleFactor)
+
+                _translationX = 0f
+                _translationY = 0f
+                onPan.emit(_translationX, _translationY)
+            }
+
             _layoutControlsZoom.visibility = View.GONE
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.GONE
             _isZooming = false
         }
 
@@ -315,6 +369,34 @@ class GestureControlView : LinearLayout {
         _gestureController.onTouchEvent(ev)
         _scaleGestureDetector.onTouchEvent(ev)
         return true;
+    }
+
+    private fun calculateZoomScaleFactor(): Float {
+        val w = _surfaceView?.width?.toFloat() ?: return 1.0f;
+        val h = _surfaceView?.height?.toFloat() ?: return 1.0f;
+        if (w == 0.0f || h == 0.0f) {
+            return 1.0f;
+        }
+
+        return Math.max(width / w, height / h)
+    }
+
+    private fun willSnapFill(): Boolean {
+        //TODO: Make sure pan is not too far away from 0, 0
+        val surfaceView = _surfaceView
+        if (surfaceView != null) {
+            val zoomScaleFactor = calculateZoomScaleFactor()
+            if (Math.abs(_scaleFactor - zoomScaleFactor) < 0.05f) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun willSnapFit(): Boolean {
+        //TODO: Make sure pan is not too far away from 0, 0
+        return Math.abs(_scaleFactor - 1.0f) < 0.05f
     }
 
     fun cancelHideJob() {
@@ -646,11 +728,7 @@ class GestureControlView : LinearLayout {
     }
 
     fun setFullscreen(isFullScreen: Boolean) {
-        _scaleFactor = 1.0f
-        onZoom.emit(_scaleFactor)
-        _translationX = 0f
-        _translationY = 0f
-        onPan.emit(_translationX, _translationY)
+        resetZoomPan()
 
         if (isFullScreen) {
             val c = context

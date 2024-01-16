@@ -272,6 +272,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _videoView.scaleY = it
         }
 
+        gestureControl.setZoomPanEnabled(_videoView.videoSurfaceView!!)
+
         if(!isInEditMode) {
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
             val player = StatePlayer.instance.getPlayerOrCreate(context);
@@ -600,6 +602,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
+        gestureControl.resetZoomPan()
         _lastSourceFit = null;
         if(isFullScreen)
             fillHeight();
@@ -762,5 +765,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     fun setGestureSoundFactor(soundFactor: Float) {
         gestureControl.setSoundFactor(soundFactor);
+    }
+
+    override fun onSurfaceSizeChanged(width: Int, height: Int) {
+        gestureControl.resetZoomPan()
     }
 }
