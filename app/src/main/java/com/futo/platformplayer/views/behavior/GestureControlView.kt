@@ -85,6 +85,7 @@ class GestureControlView : LinearLayout {
     private val _layoutControlsZoom: FrameLayout
     private val _textZoom: TextView
     private var _isZooming = false
+    private var _isPanning = false
     private var _isZoomPanEnabled = false
     private var _surfaceView: View? = null
     private var _layoutIndicatorFill: FrameLayout;
@@ -150,23 +151,7 @@ class GestureControlView : LinearLayout {
                 _textZoom.text = "${String.format("%.1f", _scaleFactor)}x"
                 _isZooming = true
 
-                if (willSnapFill()) {
-                    _layoutIndicatorFill.visibility = View.VISIBLE
-                    _layoutIndicatorFit.visibility = View.GONE
-                } else if (willSnapFit()) {
-                    _layoutIndicatorFill.visibility = View.GONE
-                    _layoutIndicatorFit.visibility = View.VISIBLE
-
-                    _surfaceView?.let {
-                        val lp = _layoutIndicatorFit.layoutParams
-                        lp.width = it.width
-                        lp.height = it.height
-                        _layoutIndicatorFit.layoutParams = lp
-                    }
-                } else {
-                    _layoutIndicatorFill.visibility = View.GONE
-                    _layoutIndicatorFit.visibility = View.GONE
-                }
+                updateSnappingVisibility()
 
                 return true
             }
@@ -183,7 +168,7 @@ class GestureControlView : LinearLayout {
 
                 Logger.i(TAG, "p0.pointerCount: " + p0.pointerCount)
 
-                if (p1.pointerCount == 1) {
+                if (!_isPanning && p1.pointerCount == 1) {
                     val minDistance = Math.min(width, height)
                     if (_isFullScreen && _adjustingBrightness) {
                         val adjustAmount = (distanceY * 2) / minDistance;
@@ -221,7 +206,9 @@ class GestureControlView : LinearLayout {
                         }
                     }
                 } else if (_isZoomPanEnabled && _isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
+                    _isPanning = true
                     stopAllGestures()
+                    updateSnappingVisibility()
                     pan(_translationX - distanceX, _translationY - distanceY)
                 }
 
@@ -261,6 +248,26 @@ class GestureControlView : LinearLayout {
         });
 
         isClickable = true
+    }
+
+    fun updateSnappingVisibility() {
+        if (willSnapFill()) {
+            _layoutIndicatorFill.visibility = View.VISIBLE
+            _layoutIndicatorFit.visibility = View.GONE
+        } else if (willSnapFit()) {
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.VISIBLE
+
+            _surfaceView?.let {
+                val lp = _layoutIndicatorFit.layoutParams
+                lp.width = it.width
+                lp.height = it.height
+                _layoutIndicatorFit.layoutParams = lp
+            }
+        } else {
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.GONE
+        }
     }
 
     fun setZoomPanEnabled(view: View) {
@@ -337,7 +344,7 @@ class GestureControlView : LinearLayout {
             stopAdjustingFullscreenDown();
         }
 
-        if (_isZooming && ev.action == MotionEvent.ACTION_UP) {
+        if ((_isPanning || _isZooming) && ev.action == MotionEvent.ACTION_UP) {
             val surfaceView = _surfaceView
             if (surfaceView != null && willSnapFill()) {
                 _scaleFactor = calculateZoomScaleFactor()
@@ -359,6 +366,7 @@ class GestureControlView : LinearLayout {
             _layoutIndicatorFill.visibility = View.GONE
             _layoutIndicatorFit.visibility = View.GONE
             _isZooming = false
+            _isPanning = false
         }
 
         startHideJobIfNecessary();
