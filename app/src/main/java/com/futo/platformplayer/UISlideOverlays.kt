@@ -1,6 +1,5 @@
 package com.futo.platformplayer
 
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
@@ -718,6 +717,13 @@ class UISlideOverlays {
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
+            playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
+                showCreatePlaylistOverlay(container) {
+                    val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
+                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                };
+            }, false))
+
             for (playlist in allPlaylists) {
                 playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, playlist.name, "${playlist.videos.size} " + container.context.getString(R.string.videos), "",
                     {
