@@ -8,7 +8,8 @@
     android:orientation="vertical"
     android:id="@+id/container"
     android:background="#77000000"
-    android:elevation="4dp">
+    android:elevation="4dp"
+    android:clickable="true">
     <ImageView
         android:id="@+id/loader"
         android:layout_width="80dp"

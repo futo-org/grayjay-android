@@ -1,6 +1,5 @@
 package com.futo.platformplayer
 
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
@@ -68,7 +67,7 @@ class UISlideOverlays {
             return menu;
         }
 
-        fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
+        fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
 
             val originalNotif = subscription.doNotifications;
@@ -77,15 +76,13 @@ class UISlideOverlays {
             val originalVideo = subscription.doFetchVideos;
             val originalPosts = subscription.doFetchPosts;
 
+            val menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, listOf());
+
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO){
                 val plugin = StatePlatform.instance.getChannelClient(subscription.channel.url);
                 val capabilities = plugin.getChannelCapabilities();
 
                 withContext(Dispatchers.Main) {
-
-                    var menu: SlideUpMenuOverlay? = null;
-
-
                     items.addAll(listOf(
                         SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
                             subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
@@ -119,7 +116,7 @@ class UISlideOverlays {
                         }, false)*/
                         ).filterNotNull());
 
-                    menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
+                    menu.setItems(items);
 
                     if(subscription.doNotifications)
                         menu.selectOption(null, "notifications", true, true);
@@ -174,6 +171,8 @@ class UISlideOverlays {
                     menu.show();
                 }
             }
+
+            return menu;
         }
 
         fun showAddToGroupOverlay(channel: IPlatformVideo, container: ViewGroup) {
@@ -718,6 +717,13 @@ class UISlideOverlays {
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
+            playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
+                showCreatePlaylistOverlay(container) {
+                    val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
+                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                };
+            }, false))
+
             for (playlist in allPlaylists) {
                 playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, playlist.name, "${playlist.videos.size} " + container.context.getString(R.string.videos), "",
                     {

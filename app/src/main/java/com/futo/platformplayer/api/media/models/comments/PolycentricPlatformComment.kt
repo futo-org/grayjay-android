@@ -19,8 +19,9 @@ class PolycentricPlatformComment : IPlatformComment {
 
     val eventPointer: Pointer;
     val reference: Reference;
+    val parentReference: Reference?;
 
-    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, eventPointer: Pointer, replyCount: Int? = null) {
+    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, eventPointer: Pointer, parentReference: Reference?, replyCount: Int? = null) {
         this.contextUrl = contextUrl;
         this.author = author;
         this.message = msg;
@@ -29,6 +30,7 @@ class PolycentricPlatformComment : IPlatformComment {
         this.replyCount = replyCount;
         this.eventPointer = eventPointer;
         this.reference = eventPointer.toReference();
+        this.parentReference = parentReference;
     }
 
     override fun getReplies(client: IPlatformClient): IPager<IPlatformComment> {
@@ -36,10 +38,11 @@ class PolycentricPlatformComment : IPlatformComment {
     }
 
     fun cloneWithUpdatedReplyCount(replyCount: Int?): PolycentricPlatformComment {
-        return PolycentricPlatformComment(contextUrl, author, message, rating, date, eventPointer, replyCount);
+        return PolycentricPlatformComment(contextUrl, author, message, rating, date, eventPointer, parentReference, replyCount);
     }
 
     companion object {
+        private const val TAG = "PolycentricPlatformComment"
         val MAX_COMMENT_SIZE = 2000
     }
 }

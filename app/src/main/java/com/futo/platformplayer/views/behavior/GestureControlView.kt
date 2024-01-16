@@ -85,6 +85,11 @@ class GestureControlView : LinearLayout {
     private val _layoutControlsZoom: FrameLayout
     private val _textZoom: TextView
     private var _isZooming = false
+    private var _isPanning = false
+    private var _isZoomPanEnabled = false
+    private var _surfaceView: View? = null
+    private var _layoutIndicatorFill: FrameLayout;
+    private var _layoutIndicatorFit: FrameLayout;
 
     private val _gestureController: GestureDetectorCompat;
 
@@ -113,20 +118,16 @@ class GestureControlView : LinearLayout {
         _textZoom = findViewById(R.id.text_zoom)
         _progressBrightness = findViewById(R.id.progress_brightness);
         _layoutControlsFullscreen = findViewById(R.id.layout_controls_fullscreen);
+        _layoutIndicatorFill = findViewById(R.id.layout_indicator_fill);
+        _layoutIndicatorFit = findViewById(R.id.layout_indicator_fit);
 
         _scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                if (!_isFullScreen || !Settings.instance.gestureControls.zoom) {
+                if (!_isZoomPanEnabled || !_isFullScreen || !Settings.instance.gestureControls.zoom) {
                     return false
                 }
 
-                var newScaleFactor = (_scaleFactor * detector.scaleFactor).coerceAtLeast(1.0f).coerceAtMost(5.0f)
-
-                //Make original zoom sticky
-                if (newScaleFactor - 1.0f < 0.01f) {
-                    newScaleFactor = 1.0f
-                }
-
+                val newScaleFactor = (_scaleFactor * detector.scaleFactor).coerceAtLeast(1.0f).coerceAtMost(10.0f)
                 val scaleFactorChange = newScaleFactor / _scaleFactor
                 _scaleFactor = newScaleFactor
                 onZoom.emit(_scaleFactor)
@@ -149,6 +150,9 @@ class GestureControlView : LinearLayout {
                 _layoutControlsZoom.visibility = View.VISIBLE
                 _textZoom.text = "${String.format("%.1f", _scaleFactor)}x"
                 _isZooming = true
+
+                updateSnappingVisibility()
+
                 return true
             }
         })
@@ -164,7 +168,7 @@ class GestureControlView : LinearLayout {
 
                 Logger.i(TAG, "p0.pointerCount: " + p0.pointerCount)
 
-                if (p1.pointerCount == 1) {
+                if (!_isPanning && p1.pointerCount == 1) {
                     val minDistance = Math.min(width, height)
                     if (_isFullScreen && _adjustingBrightness) {
                         val adjustAmount = (distanceY * 2) / minDistance;
@@ -201,8 +205,10 @@ class GestureControlView : LinearLayout {
                             }
                         }
                     }
-                } else if (_isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
+                } else if (_isZoomPanEnabled && _isFullScreen && !_isZooming && Settings.instance.gestureControls.pan) {
+                    _isPanning = true
                     stopAllGestures()
+                    updateSnappingVisibility()
                     pan(_translationX - distanceX, _translationY - distanceY)
                 }
 
@@ -242,6 +248,39 @@ class GestureControlView : LinearLayout {
         });
 
         isClickable = true
+    }
+
+    fun updateSnappingVisibility() {
+        if (willSnapFill()) {
+            _layoutIndicatorFill.visibility = View.VISIBLE
+            _layoutIndicatorFit.visibility = View.GONE
+        } else if (willSnapFit()) {
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.VISIBLE
+
+            _surfaceView?.let {
+                val lp = _layoutIndicatorFit.layoutParams
+                lp.width = it.width
+                lp.height = it.height
+                _layoutIndicatorFit.layoutParams = lp
+            }
+        } else {
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.GONE
+        }
+    }
+
+    fun setZoomPanEnabled(view: View) {
+        _isZoomPanEnabled = true
+        _surfaceView = view
+    }
+
+    fun resetZoomPan() {
+        _scaleFactor = 1.0f
+        onZoom.emit(_scaleFactor)
+        _translationX = 0f
+        _translationY = 0f
+        onPan.emit(_translationX, _translationY)
     }
 
     private fun pan(translationX: Float, translationY: Float) {
@@ -305,9 +344,29 @@ class GestureControlView : LinearLayout {
             stopAdjustingFullscreenDown();
         }
 
-        if (_isZooming && ev.action == MotionEvent.ACTION_UP) {
+        if ((_isPanning || _isZooming) && ev.action == MotionEvent.ACTION_UP) {
+            val surfaceView = _surfaceView
+            if (surfaceView != null && willSnapFill()) {
+                _scaleFactor = calculateZoomScaleFactor()
+                onZoom.emit(_scaleFactor)
+
+                _translationX = 0f
+                _translationY = 0f
+                onPan.emit(_translationX, _translationY)
+            } else if (willSnapFit()) {
+                _scaleFactor = 1f
+                onZoom.emit(_scaleFactor)
+
+                _translationX = 0f
+                _translationY = 0f
+                onPan.emit(_translationX, _translationY)
+            }
+
             _layoutControlsZoom.visibility = View.GONE
+            _layoutIndicatorFill.visibility = View.GONE
+            _layoutIndicatorFit.visibility = View.GONE
             _isZooming = false
+            _isPanning = false
         }
 
         startHideJobIfNecessary();
@@ -315,6 +374,35 @@ class GestureControlView : LinearLayout {
         _gestureController.onTouchEvent(ev)
         _scaleGestureDetector.onTouchEvent(ev)
         return true;
+    }
+
+    private fun calculateZoomScaleFactor(): Float {
+        val w = _surfaceView?.width?.toFloat() ?: return 1.0f;
+        val h = _surfaceView?.height?.toFloat() ?: return 1.0f;
+        if (w == 0.0f || h == 0.0f) {
+            return 1.0f;
+        }
+
+        return Math.max(width / w, height / h)
+    }
+
+    private val _snapTranslationTolerance = 0.04f;
+    private val _snapZoomTolerance = 0.04f;
+
+    private fun willSnapFill(): Boolean {
+        val surfaceView = _surfaceView
+        if (surfaceView != null) {
+            val zoomScaleFactor = calculateZoomScaleFactor()
+            if (Math.abs(_scaleFactor - zoomScaleFactor) < _snapZoomTolerance && Math.abs(_translationX) / width < _snapTranslationTolerance && Math.abs(_translationY) / height < _snapTranslationTolerance) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun willSnapFit(): Boolean {
+        return Math.abs(_scaleFactor - 1.0f) < _snapZoomTolerance && Math.abs(_translationX) / width < _snapTranslationTolerance && Math.abs(_translationY) / height < _snapTranslationTolerance
     }
 
     fun cancelHideJob() {
@@ -646,11 +734,7 @@ class GestureControlView : LinearLayout {
     }
 
     fun setFullscreen(isFullScreen: Boolean) {
-        _scaleFactor = 1.0f
-        onZoom.emit(_scaleFactor)
-        _translationX = 0f
-        _translationY = 0f
-        onPan.emit(_translationX, _translationY)
+        resetZoomPan()
 
         if (isFullScreen) {
             val c = context

@@ -169,14 +169,14 @@ class VideoDetailFragment : MainFragment {
             _view!!.transitionToStart();
     }
     fun maximizeVideoDetail(instant: Boolean = false) {
-        if(_maximizeProgress > 0.9f && state != State.MAXIMIZED) {
+        if((_maximizeProgress > 0.9f || instant) && state != State.MAXIMIZED) {
             state = State.MAXIMIZED;
             onMaximized.emit();
         }
         _view?.let {
-            if(!instant)
+            if(!instant) {
                 it.transitionToEnd();
-            else {
+            } else {
                 it.progress = 1f;
                 onTransitioning.emit(true);
             }

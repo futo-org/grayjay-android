@@ -104,6 +104,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             super.onPlaybackSuppressionReasonChanged(playbackSuppressionReason)
         }
 
+        override fun onSurfaceSizeChanged(width: Int, height: Int) {
+            super.onSurfaceSizeChanged(width, height)
+            this@FutoVideoPlayerBase.onSurfaceSizeChanged(width, height);
+        }
+
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             super.onIsPlayingChanged(isPlaying);
             this@FutoVideoPlayerBase.onIsPlayingChanged(isPlaying);
@@ -590,6 +595,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     fun setVolume(volume: Float) {
         exoPlayer?.setVolume(volume);
+    }
+
+    protected open fun onSurfaceSizeChanged(width: Int, height: Int) {
+
     }
 
     @Suppress("DEPRECATION")

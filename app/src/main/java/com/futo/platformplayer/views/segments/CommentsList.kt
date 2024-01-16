@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.Gravity
-import android.view.KeyCharacterMap.UnavailableException
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
@@ -12,10 +11,8 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.R
-import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -25,6 +22,8 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
@@ -86,8 +85,6 @@ class CommentsList : ConstraintLayout {
 
     var onRepliesClick = Event1<IPlatformComment>();
     var onCommentsLoaded = Event1<Int>();
-
-
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_comments_list, this, true);
