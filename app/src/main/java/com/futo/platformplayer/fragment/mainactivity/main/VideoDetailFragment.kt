@@ -424,6 +424,7 @@ class VideoDetailFragment : MainFragment {
                 changeOrientation(OrientationManager.Orientation.PORTRAIT);
         }
         isFullscreen = fullscreen;
+        _view?.allowMotion = !fullscreen;
     }
     private fun changeOrientation(orientation: OrientationManager.Orientation) {
         Logger.i(TAG, "Orientation Change:" + orientation.name);
