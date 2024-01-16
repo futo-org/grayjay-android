@@ -16,6 +16,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
     lateinit var _buttonBack: ImageButton;
 
     lateinit var _buttonQR: BigButton;
+    lateinit var _buttonBrowse: BigButton;
     lateinit var _buttonURL: BigButton;
     lateinit var _buttonPlugins: BigButton;
 
@@ -56,6 +57,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         _buttonBack = findViewById(R.id.button_back);
 
         _buttonQR = findViewById(R.id.option_qr);
+        _buttonBrowse = findViewById(R.id.option_browse);
         _buttonURL = findViewById(R.id.option_url);
         _buttonPlugins = findViewById(R.id.option_plugins);
 
@@ -73,6 +75,9 @@ class AddSourceOptionsActivity : AppCompatActivity() {
             integrator.setBarcodeImageEnabled(true)
             integrator.setCaptureActivity(QRCaptureActivity::class.java);
             _qrCodeResultLauncher.launch(integrator.createScanIntent())
+        }
+        _buttonBrowse.onClick.subscribe {
+            startActivity(MainActivity.getTabIntent(this, "BROWSE_PLUGINS"));
         }
 
         _buttonURL.onClick.subscribe {

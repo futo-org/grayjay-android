@@ -157,9 +157,12 @@ class HomeFragment : MainFragment() {
             val dp10 = 10.dp(resources);
             val dp30 = 30.dp(resources);
 
-            if(!StatePlatform.instance.getEnabledClients().isEmpty())
+            val pluginsExist = StatePlatform.instance.getAvailableClients().isNotEmpty();
+            if(StatePlatform.instance.getEnabledClients().isEmpty())
                 //Initial setup
-                return NoResultsView(context, "You have no Sources", "Enable or install some sources", R.drawable.ic_sources,
+                return NoResultsView(context, "No enabled Sources", if(pluginsExist)
+                        "Enable or install some Sources"
+                    else "This Grayjay version comes without any sources, install sources externally or using the button below.", R.drawable.ic_sources,
                     listOf(BigButton(context, "Browse Online Sources", "View official sources online", R.drawable.ic_explore) {
                         fragment.navigate<BrowserFragment>(BrowserFragment.NavigateOptions("https://plugins.grayjay.app/", mapOf(
                             Pair("grayjay") { req ->
@@ -170,7 +173,10 @@ class HomeFragment : MainFragment() {
                                 };
                             }
                         )));
-                    }.withMargin(dp10, dp30).withBackground(R.drawable.background_big_primary))
+                    }.withMargin(dp10, dp30),
+                    if(pluginsExist) BigButton(context, "Sources", "Go to the sources tab", R.drawable.ic_creators) {
+                        fragment.navigate<SourcesFragment>();
+                    }.withMargin(dp10, dp30) else null).filterNotNull()
                 );
             else
                 return NoResultsView(context, "Nothing to see here", "The enabled sources do not have any results.", R.drawable.ic_help,

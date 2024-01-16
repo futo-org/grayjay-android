@@ -295,17 +295,24 @@ class SourceDetailFragment : MainFragment() {
                 }
             }
 
+            val isEmbedded = StatePlugins.instance.getEmbeddedSources(context).any { it.key == config.id };
+
             val clientIfExists = if(config.id != StateDeveloper.DEV_ID)
                 StatePlugins.instance.getPlugin(config.id);
             else null;
             groups.add(
                 BigButtonGroup(c, context.getString(R.string.management),
-                    BigButton(c, context.getString(R.string.uninstall), context.getString(R.string.removes_the_plugin_from_the_app), R.drawable.ic_block) {
+                    if(!isEmbedded) BigButton(c, context.getString(R.string.uninstall), context.getString(R.string.removes_the_plugin_from_the_app), R.drawable.ic_block) {
                         uninstallSource();
                     }.withBackground(R.drawable.background_big_button_red).apply {
                         this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                             setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
                         };
+                    } else BigButton(c, context.getString(R.string.uninstall), "Cannot uninstall embedded plugins", R.drawable.ic_block, {}).apply {
+                        this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                        };
+                        this.alpha = 0.5f
                     },
                     if(clientIfExists?.captchaEncrypted != null)
                         BigButton(c, context.getString(R.string.delete_captcha), context.getString(R.string.deletes_stored_captcha_answer_for_this_plugin), R.drawable.ic_block) {
@@ -325,7 +332,6 @@ class SourceDetailFragment : MainFragment() {
                 _sourceButtons.addView(group);
             }
 
-            val isEmbedded = StatePlugins.instance.getEmbeddedSources(context).any { it.key == config.id };
             val advancedButtons = BigButtonGroup(c, "Advanced",
                 BigButton(c, "Edit Code", "Modify the source of this plugin", R.drawable.ic_code) {
 
@@ -333,9 +339,15 @@ class SourceDetailFragment : MainFragment() {
                     this.alpha = 0.5f;
                 },
                 if(isEmbedded) BigButton(c, "Reinstall", "Modify the source of this plugin", R.drawable.ic_refresh) {
-                    StatePlugins.instance.updateEmbeddedPlugins(context, listOf(config.id), true);
-                    reloadSource(config.id);
-                    UIDialogs.toast(context, "Embedded plugin reinstalled, may require refresh");
+                    val embeddedConfig = StatePlugins.instance.getEmbeddedPluginConfigFromID(context, config.id);
+
+                    UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, "Are you sure you want to downgrade (${config.version}=>${embeddedConfig?.version})?",
+                        "This will revert the plugin back to the originally embedded version.\nVersion change: ${config.version}=>${embeddedConfig?.version}", null,
+                        0, UIDialogs.Action("Cancel", {}), UIDialogs.Action("Reinstall", {
+                            StatePlugins.instance.updateEmbeddedPlugins(context, listOf(config.id), true);
+                            reloadSource(config.id);
+                            UIDialogs.toast(context, "Embedded plugin reinstalled, may require refresh");
+                        }, UIDialogs.ActionStyle.DANGEROUS));
                 }.apply {
                     this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                         setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);

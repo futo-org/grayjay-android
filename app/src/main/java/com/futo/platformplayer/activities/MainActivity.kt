@@ -535,6 +535,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             navigate(_fragMainSources);
                         }
                     };
+                    "BROWSE_PLUGINS" -> {
+                        navigate(_fragBrowser, "https://plugins.grayjay.app");
+                    }
                 }
             }
         }

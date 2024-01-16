@@ -56,6 +56,15 @@
         app:buttonSubText="@string/install_a_plugin_by_scanning_a_qr_code"
         app:buttonIcon="@drawable/ic_qr" />
     <com.futo.platformplayer.views.buttons.BigButton
+        android:id="@+id/option_browse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        app:buttonText="Browse Online Sources"
+        app:buttonSubText="Install a plugin by browsing official plugins"
+        app:buttonIcon="@drawable/ic_explore" />
+    <com.futo.platformplayer.views.buttons.BigButton
         android:id="@+id/option_url"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
