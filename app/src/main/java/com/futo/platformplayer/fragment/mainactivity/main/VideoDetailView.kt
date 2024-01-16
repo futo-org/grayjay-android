@@ -1003,6 +1003,9 @@ class VideoDetailView : ConstraintLayout {
     fun setVideo(url: String, resumeSeconds: Long = 0, playWhenReady: Boolean = true) {
         Logger.i(TAG, "setVideo url=$url resumeSeconds=$resumeSeconds playWhenReady=$playWhenReady")
 
+        if(this.video?.url == url)
+            return;
+
         _searchVideo = null;
         video = null;
         _playbackTracker = null;
@@ -1032,6 +1035,9 @@ class VideoDetailView : ConstraintLayout {
     }
     fun setVideoOverview(video: IPlatformVideo, fetch: Boolean = true, resumeSeconds: Long = 0) {
         Logger.i(TAG, "setVideoOverview")
+
+        if(this.video?.url == video.url)
+            return;
 
         val cachedVideo = StateDownloads.instance.getCachedVideo(video.id);
         if(cachedVideo != null) {
@@ -1130,6 +1136,9 @@ class VideoDetailView : ConstraintLayout {
     //@OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
+
+        if(newVideo && this.video?.url == videoDetail.url)
+            return;
 
         if (newVideo) {
             _lastVideoSource = null;
@@ -2551,7 +2560,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 else
                     withContext(Dispatchers.Main) {
-                        setVideoDetails(videoDetail);
+                        setVideoDetails(videoDetail, true);
                         _liveTryJob = null;
                     }
             }
