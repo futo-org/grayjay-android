@@ -17,9 +17,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.Synchronization
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -71,6 +69,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                     try {
                         processHandle = ProcessHandle.create();
                         Store.instance.addProcessSecret(processHandle.processSecret);
+
                         processHandle.addServer("https://srv1-stg.polycentric.io");
                         processHandle.setUsername(username);
                         StatePolycentric.instance.setProcessHandle(processHandle);

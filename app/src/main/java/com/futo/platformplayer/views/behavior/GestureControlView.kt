@@ -93,6 +93,8 @@ class GestureControlView : LinearLayout {
 
     private val _gestureController: GestureDetectorCompat;
 
+    val isUserGesturing get() = _rewinding || _skipping || _adjustingBrightness || _adjustingSound || _adjustingFullscreenUp || _adjustingFullscreenDown || _isPanning || _isZooming;
+
     val onSeek = Event1<Long>();
     val onBrightnessAdjusted = Event1<Float>();
     val onPan = Event2<Float, Float>();
