@@ -373,7 +373,7 @@ class VideoDetailView : ConstraintLayout {
 
 
         _buttonSubscribe.onSubscribed.subscribe {
-            UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
+            _slideUpOverlay = UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
         };
 
         _container_content_liveChat.onRaidNow.subscribe {
@@ -2350,7 +2350,7 @@ class VideoDetailView : ConstraintLayout {
         }
         else if(isOverlayed) {
             _playerProgress.layoutParams = _playerProgress.layoutParams.apply {
-                (this as MarginLayoutParams).bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, -6f, resources.displayMetrics).toInt();
+                (this as MarginLayoutParams).bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, -2f, resources.displayMetrics).toInt();
             };
             _playerProgress.elevation = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics);
         }

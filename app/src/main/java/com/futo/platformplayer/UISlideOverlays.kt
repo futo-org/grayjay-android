@@ -67,7 +67,7 @@ class UISlideOverlays {
             return menu;
         }
 
-        fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup) {
+        fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
 
             val originalNotif = subscription.doNotifications;
@@ -76,15 +76,13 @@ class UISlideOverlays {
             val originalVideo = subscription.doFetchVideos;
             val originalPosts = subscription.doFetchPosts;
 
+            val menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, listOf());
+
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO){
                 val plugin = StatePlatform.instance.getChannelClient(subscription.channel.url);
                 val capabilities = plugin.getChannelCapabilities();
 
                 withContext(Dispatchers.Main) {
-
-                    var menu: SlideUpMenuOverlay? = null;
-
-
                     items.addAll(listOf(
                         SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
                             subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
@@ -118,7 +116,7 @@ class UISlideOverlays {
                         }, false)*/
                         ).filterNotNull());
 
-                    menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, items);
+                    menu.setItems(items);
 
                     if(subscription.doNotifications)
                         menu.selectOption(null, "notifications", true, true);
@@ -173,6 +171,8 @@ class UISlideOverlays {
                     menu.show();
                 }
             }
+
+            return menu;
         }
 
         fun showAddToGroupOverlay(channel: IPlatformVideo, container: ViewGroup) {
