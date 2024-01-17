@@ -312,6 +312,11 @@ class StatePlatform {
         };
     }
 
+
+    suspend fun enableClient(ids: List<String>) {
+        val currentClients = getEnabledClients().map { it.id };
+        selectClients(*(currentClients + ids).distinct().toTypedArray());
+    }
     /**
      * Selects the enabled clients, meaning all clients that data is actively requested from.
      * If a client is disabled, NO requests are made to said client

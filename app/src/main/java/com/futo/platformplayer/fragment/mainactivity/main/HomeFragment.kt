@@ -164,7 +164,7 @@ class HomeFragment : MainFragment() {
                         "Enable or install some Sources"
                     else "This Grayjay version comes without any sources, install sources externally or using the button below.", R.drawable.ic_sources,
                     listOf(BigButton(context, "Browse Online Sources", "View official sources online", R.drawable.ic_explore) {
-                        fragment.navigate<BrowserFragment>(BrowserFragment.NavigateOptions("https://plugins.grayjay.app/", mapOf(
+                        fragment.navigate<BrowserFragment>(BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if(it is MainActivity) {

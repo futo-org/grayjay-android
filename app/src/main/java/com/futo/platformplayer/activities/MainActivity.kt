@@ -536,7 +536,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                         }
                     };
                     "BROWSE_PLUGINS" -> {
-                        navigate(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/", mapOf(
+                        navigate(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if(it is MainActivity) {
