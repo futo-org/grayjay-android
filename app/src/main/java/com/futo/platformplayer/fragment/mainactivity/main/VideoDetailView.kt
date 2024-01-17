@@ -761,7 +761,9 @@ class VideoDetailView : ConstraintLayout {
     fun updateMoreButtons() {
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
-                _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer);
+                _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {
+                    _slideUpOverlay = it
+                };
             }
         },
             if(video?.isLive ?: false)
