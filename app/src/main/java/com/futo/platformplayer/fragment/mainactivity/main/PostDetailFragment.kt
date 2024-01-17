@@ -315,7 +315,7 @@ class PostDetailFragment : MainFragment {
             _rating.visibility = View.GONE;
 
             val ref = Models.referenceFromBuffer((_post?.url ?: _postOverview?.url)?.toByteArray() ?: return)
-            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.toByteArray()
+            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.let { if (it.isNotEmpty()) it.toByteArray() else null }
             val version = _version;
 
             _rating.onLikeDislikeUpdated.remove(this);
@@ -663,7 +663,7 @@ class PostDetailFragment : MainFragment {
             Logger.i(TAG, "fetchPolycentricComments")
             val post = _post;
             val ref = (_post?.url ?: _postOverview?.url)?.toByteArray()?.let { Models.referenceFromBuffer(it) }
-            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.toByteArray()
+            val extraBytesRef = (_post?.id?.value ?: _postOverview?.id?.value)?.let { if (it.isNotEmpty()) it.toByteArray() else null }
 
             if (ref == null) {
                 Logger.w(TAG, "Failed to fetch polycentric comments because url was not set null")
