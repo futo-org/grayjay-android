@@ -160,8 +160,8 @@ class HomeFragment : MainFragment() {
             val pluginsExist = StatePlatform.instance.getAvailableClients().isNotEmpty();
             if(StatePlatform.instance.getEnabledClients().isEmpty())
                 //Initial setup
-                return NoResultsView(context, "No enabled Sources", if(pluginsExist)
-                        "Enable or install some Sources"
+                return NoResultsView(context, "No enabled sources", if(pluginsExist)
+                        "Enable or install some sources"
                     else "This Grayjay version comes without any sources, install sources externally or using the button below.", R.drawable.ic_sources,
                     listOf(BigButton(context, "Browse Online Sources", "View official sources online", R.drawable.ic_explore) {
                         fragment.navigate<BrowserFragment>(BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
