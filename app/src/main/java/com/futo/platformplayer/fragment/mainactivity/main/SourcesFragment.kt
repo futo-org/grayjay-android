@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +26,7 @@ import com.futo.platformplayer.views.adapters.DisabledSourceView
 import com.futo.platformplayer.views.adapters.EnabledSourceAdapter
 import com.futo.platformplayer.views.adapters.EnabledSourceViewHolder
 import com.futo.platformplayer.views.adapters.ItemMoveCallback
+import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.sources.SourceUnderConstructionView
 import kotlinx.coroutines.runBlocking
 import java.util.Collections
@@ -86,6 +88,14 @@ class SourcesFragment : MainFragment() {
             _containerDisabledViews = findViewById(R.id.container_disabled_views);
             _containerConstruction = findViewById(R.id.container_construction);
 
+            if(StatePlatform.instance.getAvailableClients().isEmpty()) {
+                findViewById<LinearLayout>(R.id.no_sources).isVisible = true;
+                findViewById<LinearLayout>(R.id.plugin_disclaimer).isVisible = false;
+            }
+            findViewById<BigButton>(R.id.button_add_sources).onClick.subscribe {
+                fragment.startActivity(Intent(context, AddSourceOptionsActivity::class.java));
+            };
+
             for(inConstructSource in StatePlugins.instance.getSourcesUnderConstruction(context))
                 _containerConstruction.addView(SourceUnderConstructionView(context, inConstructSource.key, inConstructSource.value));
 
@@ -111,8 +121,6 @@ class SourcesFragment : MainFragment() {
 
                 adapterSourcesEnabled.notifyItemMoved(fromPosition, toPosition);
                 onEnabledChanged(enabledSources);
-                if(toPosition == 0)
-                    onPrimaryChanged(enabledSources.first());
 
                 StatePlatform.instance.setPlatformOrder(enabledSources.map { it.name });
             };
@@ -133,8 +141,6 @@ class SourcesFragment : MainFragment() {
 
                     updateContainerVisibility();
                     onEnabledChanged(enabledSources);
-                    if(index == 0)
-                        onPrimaryChanged(enabledSources.first());
 
                     if(enabledSources.size <= 1)
                         setCanRemove(false);
@@ -221,9 +227,6 @@ class SourcesFragment : MainFragment() {
             _adapterSourcesEnabled.canRemove = canRemove;
         }
 
-        private fun onPrimaryChanged(client: IPlatformClient) {
-            StatePlatform.instance.selectPrimaryClient(client.id);
-        }
         private fun onEnabledChanged(clients: List<IPlatformClient>) {
             runBlocking {
                 StatePlatform.instance.selectClients(*clients.map { it.id }.toTypedArray());

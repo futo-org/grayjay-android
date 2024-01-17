@@ -94,11 +94,6 @@ class StatePlatform {
     private val _liveEventClientPool = PlatformMultiClientPool("LiveEvents", 1); //Used exclusively for live events
 
 
-    private val _primaryClientPersistent = FragmentedStorage.get<StringStorage>("primaryClient");
-    private var _primaryClientObj : IPlatformClient? = null;
-    val primaryClient : IPlatformClient get() = _primaryClientObj ?: throw IllegalStateException("PlatformState not yet initialized");
-
-
     private val _icons : HashMap<String, ImageVariable> = HashMap();
 
     val hasClients: Boolean get() = _availableClients.size > 0;
@@ -207,20 +202,6 @@ class StatePlatform {
                         .filter { id -> _availableClients.any { it.id == id } }
                         .toTypedArray();
                 }
-
-
-                val primary = _primaryClientPersistent.value;
-                if(primary.isEmpty() || primary == StateDeveloper.DEV_ID) {
-                    selectPrimaryClient(enabled.firstOrNull() ?: _availableClients.first().id);
-                } else if(!_availableClients.any { it.id == primary }) {
-                    selectPrimaryClient(_availableClients.firstOrNull()?.id!!);
-                } else {
-                    selectPrimaryClient(primary);
-                }
-
-                if(!enabled.any { it == primaryClient.id }) {
-                    enabled = enabled.concat(primaryClient.id);
-                }
             }
             selectClients(*enabled);
         };
@@ -323,8 +304,6 @@ class StatePlatform {
                     newClient.initialize();
                     _enabledClients.add(newClient);
                 }
-                if (_primaryClientObj == client)
-                    _primaryClientObj = newClient;
 
                 _availableClients.removeIf { it.id == id };
                 _availableClients.add(newClient);
@@ -363,17 +342,6 @@ class StatePlatform {
                 }
             }
         };
-    }
-
-    /**
-     * Selects the primary client, meaning the first target for requests.
-     * At the moment, since multi-client requests are not yet implemented, this is the goto client.
-     */
-    fun selectPrimaryClient(id: String) {
-        synchronized(_clientsLock) {
-            _primaryClientObj = getClient(id);
-            _primaryClientPersistent.setAndSave(id);
-        }
     }
 
     fun getHome(): IPager<IPlatformContent> {
@@ -448,14 +416,12 @@ class StatePlatform {
             toAwait.map { PlaceholderPager(5, { PlatformContentPlaceholder(it.first.id) }) });
     }
 
-    fun getHomePrimary(): IPager<IPlatformContent> {
-        return primaryClient.getHome();
-    }
 
     //Search
     fun searchSuggestions(query: String): Array<String> {
         Logger.i(TAG, "Platform - searchSuggestions");
-        return primaryClient.searchSuggestions(query);
+        //TODO: hasSearchSuggestions
+        return getEnabledClients().firstOrNull()?.searchSuggestions(query) ?: arrayOf();
     }
 
     fun search(query: String, type: String? = null, sort: String? = null, filters: Map<String, List<String>> = mapOf(), clientIds: List<String>? = null): IPager<IPlatformContent> {
@@ -887,7 +853,6 @@ class StatePlatform {
         synchronized(_clientsLock) {
             val enabledExisting = _enabledClients.filter { it is DevJSClient };
             val isEnabled = !enabledExisting.isEmpty()
-            val isPrimary = _primaryClientObj is DevJSClient;
 
             for (enabled in enabledExisting) {
                 enabled.disable();
@@ -902,11 +867,7 @@ class StatePlatform {
             devId = newClient.devID;
             try {
                 StateDeveloper.instance.initializeDev(devId!!);
-                if (isPrimary) {
-                    _primaryClientObj = newClient;
-                    _enabledClients.add(0, newClient);
-                    newClient.initialize();
-                } else if (isEnabled) {
+                if (isEnabled) {
                     _enabledClients.add(newClient);
                     newClient.initialize();
                 }

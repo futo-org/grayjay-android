@@ -214,6 +214,7 @@
     <string name="videos">Videos</string>
     <string name="clear_history">Clear history</string>
     <string name="nothing_to_import">Nothing to import</string>
+    <string name="no_sources_installed">You have no sources installed, please add sources to use the app as intended.</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Enabling lots of sources can reduce the loading speed of your application.</string>
     <string name="support">Support</string>
     <string name="membership">Membership</string>
