@@ -686,7 +686,7 @@ class UISlideOverlays {
         }
 
 
-        fun showAddToOverlay(video: IPlatformVideo, container: ViewGroup): SlideUpMenuOverlay {
+        fun showAddToOverlay(video: IPlatformVideo, container: ViewGroup, slideUpMenuOverlayUpdated: (SlideUpMenuOverlay) -> Unit): SlideUpMenuOverlay {
 
             val items = arrayListOf<View>();
 
@@ -718,10 +718,10 @@ class UISlideOverlays {
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
             playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
-                showCreatePlaylistOverlay(container) {
+                slideUpMenuOverlayUpdated(showCreatePlaylistOverlay(container) {
                     val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
                     StatePlaylists.instance.createOrUpdatePlaylist(playlist);
-                };
+                });
             }, false))
 
             for (playlist in allPlaylists) {
