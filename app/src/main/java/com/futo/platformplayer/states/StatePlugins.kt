@@ -160,6 +160,13 @@ class StatePlugins {
         val configJson = StateAssets.readAsset(context, assetConfigPath) ?: return null;
         return SourcePluginConfig.fromJson(configJson, "");
     }
+    fun getEmbeddedPluginConfigFromID(context: Context, pluginId: String): SourcePluginConfig? {
+        val embedded = getEmbeddedSources(context);
+        if(!embedded.containsKey(pluginId))
+            return null;
+        return getEmbeddedPluginConfig(context, embedded[pluginId]!!);
+    }
+
     fun installEmbeddedPlugin(context: Context, assetConfigPath: String, id: String? = null): Boolean {
         try {
             val configJson = StateAssets.readAsset(context, assetConfigPath) ?:

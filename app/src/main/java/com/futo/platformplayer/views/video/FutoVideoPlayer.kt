@@ -691,7 +691,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
             val viewWidth = Math.min(metrics.widthPixels, metrics.heightPixels); //TODO: Get parent width. was this.width
             val deviceHeight = Math.max(metrics.widthPixels, metrics.heightPixels);
-            val maxHeight = deviceHeight * 0.6;
+            val maxHeight = deviceHeight * 0.4;
 
             val determinedHeight = if(w > h)
                 ((h * (viewWidth.toDouble() / w)).toInt())

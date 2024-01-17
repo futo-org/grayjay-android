@@ -2,6 +2,9 @@ package com.futo.platformplayer.api.media.platforms.js
 
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.AnnouncementType
+import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
@@ -55,7 +58,16 @@ class SourcePluginDescriptor {
         onCaptchaChanged.emit();
     }
     fun getCaptchaData(): SourceCaptchaData? {
-        return SourceCaptchaData.fromEncrypted(captchaEncrypted);
+        try {
+            return SourceCaptchaData.fromEncrypted(captchaEncrypted);
+        }
+        catch(ex: Throwable) {
+            Logger.e("SourcePluginDescriptor", "Captcha decode failed, disabling auth.", ex);
+            StateAnnouncement.instance.registerAnnouncement("CAP_BROKEN_" + config.id,
+                "Captcha corrupted for plugin [${config.name}]",
+                "Something went wrong in the stored captcha, you'll have to login again", AnnouncementType.SESSION);
+            return null;
+        }
     }
 
     fun updateAuth(str: SourceAuth?) {
@@ -63,7 +75,16 @@ class SourcePluginDescriptor {
         onAuthChanged.emit();
     }
     fun getAuth(): SourceAuth? {
-        return SourceAuth.fromEncrypted(authEncrypted);
+        try {
+            return SourceAuth.fromEncrypted(authEncrypted);
+        }
+        catch(ex: Throwable) {
+            Logger.e("SourcePluginDescriptor", "Authentication decode failed, disabling auth.", ex);
+            StateAnnouncement.instance.registerAnnouncement("AUTH_BROKEN_" + config.id,
+                "Authentication corrupted for plugin [${config.name}]",
+                "Something went wrong in the stored authentication, you'll have to login again", AnnouncementType.SESSION);
+            return null;
+        }
     }
 
     @Serializable

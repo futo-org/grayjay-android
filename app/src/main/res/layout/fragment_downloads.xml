@@ -128,13 +128,17 @@
                     tools:text="(7 playlists, 85 videos)"
                     />
             </LinearLayout>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:id="@+id/downloads_playlist_list"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-                <!--Fill Programmatically-->
-            </LinearLayout>
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:id="@+id/downloads_playlist_list"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <!--Fill Programmatically-->
+                </LinearLayout>
+            </HorizontalScrollView>
         </LinearLayout>
 
         <!--Videos-->
