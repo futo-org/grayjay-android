@@ -1,7 +1,5 @@
 {
-    "SOURCES_EMBEDDED": {
-        "1c291164-294c-4c2d-800d-7bc6d31d0019": "sources/peertube/PeerTubeConfig.json"
-    },
-    "SOURCES_EMBEDDED_DEFAULT": ["1c291164-294c-4c2d-800d-7bc6d31d0019"],
+    "SOURCES_EMBEDDED": {},
+    "SOURCES_EMBEDDED_DEFAULT": [],
     "SOURCES_UNDER_CONSTRUCTION": {}
 }
