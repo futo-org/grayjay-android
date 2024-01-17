@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Array of directories to look in
-dirs=("app/src/unstable/assets/sources" "app/src/stable/assets/sources" "app/src/playstore/assets/sources")
+dirs=("app/src/unstable/assets/sources" "app/src/stable/assets/sources")
 
 # Loop through each directory
 for dir in "${dirs[@]}"; do
