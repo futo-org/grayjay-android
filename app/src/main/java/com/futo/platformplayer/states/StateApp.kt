@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -42,7 +41,6 @@ import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.*
 import java.io.File
-import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
@@ -427,8 +425,6 @@ class StateApp {
             }
         }
 
-        StateAnnouncement.instance.registerAnnouncement("fa4647d3-36fa-4c8c-832d-85b00fc72dca", "Disclaimer", "This is an early alpha build of the application, expect bugs and unfinished features.", AnnouncementType.DELETABLE, OffsetDateTime.now())
-
         if(SettingsDev.instance.developerMode && SettingsDev.instance.devServerSettings.devServerOnBoot)
             StateDeveloper.instance.runServer();
 
@@ -557,7 +553,6 @@ class StateApp {
         }
 
         StateAnnouncement.instance.registerDefaultHandlerAnnouncement();
-        StateAnnouncement.instance.registerDidYouKnow();
         Logger.i(TAG, "MainApp Started: Finished");
 
         StatePlaylists.instance.toMigrateCheck();
@@ -580,25 +575,9 @@ class StateApp {
                             null,
                             "Plugin updates available"
                         ));
-
-                    /*
-                    StateAnnouncement.instance.registerAnnouncement(
-                        "plugin-update",
-                        "Plugin updates available",
-                        "There are ${updateAvailable.size} plugin updates available.",
-                        AnnouncementType.SESSION_RECURRING
-                    )*/
                 }
             }
         }
-
-        /*
-        UIDialogs.appToast("This is a test", false);
-        UIDialogs.appToast("This is a test 2", false);
-        UIDialogs.appToastError("This is a test 3 (Error)", false);
-        UIDialogs.appToast(ToastView.Toast("This is a test 4, with title", false, Color.WHITE, "Test title"));
-        UIDialogs.appToast("This is a test 5 Long text\nWith enters\nasdh asfh fds h rwe h fxh sdfh sdf h dsfh sdf hasdfhsdhg ads as", true);
-        */
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {
