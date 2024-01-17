@@ -90,6 +90,9 @@ class SourcePluginDescriptor {
     @Serializable
     class AppPluginSettings {
 
+        @FormField(R.string.check_for_updates_setting, FieldForm.TOGGLE, R.string.check_for_updates_setting_description, 1)
+        var checkForUpdates: Boolean = true;
+
         @FormField(R.string.visibility, "group", R.string.enable_where_this_plugins_content_are_visible, 2)
         var tabEnabled = TabEnabled();
         @Serializable

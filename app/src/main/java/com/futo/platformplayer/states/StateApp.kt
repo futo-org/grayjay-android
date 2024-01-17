@@ -581,12 +581,13 @@ class StateApp {
                             "Plugin updates available"
                         ));
 
+                    /*
                     StateAnnouncement.instance.registerAnnouncement(
                         "plugin-update",
                         "Plugin updates available",
                         "There are ${updateAvailable.size} plugin updates available.",
                         AnnouncementType.SESSION_RECURRING
-                    )
+                    )*/
                 }
             }
         }

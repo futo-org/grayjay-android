@@ -945,7 +945,7 @@ class StatePlatform {
     suspend fun checkForUpdates(): List<SourcePluginConfig> = withContext(Dispatchers.IO) {
         var configs = mutableListOf<SourcePluginConfig>()
         val updatesAvailableFor = hashSetOf<String>()
-        for (availableClient in getAvailableClients()) {
+        for (availableClient in getAvailableClients().filter { it is JSClient && it.descriptor.appSettings.checkForUpdates }) {
             if (availableClient !is JSClient) {
                 continue
             }
