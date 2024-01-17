@@ -388,8 +388,8 @@ class GestureControlView : LinearLayout {
         return Math.max(width / w, height / h)
     }
 
-    private val _snapTranslationTolerance = 0.04f;
-    private val _snapZoomTolerance = 0.04f;
+    private val _snapTranslationTolerance = 0.1f;
+    private val _snapZoomTolerance = 0.1f;
 
     private fun willSnapFill(): Boolean {
         val surfaceView = _surfaceView
