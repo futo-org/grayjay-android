@@ -1228,7 +1228,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         val ref = Models.referenceFromBuffer(video.url.toByteArray())
-        val extraBytesRef = video.id.value?.toByteArray()
+        val extraBytesRef = video.id.value?.let { if (it.isNotEmpty()) it.toByteArray() else null }
         _addCommentView.setContext(video.url, ref)
         _player.setMetadata(video.name, video.author.name);
 
@@ -1978,14 +1978,14 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "fetchPolycentricComments")
         val video = video;
         val idValue = video?.id?.value
-        if (idValue == null) {
-            Logger.w(TAG, "Failed to fetch polycentric comments because id was null")
+        if (video?.url?.isEmpty() != false) {
+            Logger.w(TAG, "Failed to fetch polycentric comments because url was null")
             _commentsList.clear()
             return
         }
 
         val ref = Models.referenceFromBuffer(video.url.toByteArray())
-        val extraBytesRef = video.id.value?.toByteArray()
+        val extraBytesRef = idValue?.let { if (it.isNotEmpty()) it.toByteArray() else null }
         _commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); };
     }
     private fun fetchVideo() {
