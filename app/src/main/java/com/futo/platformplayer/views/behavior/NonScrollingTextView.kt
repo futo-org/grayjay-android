@@ -13,6 +13,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.timestampRegex
+import kotlinx.coroutines.runBlocking
 
 class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
     constructor(context: Context) : super(context) {}
@@ -40,32 +41,34 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
                 if (text is Spannable) {
                     val links = text.getSpans(offset, offset, URLSpan::class.java)
                     if (links.isNotEmpty()) {
-                        for (link in links) {
-                            Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." };
+                        runBlocking {
+                            for (link in links) {
+                                Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." };
 
-                            val c = context;
-                            if (c is MainActivity) {
-                                if (c.handleUrl(link.url)) {
-                                    continue;
-                                }
-
-                                if (timestampRegex.matches(link.url)) {
-                                    val tokens = link.url.split(':');
-
-                                    var time_s = -1L;
-                                    if (tokens.size == 2) {
-                                        time_s = tokens[0].toLong() * 60 + tokens[1].toLong();
-                                    } else if (tokens.size == 3) {
-                                        time_s = tokens[0].toLong() * 60 * 60 + tokens[1].toLong() * 60 + tokens[2].toLong();
-                                    }
-
-                                    if (time_s != -1L) {
-                                        MediaControlReceiver.onSeekToReceived.emit(time_s * 1000);
+                                val c = context;
+                                if (c is MainActivity) {
+                                    if (c.handleUrl(link.url)) {
                                         continue;
                                     }
-                                }
 
-                                c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)));
+                                    if (timestampRegex.matches(link.url)) {
+                                        val tokens = link.url.split(':');
+
+                                        var time_s = -1L;
+                                        if (tokens.size == 2) {
+                                            time_s = tokens[0].toLong() * 60 + tokens[1].toLong();
+                                        } else if (tokens.size == 3) {
+                                            time_s = tokens[0].toLong() * 60 * 60 + tokens[1].toLong() * 60 + tokens[2].toLong();
+                                        }
+
+                                        if (time_s != -1L) {
+                                            MediaControlReceiver.onSeekToReceived.emit(time_s * 1000);
+                                            continue;
+                                        }
+                                    }
+
+                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)));
+                                }
                             }
                         }
 

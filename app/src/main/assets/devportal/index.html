@@ -385,8 +385,8 @@
 						</v-card-text>
 					</v-card>
 					<div style="width: 50%" v-if="Plugin.currentPlugin">
-						<!--Get Home-->
-						<v-card class="requestCard" v-for="req in Testing.requests">
+						<v-text-field v-model="searchTestMethods" label="Search for source methods.." style="margin-left: 35px; margin-right: 35px;"></v-text-field>
+						<v-card class="requestCard" v-for="req in Testing.requests" v-show="req.title.indexOf(searchTestMethods) >= 0">
 							<v-card-text>
 								<div class="title">
 									<span v-if="req.isOptional">(Optional)</span>
@@ -416,6 +416,9 @@
 							</v-card-text>
 							<v-card-actions>
 								<v-spacer></v-spacer>
+								<v-btn @click="testSourceRemotely(req)">
+									Test Android
+								</v-btn>
 								<v-btn @click="testSource(req)">
 									Test
 								</v-btn>
@@ -545,6 +548,7 @@
 		new Vue({
 		  el: '#app',
 		  data: {
+		  	searchTestMethods: "",
 			page: "Plugin",
 			pastPluginUrls: [],
 			settings: {},
@@ -841,6 +845,53 @@
 					console.log("Result for " + req.title, result);
 					this.Testing.lastResult = "//Results [" + name + "]\n" +
 						JSON.stringify(result, null, 3);
+					this.Testing.lastResultError = "";
+				}
+				catch(ex) {
+					if(ex.plugin_type == "CaptchaRequiredException") {
+						let shouldCaptcha = confirm("Do you want to request captcha?");
+						if(shouldCaptcha) {
+							pluginCaptchaTestPlugin(ex.url, ex.body);
+						}
+					}
+					console.error("Failed to run test for " + req.title, ex);
+					this.Testing.lastResult = ""
+					if(ex.message)
+						this.Testing.lastResultError = "//Results [" + name + "]\n\n" +
+							"Error: " + ex.message + "\n\n" + ex.stack;
+					else
+						this.Testing.lastResultError = "//Results [" + name + "]\n\n" +
+							"Error: " + ex;
+				}
+			},
+			testSourceRemotely(req) {
+				const name = req.title;
+				const parameterVals = req.parameters.map(x=>{
+					if(x.value && x.value.startsWith && x.value.startsWith("json:"))
+						return JSON.parse(x.value.substring(5));
+					return x.value
+				});
+
+				if(name == "enable") {
+					if(parameterVals.length > 0)
+						parameterVals[0] = this.Plugin.currentPlugin;
+					else
+						parameterVals.push(this.Plugin.currentPlugin);
+					if(parameterVals.length > 1)
+						parameterVals[1] = __DEV_SETTINGS;
+					else
+						parameterVals.push(__DEV_SETTINGS);
+				}
+
+				const func = source[name];
+				if(!func)
+					alert("Test func not found");
+
+				try {
+					const remoteResult = pluginRemoteTest(name, parameterVals);
+					console.log("Result for " + req.title, remoteResult);
+					this.Testing.lastResult = "//Results [" + name + "]\n" +
+						JSON.stringify(remoteResult, null, 3);
 					this.Testing.lastResultError = "";
 				}
 				catch(ex) {

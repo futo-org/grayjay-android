@@ -32,6 +32,9 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -168,7 +171,9 @@ class HomeFragment : MainFragment() {
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if(it is MainActivity) {
-                                        it.handleUrlAll(req.url.toString());
+                                        runBlocking {
+                                            it.handleUrlAll(req.url.toString());
+                                        }
                                     }
                                 };
                             }

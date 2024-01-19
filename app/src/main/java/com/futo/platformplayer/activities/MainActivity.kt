@@ -29,6 +29,7 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
+import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
@@ -141,7 +142,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
 
             try {
-                handleUrlAll(content)
+                runBlocking {
+                    handleUrlAll(content)
+                }
             } catch (e: Throwable) {
                 Logger.i(TAG, "Failed to handle URL.", e)
                 UIDialogs.toast(this, "Failed to handle URL: ${e.message}")
@@ -540,7 +543,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if(it is MainActivity) {
-                                        it.handleUrlAll(req.url.toString());
+                                        runBlocking {
+                                            it.handleUrlAll(req.url.toString());
+                                        }
                                     }
                                 };
                             }
@@ -552,7 +557,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         try {
             if (targetData != null) {
-                handleUrlAll(targetData)
+                runBlocking {
+                    handleUrlAll(targetData)
+                }
             }
         }
         catch(ex: Throwable) {
@@ -560,7 +567,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
-    fun handleUrlAll(url: String) {
+    suspend fun handleUrlAll(url: String) {
         val uri = Uri.parse(url)
         when (uri.scheme) {
             "grayjay" -> {
@@ -644,31 +651,38 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
-    fun handleUrl(url: String): Boolean {
+    suspend fun handleUrl(url: String): Boolean {
         Logger.i(TAG, "handleUrl(url=$url)")
 
-        if (StatePlatform.instance.hasEnabledVideoClient(url)) {
-            navigate(_fragVideoDetail, url);
-            _fragVideoDetail.maximizeVideoDetail(true);
-            return true;
-        } else if(StatePlatform.instance.hasEnabledChannelClient(url)) {
-            navigate(_fragMainChannel, url);
+        return withContext(Dispatchers.IO) {
+            Logger.i(TAG, "handleUrl(url=$url) on IO");
+            if (StatePlatform.instance.hasEnabledVideoClient(url)) {
+                Logger.i(TAG, "handleUrl(url=$url) found video client");
+                lifecycleScope.launch(Dispatchers.Main) {
+                    navigate(_fragVideoDetail, url);
 
-            lifecycleScope.launch {
-                delay(100);
-                _fragVideoDetail.minimizeVideoDetail();
-            };
-            return true;
+                    _fragVideoDetail.maximizeVideoDetail(true);
+                }
+                return@withContext true;
+            } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
+                Logger.i(TAG, "handleUrl(url=$url) found channel client");
+                lifecycleScope.launch(Dispatchers.Main) {
+                    navigate(_fragMainChannel, url);
+                    delay(100);
+                    _fragVideoDetail.minimizeVideoDetail();
+                };
+                return@withContext true;
+            } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
+                Logger.i(TAG, "handleUrl(url=$url) found playlist client");
+                lifecycleScope.launch(Dispatchers.Main) {
+                    navigate(_fragMainPlaylist, url);
+                    delay(100);
+                    _fragVideoDetail.minimizeVideoDetail();
+                };
+                return@withContext true;
+            }
+            return@withContext false;
         }
-        else if(StatePlatform.instance.hasEnabledPlaylistClient(url)) {
-            navigate(_fragMainPlaylist, url);
-            lifecycleScope.launch {
-                delay(100);
-                _fragVideoDetail.minimizeVideoDetail();
-            };
-            return true;
-        }
-        return false;
     }
     fun handleContent(file: String, mime: String? = null): Boolean {
         Logger.i(TAG, "handleContent(url=$file)");

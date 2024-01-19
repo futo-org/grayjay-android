@@ -2,6 +2,7 @@ package com.futo.platformplayer.engine
 
 import android.content.Context
 import com.caoccao.javet.exceptions.JavetCompilationException
+import com.caoccao.javet.exceptions.JavetException
 import com.caoccao.javet.exceptions.JavetExecutionException
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.V8Runtime
@@ -10,6 +11,7 @@ import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
@@ -173,8 +175,16 @@ class V8Plugin {
                 isStopped = true;
                 _runtime?.let {
                     _runtime = null;
-                    if(!it.isClosed && !it.isDead)
-                        it.close();
+                    if(!it.isClosed && !it.isDead) {
+                        try {
+                            it.close();
+                        }
+                        catch(ex: JavetException) {
+                            //In case race conditions are going on, already closed runtimes are fine.
+                            if(ex.message?.contains("Runtime is already closed") != true)
+                                throw ex;
+                        }
+                    }
                     Logger.i(TAG, "Stopped plugin [${config.name}]");
                 };
             }

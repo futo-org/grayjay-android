@@ -9,7 +9,10 @@ import com.futo.platformplayer.api.http.server.HttpGET
 import com.futo.platformplayer.api.http.server.HttpPOST
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
+import com.futo.platformplayer.api.media.platforms.js.internal.JSDocs
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.dev.V8RemoteObject
 import com.futo.platformplayer.engine.dev.V8RemoteObject.Companion.gsonStandard
@@ -20,18 +23,29 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateAssets
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StatePlatform
+import com.google.gson.ExclusionStrategy
+import com.google.gson.FieldAttributes
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Modifier
 import java.util.UUID
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.jvmErasure
 
 class DeveloperEndpoints(private val context: Context) {
     private val TAG = "DeveloperEndpoints";
     private val _client = ManagedHttpClient();
     private var _testPlugin: V8Plugin? = null;
+    private var _testPluginFull: JSClient? = null;
     private val testPluginOrThrow: V8Plugin get() = _testPlugin ?: throw IllegalStateException("Attempted to use test plugin without plugin");
     private val _testPluginVariables: HashMap<String, V8RemoteObject> = hashMapOf();
 
@@ -190,6 +204,17 @@ class DeveloperEndpoints(private val context: Context) {
             val client = JSHttpClient(null, null, null, config);
             val clientAuth = JSHttpClient(null, null, null, config);
             _testPlugin = V8Plugin(StateApp.instance.context, config, null, client, clientAuth);
+            try {
+                val script = _client.get(config.absoluteScriptUrl);
+                _testPluginFull = JSClient(StateApp.instance.context, SourcePluginDescriptor(
+                    config, null, null, null
+                ), null, script.body?.string() ?: "");
+                _testPluginFull!!.initialize();
+            }
+            catch (ex: Throwable) {
+                Logger.e(TAG, "Loading full client failed", ex);
+                _testPluginFull = null;
+            }
 
             context.respondJson(200, testPluginOrThrow.getPackageVariables());
         }
@@ -436,6 +461,68 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(200);
         }
         catch(ex: Exception) {
+            context.respondCode(500, ex.message ?: "", "text/plain")
+        }
+    }
+
+    private val _fieldAttributesField = FieldAttributes::class.java.getDeclaredField("field");
+    init {
+        _fieldAttributesField.isAccessible = true;
+    }
+    private val _remoteTestGson = GsonBuilder()
+        .setExclusionStrategies(object : ExclusionStrategy {
+            override fun shouldSkipClass(clazz: Class<*>?): Boolean {
+                return clazz?.simpleName == "JSClient" ||
+                    clazz?.simpleName == "KSerializer[]" ||
+                    clazz?.simpleName == "V8ValueObject";
+            }
+
+            override fun shouldSkipField(f: FieldAttributes?): Boolean {
+                val isPublic = f?.hasModifier(Modifier.PUBLIC) ?: true;
+                if(!isPublic) {
+                    val underlyingField = _fieldAttributesField.get(f) as Field;
+                    return !(underlyingField.declaringClass as Class).methods.any { it.name == "get" + underlyingField.name.replaceFirstChar { it.uppercaseChar() } && Modifier.isPublic(it.modifiers) };
+                }
+                else
+                    return !isPublic;
+            }
+        }).create();
+    @HttpPOST("/plugin/remoteTest")
+    fun pluginRemoteTest(context: HttpContext) {
+        val method = context.query.getOrDefault("method", "");
+        try {
+
+            val parameters = context.readContentString();
+            val paras = JsonParser.parseString(parameters);
+            if(!paras.isJsonArray)
+                throw IllegalArgumentException("Expected json array as body");
+
+            val plugin = _testPluginFull ?: throw IllegalStateException("Plugin not loaded");
+
+            val function = plugin::class.memberFunctions.filter { it.findAnnotation<JSDocs>() != null }
+                .find { it.name == method };
+            if(function == null)
+                throw java.lang.IllegalArgumentException("Plugin method [${function}] not found");
+            val callResult = function.call(*(listOf(plugin) + paras.asJsonArray.take(function.parameters.size - 1).mapIndexed { index, jsonElement ->
+                //For now, manual conversion.
+                val parameter = function.parameters[index + 1];
+                val value = _remoteTestGson.fromJson<Any>(jsonElement, parameter.type.javaType);
+                return@mapIndexed value;
+            }).toTypedArray());
+            val json = if(callResult is IPager<*>)
+                _remoteTestGson.toJson(callResult.getResults())
+            else
+                _remoteTestGson.toJson(callResult);
+            //val json = wrapRemoteResult(callResult, false);
+
+            context.respondCode(200, json);
+        }
+        catch(ex: InvocationTargetException) {
+            Logger.e(TAG, "Remote test for [${method}] is failed", ex.targetException);
+            context.respondCode(500, ex.targetException.message ?: "", "text/plain")
+        }
+        catch(ex: Exception) {
+            Logger.e(TAG, "Remote test for [${method}] is failed", ex);
             context.respondCode(500, ex.message ?: "", "text/plain")
         }
     }
