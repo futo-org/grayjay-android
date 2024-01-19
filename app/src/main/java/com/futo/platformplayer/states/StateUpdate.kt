@@ -155,7 +155,7 @@ class StateUpdate {
         }
     }
 
-    suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean) = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean, hideExceptionButtons: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val client = ManagedHttpClient();
             val latestVersion = downloadVersionCode(client);
@@ -167,7 +167,7 @@ class StateUpdate {
                 if (latestVersion > currentVersion) {
                     withContext(Dispatchers.Main) {
                         try {
-                            UIDialogs.showUpdateAvailableDialog(context, latestVersion);
+                            UIDialogs.showUpdateAvailableDialog(context, latestVersion, hideExceptionButtons);
                         } catch (e: Throwable) {
                             UIDialogs.toast(context, "Failed to show update dialog");
                             Logger.w(TAG, "Error occurred in update dialog.");

@@ -304,12 +304,16 @@ class UIDialogs {
             showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction)
         }
 
-        fun showUpdateAvailableDialog(context: Context, lastVersion: Int) {
+        fun showUpdateAvailableDialog(context: Context, lastVersion: Int, hideExceptionButtons: Boolean = false) {
             val dialog = AutoUpdateDialog(context);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();
             dialog.setMaxVersion(lastVersion);
+
+            if (hideExceptionButtons) {
+                dialog.hideExceptionButtons()
+            }
         }
 
         fun showChangelogDialog(context: Context, lastVersion: Int) {
