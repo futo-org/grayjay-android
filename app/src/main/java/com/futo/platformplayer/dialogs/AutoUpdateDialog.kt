@@ -96,6 +96,11 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         Logger.i(TAG, "Cleared InstallReceiver.onReceiveResult handler.")
     }
 
+    fun hideExceptionButtons() {
+        _buttonNever.visibility = View.GONE
+        _buttonShowChangelog.visibility = View.GONE
+    }
+
     private fun update() {
         _buttonShowChangelog.visibility = Button.GONE;
         _buttonNever.visibility = Button.GONE;

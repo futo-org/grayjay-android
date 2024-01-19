@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -15,6 +16,7 @@ import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logging
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateUpdate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,6 +30,7 @@ class ExceptionActivity : AppCompatActivity() {
     private lateinit var _buttonSubmit: LinearLayout;
     private lateinit var _buttonRestart: LinearLayout;
     private lateinit var _buttonClose: LinearLayout;
+    private lateinit var _buttonCheckForUpdates: LinearLayout;
     private var _file: File? = null;
     private var _submitted = false;
 
@@ -45,6 +48,7 @@ class ExceptionActivity : AppCompatActivity() {
         _buttonSubmit = findViewById(R.id.button_submit);
         _buttonRestart = findViewById(R.id.button_restart);
         _buttonClose = findViewById(R.id.button_close);
+        _buttonCheckForUpdates = findViewById(R.id.button_check_for_updates);
 
         val context = intent.getStringExtra(EXTRA_CONTEXT) ?: getString(R.string.unknown_context);
         val stack = intent.getStringExtra(EXTRA_STACK) ?: getString(R.string.something_went_wrong_missing_stack_trace);
@@ -83,6 +87,17 @@ class ExceptionActivity : AppCompatActivity() {
         _buttonClose.setOnClickListener {
             finish();
         };
+
+        if (!BuildConfig.IS_PLAYSTORE_BUILD) {
+            _buttonCheckForUpdates.visibility = View.VISIBLE
+            _buttonCheckForUpdates.setOnClickListener {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    StateUpdate.instance.checkForUpdates(this@ExceptionActivity, true, true)
+                }
+            }
+        } else {
+            _buttonCheckForUpdates.visibility = View.GONE
+        }
     }
 
     private fun submitFile() {
