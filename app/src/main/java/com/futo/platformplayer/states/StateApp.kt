@@ -13,6 +13,7 @@ import android.net.NetworkRequest
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -473,7 +474,11 @@ class StateApp {
         Logger.i(TAG, "MainApp Started: Initialize [Noisy]");
         _receiverBecomingNoisy?.let {
             _receiverBecomingNoisy = null;
-            context.unregisterReceiver(it);
+            try {
+                context.unregisterReceiver(it);
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to unregister receiver.", e)
+            }
         }
         _receiverBecomingNoisy = AudioNoisyReceiver();
         context.registerReceiver(_receiverBecomingNoisy, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
@@ -639,7 +644,11 @@ class StateApp {
         Logger.i(TAG, "App ended");
         _receiverBecomingNoisy?.let {
             _receiverBecomingNoisy = null;
-            context.unregisterReceiver(it);
+            try {
+                context.unregisterReceiver(it);
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to unregister receiver.", e)
+            }
         }
 
         Logger.i(TAG, "Unregistered network callback on connectivityManager.")

@@ -24,6 +24,7 @@ import androidx.core.animation.doOnStart
 import androidx.core.view.GestureDetectorCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -739,15 +740,23 @@ class GestureControlView : LinearLayout {
 
         if (isFullScreen) {
             if (Settings.instance.gestureControls.useSystemBrightness) {
-                _originalBrightnessMode = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE)
+                try {
+                    _originalBrightnessMode = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE)
 
-                val brightness = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS)
-                _brightnessFactor = brightness / 255.0f;
-                Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
+                    val brightness = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS)
+                    _brightnessFactor = brightness / 255.0f;
+                    Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
 
-                _originalBrightnessFactor = _brightnessFactor
-                android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
-            } else {
+                    _originalBrightnessFactor = _brightnessFactor
+                    android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                } catch (e: Throwable) {
+                    Settings.instance.gestureControls.useSystemBrightness = false
+                    Settings.instance.save()
+                    UIDialogs.toast(context, "useSystemBrightness disabled due to an error")
+                }
+            }
+
+            if (!Settings.instance.gestureControls.useSystemBrightness) {
                 _brightnessFactor = 1.0f;
             }
 
