@@ -246,7 +246,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         fun updateAllButtonVisibility() {
             val defs = currentButtonDefinitions?.toMutableList() ?: return
             val metrics = StateApp.instance.displayMetrics ?: resources.displayMetrics;
-            _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt() - 1;
+            _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
             if (_buttonsVisible >= defs.size) {
                 updateBottomMenuButtons(defs.toMutableList(), false);
             } else if (_buttonsVisible > 0) {
