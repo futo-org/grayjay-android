@@ -748,7 +748,6 @@ class GestureControlView : LinearLayout {
                     Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
 
                     _originalBrightnessFactor = _brightnessFactor
-                    android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
                 } catch (e: Throwable) {
                     Settings.instance.gestureControls.useSystemBrightness = false
                     Settings.instance.save()
