@@ -46,6 +46,7 @@ import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
+import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -166,8 +167,13 @@ class StatePlatform {
             var enabled: Array<String>;
             synchronized(_clientsLock) {
                 for(e in _enabledClients) {
-                    e.disable();
-                    onSourceDisabled.emit(e);
+                    try {
+                        e.disable();
+                        onSourceDisabled.emit(e);
+                    }
+                    catch(ex: Throwable) {
+                        UIDialogs.appToast(ToastView.Toast("If this happens often, please inform the developers on Github", false, null, "Plugin [${e.name}] failed to disable"));
+                    }
                 }
 
                 _enabledClients.clear();

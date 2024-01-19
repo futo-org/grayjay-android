@@ -1,5 +1,6 @@
 package com.futo.platformplayer.states
 
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
@@ -92,14 +93,20 @@ class StateHistory {
     }
     fun getHistoryByVideo(video: IPlatformVideo, create: Boolean = false, watchDate: OffsetDateTime? = null): DBHistory.Index? {
         val existing = historyIndex[video.url];
-        if(existing != null)
-            return _historyDBStore.get(existing.id!!);
+        var result: DBHistory.Index? = null;
+        if(existing != null) {
+            result = _historyDBStore.getOrNull(existing.id!!);
+            if(result == null)
+                UIDialogs.toast("History item null?\nNo history tracking..");
+        }
         else if(create) {
             val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, watchDate ?: OffsetDateTime.now());
             val id = _historyDBStore.insert(newHistItem);
-            return _historyDBStore.get(id);
+            result = _historyDBStore.getOrNull(id);
+            if(result == null)
+                UIDialogs.toast("History creation failed?\nNo history tracking..");
         }
-        return null;
+        return result;
     }
 
     fun removeHistory(url: String) {

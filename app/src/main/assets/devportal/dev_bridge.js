@@ -233,6 +233,9 @@ function pluginRemoteProp(objID, propName) {
 function pluginRemoteCall(objID, methodName, args) {
     return JSON.parse(syncPOST("/plugin/remoteCall?id=" + objID + "&method=" + methodName, {}, JSON.stringify(args)));
 }
+function pluginRemoteTest(methodName, args) {
+    return JSON.parse(syncPOST("/plugin/remoteTest?method=" + methodName, {}, JSON.stringify(args)));
+}
 
 function pluginIsLoggedIn(cb, err) {
     fetch("/plugin/isLoggedIn", {

@@ -12,6 +12,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.StoreSerializer
 import kotlinx.serialization.KSerializer
+import java.lang.IllegalArgumentException
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -209,7 +210,9 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
 
     fun getObject(id: Long) = get(id).obj!!;
     fun get(id: Long): I {
-        return deserializeIndex(dbDaoBase.get(_sqlGet(id)));
+        val result = dbDaoBase.getNullable(_sqlGet(id))
+            ?: throw IllegalArgumentException("DB [${name}] has no entry with id ${id}");
+        return deserializeIndex(result);
     }
     fun getOrNull(id: Long): I? {
         val result = dbDaoBase.getNullable(_sqlGet(id));
