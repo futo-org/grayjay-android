@@ -859,11 +859,11 @@ class VideoDetailView : ConstraintLayout {
 
 
     private val _historyIndexLock = Mutex(false);
-    suspend fun getHistoryIndex(video: IPlatformVideo): DBHistory.Index = withContext(Dispatchers.IO){
+    suspend fun getHistoryIndex(video: IPlatformVideo): DBHistory.Index? = withContext(Dispatchers.IO){
         _historyIndexLock.withLock {
             val current = _historyIndex;
             if(current == null || current.url != video.url) {
-                val index = StateHistory.instance.getHistoryByVideo(video, true)!!;
+                val index = StateHistory.instance.getHistoryByVideo(video, true);
                 _historyIndex = index;
                 return@withContext index;
             }
@@ -1390,7 +1390,7 @@ class VideoDetailView : ConstraintLayout {
 
         if (video !is TutorialFragment.TutorialVideo) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                val historyItem = getHistoryIndex(videoDetail);
+                val historyItem = getHistoryIndex(videoDetail) ?: return@launch;
 
                 withContext(Dispatchers.Main) {
                     _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
@@ -2252,7 +2252,7 @@ class VideoDetailView : ConstraintLayout {
         if (updateHistory && (_lastPositionSaveTime == -1L || currentTime - _lastPositionSaveTime > 5000)) {
             if (v !is TutorialFragment.TutorialVideo) {
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
-                    val history = getHistoryIndex(v);
+                    val history = getHistoryIndex(v) ?: return@launch;
                     StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
                 }
             }

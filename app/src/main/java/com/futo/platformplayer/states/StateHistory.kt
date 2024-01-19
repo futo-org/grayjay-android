@@ -106,7 +106,7 @@ class StateHistory {
             if(result == null)
                 UIDialogs.toast("History creation failed?\nNo history tracking..");
         }
-        return null;
+        return result;
     }
 
     fun removeHistory(url: String) {
