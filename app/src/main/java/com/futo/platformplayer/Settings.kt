@@ -823,7 +823,7 @@ class Settings : FragmentedStorageFileJson() {
         var toggleFullscreen: Boolean = true;
 
         @FormField(R.string.system_brightness, FieldForm.TOGGLE, R.string.system_brightness_descr, 4)
-        var useSystemBrightness: Boolean = true;
+        var useSystemBrightness: Boolean = false;
 
         @FormField(R.string.system_volume, FieldForm.TOGGLE, R.string.system_volume_descr, 5)
         var useSystemVolume: Boolean = true;

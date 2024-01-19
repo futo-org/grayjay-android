@@ -3,12 +3,12 @@ package com.futo.platformplayer.views.behavior
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.app.Activity
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.drawable.Animatable
 import android.media.AudioManager
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -67,6 +67,7 @@ class GestureControlView : LinearLayout {
     private var _animatorSound: ObjectAnimator? = null;
     private var _brightnessFactor = 1.0f;
     private var _originalBrightnessFactor = 1.0f;
+    private var _originalBrightnessMode: Int = 0;
     private var _adjustingBrightness: Boolean = false;
     private val _layoutControlsBrightness: FrameLayout;
     private val _progressBrightness: CircularProgressBar;
@@ -167,8 +168,6 @@ class GestureControlView : LinearLayout {
             override fun onScroll(p0: MotionEvent?, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 if(p0 == null)
                     return false;
-
-                Logger.i(TAG, "p0.pointerCount: " + p0.pointerCount)
 
                 if (!_isPanning && p1.pointerCount == 1) {
                     val minDistance = Math.min(width, height)
@@ -739,16 +738,17 @@ class GestureControlView : LinearLayout {
         resetZoomPan()
 
         if (isFullScreen) {
-            val c = context
-            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
-                _brightnessFactor = c.window.attributes.screenBrightness
-                if (_brightnessFactor == -1.0f) {
-                    _brightnessFactor = android.provider.Settings.System.getInt(
-                        context.contentResolver,
-                        android.provider.Settings.System.SCREEN_BRIGHTNESS
-                    ) / 255.0f;
-                }
+            if (Settings.instance.gestureControls.useSystemBrightness) {
+                _originalBrightnessMode = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE)
+
+                val brightness = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS)
+                _brightnessFactor = brightness / 255.0f;
+                Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
+
                 _originalBrightnessFactor = _brightnessFactor
+                android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+            } else {
+                _brightnessFactor = 1.0f;
             }
 
             if (Settings.instance.gestureControls.useSystemVolume) {
@@ -761,10 +761,19 @@ class GestureControlView : LinearLayout {
             onBrightnessAdjusted.emit(_brightnessFactor);
             onSoundAdjusted.emit(_soundFactor);
         } else {
-            val c = context
-            if (c is Activity && Settings.instance.gestureControls.useSystemBrightness) {
+            if (Settings.instance.gestureControls.useSystemBrightness) {
                 if (Settings.instance.gestureControls.restoreSystemBrightness) {
-                    onBrightnessAdjusted.emit(_originalBrightnessFactor);
+                    onBrightnessAdjusted.emit(_originalBrightnessFactor)
+
+                    if (android.provider.Settings.System.canWrite(context)) {
+                        Log.i(TAG, "Restoring system brightness mode _originalBrightnessMode: $_originalBrightnessMode")
+
+                        android.provider.Settings.System.putInt(
+                            context.contentResolver,
+                            android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE,
+                            _originalBrightnessMode
+                        )
+                    }
                 }
             } else {
                 onBrightnessAdjusted.emit(1.0f);
