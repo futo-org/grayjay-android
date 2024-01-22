@@ -2562,7 +2562,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 else
                     withContext(Dispatchers.Main) {
-                        setVideoDetails(videoDetail, true);
+                        setVideoDetails(videoDetail, false);
                         _liveTryJob = null;
                     }
             }
