@@ -1035,10 +1035,10 @@ class VideoDetailView : ConstraintLayout {
 
         switchContentView(_container_content_main);
     }
-    fun setVideoOverview(video: IPlatformVideo, fetch: Boolean = true, resumeSeconds: Long = 0) {
+    fun setVideoOverview(video: IPlatformVideo, fetch: Boolean = true, resumeSeconds: Long = 0, bypassSameVideoCheck: Boolean = false) {
         Logger.i(TAG, "setVideoOverview")
 
-        if(this.video?.url == video.url)
+        if(!bypassSameVideoCheck && this.video?.url == video.url)
             return;
 
         val cachedVideo = StateDownloads.instance.getCachedVideo(video.id);
@@ -1663,7 +1663,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "prevVideo")
         val next = StatePlayer.instance.prevQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
         if(next != null) {
-            setVideoOverview(next);
+            setVideoOverview(next, true, 0, true);
         }
     }
 
@@ -1673,7 +1673,7 @@ class VideoDetailView : ConstraintLayout {
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {
-            setVideoOverview(next);
+            setVideoOverview(next, true, 0, true);
             return true;
         }
         else
