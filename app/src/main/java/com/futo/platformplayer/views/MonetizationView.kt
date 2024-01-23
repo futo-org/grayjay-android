@@ -8,11 +8,13 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.HorizontalSpaceItemDecoration
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
@@ -61,6 +63,7 @@ class MonetizationView : LinearLayout {
 
     val onSupportTap = Event0();
     val onStoreTap = Event0();
+    val onUrlTap = Event1<String>();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_monetization, this);
@@ -70,10 +73,12 @@ class MonetizationView : LinearLayout {
         _membershipPlatform = findViewById(R.id.membership_platform);
         _buttonMembership.setOnClickListener {
             _membershipUrl?.let {
+                /*
                 val uri = Uri.parse(it);
                 val intent = Intent(Intent.ACTION_VIEW);
                 intent.data = uri;
-                context.startActivity(intent);
+                context.startActivity(intent);*/
+                onUrlTap.emit(it);
             }
         }
 
@@ -129,9 +134,18 @@ class MonetizationView : LinearLayout {
                 _buttonStore.visibility = View.GONE;
             }
 
+            if(profile.systemState.donationDestinations.isNotEmpty() ||
+                profile.systemState.membershipUrls.isNotEmpty() ||
+                profile.systemState.store.isNotEmpty() ||
+                profile.systemState.promotion.isNotEmpty())
+                _buttonSupport.isVisible = true;
+            else
+                _buttonSupport.isVisible = false;
+
             _root.visibility = View.VISIBLE;
         } else {
             _root.visibility = View.GONE;
+            _buttonSupport.isVisible = false;
         }
 
         setMerchandise(null);

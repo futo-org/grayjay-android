@@ -10,6 +10,8 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.core.view.size
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
@@ -32,6 +34,13 @@ class SupportView : LinearLayout {
     private val _imagePromotion: ShapeableImageView
     private var _textNoSupportOptionsSet: TextView
     private var _polycentricProfile: PolycentricProfile? = null
+
+    val hasSupportItems: Boolean get() {
+        return (_layoutPromotions.isVisible && _buttonPromotion.isVisible) ||
+                (_layoutMemberships.isVisible && _layoutMembershipEntries.isVisible && _layoutMembershipEntries.size > 0) ||
+                (_layoutDonation.isVisible && _layoutDonationEntries.isVisible && _layoutDonationEntries.size > 0) ||
+                _buttonStore.isVisible;
+    };
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_support, this);

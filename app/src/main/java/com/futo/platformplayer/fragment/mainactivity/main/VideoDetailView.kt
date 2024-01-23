@@ -12,6 +12,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
+import android.provider.Browser
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
@@ -398,6 +399,10 @@ class VideoDetailView : ConstraintLayout {
                 }
             }
         };
+        _monetization.onUrlTap.subscribe {
+            fragment.navigate<BrowserFragment>(it);
+            onMinimize.emit();
+        }
 
         _player.attachPlayer();
 

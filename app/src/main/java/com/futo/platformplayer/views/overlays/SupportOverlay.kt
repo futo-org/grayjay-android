@@ -14,6 +14,10 @@ class SupportOverlay : LinearLayout {
     private val _topbar: OverlayTopbar;
     private val _support: SupportView;
 
+    val hasSupportItems: Boolean get() {
+        return _support.hasSupportItems;
+    }
+
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.overlay_support, this)
         _topbar = findViewById(R.id.topbar);
