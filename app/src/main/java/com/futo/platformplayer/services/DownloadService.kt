@@ -37,6 +37,7 @@ class DownloadService : Service() {
     private val DOWNLOAD_NOTIF_ID = 3;
     private val DOWNLOAD_NOTIF_TAG = "download";
     private val DOWNLOAD_NOTIF_CHANNEL_ID = "downloadChannel";
+    private val DOWNLOAD_NOTIF_CHANNEL_NAME = "Downloads";
 
     //Context
     private val _scope: CoroutineScope = CoroutineScope(Dispatchers.Default);
@@ -95,7 +96,7 @@ class DownloadService : Service() {
     }
     fun setupNotificationRequirements() {
         _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
-        _notificationChannel = NotificationChannel(DOWNLOAD_NOTIF_CHANNEL_ID, "Temp", NotificationManager.IMPORTANCE_DEFAULT).apply {
+        _notificationChannel = NotificationChannel(DOWNLOAD_NOTIF_CHANNEL_ID, DOWNLOAD_NOTIF_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
             this.enableVibration(false);
             this.setSound(null, null);
         };

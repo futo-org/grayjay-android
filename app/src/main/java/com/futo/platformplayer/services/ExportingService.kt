@@ -36,6 +36,7 @@ class ExportingService : Service() {
     private val EXPORT_NOTIF_ID = 4;
     private val EXPORT_NOTIF_TAG = "export";
     private val EXPORT_NOTIF_CHANNEL_ID = "exportChannel";
+    private val EXPORT_NOTIF_CHANNEL_NAME = "Export";
 
     //Context
     private val _scope: CoroutineScope = CoroutineScope(Dispatchers.Default);
@@ -88,7 +89,7 @@ class ExportingService : Service() {
     }
     fun setupNotificationRequirements() {
         _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
-        _notificationChannel = NotificationChannel(EXPORT_NOTIF_CHANNEL_ID, "Temp", NotificationManager.IMPORTANCE_DEFAULT).apply {
+        _notificationChannel = NotificationChannel(EXPORT_NOTIF_CHANNEL_ID, EXPORT_NOTIF_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
             this.enableVibration(false);
             this.setSound(null, null);
         };

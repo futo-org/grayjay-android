@@ -646,9 +646,17 @@ class UISlideOverlays {
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.actions), "actions",
                 (listOf(
-                    SlideUpMenuItem(container.context, R.drawable.ic_download, container.context.getString(R.string.download), container.context.getString(R.string.download_the_video), container.context.getString(R.string.download), {
-                            showDownloadVideoOverlay(video, container, true);
-                        }, false),
+                    SlideUpMenuItem(container.context, R.drawable.ic_download, container.context.getString(R.string.download), container.context.getString(R.string.download_the_video), "download", {
+                        showDownloadVideoOverlay(video, container, true);
+                    }, false),
+                    SlideUpMenuItem(container.context, R.drawable.ic_share, container.context.getString(R.string.share), "Share the video", "share", {
+                        val url = if(video.shareUrl.isNotEmpty()) video.shareUrl else video.url;
+                        container.context.startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND;
+                            putExtra(Intent.EXTRA_TEXT, url);
+                            type = "text/plain";
+                        }, null));
+                    }, false),
                     SlideUpMenuItem(container.context, R.drawable.ic_visibility_off, container.context.getString(R.string.hide_creator_from_home), "", "hide_creator", {
                         StateMeta.instance.addHiddenCreator(video.author.url);
                         UIDialogs.toast(container.context, "[${video.author.name}] hidden, you may need to reload home");
