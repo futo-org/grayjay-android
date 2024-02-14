@@ -50,6 +50,9 @@ class StateHistory {
     fun getHistoryPosition(url: String): Long {
         return historyIndex[url]?.position ?: 0;
     }
+    fun isHistoryWatched(url: String, duration: Long): Boolean {
+        return getHistoryPosition(url) > duration * 0.7;
+    }
 
 
     fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L): Long {

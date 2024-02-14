@@ -25,6 +25,7 @@ import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -197,6 +198,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             val allowContentTypes: MutableList<ContentType> = mutableListOf(ContentType.MEDIA, ContentType.POST);
             var allowLive: Boolean = true;
             var allowPlanned: Boolean = false;
+            var allowWatched: Boolean = true;
             override fun encode(): String {
                 return Json.encodeToString(this);
             }
@@ -304,7 +306,8 @@ class SubscriptionsFeedFragment : MainFragment() {
                     SubscriptionBar.Toggle(context.getString(R.string.videos), _filterSettings.allowContentTypes.contains(ContentType.MEDIA)) { toggleFilterContentTypes(listOf(ContentType.MEDIA, ContentType.NESTED_VIDEO), it);  },
                     SubscriptionBar.Toggle(context.getString(R.string.posts),  _filterSettings.allowContentTypes.contains(ContentType.POST)) { toggleFilterContentType(ContentType.POST, it); },
                     SubscriptionBar.Toggle(context.getString(R.string.live), _filterSettings.allowLive) { _filterSettings.allowLive = it; _filterSettings.save(); loadResults(false); },
-                    SubscriptionBar.Toggle(context.getString(R.string.planned), _filterSettings.allowPlanned) { _filterSettings.allowPlanned = it; _filterSettings.save(); loadResults(false); }
+                    SubscriptionBar.Toggle(context.getString(R.string.planned), _filterSettings.allowPlanned) { _filterSettings.allowPlanned = it; _filterSettings.save(); loadResults(false); },
+                    SubscriptionBar.Toggle(context.getString(R.string.watched), _filterSettings.allowWatched) { _filterSettings.allowWatched = it; _filterSettings.save(); loadResults(false); }
                 );
             }
 
@@ -335,6 +338,9 @@ class SubscriptionsFeedFragment : MainFragment() {
             val filterGroup = subGroup;
             return results.filter {
                 val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
+
+                if(it is IPlatformVideo && it.duration > 0 && !_filterSettings.allowWatched && StateHistory.instance.isHistoryWatched(it.url, it.duration))
+                    return@filter false;
 
                 //TODO: Check against a sub cache
                 if(filterGroup != null && !filterGroup.urls.contains(it.author.url))
