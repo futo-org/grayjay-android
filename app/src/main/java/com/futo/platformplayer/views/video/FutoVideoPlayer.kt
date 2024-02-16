@@ -582,6 +582,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
             _videoControls_fullscreen.show();
             videoControls.hideImmediately();
+            videoControls.visibility = View.GONE;
         }
         else {
             val lp = background.layoutParams as ConstraintLayout.LayoutParams;
@@ -594,6 +595,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
             videoControls.show();
             _videoControls_fullscreen.hideImmediately();
+            _videoControls_fullscreen.visibility = View.GONE;
         }
 
         fitOrFill(fullScreen);
