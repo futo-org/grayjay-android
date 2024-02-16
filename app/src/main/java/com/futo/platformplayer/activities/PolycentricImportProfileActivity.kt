@@ -13,6 +13,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -125,6 +126,12 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
 
                 val processSecret = ProcessSecret(keyPair, Process.random());
                 Store.instance.addProcessSecret(processSecret);
+
+                try {
+                    PolycentricStorage.instance.addProcessSecret(processSecret)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to save process secret to secret storage.", e)
+                }
 
                 val processHandle = processSecret.toProcessHandle();
 

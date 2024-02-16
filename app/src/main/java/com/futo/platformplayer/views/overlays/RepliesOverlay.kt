@@ -51,9 +51,11 @@ class RepliesOverlay : LinearLayout {
     private var _onCommentAdded: ((comment: IPlatformComment) -> Unit)? = null;
     private val _loaderOverlay: LoaderOverlay
     private val _client = ManagedHttpClient()
+    private val _layoutItems: LinearLayout
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.overlay_replies, this)
+        _layoutItems = findViewById(R.id.layout_items)
         _topbar = findViewById(R.id.topbar);
         _commentsList = findViewById(R.id.comments_list);
         _addCommentView = findViewById(R.id.add_comment_view);
@@ -64,6 +66,9 @@ class RepliesOverlay : LinearLayout {
         _layoutParentComment = findViewById(R.id.layout_parent_comment)
         _loaderOverlay = findViewById(R.id.loader_overlay)
         setLoading(false);
+
+        _layoutItems.removeView(_layoutParentComment)
+        _commentsList.setPrependedView(_layoutParentComment)
 
         _addCommentView.onCommentAdded.subscribe {
             _commentsList.addComment(it);
