@@ -7,5 +7,25 @@
         android:id="@+id/recycler_comments"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-    
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:paddingBottom="7dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="7dp"
+        android:paddingStart="14dp"
+        android:background="@drawable/background_pill"
+        android:id="@+id/layout_scroll_to_top">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/scroll_to_top"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:textSize="14dp"/>
+    </FrameLayout>
 </FrameLayout>

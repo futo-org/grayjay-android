@@ -23,6 +23,7 @@ import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -67,28 +68,40 @@ class StatePolycentric {
             return
         }
 
-        try {
-            val db = SqlLiteDbHelper(context);
-            Store.initializeSqlLiteStore(db);
+        for (i in 0 .. 1) {
+            try {
+                val db = SqlLiteDbHelper(context);
+                Store.initializeSqlLiteStore(db);
 
-            val activeProcessHandleString = _activeProcessHandle.value;
-            if (activeProcessHandleString.isNotEmpty()) {
-                try {
-                    val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                    setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
-                } catch (e: Throwable) {
-                    db.upgradeOldSecrets(db.writableDatabase);
+                val activeProcessHandleString = _activeProcessHandle.value;
+                if (activeProcessHandleString.isNotEmpty()) {
+                    try {
+                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+                    } catch (e: Throwable) {
+                        db.upgradeOldSecrets(db.writableDatabase);
 
-                    val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                    setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
+                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
+                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
 
+                        Log.i(TAG, "Failed to initialize Polycentric.", e)
+                    }
+                }
+
+                getProcessHandles()
+
+                break;
+            } catch (e: Throwable) {
+                if (i == 0) {
+                    Logger.i(TAG, "Clearing Polycentric database due to corruption");
+                    val db = SqlLiteDbHelper(context);
+                    db.recreate()
+                } else {
+                    _transientEnabled = false
+                    UIDialogs.showGeneralErrorDialog(context, "Failed to initialize Polycentric.", e);
                     Log.i(TAG, "Failed to initialize Polycentric.", e)
                 }
             }
-        } catch (e: Throwable) {
-            _transientEnabled = false
-            UIDialogs.showGeneralErrorDialog(context, "Failed to initialize Polycentric.", e);
-            Log.i(TAG, "Failed to initialize Polycentric.", e)
         }
     }
 
@@ -103,7 +116,32 @@ class StatePolycentric {
             return listOf()
         }
 
-        return Store.instance.getProcessSecrets().map { it.toProcessHandle(); };
+        val storeProcessSecrets = Store.instance.getProcessSecrets().toMutableList()
+        val processSecrets = PolycentricStorage.instance.getProcessSecrets()
+
+        for (processSecret in processSecrets)
+        {
+            if (!storeProcessSecrets.contains(processSecret)) {
+                try {
+                    Store.instance.addProcessSecret(processSecret)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to backfill process secret.")
+                }
+            }
+        }
+
+        for (processSecret in storeProcessSecrets)
+        {
+            if (!processSecrets.contains(processSecret)) {
+                try {
+                    PolycentricStorage.instance.addProcessSecret(processSecret)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to backfill process secret.")
+                }
+            }
+        }
+
+        return (storeProcessSecrets + processSecrets).distinct().map { it.toProcessHandle() }
     }
 
     fun setProcessHandle(processHandle: ProcessHandle?) {

@@ -71,6 +71,9 @@ class CommentsList : ConstraintLayout {
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
             super.onScrolled(recyclerView, dx, dy);
             onScrolled();
+
+            val totalScrollDistance = recyclerView.computeVerticalScrollOffset()
+            _layoutScrollToTop.visibility = if (totalScrollDistance > recyclerView.height) View.VISIBLE else View.GONE
         }
     };
 
@@ -82,6 +85,7 @@ class CommentsList : ConstraintLayout {
     private var _loading = false;
     private val _prependedView: FrameLayout;
     private var _readonly: Boolean = false;
+    private val _layoutScrollToTop: FrameLayout;
 
     var onRepliesClick = Event1<IPlatformComment>();
     var onCommentsLoaded = Event1<Int>();
@@ -90,6 +94,13 @@ class CommentsList : ConstraintLayout {
         LayoutInflater.from(context).inflate(R.layout.view_comments_list, this, true);
 
         _recyclerComments = findViewById(R.id.recycler_comments);
+
+        _layoutScrollToTop = findViewById(R.id.layout_scroll_to_top);
+        _layoutScrollToTop.setOnClickListener {
+            _recyclerComments.smoothScrollToPosition(0)
+        }
+        _layoutScrollToTop.visibility = View.GONE
+
         _textMessage = TextView(context).apply {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 setMargins(0, 30, 0, 0)

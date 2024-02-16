@@ -751,6 +751,7 @@
     <string name="select">Select</string>
     <string name="zoom">Zoom</string>
     <string name="check_to_see_if_an_update_is_available">Check to see if an update is available.</string>
+    <string name="scroll_to_top">Scroll to top</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
