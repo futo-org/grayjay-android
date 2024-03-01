@@ -603,7 +603,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     UIDialogs.showSingleButtonDialog(
                         this,
                         R.drawable.ic_play,
-                        getString(R.string.unknown_content_format) + " [${url}]",
+                        getString(R.string.unknown_content_format) + " [${url}]\n[${intent.type}]",
                         "Ok",
                         { });
                 }
