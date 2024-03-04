@@ -150,6 +150,7 @@ fun OffsetDateTime.toHumanNowDiffString(abs: Boolean = false) : String {
     if(value >= secondsInYear) {
         value = getNowDiffYears();
         if(abs) value = abs(value);
+        value = Math.max(1, value);
         unit = "year";
     }
     else if(value >= secondsInMonth) {
