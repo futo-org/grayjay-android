@@ -14,6 +14,7 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
@@ -32,8 +33,10 @@ class StatePlaylists {
         .withUnique { it.url }
         .withRestore(object: ReconstructStore<SerializedPlatformVideo>() {
             override fun toReconstruction(obj: SerializedPlatformVideo): String = obj.url;
-            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): SerializedPlatformVideo
-                = SerializedPlatformVideo.fromVideo(StatePlatform.instance.getContentDetails(backup).await() as IPlatformVideoDetails);
+            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, importCache: ImportCache?): SerializedPlatformVideo
+                = SerializedPlatformVideo.fromVideo(
+                    importCache?.videos?.find { it.url == backup }?.let { Logger.i(TAG, "Reconstruction [${backup}] from cache"); return@let it; } ?:
+                    StatePlatform.instance.getContentDetails(backup).await() as IPlatformVideoDetails);
         })
         .load();
     private val _watchlistOrderStore = FragmentedStorage.get<StringArrayStorage>("watchListOrder"); //Temporary workaround to add order..
@@ -154,7 +157,11 @@ class StatePlaylists {
         val reconstruction = playlistStore.getReconstructionString(playlist, true);
 
         val newFile = File(playlistShareDir, playlist.name + ".json");
-        newFile.writeText(Json.encodeToString(reconstruction.split("\n")), Charsets.UTF_8);
+        newFile.writeText(Json.encodeToString(reconstruction.split("\n") + listOf(
+            "__CACHE:" + Json.encodeToString(ImportCache(
+                videos = playlist.videos.toList()
+            ))
+        )), Charsets.UTF_8);
 
         return FileProvider.getUriForFile(context, context.resources.getString(R.string.authority), newFile);
     }
@@ -185,7 +192,7 @@ class StatePlaylists {
             items.addAll(obj.videos.map { it.url });
             return items.map { it.replace("\n","") }.joinToString("\n");
         }
-        override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): Playlist {
+        override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, importCache: ImportCache?): Playlist {
             val items = backup.split("\n");
             if(items.size <= 0) {
                 throw IllegalStateException("Cannot reconstructor playlist ${id}");
@@ -194,10 +201,17 @@ class StatePlaylists {
             val name = items[0];
             val videos = items.drop(1).filter { it.isNotEmpty() }.map {
                 try {
-                    val video = StatePlatform.instance.getContentDetails(it).await();
+                    val videoUrl = it;
+                    val video = importCache?.videos?.find { it.url == videoUrl } ?:
+                        StatePlatform.instance.getContentDetails(it).await();
                     if (video is IPlatformVideoDetails) {
                         return@map SerializedPlatformVideo.fromVideo(video);
-                    } else {
+                    }
+                    else if(video is SerializedPlatformVideo) {
+                        Logger.i(TAG, "Reconstruction [${it}] from cache");
+                        return@map video;
+                    }
+                    else {
                         return@map null
                     }
                 }

@@ -30,7 +30,7 @@ class HistoryVideo {
     }
 
     companion object {
-        fun fromReconString(str: String, resolve: ((url: String)->SerializedPlatformVideo)? = null): HistoryVideo {
+        fun fromReconString(str: String, resolve: ((url: String)->SerializedPlatformVideo?)? = null): HistoryVideo {
             var index = str.indexOf("|||");
             if(index < 0) throw IllegalArgumentException("Invalid history string: " + str);
             val url = str.substring(0, index);

@@ -41,6 +41,7 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.listeners.OrientationManager
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -693,10 +694,22 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if(!recon.trim().startsWith("["))
                 return handleUnknownJson(recon);
 
-            val reconLines = Json.decodeFromString<List<String>>(recon);
+            var reconLines = Json.decodeFromString<List<String>>(recon);
+            val cacheStr = reconLines.find { it.startsWith("__CACHE:") }?.substring("__CACHE:".length);
+            reconLines = reconLines.filter { !it.startsWith("__CACHE:") }; //TODO: constant prefix
+            var cache: ImportCache? = null;
+            try {
+                if(cacheStr != null)
+                    cache = Json.decodeFromString(cacheStr);
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to deserialize cache");
+            }
+
+
             recon = reconLines.joinToString("\n");
             Logger.i(TAG, "Opened shared playlist reconstruction\n${recon}");
-            handleReconstruction(recon);
+            handleReconstruction(recon, cache);
             return true;
         }
         else if(file.lowercase().endsWith(".zip") || mime == "application/zip") {
@@ -711,12 +724,25 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     fun handleFile(file: String): Boolean {
         Logger.i(TAG, "handleFile(url=$file)");
         if(file.lowercase().endsWith(".json")) {
-            val recon = String(readSharedFile(file));
+            var recon = String(readSharedFile(file));
             if(!recon.startsWith("["))
                 return handleUnknownJson(recon);
 
+            var reconLines = Json.decodeFromString<List<String>>(recon);
+            val cacheStr = reconLines.find { it.startsWith("__CACHE:") }?.substring("__CACHE:".length);
+            reconLines = reconLines.filter { !it.startsWith("__CACHE:") }; //TODO: constant prefix
+            var cache: ImportCache? = null;
+            try {
+                if(cacheStr != null)
+                    cache = Json.decodeFromString(cacheStr);
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to deserialize cache");
+            }
+            recon = reconLines.joinToString("\n");
+
             Logger.i(TAG, "Opened shared playlist reconstruction\n${recon}");
-            handleReconstruction(recon);
+            handleReconstruction(recon, cache);
             return true;
         }
         else if(file.lowercase().endsWith(".zip")) {
@@ -728,7 +754,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
         return false;
     }
-    fun handleReconstruction(recon: String) {
+    fun handleReconstruction(recon: String, cache: ImportCache? = null) {
         val type = ManagedStore.getReconstructionIdentifier(recon);
         val store: ManagedStore<*> = when(type) {
             "Playlist" -> StatePlaylists.instance.playlistStore
@@ -745,7 +771,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
 
         if(!type.isNullOrEmpty()) {
-            UIDialogs.showImportDialog(this, store, name, listOf(recon)) {
+            UIDialogs.showImportDialog(this, store, name, listOf(recon), cache) {
 
             }
         }

@@ -37,6 +37,10 @@ class SerializedChannel(
         TODO("Not yet implemented")
     }
 
+    fun isSameUrl(url: String): Boolean {
+        return this.url == url || urlAlternatives.contains(url);
+    }
+
     companion object {
         fun fromChannel(channel: IPlatformChannel): SerializedChannel {
             return SerializedChannel(

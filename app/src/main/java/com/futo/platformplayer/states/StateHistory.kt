@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
@@ -20,8 +21,8 @@ class StateHistory {
     private val _historyStore = FragmentedStorage.storeJson<HistoryVideo>("history")
         .withRestore(object: ReconstructStore<HistoryVideo>() {
             override fun toReconstruction(obj: HistoryVideo): String = obj.toReconString();
-            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): HistoryVideo
-                    = HistoryVideo.fromReconString(backup, null);
+            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, cache: ImportCache?): HistoryVideo
+                    = HistoryVideo.fromReconString(backup) { url -> cache?.videos?.find { it.url == url } };
         })
         .load();
 
