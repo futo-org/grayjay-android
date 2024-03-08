@@ -13,6 +13,8 @@ import java.text.DecimalFormat
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 
 //Long
@@ -119,7 +121,8 @@ fun OffsetDateTime.getNowDiffMonths(): Long {
     return ChronoUnit.MONTHS.between(this, OffsetDateTime.now());
 }
 fun OffsetDateTime.getNowDiffYears(): Long {
-    return ChronoUnit.YEARS.between(this, OffsetDateTime.now());
+    val diff = ChronoUnit.MONTHS.between(this, OffsetDateTime.now()) / 12.0;
+    return diff.roundToLong();
 }
 
 fun OffsetDateTime.getDiffDays(otherDate: OffsetDateTime): Long {
@@ -150,6 +153,7 @@ fun OffsetDateTime.toHumanNowDiffString(abs: Boolean = false) : String {
     if(value >= secondsInYear) {
         value = getNowDiffYears();
         if(abs) value = abs(value);
+        value = Math.max(1, value);
         unit = "year";
     }
     else if(value >= secondsInMonth) {

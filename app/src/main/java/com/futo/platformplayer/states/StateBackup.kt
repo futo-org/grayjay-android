@@ -10,6 +10,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.copyTo
 import com.futo.platformplayer.encryption.GPasswordEncryptionProvider
@@ -17,6 +18,7 @@ import com.futo.platformplayer.encryption.GPasswordEncryptionProviderV0
 import com.futo.platformplayer.fragment.mainactivity.main.ImportSubscriptionsFragment
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -57,6 +59,19 @@ class StateBackup {
             StateSubscriptions.instance.toMigrateCheck(),
             StatePlaylists.instance.toMigrateCheck()
         ).flatten();
+
+        fun getCache(): ImportCache {
+            val allPlaylists = StatePlaylists.instance.getPlaylists();
+            val videos = allPlaylists.flatMap { it.videos }.distinctBy { it.url };
+
+            val allSubscriptions = StateSubscriptions.instance.getSubscriptions();
+            val channels = allSubscriptions.map { it.channel };
+
+            return ImportCache(
+                videos = videos,
+                channels = channels
+            );
+        }
 
 
         private fun getAutomaticBackupPassword(customPassword: String? = null): String {
@@ -233,11 +248,10 @@ class StateBackup {
                 .associateBy { it.config.id }
                 .mapValues { it.value.config.sourceUrl!! };
 
+            val cache = getCache();
 
-            val export = ExportStructure(exportInfo, settings, storesToSave, pluginUrls, pluginSettings);
-            //export.videoCache = StatePlaylists.instance.getHistory()
-            //    .distinctBy { it.video.url }
-            //    .map { it.video };
+            val export = ExportStructure(exportInfo, settings, storesToSave, pluginUrls, pluginSettings, cache);
+
             return export;
         }
 
@@ -324,7 +338,7 @@ class StateBackup {
                                             continue;
                                         }
                                         withContext(Dispatchers.Main) {
-                                            UIDialogs.showImportDialog(context, relevantStore, store.key, store.value) {
+                                            UIDialogs.showImportDialog(context, relevantStore, store.key, store.value, export.cache) {
                                                 synchronized(toAwait) {
                                                     toAwait.remove(store.key);
                                                     if(toAwait.isEmpty())
@@ -453,8 +467,8 @@ class StateBackup {
         val stores: Map<String, List<String>>,
         val plugins: Map<String, String>,
         val pluginSettings: Map<String, Map<String, String?>>,
+        var cache: ImportCache? = null
     ) {
-        var videoCache: List<SerializedPlatformVideo>? = null;
 
         fun asZip(): ByteArray {
             return ByteArrayOutputStream().use { byteStream ->
@@ -478,6 +492,17 @@ class StateBackup {
 
                     zipStream.putNextEntry(ZipEntry("plugin_settings"));
                     zipStream.write(Json.encodeToString(pluginSettings).toByteArray());
+
+                    if(cache != null) {
+                        if(cache?.videos != null) {
+                            zipStream.putNextEntry(ZipEntry("cache_videos"));
+                            zipStream.write(Json.encodeToString(cache!!.videos).toByteArray());
+                        }
+                        if(cache?.channels != null) {
+                            zipStream.putNextEntry(ZipEntry("cache_channels"));
+                            zipStream.write(Json.encodeToString(cache!!.channels).toByteArray());
+                        }
+                    }
                 };
                 return byteStream.toByteArray();
             }
@@ -492,6 +517,8 @@ class StateBackup {
                 val stores: MutableMap<String, List<String>> = mutableMapOf();
                 var plugins: Map<String, String> = mapOf();
                 var pluginSettings: Map<String, Map<String, String?>> = mapOf();
+                var videoCache: List<SerializedPlatformVideo>? = null
+                var channelCache: List<SerializedChannel>? = null
 
                 while (zipStream.nextEntry.also { entry = it } != null) {
                     if(entry!!.isDirectory)
@@ -503,6 +530,22 @@ class StateBackup {
                                 "settings" -> settings = String(zipStream.readBytes());
                                 "plugins" -> plugins = Json.decodeFromString(String(zipStream.readBytes()));
                                 "plugin_settings" -> pluginSettings = Json.decodeFromString(String(zipStream.readBytes()));
+                                "cache_videos" -> {
+                                    try {
+                                        videoCache = Json.decodeFromString(String(zipStream.readBytes()));
+                                    }
+                                    catch(ex: Exception) {
+                                        Logger.e(TAG, "Couldn't deserialize video cache", ex);
+                                    }
+                                };
+                                "cache_channels" -> {
+                                    try {
+                                        channelCache = Json.decodeFromString(String(zipStream.readBytes()));
+                                    }
+                                    catch(ex: Exception) {
+                                        Logger.e(TAG, "Couldn't deserialize channel cache", ex);
+                                    }
+                                };
                             }
                         else
                             stores[entry!!.name.substring("stores/".length)] = Json.decodeFromString(String(zipStream.readBytes()));
@@ -511,7 +554,10 @@ class StateBackup {
                         throw IllegalStateException("Failed to parse zip [${entry?.name}] due to ${ex.message}");
                     }
                 }
-                return ExportStructure(exportInfo, settings, stores, plugins, pluginSettings);
+                return ExportStructure(exportInfo, settings, stores, plugins, pluginSettings, ImportCache(
+                    videos = videoCache,
+                    channels = channelCache
+                ));
             }
         }
     }

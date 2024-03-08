@@ -34,6 +34,7 @@ import com.futo.platformplayer.dialogs.MigrateDialog
 import com.futo.platformplayer.dialogs.ProgressDialog
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -343,8 +344,8 @@ class UIDialogs {
             }
         }
 
-        fun showImportDialog(context: Context, store: ManagedStore<*>, name: String, reconstructions: List<String>, onConcluded: () -> Unit) {
-            val dialog = ImportDialog(context, store, name, reconstructions, onConcluded);
+        fun showImportDialog(context: Context, store: ManagedStore<*>, name: String, reconstructions: List<String>, cache: ImportCache?, onConcluded: () -> Unit) {
+            val dialog = ImportDialog(context, store, name, reconstructions, cache, onConcluded);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();

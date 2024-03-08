@@ -22,7 +22,9 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.stores.v2.ManagedStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,13 +68,15 @@ class ImportDialog : AlertDialog {
     private val _name: String;
     private val _toImport: List<String>;
 
+    private val _cache: ImportCache?;
 
-    constructor(context: Context, importStore: ManagedStore<*>, name: String, toReconstruct: List<String>, onConcluded: ()->Unit): super(context) {
+    constructor(context: Context, importStore: ManagedStore<*>, name: String, toReconstruct: List<String>, cache: ImportCache?, onConcluded: ()->Unit): super(context) {
         _context = context;
         _store = importStore;
         _onConcluded = onConcluded;
         _name = name;
         _toImport = ArrayList(toReconstruct);
+        _cache = cache;
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,7 +150,7 @@ class ImportDialog : AlertDialog {
         val scope = StateApp.instance.scopeOrNull;
         scope?.launch(Dispatchers.IO) {
             try {
-                val migrationResult = _store.importReconstructions(_toImport) { finished, total ->
+                val migrationResult = _store.importReconstructions(_toImport, _cache) { finished, total ->
                     scope.launch(Dispatchers.Main) {
                         _textProgress.text = "${finished}/${total}";
                     }

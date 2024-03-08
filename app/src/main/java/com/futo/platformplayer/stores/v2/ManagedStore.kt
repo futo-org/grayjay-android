@@ -2,6 +2,7 @@ package com.futo.platformplayer.stores.v2
 
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -105,7 +106,7 @@ class ManagedStore<T>{
             _toReconstruct.clear();
         }
     }
-    suspend fun importReconstructions(items: List<String>, onProgress: ((Int, Int)->Unit)? = null): ReconstructionResult {
+    suspend fun importReconstructions(items: List<String>, cache: ImportCache? = null, onProgress: ((Int, Int)->Unit)? = null): ReconstructionResult {
         var successes = 0;
         val exs = ArrayList<Throwable>();
 
@@ -120,7 +121,7 @@ class ManagedStore<T>{
             for (i in 0 .. 1) {
                 try {
                     Logger.i(TAG, "Importing ${logName(recon)}");
-                    val reconId = createFromReconstruction(recon, builder);
+                    val reconId = createFromReconstruction(recon, builder, cache);
                     successes++;
                     Logger.i(TAG, "Imported ${logName(reconId)}");
                     break;
@@ -272,12 +273,12 @@ class ManagedStore<T>{
             save(obj, withReconstruction, onlyExisting);
     }
 
-    suspend fun createFromReconstruction(reconstruction: String, builder: ReconstructStore.Builder): String {
+    suspend fun createFromReconstruction(reconstruction: String, builder: ReconstructStore.Builder, cache: ImportCache? = null): String {
         if(_reconstructStore == null)
             throw IllegalStateException("Can't reconstruct as no reconstruction is implemented for this type");
 
         val id = UUID.randomUUID().toString();
-        val reconstruct = _reconstructStore!!.toObjectWithHeader(id, reconstruction, builder);
+        val reconstruct = _reconstructStore!!.toObjectWithHeader(id, reconstruction, builder, cache);
         save(reconstruct);
         return id;
     }

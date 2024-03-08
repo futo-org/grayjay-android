@@ -12,6 +12,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.functional.CentralizedFeed
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.polycentric.PolycentricCache
@@ -38,8 +39,8 @@ class StateSubscriptions {
         .withRestore(object: ReconstructStore<Subscription>(){
             override fun toReconstruction(obj: Subscription): String =
                 obj.channel.url;
-            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder): Subscription =
-                Subscription(SerializedChannel.fromChannel(StatePlatform.instance.getChannelLive(backup, false)));
+            override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, importCache: ImportCache?): Subscription =
+                Subscription(importCache?.channels?.find { it.isSameUrl(backup) } ?: SerializedChannel.fromChannel(StatePlatform.instance.getChannelLive(backup, false)));
         }).load();
     private val _subscriptionOthers = FragmentedStorage.storeJson<Subscription>("subscriptions_others")
         .withUnique { it.channel.url }
