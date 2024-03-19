@@ -163,24 +163,25 @@ class AirPlayCastingDevice : CastingDevice {
                         }
 
                         connectionState = CastConnectionState.CONNECTED;
-                        delay(1000);
 
                         val progressIndex = progressInfo.lowercase().indexOf("position: ");
                         if (progressIndex == -1) {
+                            delay(1000);
                             continue;
                         }
 
                         val progress = progressInfo.substring(progressIndex + "position: ".length).toDoubleOrNull() ?: continue;
                         setTime(progress);
 
-
                         val durationIndex = progressInfo.lowercase().indexOf("duration: ");
                         if (durationIndex == -1) {
+                            delay(1000);
                             continue;
                         }
 
                         val duration = progressInfo.substring(durationIndex + "duration: ".length).toDoubleOrNull() ?: continue;
                         setDuration(duration);
+                        delay(1000);
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get server info from AirPlay device.", e)
                     }

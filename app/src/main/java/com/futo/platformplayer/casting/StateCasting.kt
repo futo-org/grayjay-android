@@ -242,6 +242,7 @@ class StateCasting {
                 jmDNS.addServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
                 jmDNS.addServiceListener("_airplay._tcp.local.", _airPlayServiceListener);
                 jmDNS.addServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
+                jmDNS.addServiceListener("_fcast._tcp.local.", _fastCastServiceListener);
 
                 if (BuildConfig.DEBUG) {
                     jmDNS.addServiceTypeListener(_serviceTypeListener);

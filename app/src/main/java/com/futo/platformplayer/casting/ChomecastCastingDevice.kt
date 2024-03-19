@@ -44,7 +44,9 @@ class ChromecastCastingDevice : CastingDevice {
 
     private var _socket: SSLSocket? = null;
     private var _outputStream: DataOutputStream? = null;
+    private var _outputStreamLock = Object();
     private var _inputStream: DataInputStream? = null;
+    private var _inputStreamLock = Object();
     private var _scopeIO: CoroutineScope? = null;
     private var _requestId = 1;
     private var _started: Boolean = false;
@@ -383,39 +385,44 @@ class ChromecastCastingDevice : CastingDevice {
 
                     getStatus();
 
-                    val buffer = ByteArray(4096);
+                    val buffer = ByteArray(409600);
 
                     Logger.i(TAG, "Started receiving.");
                     while (_scopeIO?.isActive == true) {
                         try {
                             val inputStream = _inputStream ?: break;
-                            Log.d(TAG, "Receiving next packet...");
-                            val b1 = inputStream.readUnsignedByte();
-                            val b2 = inputStream.readUnsignedByte();
-                            val b3 = inputStream.readUnsignedByte();
-                            val b4 = inputStream.readUnsignedByte();
-                            val size = ((b1.toLong() shl 24) or (b2.toLong() shl 16) or (b3.toLong() shl 8) or b4.toLong()).toInt();
-                            if (size > buffer.size) {
-                                Logger.w(TAG, "Skipping packet that is too large $size bytes.")
-                                inputStream.skip(size.toLong());
-                                continue;
-                            }
 
-                            Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
-                            inputStream.read(buffer, 0, size);
+                            synchronized(_inputStreamLock)
+                            {
+                                Log.d(TAG, "Receiving next packet...");
+                                val b1 = inputStream.readUnsignedByte();
+                                val b2 = inputStream.readUnsignedByte();
+                                val b3 = inputStream.readUnsignedByte();
+                                val b4 = inputStream.readUnsignedByte();
+                                val size =
+                                    ((b1.toLong() shl 24) or (b2.toLong() shl 16) or (b3.toLong() shl 8) or b4.toLong()).toInt();
+                                if (size > buffer.size) {
+                                    Logger.w(TAG, "Skipping packet that is too large $size bytes.")
+                                    inputStream.skip(size.toLong());
+                                    return@synchronized
+                                }
 
-                            //TODO: In the future perhaps this size-1 will cause issues, why is there a 0 on the end?
-                            val messageBytes = buffer.sliceArray(IntRange(0, size - 1));
-                            Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
-                            val message = ChromeCast.CastMessage.parseFrom(messageBytes);
-                            if (message.namespace != "urn:x-cast:com.google.cast.tp.heartbeat") {
-                                Logger.i(TAG, "Received message: $message");
-                            }
+                                Log.d(TAG, "Received header indicating $size bytes. Waiting for message.");
+                                inputStream.read(buffer, 0, size);
 
-                            try {
-                                handleMessage(message);
-                            } catch (e:Throwable) {
-                                Logger.w(TAG, "Failed to handle message.", e);
+                                //TODO: In the future perhaps this size-1 will cause issues, why is there a 0 on the end?
+                                val messageBytes = buffer.sliceArray(IntRange(0, size - 1));
+                                Log.d(TAG, "Received $size bytes: ${messageBytes.toHexString()}.");
+                                val message = ChromeCast.CastMessage.parseFrom(messageBytes);
+                                if (message.namespace != "urn:x-cast:com.google.cast.tp.heartbeat") {
+                                    Logger.i(TAG, "Received message: $message");
+                                }
+
+                                try {
+                                    handleMessage(message);
+                                } catch (e: Throwable) {
+                                    Logger.w(TAG, "Failed to handle message.", e);
+                                }
                             }
                         } catch (e: java.net.SocketException) {
                             Logger.e(TAG, "Socket exception while receiving.", e);
@@ -588,13 +595,16 @@ class ChromecastCastingDevice : CastingDevice {
             return;
         }
 
-        val serializedSizeBE = ByteArray(4);
-        serializedSizeBE[0] = (data.size shr 24 and 0xff).toByte();
-        serializedSizeBE[1] = (data.size shr 16 and 0xff).toByte();
-        serializedSizeBE[2] = (data.size shr 8 and 0xff).toByte();
-        serializedSizeBE[3] = (data.size and 0xff).toByte();
-        outputStream.write(serializedSizeBE);
-        outputStream.write(data);
+        synchronized(_outputStreamLock)
+        {
+            val serializedSizeBE = ByteArray(4);
+            serializedSizeBE[0] = (data.size shr 24 and 0xff).toByte();
+            serializedSizeBE[1] = (data.size shr 16 and 0xff).toByte();
+            serializedSizeBE[2] = (data.size shr 8 and 0xff).toByte();
+            serializedSizeBE[3] = (data.size and 0xff).toByte();
+            outputStream.write(serializedSizeBE);
+            outputStream.write(data);
+        }
 
         //Log.d(TAG, "Sent ${data.size} bytes.");
     }
