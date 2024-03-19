@@ -13,7 +13,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="4dp"
         android:scaleType="fitCenter"
-        app:srcCompat="@drawable/ic_construction" />
+        app:srcCompat="@drawable/foreground" />
 
     <!--<ImageButton
         android:layout_width="wrap_content"
@@ -22,17 +22,19 @@
         android:scaleType="fitCenter"
         app:srcCompat="@drawable/ic_futo_logo_text" />-->
 
-    <!--
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:textSize="28dp"
-        android:fontFamily="@font/inter_bold"
-        android:text="TEST BUILD"
+        android:layout_marginTop="-2dp"
+        android:fontFamily="@font/inter_light"
+        android:text="Grayjay"
         android:textColor="@color/white"
         android:gravity="center_vertical"
-        android:layout_marginStart="8dp"/>-->
+        android:layout_marginStart="8dp"/>
 
+    <!--
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
@@ -54,7 +56,7 @@
             android:text="@string/construction"
             android:textColor="@color/white"
             android:layout_marginTop="-8dp"/>
-    </LinearLayout>
+    </LinearLayout>-->
 
     <Space
         android:layout_width="0dp"
