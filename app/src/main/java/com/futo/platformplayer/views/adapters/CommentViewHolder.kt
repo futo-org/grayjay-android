@@ -48,6 +48,7 @@ class CommentViewHolder : ViewHolder {
 
     var onRepliesClick = Event1<IPlatformComment>();
     var onDelete = Event1<IPlatformComment>();
+    var onAuthorClick = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
@@ -95,6 +96,19 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
+        _creatorThumbnail.onClick.subscribe {
+            val c = comment ?: return@subscribe;
+            onAuthorClick.emit(c);
+        }
+
+        _creatorThumbnail.setOnClickListener {
+            val c = comment ?: return@setOnClickListener;
+            onAuthorClick.emit(c);
+        }
+        _textAuthor.setOnClickListener {
+            val c = comment ?: return@setOnClickListener;
+            onAuthorClick.emit(c);
+        }
         _buttonReplies.onClick.subscribe {
             val c = comment ?: return@subscribe;
             onRepliesClick.emit(c);

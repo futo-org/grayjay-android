@@ -56,8 +56,10 @@ import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import java.util.Dictionary
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.jvm.kotlinFunction
+import kotlin.streams.asSequence
 
 open class JSClient : IPlatformClient {
     val config: SourcePluginConfig;
@@ -662,10 +664,43 @@ open class JSClient : IPlatformClient {
 
     companion object {
         val TAG = "JSClient";
+        private val _lock = Object();
+        private var _docs: Map<String, String>? = null;
+
+        fun getMethodDocs(names: List<String>): Map<String, String>? {
+            synchronized(_lock) {
+                if(_docs == null) {
+                    val client = ManagedHttpClient();
+                    val docs = names
+                        .map { stringWithoutBrackets(it) }
+                        .distinct()
+                        .parallelStream()
+                        .map {
+                            val url = "https://github.com/futo-org/grayjay-android/blob/master/docs/source/${it}.md";
+                            val resp = client.head(url);
+                            if(resp.isOk)
+                                return@map Pair(it, url);
+                            else
+                                return@map null;
+                        }.asSequence()
+                        .filterNotNull()
+                        .toMap();
+                    _docs = docs;
+                }
+                return _docs;
+            }
+        }
+        fun getMethodDocUrls(): Map<String, String>? {
+            if(_docs != null)
+                return _docs;
+            val methods = JSClient::class.java.declaredMethods.filter { it.getAnnotation(JSDocs::class.java) != null }
+            return getMethodDocs(methods.map { it.name });
+        }
 
         fun getJSDocs(): List<JSCallDocs> {
             val docs = mutableListOf<JSCallDocs>();
             val methods = JSClient::class.java.declaredMethods.filter { it.getAnnotation(JSDocs::class.java) != null }
+
             for(method in methods.sortedBy { it.getAnnotation(JSDocs::class.java)?.order }) {
                 val doc = method.getAnnotation(JSDocs::class.java);
                 val parameters = method.kotlinFunction!!.findAnnotations<JSDocsParameter>();
@@ -677,6 +712,13 @@ open class JSClient : IPlatformClient {
                     .toList(), isOptional));
             }
             return docs;
+        }
+
+        private fun stringWithoutBrackets(name: String): String {
+            val index = name.indexOf('(');
+            if(index >= 0)
+                return name.substring(0, index);
+            return name;
         }
     }
 }

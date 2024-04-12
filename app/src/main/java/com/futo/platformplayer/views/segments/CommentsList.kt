@@ -88,6 +88,7 @@ class CommentsList : ConstraintLayout {
     private val _layoutScrollToTop: FrameLayout;
 
     var onRepliesClick = Event1<IPlatformComment>();
+    var onAuthorClick = Event1<IPlatformComment>();
     var onCommentsLoaded = Event1<Int>();
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -120,6 +121,7 @@ class CommentsList : ConstraintLayout {
             childViewHolderFactory = { viewGroup, _ ->
                 val holder = CommentViewHolder(viewGroup);
                 holder.onRepliesClick.subscribe { c -> onRepliesClick.emit(c) };
+                holder.onAuthorClick.subscribe { c -> onAuthorClick.emit(c) };
                 holder.onDelete.subscribe(::onDelete);
                 return@InsertedViewAdapterWithLoader holder;
             }

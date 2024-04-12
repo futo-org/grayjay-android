@@ -201,14 +201,18 @@ class PlaylistFragment : MainFragment() {
                 showConvertPlaylistButton();
             }
 
-            updateDownloadState();
+            _playlist?.let {
+                updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this::download);
+            }
         }
 
         fun onResume() {
             StateDownloads.instance.onDownloadsChanged.subscribe(this) {
                 _fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        updateDownloadState();
+                        _playlist?.let {
+                            updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this@PlaylistView::download);
+                        }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to update download state onDownloadedChanged.")
                     }
@@ -217,12 +221,20 @@ class PlaylistFragment : MainFragment() {
             StateDownloads.instance.onDownloadedChanged.subscribe(this) {
                 _fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        updateDownloadState();
+                        _playlist?.let {
+                            updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this@PlaylistView::download);
+                        }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to update download state onDownloadedChanged.")
                     }
                 }
             };
+        }
+
+        private fun download() {
+            _playlist?.let {
+                UISlideOverlays.showDownloadPlaylistOverlay(it, overlayContainer);
+            }
         }
 
         fun onPause() {
@@ -268,43 +280,6 @@ class PlaylistFragment : MainFragment() {
             }
         }
 
-        private fun updateDownloadState() {
-            val playlist = _playlist ?: return;
-            val isDownloading = StateDownloads.instance.getDownloading().any { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == playlist.id };
-            val isDownloaded = StateDownloads.instance.isPlaylistCached(playlist.id);
-
-            val dp10 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, resources.displayMetrics);
-
-            if(isDownloaded && !isDownloading)
-                _buttonDownload.setBackgroundResource(R.drawable.background_button_round_green);
-            else
-                _buttonDownload.setBackgroundResource(R.drawable.background_button_round);
-
-            if(isDownloading) {
-                _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
-                _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
-                _buttonDownload.setOnClickListener {
-                    UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
-                        StateDownloads.instance.deleteCachedPlaylist(playlist.id);
-                    });
-                }
-            }
-            else if(isDownloaded) {
-                _buttonDownload.setImageResource(R.drawable.ic_download_off);
-                _buttonDownload.setOnClickListener {
-                    UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
-                        StateDownloads.instance.deleteCachedPlaylist(playlist.id);
-                    });
-                }
-            }
-            else {
-                _buttonDownload.setImageResource(R.drawable.ic_download);
-                _buttonDownload.setOnClickListener {
-                    UISlideOverlays.showDownloadPlaylistOverlay(playlist, overlayContainer);
-                }
-            }
-            _buttonDownload.setPadding(dp10.toInt());
-        }
 
         override fun canEdit(): Boolean { return _playlist != null; }
 

@@ -188,7 +188,7 @@ class ExportingService : Service() {
 
     fun closeExportSession() {
         Logger.i(TAG, "closeExportSession");
-        stopForeground(STOP_FOREGROUND_DETACH);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         _notificationManager?.cancel(EXPORT_NOTIF_ID);
         stopService();
         _started = false;

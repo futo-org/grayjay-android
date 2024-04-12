@@ -12,8 +12,10 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
 import com.futo.platformplayer.views.others.ProgressBar
@@ -143,6 +145,7 @@ class DownloadsFragment : MainFragment() {
 
             val activeDownloads = StateDownloads.instance.getDownloading();
             val playlists = StateDownloads.instance.getCachedPlaylists();
+            val watchLaterDownload = StateDownloads.instance.getWatchLaterDescriptor();
             val downloaded = StateDownloads.instance.getDownloadedVideos()
                 .filter { it.groupType != VideoDownload.GROUP_PLAYLIST || it.groupID == null || !StateDownloads.instance.hasCachedPlaylist(it.groupID!!) };
 
@@ -157,16 +160,28 @@ class DownloadsFragment : MainFragment() {
                     _listActiveDownloads.addView(view);
             }
 
-            if(playlists.isEmpty())
+            if(playlists.isEmpty() && watchLaterDownload == null)
                 _listPlaylistsContainer.visibility = GONE;
             else {
                 _listPlaylistsContainer.visibility = VISIBLE;
-                _listPlaylistsMeta.text = "(${playlists.size} ${context.getString(R.string.playlists).lowercase()}, ${playlists.sumOf { it.playlist.videos.size }} ${context.getString(R.string.videos).lowercase()})";
+
+                val watchLater = if(watchLaterDownload != null) StatePlaylists.instance.getWatchLater() else listOf();
+
+                _listPlaylistsMeta.text = "(${playlists.size + (if(watchLaterDownload != null) 1 else 0)} ${context.getString(R.string.playlists).lowercase()}, ${playlists.sumOf { it.playlist.videos.size } + watchLater.size} ${context.getString(R.string.videos).lowercase()})";
 
                 _listPlaylists.removeAllViews();
-                for(view in playlists.map { PlaylistDownloadItem(context, it) }) {
+                if(watchLaterDownload != null) {
+                    val pdView = PlaylistDownloadItem(context, "Watch Later", watchLater.firstOrNull()?.thumbnails?.getHQThumbnail(), "WATCHLATER");
+                    pdView.setOnClickListener {
+                        _frag.navigate<WatchLaterFragment>();
+                    }
+                    _listPlaylists.addView(pdView);
+                }
+                for(view in playlists.map { PlaylistDownloadItem(context, it.playlist.name, it.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail(), it.playlist) }) {
                     view.setOnClickListener {
-                        _frag.navigate<PlaylistFragment>(view.playlist.playlist);
+                        if(view.obj is Playlist) {
+                            _frag.navigate<PlaylistFragment>(view.obj);
+                        }
                     };
                     _listPlaylists.addView(view);
                 }

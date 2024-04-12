@@ -270,7 +270,7 @@ class DownloadService : Service() {
 
     fun closeDownloadSession() {
         Logger.i(TAG, "closeDownloadSession");
-        stopForeground(STOP_FOREGROUND_DETACH);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         _notificationManager?.cancel(DOWNLOAD_NOTIF_ID);
         stopService();
         _started = false;

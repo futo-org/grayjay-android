@@ -97,6 +97,9 @@ class StateDownloads {
         }
     }
 
+    fun getWatchLaterDescriptor(): PlaylistDownloadDescriptor? {
+        return _downloadPlaylists.getItems().find { it.id == VideoDownload.GROUP_WATCHLATER };
+    }
     fun getCachedPlaylists(): List<PlaylistDownloaded> {
         return _downloadPlaylists.getItems()
             .map { Pair(it, StatePlaylists.instance.getPlaylist(it.id)) }
@@ -124,10 +127,18 @@ class StateDownloads {
         val pdl = getPlaylistDownload(id);
         if(pdl != null)
             _downloadPlaylists.delete(pdl);
-        getDownloading().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
-            .forEach { removeDownload(it) };
-        getDownloadedVideos().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
-            .forEach { deleteCachedVideo(it.id) };
+        if(id == VideoDownload.GROUP_WATCHLATER) {
+            getDownloading().filter { it.groupType == VideoDownload.GROUP_WATCHLATER && it.groupID == id }
+                .forEach { removeDownload(it) };
+            getDownloadedVideos().filter { it.groupType == VideoDownload.GROUP_WATCHLATER && it.groupID == id }
+                .forEach { deleteCachedVideo(it.id) };
+        }
+        else {
+            getDownloading().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
+                .forEach { removeDownload(it) };
+            getDownloadedVideos().filter { it.groupType == VideoDownload.GROUP_PLAYLIST && it.groupID == id }
+                .forEach { deleteCachedVideo(it.id) };
+        }
     }
 
     fun getDownloadedVideos(): List<VideoLocal> {
@@ -192,9 +203,59 @@ class StateDownloads {
             else
                 Logger.v(TAG, "Offline playlist [${playlist.playlist.name}] is up to date");
         }
+        val downloadWatchLater = getWatchLaterDescriptor();
+        if(downloadWatchLater != null) {
+            continueDownloadWatchLater(downloadWatchLater);
+        }
         return hasChanged;
     }
 
+    fun continueDownloadWatchLater(playlistDownload: PlaylistDownloadDescriptor) {
+        var hasNew = false;
+        val watchLater = StatePlaylists.instance.getWatchLater();
+        for(item in watchLater) {
+            val existing = getCachedVideo(item.id);
+
+            if(!playlistDownload.shouldDownload(item)) {
+                Logger.i(TAG, "Not downloading for watchlater [${playlistDownload.id}] Video [${item.name}]:${item.url}")
+                continue;
+            }
+            if(existing == null) {
+                val ongoingDownload = getDownloading().find { it.id.value == item.id.value && it.id.value != null };
+                if(ongoingDownload != null) {
+                    Logger.i(TAG, "New watchlater video (already downloading) ${item.name}");
+                    ongoingDownload.groupID = VideoDownload.GROUP_WATCHLATER;
+                    ongoingDownload.groupType = VideoDownload.GROUP_WATCHLATER;
+                }
+                else {
+                    Logger.i(TAG, "New watchlater video ${item.name}");
+                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate)
+                        .withGroup(VideoDownload.GROUP_PLAYLIST, VideoDownload.GROUP_WATCHLATER), false);
+                    hasNew = true;
+                }
+            }
+            else {
+                Logger.i(TAG, "New watchlater video (already downloaded) ${item.name}");
+                if(existing.groupID == null) {
+                    existing.groupID = VideoDownload.GROUP_WATCHLATER;
+                    existing.groupType = VideoDownload.GROUP_WATCHLATER;
+                    synchronized(_downloadedSet) {
+                        _downloadedSet.add(existing.id);
+                    }
+                    _downloaded.save(existing);
+                }
+            }
+        }
+        if(watchLater.isNotEmpty() && Settings.instance.downloads.shouldDownload()) {
+            if(hasNew) {
+                UIDialogs.toast("Downloading [Watch Later]")
+                StateApp.withContext {
+                    DownloadService.getOrCreateService(it);
+                }
+            }
+            onDownloadsChanged.emit();
+        }
+    }
     fun continueDownload(playlistDownload: PlaylistDownloadDescriptor, playlist: Playlist) {
         var hasNew = false;
         for(item in playlist.videos) {
@@ -239,6 +300,11 @@ class StateDownloads {
             }
             onDownloadsChanged.emit();
         }
+    }
+    fun downloadWatchLater(targetPixelCount: Long?, targetBitrate: Long?) {
+        val playlistDownload = PlaylistDownloadDescriptor(VideoDownload.GROUP_WATCHLATER, targetPixelCount, targetBitrate);
+        _downloadPlaylists.save(playlistDownload);
+        continueDownloadWatchLater(playlistDownload);
     }
     fun download(playlist: Playlist, targetPixelcount: Long?, targetBitrate: Long?) {
         val playlistDownload = PlaylistDownloadDescriptor(playlist.id, targetPixelcount, targetBitrate);

@@ -510,9 +510,14 @@ class UISlideOverlays {
             }
         }
         fun showDownloadPlaylistOverlay(playlist: Playlist, container: ViewGroup) {
-            showUnknownVideoDownload(container.context.getString(R.string.video), container) { px, bitrate ->
+            showUnknownVideoDownload(container.context.getString(R.string.playlist), container) { px, bitrate ->
                 StateDownloads.instance.download(playlist, px, bitrate);
             };
+        }
+        fun showDownloadWatchlaterOverlay(container: ViewGroup) {
+            showUnknownVideoDownload(container.context.getString(R.string.watch_later), container, { px, bitrate ->
+                StateDownloads.instance.downloadWatchLater(px, bitrate);
+            })
         }
         private fun showUnknownVideoDownload(toDownload: String, container: ViewGroup, cb: (Long?, Long?)->Unit) {
             val items = arrayListOf<View>();

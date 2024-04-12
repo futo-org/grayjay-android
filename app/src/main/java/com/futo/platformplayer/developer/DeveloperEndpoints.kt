@@ -104,6 +104,17 @@ class DeveloperEndpoints(private val context: Context) {
     @HttpGET("/source_docs.js", "application/javascript")
     val devSourceDocsJS = "const sourceDocs = $devSourceDocsJson";
 
+    @HttpGET("/source_doc_urls.json", "application/json")
+    fun devSourceDocUrlsJson(httpContext: HttpContext) {;
+        val docs = JSClient.getMethodDocUrls();
+        httpContext.respondCode(200, Json.encodeToString(docs), "application/json");
+    }
+    @HttpGET("/source_doc_urls.js", "application/javascript")
+    fun devSourceDocUrlsJs(httpContext: HttpContext) {;
+        val docs = JSClient.getMethodDocUrls();
+        httpContext.respondCode(200, "const sourceDocUrls = " + Json.encodeToString(docs), "application/javascript");
+    }
+
     //Dependencies
     //@HttpGET("/dependencies/vue.js", "application/javascript")
     //val depVue = StateAssets.readAsset(context, "devportal/dependencies/vue.js", true);

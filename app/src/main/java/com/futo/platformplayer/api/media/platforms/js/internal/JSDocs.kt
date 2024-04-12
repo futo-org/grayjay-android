@@ -14,6 +14,6 @@ annotation class JSOptional()
 annotation class JSDocsParameter(val name: String, val description: String, val order: Int = 0)
 
 @kotlinx.serialization.Serializable
-data class JSCallDocs(val title: String, val code: String, val description: String, val parameters: List<JSParameterDocs>, val isOptional: Boolean = false);
+data class JSCallDocs(val title: String, val code: String, val description: String, val parameters: List<JSParameterDocs>, val isOptional: Boolean = false, val docsUrl: String? = null);
 @kotlinx.serialization.Serializable
 data class JSParameterDocs(val name: String, val description: String);

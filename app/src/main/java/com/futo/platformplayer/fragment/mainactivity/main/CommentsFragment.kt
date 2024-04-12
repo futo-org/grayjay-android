@@ -2,6 +2,7 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Browser
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -118,6 +119,7 @@ class CommentsFragment : MainFragment() {
                     holder.onDelete.subscribe(::onDelete);
                     holder.onRepliesClick.subscribe(::onRepliesClick);
                     holder.onClick.subscribe(::onClick);
+                    holder.onAuthorClick.subscribe(::onAuthorClick);
                     return@InsertedViewAdapterWithLoader holder;
                 }
             );
@@ -209,6 +211,17 @@ class CommentsFragment : MainFragment() {
             val parentRef = c.parentReference
             if (parentRef != null && _repliesOverlay.handleParentClick(c.contextUrl, parentRef)) {
                 setRepliesOverlayVisible(true, true)
+            }
+        }
+        private fun onAuthorClick(c: IPlatformComment) {
+            if (c !is PolycentricPlatformComment) {
+                return@onAuthorClick;
+            }
+
+            Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
+            if(c.author.id.value?.startsWith("polycentric://") ?: false) {
+                val navUrl = "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
+                _fragment.navigate<BrowserFragment>(navUrl);
             }
         }
 

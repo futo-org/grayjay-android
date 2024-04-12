@@ -755,6 +755,7 @@ class VideoDownload {
     companion object {
         const val TAG = "VideoDownload";
         const val GROUP_PLAYLIST = "Playlist";
+        const val GROUP_WATCHLATER= "WatchLater";
 
         fun videoContainerToExtension(container: String): String? {
             if (container.contains("video/mp4") || container == "application/vnd.apple.mpegurl")

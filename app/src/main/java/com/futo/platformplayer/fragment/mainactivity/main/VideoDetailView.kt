@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
+import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -124,6 +125,7 @@ import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.platformplayer.views.overlays.SupportOverlay
+import com.futo.platformplayer.views.overlays.WebviewOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuButtonList
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
@@ -244,6 +246,7 @@ class VideoDetailView : ConstraintLayout {
     private val _container_content_replies: RepliesOverlay;
     private val _container_content_description: DescriptionOverlay;
     private val _container_content_liveChat: LiveChatOverlay;
+    private val _container_content_browser: WebviewOverlay;
     private val _container_content_support: SupportOverlay;
 
     private var _container_content_current: View;
@@ -349,7 +352,8 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies = findViewById(R.id.videodetail_container_replies);
         _container_content_description = findViewById(R.id.videodetail_container_description);
         _container_content_liveChat = findViewById(R.id.videodetail_container_livechat);
-        _container_content_support = findViewById(R.id.videodetail_container_support)
+        _container_content_support = findViewById(R.id.videodetail_container_support);
+        _container_content_browser = findViewById(R.id.videodetail_container_webview)
 
         _textComments = findViewById(R.id.text_comments);
         _addCommentView = findViewById(R.id.add_comment_view);
@@ -624,6 +628,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_queue.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_replies.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_support.onClose.subscribe { switchContentView(_container_content_main); };
+        _container_content_browser.onClose.subscribe { switchContentView(_container_content_main); };
 
         _description_viewMore.setOnClickListener {
             switchContentView(_container_content_description);
@@ -644,6 +649,20 @@ class VideoDetailView : ConstraintLayout {
 
         _container_content_current = _container_content_main;
 
+        _commentsList.onAuthorClick.subscribe { c ->
+            if (c !is PolycentricPlatformComment) {
+                return@subscribe;
+            }
+
+            Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
+            if(c.author.id.value?.startsWith("polycentric://") ?: false) {
+                val navUrl = "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
+                //fragment.navigate<BrowserFragment>(navUrl);
+                //fragment.minimizeVideoDetail();
+                _container_content_browser.goto(navUrl);
+                switchContentView(_container_content_browser);
+            }
+        };
         _commentsList.onRepliesClick.subscribe { c ->
             val replyCount = c.replyCount ?: 0;
             var metadata = "";

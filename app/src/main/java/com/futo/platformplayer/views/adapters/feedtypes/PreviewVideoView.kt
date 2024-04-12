@@ -61,6 +61,7 @@ open class PreviewVideoView : LinearLayout {
     protected val _layoutDownloaded: FrameLayout;
 
     protected val _button_add_to_queue : View;
+    protected val _button_add_to_watch_later : View;
     protected val _button_add_to : View;
 
     protected val _exoPlayer: PlayerManager?;
@@ -80,6 +81,7 @@ open class PreviewVideoView : LinearLayout {
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformVideo>();
     val onAddToQueueClicked = Event1<IPlatformVideo>();
+    val onAddToWatchLaterClicked = Event1<IPlatformVideo>();
 
     var currentVideo: IPlatformVideo? = null
         private set
@@ -104,6 +106,7 @@ open class PreviewVideoView : LinearLayout {
         _containerDuration = findViewById(R.id.thumbnail_duration_container);
         _containerLive = findViewById(R.id.thumbnail_live_container);
         _button_add_to_queue = findViewById(R.id.button_add_to_queue);
+        _button_add_to_watch_later = findViewById(R.id.button_add_to_watch_later);
         _button_add_to = findViewById(R.id.button_add_to);
         _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
         _layoutDownloaded = findViewById(R.id.layout_downloaded);
@@ -124,7 +127,7 @@ open class PreviewVideoView : LinearLayout {
         _textVideoMetadata.setOnClickListener { currentVideo?.let { onChannelClicked.emit(it.author) }  };
         _button_add_to.setOnClickListener { currentVideo?.let { onAddToClicked.emit(it) } };
         _button_add_to_queue.setOnClickListener { currentVideo?.let { onAddToQueueClicked.emit(it) } };
-
+        _button_add_to_watch_later.setOnClickListener { currentVideo?.let { onAddToWatchLaterClicked.emit(it); } }
     }
 
     protected open fun inflate(feedStyle: FeedStyle) {

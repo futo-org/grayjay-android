@@ -1,6 +1,7 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.graphics.drawable.Animatable
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
@@ -8,10 +9,17 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.setPadding
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.assume
+import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
+import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.lists.VideoListEditorView
 
 abstract class VideoListEditorView : LinearLayout {
@@ -85,6 +93,44 @@ abstract class VideoListEditorView : LinearLayout {
 
     }
 
+    protected fun updateDownloadState(groupType: String, playlistId: String, onDownload: ()->Unit) {
+        //val playlist = _playlist ?: return;
+        val isDownloading = StateDownloads.instance.getDownloading().any { it.groupType == groupType && it.groupID == playlistId };
+        val isDownloaded = StateDownloads.instance.isPlaylistCached(playlistId);
+
+        val dp10 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, resources.displayMetrics);
+
+        if(isDownloaded && !isDownloading)
+            _buttonDownload.setBackgroundResource(R.drawable.background_button_round_green);
+        else
+            _buttonDownload.setBackgroundResource(R.drawable.background_button_round);
+
+        if(isDownloading) {
+            _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
+            _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
+            _buttonDownload.setOnClickListener {
+                UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
+                    StateDownloads.instance.deleteCachedPlaylist(playlistId);
+                });
+            }
+        }
+        else if(isDownloaded) {
+            _buttonDownload.setImageResource(R.drawable.ic_download_off);
+            _buttonDownload.setOnClickListener {
+                UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
+                    StateDownloads.instance.deleteCachedPlaylist(playlistId);
+                });
+            }
+        }
+        else {
+            _buttonDownload.setImageResource(R.drawable.ic_download);
+            _buttonDownload.setOnClickListener {
+                onDownload();
+                //UISlideOverlays.showDownloadPlaylistOverlay(playlist, overlayContainer);
+            }
+        }
+        _buttonDownload.setPadding(dp10.toInt());
+    }
 
     protected fun setName(name: String?) {
         _textName.text = name ?: "";

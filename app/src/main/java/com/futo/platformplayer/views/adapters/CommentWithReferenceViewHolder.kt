@@ -53,9 +53,10 @@ class CommentWithReferenceViewHolder : ViewHolder {
             hideLikesDislikesReplies()
         }
 
-    var onRepliesClick = Event1<IPlatformComment>();
-    var onDelete = Event1<IPlatformComment>();
-    var onClick = Event1<IPlatformComment>();
+    val onRepliesClick = Event1<IPlatformComment>();
+    val onDelete = Event1<IPlatformComment>();
+    val onClick = Event1<IPlatformComment>();
+    val onAuthorClick = Event1<IPlatformComment>();
     var comment: IPlatformComment? = null
         private set;
 
@@ -99,6 +100,14 @@ class CommentWithReferenceViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
+        _creatorThumbnail.onClick.subscribe {
+            val c = comment ?: return@subscribe;
+            onAuthorClick.emit(c);
+        }
+        _textAuthor.setOnClickListener {
+            val c = comment ?: return@setOnClickListener;
+            onAuthorClick.emit(c);
+        }
         _buttonReplies.onClick.subscribe {
             val c = comment ?: return@subscribe;
             onRepliesClick.emit(c);

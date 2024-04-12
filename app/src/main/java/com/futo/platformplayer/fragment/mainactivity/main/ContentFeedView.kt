@@ -12,10 +12,12 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
@@ -81,6 +83,12 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                 StatePlayer.instance.addToQueue(it);
             }
         };
+        adapter.onAddToWatchLaterClicked.subscribe(this) {
+            if(it is IPlatformVideo) {
+                StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it));
+                UIDialogs.toast("Added to watch later\n[${it.name}]");
+            }
+        };
         adapter.onLongPress.subscribe(this) {
             if (it is IPlatformVideo) {
                 showVideoOptionsOverlay(it)
@@ -135,6 +143,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         adapter.onChannelClicked.remove(this);
         adapter.onAddToClicked.remove(this);
         adapter.onAddToQueueClicked.remove(this);
+        adapter.onAddToWatchLaterClicked.remove(this);
         adapter.onLongPress.remove(this);
     }
 

@@ -26,7 +26,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:textSize="28dp"
+        android:textSize="22dp"
         android:layout_marginTop="-2dp"
         android:fontFamily="@font/inter_light"
         android:text="Grayjay"

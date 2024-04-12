@@ -26,6 +26,7 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
@@ -204,6 +205,12 @@ class ChannelFragment : MainFragment() {
             adapter.onAddToQueueClicked.subscribe { content ->
                 if(content is IPlatformVideo) {
                     StatePlayer.instance.addToQueue(content);
+                }
+            }
+            adapter.onAddToWatchLaterClicked.subscribe { content ->
+                if(content is IPlatformVideo) {
+                    StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content));
+                    UIDialogs.toast("Added to watch later\n[${content.name}]");
                 }
             }
             adapter.onUrlClicked.subscribe { url ->

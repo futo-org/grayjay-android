@@ -39,6 +39,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformContent>();
     val onAddToQueueClicked = Event1<IPlatformContent>();
+    val onAddToWatchLaterClicked = Event1<IPlatformContent>();
     val onLongPress = Event1<IPlatformContent>();
 
     private var _taskLoadContent = TaskHandler<Pair<ContentPreviewViewHolder, IPlatformContent>, Pair<ContentPreviewViewHolder, IPlatformContentDetails>>(
@@ -95,6 +96,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
         this.onAddToClicked.subscribe(this@PreviewContentListAdapter.onAddToClicked::emit);
         this.onAddToQueueClicked.subscribe(this@PreviewContentListAdapter.onAddToQueueClicked::emit);
+        this.onAddToWatchLaterClicked.subscribe(this@PreviewContentListAdapter.onAddToWatchLaterClicked::emit);
     };
     private fun createLockedViewHolder(viewGroup: ViewGroup): PreviewLockedViewHolder = PreviewLockedViewHolder(viewGroup, _feedStyle).apply {
         this.onLockedUrlClicked.subscribe(this@PreviewContentListAdapter.onUrlClicked::emit);
@@ -106,6 +108,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
             this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@PreviewContentListAdapter.onAddToClicked::emit);
             this.onAddToQueueClicked.subscribe(this@PreviewContentListAdapter.onAddToQueueClicked::emit);
+            this.onAddToWatchLaterClicked.subscribe(this@PreviewContentListAdapter.onAddToWatchLaterClicked::emit);
             this.onLongPress.subscribe(this@PreviewContentListAdapter.onLongPress::emit);
         };
     private fun createPlaylistViewHolder(viewGroup: ViewGroup): PreviewPlaylistViewHolder = PreviewPlaylistViewHolder(viewGroup, _feedStyle).apply {
@@ -161,6 +164,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         onChannelClicked.clear();
         onAddToClicked.clear();
         onAddToQueueClicked.clear();
+        onAddToWatchLaterClicked.clear();
     }
 
     private fun previewContentDetails(viewHolder: ContentPreviewViewHolder, videoDetails: IPlatformContentDetails?) {

@@ -542,6 +542,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+        <com.futo.platformplayer.views.overlays.WebviewOverlay
+            android:id="@+id/videodetail_container_webview"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <com.futo.platformplayer.views.overlays.QueueEditorOverlay
             android:id="@+id/videodetail_container_queue"
             android:visibility="gone"

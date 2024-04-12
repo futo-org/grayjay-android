@@ -9,16 +9,16 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.PlaylistDownloaded
 
-class PlaylistDownloadItem(context: Context, val playlist: PlaylistDownloaded): LinearLayout(context) {
+class PlaylistDownloadItem(context: Context, playlistName: String, playlistThumbnail: String?, val obj: Any): LinearLayout(context) {
     init { inflate(context, R.layout.list_downloaded_playlist, this) }
 
     var imageView: ImageView = findViewById(R.id.downloaded_playlist_image);
     var imageText: TextView = findViewById(R.id.downloaded_playlist_name);
 
     init {
-        imageText.text = playlist.playlist.name;
+        imageText.text = playlistName;
         Glide.with(imageView)
-            .load(playlist.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail())
+            .load(playlistThumbnail)
             .crossfade()
             .into(imageView);
     }

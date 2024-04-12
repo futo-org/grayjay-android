@@ -5,10 +5,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class WatchLaterFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -28,6 +35,11 @@ class WatchLaterFragment : MainFragment() {
         return view;
     }
 
+    override fun onResume() {
+        super.onResume()
+        _view?.onResume();
+    }
+
     override fun onDestroyMainView() {
         super.onDestroyMainView();
         _view = null;
@@ -45,6 +57,34 @@ class WatchLaterFragment : MainFragment() {
         fun onShown() {
             setName("Watch Later");
             setVideos(StatePlaylists.instance.getWatchLater(), true);
+
+            setButtonDownloadVisible(true);
+            updateDownloadState(VideoDownload.GROUP_WATCHLATER, VideoDownload.GROUP_WATCHLATER, this@WatchLaterView::download);
+        }
+
+        fun onResume(){
+            StateDownloads.instance.onDownloadsChanged.subscribe(this) {
+                _fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        updateDownloadState(VideoDownload.GROUP_WATCHLATER, VideoDownload.GROUP_WATCHLATER, this@WatchLaterView::download);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to update download state onDownloadedChanged.")
+                    }
+                }
+            };
+            StateDownloads.instance.onDownloadedChanged.subscribe(this) {
+                _fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        updateDownloadState(VideoDownload.GROUP_WATCHLATER, VideoDownload.GROUP_WATCHLATER, this@WatchLaterView::download);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to update download state onDownloadedChanged.")
+                    }
+                }
+            };
+        }
+
+        fun download(){
+            UISlideOverlays.showDownloadWatchlaterOverlay(overlayContainer);
         }
 
         override fun onPlayAllClick() {
@@ -76,6 +116,7 @@ class WatchLaterFragment : MainFragment() {
     }
 
     companion object {
+        val TAG = "WatchLaterFragment";
         fun newInstance() = WatchLaterFragment().apply {}
     }
 }

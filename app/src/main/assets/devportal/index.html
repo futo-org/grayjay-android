@@ -402,6 +402,11 @@
 								<div class="code">
 									{{req.code}}
 								</div>
+								<div class="documentation" v-if="req.docUrl" style="position: absolute; right: 15px; top: 15px;">
+									<a :href="req.docUrl" target="_blank">
+										Documentation
+									</a>
+								</div>
 								<div>
 									<div class="parameter" v-for="parameter in req.parameters">
 										<div class="name">
@@ -538,6 +543,7 @@
 	  <!--<script src="./dependencies/vue.js"></script>-->
 	  <!--<script src="./dependencies/vuetify.js"></script>-->
 	  <script src="./source_docs.js"></script>
+	  <script src="./source_doc_urls.js"></script>
 	  <script src="./source.js"></script>
 	  <script src="./dev_bridge.js"></script>
 	  <script>
@@ -574,6 +580,9 @@
 			Testing: {
 				requests: sourceDocs.map(x=>{
 					x.parameters.forEach(y=>y.value = null);
+
+					if(sourceDocUrls[x.title])
+						x.docUrl = sourceDocUrls[x.title];
 					return x;
 				}),
 				lastResult: "",

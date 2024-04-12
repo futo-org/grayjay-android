@@ -18,6 +18,7 @@ class PreviewVideoViewHolder : ContentPreviewViewHolder {
     val onChannelClicked = Event1<PlatformAuthorLink>();
     val onAddToClicked = Event1<IPlatformVideo>();
     val onAddToQueueClicked = Event1<IPlatformVideo>();
+    val onAddToWatchLaterClicked = Event1<IPlatformVideo>();
     val onLongPress = Event1<IPlatformVideo>();
 
     //val context: Context;
@@ -34,6 +35,7 @@ class PreviewVideoViewHolder : ContentPreviewViewHolder {
         view.onChannelClicked.subscribe(onChannelClicked::emit);
         view.onAddToClicked.subscribe(onAddToClicked::emit);
         view.onAddToQueueClicked.subscribe(onAddToQueueClicked::emit);
+        view.onAddToWatchLaterClicked.subscribe(onAddToWatchLaterClicked::emit);
         view.onLongPress.subscribe(onLongPress::emit);
     }
 

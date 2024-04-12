@@ -206,6 +206,7 @@
             </LinearLayout>
 
 
+
             <ImageButton
                 android:id="@+id/button_add_to_queue"
                 android:layout_width="wrap_content"
@@ -215,11 +216,26 @@
                 android:paddingBottom="2dp"
                 android:paddingLeft="10dp"
                 android:paddingRight="7dp"
-                android:layout_marginLeft="7dp"
+                android:layout_marginLeft="5dp"
                 android:scaleType="fitCenter"
                 android:background="@drawable/edit_text_background"
                 android:contentDescription="@string/add_to_queue"
                 app:layout_constraintLeft_toRightOf="@id/button_add_to"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageButton
+                android:id="@+id/button_add_to_watch_later"
+                android:layout_width="wrap_content"
+                android:layout_height="27dp"
+                android:src="@drawable/ic_clock_white"
+                android:paddingTop="7dp"
+                android:paddingBottom="6dp"
+                android:paddingLeft="9dp"
+                android:paddingRight="9dp"
+                android:layout_marginLeft="5dp"
+                android:scaleType="fitCenter"
+                android:background="@drawable/edit_text_background"
+                app:layout_constraintLeft_toRightOf="@id/button_add_to_queue"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
             <TextView
