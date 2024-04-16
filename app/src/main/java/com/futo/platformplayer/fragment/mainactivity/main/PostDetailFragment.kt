@@ -476,6 +476,7 @@ class PostDetailFragment : MainFragment {
             }
 
             updateCommentType(true);
+            setLoading(false);
         }
 
         fun setPostOverview(value: IPlatformPost) {
