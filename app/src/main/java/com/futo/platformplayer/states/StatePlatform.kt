@@ -529,12 +529,23 @@ class StatePlatform {
     }
 
     fun getCommonSearchCapabilities(clientIds: List<String>): ResultCapabilities? {
+        return getCommonSearchCapabilitiesType(clientIds){
+            it.getSearchCapabilities()
+        };
+    }
+    fun getCommonSearchChannelContentsCapabilities(clientIds: List<String>): ResultCapabilities? {
+        return getCommonSearchCapabilitiesType(clientIds){
+            it.getSearchChannelContentsCapabilities()
+        };
+    }
+
+    fun getCommonSearchCapabilitiesType(clientIds: List<String>, capabilitiesGetter: (client: IPlatformClient)-> ResultCapabilities): ResultCapabilities? {
         try {
             Logger.i(TAG, "Platform - getCommonSearchCapabilities");
 
             val clients = getEnabledClients().filter { clientIds.contains(it.id) };
             val c = clients.firstOrNull() ?: return null;
-            val cap = c.getSearchCapabilities();
+            val cap = capabilitiesGetter(c)//c.getSearchCapabilities();
 
             //var types = arrayListOf<String>();
             var sorts = cap.sorts.toMutableList();
@@ -544,7 +555,7 @@ class StatePlatform {
             val filtersToRemove = arrayListOf<Int>();
 
             for (i in 1 until clients.size) {
-                val clientSearchCapabilities = clients[i].getSearchCapabilities();
+                val clientSearchCapabilities = capabilitiesGetter(clients[i]);//.getSearchCapabilities();
 
                 for (j in 0 until sorts.size) {
                     if (!clientSearchCapabilities.sorts.contains(sorts[j])) {

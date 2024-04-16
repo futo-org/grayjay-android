@@ -271,7 +271,7 @@ class ChannelFragment : MainFragment() {
             _taskLoadPolycentricProfile.cancel();
             _selectedTabIndex = -1;
 
-            if (!isBack) {
+            if (!isBack || _url == null) {
                 _imageBanner.setImageDrawable(null);
 
                 if (parameter is String) {

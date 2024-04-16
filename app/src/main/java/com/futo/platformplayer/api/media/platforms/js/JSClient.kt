@@ -216,6 +216,7 @@ open class JSClient : IPlatformClient {
             hasGetChannelTemplateByClaimMap = plugin.executeBoolean("!!source.getChannelTemplateByClaimMap") ?: false,
             hasGetSearchCapabilities = plugin.executeBoolean("!!source.getSearchCapabilities") ?: false,
             hasGetChannelCapabilities = plugin.executeBoolean("!!source.getChannelCapabilities") ?: false,
+            hasGetSearchChannelContentsCapabilities = plugin.executeBoolean("!!source.getSearchChannelContentsCapabilities") ?: false,
             hasGetLiveEvents = plugin.executeBoolean("!!source.getLiveEvents") ?: false,
             hasGetLiveChatWindow = plugin.executeBoolean("!!source.getLiveChatWindow") ?: false,
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
@@ -308,6 +309,9 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(4, "source.getSearchChannelContentsCapabilities()", "Gets capabilities this plugin has for search videos")
     override fun getSearchChannelContentsCapabilities(): ResultCapabilities {
+        if(!capabilities.hasGetSearchChannelContentsCapabilities)
+            return ResultCapabilities(listOf(ResultCapabilities.TYPE_MIXED));
+
         ensureEnabled();
         if (_searchChannelContentsCapabilities != null)
             return _searchChannelContentsCapabilities!!;

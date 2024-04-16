@@ -11,6 +11,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
@@ -66,6 +67,10 @@ class StatePlaylists {
             _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
+
+        if(StateDownloads.instance.getWatchLaterDescriptor() != null) {
+            StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
+        }
     }
     fun removeFromWatchLater(video: SerializedPlatformVideo) {
         synchronized(_watchlistStore) {
@@ -74,6 +79,10 @@ class StatePlaylists {
             _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
+
+        if(StateDownloads.instance.getWatchLaterDescriptor() != null) {
+            StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
+        }
     }
     fun addToWatchLater(video: SerializedPlatformVideo) {
         synchronized(_watchlistStore) {
@@ -82,6 +91,8 @@ class StatePlaylists {
             _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
+
+        StateDownloads.instance.checkForOutdatedPlaylists();
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
@@ -131,6 +142,11 @@ class StatePlaylists {
     fun createOrUpdatePlaylist(playlist: Playlist) {
         playlist.dateUpdate = OffsetDateTime.now();
         playlistStore.saveAsync(playlist, true);
+        if(playlist.id.isNotEmpty()) {
+            if (StateDownloads.instance.isPlaylistCached(playlist.id)) {
+                StateDownloads.instance.checkForOutdatedPlaylistVideos(playlist.id);
+            }
+        }
     }
     fun addToPlaylist(id: String, video: IPlatformVideo) {
         synchronized(playlistStore) {
@@ -143,6 +159,9 @@ class StatePlaylists {
 
     fun removePlaylist(playlist: Playlist) {
         playlistStore.delete(playlist);
+        if(StateDownloads.instance.isPlaylistCached(playlist.id)) {
+            StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+        }
     }
 
     fun createPlaylistShareUri(context: Context, playlist: Playlist): Uri {

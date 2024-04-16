@@ -34,6 +34,20 @@ class PackageUtilities : V8Package {
     fun md5(arr: ByteArray): ByteArray {
         return MessageDigest.getInstance("MD5").digest(arr);
     }
+    @V8Function
+    fun md5String(str: String): String {
+        return md5(str.toByteArray(Charsets.UTF_8)).fold("") { str, it -> str + "%02x".format(it) };
+    }
+
+
+    @V8Function
+    fun sha256(arr: ByteArray): ByteArray {
+        return MessageDigest.getInstance("SHA-256").digest(arr);
+    }
+    @V8Function
+    fun sha256String(str: String): String {
+        return sha256(str.toByteArray(Charsets.UTF_8)).fold("") { str, it -> str + "%02x".format(it) };
+    }
 
     @V8Function
     fun randomUUID(): String {

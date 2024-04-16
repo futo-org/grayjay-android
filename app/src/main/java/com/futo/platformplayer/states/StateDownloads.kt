@@ -144,10 +144,15 @@ class StateDownloads {
     fun getDownloadedVideos(): List<VideoLocal> {
         return _downloaded.getItems();
     }
+    fun getDownloadedVideosPlaylist(str: String): List<VideoLocal> {
+        val videos = _downloaded.findItems { it.groupID == str };
+        return videos;
+    }
 
     fun getDownloadPlaylists(): List<PlaylistDownloadDescriptor> {
         return _downloadPlaylists.getItems();
     }
+
     fun isPlaylistCached(id: String): Boolean {
         return getDownloadPlaylists().any{it.id == id};
     }
@@ -187,6 +192,21 @@ class StateDownloads {
             StateApp.withContext {
                 DownloadService.getOrCreateService(it);
             }
+    }
+
+    fun checkForOutdatedPlaylistVideos(playlistId: String) {
+        val playlistVideos = if(playlistId == VideoDownload.GROUP_WATCHLATER)
+            (if(getWatchLaterDescriptor() != null) StatePlaylists.instance.getWatchLater() else listOf())
+        else
+            getCachedPlaylist(playlistId)?.playlist?.videos ?: return;
+        val playlistVideosDownloaded = getDownloadedVideosPlaylist(playlistId);
+        val urls = playlistVideos.map { it.url }.toHashSet();
+        for(item in playlistVideosDownloaded) {
+            if(!urls.contains(item.url)) {
+                Logger.i(TAG, "Playlist [${playlistId}] deleting removed video [${item.name}]");
+                deleteCachedVideo(item.id);
+            }
+        }
     }
     fun checkForOutdatedPlaylists(): Boolean {
         var hasChanged = false;
@@ -230,7 +250,7 @@ class StateDownloads {
                 else {
                     Logger.i(TAG, "New watchlater video ${item.name}");
                     download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate)
-                        .withGroup(VideoDownload.GROUP_PLAYLIST, VideoDownload.GROUP_WATCHLATER), false);
+                        .withGroup(VideoDownload.GROUP_WATCHLATER, VideoDownload.GROUP_WATCHLATER), false);
                     hasNew = true;
                 }
             }

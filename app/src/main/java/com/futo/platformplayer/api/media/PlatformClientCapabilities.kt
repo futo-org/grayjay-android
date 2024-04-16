@@ -13,6 +13,7 @@ data class PlatformClientCapabilities(
     val hasGetChannelUrlByClaim: Boolean = false,
     val hasGetChannelTemplateByClaimMap: Boolean = false,
     val hasGetSearchCapabilities: Boolean = false,
+    val hasGetSearchChannelContentsCapabilities: Boolean = false,
     val hasGetChannelCapabilities: Boolean = false,
     val hasGetLiveEvents: Boolean = false,
     val hasGetLiveChatWindow: Boolean = false,

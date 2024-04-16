@@ -129,7 +129,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     onFilterClick.subscribe(this) {
                         _overlayContainer.let {
                             val filterValuesCopy = HashMap(_filterValues);
-                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy);
+                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy, _channelUrl != null);
                             filtersOverlay.onOK.subscribe { enabledClientIds, changed ->
                                 if (changed) {
                                     setFilterValues(filtersOverlay.commonCapabilities, filterValuesCopy);
@@ -170,7 +170,11 @@ class ContentSearchResultsFragment : MainFragment() {
 
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val commonCapabilities = StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
+                    val commonCapabilities =
+                        if(_channelUrl == null)
+                            StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
+                        else
+                            StatePlatform.instance.getCommonSearchChannelContentsCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
                     val sorts = commonCapabilities?.sorts ?: listOf();
                     if (sorts.size > 1) {
                         withContext(Dispatchers.Main) {

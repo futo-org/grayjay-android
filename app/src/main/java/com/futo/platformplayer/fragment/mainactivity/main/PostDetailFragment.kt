@@ -35,6 +35,7 @@ import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
@@ -210,6 +211,8 @@ class PostDetailFragment : MainFragment {
             _layoutThumbnails = findViewById(R.id.layout_thumbnails);
 
             _repliesOverlay = findViewById(R.id.replies_overlay);
+
+            _textContent.setPlatformPlayerLinkMovementMethod(context);
 
             _buttonSubscribe.onSubscribed.subscribe {
                 //TODO: add overlay to layout

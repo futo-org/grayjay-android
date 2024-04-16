@@ -28,13 +28,17 @@ class SlideUpMenuFilters {
     private var _changed: Boolean = false;
     private val _lifecycleScope: CoroutineScope;
 
+    private var _isChannelSearch = false;
+
     var commonCapabilities: ResultCapabilities? = null;
 
-    constructor(lifecycleScope: CoroutineScope, container: ViewGroup, enabledClientsIds: List<String>, filterValues: HashMap<String, List<String>>) {
+
+    constructor(lifecycleScope: CoroutineScope, container: ViewGroup, enabledClientsIds: List<String>, filterValues: HashMap<String, List<String>>, isChannelSearch: Boolean = false) {
         _lifecycleScope = lifecycleScope;
         _container = container;
         _enabledClientsIds = enabledClientsIds;
         _filterValues = filterValues;
+        _isChannelSearch = isChannelSearch;
         _slideUpMenuOverlay = SlideUpMenuOverlay(_container.context, _container, container.context.getString(R.string.filters), container.context.getString(R.string.done), true, listOf());
         _slideUpMenuOverlay.onOK.subscribe {
             onOK.emit(_enabledClientsIds, _changed);
@@ -47,7 +51,10 @@ class SlideUpMenuFilters {
     private fun updateCommonCapabilities() {
         _lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val caps = StatePlatform.instance.getCommonSearchCapabilities(_enabledClientsIds);
+                val caps = if(!_isChannelSearch)
+                    StatePlatform.instance.getCommonSearchCapabilities(_enabledClientsIds);
+                else
+                    StatePlatform.instance.getCommonSearchChannelContentsCapabilities(_enabledClientsIds);
                 synchronized(_filterValues) {
                     if (caps != null) {
                         val keysToRemove = arrayListOf<String>();
