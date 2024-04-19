@@ -12,6 +12,7 @@ import android.webkit.CookieManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -107,17 +108,20 @@ class SourceDetailFragment : MainFragment() {
         fun onHide() {
             val id = _config?.id ?: return;
 
-            if(_settingsChanged && _settings != null) {
-                _settingsChanged = false;
-                StatePlugins.instance.setPluginSettings(id, _settings!!);
-                reloadSource(id);
-
-                UIDialogs.toast(context.getString(R.string.plugin_settings_saved), false);
-            }
+            var shouldReload = false;
             if(_settingsAppChanged) {
                 _settingsAppForm.setObjectValues();
                 StatePlugins.instance.savePlugin(id);
+                shouldReload = true;
             }
+            if(_settingsChanged && _settings != null) {
+                _settingsChanged = false;
+                StatePlugins.instance.setPluginSettings(id, _settings!!);
+                shouldReload = true;
+                UIDialogs.toast(context.getString(R.string.plugin_settings_saved), false);
+            }
+            if(shouldReload)
+                reloadSource(id);
         }
 
 
@@ -137,9 +141,25 @@ class SourceDetailFragment : MainFragment() {
                         //App settings
                         try {
                             _settingsAppForm.fromObject(source.descriptor.appSettings);
+                            if(source.config.developerSubmitUrl.isNullOrEmpty()) {
+                                val field = _settingsAppForm.findField("devSubmit");
+                                field?.setValue(false);
+                                if(field is View)
+                                    field.isVisible = false;
+                            }
                             _settingsAppForm.onChanged.clear();
-                            _settingsAppForm.onChanged.subscribe { _, _ ->
+                            _settingsAppForm.onChanged.subscribe { field, value ->
                                 _settingsAppChanged = true;
+                                if(field.descriptor?.id == "devSubmit") {
+                                    if(value is Boolean && value) {
+                                        UIDialogs.showDialog(context, R.drawable.ic_warning_yellow,
+                                            "Are you sure you trust the developer?",
+                                            "Developers may gain access to sensitive data. Only enable this when you are trying to help the developer fix a bug.\nThe following domain is used:",
+                                                source.config.developerSubmitUrl ?: "", 0,
+                                            UIDialogs.Action("Cancel", { field.setValue(false); }, UIDialogs.ActionStyle.NONE),
+                                            UIDialogs.Action("Enable", {  }, UIDialogs.ActionStyle.DANGEROUS));
+                                    }
+                                }
                             }
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Failed to load app settings form from plugin settings", e)

@@ -8,6 +8,7 @@ import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
+import com.futo.platformplayer.views.fields.FormFieldWarning
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -90,7 +91,7 @@ class SourcePluginDescriptor {
     @Serializable
     class AppPluginSettings {
 
-        @FormField(R.string.check_for_updates_setting, FieldForm.TOGGLE, R.string.check_for_updates_setting_description, 1)
+        @FormField(R.string.check_for_updates_setting, FieldForm.TOGGLE, R.string.check_for_updates_setting_description, 0)
         var checkForUpdates: Boolean = true;
 
         @FormField(R.string.visibility, "group", R.string.enable_where_this_plugins_content_are_visible, 2)
@@ -128,6 +129,11 @@ class SourcePluginDescriptor {
             }
 
         }
+
+
+
+        @FormField(R.string.allow_developer_submit, FieldForm.TOGGLE, R.string.allow_developer_submit_description, 1, "devSubmit")
+        var allowDeveloperSubmit: Boolean = false;
 
 
         fun loadDefaults(config: SourcePluginConfig) {

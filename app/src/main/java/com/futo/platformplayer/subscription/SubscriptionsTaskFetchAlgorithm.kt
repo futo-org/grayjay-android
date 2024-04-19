@@ -24,6 +24,7 @@ import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
+import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
@@ -48,15 +49,17 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val tasksGrouped = tasks.groupBy { it.client }
 
         Logger.i(TAG, "Starting Subscriptions Fetch:\n" +
-            tasksGrouped.map { "   ${it.key.name}: ${it.value.count { !it.fromCache }}, Cached(${it.value.count { it.fromCache } })" }.joinToString("\n"));
+            tasksGrouped.map { "   ${it.key.name}: ${it.value.count { !it.fromCache }}, Cached(${it.value.count { it.fromCache } - it.value.count { it.fromPeek && it.fromCache }}), Peek(${it.value.count { it.fromPeek }})" }.joinToString("\n"));
 
         try {
             for(clientTasks in tasksGrouped) {
-                val clientTaskCount = clientTasks.value.filter { !it.fromCache }.size;
-                val clientCacheCount = clientTasks.value.size - clientTaskCount;
+                val clientTaskCount = clientTasks.value.count { !it.fromCache };
+                val clientCacheCount = clientTasks.value.count { it.fromCache && !it.fromPeek };
+                val clientPeekCount = clientTasks.value.count { it.fromPeek };
                 val limit = clientTasks.key.getSubscriptionRateLimit();
                 if(clientCacheCount > 0 && clientTaskCount > 0 && limit != null && clientTaskCount >= limit && StateApp.instance.contextOrNull?.let { it is MainActivity && it.isFragmentActive<SubscriptionsFeedFragment>() } == true) {
-                    UIDialogs.appToast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels (rqs). (${clientCacheCount} cached)");
+                    UIDialogs.appToast("[${clientTasks.key.name}] only updating ${clientTaskCount} most urgent channels (rqs). " +
+                            "(${if(clientPeekCount > 0) "${clientPeekCount} peek, " else ""}${clientCacheCount} cached)");
                 }
             }
 
@@ -135,8 +138,30 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
         for(task in tasks) {
             val forkTask = threadPool.submit<SubscriptionTaskResult> {
+                if(task.fromPeek) {
+                    try {
+
+                        val time = measureTimeMillis {
+                            val peekResults = StatePlatform.instance.peekChannelContents(task.client, task.url, task.type);
+                            val mostRecent = peekResults.firstOrNull();
+                            task.sub.lastPeekVideo = mostRecent?.datetime ?: OffsetDateTime.MIN;
+                            task.sub.saveAsync();
+                            val cacheItems = peekResults.filter { it.datetime != null && it.datetime!! > task.sub.lastVideoUpdate };
+                            //Fix for current situation
+                            for(item in cacheItems) {
+                                if(item.author.thumbnail.isNullOrEmpty())
+                                    item.author.thumbnail = task.sub.channel.thumbnail;
+                            }
+                            StateCache.instance.cacheContents(cacheItems, false);
+                        }
+                        Logger.i("StateSubscriptions", "Subscription peek [${task.sub.channel.name}]:${task.type} results in ${time}ms");
+                    }
+                    catch(ex: Throwable) {
+                        Logger.e(StateSubscriptions.TAG, "Subscription peek [${task.sub.channel.name}] failed", ex);
+                    }
+                }
                 synchronized(cachedChannels) {
-                    if(task.fromCache) {
+                    if(task.fromCache || task.fromPeek) {
                         finished++;
                         onProgress.emit(finished, forkTasks.size);
                         if(cachedChannels.contains(task.url)) {
@@ -218,6 +243,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val url: String,
         val type: String,
         var fromCache: Boolean = false,
+        var fromPeek: Boolean = false,
         var urgency: Int = 0
     );
 

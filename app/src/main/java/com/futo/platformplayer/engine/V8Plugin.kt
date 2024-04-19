@@ -11,7 +11,6 @@ import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
-import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
@@ -45,7 +44,6 @@ class V8Plugin {
     private val _clientAuth: ManagedHttpClient;
     private val _clientOthers: ConcurrentHashMap<String, JSHttpClient> = ConcurrentHashMap();
 
-
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
     val httpClientOthers: Map<String, JSHttpClient> get() = _clientOthers;
@@ -71,6 +69,11 @@ class V8Plugin {
     private var _busyCounter = 0;
     val isBusy get() = synchronized(_busyCounterLock) { _busyCounter > 0 };
 
+    var allowDevSubmit: Boolean = false
+        private set(value) {
+            field = value;
+        }
+
     /**
      * Called before a busy counter is about to be removed.
      * Is primarily used to prevent additional calls to dead runtimes.
@@ -90,6 +93,10 @@ class V8Plugin {
 
         for(pack in config.packages)
             withDependency(getPackage(pack));
+    }
+
+    fun changeAllowDevSubmit(isAllowed: Boolean) {
+        allowDevSubmit = isAllowed;
     }
 
     fun withDependency(context: Context, assetPath: String) : V8Plugin  {

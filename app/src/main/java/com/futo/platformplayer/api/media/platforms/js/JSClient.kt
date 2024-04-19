@@ -27,6 +27,7 @@ import com.futo.platformplayer.api.media.platforms.js.internal.JSDocsParameter
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSOptional
 import com.futo.platformplayer.api.media.platforms.js.internal.JSParameterDocs
+import com.futo.platformplayer.api.media.platforms.js.models.IJSContent
 import com.futo.platformplayer.api.media.platforms.js.models.IJSContentDetails
 import com.futo.platformplayer.api.media.platforms.js.models.JSChannel
 import com.futo.platformplayer.api.media.platforms.js.models.JSChannelPager
@@ -56,7 +57,6 @@ import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
-import java.util.Dictionary
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.jvm.kotlinFunction
 import kotlin.streams.asSequence
@@ -75,6 +75,7 @@ open class JSClient : IPlatformClient {
     private var _searchCapabilities: ResultCapabilities? = null;
     private var _searchChannelContentsCapabilities: ResultCapabilities? = null;
     private var _channelCapabilities: ResultCapabilities? = null;
+    private var _peekChannelTypes: List<String>? = null;
 
     protected val _script: String;
 
@@ -93,7 +94,11 @@ open class JSClient : IPlatformClient {
 
     private val _busyLock = Object();
     private var _busyCounter = 0;
+    private var _busyAction = "";
     val isBusy: Boolean get() = _busyCounter > 0;
+    val isBusyAction: String get() {
+        return _busyAction;
+    }
 
     val settings: HashMap<String, String?> get() = descriptor.settings;
 
@@ -152,6 +157,8 @@ open class JSClient : IPlatformClient {
             if(it is ScriptCaptchaRequiredException)
                 onCaptchaException.emit(this, it);
         };
+
+        _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
     constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String?, script: String) {
         this._context = context;
@@ -175,6 +182,8 @@ open class JSClient : IPlatformClient {
             if(it is ScriptCaptchaRequiredException)
                 onCaptchaException.emit(this, it);
         };
+
+        _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
 
     open fun getCopy(): JSClient {
@@ -220,6 +229,7 @@ open class JSClient : IPlatformClient {
             hasGetLiveEvents = plugin.executeBoolean("!!source.getLiveEvents") ?: false,
             hasGetLiveChatWindow = plugin.executeBoolean("!!source.getLiveChatWindow") ?: false,
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
+            hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false
         );
 
         try {
@@ -263,7 +273,7 @@ open class JSClient : IPlatformClient {
     }
 
     @JSDocs(2, "source.getHome()", "Gets the HomeFeed of the platform")
-    override fun getHome(): IPager<IPlatformContent> = isBusyWith {
+    override fun getHome(): IPager<IPlatformContent> = isBusyWith("getHome") {
         ensureEnabled();
         return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.getHome()"));
@@ -271,7 +281,7 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(3, "source.searchSuggestions(query)", "Gets search suggestions for a given query")
     @JSDocsParameter("query", "Query to complete suggestions for")
-    override fun searchSuggestions(query: String): Array<String> = isBusyWith {
+    override fun searchSuggestions(query: String): Array<String> = isBusyWith("searchSuggestions") {
         ensureEnabled();
         return@isBusyWith plugin.executeTyped<V8ValueArray>("source.searchSuggestions(${Json.encodeToString(query)})")
             .toArray()
@@ -301,7 +311,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("order", "(optional) Order in which contents should be returned")
     @JSDocsParameter("filters", "(optional) Filters to apply on contents")
     @JSDocsParameter("channelId", "(optional) Channel id to search in")
-    override fun search(query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
+    override fun search(query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith("search") {
         ensureEnabled();
         return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.search(${Json.encodeToString(query)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
@@ -325,7 +335,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("type", "(optional) Type of contents to get from search ")
     @JSDocsParameter("order", "(optional) Order in which contents should be returned")
     @JSDocsParameter("filters", "(optional) Filters to apply on contents")
-    override fun searchChannelContents(channelUrl: String, query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
+    override fun searchChannelContents(channelUrl: String, query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith("searchChannelContents") {
         ensureEnabled();
         if(!capabilities.hasSearchChannelContents)
             throw IllegalStateException("This plugin does not support channel search");
@@ -337,7 +347,7 @@ open class JSClient : IPlatformClient {
     @JSOptional
     @JSDocs(5, "source.searchChannels(query)",  "Searches for channels on the platform")
     @JSDocsParameter("query", "Query that channels should match")
-    override fun searchChannels(query: String): IPager<PlatformAuthorLink> = isBusyWith {
+    override fun searchChannels(query: String): IPager<PlatformAuthorLink> = isBusyWith("searchChannels") {
         ensureEnabled();
         return@isBusyWith JSChannelPager(config, this,
             plugin.executeTyped("source.searchChannels(${Json.encodeToString(query)})"));
@@ -357,7 +367,7 @@ open class JSClient : IPlatformClient {
     }
     @JSDocs(7, "source.getChannel(channelUrl)", "Gets a channel by its url")
     @JSDocsParameter("channelUrl", "A channel url (this platform)")
-    override fun getChannel(channelUrl: String): IPlatformChannel = isBusyWith {
+    override fun getChannel(channelUrl: String): IPlatformChannel = isBusyWith("getChannel") {
         ensureEnabled();
         return@isBusyWith JSChannel(config,
             plugin.executeTyped("source.getChannel(${Json.encodeToString(channelUrl)})"));
@@ -384,10 +394,44 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("type", "(optional) Type of contents to get from channel")
     @JSDocsParameter("order", "(optional) Order in which contents should be returned")
     @JSDocsParameter("filters", "(optional) Filters to apply on contents")
-    override fun getChannelContents(channelUrl: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
+    override fun getChannelContents(channelUrl: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith("getChannelContents") {
         ensureEnabled();
         return@isBusyWith JSContentPager(config, this,
             plugin.executeTyped("source.getChannelContents(${Json.encodeToString(channelUrl)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
+    }
+
+    @JSDocs(10, "source.getPeekChannelTypes()", "Gets types this plugin has for peek channel contents")
+    override fun getPeekChannelTypes(): List<String> {
+        if(!capabilities.hasPeekChannelContents)
+            return listOf();
+        try {
+            if (_peekChannelTypes != null) {
+                return _peekChannelTypes!!;
+            }
+            val arr: V8ValueArray = plugin.executeTyped("source.getPeekChannelTypes()");
+
+            _peekChannelTypes = arr.keys.mapNotNull {
+                val str = arr.get<V8ValueString>(it);
+                return@mapNotNull str.value;
+            };
+            return _peekChannelTypes ?: listOf();
+        }
+        catch(ex: Throwable) {
+            announcePluginUnhandledException("getPeekChannelTypes", ex);
+            return listOf();
+        }
+    }
+    @JSDocs(10, "source.peekChannelContents(url, type)", "Peek contents of a channel (reverse chronological order)")
+    @JSDocsParameter("channelUrl", "A channel url (this platform)")
+    @JSDocsParameter("type", "(optional) Type of contents to get from channel")
+    override fun peekChannelContents(channelUrl: String, type: String?): List<IPlatformContent> = isBusyWith("peekChannelContents") {
+        ensureEnabled();
+
+        val items: V8ValueArray = plugin.executeTyped("source.peekChannelContents(${Json.encodeToString(channelUrl)}, ${Json.encodeToString(type)})");
+        return@isBusyWith items.keys.mapNotNull {
+            val obj = items.get<V8ValueObject>(it);
+            return@mapNotNull IJSContent.fromV8(this, obj);
+        };
     }
 
     @JSOptional
@@ -450,7 +494,7 @@ open class JSClient : IPlatformClient {
     }
     @JSDocs(14, "source.getContentDetails(url)", "Gets content details by its url")
     @JSDocsParameter("url", "A content url (this platform)")
-    override fun getContentDetails(url: String): IPlatformContentDetails = isBusyWith {
+    override fun getContentDetails(url: String): IPlatformContentDetails = isBusyWith("getContentDetails") {
         ensureEnabled();
         return@isBusyWith IJSContentDetails.fromV8(this,
             plugin.executeTyped("source.getContentDetails(${Json.encodeToString(url)})"));
@@ -459,7 +503,7 @@ open class JSClient : IPlatformClient {
     @JSOptional //getContentChapters = function(url, initialData)
     @JSDocs(15, "source.getContentChapters(url)", "Gets chapters for content details")
     @JSDocsParameter("url", "A content url (this platform)")
-    override fun getContentChapters(url: String): List<IChapter> = isBusyWith {
+    override fun getContentChapters(url: String): List<IChapter> = isBusyWith("getContentChapters") {
         if(!capabilities.hasGetContentChapters)
             return@isBusyWith listOf();
         ensureEnabled();
@@ -470,7 +514,7 @@ open class JSClient : IPlatformClient {
     @JSOptional
     @JSDocs(15, "source.getPlaybackTracker(url)", "Gets a playback tracker for given content url")
     @JSDocsParameter("url", "A content url (this platform)")
-    override fun getPlaybackTracker(url: String): IPlaybackTracker? = isBusyWith {
+    override fun getPlaybackTracker(url: String): IPlaybackTracker? = isBusyWith("getPlaybackTracker") {
         if(!capabilities.hasGetPlaybackTracker)
             return@isBusyWith null;
         ensureEnabled();
@@ -484,7 +528,7 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(16, "source.getComments(url)", "Gets comments for a content by its url")
     @JSDocsParameter("url", "A content url (this platform)")
-    override fun getComments(url: String): IPager<IPlatformComment> = isBusyWith {
+    override fun getComments(url: String): IPager<IPlatformComment> = isBusyWith("getComments") {
         ensureEnabled();
         val pager = plugin.executeTyped<V8Value>("source.getComments(${Json.encodeToString(url)})");
         if (pager !is V8ValueObject) { //TODO: Maybe solve this better
@@ -502,7 +546,7 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(16, "source.getLiveChatWindow(url)", "Gets live events for a livestream")
     @JSDocsParameter("url", "Url of live stream")
-    override fun getLiveChatWindow(url: String): ILiveChatWindowDescriptor? = isBusyWith {
+    override fun getLiveChatWindow(url: String): ILiveChatWindowDescriptor? = isBusyWith("getLiveChatWindow") {
         if(!capabilities.hasGetLiveChatWindow)
             return@isBusyWith null;
         ensureEnabled();
@@ -511,7 +555,7 @@ open class JSClient : IPlatformClient {
     }
     @JSDocs(16, "source.getLiveEvents(url)", "Gets live events for a livestream")
     @JSDocsParameter("url", "Url of live stream")
-    override fun getLiveEvents(url: String): IPager<IPlatformLiveEvent>? = isBusyWith {
+    override fun getLiveEvents(url: String): IPager<IPlatformLiveEvent>? = isBusyWith("getLiveEvents") {
         if(!capabilities.hasGetLiveEvents)
             return@isBusyWith null;
         ensureEnabled();
@@ -524,7 +568,7 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("order", "(optional) Order in which contents should be returned")
     @JSDocsParameter("filters", "(optional) Filters to apply on contents")
     @JSDocsParameter("channelId", "(optional) Channel id to search in")
-    override fun searchPlaylists(query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith {
+    override fun searchPlaylists(query: String, type: String?, order: String?, filters: Map<String, List<String>>?): IPager<IPlatformContent> = isBusyWith("searchPlaylists") {
         ensureEnabled();
         if(!capabilities.hasSearchPlaylists)
             throw IllegalStateException("This plugin does not support playlist search");
@@ -534,15 +578,22 @@ open class JSClient : IPlatformClient {
     @JSDocs(20, "source.isPlaylistUrl(url)", "Validates if a playlist url is for this platform")
     @JSDocsParameter("url", "Url of playlist")
     override fun isPlaylistUrl(url: String): Boolean {
-        ensureEnabled();
         if (!capabilities.hasGetPlaylist)
             return false;
-        return plugin.executeBoolean("source.isPlaylistUrl(${Json.encodeToString(url)})") ?: false;
+
+        try {
+            return plugin.executeTyped<V8ValueBoolean>("source.isPlaylistUrl(${Json.encodeToString(url)})")
+                .value;
+        }
+        catch(ex: Throwable) {
+            announcePluginUnhandledException("isPlaylistUrl", ex);
+            return false;
+        }
     }
     @JSOptional
     @JSDocs(21, "source.getPlaylist(url)", "Gets the playlist of the current user")
     @JSDocsParameter("url", "Url of playlist")
-    override fun getPlaylist(url: String): IPlatformPlaylistDetails = isBusyWith {
+    override fun getPlaylist(url: String): IPlatformPlaylistDetails = isBusyWith("getPlaylist") {
         ensureEnabled();
         return@isBusyWith JSPlaylistDetails(this, plugin.config as SourcePluginConfig, plugin.executeTyped("source.getPlaylist(${Json.encodeToString(url)})"));
     }
@@ -639,18 +690,23 @@ open class JSClient : IPlatformClient {
     }
 
 
-    private fun <T> isBusyWith(handle: ()->T): T {
+    private fun <T> isBusyWith(actionName: String, handle: ()->T): T {
         try {
             synchronized(_busyLock) {
                 _busyCounter++;
             }
+            _busyAction = actionName;
             return handle();
         }
         finally {
+            _busyAction = "";
             synchronized(_busyLock) {
                 _busyCounter--;
             }
         }
+    }
+    private fun <T> isBusyWith(handle: ()->T): T {
+        return isBusyWith("Unknown", handle);
     }
 
     private fun announcePluginUnhandledException(method: String, ex: Throwable) {

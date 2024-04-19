@@ -54,6 +54,9 @@ import kotlin.system.measureTimeMillis
 class StateApp {
     val isMainActive: Boolean get() = contextOrNull != null && contextOrNull is MainActivity; //if context is MainActivity, it means its active
 
+    val sessionId = UUID.randomUUID().toString();
+
+
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();
         if(isValidStorageUri(context, generalUri))

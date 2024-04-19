@@ -797,6 +797,10 @@ class StatePlatform {
         return client.getChannelContents(channelUrl, type, ordering) ;
     }
 
+    fun peekChannelContents(baseClient: IPlatformClient, channelUrl: String, type: String?): List<IPlatformContent> {
+        val client = _channelClientPool.getClientPooled(baseClient, Settings.instance.subscriptions.getSubscriptionsConcurrency());
+        return client.peekChannelContents(channelUrl, type) ;
+    }
 
     fun getChannelLive(url: String, updateSubscriptions: Boolean = true): IPlatformChannel {
         val channel = getChannelClient(url).getChannel(url);

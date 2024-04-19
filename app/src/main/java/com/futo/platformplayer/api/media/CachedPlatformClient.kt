@@ -60,6 +60,9 @@ class CachedPlatformClient : IPlatformClient {
         filters: Map<String, List<String>>?
     ): IPager<IPlatformContent> = _client.getChannelContents(channelUrl);
 
+    override fun getPeekChannelTypes(): List<String> = _client.getPeekChannelTypes();
+    override fun peekChannelContents(channelUrl: String, type: String?): List<IPlatformContent> = _client.peekChannelContents(channelUrl, type);
+
     override fun getChannelUrlByClaim(claimType: Int, claimValues: Map<Int, String>): String? = _client.getChannelUrlByClaim(claimType, claimValues)
 
     override fun searchSuggestions(query: String): Array<String> = _client.searchSuggestions(query);

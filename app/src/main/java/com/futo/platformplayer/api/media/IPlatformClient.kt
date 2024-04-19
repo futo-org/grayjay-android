@@ -85,6 +85,15 @@ interface IPlatformClient {
     fun getChannelContents(channelUrl: String, type: String? = null, order: String? = null, filters: Map<String, List<String>>? = null): IPager<IPlatformContent>;
 
     /**
+     * Describes what the plugin is capable on peek channel results
+     */
+    fun getPeekChannelTypes(): List<String>;
+    /**
+     * Peeks contents of a channel, upload time descending
+     */
+    fun peekChannelContents(channelUrl: String, type: String? = null): List<IPlatformContent>
+
+    /**
      * Gets the channel url associated with a claimType
      */
     fun getChannelUrlByClaim(claimType: Int, claimValues: Map<Int, String>): String?;

@@ -153,10 +153,10 @@ class DownloadsFragment : MainFragment() {
                 _listActiveDownloadsContainer.visibility = GONE;
             else {
                 _listActiveDownloadsContainer.visibility = VISIBLE;
-                _listActiveDownloadsMeta.text = "(${activeDownloads.size})";
+                _listActiveDownloadsMeta.text = "(${activeDownloads.size} videos)";
 
                 _listActiveDownloads.removeAllViews();
-                for(view in activeDownloads.map { ActiveDownloadItem(context, it, _frag.lifecycleScope) })
+                for(view in activeDownloads.take(4).map { ActiveDownloadItem(context, it, _frag.lifecycleScope) })
                     _listActiveDownloads.addView(view);
             }
 

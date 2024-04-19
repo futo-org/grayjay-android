@@ -14,7 +14,7 @@ open class PlatformAuthorLink {
     val id: PlatformID;
     val name: String;
     val url: String;
-    val thumbnail: String?;
+    var thumbnail: String?;
     var subscribers: Long? = null; //Optional
 
     constructor(id: PlatformID, name: String, url: String, thumbnail: String? = null, subscribers: Long? = null)

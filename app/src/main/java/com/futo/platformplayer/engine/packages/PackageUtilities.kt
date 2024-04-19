@@ -22,12 +22,12 @@ class PackageUtilities : V8Package {
 
     @V8Function
     fun toBase64(arr: ByteArray): String {
-        return Base64.encodeToString(arr, Base64.NO_WRAP);
+        return Base64.encodeToString(arr, Base64.NO_PADDING or Base64.NO_WRAP);
     }
 
     @V8Function
     fun fromBase64(str: String): ByteArray {
-        return Base64.decode(str, Base64.DEFAULT)
+        return Base64.decode(str, Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
     @V8Function

@@ -40,6 +40,9 @@ class Subscription {
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
     var lastPostUpdate : OffsetDateTime = OffsetDateTime.MIN;
 
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
+    var lastPeekVideo : OffsetDateTime = OffsetDateTime.MIN;
+
     //Last video interval
     var uploadInterval : Int = 0;
     var uploadStreamInterval : Int = 0;
@@ -126,6 +129,7 @@ class Subscription {
                 else if(lastVideo.year > 3000)
                     lastVideo = OffsetDateTime.MIN;
                 lastVideoUpdate = OffsetDateTime.now();
+                lastPeekVideo = OffsetDateTime.MIN;
             }
             ResultCapabilities.TYPE_MIXED -> {
                 uploadInterval = interval;
@@ -134,6 +138,7 @@ class Subscription {
                 else if(lastVideo.year > 3000)
                     lastVideo = OffsetDateTime.MIN;
                 lastVideoUpdate = OffsetDateTime.now();
+                lastPeekVideo = OffsetDateTime.MIN;
             }
             ResultCapabilities.TYPE_SUBSCRIPTIONS -> {
                 uploadInterval = interval;

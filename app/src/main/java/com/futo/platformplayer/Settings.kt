@@ -311,7 +311,10 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 14)
         var alwaysReloadFromCache: Boolean = false;
 
-        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 15)
+        @FormField(R.string.peek_channel_contents, FieldForm.TOGGLE, R.string.peek_channel_contents_description, 15)
+        var peekChannelContents: Boolean = false;
+
+        @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 16)
         fun clearChannelCache() {
             UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
             StateCache.instance.clear();

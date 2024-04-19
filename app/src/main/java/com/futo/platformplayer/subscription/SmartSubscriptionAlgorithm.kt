@@ -1,5 +1,6 @@
 package com.futo.platformplayer.subscription
 
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.getNowDiffHours
@@ -7,6 +8,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StatePlatform
 import kotlinx.coroutines.CoroutineScope
+import java.time.OffsetDateTime
 import java.util.concurrent.ForkJoinPool
 
 class SmartSubscriptionAlgorithm(
@@ -70,18 +72,30 @@ class SmartSubscriptionAlgorithm(
             } else {
                 val fetchTasks = mutableListOf<SubscriptionTask>();
                 val cacheTasks = mutableListOf<SubscriptionTask>();
+                var peekTasks = mutableListOf<SubscriptionTask>();
 
                 for(task in clientTasks.second) {
                     if (!task.fromCache && fetchTasks.size < limit) {
                         fetchTasks.add(task);
                     } else {
-                        task.fromCache = true;
-                        cacheTasks.add(task);
+                        if(peekTasks.size < 100 &&
+                                Settings.instance.subscriptions.peekChannelContents &&
+                                (task.sub.lastPeekVideo.year < 1971 || task.sub.lastPeekVideo < task.sub.lastVideoUpdate) &&
+                                task.client.capabilities.hasPeekChannelContents &&
+                                task.client.getPeekChannelTypes().contains(task.type)) {
+                            task.fromPeek = true;
+                            task.fromCache = true;
+                            peekTasks.add(task);
+                        }
+                        else {
+                            task.fromCache = true;
+                            cacheTasks.add(task);
+                        }
                     }
                 }
                 Logger.i(TAG, "Subscription Client Budget [${clientTasks.first.name}]: ${fetchTasks.size}/${limit}")
 
-                finalTasks.addAll(fetchTasks + cacheTasks);
+                finalTasks.addAll(fetchTasks + peekTasks + cacheTasks);
             }
         }
 
@@ -115,6 +129,9 @@ class SmartSubscriptionAlgorithm(
         val lastUpdateHoursAgo = lastUpdate.getNowDiffHours();
         val expectedHours = (interval * 24) - lastUpdateHoursAgo.toDouble();
 
-        return (expectedHours * 100).toInt();
+        if((type == ResultCapabilities.TYPE_MIXED || type == ResultCapabilities.TYPE_VIDEOS) && (sub.lastPeekVideo.year > 1970 && sub.lastPeekVideo > sub.lastVideoUpdate))
+            return 0;
+        else
+            return (expectedHours * 100).toInt();
     }
 }

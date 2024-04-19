@@ -342,6 +342,8 @@
     <string name="fetch_on_tab_opened_description">Fetch new results when the tab is opened (if no results yet, disabling is not recommended unless you have issues)</string>
     <string name="always_reload_from_cache">Always reload from cache</string>
     <string name="always_reload_from_cache_description">This is not recommended, but a possible workaround for some issues.</string>
+    <string name="peek_channel_contents">Peek Channel Contents</string>
+    <string name="peek_channel_contents_description">Peek channel contents if supported by plugin of rate-limited calls, may increase subscription reload time.</string>
     <string name="get_answers_to_common_questions">Get answers to common questions</string>
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>
@@ -487,6 +489,9 @@
     <string name="visibility">Visibility</string>
     <string name="check_for_updates_setting">Check for updates</string>
     <string name="check_for_updates_setting_description">If a plugin should be checked for updates on startup</string>
+    <string name="allow_developer_submit">Allow Developer Submissions</string>
+    <string name="allow_developer_submit_description">Allows the developer to send data to their server, be careful as this might include sensitive data.</string>
+    <string name="allow_developer_submit_warning">Make sure you trust the developer. They may gain access to sensitive data. Only enable this when you are trying to help the developer fix a bug.</string>
     <string name="ratelimit">Rate-limit</string>
     <string name="ratelimit_description">Settings related to rate-limiting this plugin\'s behavior</string>
     <string name="ratelimit_sub_setting">Rate-limit Subscriptions</string>
