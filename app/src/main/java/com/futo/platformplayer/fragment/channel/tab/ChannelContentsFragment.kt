@@ -105,9 +105,9 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
     }).success {
         setLoading(false);
         val posBefore = _results.size;
-        val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo }
-        _results.addAll(toAdd);
-        _adapterResults?.let { adapterVideo -> adapterVideo.notifyItemRangeInserted(adapterVideo.childToParentPosition(posBefore), toAdd.size); };
+        //val toAdd = it.filter { it is IPlatformVideo }.map { it as IPlatformVideo }
+        _results.addAll(it);
+        _adapterResults?.let { adapterVideo -> adapterVideo.notifyItemRangeInserted(adapterVideo.childToParentPosition(posBefore), it.size); };
     }.exception<Throwable> {
         Logger.w(TAG, "Failed to load next page.", it);
         UIDialogs.showGeneralRetryErrorDialog(requireContext(), it.message ?: "", it, { loadNextPage() });

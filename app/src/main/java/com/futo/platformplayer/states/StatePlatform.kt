@@ -676,8 +676,11 @@ class StatePlatform {
 
         val pagerResult: IPager<IPlatformContent>;
         if(!clientCapabilities.hasType(ResultCapabilities.TYPE_MIXED) &&
-            clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS) &&
-            clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS)) {
+                (   clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS) ||
+                    clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS) ||
+                    clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE) ||
+                    clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS)
+                )) {
             val toQuery = mutableListOf<String>();
             if(clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
                 toQuery.add(ResultCapabilities.TYPE_VIDEOS);
