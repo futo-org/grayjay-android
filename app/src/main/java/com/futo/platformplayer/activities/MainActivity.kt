@@ -192,6 +192,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Logger.i(TAG, "MainActivity Starting");
         StateApp.instance.setGlobalContext(this, lifecycleScope);
         StateApp.instance.mainAppStarting(this);
 

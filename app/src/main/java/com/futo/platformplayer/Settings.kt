@@ -549,6 +549,8 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.log_levels)
         var logLevel: Int = 0;
 
+        fun isVerbose() = logLevel >= 4;
+
         @FormField(R.string.submit_logs, FieldForm.BUTTON, R.string.submit_logs_to_help_us_narrow_down_issues, 1)
         fun submitLogs() {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {

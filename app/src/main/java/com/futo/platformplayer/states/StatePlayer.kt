@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.services.MediaPlaybackService
 import com.futo.platformplayer.video.PlayerManager
@@ -633,6 +634,7 @@ class StatePlayer {
             val instance = _instance;
             _instance = null;
             instance?.dispose();
+            Logger.i(TAG, "Disposed StatePlayer");
         }
     }
 }

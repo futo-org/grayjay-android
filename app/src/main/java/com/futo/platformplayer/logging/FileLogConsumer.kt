@@ -43,7 +43,8 @@ class FileLogConsumer : ILogConsumer, Closeable {
                     }
 
                     while (_linesToWrite.isNotEmpty()) {
-                        _writer?.appendLine(_linesToWrite.remove());
+                        val todo = _linesToWrite.remove()
+                        _writer?.appendLine(todo);
                     }
 
                     _writer?.flush();
@@ -85,7 +86,7 @@ class FileLogConsumer : ILogConsumer, Closeable {
         _running = false;
         _writer?.close();
         _writer = null;
-        _logThread?.join();
+        //_logThread?.join();
         _logThread = null;
     }
 

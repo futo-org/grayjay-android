@@ -333,7 +333,7 @@ class StateApp {
     suspend fun backgroundStarting(context: Context, scope: CoroutineScope, withFiles: Boolean, withPlugins: Boolean) {
         if(contextOrNull == null) {
             Logger.i(TAG, "BACKGROUND STATE: Starting");
-            if(!Logger.hasConsumers && BuildConfig.DEBUG) {
+            if(!Logger.hasConsumers && (BuildConfig.DEBUG)) {
                 Logger.i(TAG, "BACKGROUND STATE: Initialize logger");
                 Logger.setLogConsumers(listOf(AndroidLogConsumer()));
             }
