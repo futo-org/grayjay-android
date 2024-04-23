@@ -7,6 +7,7 @@ import androidx.documentfile.provider.DocumentFile
 import com.arthenica.ffmpegkit.*
 import com.futo.platformplayer.api.media.models.streams.sources.*
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanBitrate
@@ -63,7 +64,7 @@ class VideoExport {
         val outputFile: DocumentFile?;
         val downloadRoot = StateApp.instance.getExternalDownloadDirectory(context) ?: throw Exception("External download directory is not set");
         if (sourceCount > 1) {
-            val outputFileName = toSafeFileName(videoLocal.name) + ".mp4"// + VideoDownload.videoContainerToExtension(v.container);
+            val outputFileName = videoLocal.name.sanitizeFileName(true) + ".mp4"// + VideoDownload.videoContainerToExtension(v.container);
             val f = downloadRoot.createFile("video/mp4", outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
@@ -79,7 +80,7 @@ class VideoExport {
             }
             outputFile = f;
         } else if (v != null) {
-            val outputFileName = toSafeFileName(videoLocal.name) + "." + VideoDownload.videoContainerToExtension(v.container);
+            val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.videoContainerToExtension(v.container);
             val f = downloadRoot.createFile(v.container, outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
@@ -91,7 +92,7 @@ class VideoExport {
 
             outputFile = f;
         } else if (a != null) {
-            val outputFileName = toSafeFileName(videoLocal.name) + "." + VideoDownload.audioContainerToExtension(a.container);
+            val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.audioContainerToExtension(a.container);
             val f = downloadRoot.createFile(a.container, outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
@@ -108,11 +109,6 @@ class VideoExport {
 
         onProgressChanged.emit(100.0);
         return@coroutineScope outputFile;
-    }
-
-    private fun toSafeFileName(input: String): String {
-        val safeCharacters = ('a'..'z') + ('A'..'Z') + ('0'..'9') + listOf('-', '_')
-        return input.map { if (it in safeCharacters) it else '_' }.joinToString(separator = "")
     }
 
     private suspend fun combine(inputPathAudio: String?, inputPathVideo: String?, inputPathSubtitles: String?, outputPath: String, duration: Double, onProgress: ((Double) -> Unit)? = null) = withContext(Dispatchers.IO) {
