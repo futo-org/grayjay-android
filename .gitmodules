@@ -58,3 +58,9 @@
 [submodule "dep/futopay"]
 	path = dep/futopay
 	url = ../futopayclientlibraries.git
+[submodule "app/src/unstable/assets/sources/bilibili"]
+	path = app/src/unstable/assets/sources/bilibili
+	url = ../plugins/bilibili.git
+[submodule "app/src/stable/assets/sources/bilibili"]
+	path = app/src/stable/assets/sources/bilibili
+	url = ../plugins/bilibili.git

@@ -134,8 +134,11 @@ class StatePlugins {
             val embeddedConfig = getEmbeddedPluginConfig(context, embedded.value);
             if(embeddedConfig != null) {
                 val existing = getPlugin(embedded.key);
-                if(existing != null && (existing.config.version < embeddedConfig.version || (force || FORCE_REINSTALL_EMBEDDED))) {
-                    Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig.version}), reinstalling");
+                if(existing == null || (existing.config.version < embeddedConfig.version || (force || FORCE_REINSTALL_EMBEDDED))) {
+                    if (existing != null)
+                        Logger.i(TAG, "Outdated Embedded plugin [${existing.config.id}] ${existing.config.name} (${existing.config.version} < ${embeddedConfig.version}), reinstalling");
+                    else
+                        Logger.i(TAG, "Embedded plugin nog installed [${embeddedConfig.id}] ${embeddedConfig.name} (${embeddedConfig.version}), installing");
                     installEmbeddedPlugin(context, embedded.value)
                 }
                 else if(existing != null && _isFirstEmbedUpdate) {

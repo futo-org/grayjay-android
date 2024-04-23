@@ -8,7 +8,8 @@
         "c0f315f9-0992-4508-a061-f2738724c331": "sources/twitch/TwitchConfig.json",
         "4a78c2ff-c20f-43ac-8f75-34515df1d320": "sources/kick/KickConfig.json",
         "aac9e9f0-24b5-11ee-be56-0242ac120002": "sources/patreon/PatreonConfig.json",
-        "9d703ff5-c556-4962-a990-4f000829cb87": "sources/nebula/NebulaConfig.json"
+        "9d703ff5-c556-4962-a990-4f000829cb87": "sources/nebula/NebulaConfig.json",
+        "cf8ea74d-ad9b-489e-a083-539b6aa8648c": "sources/bilibili/build/BiliBiliConfig.json"
     },
     "SOURCES_EMBEDDED_DEFAULT": [
         "35ae969a-a7db-11ed-afa1-0242ac120002"
