@@ -2231,11 +2231,11 @@ class VideoDetailView : ConstraintLayout {
             videoSourceHeight = 9;
         }
         val aspectRatio = videoSourceWidth.toDouble() / videoSourceHeight;
-        if(aspectRatio > 3) {
+        if(aspectRatio > 2.38) {
             videoSourceWidth = 16;
             videoSourceHeight = 9;
         }
-        else if(aspectRatio < 0.3) {
+        else if(aspectRatio < 0.43) {
             videoSourceHeight = 16;
             videoSourceWidth = 9;
         }
