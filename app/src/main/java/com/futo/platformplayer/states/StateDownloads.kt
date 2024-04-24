@@ -456,6 +456,18 @@ class StateDownloads {
                 }
             }
         }
+
+        try {
+            val currentDownloads = _downloaded.getItems().map { it.url }.toHashSet();
+            val exporting = _exporting.findItems { !currentDownloads.contains(it.videoLocal.url) };
+            for (export in exporting)
+                _exporting.delete(export);
+        }
+        catch(ex: Throwable) {
+            Logger.e(TAG, "Failed to delete dangling export:", ex);
+            UIDialogs.toast("Failed to delete dangling export:\n" + ex);
+        }
+
         return Pair(totalDeletedCount, totalDeleted);
     }
 
