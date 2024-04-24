@@ -48,6 +48,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
+import com.futo.polycentric.core.ApiMethods
 import com.google.gson.JsonParser
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.*
@@ -154,6 +155,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     constructor() : super() {
+        ApiMethods.UserAgent = "Grayjay Android (${BuildConfig.VERSION_CODE})";
+
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             val writer = StringWriter();
 
