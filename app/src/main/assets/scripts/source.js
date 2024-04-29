@@ -357,6 +357,15 @@ class AudioUrlSource {
             this.requestModifier = obj.requestModifier;
     }
 }
+class AudioUrlWidevineSource extends AudioUrlSource {
+    constructor(obj) {
+        super(obj);
+        this.plugin_type = "AudioUrlWidevineSource";
+
+        this.bearerToken = obj.bearerToken;
+        this.licenseUri = obj.licenseUri;
+    }
+}
 class AudioUrlRangeSource extends AudioUrlSource {
     constructor(obj) {
         super(obj);
