@@ -99,7 +99,7 @@ class ContentSearchResultsFragment : MainFragment() {
             .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
             .exception<Throwable> {
                 Logger.w(TAG, "Failed to load results.", it);
-                UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
+                UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() }, null, fragment);
             }
 
             setPreviewsEnabled(Settings.instance.search.previewFeedItems);

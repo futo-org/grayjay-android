@@ -571,18 +571,22 @@ class StateApp {
         StateAnnouncement.instance.deleteAnnouncement("plugin-update")
 
         scopeOrNull?.launch(Dispatchers.IO) {
-            val updateAvailable = StatePlatform.instance.checkForUpdates()
+            val updateAvailable = StatePlugins.instance.checkForUpdates()
 
             withContext(Dispatchers.Main) {
                 if (updateAvailable.isNotEmpty()) {
                     UIDialogs.appToast(
                         ToastView.Toast(updateAvailable
-                            .map { " - " + it.name }
+                            .map { " - " + it.first.name }
                             .joinToString("\n"),
                             true,
                             null,
                             "Plugin updates available"
                         ));
+
+                    for(update in updateAvailable)
+                        if(StatePlatform.instance.isClientEnabled(update.first.id))
+                            UIDialogs.showPluginUpdateDialog(context, update.first, update.second);
                 }
             }
         }

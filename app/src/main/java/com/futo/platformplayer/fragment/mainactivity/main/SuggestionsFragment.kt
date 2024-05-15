@@ -40,7 +40,7 @@ class SuggestionsFragment : MainFragment {
     .success { suggestions -> updateSuggestions(suggestions, false) }
     .exception<Throwable> {
         Logger.w(ChannelFragment.TAG, "Failed to load suggestions.", it);
-        UIDialogs.showGeneralRetryErrorDialog(requireContext(), it.message ?: "", it, { loadSuggestions() });
+        UIDialogs.showGeneralRetryErrorDialog(requireContext(), it.message ?: "", it, { loadSuggestions() }, null, this);
     };
 
     constructor(): super() {

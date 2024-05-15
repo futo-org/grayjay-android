@@ -489,6 +489,8 @@
     <string name="visibility">Visibility</string>
     <string name="check_for_updates_setting">Check for updates</string>
     <string name="check_for_updates_setting_description">If a plugin should be checked for updates on startup</string>
+    <string name="automatic_update_setting">Automatic Update</string>
+    <string name="automatic_update_setting_description">Update automatically on boot if no permissions changed and plugin is enabled</string>
     <string name="allow_developer_submit">Allow Developer Submissions</string>
     <string name="allow_developer_submit_description">Allows the developer to send data to their server, be careful as this might include sensitive data.</string>
     <string name="allow_developer_submit_warning">Make sure you trust the developer. They may gain access to sensitive data. Only enable this when you are trying to help the developer fix a bug.</string>

@@ -152,7 +152,7 @@ class ChannelFragment : MainFragment() {
                 }
                 .exception<Throwable> {
                     Logger.e(TAG, "Failed to load channel.", it);
-                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadChannel() });
+                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadChannel() }, null, fragment);
                 }
 
             val tabs: TabLayout = findViewById(R.id.tabs);

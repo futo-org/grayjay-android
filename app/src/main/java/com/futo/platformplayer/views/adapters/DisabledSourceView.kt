@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 
 class DisabledSourceView : LinearLayout {
     private val _root: LinearLayout;
@@ -37,7 +38,7 @@ class DisabledSourceView : LinearLayout {
 
         _textSource.text = client.name;
 
-        if (client is JSClient && StatePlatform.instance.hasUpdateAvailable(client.config)) {
+        if (client is JSClient && StatePlugins.instance.hasUpdateAvailable(client.config)) {
             _textSourceSubtitle.text = context.getString(R.string.update_available_exclamation)
             _textSourceSubtitle.setTextColor(context.getColor(R.color.light_blue_400))
             _textSourceSubtitle.typeface = resources.getFont(R.font.inter_regular)

@@ -224,7 +224,7 @@ class AddSourceActivity : AppCompatActivity() {
         val isNew = !StatePlatform.instance.getAvailableClients().any { it.id == config.id };
         StatePlugins.instance.installPlugin(this, lifecycleScope, config, script) {
             if(it) {
-                StatePlatform.instance.clearUpdateAvailable(config)
+                StatePlugins.instance.clearUpdateAvailable(config)
                 if(isNew)
                     lifecycleScope.launch {
                         StatePlatform.instance.enableClient(listOf(config.id));

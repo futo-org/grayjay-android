@@ -316,7 +316,7 @@ class PackageHttp: V8Package {
             return result
         }
 
-        /*private fun logRequest(method: String, url: String, headers: Map<String, String> = HashMap(), body: String?) {
+        private fun logRequest(method: String, url: String, headers: Map<String, String> = HashMap(), body: String?) {
             Logger.v(TAG) {
                 val stringBuilder = StringBuilder();
                 stringBuilder.appendLine("HTTP request (useAuth = )");
@@ -333,7 +333,7 @@ class PackageHttp: V8Package {
 
                 return@v stringBuilder.toString();
             };
-        }*/
+        }
 
         /*private fun logResponse(method: String, url: String, responseCode: Int? = null, responseHeaders: Map<String, List<String>> = HashMap(), responseBody: String? = null) {
             Logger.v(TAG) {

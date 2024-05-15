@@ -69,7 +69,7 @@ class PlaylistSearchResultsFragment : MainFragment() {
                 .success { loadedResult(it); }
                 .exception<Throwable> {
                     Logger.w(ChannelFragment.TAG, "Failed to load results.", it);
-                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() });
+                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults() }, null, fragment);
                 }
         }
 

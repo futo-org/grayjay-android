@@ -43,6 +43,7 @@ class StatePlugins {
     private var _embeddedSourcesDefault: List<String>? = null
     private var _sourcesUnderConstruction: Map<String, ImageVariable>? = null
 
+    private var _updatesAvailableMap: HashSet<String> = hashSetOf();
 
     fun getPluginIconOrNull(id: String): ImageVariable? {
         if(iconsDir.hasIcon(id))
@@ -54,6 +55,70 @@ class StatePlugins {
         _plugins = FragmentedStorage.storeJson<SourcePluginDescriptor>("plugins")
             .load();
     }
+
+
+    suspend fun checkForUpdates(): List<Pair<SourcePluginConfig, SourcePluginConfig>> = withContext(Dispatchers.IO) {
+        var configs = mutableListOf<Pair<SourcePluginConfig, SourcePluginConfig>>()
+        val updatesAvailableFor = hashSetOf<String>()
+        for (availableClient in StatePlatform.instance.getAvailableClients().filter { it is JSClient && it.descriptor.appSettings.checkForUpdates }) {
+            if (availableClient !is JSClient) {
+                continue
+            }
+
+            val newConfig = checkForUpdates(availableClient.config);
+            if (newConfig != null) {
+                configs.add(Pair(availableClient.config, newConfig));
+                updatesAvailableFor.add(availableClient.config.id)
+            }
+        }
+
+        _updatesAvailableMap = updatesAvailableFor
+        return@withContext configs;
+    }
+    private suspend fun checkForUpdates(c: SourcePluginConfig): SourcePluginConfig? = withContext(Dispatchers.IO) {
+        val sourceUrl = c.sourceUrl ?: return@withContext null;
+
+        Logger.i(TAG, "Check for source updates '${c.name}'.");
+        try {
+            val client = ManagedHttpClient();
+            val response = client.get(sourceUrl);
+            Logger.i(TAG, "Downloading source config '$sourceUrl'.");
+
+            if (!response.isOk || response.body == null) {
+                return@withContext null;
+            }
+
+            val configJson = response.body.string();
+            Logger.i(TAG, "Downloaded source config ($sourceUrl):\n${configJson}");
+
+            val config = SourcePluginConfig.fromJson(configJson);
+            if (config.version <= c.version) {
+                return@withContext null;
+            }
+
+            Logger.i(TAG, "Update is available (config.version=${config.version}, source.config.version=${c.version}).");
+            return@withContext config;
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to check for updates.", e);
+            return@withContext null;
+        }
+    }
+    fun hasUpdateAvailable(c: SourcePluginConfig): Boolean {
+        val updatesAvailableMap = _updatesAvailableMap
+        synchronized(updatesAvailableMap) {
+            return updatesAvailableMap.contains(c.id)
+        }
+    }
+    fun clearUpdateAvailable(c: SourcePluginConfig) {
+        val updatesAvailableMap = _updatesAvailableMap
+        synchronized(updatesAvailableMap) {
+            updatesAvailableMap.remove(c.id)
+        }
+    }
+
+
+
+
 
     fun loginPlugin(context: Context, id: String, afterLogin: ()->Unit): Boolean {
         val descriptor = getPlugin(id) ?: return false;
@@ -351,6 +416,49 @@ class StatePlugins {
                 UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.DANGEROUS));
         }
         else verifyCanInstall();
+    }
+
+    fun installPluginBackground(context: Context, scope: CoroutineScope, config: SourcePluginConfig, script: String, onProgress: (text: String, progress: Double)->Unit, onConcluded: (ex: Throwable?)->Unit) {
+        scope.launch(Dispatchers.IO) {
+            val client = ManagedHttpClient();
+            try {
+                withContext(Dispatchers.Main) {
+                    onProgress.invoke("Validating script", 0.25);
+                }
+
+                val tempDescriptor = SourcePluginDescriptor(config);
+                val plugin = JSClient(context, tempDescriptor, null, script);
+                plugin.validate();
+
+                withContext(Dispatchers.Main) {
+                    onProgress.invoke("Downloading Icon", 0.5);
+                }
+
+                val icon = config.absoluteIconUrl?.let { absIconUrl ->
+                    withContext(Dispatchers.Main) {
+                        onProgress.invoke("Saving plugin", 0.75);
+                    }
+                    val iconResp = client.get(absIconUrl);
+                    if(iconResp.isOk)
+                        return@let iconResp.body?.byteStream()?.use { it.readBytes() };
+                    return@let null;
+                }
+                val installEx = StatePlugins.instance.createPlugin(config, script, icon, true);
+                if(installEx != null)
+                    throw installEx;
+                StatePlatform.instance.updateAvailableClients(context);
+
+                withContext(Dispatchers.Main) {
+                    onProgress.invoke("Finished", 1.0)
+                    onConcluded.invoke(null);
+                }
+            } catch (ex: Exception) {
+                Logger.e(TAG, ex.message ?: "null", ex);
+                withContext(Dispatchers.Main) {
+                    onConcluded.invoke(ex);
+                }
+            }
+        }
     }
 
     fun getPlugin(id: String): SourcePluginDescriptor? {

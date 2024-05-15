@@ -2476,7 +2476,7 @@ class VideoDetailView : ConstraintLayout {
             Logger.w(TAG, "exception<ScriptImplementationException>", it)
 
             if (!nextVideo()) {
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, ::fetchVideo, null, fragment);
             } else {
                 StateAnnouncement.instance.registerAnnouncement(video?.id?.value + "_Q_INVALIDVIDEO", context.getString(R.string.invalid_video), context.getString(
                                     R.string.there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped).replace("{videoName}", video?.name ?: "").replace("{authorName}", video?.author?.name ?: ""), AnnouncementType.SESSION)
@@ -2512,7 +2512,7 @@ class VideoDetailView : ConstraintLayout {
                 _retryJob = null;
                 _liveTryJob?.cancel();
                 _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, ::fetchVideo, null, fragment);
             }
         }
         .exception<Throwable> {
@@ -2524,7 +2524,7 @@ class VideoDetailView : ConstraintLayout {
                 _retryJob = null;
                 _liveTryJob?.cancel();
                 _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 

@@ -262,7 +262,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, "Failed to load channel.", it);
                 if(it !is CancellationException)
-                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults(true) });
+                    UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadResults(true) }, null, fragment);
                 else {
                     finishRefreshLayoutLoader();
                     setLoading(false);

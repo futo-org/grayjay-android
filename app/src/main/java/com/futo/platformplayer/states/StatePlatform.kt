@@ -80,7 +80,6 @@ class StatePlatform {
     private val _clientsLock = Object();
     private val _availableClients : ArrayList<IPlatformClient> = ArrayList();
     private val _enabledClients : ArrayList<IPlatformClient> = ArrayList();
-    private var _updatesAvailableMap: HashSet<String> = hashSetOf();
 
     //ClientPools are used to isolate plugin usage of certain components from others
     //This prevents for example a background task like subscriptions from blocking a user from opening a video
@@ -925,66 +924,7 @@ class StatePlatform {
         }
     }
 
-    fun hasUpdateAvailable(c: SourcePluginConfig): Boolean {
-        val updatesAvailableMap = _updatesAvailableMap
-        synchronized(updatesAvailableMap) {
-            return updatesAvailableMap.contains(c.id)
-        }
-    }
 
-    suspend fun checkForUpdates(): List<SourcePluginConfig> = withContext(Dispatchers.IO) {
-        var configs = mutableListOf<SourcePluginConfig>()
-        val updatesAvailableFor = hashSetOf<String>()
-        for (availableClient in getAvailableClients().filter { it is JSClient && it.descriptor.appSettings.checkForUpdates }) {
-            if (availableClient !is JSClient) {
-                continue
-            }
-
-            if (checkForUpdates(availableClient.config)) {
-                configs.add(availableClient.config);
-                updatesAvailableFor.add(availableClient.config.id)
-            }
-        }
-
-        _updatesAvailableMap = updatesAvailableFor
-        return@withContext configs;
-    }
-
-    fun clearUpdateAvailable(c: SourcePluginConfig) {
-        val updatesAvailableMap = _updatesAvailableMap
-        synchronized(updatesAvailableMap) {
-            updatesAvailableMap.remove(c.id)
-        }
-    }
-
-    private suspend fun checkForUpdates(c: SourcePluginConfig): Boolean = withContext(Dispatchers.IO) {
-        val sourceUrl = c.sourceUrl ?: return@withContext false;
-
-        Logger.i(TAG, "Check for source updates '${c.name}'.");
-        try {
-            val client = ManagedHttpClient();
-            val response = client.get(sourceUrl);
-            Logger.i(TAG, "Downloading source config '$sourceUrl'.");
-
-            if (!response.isOk || response.body == null) {
-                return@withContext false;
-            }
-
-            val configJson = response.body.string();
-            Logger.i(TAG, "Downloaded source config ($sourceUrl):\n${configJson}");
-
-            val config = SourcePluginConfig.fromJson(configJson);
-            if (config.version <= c.version) {
-                return@withContext false;
-            }
-
-            Logger.i(TAG, "Update is available (config.version=${config.version}, source.config.version=${c.version}).");
-            return@withContext true;
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to check for updates.", e);
-            return@withContext false;
-        }
-    }
 
     companion object {
         private var _instance : StatePlatform? = null;

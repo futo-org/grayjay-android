@@ -162,7 +162,7 @@ class PostDetailFragment : MainFragment {
             .success { setPostDetails(it) }
             .exception<Throwable> {
                 Logger.w(ChannelFragment.TAG, context.getString(R.string.failed_to_load_post), it);
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost, null, _fragment);
             } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
         private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(StateApp.instance.scopeGetter, { PolycentricCache.instance.getProfileAsync(it) })

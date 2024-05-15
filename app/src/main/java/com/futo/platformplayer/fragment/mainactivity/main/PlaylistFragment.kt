@@ -146,7 +146,7 @@ class PlaylistFragment : MainFragment() {
                 .exception<Throwable> {
                     Logger.w(TAG, "Failed to load playlist.", it);
                     val c = context ?: return@exception;
-                    UIDialogs.showGeneralRetryErrorDialog(c, context.getString(R.string.failed_to_load_playlist), it, ::fetchPlaylist);
+                    UIDialogs.showGeneralRetryErrorDialog(c, context.getString(R.string.failed_to_load_playlist), it, ::fetchPlaylist, null, fragment);
                 };
         }
 

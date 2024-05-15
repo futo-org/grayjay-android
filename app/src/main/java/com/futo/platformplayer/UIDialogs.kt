@@ -18,6 +18,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.AutoUpdateDialog
 import com.futo.platformplayer.dialogs.AutomaticBackupDialog
@@ -31,12 +32,17 @@ import com.futo.platformplayer.dialogs.ConnectedCastingDialog
 import com.futo.platformplayer.dialogs.ImportDialog
 import com.futo.platformplayer.dialogs.ImportOptionsDialog
 import com.futo.platformplayer.dialogs.MigrateDialog
+import com.futo.platformplayer.dialogs.PluginUpdateDialog
 import com.futo.platformplayer.dialogs.ProgressDialog
 import com.futo.platformplayer.engine.exceptions.PluginException
+import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.CoroutineScope
@@ -184,6 +190,14 @@ class UIDialogs {
             dialog.show();
         }
 
+        fun showPluginUpdateDialog(context: Context, oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig) {
+            val dialog = PluginUpdateDialog(context, oldConfig, newConfig);
+            registerDialogOpened(dialog);
+            dialog.setOnDismissListener { registerDialogClosed(dialog) };
+            dialog.show();
+        }
+
+
         fun showDialog(context: Context, icon: Int, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action) {
             val builder = AlertDialog.Builder(context);
             val view = LayoutInflater.from(context).inflate(R.layout.dialog_multi_button, null);
@@ -269,22 +283,48 @@ class UIDialogs {
                 }, UIDialogs.ActionStyle.PRIMARY)
             );
         }
-        fun showGeneralRetryErrorDialog(context: Context, msg: String, ex: Throwable? = null, retryAction: (() -> Unit)? = null, closeAction: (() -> Unit)? = null) {
+        fun showGeneralRetryErrorDialog(context: Context, msg: String, ex: Throwable? = null, retryAction: (() -> Unit)? = null, closeAction: (() -> Unit)? = null, mainFragment: MainFragment? = null) {
+            val pluginConfig = if(ex is PluginException) ex.config else null;
             val pluginInfo = if(ex is PluginException)
                 "\nPlugin [${ex.config.name}]" else "";
-            showDialog(context,
-                R.drawable.ic_error_pred,
-                "${msg}${pluginInfo}",
-                (if(ex != null ) "${ex.message}" else ""),
-                if(ex is PluginException) ex.code else null,
-                0,
-                UIDialogs.Action(context.getString(R.string.retry), {
-                    retryAction?.invoke();
-                }, UIDialogs.ActionStyle.PRIMARY),
-                UIDialogs.Action(context.getString(R.string.close), {
-                    closeAction?.invoke()
-                }, UIDialogs.ActionStyle.NONE)
-            );
+
+            var exMsg = if(ex != null ) "${ex.message}" else "";
+            if(pluginConfig != null && pluginConfig is SourcePluginConfig && StatePlugins.instance.hasUpdateAvailable(pluginConfig))
+                exMsg += "\n\nAn update is available"
+
+            if(mainFragment != null && pluginConfig != null && pluginConfig is SourcePluginConfig && StatePlugins.instance.hasUpdateAvailable(pluginConfig))
+                showDialog(context,
+                    R.drawable.ic_error_pred,
+                    "${msg}${pluginInfo}",
+                    exMsg,
+                    if(ex is PluginException) ex.code else null,
+                    1,
+                    UIDialogs.Action(context.getString(R.string.update), {
+                        mainFragment.navigate<SourceDetailFragment>(pluginConfig);
+                        if(mainFragment is VideoDetailFragment)
+                            mainFragment.minimizeVideoDetail();
+                    }, UIDialogs.ActionStyle.ACCENT),
+                    UIDialogs.Action(context.getString(R.string.close), {
+                        closeAction?.invoke()
+                    }, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action(context.getString(R.string.retry), {
+                        retryAction?.invoke();
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
+            else
+                showDialog(context,
+                    R.drawable.ic_error_pred,
+                    "${msg}${pluginInfo}",
+                    exMsg,
+                    if(ex is PluginException) ex.code else null,
+                    0,
+                    UIDialogs.Action(context.getString(R.string.close), {
+                        closeAction?.invoke()
+                    }, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action(context.getString(R.string.retry), {
+                        retryAction?.invoke();
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
         }
 
         fun showSingleButtonDialog(context: Context, icon: Int, text: String, buttonText: String, action: (() -> Unit)) {

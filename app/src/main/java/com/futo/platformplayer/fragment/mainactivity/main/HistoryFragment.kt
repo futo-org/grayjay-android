@@ -174,7 +174,7 @@ class HistoryFragment : MainFragment() {
                 Logger.w(TAG, "Failed to load next page.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
                     loadNextPage();
-                });
+                }, null, fragment);
             };
         }
 

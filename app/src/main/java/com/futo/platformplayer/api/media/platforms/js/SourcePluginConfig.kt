@@ -80,6 +80,41 @@ class SourcePluginConfig(
         return _allowUrlsLowerVal!!;
     };
 
+    fun isLowRiskUpdate(oldScript: String, newConfig: SourcePluginConfig, newScript: String): Boolean{
+
+        //All urls should already be allowed
+        for(url in newConfig.allowUrls) {
+            if(!allowUrls.contains(url))
+                return false;
+        }
+        //All packages should already be allowed
+        for(pack in newConfig.packages) {
+            if(!packages.contains(pack))
+                return false;
+        }
+        //Developer Submit Url should be same or empty
+        if(!newConfig.developerSubmitUrl.isNullOrEmpty() && developerSubmitUrl != newConfig.developerSubmitUrl)
+            return false;
+
+        //Should have a public key
+        if(scriptPublicKey.isNullOrEmpty() || scriptSignature.isNullOrEmpty())
+            return false;
+
+        //Should be same public key
+        if(scriptPublicKey != newConfig.scriptPublicKey)
+            return false;
+
+        //Old signature should be valid
+        if(!validate(oldScript))
+            return false;
+
+        //New signature should be valid
+        if(!newConfig.validate(newScript))
+            return false;
+
+        return true;
+    }
+
     fun getWarnings(scriptToCheck: String? = null) : List<Pair<String,String>> {
         val list = mutableListOf<Pair<String,String>>();
 

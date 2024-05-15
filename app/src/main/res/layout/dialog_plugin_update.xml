@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="@color/gray_1d">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="30dp"
+        android:paddingBottom="30dp">
+
+        <FrameLayout
+            android:id="@+id/dialog_ui_choice_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible">
+            <ImageView
+                android:id="@+id/icon_plugin"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_sources" />
+
+        </FrameLayout>
+        <FrameLayout
+            android:id="@+id/dialog_ui_risk_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_warning_yellow" />
+
+        </FrameLayout>
+        <FrameLayout
+            android:id="@+id/dialog_ui_progress_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/update_spinner"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:srcCompat="@drawable/ic_update_animated"
+                android:visibility="visible" />
+
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Plugin Update"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_extra_light"
+            android:layout_marginTop="15dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+        <TextView
+            android:id="@+id/text_plugin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Some Plugin Name"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp" />
+
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_choice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="A new update is available.\nWould you like to update this plugin?"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Updates may be critical to functionality"
+                android:textSize="13sp"
+                android:textColor="@color/pastel_red"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/button_cancel_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cancel"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/colorPrimary"
+                    android:background="@color/transparent" />
+
+                <LinearLayout
+                    android:id="@+id/button_update"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:layout_marginEnd="28dp"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Update"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:id="@+id/text_progress"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="This plugin has modified its permissions"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_risk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="This plugin has modified its permissions"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Make sure you read the installation screen"
+                android:textSize="13sp"
+                android:textColor="@color/pastel_red"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/button_cancel_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cancel"
+                    android:textSize="14dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/colorPrimary"
+                    android:background="@color/transparent" />
+
+                <LinearLayout
+                    android:id="@+id/button_install"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:layout_marginEnd="28dp"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reinstall"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/dialog_ui_bottom_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/text_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text=""
+                android:textSize="13sp"
+                android:textColor="@color/pastel_red"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <TextView
+                android:id="@+id/text_result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Succesfully updated plugin."
+                android:textSize="13sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <LinearLayout
+                    android:id="@+id/button_ok"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_button_primary"
+                    android:layout_marginEnd="28dp"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ok"
+                        android:textSize="14dp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/inter_regular"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+
+    </LinearLayout>
+</LinearLayout>
