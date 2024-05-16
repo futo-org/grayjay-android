@@ -101,6 +101,11 @@ class SourceDetailFragment : MainFragment() {
                 loadConfig(parameter);
                 updateSourceViews();
             }
+            else if(parameter is UpdatePluginAction) {
+                loadConfig(parameter.config);
+                updateSourceViews();
+                checkForUpdatesSource();
+            }
 
             setLoading(false);
         }
@@ -566,5 +571,9 @@ class SourceDetailFragment : MainFragment() {
     companion object {
         const val TAG = "SourceDetailFragment";
         fun newInstance() = SourceDetailFragment().apply {}
+    }
+
+    class UpdatePluginAction(val config: SourcePluginConfig) {
+
     }
 }

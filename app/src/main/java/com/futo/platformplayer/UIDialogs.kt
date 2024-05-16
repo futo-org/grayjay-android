@@ -300,7 +300,7 @@ class UIDialogs {
                     if(ex is PluginException) ex.code else null,
                     1,
                     UIDialogs.Action(context.getString(R.string.update), {
-                        mainFragment.navigate<SourceDetailFragment>(pluginConfig);
+                        mainFragment.navigate<SourceDetailFragment>(SourceDetailFragment.UpdatePluginAction(pluginConfig));
                         if(mainFragment is VideoDetailFragment)
                             mainFragment.minimizeVideoDetail();
                     }, UIDialogs.ActionStyle.ACCENT),
