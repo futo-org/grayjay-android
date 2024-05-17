@@ -519,7 +519,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
 
-        val httpRequestHeaders = mapOf("Authorization" to "Bearer " + audioSource.getBearerToken())
+        val httpRequestHeaders = mapOf("Authorization" to "Bearer " + audioSource.bearerToken)
         val provider = DefaultDrmSessionManagerProvider()
         provider.setDrmHttpDataSourceFactory(dataSource)
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
@@ -528,7 +528,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 MediaItem.Builder()
                     .setUri(audioSource.getAudioUrl()).setDrmConfiguration(
                         MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                            .setLicenseUri(audioSource.getLicenseUri())
+                            .setLicenseUri(audioSource.licenseUri)
                             .setMultiSession(true)
                             .setLicenseRequestHeaders(httpRequestHeaders)
                             .build()
