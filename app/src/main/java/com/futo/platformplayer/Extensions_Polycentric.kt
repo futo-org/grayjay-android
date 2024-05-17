@@ -50,12 +50,9 @@ fun Protocol.Claim.resolveChannelUrls(): List<String> {
 
 suspend fun ProcessHandle.fullyBackfillServersAnnounceExceptions() {
     val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
-    if (!systemState.servers.contains(PolycentricCache.STAGING_SERVER)) {
-        removeServer(PolycentricCache.STAGING_SERVER)
-    }
-
     if (!systemState.servers.contains(PolycentricCache.SERVER)) {
-        removeServer(PolycentricCache.SERVER)
+        Logger.w("Backfill", "Polycentric prod server not added, adding it.")
+        addServer(PolycentricCache.SERVER)
     }
 
     val exceptions = fullyBackfillServers()
