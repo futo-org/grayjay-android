@@ -82,6 +82,9 @@ class SourcePluginConfig(
     };
 
     fun isLowRiskUpdate(oldScript: String, newConfig: SourcePluginConfig, newScript: String): Boolean{
+        //New allow header access
+        if(!allowAllHttpHeaderAccess && newConfig.allowAllHttpHeaderAccess)
+            return false;
 
         //All urls should already be allowed
         for(url in newConfig.allowUrls) {
