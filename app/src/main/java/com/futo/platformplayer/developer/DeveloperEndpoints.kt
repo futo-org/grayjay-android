@@ -124,6 +124,8 @@ class DeveloperEndpoints(private val context: Context) {
     //val depVuetifyCss = StateAssets.readAsset(context, "devportal/dependencies/vuetify.min.css", true);
     @HttpGET("/dependencies/FutoMainLogo.svg", "image/svg+xml")
     val depFutoLogo = StateAssets.readAsset(context, "devportal/dependencies/FutoMainLogo.svg");
+    @HttpGET("/favicon.svg", "image/svg+xml")
+    val favicon = StateAssets.readAsset(context, "devportal/dependencies/favicon.svg");
 
     @HttpGET("/reference_plugin.d.ts", "text/plain")
     fun devSourceTSWithRefs(httpContext: HttpContext) {
