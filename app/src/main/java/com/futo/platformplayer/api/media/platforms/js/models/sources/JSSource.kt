@@ -66,7 +66,7 @@ abstract class JSSource {
         const val TYPE_VIDEO_WITH_METADATA = "VideoUrlRangeSource";
         const val TYPE_DASH = "DashSource";
         const val TYPE_HLS = "HLSSource";
-        private const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
+        const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
 
         fun fromV8VideoNullable(plugin: JSClient, obj: V8Value?) : IVideoSource? = obj.orNull { fromV8Video(plugin, it as V8ValueObject) };
         fun fromV8Video(plugin: JSClient, obj: V8ValueObject) : IVideoSource {
