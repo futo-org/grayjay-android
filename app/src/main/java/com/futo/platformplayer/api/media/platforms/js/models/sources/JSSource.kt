@@ -66,6 +66,7 @@ abstract class JSSource {
         const val TYPE_VIDEO_WITH_METADATA = "VideoUrlRangeSource";
         const val TYPE_DASH = "DashSource";
         const val TYPE_HLS = "HLSSource";
+        const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
 
         fun fromV8VideoNullable(plugin: JSClient, obj: V8Value?) : IVideoSource? = obj.orNull { fromV8Video(plugin, it as V8ValueObject) };
         fun fromV8Video(plugin: JSClient, obj: V8ValueObject) : IVideoSource {
@@ -88,6 +89,7 @@ abstract class JSSource {
             return when(type) {
                 TYPE_HLS -> JSHLSManifestAudioSource.fromV8HLS(plugin, obj);
                 TYPE_AUDIOURL -> JSAudioUrlSource(plugin, obj);
+                TYPE_AUDIOURL_WIDEVINE -> JSAudioUrlWidevineSource(plugin, obj);
                 TYPE_AUDIO_WITH_METADATA -> JSAudioUrlRangeSource(plugin, obj);
                 else -> throw NotImplementedError("Unknown type ${type}");
             }

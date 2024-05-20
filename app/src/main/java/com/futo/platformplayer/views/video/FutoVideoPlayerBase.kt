@@ -16,6 +16,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
@@ -27,6 +28,7 @@ import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
@@ -389,6 +391,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is LocalAudioSource -> swapAudioSourceLocal(audioSource);
             is JSAudioUrlRangeSource -> swapAudioSourceUrlRange(audioSource);
             is JSHLSManifestAudioSource -> swapAudioSourceHLS(audioSource);
+            is IAudioUrlWidevineSource -> swapAudioSourceUrlWidevine(audioSource)
             is IAudioUrlSource -> swapAudioSourceUrl(audioSource);
             null -> _lastAudioMediaSource = null;
             else -> throw IllegalArgumentException("Unsupported video source [${audioSource.javaClass.simpleName}]");
@@ -506,6 +509,31 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         _lastAudioMediaSource = HlsMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(audioSource.url));
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun swapAudioSourceUrlWidevine(audioSource: IAudioUrlWidevineSource) {
+        Logger.i(TAG, "Loading AudioSource [UrlWidevine]")
+        val dataSource = if (audioSource is JSSource && audioSource.hasRequestModifier)
+            audioSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
+
+        val httpRequestHeaders = mapOf("Authorization" to "Bearer " + audioSource.bearerToken)
+        val provider = DefaultDrmSessionManagerProvider()
+        provider.setDrmHttpDataSourceFactory(dataSource)
+        _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
+            .setDrmSessionManagerProvider(provider)
+            .createMediaSource(
+                MediaItem.Builder()
+                    .setUri(audioSource.getAudioUrl()).setDrmConfiguration(
+                        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                            .setLicenseUri(audioSource.licenseUri)
+                            .setMultiSession(true)
+                            .setLicenseRequestHeaders(httpRequestHeaders)
+                            .build()
+                    ).build()
+            )
     }
 
 
