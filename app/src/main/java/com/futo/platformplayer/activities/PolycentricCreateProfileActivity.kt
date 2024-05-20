@@ -12,6 +12,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
@@ -77,7 +78,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                             Logger.e(TAG, "Failed to save process secret to secret storage.", e)
                         }
 
-                        processHandle.addServer("https://srv1-stg.polycentric.io");
+                        processHandle.addServer(PolycentricCache.SERVER);
                         processHandle.setUsername(username);
                         StatePolycentric.instance.setProcessHandle(processHandle);
                     } catch (e: Throwable) {

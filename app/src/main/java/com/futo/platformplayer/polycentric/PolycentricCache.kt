@@ -316,7 +316,6 @@ class PolycentricCache {
             .build();
 
         private const val TAG = "PolycentricCache"
-        const val STAGING_SERVER = "https://srv1-stg.polycentric.io"
         const val SERVER = "https://srv1-prod.polycentric.io"
         private var _instance: PolycentricCache? = null;
         private val CACHE_EXPIRATION_SECONDS = 60 * 5;
