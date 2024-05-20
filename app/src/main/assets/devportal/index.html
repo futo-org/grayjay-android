@@ -196,6 +196,79 @@
 				padding-top: 50px;
 				font-family: sans-serif;
 			}
+			.httpContainer {
+				position: relative;
+			}
+			.httpLine {
+			}
+			.httpLine .request {
+				height: 50px;
+				position: relative;
+				cursor: pointer;
+			}
+			.httpLine .request .status {
+				position: absolute;
+				left: 10px;
+				width: 40px;
+				top: 10px;
+				padding: 5px;
+				background-color: #333;
+				border-radius: 5px;
+				text-align: center;
+			}
+			.httpLine .request .status.error {
+				background-color: #880000;
+			}
+			.httpLine .request .status.success {
+				background-color: #008800;
+			}
+			.httpLine .request .status.warn {
+				background-color: #803500;
+			}
+			.httpLine .request .method {
+				position: absolute;
+				left: 55px;
+				top: 10px;
+				padding: 5px;
+				background-color: #333;
+				border-radius: 5px;
+				width: 50px;
+				text-align: center;
+			}
+			.httpLine .request .url {
+				position: absolute;
+				left: 110px;
+				top: 10px;
+				padding: 5px;
+				background-color: #333;
+				border-radius: 5px;
+			}
+			.httpLine .response {
+				background-color: #111;
+    			margin-left: 55px;
+    			border-radius: 6px;
+    			padding: 10px;
+			}
+			.httpLine .response .body{
+				white-space: pre-wrap;
+				font-family: monospace;
+				background-color: black;
+				padding: 10px;
+			}
+			.httpLine .response .headers {
+				margin: 10px;
+			}
+			.httpLine .response .headers .key {
+				display: inline-block;
+				font-weight: bold;
+				font-size: 14px;
+				color: #FFF;
+			}
+			.httpLine .response .headers .value {
+				display: inline-block;
+				font-size: 14px;
+				color: #AAA;
+			}
 		</style>
 	</head>
 	<body>
@@ -547,7 +620,62 @@
 						</v-card-text>
 						<v-card-actions>
 							<v-spacer></v-spacer>
-							<v-btn>Clear</v-btn>
+							<v-btn @click="Integration.logs = []">Clear</v-btn>
+						</v-card-actions>
+					</v-card>
+					<v-card style="margin: 20px;" v-if="Plugin.currentPlugin && Integration.httpExchanges">
+						<v-card-title>
+							Http Logs
+						</v-card-title>
+						</v-card-header>
+						<v-card-text>
+							<div style="position: absolute; top: 0px; right: 15px;">
+								<v-checkbox v-model="Integration.showHttpRequests" label="Show Http Requests"></v-checkbox>
+							</div>
+							<div class="httpContainer" v-if="Integration.showHttpRequests">
+								<div class="httpLine" v-for="exchange of Integration.httpExchanges">
+									<div class="request" @click="toggleHttpExchange(exchange)">
+										<div :class="[{ success: exchange.response.status < 300, warn: exchange.response.status >= 300 && exchange.response.status < 400, error: exchange.response.status >= 400 }, 'status']">
+											{{exchange.response.status}}
+										</div>
+										<div class="method">
+											{{exchange.request.method}}
+										</div>
+										<div class="url">
+											{{exchange.request.url}}
+										</div>
+									</div>
+									<div class="response" v-if="exchange.response.show">
+										<h2>Request Headers</h2>
+										<div class="headers">
+											<div class="header" v-for="(headerValue, header) in exchange.request.headers">
+												<div class="key">
+													{{header}}
+												</div>
+												<div class="value">
+													{{headerValue}}
+												</div>
+											</div>
+										</div>
+										<h2>Response</h2>
+										<div class="headers">
+											<div class="header" v-for="(headerValue, header) in exchange.response.headers">
+												<div class="key">
+													{{header}}
+												</div>
+												<div class="value">
+													{{headerValue}}
+												</div>
+											</div>
+										</div>
+										<div class="body">{{exchange.response.body}}</div>
+									</div>
+								</div>
+							</div>
+						</v-card-text>
+						<v-card-actions>
+							<v-spacer></v-spacer>
+							<v-btn v-if="Integration.showHttpRequests" @click="Integration.httpExchanges = []">Clear</v-btn>
 						</v-card-actions>
 					</v-card>
 				</div>
@@ -604,7 +732,9 @@
 				lastLogIndex: -1,
 				lastLogDevID: "",
 				logs: [],
-				lastInjectTime: ""
+				httpExchanges: [],
+				lastInjectTime: "",
+				showHttpRequests: false
 			},
 			Plugin: {
 				loadUsingTag: false,
@@ -688,6 +818,16 @@
 							});
 						}
 					});
+					if(this.Integration.showHttpRequests) {
+						getDevHttpExchanges((exchanges)=>{
+							Vue.nextTick(()=>{
+								for(i = 0; i < exchanges.length; i++) {
+									exchanges[i].response.show = false;
+									this.Integration.httpExchanges.unshift(exchanges[i]);
+								}
+							});
+						});
+					}
 				}
 				catch(ex) {
 					console.error("Failed update", ex);
@@ -970,6 +1110,9 @@
 			},
 			showTestResults(results) {
 			
+			},
+			toggleHttpExchange(exchange) {
+				exchange.response.show = !exchange.response.show;
 			},
 			copyClipboard(cpy) {
 				if(navigator.clipboard)

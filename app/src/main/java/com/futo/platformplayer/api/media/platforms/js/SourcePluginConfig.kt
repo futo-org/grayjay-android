@@ -46,7 +46,8 @@ class SourcePluginConfig(
     var enableInHome: Boolean = true,
     var supportedClaimTypes: List<Int> = listOf(),
     var primaryClaimFieldType: Int? = null,
-    var developerSubmitUrl: String? = null
+    var developerSubmitUrl: String? = null,
+    var allowAllHttpHeaderAccess: Boolean = false,
 ) : IV8PluginConfig {
 
     val absoluteIconUrl: String? get() = resolveAbsoluteUrl(iconUrl, sourceUrl);
@@ -143,6 +144,11 @@ class SourcePluginConfig(
             list.add(Pair(
                 "Unrestricted Web Access",
                 "This plugin requires access to all URLs, this may include malicious URLs."));
+        if(allowAllHttpHeaderAccess)
+            list.add(Pair(
+                "Unrestricted Http Header access",
+                "Allows this plugin to access all headers (including cookies and authorization headers) for unauthenticated requests."
+            ))
 
         return list;
     }

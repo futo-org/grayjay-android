@@ -9,6 +9,7 @@ import com.caoccao.javet.interop.V8Runtime
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
@@ -242,7 +243,8 @@ class PackageHttp: V8Package {
                     val resp = client.requestMethod(method, url, headers);
                     val responseBody = resp.body?.string();
                     //logResponse(method, url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers,
+                        _client !is JSHttpClient || _client.isLoggedIn || _package._config !is SourcePluginConfig || !_package._config.allowAllHttpHeaderAccess));
                 }
             };
         }
@@ -256,7 +258,8 @@ class PackageHttp: V8Package {
                     val resp = client.requestMethod(method, url, body, headers);
                     val responseBody = resp.body?.string();
                     //logResponse(method, url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers,
+                        _client !is JSHttpClient || _client.isLoggedIn || _package._config !is SourcePluginConfig || !_package._config.allowAllHttpHeaderAccess));
                 }
             };
         }
@@ -271,7 +274,8 @@ class PackageHttp: V8Package {
                     val resp = client.get(url, headers);
                     val responseBody = resp.body?.string();
                     //logResponse("GET", url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers,
+                        _client !is JSHttpClient || _client.isLoggedIn || _package._config !is SourcePluginConfig || !_package._config.allowAllHttpHeaderAccess));
                 }
             };
         }
@@ -285,7 +289,8 @@ class PackageHttp: V8Package {
                     val resp = client.post(url, body, headers);
                     val responseBody = resp.body?.string();
                     //logResponse("POST", url, resp.code, resp.headers, responseBody);
-                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers));
+                    return@catchHttp BridgeHttpResponse(resp.url, resp.code, responseBody, sanitizeResponseHeaders(resp.headers,
+                        _client !is JSHttpClient || _client.isLoggedIn || _package._config !is SourcePluginConfig || !_package._config.allowAllHttpHeaderAccess));
                 }
             };
         }
@@ -305,12 +310,25 @@ class PackageHttp: V8Package {
             }
         }
 
-        private fun sanitizeResponseHeaders(headers: Map<String, List<String>>?): Map<String, List<String>> {
+        private fun sanitizeResponseHeaders(headers: Map<String, List<String>>?, onlyWhitelisted: Boolean = false): Map<String, List<String>> {
             val result = mutableMapOf<String, List<String>>()
-            headers?.forEach { (header, values) ->
-                val lowerCaseHeader = header.lowercase()
-                if (WHITELISTED_RESPONSE_HEADERS.contains(lowerCaseHeader)) {
-                    result[lowerCaseHeader] = values
+            if(onlyWhitelisted)
+                headers?.forEach { (header, values) ->
+                    val lowerCaseHeader = header.lowercase()
+                    if (WHITELISTED_RESPONSE_HEADERS.contains(lowerCaseHeader)) {
+                        result[lowerCaseHeader] = values
+                    }
+                }
+            else {
+                headers?.forEach { (header, values) ->
+                    val lowerCaseHeader = header.lowercase()
+                    if(lowerCaseHeader == "set-cookie") {
+                        result[lowerCaseHeader] = values.filter{
+                            !it.lowercase().contains("httponly")
+                        };
+                    }
+                    else
+                        result[lowerCaseHeader] = values;
                 }
             }
             return result

@@ -19,6 +19,9 @@ class StateDeveloper {
 
     private var _devLogsIndex: Int = 0;
     private val _devLogs: MutableList<DevLog> = mutableListOf();
+    private val _devHttpExchanges: MutableList<DevHttpExchange> = mutableListOf();
+
+    var devProxy: DevProxySettings? = null;
 
     fun initializeDev(id: String) {
         currentDevID = id;
@@ -94,6 +97,21 @@ class StateDeveloper {
         }
     }
 
+    fun addDevHttpExchange(exchange: DevHttpExchange) {
+        synchronized(_devHttpExchanges) {
+            if(_devHttpExchanges.size > 15)
+                _devHttpExchanges.removeAt(0);
+            _devHttpExchanges.add(exchange);
+        }
+    }
+    fun getHttpExchangesAndClear(): List<DevHttpExchange> {
+        synchronized(_devHttpExchanges) {
+            val data = _devHttpExchanges.toList();
+            _devHttpExchanges.clear();
+            return data;
+        }
+    }
+
     fun setDevClientSettings(settings: HashMap<String, String?>) {
         val client = StatePlatform.instance.getDevClient();
         client?.let {
@@ -138,4 +156,12 @@ class StateDeveloper {
 
     @kotlinx.serialization.Serializable
     data class DevLog(val id: Int, val devId: String, val type: String, val log: String);
+
+    @kotlinx.serialization.Serializable
+    data class DevHttpRequest(val method: String, val url: String, val headers: Map<String, String>, val body: String, val status: Int = 0);
+    @kotlinx.serialization.Serializable
+    data class DevHttpExchange(val request: DevHttpRequest, val response: DevHttpRequest);
+
+    @kotlinx.serialization.Serializable
+    data class DevProxySettings(val url: String, val port: Int)
 }

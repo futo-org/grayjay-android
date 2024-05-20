@@ -2,14 +2,22 @@ package com.futo.platformplayer.api.media.platforms.js.internal
 
 import android.net.Uri
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequest
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
+import com.futo.platformplayer.developer.DeveloperEndpoints
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.matchesDomain
+import com.futo.platformplayer.states.StateDeveloper
+import com.google.common.net.MediaType
+import okhttp3.OkHttpClient
+import okio.GzipSource
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.UUID
 
 class JSHttpClient : ManagedHttpClient {
@@ -28,7 +36,15 @@ class JSHttpClient : ManagedHttpClient {
     private var _currentCookieMap: HashMap<String, HashMap<String, String>>;
     private var _otherCookieMap: HashMap<String, HashMap<String, String>>;
 
-    constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, config: SourcePluginConfig? = null) : super() {
+    constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, config: SourcePluginConfig? = null) : super(
+            //Temporary ugly solution for DevPortal proxy support
+            (if(jsClient?.config?.id == StateDeveloper.DEV_ID && StateDeveloper.instance.devProxy != null)
+                OkHttpClient.Builder().proxy(Proxy(Proxy.Type.HTTP,
+                    InetSocketAddress(StateDeveloper.instance.devProxy!!.url, StateDeveloper.instance.devProxy!!.port)
+                ))
+            else
+                OkHttpClient.Builder())
+        ) {
         _jsClient = jsClient;
         _jsConfig = config;
         _auth = auth;
@@ -201,6 +217,16 @@ class JSHttpClient : ManagedHttpClient {
                 }
             }
         }
+
+        if(_jsClient is DevJSClient) {
+            //val peekBody = resp.peekBody(1000 * 1000).string();
+            StateDeveloper.instance.addDevHttpExchange(
+                StateDeveloper.DevHttpExchange(
+                    StateDeveloper.DevHttpRequest(resp.request.method, resp.request.url.toString(), mapOf(*resp.request.headers.map { Pair(it.first, it.second) }.toTypedArray()), ""),
+                    StateDeveloper.DevHttpRequest("RESP", resp.request.url.toString(), mapOf(*resp.headers.map { Pair(it.first, it.second) }.toTypedArray()), "", resp.code)
+                ));
+        }
+
         return resp;
     }
 

@@ -116,12 +116,6 @@ class DeveloperEndpoints(private val context: Context) {
     }
 
     //Dependencies
-    //@HttpGET("/dependencies/vue.js", "application/javascript")
-    //val depVue = StateAssets.readAsset(context, "devportal/dependencies/vue.js", true);
-    //@HttpGET("/dependencies/vuetify.js", "application/javascript")
-    //val depVuetify = StateAssets.readAsset(context, "devportal/dependencies/vuetify.js", true);
-    //@HttpGET("/dependencies/vuetify.min.css", "text/css")
-    //val depVuetifyCss = StateAssets.readAsset(context, "devportal/dependencies/vuetify.min.css", true);
     @HttpGET("/dependencies/FutoMainLogo.svg", "image/svg+xml")
     val depFutoLogo = StateAssets.readAsset(context, "devportal/dependencies/FutoMainLogo.svg");
     @HttpGET("/favicon.svg", "image/svg+xml")
@@ -450,12 +444,40 @@ class DeveloperEndpoints(private val context: Context) {
             context.respondCode(500, ex::class.simpleName + ":" + ex.message, "text/plain")
         }
     }
+    @HttpGET("/dev/setDevProxy")
+    fun devSetDevProxy(context: HttpContext) {
+        try {
+            val url = context.query.getOrDefault("url", "");
+            val port = context.query.getOrDefault("port", "");
+            if(url.isNullOrEmpty() || port.isNullOrEmpty() || port.toIntOrNull() == null)
+            {
+                StateDeveloper.instance.devProxy = null;
+                context.respondCode(400);
+                return;
+            }
+            StateDeveloper.instance.devProxy = StateDeveloper.DevProxySettings(url, port.toInt());
+            context.respondCode(200, "true", "application/json");
+        }
+        catch(ex: Exception) {
+            Logger.e("DeveloperEndpoints", ex.message, ex);
+            context.respondCode(500, ex::class.simpleName + ":" + ex.message, "text/plain")
+        }
+    }
 
     @HttpGET("/plugin/getDevLogs")
     fun pluginGetDevLogs(context: HttpContext) {
         try {
             val index = context.query.getOrDefault("index", "0").toInt();
             context.respondJson(200, StateDeveloper.instance.getLogs(index));
+        }
+        catch(ex: Exception) {
+            context.respondCode(500, ex.message ?: "", "text/plain")
+        }
+    }
+    @HttpGET("/plugin/getDevHttpExchanges")
+    fun pluginGetDevExchanges(context: HttpContext) {
+        try {
+            context.respondJson(200, StateDeveloper.instance.getHttpExchangesAndClear());
         }
         catch(ex: Exception) {
             context.respondCode(500, ex.message ?: "", "text/plain")

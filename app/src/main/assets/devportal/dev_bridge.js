@@ -262,6 +262,17 @@ function getDevLogs(lastIndex, cb) {
         .then(x=>x.json())
         .then(y=> cb && cb(y));
 }
+function getDevHttpExchanges(cb) {
+    fetch("/plugin/getDevHttpExchanges", {
+        timeout: 1000
+    })
+        .then(x=>x.json())
+        .then(y=> cb && cb(y));
+}
+function setDevHttpProxy(url, port) {
+    return fetch("/dev/setDevProxy?url=" + encodeURIComponent(url) + "&port=" + port)
+        .then(x=>x.json());
+}
 function sendFakeDevLog(devId, msg) {
     return syncGET("/plugin/fakeDevLog?devId=" + devId + "&msg=" + msg, {});
 }
