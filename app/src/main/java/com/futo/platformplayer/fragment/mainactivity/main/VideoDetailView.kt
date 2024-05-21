@@ -690,7 +690,7 @@ class VideoDetailView : ConstraintLayout {
             _lastAudioSource = null;
             _lastSubtitleSource = null;
             video = null;
-            _playbackTracker = null;
+            cleanupPlaybackTracker();
             Logger.i(TAG, "Keep screen on unset onClose")
             fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         };
@@ -1033,7 +1033,7 @@ class VideoDetailView : ConstraintLayout {
 
         _searchVideo = null;
         video = null;
-        _playbackTracker = null;
+        cleanupPlaybackTracker();
         _url = url;
         _videoResumePositionMilliseconds = resumeSeconds * 1000;
         _rating.visibility = View.GONE;
@@ -1071,7 +1071,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         this.video = null;
-        this._playbackTracker = null;
+        cleanupPlaybackTracker();
         _searchVideo = video;
         _videoResumePositionMilliseconds = resumeSeconds * 1000;
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
@@ -1206,7 +1206,7 @@ class VideoDetailView : ConstraintLayout {
         }
         this.videoLocal = videoLocal;
         this.video = video;
-        this._playbackTracker = null;
+        cleanupPlaybackTracker();
 
         if(video is JSVideoDetails) {
             val me = this;
@@ -1518,6 +1518,22 @@ class VideoDetailView : ConstraintLayout {
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     UIDialogs.showGeneralRetryErrorDialog(context, "Failed to load live chat", ex, { loadLiveChat(video); });
                 } */
+            }
+        }
+    }
+
+    fun cleanupPlaybackTracker(){
+        val tracker = _playbackTracker;
+        if(tracker != null) {
+            _playbackTracker = null;
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                Logger.i(TAG, "Cleaning up old playback tracker");
+                try {
+                    tracker.onConcluded();
+                }
+                catch(ex: Throwable) {
+                    Logger.e(TAG, "Failed to cleanup playback tracker", ex);
+                }
             }
         }
     }
@@ -2016,7 +2032,7 @@ class VideoDetailView : ConstraintLayout {
     private fun fetchVideo() {
         Logger.i(TAG, "fetchVideo")
         video = null;
-        _playbackTracker = null;
+        cleanupPlaybackTracker();
 
         val url = _url;
         if (url != null && url.isNotBlank()) {

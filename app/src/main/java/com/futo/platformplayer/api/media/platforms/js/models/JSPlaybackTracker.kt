@@ -17,6 +17,8 @@ class JSPlaybackTracker: IPlaybackTracker {
 
     private var _lastRequest: Long = Long.MIN_VALUE;
 
+    private val _hasOnConcluded: Boolean;
+
     override var nextRequest: Int = 1000
         private set;
 
@@ -26,6 +28,7 @@ class JSPlaybackTracker: IPlaybackTracker {
             throw ScriptImplementationException(config, "Missing onProgress on PlaybackTracker");
         if(!obj.has("nextRequest"))
             throw ScriptImplementationException(config, "Missing nextRequest on PlaybackTracker");
+        _hasOnConcluded = obj.has("onConcluded");
 
         this._config = config;
         this._obj = obj;
@@ -59,6 +62,16 @@ class JSPlaybackTracker: IPlaybackTracker {
             }
         }
     }
+    override fun onConcluded() {
+        warnIfMainThread("JSPlaybackTracker.onConcluded");
+        if(_hasOnConcluded) {
+            synchronized(_obj) {
+                Logger.i("JSPlaybackTracker", "onConcluded");
+                _obj.invokeVoid("onConcluded", -1);
+            }
+        }
+    }
+
 
     override fun shouldUpdate(): Boolean = (_lastRequest < 0 || (System.currentTimeMillis() - _lastRequest) > nextRequest);
 }

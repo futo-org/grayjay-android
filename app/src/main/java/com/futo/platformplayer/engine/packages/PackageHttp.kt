@@ -191,6 +191,8 @@ class PackageHttp: V8Package {
         @Transient
         private val _client: ManagedHttpClient;
 
+        val parentConfig: IV8PluginConfig get() = _package._config;
+
         @Transient
         private val _defaultHeaders = mutableMapOf<String, String>();
         @Transient
@@ -431,7 +433,7 @@ class PackageHttp: V8Package {
             val hasClosed = socketObj.has("closed");
             val hasFailure = socketObj.has("failure");
 
-            //socketObj.setWeak(); //We have to manage this lifecycle
+            socketObj.setWeak(); //We have to manage this lifecycle
             _listeners = socketObj;
 
             _socket = _packageClient.logExceptions {
@@ -440,8 +442,14 @@ class PackageHttp: V8Package {
                     override fun open() {
                         Logger.i(TAG, "Websocket opened: " + _url);
                         _isOpen = true;
-                        if(hasOpen)
-                            _listeners?.invokeVoid("open", arrayOf<Any>());
+                        if(hasOpen) {
+                            try {
+                                _listeners?.invokeVoid("open", arrayOf<Any>());
+                            }
+                            catch(ex: Throwable){
+                                Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] open failed: " + ex.message, ex);
+                            }
+                        }
                     }
                     override fun message(msg: String) {
                         if(hasMessage) {
@@ -453,18 +461,37 @@ class PackageHttp: V8Package {
                     }
                     override fun closing(code: Int, reason: String) {
                         if(hasClosing)
-                            _listeners?.invokeVoid("closing", code, reason);
+                        {
+                            try {
+                                _listeners?.invokeVoid("closing", code, reason);
+                            }
+                            catch(ex: Throwable){
+                                Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closing failed: " + ex.message, ex);
+                            }
+                        }
                     }
                     override fun closed(code: Int, reason: String) {
                         _isOpen = false;
-                        if(hasClosed)
-                            _listeners?.invokeVoid("closed", code, reason);
+                        if(hasClosed) {
+                            try {
+                                _listeners?.invokeVoid("closed", code, reason);
+                            }
+                            catch(ex: Throwable){
+                                Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closed failed: " + ex.message, ex);
+                            }
+                        }
                     }
                     override fun failure(exception: Throwable) {
                         _isOpen = false;
                         Logger.e(TAG, "Websocket failure: ${exception.message} (${_url})", exception);
-                        if(hasFailure)
-                            _listeners?.invokeVoid("failure", exception.message);
+                        if(hasFailure) {
+                            try {
+                                _listeners?.invokeVoid("failure", exception.message);
+                            }
+                            catch(ex: Throwable){
+                                Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closed failed: " + ex.message, ex);
+                            }
+                        }
                     }
                 });
             };
@@ -473,6 +500,16 @@ class PackageHttp: V8Package {
         @V8Function
         fun send(msg: String) {
             _socket?.send(msg);
+        }
+
+        @V8Function
+        fun close() {
+            _socket?.close(1000, "");
+        }
+        @V8Function
+        fun close(code: Int?, reason: String?) {
+            _socket?.close(code ?: 1000, reason ?: "");
+            _listeners?.close()
         }
     }
 

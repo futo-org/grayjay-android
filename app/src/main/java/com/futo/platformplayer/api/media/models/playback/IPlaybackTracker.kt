@@ -7,4 +7,5 @@ interface IPlaybackTracker {
 
     fun onInit(seconds: Double);
     fun onProgress(seconds: Double, isPlaying: Boolean);
+    fun onConcluded();
 }
