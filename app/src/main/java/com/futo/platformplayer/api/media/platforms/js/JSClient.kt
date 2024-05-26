@@ -409,6 +409,8 @@ open class JSClient : IPlatformClient {
     @JSDocsParameter("channelUrl", "A channel url (this platform)")
     override fun getChannelPlaylists(channelUrl: String): IPager<IPlatformPlaylist> = isBusyWith("getChannelPlaylists") {
         ensureEnabled();
+        if(!capabilities.hasGetChannelPlaylists)
+            return@isBusyWith EmptyPager();
         return@isBusyWith JSPlaylistPager(config, this,
             plugin.executeTyped("source.getChannelPlaylists(${Json.encodeToString(channelUrl)})"));
     }
