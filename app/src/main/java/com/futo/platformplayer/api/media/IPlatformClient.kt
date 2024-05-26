@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.models.ImageVariable
@@ -92,6 +93,11 @@ interface IPlatformClient {
      * Peeks contents of a channel, upload time descending
      */
     fun peekChannelContents(channelUrl: String, type: String? = null): List<IPlatformContent>
+
+    /**
+     * Gets all playlists of a channel
+     */
+    fun getChannelPlaylists(channelUrl: String): IPager<IPlatformPlaylist>
 
     /**
      * Gets the channel url associated with a claimType

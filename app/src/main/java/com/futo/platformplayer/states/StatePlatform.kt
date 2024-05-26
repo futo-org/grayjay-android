@@ -22,6 +22,7 @@ import com.futo.platformplayer.api.media.models.contents.PlatformContentPlacehol
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
@@ -797,6 +798,11 @@ class StatePlatform {
     fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, type: String?, ordering: String = ResultCapabilities.ORDER_CHONOLOGICAL): IPager<IPlatformContent> {
         val client = _channelClientPool.getClientPooled(baseClient, Settings.instance.subscriptions.getSubscriptionsConcurrency());
         return client.getChannelContents(channelUrl, type, ordering) ;
+    }
+
+    fun getChannelPlaylists(channelUrl: String): IPager<IPlatformPlaylist> {
+        val client = getChannelClient(channelUrl);
+        return client.getChannelPlaylists(channelUrl);
     }
 
     fun peekChannelContents(baseClient: IPlatformClient, channelUrl: String, type: String?): List<IPlatformContent> {

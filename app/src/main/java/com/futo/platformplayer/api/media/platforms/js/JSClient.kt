@@ -20,6 +20,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.platforms.js.internal.JSCallDocs
 import com.futo.platformplayer.api.media.platforms.js.internal.JSDocs
@@ -39,6 +40,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSLiveChatWindowDes
 import com.futo.platformplayer.api.media.platforms.js.models.JSLiveEventPager
 import com.futo.platformplayer.api.media.platforms.js.models.JSPlaybackTracker
 import com.futo.platformplayer.api.media.platforms.js.models.JSPlaylistDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSPlaylistPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
@@ -231,7 +233,8 @@ open class JSClient : IPlatformClient {
             hasGetLiveEvents = plugin.executeBoolean("!!source.getLiveEvents") ?: false,
             hasGetLiveChatWindow = plugin.executeBoolean("!!source.getLiveChatWindow") ?: false,
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
-            hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false
+            hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false,
+            hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false
         );
 
         try {
@@ -402,6 +405,14 @@ open class JSClient : IPlatformClient {
             plugin.executeTyped("source.getChannelContents(${Json.encodeToString(channelUrl)}, ${Json.encodeToString(type)}, ${Json.encodeToString(order)}, ${Json.encodeToString(filters)})"));
     }
 
+    @JSDocs(10, "source.getChannelPlaylists(url)", "Gets playlists of a channel")
+    @JSDocsParameter("channelUrl", "A channel url (this platform)")
+    override fun getChannelPlaylists(channelUrl: String): IPager<IPlatformPlaylist> = isBusyWith("getChannelPlaylists") {
+        ensureEnabled();
+        return@isBusyWith JSPlaylistPager(config, this,
+            plugin.executeTyped("source.getChannelPlaylists(${Json.encodeToString(channelUrl)})"));
+    }
+
     @JSDocs(10, "source.getPeekChannelTypes()", "Gets types this plugin has for peek channel contents")
     override fun getPeekChannelTypes(): List<String> {
         if(!capabilities.hasPeekChannelContents)
@@ -423,6 +434,7 @@ open class JSClient : IPlatformClient {
             return listOf();
         }
     }
+
     @JSDocs(10, "source.peekChannelContents(url, type)", "Peek contents of a channel (reverse chronological order)")
     @JSDocsParameter("channelUrl", "A channel url (this platform)")
     @JSDocsParameter("type", "(optional) Type of contents to get from channel")

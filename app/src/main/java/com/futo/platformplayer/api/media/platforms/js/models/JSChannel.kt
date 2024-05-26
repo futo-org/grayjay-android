@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrDefaultList
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
@@ -37,7 +38,7 @@ class JSChannel : IPlatformChannel {
         description = _channel.getOrThrowNullable(config, "description", contextName);
         url = _channel.getOrThrow(config, "url", contextName);
         urlAlternatives = _channel.getOrDefaultList(config, "urlAlternatives", contextName, listOf()) ?: listOf();
-        links = HashMap();
+        links = HashMap(_channel.getOrDefault<Map<String, String>>(config, "links", contextName, mapOf()) ?: mapOf());
     }
 
     override fun getContents(client: IPlatformClient): IPager<IPlatformContent> {

@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.models.ImageVariable
@@ -59,6 +60,8 @@ class CachedPlatformClient : IPlatformClient {
         order: String?,
         filters: Map<String, List<String>>?
     ): IPager<IPlatformContent> = _client.getChannelContents(channelUrl);
+
+    override fun getChannelPlaylists(channelUrl: String): IPager<IPlatformPlaylist> = _client.getChannelPlaylists(channelUrl);
 
     override fun getPeekChannelTypes(): List<String> = _client.getPeekChannelTypes();
     override fun peekChannelContents(channelUrl: String, type: String?): List<IPlatformContent> = _client.peekChannelContents(channelUrl, type);
