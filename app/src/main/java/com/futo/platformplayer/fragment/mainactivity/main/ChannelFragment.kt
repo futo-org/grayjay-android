@@ -32,6 +32,7 @@ import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
@@ -56,6 +57,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PolycentricProfile(val system: PublicKey, val systemState: SystemState, val ownedClaims: List<OwnedClaim>);
+
+const val PLAYLIST_POSITION = 4
 
 class ChannelFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -241,6 +244,7 @@ class ChannelFragment : MainFragment() {
                     //2 -> "STORE"
                     2 -> "SUPPORT"
                     3 -> "ABOUT"
+                    PLAYLIST_POSITION -> "PLAYLISTS"
                     else -> "Unknown $position"
                 };
             };
@@ -384,6 +388,10 @@ class ChannelFragment : MainFragment() {
         private fun showChannel(channel: IPlatformChannel) {
             setLoading(false);
 
+            if (!StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists) {
+                _tabs.removeTabAt(PLAYLIST_POSITION)
+            }
+
             _fragment.topBar?.onShown(channel);
 
             val buttons = arrayListOf(Pair(R.drawable.ic_playlist_add) {
@@ -435,6 +443,10 @@ class ChannelFragment : MainFragment() {
                 it.getFragment<ChannelAboutFragment>().setChannel(channel);
                 it.getFragment<ChannelListFragment>().setChannel(channel);
                 it.getFragment<ChannelMonetizationFragment>().setChannel(channel);
+                if (StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists) {
+                    Logger.w(TAG, "Supported channel playlists??");
+                    it.getFragment<ChannelPlaylistsFragment>().setChannel(channel);
+                }
                 //TODO: Call on other tabs as needed
             }
 
@@ -501,6 +513,12 @@ class ChannelFragment : MainFragment() {
                 it.getFragment<ChannelMonetizationFragment>().setPolycentricProfile(profile);
                 it.getFragment<ChannelListFragment>().setPolycentricProfile(profile);
                 it.getFragment<ChannelContentsFragment>().setPolycentricProfile(profile);
+                channel?.let { channel ->
+                    if (StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists) {
+                        Logger.w(TAG, "Supported channel playlists??");
+                        it.getFragment<ChannelPlaylistsFragment>().setPolycentricProfile(profile);
+                    }
+                }
                 //TODO: Call on other tabs as needed
             }
         }

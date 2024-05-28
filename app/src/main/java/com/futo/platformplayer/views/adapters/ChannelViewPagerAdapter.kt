@@ -12,7 +12,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.fragment.channel.tab.*
 
 class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) : FragmentStateAdapter(fragmentManager, lifecycle) {
-    private val _cache: Array<Fragment?> = arrayOfNulls(4);
+    private val _cache: Array<Fragment?> = arrayOfNulls(5);
 
     val onContentUrlClicked = Event2<String, ContentType>();
     val onUrlClicked = Event1<String>();
@@ -39,6 +39,8 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
             return createFragment(2) as T;
         else if(T::class == ChannelAboutFragment::class)
             return createFragment(3) as T;
+        else if(T::class == ChannelPlaylistsFragment::class)
+            return createFragment(4) as T;
         else
             throw NotImplementedError("Implement other types");
     }
@@ -64,6 +66,16 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
             //2 -> ChannelStoreFragment.newInstance();
             2 -> ChannelMonetizationFragment.newInstance();
             3 -> ChannelAboutFragment.newInstance();
+            4 -> ChannelPlaylistsFragment.newInstance().apply {
+                onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit);
+                onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit);
+                onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit);
+                onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit);
+                onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit);
+                onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit);
+                onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit);
+                onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit);
+            };
             else -> throw IllegalStateException("Invalid tab position $position")
         };
 
