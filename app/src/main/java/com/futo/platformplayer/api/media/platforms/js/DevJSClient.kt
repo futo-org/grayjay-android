@@ -8,6 +8,8 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContentDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class DevJSClient : JSClient {
@@ -115,7 +117,7 @@ class DevJSClient : JSClient {
 
     //Video
     override fun isContentDetailsUrl(url: String): Boolean {
-        return StateDeveloper.instance.handleDevCall(devID, "isVideoDetailsUrl"){
+        return StateDeveloper.instance.handleDevCall(devID, "isVideoDetailsUrl(${Json.encodeToString(url)})"){
             super.isContentDetailsUrl(url);
         };
     }

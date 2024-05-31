@@ -106,8 +106,15 @@ class LiveChatOverlay : LinearLayout {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url);
                 _window?.let {
+                    var toRemoveJS = "";
                     for(req in it.removeElements)
-                        view?.evaluateJavascript("document.querySelectorAll("  + _argJsonSerializer.encodeToString(req) + ").forEach(x=>x.remove());") {};
+                        toRemoveJS += "document.querySelectorAll("  + _argJsonSerializer.encodeToString(req) + ").forEach(x=>x.remove());\n";
+                    view?.evaluateJavascript(toRemoveJS) {};
+                    var toRemoveJSInterval = "";
+                    for(req in it.removeElementsInterval)
+                        toRemoveJSInterval += "document.querySelectorAll("  + _argJsonSerializer.encodeToString(req) + ").forEach(x=>x.remove());\n";
+                    //Cleanup every second as fallback
+                    view?.evaluateJavascript("setInterval(()=>{" + toRemoveJSInterval + "}, 1000)") {};
                 };
             }
         };

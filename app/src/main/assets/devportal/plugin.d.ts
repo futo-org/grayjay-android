@@ -127,7 +127,7 @@ declare class PlatformVideoDetails extends PlatformVideo {
 }
 
 declare interface PlatformPostDef extends PlatformContentDef {
-    thumbnails: string[],
+    thumbnails: Thumbnails[],
     images: string[],
     description: string
 }
