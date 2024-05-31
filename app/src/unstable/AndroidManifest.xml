@@ -4,7 +4,7 @@
 
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <application>
+    <application android:networkSecurityConfig="@xml/network_security_config">
         <receiver android:name=".receivers.InstallReceiver" />
 
         <activity android:name=".activities.MainActivity">
