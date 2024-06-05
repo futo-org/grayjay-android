@@ -55,6 +55,10 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
         return _supportedFragments.size
     }
 
+    fun getTabPosition(tab: ChannelTab): Int {
+        return _tabs.indexOf(tab)
+    }
+
     fun getTabNames(tab: TabLayout.Tab, position: Int) {
         tab.text = _tabs[position].name
     }

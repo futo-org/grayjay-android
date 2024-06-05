@@ -41,6 +41,7 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.views.adapters.ChannelTab
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
@@ -264,7 +265,7 @@ class PostDetailFragment : MainFragment {
 
             _buttonSupport.setOnClickListener {
                 val author = _post?.author ?: _postOverview?.author;
-                author?.let { _fragment.navigate<ChannelFragment>(it).selectTab(2); };
+                author?.let { _fragment.navigate<ChannelFragment>(it).selectTab(ChannelTab.SUPPORT); };
             };
 
             _buttonStore.setOnClickListener {

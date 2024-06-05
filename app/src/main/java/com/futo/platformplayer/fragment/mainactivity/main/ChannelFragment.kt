@@ -95,8 +95,8 @@ class ChannelFragment : MainFragment() {
         _view = null
     }
 
-    fun selectTab(selectedTabIndex: Int) {
-        _view?.selectTab(selectedTabIndex)
+    fun selectTab(tab: ChannelTab) {
+        _view?.selectTab(tab)
     }
 
     @SuppressLint("ViewConstructor")
@@ -266,6 +266,10 @@ class ChannelFragment : MainFragment() {
                 selectTab(_selectedTabIndex)
             }
             setLoading(true)
+        }
+
+        fun selectTab(tab: ChannelTab) {
+            (_viewPager.adapter as ChannelViewPagerAdapter).getTabPosition(tab)
         }
 
         fun cleanup() {
@@ -560,18 +564,20 @@ class ChannelFragment : MainFragment() {
                 (fragment as IChannelTabFragment).setPolycentricProfile(profile)
             }
 
+            val insertPosition = 2
+
             //TODO only add channels and support if its setup on the polycentric profile
             if (profile != null && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.SUPPORT.ordinal.toLong()
                 )
             ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).insert(2, ChannelTab.SUPPORT)
+                (_viewPager.adapter as ChannelViewPagerAdapter).insert(insertPosition, ChannelTab.SUPPORT)
             }
             if (profile != null && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.CHANNELS.ordinal.toLong()
                 )
             ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).insert(2, ChannelTab.CHANNELS)
+                (_viewPager.adapter as ChannelViewPagerAdapter).insert(insertPosition, ChannelTab.CHANNELS)
             }
             (_viewPager.adapter as ChannelViewPagerAdapter).profile = profile
             _viewPager.adapter!!.notifyDataSetChanged()
