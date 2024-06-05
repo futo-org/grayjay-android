@@ -114,7 +114,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
 
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
+    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _lastPolycentricProfile = polycentricProfile;
 
         if (polycentricProfile == null) {

@@ -5,81 +5,117 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
+import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
-import com.futo.platformplayer.fragment.channel.tab.*
+import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
+import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
+import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
+import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.google.android.material.tabs.TabLayout
 
-class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) : FragmentStateAdapter(fragmentManager, lifecycle) {
-    private val _cache: Array<Fragment?> = arrayOfNulls(5);
 
-    val onContentUrlClicked = Event2<String, ContentType>();
-    val onUrlClicked = Event1<String>();
-    val onContentClicked = Event2<IPlatformContent, Long>();
-    val onChannelClicked = Event1<PlatformAuthorLink>();
-    val onAddToClicked = Event1<IPlatformContent>();
-    val onAddToQueueClicked = Event1<IPlatformContent>();
-    val onAddToWatchLaterClicked = Event1<IPlatformContent>();
-    val onLongPress = Event1<IPlatformContent>();
+enum class ChannelTab {
+    VIDEOS, CHANNELS, PLAYLISTS, SUPPORT, ABOUT
+}
+
+class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
+    FragmentStateAdapter(fragmentManager, lifecycle) {
+    private val _supportedFragments = mutableMapOf(
+        ChannelTab.VIDEOS.ordinal to ChannelTab.VIDEOS, ChannelTab.ABOUT.ordinal to ChannelTab.ABOUT
+    )
+    private val _tabs = arrayListOf(ChannelTab.VIDEOS, ChannelTab.ABOUT)
+
+    var profile: PolycentricProfile? = null
+    var channel: IPlatformChannel? = null
+
+    val onContentUrlClicked = Event2<String, ContentType>()
+    val onUrlClicked = Event1<String>()
+    val onContentClicked = Event2<IPlatformContent, Long>()
+    val onChannelClicked = Event1<PlatformAuthorLink>()
+    val onAddToClicked = Event1<IPlatformContent>()
+    val onAddToQueueClicked = Event1<IPlatformContent>()
+    val onAddToWatchLaterClicked = Event1<IPlatformContent>()
+    val onLongPress = Event1<IPlatformContent>()
+
+    override fun getItemId(position: Int): Long {
+        return _tabs[position].ordinal.toLong()
+    }
+
+    override fun containsItem(itemId: Long): Boolean {
+        return _supportedFragments.containsKey(itemId.toInt())
+    }
 
     override fun getItemCount(): Int {
-        return _cache.size;
+        return _supportedFragments.size
     }
-    inline fun <reified T:IChannelTabFragment> getFragment(): T {
 
-        //TODO: I have a feeling this can somehow be synced with createFragment so only 1 mapping exists (without a Map<>)
-        if(T::class == ChannelContentsFragment::class)
-            return createFragment(0) as T;
-        else if(T::class == ChannelListFragment::class)
-            return createFragment(1) as T;
-        //else if(T::class == ChannelStoreFragment::class)
-        //    return createFragment(2) as T;
-        else if(T::class == ChannelMonetizationFragment::class)
-            return createFragment(2) as T;
-        else if(T::class == ChannelAboutFragment::class)
-            return createFragment(3) as T;
-        else if(T::class == ChannelPlaylistsFragment::class)
-            return createFragment(4) as T;
-        else
-            throw NotImplementedError("Implement other types");
+    fun getTabNames(tab: TabLayout.Tab, position: Int) {
+        tab.text = _tabs[position].name
+    }
+
+    fun insert(position: Int, tab: ChannelTab) {
+        _supportedFragments[tab.ordinal] = tab
+        _tabs.add(position, tab)
+        notifyItemInserted(position)
+    }
+
+    fun remove(position: Int) {
+        _supportedFragments.remove(_tabs[position].ordinal)
+        _tabs.removeAt(position)
+        notifyItemRemoved(position)
     }
 
     override fun createFragment(position: Int): Fragment {
-        val cachedFragment = _cache[position];
-        if (cachedFragment != null) {
-            return cachedFragment;
+        val fragment: Fragment
+        when (_tabs[position]) {
+            ChannelTab.VIDEOS -> {
+                fragment = ChannelContentsFragment.newInstance().apply {
+                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
+                    onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
+                    onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)
+                    onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit)
+                    onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit)
+                    onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit)
+                    onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit)
+                    onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit)
+                }
+            }
+
+            ChannelTab.CHANNELS -> {
+                fragment = ChannelListFragment.newInstance()
+                    .apply { onClickChannel.subscribe(onChannelClicked::emit) }
+            }
+
+            ChannelTab.PLAYLISTS -> {
+                fragment = ChannelPlaylistsFragment.newInstance().apply {
+                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
+                    onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
+                    onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)
+                    onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit)
+                    onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit)
+                    onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit)
+                    onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit)
+                    onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit)
+                }
+            }
+
+            ChannelTab.SUPPORT -> {
+                fragment = ChannelMonetizationFragment.newInstance()
+            }
+
+            ChannelTab.ABOUT -> {
+                fragment = ChannelAboutFragment.newInstance()
+            }
         }
+        channel?.let { (fragment as IChannelTabFragment).setChannel(it) }
+        profile?.let { (fragment as IChannelTabFragment).setPolycentricProfile(it) }
 
-        val fragment = when (position) {
-            0 -> ChannelContentsFragment.newInstance().apply {
-                onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit);
-                onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit);
-                onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit);
-                onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit);
-                onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit);
-                onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit);
-                onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit);
-                onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit);
-            };
-            1 -> ChannelListFragment.newInstance().apply { onClickChannel.subscribe(onChannelClicked::emit) };
-            //2 -> ChannelStoreFragment.newInstance();
-            2 -> ChannelMonetizationFragment.newInstance();
-            3 -> ChannelAboutFragment.newInstance();
-            4 -> ChannelPlaylistsFragment.newInstance().apply {
-                onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit);
-                onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit);
-                onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit);
-                onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit);
-                onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit);
-                onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit);
-                onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit);
-                onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit);
-            };
-            else -> throw IllegalStateException("Invalid tab position $position")
-        };
-
-        _cache[position]= fragment;
-        return fragment;
+        return fragment
     }
 }

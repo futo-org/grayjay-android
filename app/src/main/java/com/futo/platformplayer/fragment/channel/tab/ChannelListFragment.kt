@@ -124,7 +124,7 @@ class ChannelListFragment : Fragment, IChannelTabFragment {
         }
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
+    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _taskLoadChannel.cancel();
         _lastPolycentricProfile = polycentricProfile;
 
