@@ -459,17 +459,31 @@ class ChannelFragment : MainFragment() {
 
             val supportsPlaylists =
                 StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists
+            val playlistPosition = 2
             if (supportsPlaylists && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.PLAYLISTS.ordinal.toLong()
                 )
             ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).insert(2, ChannelTab.PLAYLISTS)
+                // keep the current tab selected
+                if (_viewPager.currentItem >= playlistPosition) {
+                    _viewPager.setCurrentItem(_viewPager.currentItem + 1, false)
+                }
+
+                (_viewPager.adapter as ChannelViewPagerAdapter).insert(
+                    playlistPosition,
+                    ChannelTab.PLAYLISTS
+                )
             }
             if (!supportsPlaylists && (_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.PLAYLISTS.ordinal.toLong()
                 )
             ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).remove(2)
+                // keep the current tab selected
+                if (_viewPager.currentItem >= playlistPosition) {
+                    _viewPager.setCurrentItem(_viewPager.currentItem - 1, false)
+                }
+
+                (_viewPager.adapter as ChannelViewPagerAdapter).remove(playlistPosition)
             }
 
             // sets the channel for each tab
