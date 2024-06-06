@@ -211,28 +211,24 @@ class PackageHttp: V8Package {
         }
 
         @V8Function
-        fun setDefaultHeaders(defaultHeaders: Map<String, String>): PackageHttpClient {
+        fun setDefaultHeaders(defaultHeaders: Map<String, String>) {
             for(pair in defaultHeaders)
                 _defaultHeaders[pair.key] = pair.value;
-            return this;
         }
         @V8Function
-        fun setDoApplyCookies(apply: Boolean): PackageHttpClient {
+        fun setDoApplyCookies(apply: Boolean) {
             if(_client is JSHttpClient)
                 _client.doApplyCookies = apply;
-            return this;
         }
         @V8Function
-        fun setDoUpdateCookies(update: Boolean): PackageHttpClient {
+        fun setDoUpdateCookies(update: Boolean) {
             if(_client is JSHttpClient)
                 _client.doUpdateCookies = update;
-            return this;
         }
         @V8Function
-        fun setDoAllowNewCookies(allow: Boolean): PackageHttpClient {
+        fun setDoAllowNewCookies(allow: Boolean) {
             if(_client is JSHttpClient)
                 _client.doAllowNewCookies = allow;
-            return this;
         }
 
         @V8Function
