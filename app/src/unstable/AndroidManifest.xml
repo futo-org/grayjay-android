@@ -30,6 +30,9 @@
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
+                <data android:host="bilibili.com" />
+                <data android:host="bilibili.tv" />
+                <data android:host="spotify.com" />
                 <data android:pathPrefix="/" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
@@ -51,6 +54,9 @@
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
+                <data android:host="bilibili.com" />
+                <data android:host="bilibili.tv" />
+                <data android:host="spotify.com" />
             </intent-filter>
         </activity>
     </application>
