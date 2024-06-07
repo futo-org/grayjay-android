@@ -345,7 +345,7 @@ class ChannelFragment : MainFragment() {
             }
         }
 
-        fun selectTab(selectedTabIndex: Int) {
+        private fun selectTab(selectedTabIndex: Int) {
             _selectedTabIndex = selectedTabIndex
             _tabs.selectTab(_tabs.getTabAt(selectedTabIndex))
         }
@@ -463,7 +463,7 @@ class ChannelFragment : MainFragment() {
 
             val supportsPlaylists =
                 StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists
-            val playlistPosition = 2
+            val playlistPosition = 1
             if (supportsPlaylists && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.PLAYLISTS.ordinal.toLong()
                 )
@@ -564,7 +564,7 @@ class ChannelFragment : MainFragment() {
                 (fragment as IChannelTabFragment).setPolycentricProfile(profile)
             }
 
-            val insertPosition = 2
+            val insertPosition = 1
 
             //TODO only add channels and support if its setup on the polycentric profile
             if (profile != null && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
