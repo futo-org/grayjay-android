@@ -13,6 +13,7 @@ import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
@@ -44,7 +45,7 @@ class VideoHelper {
         }
 
         fun isDownloadable(source: IVideoSource) = source is IVideoUrlSource || source is IHLSManifestSource;
-        fun isDownloadable(source: IAudioSource) = source is IAudioUrlSource || source is IHLSManifestAudioSource;
+        fun isDownloadable(source: IAudioSource) = (source is IAudioUrlSource || source is IHLSManifestAudioSource) && source !is IAudioUrlWidevineSource
 
         fun selectBestVideoSource(desc: IVideoSourceDescriptor, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? = selectBestVideoSource(desc.videoSources.toList(), desiredPixelCount, prefContainers);
         fun selectBestVideoSource(sources: Iterable<IVideoSource>, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? {
