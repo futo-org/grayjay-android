@@ -1,6 +1,8 @@
 package com.futo.platformplayer.engine.packages
 
 import com.caoccao.javet.annotations.V8Function
+import com.caoccao.javet.annotations.V8Property
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.UIDialogs
@@ -33,6 +35,19 @@ class PackageBridge : V8Package {
         _config = config;
         _client = plugin.httpClient;
         _clientAuth = plugin.httpClientAuth;
+    }
+
+
+    @V8Property
+    fun buildVersion(): Int {
+        //If debug build, assume max version
+        if(BuildConfig.VERSION_CODE == 1)
+            return Int.MAX_VALUE;
+        return BuildConfig.VERSION_CODE;
+    }
+    @V8Property
+    fun buildFlavor(): String {
+        return BuildConfig.FLAVOR;
     }
 
     @V8Function
