@@ -46,7 +46,7 @@ class ChannelMonetizationFragment : Fragment, IChannelTabFragment {
         _lastChannel = channel;
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
+    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         _lastPolycentricProfile = polycentricProfile
         if (polycentricProfile != null) {
             _supportView?.setPolycentricProfile(polycentricProfile)
