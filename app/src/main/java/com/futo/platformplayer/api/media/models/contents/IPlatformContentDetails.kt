@@ -10,4 +10,6 @@ interface IPlatformContentDetails : IPlatformContent {
 
     fun getComments(client: IPlatformClient): IPager<IPlatformComment>?;
     fun getPlaybackTracker(): IPlaybackTracker?;
+
+    fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>?;
 }

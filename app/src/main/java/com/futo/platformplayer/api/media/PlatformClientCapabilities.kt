@@ -19,7 +19,8 @@ data class PlatformClientCapabilities(
     val hasGetLiveChatWindow: Boolean = false,
     val hasGetContentChapters: Boolean = false,
     val hasPeekChannelContents: Boolean = false,
-    val hasGetChannelPlaylists: Boolean = false
+    val hasGetChannelPlaylists: Boolean = false,
+    val hasGetContentRecommendations: Boolean = false
 ) {
 
 }

@@ -560,7 +560,7 @@ open class JSClient : IPlatformClient {
                 plugin.executeTyped("source.getSubComments(${Json.encodeToString(comment as JSComment)})"));
     }
 
-    @JSDocs(16, "source.getLiveChatWindow(url)", "Gets live events for a livestream")
+    @JSDocs(18, "source.getLiveChatWindow(url)", "Gets live events for a livestream")
     @JSDocsParameter("url", "Url of live stream")
     override fun getLiveChatWindow(url: String): ILiveChatWindowDescriptor? = isBusyWith("getLiveChatWindow") {
         if(!capabilities.hasGetLiveChatWindow)
@@ -569,7 +569,7 @@ open class JSClient : IPlatformClient {
         return@isBusyWith JSLiveChatWindowDescriptor(config,
             plugin.executeTyped("source.getLiveChatWindow(${Json.encodeToString(url)})"));
     }
-    @JSDocs(16, "source.getLiveEvents(url)", "Gets live events for a livestream")
+    @JSDocs(19, "source.getLiveEvents(url)", "Gets live events for a livestream")
     @JSDocsParameter("url", "Url of live stream")
     override fun getLiveEvents(url: String): IPager<IPlatformLiveEvent>? = isBusyWith("getLiveEvents") {
         if(!capabilities.hasGetLiveEvents)
@@ -578,6 +578,20 @@ open class JSClient : IPlatformClient {
         return@isBusyWith JSLiveEventPager(config, this,
             plugin.executeTyped("source.getLiveEvents(${Json.encodeToString(url)})"));
     }
+
+
+    @JSDocs(19, "source.getContentRecommendations(url)", "Gets recommendations of a content page")
+    @JSDocsParameter("url", "Url of content")
+    override fun getContentRecommendations(url: String): IPager<IPlatformContent>? = isBusyWith("getContentRecommendations") {
+        if(!capabilities.hasGetContentRecommendations)
+            return@isBusyWith null;
+        ensureEnabled();
+        return@isBusyWith JSContentPager(config, this,
+            plugin.executeTyped("source.getContentRecommendations(${Json.encodeToString(url)})"));
+    }
+
+
+
     @JSDocs(19, "source.searchPlaylists(query)", "Searches for playlists on the platform")
     @JSDocsParameter("query", "Query that search results should match")
     @JSDocsParameter("type", "(optional) Type of contents to get from search ")

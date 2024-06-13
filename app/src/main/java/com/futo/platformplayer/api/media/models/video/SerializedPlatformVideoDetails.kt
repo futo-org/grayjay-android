@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.ContentType
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.streams.sources.*
@@ -56,6 +57,7 @@ open class SerializedPlatformVideoDetails(
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? = null;
     override fun getPlaybackTracker(): IPlaybackTracker? = null;
+    override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? = null;
 
     companion object {
         fun fromVideo(video : IPlatformVideoDetails, subtitleSources: List<SubtitleRawSource>) : SerializedPlatformVideoDetails {
