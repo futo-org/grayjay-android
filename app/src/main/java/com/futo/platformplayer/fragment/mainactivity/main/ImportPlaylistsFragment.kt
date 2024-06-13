@@ -12,16 +12,21 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.viewholders.ImportPlaylistsViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectablePlaylist
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ImportPlaylistsFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -67,7 +72,7 @@ class ImportPlaylistsFragment : MainFragment() {
         private val _items: ArrayList<SelectablePlaylist> = arrayListOf();
         private var _currentLoadIndex = 0;
 
-        private var _taskLoadPlaylist: TaskHandler<String, Playlist?>;
+        private var _taskLoadPlaylist: TaskHandler<String, IPlatformPlaylistDetails?>;
 
         constructor(fragment: ImportPlaylistsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -102,7 +107,7 @@ class ImportPlaylistsFragment : MainFragment() {
 
             setLoading(false);
 
-            _taskLoadPlaylist = TaskHandler<String, Playlist?>({fragment.lifecycleScope}, { link -> StatePlatform.instance.getPlaylist(link).toPlaylist(); })
+            _taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails?>({fragment.lifecycleScope}, { link -> StatePlatform.instance.getPlaylist(link); })
                 .success {
                     if (it != null) {
                         _items.add(SelectablePlaylist(it));
@@ -113,7 +118,7 @@ class ImportPlaylistsFragment : MainFragment() {
                 }.exceptionWithParameter<Throwable> { ex, para ->
                     //setLoading(false);
                     Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
-                    UIDialogs.toast(context, context.getString(R.string.failed_to_fetch) + "\n${para}", false)
+                    UIDialogs.appToast(context.getString(R.string.failed_to_fetch) + "\n${para}\n" + ex.message, false)
                     //UIDialogs.showDataRetryDialog(layoutInflater, { load(); });
                     loadNext();
                 };
@@ -147,12 +152,32 @@ class ImportPlaylistsFragment : MainFragment() {
                 it.title = context.getString(R.string.import_playlists);
                 it.onImport.subscribe(this) {
                     val playlistsToImport = _items.filter { i -> i.selected }.toList();
-                    for (playlistToImport in playlistsToImport) {
-                        StatePlaylists.instance.createOrUpdatePlaylist(playlistToImport.playlist);
-                    }
 
-                    UIDialogs.toast("${playlistsToImport.size} " + context.getString(R.string.playlists_imported));
-                    _fragment.closeSegment();
+                    UIDialogs.showDialogProgress(context) {
+                        it.setText("Importing playlists..");
+                        it.setProgress(0f);
+                        _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                            for ((i, playlistToImport) in playlistsToImport.withIndex()) {
+                                withContext(Dispatchers.Main) {
+                                    it.setText("Importing playlists..\n[${playlistToImport.playlist.name}]");
+                                }
+                                try {
+                                    StatePlaylists.instance.createOrUpdatePlaylist(playlistToImport.playlist.toPlaylist());
+                                }
+                                catch(ex: Throwable) {
+                                    UIDialogs.appToast("Failed to import [${playlistToImport.playlist.name}]\n" + ex.message);
+                                }
+                                withContext(Dispatchers.Main) {
+                                    it.setProgress(i.toDouble() / playlistsToImport.size);
+                                }
+                            }
+                            withContext(Dispatchers.Main) {
+                                UIDialogs.toast("${playlistsToImport.size} " + context.getString(R.string.playlists_imported));
+                                _fragment.closeSegment();
+                                it.dismiss();
+                            }
+                        }
+                    }
                 };
             }
         }

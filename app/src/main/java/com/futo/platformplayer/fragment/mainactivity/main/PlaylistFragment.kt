@@ -136,12 +136,12 @@ class PlaylistFragment : MainFragment() {
                     return@TaskHandler StatePlatform.instance.getPlaylist(it);
                 })
                 .success {
-                    setLoading(false);
                     _remotePlaylist = it;
                     setName(it.name);
-                    setVideos(it.contents.getResults(), false);
-                    setVideoCount(it.videoCount);
                     //TODO: Implement support for pagination
+                    setVideos(it.toPlaylist().videos, false);
+                    setVideoCount(it.videoCount);
+                    setLoading(false);
                 }
                 .exception<Throwable> {
                     Logger.w(TAG, "Failed to load playlist.", it);
