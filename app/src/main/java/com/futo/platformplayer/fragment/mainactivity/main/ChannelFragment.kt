@@ -204,7 +204,7 @@ class ChannelFragment : MainFragment() {
                     }
 
                     is IPlatformPlaylist -> {
-                        fragment.navigate<PlaylistFragment>(v)
+                        fragment.navigate<RemotePlaylistFragment>(v)
                     }
 
                     is IPlatformPost -> {

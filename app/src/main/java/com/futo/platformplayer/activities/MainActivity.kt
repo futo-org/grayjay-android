@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainTutorial: TutorialFragment;
     lateinit var _fragMainPlaylists: PlaylistsFragment;
     lateinit var _fragMainPlaylist: PlaylistFragment;
+    lateinit var _fragMainRemotePlaylist: RemotePlaylistFragment;
     lateinit var _fragWatchlist: WatchLaterFragment;
     lateinit var _fragHistory: HistoryFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
@@ -246,6 +247,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainSources = SourcesFragment.newInstance();
         _fragMainPlaylists = PlaylistsFragment.newInstance();
         _fragMainPlaylist = PlaylistFragment.newInstance();
+        _fragMainRemotePlaylist = RemotePlaylistFragment.newInstance();
         _fragPostDetail = PostDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
@@ -331,6 +333,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainSources.topBar = _fragTopBarAdd;
         _fragMainPlaylists.topBar = _fragTopBarGeneral;
         _fragMainPlaylist.topBar = _fragTopBarNavigation;
+        _fragMainRemotePlaylist.topBar = _fragTopBarNavigation;
         _fragPostDetail.topBar = _fragTopBarNavigation;
         _fragWatchlist.topBar = _fragTopBarNavigation;
         _fragHistory.topBar = _fragTopBarNavigation;
@@ -1044,6 +1047,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             SourcesFragment::class -> _fragMainSources as T;
             PlaylistsFragment::class -> _fragMainPlaylists as T;
             PlaylistFragment::class -> _fragMainPlaylist as T;
+            RemotePlaylistFragment::class -> _fragMainRemotePlaylist as T;
             PostDetailFragment::class -> _fragPostDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;

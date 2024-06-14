@@ -156,7 +156,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     onSearch.subscribe(this) {
                         if(it.isHttpUrl()) {
                             if(StatePlatform.instance.hasEnabledPlaylistClient(it))
-                                navigate<PlaylistFragment>(it);
+                                navigate<RemotePlaylistFragment>(it);
                             else if(StatePlatform.instance.hasEnabledChannelClient(it))
                                 navigate<ChannelFragment>(it);
                             else

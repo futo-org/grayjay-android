@@ -6,28 +6,32 @@ import android.view.LayoutInflater
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.api.media.structures.*
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewNestedVideoViewHolder
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewVideoViewHolder
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
+import com.futo.platformplayer.withTimestamp
 import kotlin.math.floor
 
 abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent, IPlatformContent, IPager<IPlatformContent>, ContentPreviewViewHolder> where TFragment : MainFragment {
@@ -183,7 +187,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                     fragment.navigate<VideoDetailFragment>(content).maximizeVideoDetail();
             }
         } else if (content is IPlatformPlaylist) {
-            fragment.navigate<PlaylistFragment>(content);
+            fragment.navigate<RemotePlaylistFragment>(content);
         } else if (content is IPlatformPost) {
             fragment.navigate<PostDetailFragment>(content);
         }
@@ -194,7 +198,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                 StatePlayer.instance.clearQueue();
                 fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
             };
-            ContentType.PLAYLIST -> fragment.navigate<PlaylistFragment>(url);
+            ContentType.PLAYLIST -> fragment.navigate<RemotePlaylistFragment>(url);
             ContentType.URL -> fragment.navigate<BrowserFragment>(url);
             else -> {};
         }
