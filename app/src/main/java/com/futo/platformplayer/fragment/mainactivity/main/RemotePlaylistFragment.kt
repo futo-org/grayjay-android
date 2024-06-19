@@ -24,11 +24,11 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSPager
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiPager
+import com.futo.platformplayer.api.media.structures.ReusablePager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlaylists
@@ -66,6 +66,7 @@ class RemotePlaylistFragment : MainFragment() {
         private val _fragment: RemotePlaylistFragment;
 
         private var _remotePlaylist: IPlatformPlaylistDetails? = null;
+        private var _remotePlaylistPagerWindow: IPager<IPlatformVideo>? = null;
         private var _url: String? = null;
         private val _videos: ArrayList<IPlatformVideo> = arrayListOf();
 
@@ -103,9 +104,7 @@ class RemotePlaylistFragment : MainFragment() {
                     val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_playlist, viewGroup, false);
                     val holder = VideoListEditorViewHolder(view, null);
                     holder.onClick.subscribe {
-                        showConvertConfirmationModal() {
-                            _fragment.navigate<PlaylistFragment>(it);
-                        }
+                        showConvertConfirmationModal();
                     };
                     return@InsertedViewAdapterWithLoader holder;
                 }
@@ -129,14 +128,10 @@ class RemotePlaylistFragment : MainFragment() {
             };
 
             buttonPlayAll.setOnClickListener {
-                showConvertConfirmationModal() {
-                    _fragment.navigate<PlaylistFragment>(it);
-                }
+                showConvertConfirmationModal();
             };
             buttonShuffle.setOnClickListener {
-                showConvertConfirmationModal() {
-                    _fragment.navigate<PlaylistFragment>(it);
-                }
+                showConvertConfirmationModal();
             };
 
             _taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails>(
@@ -146,8 +141,10 @@ class RemotePlaylistFragment : MainFragment() {
                 })
                 .success {
                     _remotePlaylist = it;
+                    val c = it.contents;
+                    _remotePlaylistPagerWindow = if (c is ReusablePager) c.getWindow() else c;
                     setName(it.name);
-                    setVideos(it.contents.getResults());
+                    setVideos(_remotePlaylistPagerWindow!!.getResults());
                     setVideoCount(it.videoCount);
                     setLoading(false);
                 }
@@ -193,7 +190,7 @@ class RemotePlaylistFragment : MainFragment() {
         }
 
         private fun loadNextPage() {
-            val pager: IPager<IPlatformVideo> = _remotePlaylist?.contents ?: return;
+            val pager: IPager<IPlatformVideo> = _remotePlaylistPagerWindow ?: return;
             val hasMorePages = pager.hasMorePages();
             Logger.i(TAG, "loadNextPage() hasMorePages=$hasMorePages, page size=${pager.getResults().size}");
 
@@ -256,7 +253,7 @@ class RemotePlaylistFragment : MainFragment() {
             }
         }
 
-        private fun showConvertConfirmationModal(onSuccess: ((playlist: Playlist) -> Unit)? = null) {
+        private fun showConvertConfirmationModal() {
             val remotePlaylist = _remotePlaylist;
             if (remotePlaylist == null) {
                 UIDialogs.toast(context.getString(R.string.please_wait_for_playlist_to_finish_loading));
@@ -266,22 +263,30 @@ class RemotePlaylistFragment : MainFragment() {
             val c = context ?: return;
             UIDialogs.showConfirmationDialog(c, "Conversion to local playlist is required for this action", {
                 setLoading(true);
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    try {
-                        val playlist = remotePlaylist.toPlaylist();
-                        StatePlaylists.instance.playlistStore.save(playlist);
 
-                        withContext(Dispatchers.Main) {
-                            setLoading(false);
-                            UIDialogs.toast(context.getString(R.string.playlist_copied_as_local_playlist));
-                            onSuccess?.invoke(playlist);
-                        }
-                    } catch (e: Throwable) {
-                        withContext(Dispatchers.Main) {
-                            setLoading(false);
-                        }
+                UIDialogs.showDialogProgress(context) {
+                    it.setText("Converting playlist..");
+                    it.setProgress(0f);
 
-                        throw e;
+                    _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val playlist = remotePlaylist.toPlaylist() { progress ->
+                                _fragment.lifecycleScope.launch(Dispatchers.Main) {
+                                    it.setProgress(progress.toDouble() / remotePlaylist.videoCount);
+                                }
+                            };
+
+                            StatePlaylists.instance.playlistStore.save(playlist);
+
+                            withContext(Dispatchers.Main) {
+                                UIDialogs.toast("Playlist converted");
+                                it.dismiss();
+                                _fragment.navigate<PlaylistFragment>(playlist);
+                            }
+                        }
+                        catch(ex: Throwable) {
+                            UIDialogs.appToast("Failed to convert playlist.\n" + ex.message);
+                        }
                     }
                 }
             });

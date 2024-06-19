@@ -7,7 +7,7 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.api.media.structures.ReusablePager
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.models.Playlist
 
@@ -15,22 +15,26 @@ class JSPlaylistDetails: JSPlaylist, IPlatformPlaylistDetails {
     override val contents: IPager<IPlatformVideo>;
 
     constructor(plugin: JSClient, config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
-        contents = JSVideoPager(config, plugin, obj.getOrThrow(config, "contents", "PlaylistDetails"));
+        contents = ReusablePager(JSVideoPager(config, plugin, obj.getOrThrow(config, "contents", "PlaylistDetails")));
     }
 
-    override fun toPlaylist(): Playlist {
-        val videos = contents.getResults().toMutableList();
+    override fun toPlaylist(onProgress: ((progress: Int) -> Unit)?): Playlist {
+        val playlist = if (contents is ReusablePager) contents.getWindow() else contents;
+        val videos = playlist.getResults().toMutableList();
+        onProgress?.invoke(videos.size);
 
         //Download all pages
         var allowedEmptyCount = 2;
-        while(contents.hasMorePages()) {
-            contents.nextPage();
-            if(!videos.addAll(contents.getResults())) {
+        while(playlist.hasMorePages()) {
+            playlist.nextPage();
+            if(!videos.addAll(playlist.getResults())) {
                 allowedEmptyCount--;
                 if(allowedEmptyCount <= 0)
                     break;
             }
             else allowedEmptyCount = 2;
+
+            onProgress?.invoke(videos.size);
         }
 
         return Playlist(id.toString(), name, videos.map { SerializedPlatformVideo.fromVideo(it)});
