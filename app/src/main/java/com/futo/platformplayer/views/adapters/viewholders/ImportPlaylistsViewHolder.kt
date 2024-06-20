@@ -1,6 +1,7 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -46,7 +47,12 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
 
     override fun bind(value: SelectablePlaylist) {
         _textName.text = value.playlist.name;
-        _textMetadata.text = "${value.playlist.videoCount} " + _view.context.getString(R.string.videos);
+        if(value.playlist.videoCount >= 0) {
+            _textMetadata.text = "${value.playlist.videoCount} " + _view.context.getString(R.string.videos);
+            _textMetadata.visibility = View.VISIBLE;
+        }
+        else
+            _textMetadata.visibility = View.GONE;
         _checkbox.value = value.selected;
 
         val thumbnail = value.playlist.thumbnail;

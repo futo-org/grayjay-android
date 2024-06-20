@@ -66,8 +66,8 @@
                     android:fontFamily="@font/inter_light"
                     tools:text="100"
                     android:textColor="@color/gray_7f"
-                    app:layout_constraintRight_toLeftOf="@id/text_videos"
-                    app:layout_constraintBottom_toBottomOf="@id/text_videos" />
+                    app:layout_constraintRight_toLeftOf="@id/text_video_count_label"
+                    app:layout_constraintBottom_toBottomOf="@id/text_video_count_label" />
 
                 <TextView
                     android:id="@+id/text_playlist"
@@ -80,10 +80,10 @@
                     android:textColor="@color/gray_e0"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toTopOf="@id/text_videos"/>
+                    app:layout_constraintBottom_toTopOf="@id/text_video_count_label"/>
 
                 <TextView
-                    android:id="@+id/text_videos"
+                    android:id="@+id/text_video_count_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="12dp"

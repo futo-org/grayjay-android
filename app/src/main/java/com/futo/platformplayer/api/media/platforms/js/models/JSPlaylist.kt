@@ -14,6 +14,6 @@ open class JSPlaylist : JSContent, IPlatformPlaylist {
     constructor(config: SourcePluginConfig, obj: V8ValueObject) : super(config, obj) {
         val contextName = "Playlist";
         thumbnail = obj.getOrDefault(config, "thumbnail", contextName, null);
-        videoCount = obj.getOrDefault(config, "videoCount", contextName, 0)!!;
+        videoCount = obj.getOrDefault(config, "videoCount", contextName, -1)!!;
     }
 }

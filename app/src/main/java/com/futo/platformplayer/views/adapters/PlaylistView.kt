@@ -33,6 +33,7 @@ open class PlaylistView : LinearLayout {
     protected val _platformIndicator: PlatformIndicator;
     protected val _textPlaylistName: TextView
     protected val _textVideoCount: TextView
+    protected val _textVideoCountLabel: TextView;
     protected val _textPlaylistItems: TextView
     protected val _textChannelName: TextView
     protected var _neopassAnimator: ObjectAnimator? = null;
@@ -62,6 +63,7 @@ open class PlaylistView : LinearLayout {
         _platformIndicator = findViewById(R.id.thumbnail_platform);
         _textPlaylistName = findViewById(R.id.text_playlist_name);
         _textVideoCount = findViewById(R.id.text_video_count);
+        _textVideoCountLabel = findViewById(R.id.text_video_count_label);
         _textChannelName = findViewById(R.id.text_channel_name);
         _textPlaylistItems = findViewById(R.id.text_playlist_items);
         _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
@@ -137,7 +139,15 @@ open class PlaylistView : LinearLayout {
                     .crossfade()
                     .into(_imageThumbnail);
 
-            _textVideoCount.text = content.videoCount.toString();
+            if(content.videoCount >= 0) {
+                _textVideoCount.text = content.videoCount.toString();
+                _textVideoCount.visibility = View.VISIBLE;
+                _textVideoCountLabel.visibility = VISIBLE;
+            }
+            else {
+                _textVideoCount.visibility = View.GONE;
+                _textVideoCountLabel.visibility = GONE;
+            }
         }
         else {
             currentPlaylist = null;
