@@ -31,12 +31,16 @@ import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.VideoListEditorViewHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+
+enum class Action {
+    PLAY_ALL, SHUFFLE, PLAY, NONE
+}
 
 class RemotePlaylistFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -85,6 +89,8 @@ class RemotePlaylistFragment : MainFragment() {
         private val _adapterVideos: InsertedViewAdapterWithLoader<VideoListEditorViewHolder>;
         private val _scrollListener: RecyclerView.OnScrollListener
 
+
+
         constructor(fragment: RemotePlaylistFragment, inflater: LayoutInflater) : super(inflater.context) {
             inflater.inflate(R.layout.fragment_remote_playlist, this);
 
@@ -97,18 +103,25 @@ class RemotePlaylistFragment : MainFragment() {
             _imageLoader = findViewById(R.id.image_loader);
             _recyclerPlaylist = findViewById(R.id.recycler_playlist);
             _llmPlaylist = LinearLayoutManager(context);
-            _adapterVideos = InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
+            _adapterVideos = InsertedViewAdapterWithLoader(context,
+                arrayListOf(),
+                arrayListOf(),
                 childCountGetter = { _videos.size },
-                childViewHolderBinder = { viewHolder, position -> viewHolder.bind(_videos[position], false); },
+                childViewHolderBinder = { viewHolder, position ->
+                    viewHolder.bind(
+                        _videos[position],
+                        false
+                    )
+                },
                 childViewHolderFactory = { viewGroup, _ ->
-                    val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_playlist, viewGroup, false);
-                    val holder = VideoListEditorViewHolder(view, null);
+                    val view = LayoutInflater.from(viewGroup.context)
+                        .inflate(R.layout.list_playlist, viewGroup, false)
+                    val holder = VideoListEditorViewHolder(view, null)
                     holder.onClick.subscribe {
-                        showConvertConfirmationModal(false);
-                    };
-                    return@InsertedViewAdapterWithLoader holder;
-                }
-            );
+                        convertPlaylist(false, Action.PLAY, holder.video)
+                    }
+                    return@InsertedViewAdapterWithLoader holder
+                })
 
             _recyclerPlaylist.adapter = _adapterVideos;
             _recyclerPlaylist.layoutManager = _llmPlaylist;
@@ -128,10 +141,10 @@ class RemotePlaylistFragment : MainFragment() {
             };
 
             buttonPlayAll.setOnClickListener {
-                showConvertConfirmationModal(false);
+                convertPlaylist(false, Action.PLAY_ALL);
             };
             buttonShuffle.setOnClickListener {
-                showConvertConfirmationModal(false);
+                convertPlaylist(false, Action.SHUFFLE);
             };
 
             _taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails>(
@@ -253,52 +266,76 @@ class RemotePlaylistFragment : MainFragment() {
             }
         }
 
-        private fun showConvertConfirmationModal(savePlaylist: Boolean) {
+        private fun convertPlaylist(
+            savePlaylist: Boolean, action: Action, video: IPlatformVideo? = null
+        ) {
             val remotePlaylist = _remotePlaylist
             if (remotePlaylist == null) {
                 UIDialogs.toast(context.getString(R.string.please_wait_for_playlist_to_finish_loading))
                 return
             }
 
-            val c = context ?: return
-            UIDialogs.showConfirmationDialog(
-                c,
-                "Conversion to local playlist is required for this action",
-                {
-                    setLoading(true)
+            val convert = {
+                setLoading(true)
 
-                    UIDialogs.showDialogProgress(context) {
-                        it.setText("Converting playlist..")
-                        it.setProgress(0f)
+                UIDialogs.showDialogProgress(context) {
+                    it.setText("Converting playlist..")
+                    it.setProgress(0f)
 
-                        _fragment.lifecycleScope.launch(Dispatchers.IO) {
-                            try {
-                                val playlist = remotePlaylist.toPlaylist { progress ->
-                                    _fragment.lifecycleScope.launch(Dispatchers.Main) {
-                                        it.setProgress(progress.toDouble() / remotePlaylist.videoCount)
-                                    }
-                                }
-
-                                if (savePlaylist) {
-                                    StatePlaylists.instance.playlistStore.save(playlist)
-                                }
-
+                    _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val playlist = remotePlaylist.toPlaylist { progress ->
                                 _fragment.lifecycleScope.launch(Dispatchers.Main) {
-                                    UIDialogs.toast("Playlist converted")
-                                    it.dismiss()
-                                    _fragment.navigate<PlaylistFragment>(playlist)
+                                    it.setProgress(progress.toDouble() / remotePlaylist.videoCount)
                                 }
-                            } catch (ex: Throwable) {
-                                UIDialogs.appToast("Failed to convert playlist.\n" + ex.message)
                             }
+
+                            if (savePlaylist) {
+                                StatePlaylists.instance.playlistStore.save(playlist)
+                            }
+
+                            _fragment.lifecycleScope.launch(Dispatchers.Main) {
+                                UIDialogs.toast("Playlist converted")
+                                it.dismiss()
+                                _fragment.navigate<PlaylistFragment>(playlist)
+                                when (action) {
+                                    Action.SHUFFLE -> StatePlayer.instance.setPlaylist(
+                                        playlist, focus = true, shuffle = true
+                                    )
+
+                                    Action.PLAY_ALL -> StatePlayer.instance.setPlaylist(
+                                        playlist, focus = true
+                                    )
+
+                                    Action.PLAY -> {
+                                        StatePlayer.instance.setPlaylist(
+                                            playlist, _videos.indexOf(video), true
+                                        )
+                                    }
+
+                                    Action.NONE -> {}
+                                }
+                            }
+                        } catch (ex: Throwable) {
+                            UIDialogs.appToast("Failed to convert playlist.\n" + ex.message)
                         }
                     }
-                })
+                }
+            }
+
+            if (remotePlaylist.videoCount > 20) {
+                val c = context ?: return
+                UIDialogs.showConfirmationDialog(
+                    c, "Conversion to local playlist is required for this action", convert
+                )
+            } else {
+                convert()
+            }
         }
 
         private fun showConvertPlaylistButton() {
             _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
-                showConvertConfirmationModal(true);
+                convertPlaylist(true, Action.NONE);
             }));
         }
 
