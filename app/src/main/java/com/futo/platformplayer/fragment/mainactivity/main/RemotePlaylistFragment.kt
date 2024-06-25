@@ -323,7 +323,7 @@ class RemotePlaylistFragment : MainFragment() {
                 }
             }
 
-            if (remotePlaylist.videoCount > 20) {
+            if (remotePlaylist.videoCount > 100) {
                 val c = context ?: return
                 UIDialogs.showConfirmationDialog(
                     c, "Conversion to local playlist is required for this action", convert

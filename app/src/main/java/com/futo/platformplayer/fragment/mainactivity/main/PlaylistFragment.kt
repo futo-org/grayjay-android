@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StateApp
@@ -144,53 +145,59 @@ class PlaylistFragment : MainFragment() {
         }
 
         fun onShown(parameter: Any?) {
-            _taskLoadPlaylist.cancel();
+            _taskLoadPlaylist.cancel()
 
             if (parameter is Playlist?) {
-                _playlist = parameter;
-                _url = null;
+                _playlist = parameter
+                _url = null
 
-                if(parameter != null) {
-                    setName(parameter.name);
-                    setVideos(parameter.videos, true);
-                    setVideoCount(parameter.videos.size);
-                    setButtonDownloadVisible(true);
-                    setButtonEditVisible(true);
+                if (parameter != null) {
+                    setName(parameter.name)
+                    setVideos(parameter.videos, true)
+                    setVideoCount(parameter.videos.size)
+                    setButtonDownloadVisible(true)
+                    setButtonEditVisible(true)
+
+                    if (!StatePlaylists.instance.playlistStore.getItems().contains(parameter)) {
+                        _fragment.topBar?.assume<NavigationTopBarFragment>()
+                            ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
+                                StatePlaylists.instance.playlistStore.save(parameter)
+                                UIDialogs.toast("Playlist saved")
+                            }))
+                    }
                 } else {
-                    setName(null);
-                    setVideos(null, false);
-                    setVideoCount(-1);
-                    setButtonDownloadVisible(false);
-                    setButtonEditVisible(false);
+                    setName(null)
+                    setVideos(null, false)
+                    setVideoCount(-1)
+                    setButtonDownloadVisible(false)
+                    setButtonEditVisible(false)
                 }
-
-                //TODO: Do I have to remove the showConvertPlaylistButton(); button here?
             } else if (parameter is IPlatformPlaylist) {
-                _playlist = null;
-                _url = parameter.url;
+                _playlist = null
+                _url = parameter.url
 
-                setVideoCount(parameter.videoCount);
-                setName(parameter.name);
-                setVideos(null, false);
-                setButtonDownloadVisible(false);
-                setButtonEditVisible(false);
+                setVideoCount(parameter.videoCount)
+                setName(parameter.name)
+                setVideos(null, false)
+                setButtonDownloadVisible(false)
+                setButtonEditVisible(false)
 
-                fetchPlaylist();
+                fetchPlaylist()
             } else if (parameter is String) {
-                _playlist = null;
-                _url = parameter;
+                _playlist = null
+                _url = parameter
 
-                setName(null);
-                setVideos(null, false);
-                setVideoCount(-1);
-                setButtonDownloadVisible(false);
-                setButtonEditVisible(false);
+                setName(null)
+                setVideos(null, false)
+                setVideoCount(-1)
+                setButtonDownloadVisible(false)
+                setButtonEditVisible(false)
 
-                fetchPlaylist();
+                fetchPlaylist()
             }
 
             _playlist?.let {
-                updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this::download);
+                updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this::download)
             }
         }
 
