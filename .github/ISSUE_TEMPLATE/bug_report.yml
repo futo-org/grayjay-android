@@ -30,16 +30,7 @@ body:
         To fix your issues faster, we need clear reproduction cases - ideally allowing us to make it happen locally. 
         * Please include all needed context. For example, Device, OS, Application, your Grayjay Configurations and Plugin versioning info.
         * if you've found out a particular series of UI interactions can introduce buggy behavior, please label those steps 1-n with markdown
-  
-  - type: input
-    id: contact
-    attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
-    validations:
-      required: false
-      
+
   - type: textarea
     id: what-happened
     attributes:
