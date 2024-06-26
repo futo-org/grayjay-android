@@ -2,12 +2,12 @@
 Package http is the main way for a plugin to make web requests, and is likely a package you will always need.
 It offers several ways to make web requests as well as websocket connections.
 
-Before you can use http you need to register it in your plugin config. See [Packages](_blank).
+Before you can use http you need to register it in your plugin config. See [Packages](/app/src/main/java/com/futo/platformplayer/engine/packages).
 
 ## Basic Info
 Underneath the http package by default exist two web clients. An authenticated client and a unauthenticated client.
 The authenticated client has will apply headers and cookies if the user is logged in with your plugin. 
-See [Plugin Authentication](_blank).
+See [Plugin Authentication](/docs/Authentication.md).
 These two clients are always available even when the user is not logged in, meaning it behaves similar to the unauthenticated client and can safely use it either way.
 
 >:warning: **Requests are synchronous**  
