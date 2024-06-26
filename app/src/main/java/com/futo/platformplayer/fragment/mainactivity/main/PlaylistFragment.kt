@@ -162,6 +162,9 @@ class PlaylistFragment : MainFragment() {
                         _fragment.topBar?.assume<NavigationTopBarFragment>()
                             ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
                                 StatePlaylists.instance.playlistStore.save(parameter)
+                                _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(
+                                    arrayListOf()
+                                )
                                 UIDialogs.toast("Playlist saved")
                             }))
                     }
