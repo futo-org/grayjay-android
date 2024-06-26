@@ -16,6 +16,8 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.adapters.AnyAdapter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<VideoLocal>(
@@ -57,10 +59,14 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
                         return@changeExternalDownloadDirectory;
                     }
 
-                    StateDownloads.instance.export(v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        StateDownloads.instance.export(_viewGroup.context, v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+                    }
                 };
             } else {
-                StateDownloads.instance.export(v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    StateDownloads.instance.export(_viewGroup.context, v, v.videoSource.firstOrNull(), v.audioSource.firstOrNull(), v.subtitlesSources.firstOrNull());
+                }
             }
         }
     }

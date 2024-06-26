@@ -1,13 +1,13 @@
 package com.futo.platformplayer.states
 
 import android.content.ContentResolver
+import android.content.Context
 import android.os.StatFs
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.api.media.exceptions.AlreadyQueuedException
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
@@ -27,10 +27,14 @@ import com.futo.platformplayer.models.DiskUsage
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.PlaylistDownloaded
 import com.futo.platformplayer.services.DownloadService
-import com.futo.platformplayer.services.ExportingService
+import com.futo.platformplayer.share
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.UUID
 
 /***
  * Used to maintain downloads
@@ -50,12 +54,8 @@ class StateDownloads {
     private val _downloadPlaylists = FragmentedStorage.storeJson<PlaylistDownloadDescriptor>("playlistDownloads")
         .load();
 
-    private val _exporting = FragmentedStorage.storeJson<VideoExport>("exporting")
-        .load();
-
     private lateinit var _downloadedSet: HashSet<PlatformID>;
 
-    val onExportsChanged = Event0();
     val onDownloadsChanged = Event0();
     val onDownloadedChanged = Event0();
 
@@ -457,17 +457,6 @@ class StateDownloads {
             }
         }
 
-        try {
-            val currentDownloads = _downloaded.getItems().map { it.url }.toHashSet();
-            val exporting = _exporting.findItems { !currentDownloads.contains(it.videoLocal.url) };
-            for (export in exporting)
-                _exporting.delete(export);
-        }
-        catch(ex: Throwable) {
-            Logger.e(TAG, "Failed to delete dangling export:", ex);
-            UIDialogs.toast("Failed to delete dangling export:\n" + ex);
-        }
-
         return Pair(totalDeletedCount, totalDeleted);
     }
 
@@ -475,64 +464,39 @@ class StateDownloads {
         return _downloadsDirectory;
     }
 
+    fun export(context: Context, videoLocal: VideoLocal, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?) {
+        var lastNotifyTime = -1L;
 
+        UIDialogs.showDialogProgress(context) {
+            it.setText("Exporting content..");
+            it.setProgress(0f);
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                val export = VideoExport(videoLocal, videoSource, audioSource, subtitleSource);
+                try {
+                    Logger.i(TAG, "Exporting [${export.videoLocal.name}] started");
 
-    //Export
-    fun getExporting(): List<VideoExport> {
-        return _exporting.getItems();
-    }
-    fun checkForExportTodos() {
-        if(_exporting.hasItems()) {
-            StateApp.withContext {
-                ExportingService.getOrCreateService(it);
+                    val file = export.export(context) { progress ->
+                        val now = System.currentTimeMillis();
+                        if (lastNotifyTime == -1L || now - lastNotifyTime > 100) {
+                            it.setProgress(progress);
+                            lastNotifyTime = now;
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        it.setProgress(100.0f)
+                        it.dismiss()
+
+                        StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), "File exported", "Exported [${file.uri}]", AnnouncementType.SESSION, time = null, category = "download", actionButton = "Open") {
+                            file.share(context);
+                        };
+                    }
+                } catch(ex: Throwable) {
+                    Logger.e(TAG, "Failed export [${export.videoLocal.name}]: ${ex.message}", ex);
+
+                }
             }
         }
-    }
-
-    fun validateExport(export: VideoExport) {
-        if(_exporting.hasItem { it.videoLocal.url == export.videoLocal.url })
-            throw AlreadyQueuedException("Video [${export.videoLocal.name}] is already queued for export");
-    }
-    fun export(videoLocal: VideoLocal, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, notify: Boolean = true) {
-        val shortName = if(videoLocal.name.length > 23)
-            videoLocal.name.substring(0, 20) + "...";
-        else
-            videoLocal.name;
-
-        val videoExport = VideoExport(videoLocal, videoSource, audioSource, subtitleSource);
-
-        try {
-            validateExport(videoExport);
-            _exporting.save(videoExport);
-
-            if(notify) {
-                UIDialogs.toast("Exporting [${shortName}]");
-                StateApp.withContext { ExportingService.getOrCreateService(it) };
-                onExportsChanged.emit();
-            }
-        }
-        catch (ex: AlreadyQueuedException) {
-            Logger.e(TAG, "File is already queued for export.", ex);
-            StateApp.withContext { ExportingService.getOrCreateService(it) };
-        }
-        catch(ex: Throwable) {
-            StateApp.withContext {
-                UIDialogs.showDialog(
-                    it,
-                    R.drawable.ic_error,
-                    "Failed to start export due to:\n${ex.message}", null, null,
-                    0,
-                    UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY)
-                );
-            }
-        }
-    }
-
-
-    fun removeExport(export: VideoExport) {
-        _exporting.delete(export);
-        export.isCancelled = true;
-        onExportsChanged.emit();
     }
 
     companion object {
