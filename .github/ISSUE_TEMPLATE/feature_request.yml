@@ -1,0 +1,72 @@
+name: Feature Request
+description: Suggest a new feature or other enhancement.
+labels: ["enhancement", "new"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Thank you for opening a feature request.
+
+        The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application
+
+        [External Contributions are close at this time](https://github.com/tom-futo/grayjay-android/blob/master/CONTRIBUTION.md#contributing-to-core)
+
+        For discussion related to enhancements, please see: [The FUTO Grayjay Zulip Channel](https://chat.futo.org/#narrow/stream/46-Grayjay)
+
+        ## If your feature request relates to:
+        * **Grayjay Official Youtube Plugin**: Open an issue at [grayjay-plugin-youtube](https://github.com/futo-org/grayjay-plugin-youtube/issues).
+        * **Grayjay Official BiliBili Plugin**: Open an issue at [grayjay-plugin-bilibili](https://github.com/futo-org/grayjay-plugin-bilibili/issues).
+        * **Grayjay Official Twitch Plugin**: Open an issue at [grayjay-plugin-twitch](https://github.com/futo-org/grayjay-plugin-twitch/issues).
+        * **Grayjay Official Odysee Plugin**: Open an issue at [grayjay-plugin-odysee](https://github.com/futo-org/grayjay-plugin-odysee/issues).
+        * **Grayjay Official Rumble Plugin**: Open an issue at [grayjay-plugin-rumble](https://github.com/futo-org/grayjay-plugin-rumble/issues).
+        * **Grayjay Official Kick Plugin**: Open an issue at [grayjay-plugin-kick](https://github.com/futo-org/grayjay-plugin-kick/issues).
+        * **Grayjay Official PeerTube Plugin**: Open an issue at [grayjay-plugin-peertube](https://github.com/futo-org/grayjay-plugin-peertube/issues).
+        * **Grayjay Official Patreon Plugin**: Open an issue at [grayjay-plugin-patreon](https://github.com/futo-org/grayjay-plugin-patreon/issues).
+        * **Grayjay Official Nebula Plugin**: Open an issue at [grayjay-plugin-nebula](https://github.com/futo-org/grayjay-plugin-nebula/issues).
+        * **Grayjay Official SoundCloud Plugin**: Open an issue at [grayjay-plugin-soundcloud](https://github.com/futo-org/grayjay-plugin-soundcloud/issues).
+        * **A Grayjay Unofficial Plugin**: Please open an issue in the plugin's own repository, which can be found by selecting Sources > Plugin Name > Script URL OR Repository URL.
+
+  - type: textarea
+    id: grayjay-use-case
+    attributes:
+      label: Use Cases
+      description: |
+        In order to properly evaluate a feature request, it is necessary to understand the use cases for it.
+        Please describe below the _end goal_ you are trying to achieve that has led you to request this feature.
+        Please keep this section focused on the problem and not on the suggested solution.
+      placeholder:
+      value:
+    validations:
+      required: true
+
+  - type: textarea
+    id: grayjay-proposal
+    attributes:
+      label: Proposal
+      description: |
+          If you have an idea for a way to address the problem via a change to Grayjay features, please describe it below.
+          In this section, it's helpful to include specific examples of how what you are suggesting might look in the application, this allows us to understand the full picture of what you are proposing.
+          If you're not sure of some details, don't worry! When we evaluate the feature request we may suggest modifications as necessary to work within the design constraints of the Grayjay Core Application.
+      placeholder:
+      value:
+    validations:
+      required: false
+
+  - type: textarea
+    id: grayjay-references
+    attributes:
+      label: References
+      description: |
+        Are there any other GitHub issues, whether open or closed, that are related to the problem you've described above or to the suggested solution? If so, please create a list below that mentions each of them. For example:
+        ```
+          - #10
+        ```
+      placeholder:
+      value:
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        **Note:** If the submit button is disabled and you have filled out all required fields, please check that you did not forget a **Title** for the issue.
