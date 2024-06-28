@@ -23,16 +23,14 @@ body:
       label: What happened?
       description: What did you expect to happen?
       placeholder: Tell us what you see!
-      value: "A bug happened!"
     validations:
       required: true
 
-  - type: textarea
+  - type: input
     id: grayjay-version
     attributes:
       label: Grayjay Version
       description: In the application, select More > Settings, scroll to the bottom and locate the value next to "Version Name".
-      render: shell
       placeholder: "242"
     validations:
       required: true
@@ -46,29 +44,33 @@ body:
         - All
         - Youtube
         - BiliBili (CN)
-        - Twitch (Beta)
+        - Twitch
         - Odysee
         - Rumble
-        - Kick (Beta)
+        - Kick
         - PeerTube
         - Patreon
-        - Nebula (Beta)
+        - Nebula
         - SoundCloud
         - Other
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin Version
+      description: In the application, select Sources > [the broken plugin], write down the value under "Version".
+      placeholder: "12"
+
+  - type: checkboxes
     id: login
     attributes:
-      label: Are you experiencing the issue when logged in?
-      multiple: false
+      label: When do you experience the issue?
       options:
-        - "Yes"
-        - "No"
-        - N/A
-    validations:
-      required: true
+      - label: While logged in
+      - label: While logged out
+      - label: N/A
 
   - type: textarea
     id: logs
