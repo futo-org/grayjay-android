@@ -9,7 +9,7 @@ body:
 
         The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application
 
-        [External Contributions are close at this time](https://github.com/tom-futo/grayjay-android/blob/master/CONTRIBUTION.md#contributing-to-core)
+        [External Contributions are closed at this time](https://github.com/tom-futo/grayjay-android/blob/master/CONTRIBUTION.md#contributing-to-core)
 
         For discussion related to enhancements, please see: [The FUTO Grayjay Zulip Channel](https://chat.futo.org/#narrow/stream/46-Grayjay)
 
@@ -18,9 +18,7 @@ body:
     attributes:
       label: Use Cases
       description: |
-        In order to properly evaluate a feature request, it is necessary to understand the use cases for it.
-        Please describe below the _end goal_ you are trying to achieve that has led you to request this feature.
-        Please keep this section focused on the problem and not on the suggested solution.
+        In order to properly evaluate a feature request, it is necessary to understand the use cases for it. Please describe below the _end goal_ you are trying to achieve that has led you to request this feature. Please keep this section focused on the problem and not on the suggested solution.
       placeholder:
       value:
     validations:
@@ -32,8 +30,8 @@ body:
       label: Proposal
       description: |
           If you have an idea for a way to address the problem via a change to Grayjay features, please describe it below.
-          In this section, it's helpful to include specific examples of how what you are suggesting might look in the application, this allows us to understand the full picture of what you are proposing.
-          If you're not sure of some details, don't worry! When we evaluate the feature request we may suggest modifications as necessary to work within the design constraints of the Grayjay Core Application.
+
+          In this section, it's helpful to include specific examples of how what you are suggesting might look in the application, this allows us to understand the full picture of what you are proposing. If you're not sure of some details, don't worry! When we evaluate the feature request we may suggest modifications as necessary to work within the design constraints of the Grayjay Core Application.
       placeholder:
       value:
     validations:
