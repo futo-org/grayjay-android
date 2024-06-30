@@ -15,6 +15,7 @@ import com.futo.platformplayer.R
 open class InsertedViewAdapterWithLoader<TViewHolder> : InsertedViewAdapter<TViewHolder> where TViewHolder : ViewHolder {
     private var _loaderView: ImageView? = null;
     private var _loading = false;
+    val isLoading get() = _loading;
 
     constructor(
         context: Context,

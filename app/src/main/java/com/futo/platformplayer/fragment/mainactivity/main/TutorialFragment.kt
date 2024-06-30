@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.models.Thumbnail
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.ContentType
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
@@ -144,10 +145,8 @@ class TutorialFragment : MainFragment() {
         override fun getComments(client: IPlatformClient): IPager<IPlatformComment> {
             return EmptyPager()
         }
-
-        override fun getPlaybackTracker(): IPlaybackTracker? {
-            return null
-        }
+        override fun getPlaybackTracker(): IPlaybackTracker? = null;
+        override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? = null;
     }
 
     companion object {

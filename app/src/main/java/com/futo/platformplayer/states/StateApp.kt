@@ -445,9 +445,6 @@ class StateApp {
                 DownloadService.getOrCreateService(context);
         }
 
-        Logger.i(TAG, "MainApp Started: Check [Exports]");
-        StateDownloads.instance.checkForExportTodos();
-
         Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate]");
         val autoUpdateEnabled = Settings.instance.autoUpdate.isAutoUpdateEnabled();
         val shouldDownload = Settings.instance.autoUpdate.shouldDownload();

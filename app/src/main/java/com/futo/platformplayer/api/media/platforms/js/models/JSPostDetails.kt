@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media.platforms.js.models
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.post.IPlatformPostDetails
@@ -18,6 +19,7 @@ import com.futo.platformplayer.states.StateDeveloper
 
 class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
     private val _hasGetComments: Boolean;
+    private val _hasGetContentRecommendations: Boolean;
 
     override val rating: IRating;
 
@@ -34,6 +36,7 @@ class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
         content = obj.getOrDefault(config, "content", contextName, "") ?: "";
 
         _hasGetComments = _content.has("getComments");
+        _hasGetContentRecommendations = _content.has("getContentRecommendations");
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {
@@ -51,9 +54,27 @@ class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
     }
     override fun getPlaybackTracker(): IPlaybackTracker? = null;
 
+    override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? {
+        if(!_hasGetContentRecommendations || _content.isClosed)
+            return  null;
+
+        if(client is DevJSClient)
+            return StateDeveloper.instance.handleDevCall(client.devID, "postDetail.getContentRecommendations()") {
+                return@handleDevCall getContentRecommendationsJS(client);
+            }
+        else if(client is JSClient)
+            return getContentRecommendationsJS(client);
+
+        return null;
+    }
+    private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
+        val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+        return JSContentPager(_pluginConfig, client, contentPager);
+    }
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
         val commentPager = _content.invoke<V8ValueObject>("getComments", arrayOf<Any>());
         return JSCommentPager(_pluginConfig, client, commentPager);
     }
+
 }

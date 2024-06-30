@@ -347,6 +347,7 @@
     <string name="get_answers_to_common_questions">Get answers to common questions</string>
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>
+    <string name="networking">Networking</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
     <string name="volume_slider_descr">Enable slide gesture to change volume</string>
@@ -461,6 +462,8 @@
     <string name="deletes_all_ongoing_downloads">Deletes all ongoing downloads</string>
     <string name="deletes_all_unresolved_source_files">Deletes all unresolved source files</string>
     <string name="developer_mode">Developer Mode</string>
+    <string name="allow_all_certificates">Allow All Certificates</string>
+    <string name="allow_all_certificates_warning">This risks exposing all your Grayjay network traffic.</string>
     <string name="development_server">Development Server</string>
     <string name="experimental">Experimental</string>
     <string name="cache">Cache</string>

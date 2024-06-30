@@ -121,6 +121,11 @@ interface IPlatformClient {
      */
     fun getPlaybackTracker(url: String): IPlaybackTracker?;
 
+    /**
+     * Get content recommendations
+     */
+    fun getContentRecommendations(url: String): IPager<IPlatformContent>?;
+
 
     //Comments
     /**

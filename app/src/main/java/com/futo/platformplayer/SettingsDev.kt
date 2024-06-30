@@ -33,6 +33,7 @@ import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.fields.ButtonField
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
+import com.futo.platformplayer.views.fields.FormFieldWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -493,6 +494,17 @@ class SettingsDev : FragmentedStorageFileJson() {
     }
 
 
+
+    @FormField(R.string.networking, FieldForm.GROUP, -1, 18)
+    var networking = Networking();
+    @Serializable
+    class Networking {
+        @FormField(R.string.allow_all_certificates, FieldForm.TOGGLE, -1, 0)
+        @FormFieldWarning(R.string.allow_all_certificates_warning)
+        var allowAllCertificates: Boolean = false;
+    }
+
+
     @Contextual
     @Transient
     @FormField(R.string.info, FieldForm.GROUP, -1, 19)
@@ -502,6 +514,8 @@ class SettingsDev : FragmentedStorageFileJson() {
         @FormField(R.string.dev_info_channel_cache_size, FieldForm.READONLYTEXT, -1, 1, "channelCacheSize")
         var channelCacheStartupCount = StateCache.instance.channelCacheStartupCount;
     }
+
+
 
     //region BOILERPLATE
     override fun encode(): String {

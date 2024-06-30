@@ -41,9 +41,6 @@
         <service android:name=".services.DownloadService"
             android:enabled="true"
             android:foregroundServiceType="dataSync" />
-        <service android:name=".services.ExportingService"
-            android:enabled="true"
-            android:foregroundServiceType="dataSync" />
 
         <receiver android:name=".receivers.MediaControlReceiver" />
         <receiver android:name=".receivers.AudioNoisyReceiver" />

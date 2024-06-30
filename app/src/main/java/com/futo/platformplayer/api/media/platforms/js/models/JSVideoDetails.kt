@@ -6,6 +6,7 @@ import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
@@ -27,6 +28,7 @@ import com.futo.platformplayer.states.StateDeveloper
 
 class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     private val _hasGetComments: Boolean;
+    private val _hasGetContentRecommendations: Boolean;
     private val _hasGetPlaybackTracker: Boolean;
 
     //Details
@@ -66,6 +68,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
 
         _hasGetComments = _content.has("getComments");
         _hasGetPlaybackTracker = _content.has("getPlaybackTracker");
+        _hasGetContentRecommendations = _content.has("getContentRecommendations");
     }
 
     override fun getPlaybackTracker(): IPlaybackTracker? {
@@ -87,6 +90,24 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             else
                 return@catchScriptErrors null;
         };
+    }
+
+    override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? {
+        if(!_hasGetContentRecommendations || _content.isClosed)
+            return  null;
+
+        if(client is DevJSClient)
+            return StateDeveloper.instance.handleDevCall(client.devID, "videoDetail.getContentRecommendations()") {
+                return@handleDevCall getContentRecommendationsJS(client);
+            }
+        else if(client is JSClient)
+            return getContentRecommendationsJS(client);
+
+        return null;
+    }
+    private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
+        val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+        return JSContentPager(_pluginConfig, client, contentPager);
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {

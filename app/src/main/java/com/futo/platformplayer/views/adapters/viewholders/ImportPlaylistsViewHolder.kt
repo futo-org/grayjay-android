@@ -1,12 +1,14 @@
 package com.futo.platformplayer.views.adapters.viewholders
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.views.adapters.AnyAdapter
@@ -45,10 +47,15 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
 
     override fun bind(value: SelectablePlaylist) {
         _textName.text = value.playlist.name;
-        _textMetadata.text = "${value.playlist.videos.size} " + _view.context.getString(R.string.videos);
+        if(value.playlist.videoCount >= 0) {
+            _textMetadata.text = "${value.playlist.videoCount} " + _view.context.getString(R.string.videos);
+            _textMetadata.visibility = View.VISIBLE;
+        }
+        else
+            _textMetadata.visibility = View.GONE;
         _checkbox.value = value.selected;
 
-        val thumbnail = value.playlist.videos.firstOrNull()?.thumbnails?.getHQThumbnail();
+        val thumbnail = value.playlist.thumbnail;
         if (thumbnail != null)
             Glide.with(_imageThumbnail)
                 .load(thumbnail)
@@ -62,6 +69,6 @@ class ImportPlaylistsViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
 }
 
 class SelectablePlaylist(
-    val playlist: Playlist,
+    val playlist: IPlatformPlaylistDetails,
     var selected: Boolean = false
 ) { }

@@ -1,5 +1,7 @@
 package com.futo.platformplayer.api.http
 
+import androidx.collection.arrayMapOf
+import com.futo.platformplayer.SettingsDev
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
@@ -13,6 +15,11 @@ import okhttp3.Response
 import okhttp3.ResponseBody
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 import kotlin.system.measureTimeMillis
 
 open class ManagedHttpClient {
@@ -25,8 +32,29 @@ open class ManagedHttpClient {
 
     var user_agent = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
 
+    private val trustAllCerts = arrayOf<TrustManager>(
+      object: X509TrustManager {
+          override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) { }
+          override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) { }
+          override fun getAcceptedIssuers(): Array<X509Certificate> {
+              return arrayOf();
+          }
+      }
+    );
+    private fun trustAllCertificates(builder: OkHttpClient.Builder) {
+        val sslContext = SSLContext.getInstance("SSL");
+        sslContext.init(null, trustAllCerts, SecureRandom());
+        builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager);
+        builder.hostnameVerifier { a, b ->
+            return@hostnameVerifier true;
+        }
+        Logger.w(TAG, "Creating INSECURE client (TrustAll)");
+    }
+
     constructor(builder: OkHttpClient.Builder = OkHttpClient.Builder()) {
         _builderTemplate = builder;
+        if(SettingsDev.instance.developerMode && SettingsDev.instance.networking.allowAllCertificates)
+            trustAllCertificates(builder);
         client = builder.addNetworkInterceptor { chain ->
             val request = beforeRequest(chain.request());
             val response = afterRequest(chain.proceed(request));

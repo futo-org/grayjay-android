@@ -436,7 +436,7 @@ class PlatformPlaylist extends PlatformContent {
     constructor(obj) {
         super(obj, 4);
         this.plugin_type = "PlatformPlaylist";
-        this.videoCount = obj.videoCount ?? 0;
+        this.videoCount = obj.videoCount ?? -1;
         this.thumbnail = obj.thumbnail;
     }
 }

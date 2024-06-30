@@ -1063,6 +1063,11 @@ class VideoDetailView : ConstraintLayout {
 
         if(!bypassSameVideoCheck && this.video?.url == video.url)
             return;
+        //Loop workaround
+        if(bypassSameVideoCheck && this.video?.url == video.url && StatePlayer.instance.loopVideo) {
+            _player.seekTo(0);
+            return;
+        }
 
         val cachedVideo = StateDownloads.instance.getCachedVideo(video.id);
         if(cachedVideo != null) {

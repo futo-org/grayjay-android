@@ -8,5 +8,5 @@ interface IPlatformPlaylistDetails: IPlatformPlaylist {
     //TODO: Determine if this should be IPlatformContent (probably not?)
     val contents: IPager<IPlatformVideo>;
 
-    fun toPlaylist(): Playlist;
+    fun toPlaylist(onProgress: ((progress: Int) -> Unit)? = null): Playlist;
 }

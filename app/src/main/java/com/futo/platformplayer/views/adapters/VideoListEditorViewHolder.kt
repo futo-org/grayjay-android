@@ -43,7 +43,7 @@ class VideoListEditorViewHolder : ViewHolder {
     val onRemove = Event1<IPlatformVideo>();
 
     @SuppressLint("ClickableViewAccessibility")
-    constructor(view: View, touchHelper: ItemTouchHelper) : super(view) {
+    constructor(view: View, touchHelper: ItemTouchHelper? = null) : super(view) {
         _root = view.findViewById(R.id.root);
         _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
         _imageThumbnail?.clipToOutline = true;
@@ -59,7 +59,7 @@ class VideoListEditorViewHolder : ViewHolder {
         _layoutDownloaded = view.findViewById(R.id.layout_downloaded);
 
         _imageDragDrop.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
+            if (touchHelper != null && event.action == MotionEvent.ACTION_DOWN) {
                 touchHelper.startDrag(this);
             }
             false

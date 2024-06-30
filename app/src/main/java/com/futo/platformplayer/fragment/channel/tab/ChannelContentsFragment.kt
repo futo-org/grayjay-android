@@ -309,7 +309,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         _adapterResults?.setLoading(loading);
     }
 
-    fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
+    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
         val p = _lastPolycentricProfile;
         if (p != null && polycentricProfile != null && p.system == polycentricProfile.system) {
             Logger.i(TAG, "setPolycentricProfile skipped because previous was same");

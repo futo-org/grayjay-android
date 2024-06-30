@@ -1,14 +1,11 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
-import android.graphics.drawable.Animatable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ShareCompat
-import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
@@ -30,7 +27,6 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class PlaylistFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -70,7 +66,6 @@ class PlaylistFragment : MainFragment() {
         private val _fragment: PlaylistFragment;
 
         private var _playlist: Playlist? = null;
-        private var _remotePlaylist: IPlatformPlaylistDetails? = null;
         private var _editPlaylistNameInput: SlideUpMenuTextInput? = null;
         private var _editPlaylistOverlay: SlideUpMenuOverlay? = null;
         private var _url: String? = null;
@@ -136,12 +131,11 @@ class PlaylistFragment : MainFragment() {
                     return@TaskHandler StatePlatform.instance.getPlaylist(it);
                 })
                 .success {
-                    setLoading(false);
-                    _remotePlaylist = it;
                     setName(it.name);
-                    setVideos(it.contents.getResults(), false);
-                    setVideoCount(it.videoCount);
                     //TODO: Implement support for pagination
+                    setVideos(it.toPlaylist().videos, false);
+                    setVideoCount(it.videoCount);
+                    setLoading(false);
                 }
                 .exception<Throwable> {
                     Logger.w(TAG, "Failed to load playlist.", it);
@@ -151,58 +145,62 @@ class PlaylistFragment : MainFragment() {
         }
 
         fun onShown(parameter: Any?) {
-            _taskLoadPlaylist.cancel();
+            _taskLoadPlaylist.cancel()
 
             if (parameter is Playlist?) {
-                _playlist = parameter;
-                _remotePlaylist = null;
-                _url = null;
+                _playlist = parameter
+                _url = null
 
-                if(parameter != null) {
-                    setName(parameter.name);
-                    setVideos(parameter.videos, true);
-                    setVideoCount(parameter.videos.size);
-                    setButtonDownloadVisible(true);
-                    setButtonEditVisible(true);
+                if (parameter != null) {
+                    setName(parameter.name)
+                    setVideos(parameter.videos, true)
+                    setVideoCount(parameter.videos.size)
+                    setButtonDownloadVisible(true)
+                    setButtonEditVisible(true)
+
+                    if (!StatePlaylists.instance.playlistStore.getItems().contains(parameter)) {
+                        _fragment.topBar?.assume<NavigationTopBarFragment>()
+                            ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
+                                StatePlaylists.instance.playlistStore.save(parameter)
+                                _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(
+                                    arrayListOf()
+                                )
+                                UIDialogs.toast("Playlist saved")
+                            }))
+                    }
                 } else {
-                    setName(null);
-                    setVideos(null, false);
-                    setVideoCount(-1);
-                    setButtonDownloadVisible(false);
-                    setButtonEditVisible(false);
+                    setName(null)
+                    setVideos(null, false)
+                    setVideoCount(-1)
+                    setButtonDownloadVisible(false)
+                    setButtonEditVisible(false)
                 }
-
-                //TODO: Do I have to remove the showConvertPlaylistButton(); button here?
             } else if (parameter is IPlatformPlaylist) {
-                _playlist = null;
-                _remotePlaylist = null;
-                _url = parameter.url;
+                _playlist = null
+                _url = parameter.url
 
-                setVideoCount(parameter.videoCount);
-                setName(parameter.name);
-                setVideos(null, false);
-                setButtonDownloadVisible(false);
-                setButtonEditVisible(false);
+                setVideoCount(parameter.videoCount)
+                setName(parameter.name)
+                setVideos(null, false)
+                setButtonDownloadVisible(false)
+                setButtonEditVisible(false)
 
-                fetchPlaylist();
-                showConvertPlaylistButton();
+                fetchPlaylist()
             } else if (parameter is String) {
-                _playlist = null;
-                _remotePlaylist = null;
-                _url = parameter;
+                _playlist = null
+                _url = parameter
 
-                setName(null);
-                setVideos(null, false);
-                setVideoCount(-1);
-                setButtonDownloadVisible(false);
-                setButtonEditVisible(false);
+                setName(null)
+                setVideos(null, false)
+                setVideoCount(-1)
+                setButtonDownloadVisible(false)
+                setButtonEditVisible(false)
 
-                fetchPlaylist();
-                showConvertPlaylistButton();
+                fetchPlaylist()
             }
 
             _playlist?.let {
-                updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this::download);
+                updateDownloadState(VideoDownload.GROUP_PLAYLIST, it.id, this::download)
             }
         }
 
@@ -242,34 +240,6 @@ class PlaylistFragment : MainFragment() {
             StateDownloads.instance.onDownloadedChanged.remove(this);
         }
 
-        private fun showConvertPlaylistButton() {
-            _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
-                val remotePlaylist = _remotePlaylist;
-                if (remotePlaylist == null) {
-                    UIDialogs.toast(context.getString(R.string.please_wait_for_playlist_to_finish_loading));
-                    return@Pair;
-                }
-
-                setLoading(true);
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    try {
-                        StatePlaylists.instance.playlistStore.save(remotePlaylist.toPlaylist());
-
-                        withContext(Dispatchers.Main) {
-                            setLoading(false);
-                            UIDialogs.toast(context.getString(R.string.playlist_copied_as_local_playlist));
-                        }
-                    } catch (e: Throwable) {
-                        withContext(Dispatchers.Main) {
-                            setLoading(false);
-                        }
-
-                        throw e;
-                    }
-                }
-            }));
-        }
-
         private fun fetchPlaylist() {
             Logger.i(TAG, "fetchPlaylist")
 
@@ -290,21 +260,15 @@ class PlaylistFragment : MainFragment() {
 
         override fun onPlayAllClick() {
             val playlist = _playlist;
-            val remotePlaylist = _remotePlaylist;
             if (playlist != null) {
                 StatePlayer.instance.setPlaylist(playlist, focus = true);
-            } else if (remotePlaylist != null) {
-                StatePlayer.instance.setPlaylist(remotePlaylist, focus = true, shuffle = false);
             }
         }
 
         override fun onShuffleClick() {
             val playlist = _playlist;
-            val remotePlaylist = _remotePlaylist;
             if (playlist != null) {
                 StatePlayer.instance.setPlaylist(playlist, focus = true, shuffle = true);
-            } else if (remotePlaylist != null) {
-                StatePlayer.instance.setPlaylist(remotePlaylist, focus = true, shuffle = true);
             }
         }
 
@@ -320,19 +284,12 @@ class PlaylistFragment : MainFragment() {
         }
         override fun onVideoClicked(video: IPlatformVideo) {
             val playlist = _playlist;
-            val remotePlaylist = _remotePlaylist;
             if (playlist != null) {
                 val index = playlist.videos.indexOf(video);
                 if (index == -1)
                     return;
 
                 StatePlayer.instance.setPlaylist(playlist, index, true);
-            } else if (remotePlaylist != null) {
-                val index = remotePlaylist.contents.getResults().indexOf(video);
-                if (index == -1)
-                    return;
-
-                StatePlayer.instance.setPlaylist(remotePlaylist, index, true);
             }
         }
     }

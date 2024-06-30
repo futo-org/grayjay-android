@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
@@ -19,7 +20,12 @@ import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
-import com.futo.polycentric.core.*
+import com.futo.polycentric.core.ContentType
+import com.futo.polycentric.core.SignedEvent
+import com.futo.polycentric.core.StorageTypeCRDTItem
+import com.futo.polycentric.core.StorageTypeCRDTSetItem
+import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.toBase64Url
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
@@ -64,11 +70,8 @@ class PolycentricBackupActivity : AppCompatActivity() {
         }
 
         _buttonShare.onClick.subscribe {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain";
-                putExtra(Intent.EXTRA_TEXT, _exportBundle);
-            }
-            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_text)));
+            val shareIntent = Intent(Intent.ACTION_VIEW, Uri.parse(_exportBundle))
+            startActivity(Intent.createChooser(shareIntent, "Share ID"));
         };
 
         _buttonCopy.onClick.subscribe {

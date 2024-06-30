@@ -8,7 +8,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.*
+import com.futo.platformplayer.R
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
@@ -16,12 +16,13 @@ import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
-import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.adapters.viewholders.VideoDownloadViewHolder
 import com.futo.platformplayer.views.items.ActiveDownloadItem
 import com.futo.platformplayer.views.items.PlaylistDownloadItem
+import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -64,16 +65,6 @@ class DownloadsFragment : MainFragment() {
                 }
             }
         };
-        StateDownloads.instance.onExportsChanged.subscribe(this) {
-            lifecycleScope.launch(Dispatchers.Main) {
-                try {
-                    Logger.i(TAG, "Reloading UI for exports");
-                    _view?.reloadUI()
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to reload UI for exports", e)
-                }
-            }
-        };
     }
 
     override fun onPause() {
@@ -81,7 +72,6 @@ class DownloadsFragment : MainFragment() {
 
         StateDownloads.instance.onDownloadsChanged.remove(this);
         StateDownloads.instance.onDownloadedChanged.remove(this);
-        StateDownloads.instance.onExportsChanged.remove(this);
     }
 
     private class DownloadsView : LinearLayout {

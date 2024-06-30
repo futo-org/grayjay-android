@@ -1,46 +1,36 @@
 package com.futo.platformplayer.downloads
 
 import android.content.Context
-import android.net.Uri
-import android.os.Environment
 import androidx.documentfile.provider.DocumentFile
-import com.arthenica.ffmpegkit.*
-import com.futo.platformplayer.api.media.models.streams.sources.*
-import com.futo.platformplayer.constructs.Event1
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.LogCallback
+import com.arthenica.ffmpegkit.ReturnCode
+import com.arthenica.ffmpegkit.StatisticsCallback
+import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
+import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanBitrate
-import kotlinx.coroutines.*
-import java.io.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.util.UUID
-import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
 import kotlin.coroutines.resumeWithException
 
 @kotlinx.serialization.Serializable
 class VideoExport {
-    var state: State = State.QUEUED;
-
     var videoLocal: VideoLocal;
     var videoSource: LocalVideoSource?;
     var audioSource: LocalAudioSource?;
     var subtitleSource: LocalSubtitleSource?;
-
-    var progress: Double = 0.0;
-    var isCancelled = false;
-
-    var error: String? = null;
-
-    @kotlinx.serialization.Transient
-    val onStateChanged = Event1<State>();
-    @kotlinx.serialization.Transient
-    val onProgressChanged = Event1<Double>();
-
-    fun changeState(newState: State) {
-        state = newState;
-        onStateChanged.emit(newState);
-    }
 
     constructor(videoLocal: VideoLocal, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?) {
         this.videoLocal = videoLocal;
@@ -50,8 +40,6 @@ class VideoExport {
     }
 
     suspend fun export(context: Context, onProgress: ((Double) -> Unit)? = null): DocumentFile = coroutineScope {
-        if(isCancelled) throw CancellationException("Export got cancelled");
-
         val v = videoSource;
         val a = audioSource;
         val s = subtitleSource;
@@ -107,7 +95,6 @@ class VideoExport {
             throw Exception("Cannot export when no audio or video source is set.");
         }
 
-        onProgressChanged.emit(100.0);
         return@coroutineScope outputFile;
     }
 

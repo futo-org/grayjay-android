@@ -647,6 +647,15 @@ class StatePlatform {
         return client.getPlaybackTracker(url);
     }
 
+    fun getContentRecommendations(url: String): IPager<IPlatformContent>? {
+        val baseClient = getContentClientOrNull(url) ?: return null;
+        if (baseClient !is JSClient) {
+            return baseClient.getContentRecommendations(url);
+        }
+        val client = _mainClientPool.getClientPooled(baseClient);
+        return client.getContentRecommendations(url);
+    }
+
     fun hasEnabledChannelClient(url : String) : Boolean = getEnabledClients().any { it.isChannelUrl(url) };
     fun getChannelClient(url : String, exclude: List<String>? = null) : IPlatformClient = getChannelClientOrNull(url, exclude)
         ?: throw NoPlatformClientException("No client enabled that supports this channel url (${url})");

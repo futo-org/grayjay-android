@@ -1,7 +1,6 @@
 package com.futo.platformplayer.views
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.View
@@ -49,6 +48,7 @@ class MonetizationView : LinearLayout {
 
     private val _taskLoadMerchandise = TaskHandler<String, List<StoreItem>>(StateApp.instance.scopeGetter, { url ->
         val client = ManagedHttpClient();
+        Logger.i(TAG, "Loading https://storecache.grayjay.app/StoreData?url=$url")
         val result = client.get("https://storecache.grayjay.app/StoreData?url=$url")
         if (!result.isOk) {
             throw Exception("Failed to retrieve store data.");
