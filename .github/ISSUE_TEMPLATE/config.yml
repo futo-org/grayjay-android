@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Need a Grayjay License?
+    url: https://pay.futo.org/api/PaymentPortal
+    about: Purchase a Grayjay license with FutoPay
+  - name: Plugin Building, Usage, or other Questions
+    url: https://chat.futo.org/#narrow/stream/46-Grayjay
+    about: Grayjays Community Chat
