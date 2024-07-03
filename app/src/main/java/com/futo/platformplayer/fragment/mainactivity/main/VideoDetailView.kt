@@ -59,8 +59,11 @@ import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
+import com.futo.platformplayer.api.media.models.streams.sources.DashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.HLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
@@ -1768,14 +1771,18 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        val bestVideoSources = videoSources?.map { it.height * it.width }
+        val bestVideoSources = (videoSources?.map { it.height * it.width }
             ?.distinct()
             ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
+            ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))
+            ?.distinct()
             ?.filter { it != null }
             ?.toList() ?: listOf();
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
         val bestAudioSources = audioSources
             ?.filter { it.container == bestAudioContainer }
+            ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
+            ?.distinct()
             ?.toList() ?: listOf();
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
