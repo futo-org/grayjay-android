@@ -161,6 +161,7 @@ import java.time.OffsetDateTime
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
+@androidx.media3.common.util.UnstableApi
 class VideoDetailView : ConstraintLayout {
     private val TAG = "VideoDetailView"
 
