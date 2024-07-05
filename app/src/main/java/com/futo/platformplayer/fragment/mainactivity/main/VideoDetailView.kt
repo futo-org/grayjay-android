@@ -1250,7 +1250,7 @@ class VideoDetailView : ConstraintLayout {
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
-                    if(me.video?.isLive == true) withContext(Dispatchers.Main) {
+                    if(me.video?.isLive == true || ex.message?.contains("Unable to resolve host") == true) withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, context.getString(R.string.failed_to_get_playback_tracker));
                     };
                     else withContext(Dispatchers.Main) {
@@ -2546,13 +2546,15 @@ class VideoDetailView : ConstraintLayout {
         .exception<Throwable> {
             Logger.w(ChannelFragment.TAG, "Failed to load video.", it);
 
-            handleErrorOrCall {
-                _retryCount = 0;
-                _retryJob?.cancel();
-                _retryJob = null;
-                _liveTryJob?.cancel();
-                _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
+            if(!(it.message?.contains("Unable to resolve host") ?: false && nextVideo())){
+                handleErrorOrCall {
+                    _retryCount = 0;
+                    _retryJob?.cancel();
+                    _retryJob = null;
+                    _liveTryJob?.cancel();
+                    _liveTryJob = null;
+                    UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
+                }
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 
