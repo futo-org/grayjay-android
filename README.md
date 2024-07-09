@@ -1,4 +1,4 @@
-# PlatformPlayer
+# Test
 
 The FUTO media app endeavours creating infrastructure for creators to have their content hosted by someone else but at the same time having creators retain full ownership of their content. We want creators to feel like they are publishing to the world, and we want multiple indexers competing with each other to do a good job connecting consumers to creators and their content.
 
