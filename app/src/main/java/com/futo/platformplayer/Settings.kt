@@ -525,6 +525,10 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var keepScreenOn: Boolean = true;
 
+        @FormField(R.string.always_proxy_requests, FieldForm.TOGGLE, R.string.always_proxy_requests_description, 1)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var alwaysProxyRequests: Boolean = false;
+
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
