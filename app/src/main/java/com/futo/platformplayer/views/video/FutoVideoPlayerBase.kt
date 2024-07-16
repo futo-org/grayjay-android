@@ -14,6 +14,7 @@ import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
@@ -26,6 +27,7 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
+import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlWidevineSource
@@ -36,17 +38,21 @@ import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
+import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlSource
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.engine.dev.V8RemoteObject
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.video.PlayerManager
+import com.google.gson.Gson
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +74,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         private set;
 
     private var _lastVideoMediaSource: MediaSource? = null;
+    private var _lastGeneratedDash: String? = null;
     private var _lastAudioMediaSource: MediaSource? = null;
     private var _lastSubtitleMediaSource: MediaSource? = null;
     private var _shouldPlaybackRestartOnConnectivity: Boolean = false;
@@ -375,6 +382,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
 
     private fun swapSourceInternal(videoSource: IVideoSource?) {
+        _lastGeneratedDash = null;
         when(videoSource) {
             is LocalVideoSource -> swapVideoSourceLocal(videoSource);
             is JSVideoUrlRangeSource -> swapVideoSourceUrlRange(videoSource);
@@ -415,7 +423,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         if(videoSource.hasItag) {
             //Temporary workaround for Youtube
             try {
-                _lastVideoMediaSource = VideoHelper.convertItagSourceToChunkedDashSource(videoSource);
+                val results = VideoHelper.convertItagSourceToChunkedDashSource(videoSource);
+                _lastGeneratedDash = results.second;
+                _lastVideoMediaSource = results.first;
                 return;
             }
             //If it fails to create the dash workaround, fallback to standard progressive
@@ -635,6 +645,16 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         when (error.errorCode) {
             PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
+                if(error.cause is HttpDataSource.InvalidResponseCodeException) {
+                    val cause = error.cause as HttpDataSource.InvalidResponseCodeException
+
+                    Logger.v(TAG, null) {
+                        "ERROR BAD HTTP ${cause.responseCode},\n" +
+                                "Video Source: ${V8RemoteObject.gsonStandard.toJson(lastVideoSource)}\n" +
+                                "Audio Source: ${V8RemoteObject.gsonStandard.toJson(lastAudioSource)}\n" +
+                                "Dash: ${_lastGeneratedDash}"
+                    };
+                }
                 onDatasourceError.emit(error);
             }
             //PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,

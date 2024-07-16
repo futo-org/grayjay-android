@@ -25,6 +25,7 @@ import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.datasource.HttpUtil;
 import androidx.media3.datasource.TransferListener;
 
+import com.futo.platformplayer.logging.Logger;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
@@ -581,6 +582,8 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             requestUrl = (modifiedUrl != null) ? modifiedUrl : requestUrl;
             requestHeaders = result.getHeaders();
         }
+
+        Logger.Companion.v("JSHttpDataSource", "DataSource REQ: " + requestUrl, null);
 
         HttpURLConnection connection = openConnection(new URL(requestUrl));
         connection.setConnectTimeout(connectTimeoutMillis);

@@ -127,7 +127,7 @@ class VideoHelper {
         }
 
         @OptIn(UnstableApi::class)
-        fun convertItagSourceToChunkedDashSource(videoSource: JSVideoUrlRangeSource) : MediaSource {
+        fun convertItagSourceToChunkedDashSource(videoSource: JSVideoUrlRangeSource) : Pair<MediaSource, String> {
             val urlToUse = videoSource.getVideoUrl();
             val manifestConfig = ProgressiveDashManifestCreator.fromVideoProgressiveStreamingUrl(urlToUse,
                 videoSource.duration * 1000,
@@ -145,10 +145,10 @@ class VideoHelper {
             );
 
             val manifest = DashManifestParser().parse(Uri.parse(""), manifestConfig.byteInputStream());
-            return DashMediaSource.Factory(ResolvingDataSource.Factory(videoSource.getHttpDataSourceFactory(), ResolvingDataSource.Resolver { dataSpec ->
+            return Pair(DashMediaSource.Factory(ResolvingDataSource.Factory(videoSource.getHttpDataSourceFactory(), ResolvingDataSource.Resolver { dataSpec ->
                 Logger.v("PLAYBACK", "Video REQ Range [" + dataSpec.position + "-" + (dataSpec.position + dataSpec.length) + "](" + dataSpec.length + ")", null);
                 return@Resolver dataSpec;
-            })).createMediaSource(manifest, MediaItem.Builder().setUri(Uri.parse(videoSource.getVideoUrl())).build())
+            })).createMediaSource(manifest, MediaItem.Builder().setUri(Uri.parse(videoSource.getVideoUrl())).build()), manifestConfig);
         }
 
         fun getMediaMetadata(media: IPlatformVideoDetails): MediaMetadata {
