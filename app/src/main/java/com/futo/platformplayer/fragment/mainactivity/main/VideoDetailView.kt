@@ -102,6 +102,7 @@ import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
@@ -1772,19 +1773,21 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        val bestVideoSources = (videoSources?.map { it.height * it.width }
+        val doDedup = false;
+
+        val bestVideoSources = if(doDedup) (videoSources?.map { it.height * it.width }
             ?.distinct()
             ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
             ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))
             ?.distinct()
             ?.filter { it != null }
-            ?.toList() ?: listOf();
+            ?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
-        val bestAudioSources = audioSources
+        val bestAudioSources = if(doDedup) audioSources
             ?.filter { it.container == bestAudioContainer }
             ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
             ?.distinct()
-            ?.toList() ?: listOf();
+            ?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
@@ -2312,6 +2315,15 @@ class VideoDetailView : ConstraintLayout {
         }
 
         updateTracker(positionMilliseconds, isPlaying, false);
+
+        if(StateDeveloper.instance.isPlaybackTesting) {
+            if((positionMilliseconds > 1000 * 70 || positionMilliseconds > (video!!.duration * 1000 - 1000))) {
+                StateDeveloper.instance.testPlayback();
+            }
+            else if(video!!.duration > 70 && positionMilliseconds < 10000) {
+                handleSeek(40000);
+            }
+        }
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {

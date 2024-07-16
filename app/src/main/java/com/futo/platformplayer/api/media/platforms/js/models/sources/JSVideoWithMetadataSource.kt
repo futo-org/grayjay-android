@@ -33,4 +33,9 @@ class JSVideoUrlRangeSource : JSVideoUrlSource, IStreamMetaDataSource {
         indexStart = _obj.getOrDefault(config, "indexStart", contextName, null);
         indexEnd = _obj.getOrDefault(config, "indexEnd", contextName, null);
     }
+
+    override fun toString(): String {
+        return "RangeSource(url=[${getVideoUrl()}], itagId=[${itagId}], initStart=[${initStart}], initEnd=[${initEnd}], indexStart=[${indexStart}], indexEnd=[${indexEnd}]))";
+        return super.toString()
+    }
 }

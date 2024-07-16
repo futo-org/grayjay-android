@@ -645,13 +645,14 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         when (error.errorCode) {
             PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
+                Logger.w(TAG, "ERROR_CODE_IO_BAD_HTTP_STATUS ${error.cause?.javaClass?.simpleName}");
                 if(error.cause is HttpDataSource.InvalidResponseCodeException) {
                     val cause = error.cause as HttpDataSource.InvalidResponseCodeException
 
-                    Logger.v(TAG, null) {
+                    Logger.w(TAG, null) {
                         "ERROR BAD HTTP ${cause.responseCode},\n" +
-                                "Video Source: ${V8RemoteObject.gsonStandard.toJson(lastVideoSource)}\n" +
-                                "Audio Source: ${V8RemoteObject.gsonStandard.toJson(lastAudioSource)}\n" +
+                                "Video Source: ${lastVideoSource?.toString()}\n" +
+                                "Audio Source: ${lastAudioSource?.toString()}\n" +
                                 "Dash: ${_lastGeneratedDash}"
                     };
                 }

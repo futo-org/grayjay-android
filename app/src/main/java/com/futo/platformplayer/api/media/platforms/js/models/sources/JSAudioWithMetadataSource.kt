@@ -35,4 +35,9 @@ class JSAudioUrlRangeSource : JSAudioUrlSource, IStreamMetaDataSource {
         indexEnd = _obj.getOrDefault(config, "indexEnd", contextName, null);
         audioChannels = _obj.getOrDefault(config, "audioChannels", contextName, 2) ?: 2;
     }
+
+    override fun toString(): String {
+        return "RangeSource(url=[${getAudioUrl()}], itagId=[${itagId}], initStart=[${initStart}], initEnd=[${initEnd}], indexStart=[${indexStart}], indexEnd=[${indexEnd}]))";
+        return super.toString()
+    }
 }

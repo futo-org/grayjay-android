@@ -52,6 +52,7 @@ class PackageBridge : V8Package {
 
     @V8Function
     fun toast(str: String) {
+        Logger.i(TAG, "Plugin toast [${_config.name}]: ${str}");
         StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
             try {
                 UIDialogs.toast(str);

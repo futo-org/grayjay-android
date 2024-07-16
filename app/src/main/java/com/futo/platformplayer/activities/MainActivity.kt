@@ -538,6 +538,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             "IMPORT_OPTIONS" -> {
                 UIDialogs.showImportOptionsDialog(this);
             }
+            "ACTION" -> {
+                val action = intent.getStringExtra("ACTION");
+                StateDeveloper.instance.testState = "TestPlayback";
+                StateDeveloper.instance.testPlayback();
+            }
             "TAB" -> {
                 when(intent.getStringExtra("TAB")){
                     "Sources" -> {
@@ -1177,6 +1182,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "VIDEO";
             sourcesIntent.putExtra("VIDEO", videoUrl);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            return sourcesIntent;
+        }
+        fun getActionIntent(context: Context, action: String) : Intent {
+            val sourcesIntent = Intent(context, MainActivity::class.java);
+            sourcesIntent.action = "ACTION";
+            sourcesIntent.putExtra("ACTION", action);
             sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             return sourcesIntent;
         }
