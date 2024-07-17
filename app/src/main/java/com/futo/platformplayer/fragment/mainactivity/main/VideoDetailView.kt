@@ -1239,18 +1239,25 @@ class VideoDetailView : ConstraintLayout {
                     }*/
                 }
                 try {
-                    val stopwatch = com.futo.platformplayer.debug.Stopwatch()
-                    var tracker = video.getPlaybackTracker()
-                    Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+                    if(StateApp.instance.privateMode) {
+                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
+                        var tracker = video.getPlaybackTracker()
+                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
 
-                    if (tracker == null) {
-                        stopwatch.reset()
-                        tracker = StatePlatform.instance.getPlaybackTracker(video.url);
-                        Logger.i(TAG, "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+                        if (tracker == null) {
+                            stopwatch.reset()
+                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
+                            Logger.i(
+                                TAG,
+                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
+                            )
+                        }
+
+                        if (me.video == video)
+                            me._playbackTracker = tracker;
                     }
-
-                    if(me.video == video)
-                        me._playbackTracker = tracker;
+                    else if(me.video == video)
+                        me._playbackTracker = null;
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
@@ -1454,6 +1461,8 @@ class VideoDetailView : ConstraintLayout {
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
         StatePlayer.instance.setCurrentlyPlaying(video);
 
+        _liveChat?.stop();
+        _liveChat = null;
         if(video.isLive && video.live != null) {
             loadLiveChat(video);
         }
@@ -1663,6 +1672,7 @@ class VideoDetailView : ConstraintLayout {
             if(_didTriggerDatasourceErrroCount <= 3) {
                 _didTriggerDatasourceError = true;
                 _didTriggerDatasourceErrroCount++;
+
                 UIDialogs.toast("Block detected, attempting bypass");
 
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
@@ -1683,25 +1693,25 @@ class VideoDetailView : ConstraintLayout {
                         }
                     }
                 }
-                /*
+            }
+            else if(_didTriggerDatasourceErrroCount > 3) {
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
                     context.getString(R.string.media_error),
                     context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
                     null,
                     0,
-                        UIDialogs.Action(context.getString(R.string.no), { _didTriggerDatasourceError = false }),
-                        UIDialogs.Action(context.getString(R.string.yes), {
-                            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                try {
-                                    StatePlatform.instance.reloadClient(context, config.id);
-                                    reloadVideo();
-                                } catch (e: Throwable) {
-                                    Logger.e(TAG, "Failed to reload video.", e)
-                                }
+                    UIDialogs.Action(context.getString(R.string.no), { _didTriggerDatasourceError = false }),
+                    UIDialogs.Action(context.getString(R.string.yes), {
+                        fragment.lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                StatePlatform.instance.reloadClient(context, config.id);
+                                reloadVideo();
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to reload video.", e)
                             }
-                        }, UIDialogs.ActionStyle.PRIMARY)
-                    );
-                */
+                        }
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
             }
         }
     }

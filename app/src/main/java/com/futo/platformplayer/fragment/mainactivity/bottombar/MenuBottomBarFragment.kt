@@ -16,6 +16,7 @@ import androidx.core.animation.doOnEnd
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.dp
@@ -222,6 +223,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 buttons.removeAt(faqIndex)
                 buttons.add(if (buttons.size == 1) 1 else 0, button)
             }
+            //Force privacy to be third
+            val privacyIndex = buttons.indexOfFirst { b -> b.id == 96 };
+            if (privacyIndex != -1) {
+                val button = buttons[privacyIndex]
+                buttons.removeAt(privacyIndex)
+                buttons.add(if (buttons.size == 2) 2 else 1, button)
+            }
 
             for (data in buttons) {
                 val button = MenuButton(context, data, _fragment, true);
@@ -305,6 +313,16 @@ class MenuBottomBarFragment : MainActivityFragment() {
             newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = false, { false }, {
                 it.navigate<BrowserFragment>(Settings.URL_FAQ);
             }))
+            newCurrentButtonDefinitions.add(ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = false, { false }, {
+                UIDialogs.showDialog(context, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
+                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
+                    UIDialogs.Action("Cancel", {
+                        StateApp.instance.setPrivacyMode(false);
+                    }, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action("Enable", {
+                        StateApp.instance.setPrivacyMode(true);
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            }))
 
             //Add conditional buttons here, when you add a conditional button, be sure to add the register and unregister events for when the button needs to be updated
 
@@ -370,7 +388,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     c.overridePendingTransition(R.anim.slide_in_up, R.anim.slide_darken);
                 }
             })
-            //98 is reversed for buy button
+            //96 is reserved for privacy button
+            //98 is reserved for buy button
             //99 is reserved for more button
         );
     }

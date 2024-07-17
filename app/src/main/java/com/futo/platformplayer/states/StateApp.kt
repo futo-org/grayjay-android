@@ -28,6 +28,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
@@ -56,6 +57,18 @@ class StateApp {
 
     val sessionId = UUID.randomUUID().toString();
 
+    var privateMode: Boolean = false
+        get(){
+            return field;
+        }
+        private set(value) {
+            field = value;
+        }
+    val privateModeChanged = Event1<Boolean>();
+    fun setPrivacyMode(value: Boolean) {
+        privateMode = value;
+        privateModeChanged.emit(privateMode);
+    }
 
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();

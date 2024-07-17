@@ -164,13 +164,16 @@ open class JSClient : IPlatformClient {
 
         _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
-    constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String?, script: String) {
+    constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String?, script: String, withoutCredentials: Boolean = false) {
         this._context = context;
         this.config = descriptor.config;
         icon = StatePlatform.instance.getPlatformIcon(config.id) ?: ImageVariable(config.absoluteIconUrl, null, null);
         this.descriptor = descriptor;
         _injectedSaveState = saveState;
-        _auth = descriptor.getAuth();
+        if(!withoutCredentials)
+            _auth = descriptor.getAuth();
+        else
+            _auth = null;
         _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
@@ -190,8 +193,8 @@ open class JSClient : IPlatformClient {
         _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
 
-    open fun getCopy(): JSClient {
-        return JSClient(_context, descriptor, saveState(), _script);
+    open fun getCopy(withoutCredentials: Boolean = false): JSClient {
+        return JSClient(_context, descriptor, saveState(), _script, withoutCredentials);
     }
 
     fun getUnderlyingPlugin(): V8Plugin {

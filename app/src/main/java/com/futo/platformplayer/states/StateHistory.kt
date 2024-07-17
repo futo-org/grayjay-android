@@ -96,6 +96,8 @@ class StateHistory {
         return historyIndex[url];
     }
     fun getHistoryByVideo(video: IPlatformVideo, create: Boolean = false, watchDate: OffsetDateTime? = null): DBHistory.Index? {
+        if(StateApp.instance.privateMode)
+            return null;
         val existing = historyIndex[video.url];
         var result: DBHistory.Index? = null;
         if(existing != null) {
