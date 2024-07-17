@@ -1171,6 +1171,8 @@ class VideoDetailView : ConstraintLayout {
     //@OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
+        _didTriggerDatasourceErrroCount = 0;
+        _didTriggerDatasourceError = false;
 
         if(newVideo && this.video?.url == videoDetail.url)
             return;
@@ -1648,6 +1650,7 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    private var _didTriggerDatasourceErrroCount = 0;
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
@@ -1657,9 +1660,30 @@ class VideoDetailView : ConstraintLayout {
                 return;
             val config = currentVideo.sourceConfig;
 
-            if(!_didTriggerDatasourceError) {
+            if(_didTriggerDatasourceErrroCount <= 3) {
                 _didTriggerDatasourceError = true;
+                _didTriggerDatasourceErrroCount++;
+                UIDialogs.toast("Block detected, attempting bypass");
 
+                fragment.lifecycleScope.launch(Dispatchers.IO) {
+                    val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
+                    val previousVideoSource = _lastVideoSource;
+                    val previousAudioSource = _lastAudioSource;
+
+                    if(newDetails is IPlatformVideoDetails) {
+                        val newVideoSource = if(previousVideoSource != null)
+                            VideoHelper.selectBestVideoSource(newDetails.video, previousVideoSource.height * previousVideoSource.width, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS);
+                        else null;
+                        val newAudioSource = if(previousAudioSource != null)
+                            VideoHelper.selectBestAudioSource(newDetails.video, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS, previousAudioSource.language, previousAudioSource.bitrate.toLong());
+                        else null;
+                        withContext(Dispatchers.Main) {
+                            video = newDetails;
+                            _player.setSource(newVideoSource, newAudioSource, true, true);
+                        }
+                    }
+                }
+                /*
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
                     context.getString(R.string.media_error),
                     context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
@@ -1677,6 +1701,7 @@ class VideoDetailView : ConstraintLayout {
                             }
                         }, UIDialogs.ActionStyle.PRIMARY)
                     );
+                */
             }
         }
     }
@@ -2317,11 +2342,11 @@ class VideoDetailView : ConstraintLayout {
         updateTracker(positionMilliseconds, isPlaying, false);
 
         if(StateDeveloper.instance.isPlaybackTesting) {
-            if((positionMilliseconds > 1000 * 70 || positionMilliseconds > (video!!.duration * 1000 - 1000))) {
+            if((positionMilliseconds > 1000 * 65 || positionMilliseconds > (video!!.duration * 1000 - 1000))) {
                 StateDeveloper.instance.testPlayback();
             }
             else if(video!!.duration > 70 && positionMilliseconds < 10000) {
-                handleSeek(40000);
+                handleSeek(55000);
             }
         }
     }
