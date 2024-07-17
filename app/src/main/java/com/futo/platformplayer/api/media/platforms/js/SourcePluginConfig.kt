@@ -176,7 +176,7 @@ class SourcePluginConfig(
     }
 
     companion object {
-        private val _allowRegex = Regex("\\*\\.[a-z0-9]*\\.[a-z]*");
+        private val _allowRegex = Regex("\\*\\.[a-z0-9]+\\.[a-z]+");
 
         fun fromJson(json: String, sourceUrl: String? = null): SourcePluginConfig {
             val obj = Serializer.json.decodeFromString<SourcePluginConfig>(json);
