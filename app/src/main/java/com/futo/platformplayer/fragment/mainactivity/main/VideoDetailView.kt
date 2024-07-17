@@ -1239,7 +1239,7 @@ class VideoDetailView : ConstraintLayout {
                     }*/
                 }
                 try {
-                    if(StateApp.instance.privateMode) {
+                    if(!StateApp.instance.privateMode) {
                         val stopwatch = com.futo.platformplayer.debug.Stopwatch()
                         var tracker = video.getPlaybackTracker()
                         Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
