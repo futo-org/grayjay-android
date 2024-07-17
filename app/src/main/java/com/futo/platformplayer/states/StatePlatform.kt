@@ -93,7 +93,7 @@ class StatePlatform {
     private val _channelClientPool = PlatformMultiClientPool("Channels", 15); //Used primarily for subscription/background channel fetches
     private val _trackerClientPool = PlatformMultiClientPool("Trackers", 1); //Used exclusively for playback trackers
     private val _liveEventClientPool = PlatformMultiClientPool("LiveEvents", 1); //Used exclusively for live events
-    private val _privateClientPool = PlatformMultiClientPool("Private", 2); //Used primarily for calls if in incognito mode
+    private val _privateClientPool = PlatformMultiClientPool("Private", 2, true); //Used primarily for calls if in incognito mode
 
 
     private val _icons : HashMap<String, ImageVariable> = HashMap();
@@ -118,11 +118,13 @@ class StatePlatform {
                 }
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
             }
-            else
+            else {
+                Logger.i(TAG, "Fetching details with private client");
                 _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
                     _privateClientPool.getClientPooled(it).getContentDetails(url)
                 }
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
+            }
         },
         {
             if(!Settings.instance.browsing.videoCache || StateApp.instance.privateMode)
