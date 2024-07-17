@@ -34,6 +34,7 @@ import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
@@ -710,7 +711,9 @@ class UISlideOverlays {
                     SlideUpMenuItem(container.context, R.drawable.ic_queue_add, container.context.getString(R.string.add_to_queue), "${queue.size} " + container.context.getString(R.string.videos), "queue",
                         { StatePlayer.instance.addToQueue(video); }),
                     SlideUpMenuItem(container.context, R.drawable.ic_watchlist_add, "${container.context.getString(R.string.add_to)} " + StatePlayer.TYPE_WATCHLATER + "", "${watchLater.size} " + container.context.getString(R.string.videos), "watch later",
-                        { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); })
+                        { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
+                    SlideUpMenuItem(container.context, R.drawable.ic_history, container.context.getString(R.string.add_to_history), "Mark as watched", "history",
+                        { StateHistory.instance.markAsWatched(video); }),
             ));
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();

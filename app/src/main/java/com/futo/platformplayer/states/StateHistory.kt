@@ -115,6 +115,19 @@ class StateHistory {
         return result;
     }
 
+    fun markAsWatched(video: IPlatformVideo) {
+        try {
+            val history = getHistoryByVideo(video, true, OffsetDateTime.now());
+            if (history != null) {
+                updateHistoryPosition(video, history, true, Math.max(1, video.duration - 1));
+            }
+        }
+        catch(ex: Throwable) {
+            Logger.e(TAG, "Failed to mark as watched", ex);
+            UIDialogs.toast("Failed to mark as watched\n" + ex.message);
+        }
+    }
+
     fun removeHistory(url: String) {
         val hist = getHistoryIndexByUrl(url);
         if(hist != null)
