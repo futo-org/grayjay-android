@@ -59,15 +59,6 @@ class MediaPlaybackService : Service() {
     private var _audioFocusLossTime_ms: Long? = null
     private var _playbackState = PlaybackStateCompat.STATE_NONE;
 
-    private val _updateIntervalMs: Long = 5 * 60 * 1000
-    private val _handler: Handler = Handler(Looper.getMainLooper())
-    private val _updateRunnable: Runnable = object : Runnable {
-        override fun run() {
-            updateMediaSession(null)
-            _handler.postDelayed(this, _updateIntervalMs)
-        }
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Logger.v(TAG, "onStartCommand");
 
@@ -85,8 +76,6 @@ class MediaPlaybackService : Service() {
 
             _callOnStarted?.invoke(this);
             _instance = this;
-
-            _handler.postDelayed(_updateRunnable, _updateIntervalMs)
         }
         catch(ex: Throwable) {
             Logger.e(TAG, "Failed to start MediaPlaybackService due to: " + ex.message, ex);
@@ -156,7 +145,6 @@ class MediaPlaybackService : Service() {
     override fun onDestroy() {
         Logger.v(TAG, "onDestroy");
         _instance = null;
-        _handler.removeCallbacks(_updateRunnable)
         MediaControlReceiver.onPauseReceived.emit();
         super.onDestroy();
     }
