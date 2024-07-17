@@ -54,8 +54,8 @@ class DevJSClient : JSClient {
         return DevJSClient(context, config, _devScript, _auth, _captcha, devID, descriptor.settings);
     }
 
-    override fun getCopy(): JSClient {
-        return DevJSClient(_context, descriptor, _script, _auth, _captcha, saveState(), devID);
+    override fun getCopy(privateCopy: Boolean): JSClient {
+        return DevJSClient(_context, descriptor, _script, if(!privateCopy) _auth else null, _captcha, saveState(), devID);
     }
 
     override fun initialize() {

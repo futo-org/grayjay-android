@@ -13,6 +13,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,7 +30,6 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
-import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
@@ -42,7 +42,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.listeners.OrientationManager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
-import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.*
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
@@ -78,6 +77,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     private lateinit var _fragContainerBotBar: FragmentContainerView;
     private lateinit var _fragContainerVideoDetail: FragmentContainerView;
     private lateinit var _fragContainerOverlay: FrameLayout;
+
+    //Views
+    private lateinit var _buttonIncognito: ImageView;
 
     //Frags TopBar
     lateinit var _fragTopBarGeneral: GeneralTopBarFragment;
@@ -204,6 +206,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
 
+
         runBlocking {
             StatePlatform.instance.updateAvailableClients(this@MainActivity);
         }
@@ -289,6 +292,52 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             _fragContainerVideoDetail.visibility = View.INVISIBLE;
             updateSegmentPaddings();
         };
+
+
+        _buttonIncognito = findViewById(R.id.incognito_button);
+        _buttonIncognito.elevation = -99f;
+        _buttonIncognito.alpha = 0f;
+        StateApp.instance.privateModeChanged.subscribe {
+            //Messing with visibility causes some issues with layout ordering?
+            if(it) {
+                _buttonIncognito.elevation = 99f;
+                _buttonIncognito.alpha = 1f;
+            }
+            else {
+                _buttonIncognito.elevation = -99f;
+                _buttonIncognito.alpha = 0f;
+            }
+        }
+        _buttonIncognito.setOnClickListener {
+            if(!StateApp.instance.privateMode)
+                return@setOnClickListener;
+            UIDialogs.showDialog(this, R.drawable.ic_disabled_visible_purple, "Disable Privacy Mode",
+                "Do you want to disable privacy mode? New videos will be tracked again.", null, 0,
+                UIDialogs.Action("Cancel", {
+                    StateApp.instance.setPrivacyMode(true);
+                }, UIDialogs.ActionStyle.NONE),
+                UIDialogs.Action("Disable", {
+                    StateApp.instance.setPrivacyMode(false);
+                }, UIDialogs.ActionStyle.DANGEROUS));
+        };
+        _fragVideoDetail.onFullscreenChanged.subscribe {
+            Logger.i(TAG, "onFullscreenChanged ${it}");
+
+            if(it) {
+                _buttonIncognito.elevation = -99f;
+                _buttonIncognito.alpha = 0f;
+            }
+            else {
+                if(StateApp.instance.privateMode) {
+                    _buttonIncognito.elevation = 99f;
+                    _buttonIncognito.alpha = 1f;
+                }
+                else {
+                    _buttonIncognito.elevation = -99f;
+                    _buttonIncognito.alpha = 0f;
+                }
+            }
+        }
 
         StatePlayer.instance.also {
             it.onQueueChanged.subscribe { shouldSwapCurrentItem ->
@@ -537,6 +586,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
             "IMPORT_OPTIONS" -> {
                 UIDialogs.showImportOptionsDialog(this);
+            }
+            "ACTION" -> {
+                val action = intent.getStringExtra("ACTION");
+                StateDeveloper.instance.testState = "TestPlayback";
+                StateDeveloper.instance.testPlayback();
             }
             "TAB" -> {
                 when(intent.getStringExtra("TAB")){
@@ -1177,6 +1231,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "VIDEO";
             sourcesIntent.putExtra("VIDEO", videoUrl);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            return sourcesIntent;
+        }
+        fun getActionIntent(context: Context, action: String) : Intent {
+            val sourcesIntent = Intent(context, MainActivity::class.java);
+            sourcesIntent.action = "ACTION";
+            sourcesIntent.putExtra("ACTION", action);
             sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             return sourcesIntent;
         }

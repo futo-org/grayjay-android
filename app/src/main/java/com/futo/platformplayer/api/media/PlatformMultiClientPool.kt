@@ -6,12 +6,14 @@ class PlatformMultiClientPool {
     private val _clientPools: HashMap<IPlatformClient, PlatformClientPool> = hashMapOf();
 
     private var _isFake = false;
+    private var _privatePool = false;
 
-    constructor(name: String, maxCap: Int = -1) {
+    constructor(name: String, maxCap: Int = -1, isPrivatePool: Boolean = false) {
         _name = name;
         _maxCap = if(maxCap > 0)
             maxCap
         else 99;
+        _privatePool = isPrivatePool;
     }
 
     fun getClientPooled(parentClient: IPlatformClient, capacity: Int = _maxCap): IPlatformClient {
@@ -19,7 +21,7 @@ class PlatformMultiClientPool {
             return parentClient;
         val pool = synchronized(_clientPools) {
             if(!_clientPools.containsKey(parentClient))
-                _clientPools[parentClient] = PlatformClientPool(parentClient, _name).apply {
+                _clientPools[parentClient] = PlatformClientPool(parentClient, _name, _privatePool).apply {
                     this.onDead.subscribe { _, pool ->
                         synchronized(_clientPools) {
                             if(_clientPools[parentClient] == pool)

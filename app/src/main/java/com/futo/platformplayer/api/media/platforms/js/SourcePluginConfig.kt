@@ -5,6 +5,7 @@ import com.futo.platformplayer.SignatureProvider
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.states.StatePlugins
+import kotlinx.serialization.Contextual
 import java.net.URL
 import java.util.UUID
 
@@ -77,7 +78,8 @@ class SourcePluginConfig(
     private var _allowUrlsLowerVal: List<String>? = null;
     private val _allowUrlsLower: List<String> get() {
         if(_allowUrlsLowerVal == null)
-            _allowUrlsLowerVal = allowUrls.map { it.lowercase() };
+            _allowUrlsLowerVal = allowUrls.map { it.lowercase() }
+                .filter { it.length > 0 && (it[0] != '*' || (_allowRegex.matches(it))) };
         return _allowUrlsLowerVal!!;
     };
 
@@ -170,10 +172,12 @@ class SourcePluginConfig(
             return true;
         val uri = Uri.parse(url);
         val host = uri.host?.lowercase() ?: "";
-        return _allowUrlsLower.any { it == host };
+        return _allowUrlsLower.any { it == host || (it.length > 0 && it[0] == '*' && host.endsWith(it.substring(1))) };
     }
 
     companion object {
+        private val _allowRegex = Regex("\\*\\.[a-z0-9]+\\.[a-z]+");
+
         fun fromJson(json: String, sourceUrl: String? = null): SourcePluginConfig {
             val obj = Serializer.json.decodeFromString<SourcePluginConfig>(json);
             if(obj.sourceUrl == null)

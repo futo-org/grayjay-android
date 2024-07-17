@@ -25,6 +25,7 @@ import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.datasource.HttpUtil;
 import androidx.media3.datasource.TransferListener;
 
+import com.futo.platformplayer.engine.dev.V8RemoteObject;
 import com.futo.platformplayer.logging.Logger;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
@@ -45,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+
+import kotlinx.serialization.json.Json;
 
 /*
  * Based on the default ExoPlayer DefaultHttpDataSource
@@ -583,7 +586,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             requestHeaders = result.getHeaders();
         }
 
-        Logger.Companion.v("JSHttpDataSource", "DataSource REQ: " + requestUrl, null);
+        Logger.Companion.v("JSHttpDataSource", "DataSource REQ: " + requestUrl + "\nHEADERS: [" + V8RemoteObject.Companion.getGsonStandard().toJson(requestHeaders)+ "]", null);
 
         HttpURLConnection connection = openConnection(new URL(requestUrl));
         connection.setConnectTimeout(connectTimeoutMillis);

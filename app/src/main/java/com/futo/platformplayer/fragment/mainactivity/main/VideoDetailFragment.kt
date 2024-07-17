@@ -39,6 +39,7 @@ class VideoDetailFragment : MainFragment {
     private var _view : SingleViewTouchableMotionLayout? = null;
 
     var isFullscreen : Boolean = false;
+    val onFullscreenChanged = Event1<Boolean>();
     var isTransitioning : Boolean = false
         private set;
     var isInPictureInPicture : Boolean = false
@@ -424,6 +425,7 @@ class VideoDetailFragment : MainFragment {
                 changeOrientation(OrientationManager.Orientation.PORTRAIT);
         }
         isFullscreen = fullscreen;
+        onFullscreenChanged.emit(isFullscreen);
         _view?.allowMotion = !fullscreen;
     }
     private fun changeOrientation(orientation: OrientationManager.Orientation) {

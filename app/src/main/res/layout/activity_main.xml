@@ -70,6 +70,21 @@
         android:visibility="gone"
         android:elevation="15dp">
     </FrameLayout>
+
+    <ImageView
+        android:id="@+id/incognito_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/ic_disabled_visible_purple"
+        android:background="@drawable/background_button_round_black"
+        android:scaleType="fitCenter"
+        android:visibility="visible"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="10dp"
+        android:elevation="50dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/toast_view" />
+
     <com.futo.platformplayer.views.ToastView
         android:id="@+id/toast_view"
         android:layout_width="match_parent"
@@ -79,4 +94,5 @@
         app:layout_constraintLeft_toLeftOf="@id/fragment_main"
         app:layout_constraintRight_toRightOf="@id/fragment_main"
         app:layout_constraintBottom_toBottomOf="@id/fragment_main" />
+
 </androidx.constraintlayout.motion.widget.MotionLayout>

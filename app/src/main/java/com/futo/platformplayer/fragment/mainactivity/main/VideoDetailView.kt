@@ -102,6 +102,7 @@ import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
@@ -1170,6 +1171,8 @@ class VideoDetailView : ConstraintLayout {
     //@OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
+        _didTriggerDatasourceErrroCount = 0;
+        _didTriggerDatasourceError = false;
 
         if(newVideo && this.video?.url == videoDetail.url)
             return;
@@ -1236,18 +1239,25 @@ class VideoDetailView : ConstraintLayout {
                     }*/
                 }
                 try {
-                    val stopwatch = com.futo.platformplayer.debug.Stopwatch()
-                    var tracker = video.getPlaybackTracker()
-                    Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+                    if(StateApp.instance.privateMode) {
+                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
+                        var tracker = video.getPlaybackTracker()
+                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
 
-                    if (tracker == null) {
-                        stopwatch.reset()
-                        tracker = StatePlatform.instance.getPlaybackTracker(video.url);
-                        Logger.i(TAG, "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+                        if (tracker == null) {
+                            stopwatch.reset()
+                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
+                            Logger.i(
+                                TAG,
+                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
+                            )
+                        }
+
+                        if (me.video == video)
+                            me._playbackTracker = tracker;
                     }
-
-                    if(me.video == video)
-                        me._playbackTracker = tracker;
+                    else if(me.video == video)
+                        me._playbackTracker = null;
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
@@ -1451,6 +1461,8 @@ class VideoDetailView : ConstraintLayout {
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
         StatePlayer.instance.setCurrentlyPlaying(video);
 
+        _liveChat?.stop();
+        _liveChat = null;
         if(video.isLive && video.live != null) {
             loadLiveChat(video);
         }
@@ -1647,6 +1659,7 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    private var _didTriggerDatasourceErrroCount = 0;
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
@@ -1656,26 +1669,49 @@ class VideoDetailView : ConstraintLayout {
                 return;
             val config = currentVideo.sourceConfig;
 
-            if(!_didTriggerDatasourceError) {
+            if(_didTriggerDatasourceErrroCount <= 3) {
                 _didTriggerDatasourceError = true;
+                _didTriggerDatasourceErrroCount++;
 
+                UIDialogs.toast("Block detected, attempting bypass");
+
+                fragment.lifecycleScope.launch(Dispatchers.IO) {
+                    val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
+                    val previousVideoSource = _lastVideoSource;
+                    val previousAudioSource = _lastAudioSource;
+
+                    if(newDetails is IPlatformVideoDetails) {
+                        val newVideoSource = if(previousVideoSource != null)
+                            VideoHelper.selectBestVideoSource(newDetails.video, previousVideoSource.height * previousVideoSource.width, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS);
+                        else null;
+                        val newAudioSource = if(previousAudioSource != null)
+                            VideoHelper.selectBestAudioSource(newDetails.video, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS, previousAudioSource.language, previousAudioSource.bitrate.toLong());
+                        else null;
+                        withContext(Dispatchers.Main) {
+                            video = newDetails;
+                            _player.setSource(newVideoSource, newAudioSource, true, true);
+                        }
+                    }
+                }
+            }
+            else if(_didTriggerDatasourceErrroCount > 3) {
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
                     context.getString(R.string.media_error),
                     context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
                     null,
                     0,
-                        UIDialogs.Action(context.getString(R.string.no), { _didTriggerDatasourceError = false }),
-                        UIDialogs.Action(context.getString(R.string.yes), {
-                            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                try {
-                                    StatePlatform.instance.reloadClient(context, config.id);
-                                    reloadVideo();
-                                } catch (e: Throwable) {
-                                    Logger.e(TAG, "Failed to reload video.", e)
-                                }
+                    UIDialogs.Action(context.getString(R.string.no), { _didTriggerDatasourceError = false }),
+                    UIDialogs.Action(context.getString(R.string.yes), {
+                        fragment.lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                StatePlatform.instance.reloadClient(context, config.id);
+                                reloadVideo();
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to reload video.", e)
                             }
-                        }, UIDialogs.ActionStyle.PRIMARY)
-                    );
+                        }
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                );
             }
         }
     }
@@ -1772,19 +1808,21 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        val bestVideoSources = (videoSources?.map { it.height * it.width }
+        val doDedup = false;
+
+        val bestVideoSources = if(doDedup) (videoSources?.map { it.height * it.width }
             ?.distinct()
             ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
             ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))
             ?.distinct()
             ?.filter { it != null }
-            ?.toList() ?: listOf();
+            ?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
-        val bestAudioSources = audioSources
+        val bestAudioSources = if(doDedup) audioSources
             ?.filter { it.container == bestAudioContainer }
             ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
             ?.distinct()
-            ?.toList() ?: listOf();
+            ?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
@@ -2312,6 +2350,15 @@ class VideoDetailView : ConstraintLayout {
         }
 
         updateTracker(positionMilliseconds, isPlaying, false);
+
+        if(StateDeveloper.instance.isPlaybackTesting) {
+            if((positionMilliseconds > 1000 * 65 || positionMilliseconds > (video!!.duration * 1000 - 1000))) {
+                StateDeveloper.instance.testPlayback();
+            }
+            else if(video!!.duration > 70 && positionMilliseconds < 10000) {
+                handleSeek(55000);
+            }
+        }
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {

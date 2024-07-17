@@ -8,6 +8,7 @@ import androidx.work.WorkManager
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.futo.platformplayer.activities.DeveloperActivity
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -490,6 +491,13 @@ class SettingsDev : FragmentedStorageFileJson() {
                     }
                 }
             }
+        }
+
+
+        @FormField(R.string.test_playback, FieldForm.BUTTON,
+            R.string.test_playback, 1)
+        fun testPlayback(context: Context) {
+            context.startActivity(MainActivity.getActionIntent(context, "TEST_PLAYBACK"));
         }
     }
 

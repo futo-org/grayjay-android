@@ -93,6 +93,7 @@ class StatePlatform {
     private val _channelClientPool = PlatformMultiClientPool("Channels", 15); //Used primarily for subscription/background channel fetches
     private val _trackerClientPool = PlatformMultiClientPool("Trackers", 1); //Used exclusively for playback trackers
     private val _liveEventClientPool = PlatformMultiClientPool("LiveEvents", 1); //Used exclusively for live events
+    private val _privateClientPool = PlatformMultiClientPool("Private", 2, true); //Used primarily for calls if in incognito mode
 
 
     private val _icons : HashMap<String, ImageVariable> = HashMap();
@@ -109,13 +110,24 @@ class StatePlatform {
     //Batched Requests
     private val _batchTaskGetVideoDetails: BatchedTaskHandler<String, IPlatformContentDetails> = BatchedTaskHandler<String, IPlatformContentDetails>(_scope,
         { url ->
+
             Logger.i(StatePlatform::class.java.name, "Fetching video details [${url}]");
-            _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
-                _mainClientPool.getClientPooled(it).getContentDetails(url)
-            } ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
+            if(!StateApp.instance.privateMode) {
+                _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
+                    _mainClientPool.getClientPooled(it).getContentDetails(url)
+                }
+                    ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
+            }
+            else {
+                Logger.i(TAG, "Fetching details with private client");
+                _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
+                    _privateClientPool.getClientPooled(it).getContentDetails(url)
+                }
+                    ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
+            }
         },
         {
-            if(!Settings.instance.browsing.videoCache)
+            if(!Settings.instance.browsing.videoCache || StateApp.instance.privateMode)
                 return@BatchedTaskHandler null;
             else {
                 val cached = synchronized(_cache) { _cache.get(it); } ?: return@BatchedTaskHandler null;
@@ -131,7 +143,7 @@ class StatePlatform {
             }
         },
         { para, result ->
-            if(!Settings.instance.browsing.videoCache || (result is IPlatformVideo && result.isLive))
+            if(!Settings.instance.browsing.videoCache || (result is IPlatformVideo && result.isLive) || StateApp.instance.privateMode)
                 return@BatchedTaskHandler
             else {
                 Logger.i(TAG, "Caching [${para}]");
@@ -871,7 +883,10 @@ class StatePlatform {
         if(!client.capabilities.hasGetComments)
             return EmptyPager();
 
-        return client.fromPool(_mainClientPool).getComments(url);
+        if(!StateApp.instance.privateMode)
+            return client.fromPool(_mainClientPool).getComments(url);
+        else
+            return client.fromPool(_privateClientPool).getComments(url);
     }
     fun getSubComments(comment: IPlatformComment): IPager<IPlatformComment> {
         Logger.i(TAG, "Platform - getSubComments");
@@ -882,7 +897,11 @@ class StatePlatform {
     fun getLiveEvents(url: String): IPager<IPlatformLiveEvent>? {
         Logger.i(TAG, "Platform - getLiveChat");
         var client = getContentClient(url);
-        return client.fromPool(_liveEventClientPool).getLiveEvents(url);
+
+        if(!StateApp.instance.privateMode)
+            return client.fromPool(_liveEventClientPool).getLiveEvents(url);
+        else
+            return client.fromPool(_privateClientPool).getLiveEvents(url);
     }
     fun getLiveChatWindow(url: String): ILiveChatWindowDescriptor? {
         Logger.i(TAG, "Platform - getLiveChat");
