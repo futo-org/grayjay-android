@@ -8,7 +8,6 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.MainActivityFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.TopFragment
-import com.futo.platformplayer.listeners.OrientationManager
 
 abstract class MainFragment : MainActivityFragment() {
     open val isMainView: Boolean = false;
@@ -43,10 +42,6 @@ abstract class MainFragment : MainActivityFragment() {
     }
 
     open fun onShownWithView(parameter: Any?, isBack: Boolean) {
-
-    }
-
-    open fun onOrientationChanged(orientation: OrientationManager.Orientation) {
 
     }
 

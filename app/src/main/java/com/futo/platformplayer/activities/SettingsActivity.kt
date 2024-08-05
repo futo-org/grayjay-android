@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.LoaderView
@@ -184,11 +185,18 @@ class SettingsActivity : AppCompatActivity(), IWithResultLauncher {
         resultLauncher.launch(intent);
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        settingsActivityClosed.emit()
+    }
+
 
     companion object {
         //TODO: Temporary for solving Settings issues
         @SuppressLint("StaticFieldLeak")
         private var _lastActivity: SettingsActivity? = null;
+
+        val settingsActivityClosed = Event0()
 
         fun getActivity(): SettingsActivity? {
             val act = _lastActivity;

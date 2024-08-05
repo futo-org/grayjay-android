@@ -38,7 +38,13 @@ class StatePlayer {
     private var _thumbnailExoPlayer : PlayerManager? = null;
 
     //Video Status
-    var rotationLock : Boolean = false;
+    var rotationLock: Boolean = false
+        get() = field
+        set(value) {
+            field = value
+            onRotationLockChanged.emit(value)
+        }
+    val onRotationLockChanged = Event1<Boolean>()
     var loopVideo : Boolean = false;
 
     val isPlaying: Boolean get() = _exoplayer?.player?.playWhenReady ?: false;

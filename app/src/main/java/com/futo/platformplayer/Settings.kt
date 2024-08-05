@@ -23,6 +23,7 @@ import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePayment
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -389,15 +390,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
-        fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
-
-        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 6)
-        @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
-        var autoRotateDeadZone: Int = 0;
-
-        fun getAutoRotateDeadZoneDegrees(): Int {
-            return autoRotateDeadZone * 5;
-        }
+        fun isAutoRotate() = (autoRotate == 1 && !StatePlayer.instance.rotationLock) || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate() && !StatePlayer.instance.rotationLock);
 
         @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
