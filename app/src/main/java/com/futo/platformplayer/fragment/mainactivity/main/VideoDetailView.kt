@@ -1674,7 +1674,7 @@ class VideoDetailView : ConstraintLayout {
                 _didTriggerDatasourceErrroCount++;
 
                 UIDialogs.toast("Block detected, attempting bypass");
-
+                //return;
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
                     val previousVideoSource = _lastVideoSource;
@@ -1808,7 +1808,7 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        val doDedup = false;
+        val doDedup = true;
 
         val bestVideoSources = if(doDedup) (videoSources?.map { it.height * it.width }
             ?.distinct()
