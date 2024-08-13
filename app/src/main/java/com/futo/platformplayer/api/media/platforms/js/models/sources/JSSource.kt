@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequest
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
@@ -21,8 +22,16 @@ abstract class JSSource {
     protected val _plugin: JSClient;
     protected val _config: IV8PluginConfig;
     protected val _obj: V8ValueObject;
+
     val hasRequestModifier: Boolean;
     private val _requestModifier: JSRequest?;
+
+    val hasRequestExecutor: Boolean;
+    private val _requestExecutor: JSRequest?;
+
+    val requiresCustomDatasource: Boolean get() {
+        return hasRequestModifier || hasRequestExecutor;
+    }
 
     val type : String;
 
@@ -36,6 +45,11 @@ abstract class JSSource {
             JSRequest(plugin, it, null, null, true);
         }
         hasRequestModifier = _requestModifier != null || obj.has("getRequestModifier");
+
+        _requestExecutor = obj.getOrDefault<V8ValueObject>(_config, "requestExecutor", "JSSource.requestExecutor", null)?.let {
+            JSRequest(plugin, it, null, null, true);
+        }
+        hasRequestExecutor = _requestModifier != null || obj.has("getRequestExecutor");
     }
 
     fun getRequestModifier(): IRequestModifier? {
@@ -44,19 +58,30 @@ abstract class JSSource {
                   return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers);
             };
 
-        if (!hasRequestModifier || _obj.isClosed) {
+        if (!hasRequestModifier || _obj.isClosed)
             return null;
-        }
 
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
             _obj.invoke("getRequestModifier", arrayOf<Any>());
         };
 
-        if (result !is V8ValueObject) {
+        if (result !is V8ValueObject)
             return null;
-        }
 
         return JSRequestModifier(_plugin, result)
+    }
+    fun getRequestExecutor(): JSRequestExecutor? {
+        if (!hasRequestExecutor || _obj.isClosed)
+            return null;
+
+        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
+            _obj.invoke("getRequestModifier", arrayOf<Any>());
+        };
+
+        if (result !is V8ValueObject)
+            return null;
+
+        return JSRequestExecutor(_plugin, result)
     }
 
     companion object {
@@ -65,6 +90,7 @@ abstract class JSSource {
         const val TYPE_AUDIO_WITH_METADATA = "AudioUrlRangeSource";
         const val TYPE_VIDEO_WITH_METADATA = "VideoUrlRangeSource";
         const val TYPE_DASH = "DashSource";
+        const val TYPE_DASH_RAW = "DashSourceRaw";
         const val TYPE_HLS = "HLSSource";
         const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
 

@@ -6,14 +6,17 @@ import android.view.LayoutInflater
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import com.futo.platformplayer.R
 
-class SlideUpMenuItem : RelativeLayout {
+class SlideUpMenuItem : ConstraintLayout {
 
-    private lateinit var _root: RelativeLayout;
+    private lateinit var _root: ConstraintLayout;
     private lateinit var _image: ImageView;
     private lateinit var _text: TextView;
     private lateinit var _subtext: TextView;
+    private lateinit var _description: TextView;
 
     var selectedOption: Boolean = false;
 
@@ -25,11 +28,27 @@ class SlideUpMenuItem : RelativeLayout {
         init();
     }
 
-    constructor(context: Context, imageRes: Int = 0, mainText: String, subText: String = "", tag: Any?, call: (()->Unit)? = null, invokeParent: Boolean = true): super(context){
+    constructor(
+        context: Context,
+        imageRes: Int = 0,
+        mainText: String,
+        subText: String = "",
+        description: String? = "",
+        tag: Any?,
+        call: (() -> Unit)? = null,
+        invokeParent: Boolean = true
+    ): super(context){
         init();
         _image.setImageResource(imageRes);
         _text.text = mainText;
         _subtext.text = subText;
+
+        if(description.isNullOrEmpty())
+            _description.isVisible = false;
+        else {
+            _description.text = description;
+            _description.isVisible = true;
+        }
         this.itemTag = tag;
 
         if (call != null) {
@@ -48,6 +67,7 @@ class SlideUpMenuItem : RelativeLayout {
         _image = findViewById(R.id.slide_up_menu_item_image);
         _text = findViewById(R.id.slide_up_menu_item_text);
         _subtext = findViewById(R.id.slide_up_menu_item_subtext);
+        _description = findViewById(R.id.slide_up_menu_item_description);
 
         setOptionSelected(false);
     }

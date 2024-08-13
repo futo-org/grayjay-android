@@ -326,7 +326,7 @@ class Settings : FragmentedStorageFileJson() {
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
-        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, 0)
+        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -1)
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
@@ -353,7 +353,7 @@ class Settings : FragmentedStorageFileJson() {
 
         //= context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
-        @FormField(R.string.default_playback_speed, FieldForm.DROPDOWN, -1, 1)
+        @FormField(R.string.default_playback_speed, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.playback_speeds)
         var defaultPlaybackSpeed: Int = 3;
         fun getDefaultPlaybackSpeed(): Float = when(defaultPlaybackSpeed) {
@@ -369,21 +369,25 @@ class Settings : FragmentedStorageFileJson() {
             else -> 1.0f;
         };
 
-        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, R.string.preferred_quality_description, 2)
+        @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, R.string.preferred_quality_description, 1)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredQuality: Int = 0;
 
-        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, R.string.preferred_metered_quality_description, 3)
+        @FormField(R.string.preferred_metered_quality, FieldForm.DROPDOWN, R.string.preferred_metered_quality_description, 2)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredMeteredQuality: Int = 0;
         fun getPreferredQualityPixelCount(): Int = preferedQualityToPixels(preferredQuality);
         fun getPreferredMeteredQualityPixelCount(): Int = preferedQualityToPixels(preferredMeteredQuality);
         fun getCurrentPreferredQualityPixelCount(): Int = if(!StateApp.instance.isCurrentMetered()) getPreferredQualityPixelCount() else getPreferredMeteredQualityPixelCount();
 
-        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, R.string.preferred_preview_quality_description, 4)
+        @FormField(R.string.preferred_preview_quality, FieldForm.DROPDOWN, R.string.preferred_preview_quality_description, 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
+
+
+        @FormField(R.string.simplify_sources, FieldForm.TOGGLE, R.string.simplify_sources_description, 4)
+        var simplifySources: Boolean = true;
 
         @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 5)
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
@@ -779,10 +783,10 @@ class Settings : FragmentedStorageFileJson() {
         fun export() {
             val activity = SettingsActivity.getActivity() ?: return;
             UISlideOverlays.showOverlay(activity.overlay, "Select export type", null, {},
-                SlideUpMenuItem(activity, R.drawable.ic_share, "Share", "", null, {
+                SlideUpMenuItem(activity, R.drawable.ic_share, "Share", "", tag = null, call = {
                     StateBackup.shareExternalBackup();
                 }),
-                SlideUpMenuItem(activity, R.drawable.ic_download, "File", "", null, {
+                SlideUpMenuItem(activity, R.drawable.ic_download, "File", "", tag = null, call = {
                     StateBackup.saveExternalBackup(activity);
                 })
             )

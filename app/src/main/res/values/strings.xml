@@ -285,6 +285,8 @@
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
     <string name="auto_update">Auto Update</string>
     <string name="auto_rotate">Auto-Rotate</string>
+    <string name="simplify_sources">Simplify sources</string>
+    <string name="simplify_sources_description">Deduplicate sources by resolution so that only more relevant sources are visible.</string>
     <string name="auto_rotate_dead_zone">Auto-Rotate Dead Zone</string>
     <string name="automatic_backup">Automatic Backup</string>
     <string name="background_behavior">Background Behavior</string>

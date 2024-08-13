@@ -441,7 +441,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrl(videoSource: IVideoUrlSource) {
         Logger.i(TAG, "Loading VideoSource [Url]");
-        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+        val dataSource = if(videoSource is JSSource && videoSource.requiresCustomDatasource)
             videoSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
@@ -451,7 +451,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceDash(videoSource: IDashManifestSource) {
         Logger.i(TAG, "Loading VideoSource [Dash]");
-        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+        val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
             videoSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
@@ -461,7 +461,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceHLS(videoSource: IHLSManifestSource) {
         Logger.i(TAG, "Loading VideoSource [HLS]");
-        val dataSource = if(videoSource is JSSource && videoSource.hasRequestModifier)
+        val dataSource = if(videoSource is JSSource && videoSource.requiresCustomDatasource)
             videoSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
@@ -503,7 +503,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrl(audioSource: IAudioUrlSource) {
         Logger.i(TAG, "Loading AudioSource [Url]");
-        val dataSource = if(audioSource is JSSource && audioSource.hasRequestModifier)
+        val dataSource = if(audioSource is JSSource && audioSource.requiresCustomDatasource)
             audioSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
@@ -513,7 +513,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceHLS(audioSource: IHLSManifestAudioSource) {
         Logger.i(TAG, "Loading AudioSource [HLS]");
-        val dataSource = if(audioSource is JSSource && audioSource.hasRequestModifier)
+        val dataSource = if(audioSource is JSSource && audioSource.requiresCustomDatasource)
             audioSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
@@ -524,7 +524,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlWidevine(audioSource: IAudioUrlWidevineSource) {
         Logger.i(TAG, "Loading AudioSource [UrlWidevine]")
-        val dataSource = if (audioSource is JSSource && audioSource.hasRequestModifier)
+        val dataSource = if (audioSource is JSSource && audioSource.requiresCustomDatasource)
             audioSource.getHttpDataSourceFactory()
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)

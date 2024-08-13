@@ -20,6 +20,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.Language
@@ -185,6 +186,26 @@ class VideoHelper {
                 Logger.v("PLAYBACK", "Audio REQ Range [" + dataSpec.position + "-" + (dataSpec.position + dataSpec.length) + "](" + dataSpec.length + ")", null);
                 return@Resolver dataSpec;
             })).createMediaSource(manifest, MediaItem.Builder().setUri(Uri.parse(audioSource.getAudioUrl())).build())
+        }
+
+
+        fun estimateSourceSize(source: IVideoSource?): Int {
+            if(source == null) return 0;
+            if(source is IVideoUrlSource) {
+                if(source.bitrate ?: 0 <= 0 || source.duration.toInt() == 0)
+                    return 0;
+                return (source.duration / 8).toInt() * source.bitrate!!;
+            }
+            else return 0;
+        }
+        fun estimateSourceSize(source: IAudioSource?): Int {
+            if(source == null) return 0;
+            if(source is IAudioUrlSource) {
+                if(source.bitrate <= 0 || source.duration?.toInt() ?: 0 == 0)
+                    return 0;
+                return (source.duration!! / 8).toInt() * source.bitrate;
+            }
+            else return 0;
         }
     }
 }

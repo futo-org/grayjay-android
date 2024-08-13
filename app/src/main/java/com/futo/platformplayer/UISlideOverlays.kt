@@ -40,7 +40,6 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StateSubscriptionGroups
-import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.LoaderView
@@ -92,9 +91,17 @@ class UISlideOverlays {
 
                 withContext(Dispatchers.Main) {
                     items.addAll(listOf(
-                        SlideUpMenuItem(container.context, R.drawable.ic_notifications, "Notifications", "", "notifications", {
-                            subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
-                        }, false),
+                        SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_notifications,
+                            "Notifications",
+                            "",
+                            tag = "notifications",
+                            call = {
+                                subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
+                            },
+                            invokeParent = false
+                        ),
                         if(StateSubscriptionGroups.instance.getSubscriptionGroups().isNotEmpty())
                             SlideUpMenuGroup(container.context, "Subscription Groups",
                                 "You can select which groups this subscription is part of.",
@@ -129,22 +136,62 @@ class UISlideOverlays {
                         SlideUpMenuGroup(container.context, "Fetch Settings",
                             "Depending on the platform you might not need to enable a type for it to be available.",
                             -1, listOf()),
-                        if(capabilities.hasType(ResultCapabilities.TYPE_LIVE)) SlideUpMenuItem(container.context, R.drawable.ic_live_tv, "Livestreams", "Check for livestreams", "fetchLive", {
-                            subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
-                        }, false) else null,
-                        if(capabilities.hasType(ResultCapabilities.TYPE_STREAMS)) SlideUpMenuItem(container.context, R.drawable.ic_play, "Streams", "Check for streams", "fetchStreams", {
-                            subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchStreams;
-                        }, false) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_LIVE)) SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_live_tv,
+                            "Livestreams",
+                            "Check for livestreams",
+                            tag = "fetchLive",
+                            call = {
+                                subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
+                            },
+                            invokeParent = false
+                        ) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_STREAMS)) SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_play,
+                            "Streams",
+                            "Check for streams",
+                            tag = "fetchStreams",
+                            call = {
+                                subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchStreams;
+                            },
+                            invokeParent = false
+                        ) else null,
                         if(capabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
-                            SlideUpMenuItem(container.context, R.drawable.ic_play, "Videos", "Check for videos", "fetchVideos", {
-                            subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
-                        }, false) else if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
-                            SlideUpMenuItem(container.context, R.drawable.ic_play, "Content", "Check for content", "fetchVideos", {
-                                subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
-                            }, false) else null,
-                        if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(container.context, R.drawable.ic_chat, "Posts", "Check for posts", "fetchPosts", {
-                            subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
-                        }, false) else null/*,,
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_play,
+                                "Videos",
+                                "Check for videos",
+                                tag = "fetchVideos",
+                                call = {
+                                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
+                                },
+                                invokeParent = false
+                            ) else if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_play,
+                                "Content",
+                                "Check for content",
+                                tag = "fetchVideos",
+                                call = {
+                                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
+                                },
+                                invokeParent = false
+                            ) else null,
+                        if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_chat,
+                            "Posts",
+                            "Check for posts",
+                            tag = "fetchPosts",
+                            call = {
+                                subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
+                            },
+                            invokeParent = false
+                        ) else null/*,,
 
                         SlideUpMenuGroup(container.context, "Actions",
                             "Various things you can do with this subscription",
@@ -243,11 +290,23 @@ class UISlideOverlays {
                     masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
 
                     masterPlaylist.getAudioSources().forEach { it ->
-                        audioButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "), it, {
-                            selectedAudioVariant = it
-                            slideUpMenuOverlay.selectOption(audioButtons, it)
-                            slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                        }, false))
+
+                        val estSize = VideoHelper.estimateSourceSize(it);
+                        val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                        audioButtons.add(SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_music,
+                            it.name,
+                            listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
+                            (prefix + it.codec).trim(),
+                            tag = it,
+                            call = {
+                                selectedAudioVariant = it
+                                slideUpMenuOverlay.selectOption(audioButtons, it)
+                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                            },
+                            invokeParent = false
+                        ))
                     }
 
                     /*masterPlaylist.getSubtitleSources().forEach { it ->
@@ -259,11 +318,22 @@ class UISlideOverlays {
                     }*/
 
                     masterPlaylist.getVideoSources().forEach {
-                        videoButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it, {
-                            selectedVideoVariant = it
-                            slideUpMenuOverlay.selectOption(videoButtons, it)
-                            slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                        }, false))
+                        val estSize = VideoHelper.estimateSourceSize(it);
+                        val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                        videoButtons.add(SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_movie,
+                            it.name,
+                            "${it.width}x${it.height}",
+                            (prefix + it.codec).trim(),
+                            tag = it,
+                            call = {
+                                selectedVideoVariant = it
+                                slideUpMenuOverlay.selectOption(videoButtons, it)
+                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                            },
+                            invokeParent = false
+                        ))
                     }
 
                     val newItems = arrayListOf<View>()
@@ -342,29 +412,56 @@ class UISlideOverlays {
             }
 
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoSources,
-                listOf(listOf(SlideUpMenuItem(container.context, R.drawable.ic_movie, container.context.getString(R.string.none), container.context.getString(R.string.audio_only), "none", {
-                    selectedVideo = null;
-                    menu?.selectOption(videoSources, "none");
-                    if(selectedAudio != null || !requiresAudio)
-                        menu?.setOk(container.context.getString(R.string.download));
-                }, false)) +
+                listOf(listOf(SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_movie,
+                    container.context.getString(R.string.none),
+                    container.context.getString(R.string.audio_only),
+                    tag = "none",
+                    call = {
+                        selectedVideo = null;
+                        menu?.selectOption(videoSources, "none");
+                        if(selectedAudio != null || !requiresAudio)
+                            menu?.setOk(container.context.getString(R.string.download));
+                    },
+                    invokeParent = false
+                )) +
                 videoSources
                 .filter { it.isDownloadable() }
                 .map {
                     when (it) {
                         is IVideoUrlSource -> {
-                            SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it, {
-                                selectedVideo = it
-                                menu?.selectOption(videoSources, it);
-                                if(selectedAudio != null || !requiresAudio)
-                                    menu?.setOk(container.context.getString(R.string.download));
-                            }, false)
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "${it.width}x${it.height}",
+                                (prefix + it.codec).trim(),
+                                tag = it,
+                                call = {
+                                    selectedVideo = it
+                                    menu?.selectOption(videoSources, it);
+                                    if(selectedAudio != null || !requiresAudio)
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                },
+                                invokeParent = false
+                            )
                         }
 
                         is IHLSManifestSource -> {
-                            SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS", it, {
-                                showHlsPicker(video, it, it.url, container)
-                            }, false)
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "HLS",
+                                tag = it,
+                                call = {
+                                    showHlsPicker(video, it, it.url, container)
+                                },
+                                invokeParent = false
+                            )
                         }
 
                         else -> {
@@ -389,17 +486,36 @@ class UISlideOverlays {
                     .map {
                         when (it) {
                             is IAudioUrlSource -> {
-                                SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, "${it.bitrate}", it, {
-                                    selectedAudio = it
-                                    menu?.selectOption(audioSources, it);
-                                    menu?.setOk(container.context.getString(R.string.download));
-                                }, false);
+                                val estSize = VideoHelper.estimateSourceSize(it);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_music,
+                                    it.name,
+                                    "${it.bitrate}",
+                                    (prefix + it.codec).trim(),
+                                    tag = it,
+                                    call = {
+                                        selectedAudio = it
+                                        menu?.selectOption(audioSources, it);
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                    },
+                                    invokeParent = false
+                                );
                             }
 
                             is IHLSManifestAudioSource -> {
-                                SlideUpMenuItem(container.context, R.drawable.ic_movie, it.name, "HLS Audio", it, {
-                                    showHlsPicker(video, it, it.url, container)
-                                }, false)
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_movie,
+                                    it.name,
+                                    "HLS Audio",
+                                    tag = it,
+                                    call = {
+                                        showHlsPicker(video, it, it.url, container)
+                                    },
+                                    invokeParent = false
+                                )
                             }
 
                             else -> {
@@ -417,15 +533,23 @@ class UISlideOverlays {
 
             if(contentResolver != null && subtitleSources.isNotEmpty()) {
                 items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.subtitles), subtitleSources, subtitleSources.map {
-                        SlideUpMenuItem(container.context, R.drawable.ic_edit, it.name, "", it, {
-                            if (selectedSubtitle == it) {
-                                selectedSubtitle = null;
-                                menu?.selectOption(subtitleSources, null);
-                            } else {
-                                selectedSubtitle = it;
-                                menu?.selectOption(subtitleSources, it);
-                            }
-                        }, false);
+                        SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_edit,
+                            it.name,
+                            "",
+                            tag = it,
+                            call = {
+                                if (selectedSubtitle == it) {
+                                    selectedSubtitle = null;
+                                    menu?.selectOption(subtitleSources, null);
+                                } else {
+                                    selectedSubtitle = it;
+                                    menu?.selectOption(subtitleSources, it);
+                                }
+                            },
+                            invokeParent = false
+                        );
                     })
                 );
             }
@@ -537,23 +661,47 @@ class UISlideOverlays {
             );
 
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.target_resolution), "Video", resolutions.map {
-                SlideUpMenuItem(container.context, R.drawable.ic_movie, it.first, it.second, it.third, {
-                    targetPxSize = it.third;
-                    menu?.selectOption("Video", it.third);
-                }, false)
+                SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_movie,
+                    it.first,
+                    it.second,
+                    tag = it.third,
+                    call = {
+                        targetPxSize = it.third;
+                        menu?.selectOption("Video", it.third);
+                    },
+                    invokeParent = false
+                )
             }));
 
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.target_bitrate), "Bitrate", listOf(
-                SlideUpMenuItem(container.context, R.drawable.ic_movie, container.context.getString(R.string.low_bitrate), "", 1, {
-                    targetBitrate = 1;
-                    menu?.selectOption("Bitrate", 1);
-                    menu?.setOk(container.context.getString(R.string.download));
-                }, false),
-                SlideUpMenuItem(container.context, R.drawable.ic_movie, container.context.getString(R.string.high_bitrate), "", 9999999, {
-                    targetBitrate = 9999999;
-                    menu?.selectOption("Bitrate", 9999999);
-                    menu?.setOk(container.context.getString(R.string.download));
-                }, false)
+                SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_movie,
+                    container.context.getString(R.string.low_bitrate),
+                    "",
+                    tag = 1,
+                    call = {
+                        targetBitrate = 1;
+                        menu?.selectOption("Bitrate", 1);
+                        menu?.setOk(container.context.getString(R.string.download));
+                    },
+                    invokeParent = false
+                ),
+                SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_movie,
+                    container.context.getString(R.string.high_bitrate),
+                    "",
+                    tag = 9999999,
+                    call = {
+                        targetBitrate = 9999999;
+                        menu?.selectOption("Bitrate", 9999999);
+                        menu?.setOk(container.context.getString(R.string.download));
+                    },
+                    invokeParent = false
+                )
             )));
 
 
@@ -676,8 +824,12 @@ class UISlideOverlays {
             if (lastUpdated != null) {
                 items.add(
                     SlideUpMenuGroup(container.context, container.context.getString(R.string.recently_used_playlist), "recentlyusedplaylist",
-                        SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, lastUpdated.name, "${lastUpdated.videos.size} " + container.context.getString(R.string.videos), "",
-                            {
+                        SlideUpMenuItem(container.context,
+                            R.drawable.ic_playlist_add,
+                            lastUpdated.name,
+                            "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
+                            tag = "",
+                            call = {
                                 StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
                             }))
@@ -689,44 +841,90 @@ class UISlideOverlays {
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.actions), "actions",
                 (listOf(
-                    SlideUpMenuItem(container.context, R.drawable.ic_download, container.context.getString(R.string.download), container.context.getString(R.string.download_the_video), "download", {
-                        showDownloadVideoOverlay(video, container, true);
-                    }, false),
-                    SlideUpMenuItem(container.context, R.drawable.ic_share, container.context.getString(R.string.share), "Share the video", "share", {
-                        val url = if(video.shareUrl.isNotEmpty()) video.shareUrl else video.url;
-                        container.context.startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND;
-                            putExtra(Intent.EXTRA_TEXT, url);
-                            type = "text/plain";
-                        }, null));
-                    }, false),
-                    SlideUpMenuItem(container.context, R.drawable.ic_visibility_off, container.context.getString(R.string.hide_creator_from_home), "", "hide_creator", {
-                        StateMeta.instance.addHiddenCreator(video.author.url);
-                        UIDialogs.toast(container.context, "[${video.author.name}] hidden, you may need to reload home");
-                    }))
+                    SlideUpMenuItem(
+                        container.context,
+                        R.drawable.ic_download,
+                        container.context.getString(R.string.download),
+                        container.context.getString(R.string.download_the_video),
+                        tag = "download",
+                        call = {
+                            showDownloadVideoOverlay(video, container, true);
+                        },
+                        invokeParent = false
+                    ),
+                    SlideUpMenuItem(
+                        container.context,
+                        R.drawable.ic_share,
+                        container.context.getString(R.string.share),
+                        "Share the video",
+                        tag = "share",
+                        call = {
+                            val url = if(video.shareUrl.isNotEmpty()) video.shareUrl else video.url;
+                            container.context.startActivity(Intent.createChooser(Intent().apply {
+                                action = Intent.ACTION_SEND;
+                                putExtra(Intent.EXTRA_TEXT, url);
+                                type = "text/plain";
+                            }, null));
+                        },
+                        invokeParent = false
+                    ),
+                    SlideUpMenuItem(
+                        container.context,
+                        R.drawable.ic_visibility_off,
+                        container.context.getString(R.string.hide_creator_from_home),
+                        "",
+                        tag = "hide_creator",
+                        call = {
+                            StateMeta.instance.addHiddenCreator(video.author.url);
+                            UIDialogs.toast(container.context, "[${video.author.name}] hidden, you may need to reload home");
+                        }))
                         + actions)
             ));
             items.add(
                 SlideUpMenuGroup(container.context, container.context.getString(R.string.add_to), "addto",
-                    SlideUpMenuItem(container.context, R.drawable.ic_queue_add, container.context.getString(R.string.add_to_queue), "${queue.size} " + container.context.getString(R.string.videos), "queue",
-                        { StatePlayer.instance.addToQueue(video); }),
-                    SlideUpMenuItem(container.context, R.drawable.ic_watchlist_add, "${container.context.getString(R.string.add_to)} " + StatePlayer.TYPE_WATCHLATER + "", "${watchLater.size} " + container.context.getString(R.string.videos), "watch later",
-                        { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
-                    SlideUpMenuItem(container.context, R.drawable.ic_history, container.context.getString(R.string.add_to_history), "Mark as watched", "history",
-                        { StateHistory.instance.markAsWatched(video); }),
+                    SlideUpMenuItem(container.context,
+                        R.drawable.ic_queue_add,
+                        container.context.getString(R.string.add_to_queue),
+                        "${queue.size} " + container.context.getString(R.string.videos),
+                        tag = "queue",
+                        call = { StatePlayer.instance.addToQueue(video); }),
+                    SlideUpMenuItem(container.context,
+                        R.drawable.ic_watchlist_add,
+                        "${container.context.getString(R.string.add_to)} " + StatePlayer.TYPE_WATCHLATER + "",
+                        "${watchLater.size} " + container.context.getString(R.string.videos),
+                        tag = "watch later",
+                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
+                    SlideUpMenuItem(container.context,
+                        R.drawable.ic_history,
+                        container.context.getString(R.string.add_to_history),
+                        "Mark as watched",
+                        tag = "history",
+                        call = { StateHistory.instance.markAsWatched(video); }),
             ));
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
-            playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
-                showCreatePlaylistOverlay(container) {
-                    val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
-                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
-                };
-            }, false))
+            playlistItems.add(SlideUpMenuItem(
+                container.context,
+                R.drawable.ic_playlist_add,
+                container.context.getString(R.string.new_playlist),
+                container.context.getString(R.string.add_to_new_playlist),
+                tag = "add_to_new_playlist",
+                call = {
+                    showCreatePlaylistOverlay(container) {
+                        val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
+                        StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                    };
+                },
+                invokeParent = false
+            ))
 
             for (playlist in allPlaylists) {
-                playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, "${container.context.getString(R.string.add_to)} " + playlist.name + "", "${playlist.videos.size} " + container.context.getString(R.string.videos), "",
-                    {
+                playlistItems.add(SlideUpMenuItem(container.context,
+                    R.drawable.ic_playlist_add,
+                    "${container.context.getString(R.string.add_to)} " + playlist.name + "",
+                    "${playlist.videos.size} " + container.context.getString(R.string.videos),
+                    tag = "",
+                    call = {
                         StatePlaylists.instance.addToPlaylist(playlist.id, video);
                         StateDownloads.instance.checkForOutdatedPlaylists();
                     }));
@@ -748,8 +946,12 @@ class UISlideOverlays {
             if (lastUpdated != null) {
                 items.add(
                     SlideUpMenuGroup(container.context, container.context.getString(R.string.recently_used_playlist), "recentlyusedplaylist",
-                        SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, lastUpdated.name, "${lastUpdated.videos.size} " + container.context.getString(R.string.videos), "",
-                            {
+                        SlideUpMenuItem(container.context,
+                            R.drawable.ic_playlist_add,
+                            lastUpdated.name,
+                            "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
+                            tag = "",
+                            call = {
                                 StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
                             }))
@@ -761,25 +963,52 @@ class UISlideOverlays {
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(
                 SlideUpMenuGroup(container.context, container.context.getString(R.string.other), "other",
-                    SlideUpMenuItem(container.context, R.drawable.ic_queue_add, container.context.getString(R.string.queue), "${queue.size} " + container.context.getString(R.string.videos), "queue",
-                        { StatePlayer.instance.addToQueue(video); }),
-                    SlideUpMenuItem(container.context, R.drawable.ic_watchlist_add, StatePlayer.TYPE_WATCHLATER, "${watchLater.size} " + container.context.getString(R.string.videos), "watch later",
-                        { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
-                    SlideUpMenuItem(container.context, R.drawable.ic_download, container.context.getString(R.string.download), container.context.getString(R.string.download_the_video), container.context.getString(R.string.download),
-                        { showDownloadVideoOverlay(video, container, true); }, false))
+                    SlideUpMenuItem(container.context,
+                        R.drawable.ic_queue_add,
+                        container.context.getString(R.string.queue),
+                        "${queue.size} " + container.context.getString(R.string.videos),
+                        tag = "queue",
+                        call = { StatePlayer.instance.addToQueue(video); }),
+                    SlideUpMenuItem(container.context,
+                        R.drawable.ic_watchlist_add,
+                        StatePlayer.TYPE_WATCHLATER,
+                        "${watchLater.size} " + container.context.getString(R.string.videos),
+                        tag = "watch later",
+                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
+                    SlideUpMenuItem(
+                        container.context,
+                        R.drawable.ic_download,
+                        container.context.getString(R.string.download),
+                        container.context.getString(R.string.download_the_video),
+                        tag = container.context.getString(R.string.download),
+                        call = { showDownloadVideoOverlay(video, container, true); },
+                        invokeParent = false
+                    ))
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
-            playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, container.context.getString(R.string.new_playlist), container.context.getString(R.string.add_to_new_playlist), "add_to_new_playlist", {
-                slideUpMenuOverlayUpdated(showCreatePlaylistOverlay(container) {
-                    val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
-                    StatePlaylists.instance.createOrUpdatePlaylist(playlist);
-                });
-            }, false))
+            playlistItems.add(SlideUpMenuItem(
+                container.context,
+                R.drawable.ic_playlist_add,
+                container.context.getString(R.string.new_playlist),
+                container.context.getString(R.string.add_to_new_playlist),
+                tag = "add_to_new_playlist",
+                call = {
+                    slideUpMenuOverlayUpdated(showCreatePlaylistOverlay(container) {
+                        val playlist = Playlist(it, arrayListOf(SerializedPlatformVideo.fromVideo(video)));
+                        StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                    });
+                },
+                invokeParent = false
+            ))
 
             for (playlist in allPlaylists) {
-                playlistItems.add(SlideUpMenuItem(container.context, R.drawable.ic_playlist_add, playlist.name, "${playlist.videos.size} " + container.context.getString(R.string.videos), "",
-                    {
+                playlistItems.add(SlideUpMenuItem(container.context,
+                    R.drawable.ic_playlist_add,
+                    playlist.name,
+                    "${playlist.videos.size} " + container.context.getString(R.string.videos),
+                    tag = "",
+                    call = {
                         StatePlaylists.instance.addToPlaylist(playlist.id, video);
                         StateDownloads.instance.checkForOutdatedPlaylists();
                     }));
@@ -804,20 +1033,36 @@ class UISlideOverlays {
 
             val views = arrayOf(
                 hidden
-                    .map { btn -> SlideUpMenuItem(container.context, btn.iconResource, btn.text.text.toString(), "", "", {
-                        btn.handler?.invoke(btn);
-                    }, invokeParents) as View  }.toTypedArray(),
-                arrayOf(SlideUpMenuItem(container.context, R.drawable.ic_pin, container.context.getString(R.string.change_pins), container.context.getString(R.string.decide_which_buttons_should_be_pinned), "", {
-                    showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }) {
-                        val selected = it
-                            .map { x -> visible.find { it.tagRef == x } ?: hidden.find { it.tagRef == x } }
-                            .filter { it != null }
-                            .map { it!! }
-                            .toList();
+                    .map { btn -> SlideUpMenuItem(
+                        container.context,
+                        btn.iconResource,
+                        btn.text.text.toString(),
+                        "",
+                        tag = "",
+                        call = {
+                            btn.handler?.invoke(btn);
+                        },
+                        invokeParent = invokeParents
+                    ) as View  }.toTypedArray(),
+                arrayOf(SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_pin,
+                    container.context.getString(R.string.change_pins),
+                    container.context.getString(R.string.decide_which_buttons_should_be_pinned),
+                    tag = "",
+                    call = {
+                        showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }) {
+                            val selected = it
+                                .map { x -> visible.find { it.tagRef == x } ?: hidden.find { it.tagRef == x } }
+                                .filter { it != null }
+                                .map { it!! }
+                                .toList();
 
-                        onPinnedbuttons?.invoke(selected + (visible + hidden).filter { !selected.contains(it) });
-                    }
-                }, false))
+                            onPinnedbuttons?.invoke(selected + (visible + hidden).filter { !selected.contains(it) });
+                        }
+                    },
+                    invokeParent = false
+                ))
             ).flatten().toTypedArray();
 
             return SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.more_options), null, true, *views).apply { show() };
@@ -829,14 +1074,21 @@ class UISlideOverlays {
             var overlay: SlideUpMenuOverlay? = null;
 
             overlay = SlideUpMenuOverlay(container.context, container, title, container.context.getString(R.string.save), true,
-                options.map { SlideUpMenuItem(container.context, R.drawable.ic_move_up, it.first, "", it.second, {
+                options.map { SlideUpMenuItem(
+                    container.context,
+                    R.drawable.ic_move_up,
+                    it.first,
+                    "",
+                    tag = it.second,
+                    call = {
                         if(overlay!!.selectOption(null, it.second, true, true)) {
                             if(!selection.contains(it.second))
                                 selection.add(it.second);
-                        }
-                        else
+                        } else
                             selection.remove(it.second);
-                    }, false)
+                    },
+                    invokeParent = false
+                )
                 });
             overlay.onOK.subscribe {
                 onOrdered.invoke(selection);
