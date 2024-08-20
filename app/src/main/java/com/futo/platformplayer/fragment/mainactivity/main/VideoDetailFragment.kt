@@ -43,10 +43,7 @@ class VideoDetailFragment : MainFragment {
     private var _view : SingleViewTouchableMotionLayout? = null;
     private lateinit var _autoRotateChangeListener: AutoRotateChangeListener
     private lateinit var _orientationListener: SimpleOrientationListener
-    private var _currentOrientation = 0
-    private var _temporaryForceLandscape = false
-    private var _temporaryForcePortrait = false
-    private var _wasFullScreen = false
+    private var _currentOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
     var isFullscreen : Boolean = false;
     val onFullscreenChanged = Event1<Boolean>();
@@ -69,9 +66,6 @@ class VideoDetailFragment : MainFragment {
     val onMinimize = Event0();
     val onTransitioning = Event1<Boolean>();
     val onMaximized = Event0();
-
-    var lastOrientation : Int = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        private set;
 
     private var _isInitialMaximize = true;
 
@@ -97,59 +91,22 @@ class VideoDetailFragment : MainFragment {
     }
 
     private fun updateOrientation() {
-        val isMaximized = state == State.MAXIMIZED;
+        val isMaximized = state == State.MAXIMIZED
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
-        val isAutoRotateAllowed = Settings.instance.playback.isAutoRotate();
         val currentOrientation = _currentOrientation
         val isFs = isFullscreen
-        val wasFs = _wasFullScreen
-        _wasFullScreen = isFs
 
         if (isFs && isMaximized) {
             if (isFullScreenPortraitAllowed) {
                 activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            } else if (isAutoRotateAllowed) {
-                _temporaryForcePortrait = false
-                if (!wasFs && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
-                    _temporaryForceLandscape = true
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                } else if (_temporaryForceLandscape && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
-                    _temporaryForceLandscape = false
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                } else {
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                }
             } else {
                 activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
         } else {
-            if (isMaximized && isAutoRotateAllowed) {
-                _temporaryForceLandscape = false
-                if (wasFs && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
-                    _temporaryForcePortrait = true
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-                } else if (_temporaryForcePortrait && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
-                    _temporaryForcePortrait = false
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                } else {
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                }
-            } else {
-                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            }
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         }
 
-        Log.i(TAG, "updateOrientation (isFs = ${isFs}, wasFs = ${wasFs}, _temporaryLandscape = ${_temporaryForceLandscape}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}, isAutoRotateAllowed = ${isAutoRotateAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullscreen && Settings.instance.playback.isAutoRotate()) {
-            _viewDetail?.setFullscreen(true)
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && isFullscreen && Settings.instance.playback.isAutoRotate() && !Settings.instance.playback.fullscreenPortrait) {
-            _viewDetail?.setFullscreen(false)
-        }
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -328,6 +285,19 @@ class VideoDetailFragment : MainFragment {
         _orientationListener.onOrientationChanged.subscribe {
             _currentOrientation = it
             Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
+
+            if (Settings.instance.playback.isAutoRotate()) {
+                if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                    _viewDetail?.setFullscreen(true)
+                    return@subscribe
+                }
+
+                if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                    _viewDetail?.setFullscreen(false)
+                    return@subscribe
+                }
+            }
+
             updateOrientation()
         }
         return _view!!;
