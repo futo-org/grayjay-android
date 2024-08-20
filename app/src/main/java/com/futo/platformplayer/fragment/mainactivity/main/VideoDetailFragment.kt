@@ -1,15 +1,11 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
-import AdvancedOrientationListener
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.drawable.GradientDrawable.Orientation
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.OrientationEventListener
-import android.view.OrientationListener
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
@@ -19,6 +15,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.SimpleOrientationListener
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -32,9 +29,6 @@ import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
 class VideoDetailFragment : MainFragment {
@@ -48,8 +42,11 @@ class VideoDetailFragment : MainFragment {
     private var _viewDetail : VideoDetailView? = null;
     private var _view : SingleViewTouchableMotionLayout? = null;
     private lateinit var _autoRotateChangeListener: AutoRotateChangeListener
-    private lateinit var _orientationListener: AdvancedOrientationListener
+    private lateinit var _orientationListener: SimpleOrientationListener
     private var _currentOrientation = 0
+    private var _temporaryForceLandscape = false
+    private var _temporaryForcePortrait = false
+    private var _wasFullScreen = false
 
     var isFullscreen : Boolean = false;
     val onFullscreenChanged = Event1<Boolean>();
@@ -100,37 +97,59 @@ class VideoDetailFragment : MainFragment {
     }
 
     private fun updateOrientation() {
-        val a = activity ?: return
         val isMaximized = state == State.MAXIMIZED;
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
         val isAutoRotateAllowed = Settings.instance.playback.isAutoRotate();
-        val currentOrientation = _currentOrientation;
-        var desiredOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        val currentOrientation = _currentOrientation
+        val isFs = isFullscreen
+        val wasFs = _wasFullScreen
+        _wasFullScreen = isFs
 
-        if (isMaximized) {
-            if (isFullscreen) {
-                val isCurrentlyPortrait = currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-                if (isAutoRotateAllowed && isCurrentlyPortrait) {
-                    _viewDetail?.setFullscreen(false)
-                    return
+        if (isFs && isMaximized) {
+            if (isFullScreenPortraitAllowed) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            } else if (isAutoRotateAllowed) {
+                _temporaryForcePortrait = false
+                if (!wasFs && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                    _temporaryForceLandscape = true
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                } else if (_temporaryForceLandscape && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                    _temporaryForceLandscape = false
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 } else {
-                    desiredOrientation = if (isFullScreenPortraitAllowed) ActivityInfo.SCREEN_ORIENTATION_SENSOR else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 }
             } else {
-                val isCurrentlyLandscape = currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-                if (isAutoRotateAllowed && isCurrentlyLandscape) {
-                    _viewDetail?.setFullscreen(true)
-                    return
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
+        } else {
+            if (isMaximized && isAutoRotateAllowed) {
+                _temporaryForceLandscape = false
+                if (wasFs && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                    _temporaryForcePortrait = true
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                } else if (_temporaryForcePortrait && (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                    _temporaryForcePortrait = false
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                } else {
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 }
+            } else {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
             }
         }
 
-        if (a.requestedOrientation != desiredOrientation) {
-            Log.i(TAG, "onConfigurationChanged setting requestedOrientation (desiredOrientation = ${desiredOrientation}, requestedOrientation = ${activity?.requestedOrientation})");
-            a.requestedOrientation = desiredOrientation
-        }
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, wasFs = ${wasFs}, _temporaryLandscape = ${_temporaryForceLandscape}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}, isAutoRotateAllowed = ${isAutoRotateAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
+    }
 
-        Log.i(TAG, "updateOrientation (isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}, isAutoRotateAllowed = ${isAutoRotateAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullscreen && Settings.instance.playback.isAutoRotate()) {
+            _viewDetail?.setFullscreen(true)
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && isFullscreen && Settings.instance.playback.isAutoRotate() && !Settings.instance.playback.fullscreenPortrait) {
+            _viewDetail?.setFullscreen(false)
+        }
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -305,7 +324,7 @@ class VideoDetailFragment : MainFragment {
             updateOrientation()
         }
 
-        _orientationListener = AdvancedOrientationListener(requireActivity(), lifecycleScope)
+        _orientationListener = SimpleOrientationListener(requireActivity(), lifecycleScope)
         _orientationListener.onOrientationChanged.subscribe {
             _currentOrientation = it
             Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
