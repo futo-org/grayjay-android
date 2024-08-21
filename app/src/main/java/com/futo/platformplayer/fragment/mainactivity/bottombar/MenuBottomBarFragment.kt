@@ -61,6 +61,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
         super.onConfigurationChanged(newConfig)
 
         _view?.updateAllButtonVisibility()
+
+        // collapse the more menu
+        _view?.onBackPressed()
     }
 
     @SuppressLint("ViewConstructor")

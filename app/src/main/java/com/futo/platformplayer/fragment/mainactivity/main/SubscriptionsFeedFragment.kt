@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.IPlatformClient
@@ -58,7 +59,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
     private var _view: SubscriptionsFeedView? = null;
     private var _group: SubscriptionGroup? = null;
-    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
@@ -111,7 +112,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         var subGroup: SubscriptionGroup? = null;
 
-        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
             };
@@ -396,7 +397,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             _taskGetPager.run(withRefetch);
         }
 
-        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
+        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
             super.onRestoreCachedData(cachedData);
             setEmptyPager(cachedData.results.isEmpty());
         }
