@@ -768,6 +768,8 @@
     <string name="zoom">Zoom</string>
     <string name="check_to_see_if_an_update_is_available">Check to see if an update is available.</string>
     <string name="scroll_to_top">Scroll to top</string>
+    <string name="disable_battery_optimization">Disable Battery Optimization</string>
+    <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Click to go to battery optimization settings. Disabling battery optimization will prevent the OS from killing media sessions.</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>

@@ -147,6 +147,8 @@ android {
 }
 
 dependencies {
+    implementation 'com.google.dagger:dagger:2.48'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.48'
 
     //Core
     implementation 'androidx.core:core-ktx:1.12.0'
