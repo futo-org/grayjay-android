@@ -1,6 +1,7 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -59,14 +60,14 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private var _activeTags: List<String>? = null;
 
     private var _nextPageHandler: TaskHandler<TPager, List<TResult>>;
-    val recyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, LinearLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>;
+    val recyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>;
 
     val fragment: TFragment;
 
     private val _scrollListener: RecyclerView.OnScrollListener;
     private var _automaticNextPageCounter = 0;
 
-    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, LinearLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
+    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
         this.fragment = fragment;
         inflater.inflate(R.layout.fragment_feed, this);
 
@@ -227,7 +228,24 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+
+        if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 2){
+            recyclerData.layoutManager.spanCount = 2
+        } else if (resources.configuration.screenWidthDp < resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 1){
+            recyclerData.layoutManager.spanCount = 1
+        }
+    }
+
     fun onResume() {
+        //update the number of columns
+        if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 2){
+            recyclerData.layoutManager.spanCount = 2
+        } else if (resources.configuration.screenWidthDp < resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 1){
+            recyclerData.layoutManager.spanCount = 1
+        }
+
         //Reload the pager if the plugin was killed
         val pager = recyclerData.pager;
         if((pager is MultiPager<*> && pager.findPager { it is JSPager<*> && !it.isAvailable  } != null) ||
@@ -279,7 +297,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
     protected abstract fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<TConverted>): InsertedViewAdapterWithLoader<TViewHolder>;
     protected abstract fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager;
-    protected open fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, LinearLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>) {}
+    protected open fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>) {}
 
     protected fun setProgress(fin: Int, total: Int) {
         val progress = (fin.toFloat() / total);
