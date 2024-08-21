@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.LinearLayout
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
@@ -162,10 +163,17 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         (cachedData.adapter as PreviewContentListAdapter?)?.let { attachAdapterEvents(it) };
     }
 
-    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager {
-        val llmResults = LinearLayoutManager(context);
-        llmResults.orientation = LinearLayoutManager.VERTICAL;
-        return llmResults;
+    override fun createLayoutManager(
+        recyclerResults: RecyclerView,
+        context: Context
+    ): GridLayoutManager {
+        val glmResults =
+            GridLayoutManager(
+                context,
+                if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold)) 2 else 1
+            );
+        glmResults.orientation = GridLayoutManager.VERTICAL;
+        return glmResults;
     }
 
     override fun onScrollStateChanged(newState: Int) {

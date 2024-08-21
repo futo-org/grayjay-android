@@ -34,9 +34,9 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
         );
     }
 
-    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager {
+    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager {
         val glmResults = GridLayoutManager(context, 2);
-        glmResults.orientation = LinearLayoutManager.VERTICAL;
+        glmResults.orientation = GridLayoutManager.VERTICAL;
 
         _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
             rightMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8.0f, context.resources.displayMetrics).toInt();

@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
@@ -277,7 +278,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
     protected abstract fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<TConverted>): InsertedViewAdapterWithLoader<TViewHolder>;
-    protected abstract fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager;
+    protected abstract fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager;
     protected open fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, LinearLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>) {}
 
     protected fun setProgress(fin: Int, total: Int) {
