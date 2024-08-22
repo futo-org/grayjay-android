@@ -291,12 +291,12 @@ class VideoDetailFragment : MainFragment {
                 "Current orientation changed (_currentOrientation = ${_currentOrientation})"
             )
 
-            val is_large_window = min(
+            val isSmallWindow = min(
                 resources.configuration.screenWidthDp,
                 resources.configuration.screenHeightDp
             ) < resources.getDimension(R.dimen.landscape_threshold)
 
-            if (Settings.instance.playback.isAutoRotate() && is_large_window) {
+            if (Settings.instance.playback.isAutoRotate() && isSmallWindow) {
                 if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
                     _viewDetail?.setFullscreen(true)
                     return@subscribe
