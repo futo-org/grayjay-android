@@ -229,9 +229,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration?) {
-        super.onConfigurationChanged(newConfig)
-
+    private fun updateSpanCount(){
         if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 2){
             recyclerData.layoutManager.spanCount = 2
         } else if (resources.configuration.screenWidthDp < resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 1){
@@ -239,13 +237,14 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+
+        updateSpanCount()
+    }
+
     fun onResume() {
-        //update the number of columns
-        if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 2){
-            recyclerData.layoutManager.spanCount = 2
-        } else if (resources.configuration.screenWidthDp < resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 1){
-            recyclerData.layoutManager.spanCount = 1
-        }
+        updateSpanCount()
 
         //Reload the pager if the plugin was killed
         val pager = recyclerData.pager;

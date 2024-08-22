@@ -61,9 +61,6 @@ class MenuBottomBarFragment : MainActivityFragment() {
         super.onConfigurationChanged(newConfig)
 
         _view?.updateAllButtonVisibility()
-
-        // collapse the more menu
-        _view?.onBackPressed()
     }
 
     @SuppressLint("ViewConstructor")
@@ -268,6 +265,10 @@ class MenuBottomBarFragment : MainActivityFragment() {
         }
 
         fun updateAllButtonVisibility() {
+            if(_moreVisible) {
+                setMoreVisible(false);
+            }
+
             val defs = currentButtonDefinitions?.toMutableList() ?: return
             val metrics = resources.displayMetrics;
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
