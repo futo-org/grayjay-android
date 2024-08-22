@@ -567,6 +567,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     @OptIn(UnstableApi::class)
     fun setFullScreen(fullScreen: Boolean) {
+        updateRotateLock()
+
         if (isFullScreen == fullScreen) {
             return;
         }
@@ -759,7 +761,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     fun updateRotateLock() {
-        if(!Settings.instance.playback.isAutoRotate()) {
+        if(Settings.instance.playback.autoRotate == 0) {
             _control_rotate_lock.visibility = View.GONE;
             _control_rotate_lock_fullscreen.visibility = View.GONE;
         }

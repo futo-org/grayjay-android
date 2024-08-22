@@ -3,29 +3,33 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.SimpleOrientationListener
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
-import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.listeners.OrientationManager
+import com.futo.platformplayer.listeners.AutoRotateChangeListener
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
+
 
 class VideoDetailFragment : MainFragment {
     override val isMainView : Boolean = false;
@@ -37,6 +41,9 @@ class VideoDetailFragment : MainFragment {
 
     private var _viewDetail : VideoDetailView? = null;
     private var _view : SingleViewTouchableMotionLayout? = null;
+    private lateinit var _autoRotateChangeListener: AutoRotateChangeListener
+    private lateinit var _orientationListener: SimpleOrientationListener
+    private var _currentOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
     var isFullscreen : Boolean = false;
     val onFullscreenChanged = Event1<Boolean>();
@@ -45,15 +52,20 @@ class VideoDetailFragment : MainFragment {
     var isInPictureInPicture : Boolean = false
         private set;
 
-    var state: State = State.CLOSED;
+    private var _state: State = State.CLOSED
+
+    var state: State
+        get() = _state
+        set(value) {
+            _state = value
+            onStateChanged(value)
+        }
+
     val currentUrl get() = _viewDetail?.currentUrl;
 
     val onMinimize = Event0();
     val onTransitioning = Event1<Boolean>();
     val onMaximized = Event0();
-
-    var lastOrientation : OrientationManager.Orientation = OrientationManager.Orientation.PORTRAIT
-        private set;
 
     private var _isInitialMaximize = true;
 
@@ -72,6 +84,29 @@ class VideoDetailFragment : MainFragment {
 
     fun previousVideo() {
         _viewDetail?.prevVideo(true);
+    }
+
+    private fun onStateChanged(state: VideoDetailFragment.State) {
+        updateOrientation()
+    }
+
+    private fun updateOrientation() {
+        val isMaximized = state == State.MAXIMIZED
+        val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
+        val currentOrientation = _currentOrientation
+        val isFs = isFullscreen
+
+        if (isFs && isMaximized) {
+            if (isFullScreenPortraitAllowed) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            } else {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        }
+
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -99,49 +134,6 @@ class VideoDetailFragment : MainFragment {
         }
     }
 
-    override fun onOrientationChanged(orientation: OrientationManager.Orientation) {
-        super.onOrientationChanged(orientation);
-
-        if(!_isActive || state != State.MAXIMIZED)
-            return;
-
-        var newOrientation = orientation;
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED) {
-            newOrientation = OrientationManager.Orientation.PORTRAIT;
-        } else if(StatePlayer.instance.rotationLock) {
-            return;
-        }
-
-        if(Settings.instance.other.bypassRotationPrevention && orientation == OrientationManager.Orientation.PORTRAIT)
-            changeOrientation(OrientationManager.Orientation.PORTRAIT);
-
-        if(lastOrientation == newOrientation)
-            return;
-
-        activity?.let {
-            if (isFullscreen) {
-                if (Settings.instance.playback.fullscreenPortrait) {
-                    changeOrientation(newOrientation);
-                } else {
-                    if(newOrientation == OrientationManager.Orientation.REVERSED_LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-                        changeOrientation(OrientationManager.Orientation.REVERSED_LANDSCAPE);
-                    else if(newOrientation == OrientationManager.Orientation.LANDSCAPE && it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
-                        changeOrientation(OrientationManager.Orientation.LANDSCAPE);
-                    else if(Settings.instance.playback.isAutoRotate() && (newOrientation == OrientationManager.Orientation.PORTRAIT || newOrientation == OrientationManager.Orientation.REVERSED_PORTRAIT)) {
-                        _viewDetail?.setFullscreen(false);
-                    }
-                }
-            }
-            else {
-                if(Settings.instance.playback.isAutoRotate() && (lastOrientation == OrientationManager.Orientation.PORTRAIT || lastOrientation == OrientationManager.Orientation.REVERSED_PORTRAIT)) {
-                    lastOrientation = newOrientation;
-                    _viewDetail?.setFullscreen(true);
-                }
-            }
-        }
-        lastOrientation = newOrientation;
-    }
     override fun onBackPressed(): Boolean {
         Logger.i(TAG, "onBackPressed")
 
@@ -155,6 +147,7 @@ class VideoDetailFragment : MainFragment {
             closeVideoDetails();
         return true;
     }
+
     override fun onHide() {
         super.onHide();
     }
@@ -266,7 +259,6 @@ class VideoDetailFragment : MainFragment {
             override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) { }
         });
 
-        context
         _view?.let {
             if (it.progress >= 0.5 && it.progress < 1.0)
                 maximizeVideoDetail();
@@ -274,9 +266,40 @@ class VideoDetailFragment : MainFragment {
                 minimizeVideoDetail();
         }
 
-        _loadUrlOnCreate?.let { _viewDetail?.setVideo(it.url, it.timeSeconds, it.playWhenReady) };
+        _autoRotateChangeListener = AutoRotateChangeListener(requireContext(), Handler()) { _ ->
+            updateOrientation()
+        }
 
+        _loadUrlOnCreate?.let { _viewDetail?.setVideo(it.url, it.timeSeconds, it.playWhenReady) };
         maximizeVideoDetail();
+
+        SettingsActivity.settingsActivityClosed.subscribe(this) {
+            updateOrientation()
+        }
+
+        StatePlayer.instance.onRotationLockChanged.subscribe(this) {
+            updateOrientation()
+        }
+
+        _orientationListener = SimpleOrientationListener(requireActivity(), lifecycleScope)
+        _orientationListener.onOrientationChanged.subscribe {
+            _currentOrientation = it
+            Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
+
+            if (Settings.instance.playback.isAutoRotate()) {
+                if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                    _viewDetail?.setFullscreen(true)
+                    return@subscribe
+                }
+
+                if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                    _viewDetail?.setFullscreen(false)
+                    return@subscribe
+                }
+            }
+
+            updateOrientation()
+        }
         return _view!!;
     }
 
@@ -334,11 +357,6 @@ class VideoDetailFragment : MainFragment {
             }
         }
 
-        val realOrientation = if(activity is MainActivity) (activity as MainActivity).orientation else lastOrientation;
-        Logger.i(TAG, "Real orientation on boot ${realOrientation}, lastOrientation: ${lastOrientation}");
-        if(realOrientation != lastOrientation)
-            onOrientationChanged(realOrientation);
-
         StateCasting.instance.onResume();
     }
     override fun onPause() {
@@ -380,18 +398,17 @@ class VideoDetailFragment : MainFragment {
     override fun onDestroyMainView() {
         super.onDestroyMainView();
         Logger.v(TAG, "onDestroyMainView");
+        _autoRotateChangeListener?.unregister()
+        _orientationListener.stopListening()
+
+        SettingsActivity.settingsActivityClosed.remove(this)
+        StatePlayer.instance.onRotationLockChanged.remove(this)
+
         _viewDetail?.let {
             _viewDetail = null;
             it.onDestroy();
         }
         _view = null;
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState);
-        StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, _ ->
-            onOrientationChanged(lastOrientation);
-        };
     }
 
     override fun onDestroy() {
@@ -409,63 +426,37 @@ class VideoDetailFragment : MainFragment {
         onMaximized.clear();
     }
 
-    private fun onFullscreenChanged(fullscreen : Boolean) {
-        activity?.let {
-            if (fullscreen) {
-                if (Settings.instance.playback.fullscreenPortrait) {
-                    changeOrientation(lastOrientation);
-                } else {
-                    var orient = lastOrientation;
-                    if(orient == OrientationManager.Orientation.PORTRAIT || orient == OrientationManager.Orientation.REVERSED_PORTRAIT)
-                        orient = OrientationManager.Orientation.LANDSCAPE;
-                    changeOrientation(orient);
-                }
-            }
-            else
-                changeOrientation(OrientationManager.Orientation.PORTRAIT);
+
+    private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
+        activity?.window?.insetsController?.let { controller ->
+            controller.hide(WindowInsets.Type.statusBars())
+            controller.hide(WindowInsets.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    private fun showSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, true)
+        activity?.window?.insetsController?.let { controller ->
+            controller.show(WindowInsets.Type.statusBars())
+            controller.show(WindowInsets.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
+        }
+    }
+
+    private fun onFullscreenChanged(fullscreen : Boolean) {
         isFullscreen = fullscreen;
         onFullscreenChanged.emit(isFullscreen);
-        _view?.allowMotion = !fullscreen;
-    }
-    private fun changeOrientation(orientation: OrientationManager.Orientation) {
-        Logger.i(TAG, "Orientation Change:" + orientation.name);
-        activity?.let {
-            when (orientation) {
-                OrientationManager.Orientation.LANDSCAPE -> {
-                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-                    _view?.allowMotion = false;
 
-                    WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-                    WindowInsetsControllerCompat(it.window, _viewDetail!!).let { controller ->
-                        controller.hide(WindowInsetsCompat.Type.statusBars());
-                        controller.hide(WindowInsetsCompat.Type.systemBars());
-                        controller.systemBarsBehavior =  WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
-                    }
-                }
-                OrientationManager.Orientation.REVERSED_LANDSCAPE -> {
-                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-                    _view?.allowMotion = false;
-
-                    WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-                    WindowInsetsControllerCompat(it.window, _viewDetail!!).let { controller ->
-                        controller.hide(WindowInsetsCompat.Type.statusBars());
-                        controller.hide(WindowInsetsCompat.Type.systemBars());
-                        controller.systemBarsBehavior =  WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
-                    }
-                }
-                else -> {
-                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-                    _view?.allowMotion = true;
-
-                    WindowCompat.setDecorFitsSystemWindows(it.window, true)
-                    WindowInsetsControllerCompat(it.window, _viewDetail!!).let { controller ->
-                        controller.show(WindowInsetsCompat.Type.statusBars());
-                        controller.show(WindowInsetsCompat.Type.systemBars())
-                    }
-                }
-            }
+        if (isFullscreen) {
+            hideSystemUI()
+        } else {
+            showSystemUI()
         }
+
+        updateOrientation();
+        _view?.allowMotion = !fullscreen;
     }
 
     companion object {

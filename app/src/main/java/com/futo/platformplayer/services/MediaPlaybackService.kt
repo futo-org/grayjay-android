@@ -98,7 +98,7 @@ class MediaPlaybackService : Service() {
         _mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
             .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1f)
             .build());
-        _mediaSession?.setCallback(object: MediaSessionCompat.Callback() {
+        _mediaSession?.setCallback(object : MediaSessionCompat.Callback() {
             override fun onSeekTo(pos: Long) {
                 super.onSeekTo(pos)
                 Logger.i(TAG, "Media session callback onSeekTo(pos = $pos)");
@@ -120,7 +120,9 @@ class MediaPlaybackService : Service() {
             override fun onStop() {
                 super.onStop();
                 Logger.i(TAG, "Media session callback onStop()");
-                MediaControlReceiver.onCloseReceived.emit();
+                //MediaControlReceiver.onCloseReceived.emit();
+                MediaControlReceiver.onPauseReceived.emit();
+                updateMediaSession( null);
             }
 
             override fun onSkipToPrevious() {

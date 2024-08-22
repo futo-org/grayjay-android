@@ -39,7 +39,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragmen
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
-import com.futo.platformplayer.listeners.OrientationManager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.states.*
@@ -131,9 +130,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     val onNavigated = Event1<MainFragment>();
 
-    private lateinit var _orientationManager: OrientationManager;
-    var orientation: OrientationManager.Orientation = OrientationManager.Orientation.PORTRAIT
-        private set;
     private var _isVisible = true;
     private var _wasStopped = false;
 
@@ -413,26 +409,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             .commitNow();
 
         defaultTab.action(_fragBotBarMenu);
-
-        _orientationManager = OrientationManager(this);
-        _orientationManager.onOrientationChanged.subscribe {
-            orientation = it;
-            Logger.i(TAG, "Orientation changed (Found ${it})");
-            fragCurrent.onOrientationChanged(it);
-            if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED)
-                _fragVideoDetail.onOrientationChanged(it);
-            else if(Settings.instance.other.bypassRotationPrevention)
-            {
-                requestedOrientation = when(orientation) {
-                    OrientationManager.Orientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    OrientationManager.Orientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    OrientationManager.Orientation.REVERSED_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-                    OrientationManager.Orientation.REVERSED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-                }
-            }
-        };
-        _orientationManager.enable();
-
         StateSubscriptions.instance;
 
         fragCurrent.onShown(null, false);
@@ -529,17 +505,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     override fun onResume() {
         super.onResume();
         Logger.v(TAG, "onResume")
-
-        val curOrientation = _orientationManager.orientation;
-
-        if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED && _fragVideoDetail.lastOrientation != curOrientation) {
-            Logger.i(TAG, "Orientation mismatch (Found ${curOrientation})");
-            orientation = curOrientation;
-            fragCurrent.onOrientationChanged(curOrientation);
-            if(_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED)
-                _fragVideoDetail.onOrientationChanged(curOrientation);
-        }
-
         _isVisible = true;
     }
 
@@ -940,18 +905,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     override fun onRestart() {
         super.onRestart();
         Logger.i(TAG, "onRestart");
-
-        //Force Portrait on restart
-        Logger.i(TAG, "Restarted with state ${_fragVideoDetail.state}");
-        if(_fragVideoDetail.state != VideoDetailFragment.State.MAXIMIZED) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-            WindowInsetsControllerCompat(window, rootView).let { controller ->
-                controller.show(WindowInsetsCompat.Type.statusBars());
-                controller.show(WindowInsetsCompat.Type.systemBars())
-            }
-            _fragVideoDetail.onOrientationChanged(OrientationManager.Orientation.PORTRAIT);
-        }
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -966,9 +919,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     override fun onDestroy() {
         super.onDestroy();
         Logger.v(TAG, "onDestroy")
-
-        _orientationManager.disable();
-
         StateApp.instance.mainAppDestroyed(this);
     }
 

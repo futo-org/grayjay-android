@@ -2,8 +2,11 @@ package com.futo.platformplayer
 
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Context.POWER_SERVICE
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
 import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
@@ -23,6 +26,7 @@ import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePayment
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -34,6 +38,7 @@ import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
+import com.stripe.android.customersheet.injection.CustomerSheetViewModelModule_Companion_ContextFactory.context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,6 +48,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
+
 
 @Serializable
 data class MenuBottomBarSetting(val id: Int, var enabled: Boolean);
@@ -57,7 +63,7 @@ class Settings : FragmentedStorageFileJson() {
     @Transient
     val onTabsChanged = Event0();
 
-    @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -6)
+    @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -7)
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
         SettingsActivity.getActivity()?.let {
@@ -73,7 +79,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }
 
-    @FormField(R.string.show_faq, FieldForm.BUTTON, R.string.get_answers_to_common_questions, -5)
+    @FormField(R.string.show_faq, FieldForm.BUTTON, R.string.get_answers_to_common_questions, -6)
     @FormFieldButton(R.drawable.ic_quiz)
     fun openFAQ() {
         try {
@@ -83,7 +89,7 @@ class Settings : FragmentedStorageFileJson() {
             //Ignored
         }
     }
-    @FormField(R.string.show_issues, FieldForm.BUTTON, R.string.a_list_of_user_reported_and_self_reported_issues, -4)
+    @FormField(R.string.show_issues, FieldForm.BUTTON, R.string.a_list_of_user_reported_and_self_reported_issues, -5)
     @FormFieldButton(R.drawable.ic_data_alert)
     fun openIssues() {
         try {
@@ -115,7 +121,7 @@ class Settings : FragmentedStorageFileJson() {
         }
     }*/
 
-    @FormField(R.string.manage_tabs, FieldForm.BUTTON, R.string.change_tabs_visible_on_the_home_screen, -3)
+    @FormField(R.string.manage_tabs, FieldForm.BUTTON, R.string.change_tabs_visible_on_the_home_screen, -4)
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
         try {
@@ -129,7 +135,7 @@ class Settings : FragmentedStorageFileJson() {
 
 
 
-    @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, -2)
+    @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, -3)
     @FormFieldButton(R.drawable.ic_move_up)
     fun import() {
         val act = SettingsActivity.getActivity() ?: return;
@@ -138,7 +144,7 @@ class Settings : FragmentedStorageFileJson() {
         act.startActivity(intent);
     }
 
-    @FormField(R.string.link_handling, FieldForm.BUTTON, R.string.allow_grayjay_to_handle_links, -1)
+    @FormField(R.string.link_handling, FieldForm.BUTTON, R.string.allow_grayjay_to_handle_links, -2)
     @FormFieldButton(R.drawable.ic_link)
     fun manageLinks() {
         try {
@@ -147,6 +153,24 @@ class Settings : FragmentedStorageFileJson() {
             Logger.e(TAG, "Failed to show url handling prompt", e)
         }
     }
+
+    /*@FormField(R.string.disable_battery_optimization, FieldForm.BUTTON, R.string.click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions, -1)
+    @FormFieldButton(R.drawable.battery_full_24px)
+    fun ignoreBatteryOptimization() {
+        SettingsActivity.getActivity()?.let {
+            val intent = Intent()
+            val packageName = it.packageName
+            val pm = it.getSystemService(POWER_SERVICE) as PowerManager;
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                intent.setAction(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                intent.setData(Uri.parse("package:$packageName"))
+                it.startActivity(intent)
+                UIDialogs.toast(it, "Please ignore battery optimizations for Grayjay")
+            } else {
+                UIDialogs.toast(it, "Battery optimizations already disabled for Grayjay")
+            }
+        }
+    }*/
 
     @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();
@@ -393,15 +417,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
-        fun isAutoRotate() = autoRotate == 1 || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate());
-
-        @FormField(R.string.auto_rotate_dead_zone, FieldForm.DROPDOWN, R.string.this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees, 6)
-        @DropdownFieldOptionsId(R.array.auto_rotate_dead_zone)
-        var autoRotateDeadZone: Int = 0;
-
-        fun getAutoRotateDeadZoneDegrees(): Int {
-            return autoRotateDeadZone * 5;
-        }
+        fun isAutoRotate() = (autoRotate == 1 && !StatePlayer.instance.rotationLock) || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate() && !StatePlayer.instance.rotationLock);
 
         @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
