@@ -25,10 +25,8 @@ import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StatePlatform
 import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -573,7 +571,7 @@ class DeveloperEndpoints(private val context: Context) {
             val resp = _client.get(body.url!!, body.headers);
 
             context.respondCode(200,
-                Json.encodeToString(PackageHttp.BridgeHttpResponse(resp.url, resp.code, resp.body?.string())),
+                Json.encodeToString(PackageHttp.BridgeHttpStringResponse(resp.url, resp.code, resp.body?.string())),
                 context.query.getOrDefault("CT", "text/plain"));
         }
         catch(ex: Exception) {

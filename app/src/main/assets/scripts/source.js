@@ -406,6 +406,39 @@ class DashSource {
             this.requestModifier = obj.requestModifier;
     }
 }
+class DashManifestRawSource {
+    constructor(obj) {
+        obj = obj ?? {};
+        this.plugin_type = "DashRawSource";
+        this.name = obj.name ?? "";
+        this.bitrate = obj.bitrate ?? 0;
+        this.container = obj.container ?? "";
+        this.codec = obj.codec ?? "";
+        this.duration = obj.duration ?? 0;
+        this.url = obj.url;
+        this.language = obj.language ?? Language.UNKNOWN;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
+    }
+}
+
+class DashManifestRawAudioSource {
+    constructor(obj) {
+        obj = obj ?? {};
+        this.plugin_type = "DashRawAudioSource";
+        this.name = obj.name ?? "";
+        this.bitrate = obj.bitrate ?? 0;
+        this.container = obj.container ?? "";
+        this.codec = obj.codec ?? "";
+        this.duration = obj.duration ?? 0;
+        this.url = obj.url;
+        this.language = obj.language ?? Language.UNKNOWN;
+        this.manifest = obj.manifest ?? null;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
+    }
+}
+
 
 class RequestModifier {
     constructor(obj) {

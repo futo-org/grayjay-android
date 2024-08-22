@@ -21,6 +21,7 @@ class JSVideoSourceDescriptor : VideoMuxedSourceDescriptor {
         this.isUnMuxed = obj.getOrThrow(config, "isUnMuxed", contextName);
         this.videoSources = obj.getOrThrow<V8ValueArray>(config, "videoSources", contextName).toArray()
             .map { JSSource.fromV8Video(plugin, it as V8ValueObject) }
+            .filterNotNull()
             .toTypedArray();
     }
 

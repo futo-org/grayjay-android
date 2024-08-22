@@ -3,9 +3,14 @@ package com.futo.platformplayer.views.video
 import android.content.Context
 import android.net.Uri
 import android.util.AttributeSet
+import android.util.Xml
 import android.widget.RelativeLayout
 import androidx.annotation.OptIn
+import androidx.fragment.app.findFragment
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.common.C
+import androidx.media3.common.C.Encoding
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -17,6 +22,8 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.dash.manifest.DashManifest
+import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
@@ -42,6 +49,9 @@ import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestMergingRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
@@ -52,12 +62,14 @@ import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.video.PlayerManager
+import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 import com.google.gson.Gson
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.math.abs
 
@@ -319,18 +331,31 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         swapSources(videoSource, audioSource,false, play, keepSubtitles);
     }
     fun swapSources(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true, keepSubtitles: Boolean = false): Boolean {
-        swapSourceInternal(videoSource);
-        swapSourceInternal(audioSource);
+        var videoSourceUsed = videoSource;
+        var audioSourceUsed = audioSource;
+        if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
+            videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+            audioSourceUsed = null;
+        }
+
+        swapSourceInternal(videoSourceUsed);
+        swapSourceInternal(audioSourceUsed);
         if(!keepSubtitles)
             _lastSubtitleMediaSource = null;
         return loadSelectedSources(play, resume);
     }
     fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
-        swapSourceInternal(videoSource);
+        var videoSourceUsed = videoSource;
+        if(videoSource is JSDashManifestRawSource && lastVideoSource is JSDashManifestMergingRawSource)
+            videoSourceUsed = JSDashManifestMergingRawSource(videoSource, (lastVideoSource as JSDashManifestMergingRawSource).audio);
+        swapSourceInternal(videoSourceUsed);
         return loadSelectedSources(play, resume);
     }
     fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
-        swapSourceInternal(audioSource);
+        if(audioSource is JSDashManifestRawAudioSource && lastVideoSource is JSDashManifestMergingRawSource)
+            swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource));
+        else
+            swapSourceInternal(audioSource);
         return loadSelectedSources(play, resume);
     }
 
@@ -387,6 +412,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is LocalVideoSource -> swapVideoSourceLocal(videoSource);
             is JSVideoUrlRangeSource -> swapVideoSourceUrlRange(videoSource);
             is IDashManifestSource -> swapVideoSourceDash(videoSource);
+            is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource);
             is IHLSManifestSource -> swapVideoSourceHLS(videoSource);
             is IVideoUrlSource -> swapVideoSourceUrl(videoSource);
             null -> _lastVideoMediaSource = null;
@@ -399,6 +425,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is LocalAudioSource -> swapAudioSourceLocal(audioSource);
             is JSAudioUrlRangeSource -> swapAudioSourceUrlRange(audioSource);
             is JSHLSManifestAudioSource -> swapAudioSourceHLS(audioSource);
+            is JSDashManifestRawAudioSource -> swapAudioSourceDashRaw(audioSource);
             is IAudioUrlWidevineSource -> swapAudioSourceUrlWidevine(audioSource)
             is IAudioUrlSource -> swapAudioSourceUrl(audioSource);
             null -> _lastAudioMediaSource = null;
@@ -457,6 +484,54 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(videoSource.url))
+    }
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceDashRaw(videoSource: JSDashManifestRawSource) {
+        Logger.i(TAG, "Loading VideoSource [Dash]");
+
+        if(videoSource.hasGenerate) {
+            findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
+                try {
+                    val generated = videoSource.generate();
+                    if (generated != null) {
+                        withContext(Dispatchers.Main) {
+                            val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
+                                videoSource.getHttpDataSourceFactory()
+                            else
+                                DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+
+                            if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
+                                dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+                            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                                .createMediaSource(
+                                    DashManifestParser().parse(
+                                        Uri.parse(videoSource.url),
+                                        ByteArrayInputStream(
+                                            generated?.toByteArray() ?: ByteArray(0)
+                                        )
+                                    )
+                                );
+                            loadSelectedSources(true, false);
+                        }
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e(TAG, "DashRaw generator failed", ex);
+                }
+            }
+        }
+        else {
+            val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
+                videoSource.getHttpDataSourceFactory()
+            else
+                DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+
+            if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
+                dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                .createMediaSource(DashManifestParser().parse(Uri.parse(videoSource.url),
+                    ByteArrayInputStream(videoSource.manifest?.toByteArray() ?: ByteArray(0))));
+        }
     }
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceHLS(videoSource: IHLSManifestSource) {
@@ -522,6 +597,31 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     @OptIn(UnstableApi::class)
+    private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource) {
+        Logger.i(TAG, "Loading AudioSource [DashRaw]");
+        val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
+            audioSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        if(audioSource.hasGenerate) {
+            findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
+                val generated = audioSource.generate();
+                if(generated != null) {
+                    withContext(Dispatchers.Main) {
+                        _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                            .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
+                                ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
+                        loadSelectedSources(true, false);
+                    }
+                }
+            }
+        }
+        else
+            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
+                    ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))));
+    }
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlWidevine(audioSource: IAudioUrlWidevineSource) {
         Logger.i(TAG, "Loading AudioSource [UrlWidevine]")
         val dataSource = if (audioSource is JSSource && audioSource.requiresCustomDatasource)
@@ -574,27 +674,36 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val sourceAudio = _lastAudioMediaSource;
         val sourceSubs = _lastSubtitleMediaSource;
 
-        val sources = listOf(sourceVideo, sourceAudio, sourceSubs).filter { it != null }.map { it!! }.toTypedArray()
 
         beforeSourceChanged();
 
-        _mediaSource = if(sources.size == 1) {
-            Logger.i(TAG, "Using single source mode")
-            (sourceVideo ?: sourceAudio);
-        }
-        else if(sources.size >  1) {
-            Logger.i(TAG, "Using multi source mode ${sources.size}")
-            MergingMediaSource(true, *sources);
-        }
-        else {
-            Logger.i(TAG, "Using no sources loaded");
-            stop();
+        val source = mergeMediaSources(sourceVideo, sourceAudio, sourceSubs);
+        if(source == null)
             return false;
-        }
+        _mediaSource = source;
 
         reloadMediaSource(play, resume);
         return true;
     }
+
+    @OptIn(UnstableApi::class)
+    fun mergeMediaSources(sourceVideo: MediaSource?, sourceAudio: MediaSource?, sourceSubs: MediaSource?): MediaSource? {
+        val sources = listOf(sourceVideo, sourceAudio, sourceSubs).filter { it != null }.map { it!! }.toTypedArray()
+        if(sources.size == 1) {
+            Logger.i(TAG, "Using single source mode")
+            return (sourceVideo ?: sourceAudio);
+        }
+        else if(sources.size >  1) {
+            Logger.i(TAG, "Using multi source mode ${sources.size}")
+            return MergingMediaSource(true, *sources);
+        }
+        else {
+            Logger.i(TAG, "Using no sources loaded");
+            stop();
+            return null;
+        }
+    }
+
 
     @OptIn(UnstableApi::class)
     private fun reloadMediaSource(play: Boolean = false, resume: Boolean = true) {
@@ -619,6 +728,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun clear() {
         exoPlayer?.player?.stop();
         exoPlayer?.player?.clearMediaItems();
+        _lastVideoMediaSource = null;
+        _lastAudioMediaSource = null;
+        _lastSubtitleMediaSource = null;
+        _mediaSource = null;
     }
 
     fun stop(){
@@ -697,8 +810,15 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     companion object {
         val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";
 
-        val PREFERED_VIDEO_CONTAINERS = arrayOf("video/mp4", "video/webm", "video/3gpp");
-        val PREFERED_AUDIO_CONTAINERS = arrayOf("audio/mp3", "audio/mp4", "audio/webm", "audio/opus");
+        val PREFERED_VIDEO_CONTAINERS_MP4Pref = arrayOf("video/mp4", "video/webm", "video/3gpp");
+        val PREFERED_VIDEO_CONTAINERS_WEBMPref = arrayOf("video/webm", "video/mp4", "video/3gpp");
+        val PREFERED_VIDEO_CONTAINERS: Array<String> get() { return if(Settings.instance.playback.preferWebmVideo)
+            PREFERED_VIDEO_CONTAINERS_WEBMPref else PREFERED_VIDEO_CONTAINERS_MP4Pref }
+
+        val PREFERED_AUDIO_CONTAINERS_MP4Pref = arrayOf("audio/mp3", "audio/mp4", "audio/webm", "audio/opus");
+        val PREFERED_AUDIO_CONTAINERS_WEBMPref = arrayOf("audio/webm", "audio/opus", "audio/mp3", "audio/mp4");
+        val PREFERED_AUDIO_CONTAINERS: Array<String> get() { return if(Settings.instance.playback.preferWebmAudio)
+            PREFERED_AUDIO_CONTAINERS_WEBMPref else PREFERED_AUDIO_CONTAINERS_MP4Pref }
 
         val SUPPORTED_SUBTITLES = hashSetOf("text/vtt", "application/x-subrip");
     }

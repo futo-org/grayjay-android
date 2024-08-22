@@ -54,4 +54,8 @@ open class JSContent : IPlatformContent, IPluginSourced {
 
         _hasGetDetails = _content.has("getDetails");
     }
+
+    fun getUnderlyingObject(): V8ValueObject? {
+        return _content;
+    }
 }

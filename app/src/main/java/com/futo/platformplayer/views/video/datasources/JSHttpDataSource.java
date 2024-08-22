@@ -13,6 +13,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.futo.platformplayer.api.media.models.modifier.IRequest;
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier;
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequest;
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor;
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier;
 import androidx.media3.common.C;
@@ -27,6 +28,8 @@ import androidx.media3.datasource.HttpUtil;
 import androidx.media3.datasource.TransferListener;
 
 import com.futo.platformplayer.engine.dev.V8RemoteObject;
+import com.futo.platformplayer.engine.exceptions.PluginException;
+import com.futo.platformplayer.engine.exceptions.ScriptException;
 import com.futo.platformplayer.logging.Logger;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
@@ -70,7 +73,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         private boolean allowCrossProtocolRedirects;
         private boolean keepPostFor302Redirects;
         @Nullable private IRequestModifier requestModifier = null;
-        @Nullable private JSRequestExecutor requestExecutor = null;
+        @Nullable public JSRequestExecutor requestExecutor = null;
+        @Nullable public JSRequestExecutor requestExecutor2 = null;
+
 
         /** Creates an instance. */
         public Factory() {
@@ -107,6 +112,18 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          */
         public Factory setRequestExecutor(@Nullable JSRequestExecutor requestExecutor) {
             this.requestExecutor = requestExecutor;
+            return this;
+        }
+        /**
+         * Sets the secondary request executor that will be used.
+         *
+         * <p>The default is {@code null}, which results in no request modification
+         *
+         * @param requestExecutor The request modifier that will be used, or {@code null} to use no request modifier
+         * @return This factory.
+         */
+        public Factory setRequestExecutor2(@Nullable JSRequestExecutor requestExecutor) {
+            this.requestExecutor2 = requestExecutor;
             return this;
         }
 
@@ -216,7 +233,8 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
                             contentTypePredicate,
                             keepPostFor302Redirects,
                             requestModifier,
-                            requestExecutor);
+                            requestExecutor,
+                            requestExecutor2);
             if (transferListener != null) {
                 dataSource.addTransferListener(transferListener);
             }
@@ -252,7 +270,10 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
     private long bytesToRead;
     private long bytesRead;
     @Nullable private IRequestModifier requestModifier;
-    @Nullable private JSRequestExecutor requestExecutor;
+    @Nullable public JSRequestExecutor requestExecutor;
+    @Nullable public JSRequestExecutor requestExecutor2; //Not ideal, but required for now to have 2 executors under 1 datasource
+
+    private Uri fallbackUri = null;
 
     private JSHttpDataSource(
             @Nullable String userAgent,
@@ -263,7 +284,8 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             @Nullable Predicate<String> contentTypePredicate,
             boolean keepPostFor302Redirects,
             @Nullable IRequestModifier requestModifier,
-            @Nullable JSRequestExecutor requestExecutor) {
+            @Nullable JSRequestExecutor requestExecutor,
+            @Nullable JSRequestExecutor requestExecutor2) {
         super(/* isNetwork= */ true);
         this.userAgent = userAgent;
         this.connectTimeoutMillis = connectTimeoutMillis;
@@ -275,12 +297,13 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         this.keepPostFor302Redirects = keepPostFor302Redirects;
         this.requestModifier = requestModifier;
         this.requestExecutor = requestExecutor;
+        this.requestExecutor2 = requestExecutor2;
     }
 
     @Override
     @Nullable
     public Uri getUri() {
-        return connection == null ? null : Uri.parse(connection.getURL().toString());
+        return connection == null ? fallbackUri : Uri.parse(connection.getURL().toString());
     }
 
     @Override
@@ -330,18 +353,29 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         bytesToRead = 0;
         transferInitializing(dataSpec);
 
-        if(requestExecutor != null) {
-            byte[] data = requestExecutor.executeRequest(dataSpec.uri.toString(), dataSpec.httpRequestHeaders);
-            if(data == null)
-                throw new HttpDataSourceException(
-                        "No response",
-                        dataSpec,
-                        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
-                        HttpDataSourceException.TYPE_OPEN);
-            inputStream = new ByteArrayInputStream(data);
+        //Use executor 2 if it matches the urlPrefix
+        JSRequestExecutor executor = (requestExecutor2 != null && requestExecutor2.getUrlPrefix() != null && dataSpec.uri.toString().startsWith(requestExecutor2.getUrlPrefix())) ?
+                requestExecutor2 : requestExecutor;
 
-            transferStarted(dataSpec);
-            return data.length;
+        if(executor != null) {
+            try {
+                byte[] data = executor.executeRequest(dataSpec.uri.toString(), dataSpec.httpRequestHeaders);
+                if (data == null)
+                    throw new HttpDataSourceException(
+                            "No response",
+                            dataSpec,
+                            PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                            HttpDataSourceException.TYPE_OPEN);
+                inputStream = new ByteArrayInputStream(data);
+                fallbackUri = dataSpec.uri;
+                bytesToRead = data.length;
+
+                transferStarted(dataSpec);
+                return data.length;
+            }
+            catch(PluginException ex) {
+                throw HttpDataSourceException.createForIOException(new IOException("Executor failed: " + ex.getMessage(), ex), dataSpec, HttpDataSourceException.TYPE_OPEN);
+            }
         }
         else {
             String responseMessage;

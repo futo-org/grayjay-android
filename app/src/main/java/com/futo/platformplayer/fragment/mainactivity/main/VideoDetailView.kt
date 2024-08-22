@@ -72,6 +72,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -693,6 +694,7 @@ class VideoDetailView : ConstraintLayout {
             _lastAudioSource = null;
             _lastSubtitleSource = null;
             video = null;
+            _player.clear();
             cleanupPlaybackTracker();
             Logger.i(TAG, "Keep screen on unset onClose")
             fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
