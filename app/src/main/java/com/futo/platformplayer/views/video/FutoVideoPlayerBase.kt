@@ -338,24 +338,30 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             audioSourceUsed = null;
         }
 
-        swapSourceInternal(videoSourceUsed);
-        swapSourceInternal(audioSourceUsed);
+        val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
+        val didSetAudio = swapSourceInternal(audioSourceUsed, play, resume);
         if(!keepSubtitles)
             _lastSubtitleMediaSource = null;
-        return loadSelectedSources(play, resume);
+        if(didSetVideo && didSetAudio)
+            return loadSelectedSources(play, resume);
+        else
+            return true;
     }
     fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
         var videoSourceUsed = videoSource;
         if(videoSource is JSDashManifestRawSource && lastVideoSource is JSDashManifestMergingRawSource)
             videoSourceUsed = JSDashManifestMergingRawSource(videoSource, (lastVideoSource as JSDashManifestMergingRawSource).audio);
-        swapSourceInternal(videoSourceUsed);
-        return loadSelectedSources(play, resume);
+        val didSet = swapSourceInternal(videoSourceUsed, play, resume);
+        if(didSet)
+            return loadSelectedSources(play, resume);
+        else
+            return true;
     }
     fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
         if(audioSource is JSDashManifestRawAudioSource && lastVideoSource is JSDashManifestMergingRawSource)
-            swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource));
+            swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource), play, resume);
         else
-            swapSourceInternal(audioSource);
+            swapSourceInternal(audioSource, play, resume);
         return loadSelectedSources(play, resume);
     }
 
@@ -406,32 +412,34 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
 
-    private fun swapSourceInternal(videoSource: IVideoSource?) {
+    private fun swapSourceInternal(videoSource: IVideoSource?, play: Boolean, resume: Boolean): Boolean {
         _lastGeneratedDash = null;
-        when(videoSource) {
-            is LocalVideoSource -> swapVideoSourceLocal(videoSource);
-            is JSVideoUrlRangeSource -> swapVideoSourceUrlRange(videoSource);
-            is IDashManifestSource -> swapVideoSourceDash(videoSource);
-            is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource);
-            is IHLSManifestSource -> swapVideoSourceHLS(videoSource);
-            is IVideoUrlSource -> swapVideoSourceUrl(videoSource);
-            null -> _lastVideoMediaSource = null;
+        val didSet = when(videoSource) {
+            is LocalVideoSource -> { swapVideoSourceLocal(videoSource); true; }
+            is JSVideoUrlRangeSource -> { swapVideoSourceUrlRange(videoSource); true; }
+            is IDashManifestSource -> { swapVideoSourceDash(videoSource); true;}
+            is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource, play, resume);
+            is IHLSManifestSource -> { swapVideoSourceHLS(videoSource); true; }
+            is IVideoUrlSource -> { swapVideoSourceUrl(videoSource); true; }
+            null -> { _lastVideoMediaSource = null; true;}
             else -> throw IllegalArgumentException("Unsupported video source [${videoSource.javaClass.simpleName}]");
         }
         lastVideoSource = videoSource;
+        return didSet;
     }
-    private fun swapSourceInternal(audioSource: IAudioSource?) {
-        when(audioSource) {
-            is LocalAudioSource -> swapAudioSourceLocal(audioSource);
-            is JSAudioUrlRangeSource -> swapAudioSourceUrlRange(audioSource);
-            is JSHLSManifestAudioSource -> swapAudioSourceHLS(audioSource);
-            is JSDashManifestRawAudioSource -> swapAudioSourceDashRaw(audioSource);
-            is IAudioUrlWidevineSource -> swapAudioSourceUrlWidevine(audioSource)
-            is IAudioUrlSource -> swapAudioSourceUrl(audioSource);
-            null -> _lastAudioMediaSource = null;
+    private fun swapSourceInternal(audioSource: IAudioSource?, play: Boolean, resume: Boolean): Boolean {
+        val didSet = when(audioSource) {
+            is LocalAudioSource -> {swapAudioSourceLocal(audioSource); true; }
+            is JSAudioUrlRangeSource -> { swapAudioSourceUrlRange(audioSource); true; }
+            is JSHLSManifestAudioSource -> { swapAudioSourceHLS(audioSource); true; }
+            is JSDashManifestRawAudioSource -> swapAudioSourceDashRaw(audioSource, play, resume);
+            is IAudioUrlWidevineSource -> { swapAudioSourceUrlWidevine(audioSource); true; }
+            is IAudioUrlSource -> { swapAudioSourceUrl(audioSource); true; }
+            null -> { _lastAudioMediaSource = null; true; }
             else -> throw IllegalArgumentException("Unsupported video source [${audioSource.javaClass.simpleName}]");
         }
         lastAudioSource = audioSource;
+        return didSet;
     }
 
     //Video loads
@@ -486,7 +494,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             .createMediaSource(MediaItem.fromUri(videoSource.url))
     }
     @OptIn(UnstableApi::class)
-    private fun swapVideoSourceDashRaw(videoSource: JSDashManifestRawSource) {
+    private fun swapVideoSourceDashRaw(videoSource: JSDashManifestRawSource, play: Boolean, resume: Boolean): Boolean {
         Logger.i(TAG, "Loading VideoSource [Dash]");
 
         if(videoSource.hasGenerate) {
@@ -511,7 +519,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                                         )
                                     )
                                 );
-                            loadSelectedSources(true, false);
+                            if(lastVideoSource == videoSource || (videoSource is JSDashManifestMergingRawSource && videoSource.video == lastVideoSource));
+                                loadSelectedSources(play, resume);
                         }
                     }
                 }
@@ -519,6 +528,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     Logger.e(TAG, "DashRaw generator failed", ex);
                 }
             }
+            return false;
         }
         else {
             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
@@ -531,6 +541,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(DashManifestParser().parse(Uri.parse(videoSource.url),
                     ByteArrayInputStream(videoSource.manifest?.toByteArray() ?: ByteArray(0))));
+            return true;
         }
     }
     @OptIn(UnstableApi::class)
@@ -597,7 +608,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     @OptIn(UnstableApi::class)
-    private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource) {
+    private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource, play: Boolean, resume: Boolean): Boolean {
         Logger.i(TAG, "Loading AudioSource [DashRaw]");
         val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
             audioSource.getHttpDataSourceFactory()
@@ -611,15 +622,22 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                         _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                             .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
                                 ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
-                        loadSelectedSources(true, false);
+                        loadSelectedSources(play, resume);
                     }
                 }
             }
+            return false;
         }
-        else
+        else {
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
-                    ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))));
+                .createMediaSource(
+                    DashManifestParser().parse(
+                        Uri.parse(audioSource.url),
+                        ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))
+                    )
+                );
+            return true;
+        }
     }
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlWidevine(audioSource: IAudioUrlWidevineSource) {

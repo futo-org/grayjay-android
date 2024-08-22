@@ -359,7 +359,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         if(executor != null) {
             try {
+                Logger.Companion.i(TAG, "Executor for " + dataSpec.uri.toString(), null);
                 byte[] data = executor.executeRequest(dataSpec.uri.toString(), dataSpec.httpRequestHeaders);
+                Logger.Companion.i(TAG, "Executor result for " + dataSpec.uri.toString() + " : " + data.length, null);
                 if (data == null)
                     throw new HttpDataSourceException(
                             "No response",
