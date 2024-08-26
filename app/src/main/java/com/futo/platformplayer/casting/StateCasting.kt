@@ -31,6 +31,8 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.mdns.DnsService
+import com.futo.platformplayer.mdns.ServiceDiscoverer
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
@@ -45,15 +47,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.InetAddress
 import java.util.UUID
-import javax.jmdns.JmDNS
-import javax.jmdns.ServiceEvent
-import javax.jmdns.ServiceListener
-import javax.jmdns.ServiceTypeListener
 
 class StateCasting {
     private val _scopeIO = CoroutineScope(Dispatchers.IO);
     private val _scopeMain = CoroutineScope(Dispatchers.Main);
-    private var _jmDNS: JmDNS? = null;
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
 
     private val _castServer = ManagedHttpServer(9999);
@@ -72,102 +69,46 @@ class StateCasting {
     var activeDevice: CastingDevice? = null;
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
+    val _serviceDiscoverer = ServiceDiscoverer(arrayOf(
+        "_googlecast._tcp.local",
+        "_airplay._tcp.local",
+        "_fastcast._tcp.local",
+        "_fcast._tcp.local"
+    )) { handleServiceUpdated(it) }
 
     val isCasting: Boolean get() = activeDevice != null;
 
-    private val _chromecastServiceListener = object : ServiceListener {
-        override fun serviceAdded(event: ServiceEvent) {
-            Logger.i(TAG, "ChromeCast service added: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        override fun serviceRemoved(event: ServiceEvent) {
-            Logger.i(TAG, "ChromeCast service removed: " + event.info);
-            synchronized(devices) {
-                val device = devices[event.info.name];
-                if (device != null) {
-                    onDeviceRemoved.emit(device);
+    private fun handleServiceUpdated(services: List<DnsService>) {
+        for (s in services) {
+            //TODO: Addresses IPv4 only?
+            val addresses = s.addresses.toTypedArray()
+            val port = s.port.toInt()
+            var name = s.texts.firstOrNull { it.startsWith("md=") }?.substring("md=".length)
+            if (s.name.endsWith("._googlecast._tcp.local")) {
+                if (name == null) {
+                    name = s.name.substring(0, s.name.length - "._googlecast._tcp.local".length)
                 }
-            }
-        }
 
-        override fun serviceResolved(event: ServiceEvent) {
-            Logger.v(TAG, "ChromeCast service resolved: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        fun addOrUpdateDevice(event: ServiceEvent) {
-            addOrUpdateChromeCastDevice(event.info.name, event.info.inetAddresses, event.info.port);
-        }
-    }
-
-    private val _airPlayServiceListener = object : ServiceListener {
-        override fun serviceAdded(event: ServiceEvent) {
-            Logger.i(TAG, "AirPlay service added: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        override fun serviceRemoved(event: ServiceEvent) {
-            Logger.i(TAG, "AirPlay service removed: " + event.info);
-            synchronized(devices) {
-                val device = devices[event.info.name];
-                if (device != null) {
-                    onDeviceRemoved.emit(device);
+                addOrUpdateChromeCastDevice(name, addresses, port)
+            } else if (s.name.endsWith("._airplay._tcp.local")) {
+                if (name == null) {
+                    name = s.name.substring(0, s.name.length - "._airplay._tcp.local".length)
                 }
-            }
-        }
 
-        override fun serviceResolved(event: ServiceEvent) {
-            Logger.i(TAG, "AirPlay service resolved: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        fun addOrUpdateDevice(event: ServiceEvent) {
-            addOrUpdateAirPlayDevice(event.info.name, event.info.inetAddresses, event.info.port);
-        }
-    }
-
-    private val _fastCastServiceListener = object : ServiceListener {
-        override fun serviceAdded(event: ServiceEvent) {
-            Logger.i(TAG, "FastCast service added: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        override fun serviceRemoved(event: ServiceEvent) {
-            Logger.i(TAG, "FastCast service removed: " + event.info);
-            synchronized(devices) {
-                val device = devices[event.info.name];
-                if (device != null) {
-                    onDeviceRemoved.emit(device);
+                addOrUpdateAirPlayDevice(name, addresses, port)
+            } else if (s.name.endsWith("._fastcast._tcp.local")) {
+                if (name == null) {
+                    name = s.name.substring(0, s.name.length - "._fastcast._tcp.local".length)
                 }
+
+                addOrUpdateFastCastDevice(name, addresses, port)
+            } else if (s.name.endsWith("._fcast._tcp.local")) {
+                if (name == null) {
+                    name = s.name.substring(0, s.name.length - "._fcast._tcp.local".length)
+                }
+
+                addOrUpdateFastCastDevice(name, addresses, port)
             }
-        }
-
-        override fun serviceResolved(event: ServiceEvent) {
-            Logger.i(TAG, "FastCast service resolved: " + event.info);
-            addOrUpdateDevice(event);
-        }
-
-        fun addOrUpdateDevice(event: ServiceEvent) {
-            addOrUpdateFastCastDevice(event.info.name, event.info.inetAddresses, event.info.port);
-        }
-    }
-
-    private val _serviceTypeListener = object : ServiceTypeListener {
-        override fun serviceTypeAdded(event: ServiceEvent?) {
-            if (event == null) {
-                return;
-            }
-
-            Logger.i(TAG, "Service type added (name: ${event.name}, type: ${event.type})");
-        }
-
-        override fun subTypeForServiceTypeAdded(event: ServiceEvent?) {
-            if (event == null) {
-                return;
-            }
-
-            Logger.i(TAG, "Sub type for service type added (name: ${event.name}, type: ${event.type})");
         }
     }
 
@@ -237,27 +178,28 @@ class StateCasting {
         rememberedDevices.clear();
         rememberedDevices.addAll(_storage.deviceInfos.map { deviceFromCastingDeviceInfo(it) });
 
-        _scopeIO.launch {
-            try {
-                val jmDNS = JmDNS.create(InetAddress.getLocalHost());
-                jmDNS.addServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
-                jmDNS.addServiceListener("_airplay._tcp.local.", _airPlayServiceListener);
-                jmDNS.addServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
-                jmDNS.addServiceListener("_fcast._tcp.local.", _fastCastServiceListener);
-
-                if (BuildConfig.DEBUG) {
-                    jmDNS.addServiceTypeListener(_serviceTypeListener);
-                }
-
-                _jmDNS = jmDNS;
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to start casting service.", e);
-            }
-        }
         _castServer.start();
         enableDeveloper(true);
 
         Logger.i(TAG, "CastingService started.");
+    }
+
+    @Synchronized
+    fun startDiscovering() {
+        try {
+            _serviceDiscoverer.start()
+        } catch (e: Throwable) {
+            Logger.i(TAG, "Failed to start ServiceDiscoverer", e)
+        }
+    }
+
+    @Synchronized
+    fun stopDiscovering() {
+        try {
+            _serviceDiscoverer.stop()
+        } catch (e: Throwable) {
+            Logger.i(TAG, "Failed to stop ServiceDiscoverer", e)
+        }
     }
 
     @Synchronized
@@ -269,25 +211,7 @@ class StateCasting {
 
         Logger.i(TAG, "CastingService stopping.")
 
-        val jmDNS = _jmDNS;
-        if (jmDNS != null) {
-            _scopeIO.launch {
-                try {
-                    jmDNS.removeServiceListener("_googlecast._tcp.local.", _chromecastServiceListener);
-                    jmDNS.removeServiceListener("_airplay._tcp", _airPlayServiceListener);
-                    jmDNS.removeServiceListener("_fastcast._tcp.local.", _fastCastServiceListener);
-
-                    if (BuildConfig.DEBUG) {
-                        jmDNS.removeServiceTypeListener(_serviceTypeListener);
-                    }
-
-                    jmDNS.close();
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to stop mDNS.", e);
-                }
-            }
-        }
-
+        stopDiscovering()
         _scopeIO.cancel();
         _scopeMain.cancel();
 
@@ -1245,7 +1169,7 @@ class StateCasting {
                 }
             } else {
                 val newDevice = deviceFactory();
-                devices[name] = newDevice;
+                this.devices[name] = newDevice;
 
                 invokeEvents = {
                     onDeviceAdded.emit(newDevice);
