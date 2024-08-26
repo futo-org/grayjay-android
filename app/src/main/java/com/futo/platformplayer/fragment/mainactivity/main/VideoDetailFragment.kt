@@ -157,7 +157,7 @@ class VideoDetailFragment : MainFragment {
         _viewDetail?.preventPictureInPicture = true;
     }
 
-    fun minimizeVideoDetail(){
+    fun minimizeVideoDetail() {
         _viewDetail?.setFullscreen(false);
         if(_view != null)
             _view!!.transitionToStart();

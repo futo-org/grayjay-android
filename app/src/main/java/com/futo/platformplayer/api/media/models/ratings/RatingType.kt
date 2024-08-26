@@ -8,7 +8,7 @@ enum class RatingType(val value : Int) {
 
     companion object{
         fun fromInt(value : Int) : RatingType{
-            return RatingType.values().first { it.value == value };
+            return RatingType.entries.first { it.value == value };
         }
     }
 }

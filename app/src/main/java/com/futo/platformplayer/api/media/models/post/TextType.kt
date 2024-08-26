@@ -10,7 +10,7 @@ enum class TextType(val value: Int) {
     companion object {
         fun fromInt(value: Int): TextType
         {
-            val result = TextType.values().firstOrNull { it.value == value };
+            val result = TextType.entries.firstOrNull { it.value == value };
             if(result == null)
                 throw IllegalArgumentException("Unknown Texttype: $value");
             return result;
