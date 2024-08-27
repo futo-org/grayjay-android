@@ -7,6 +7,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -34,9 +35,8 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
         );
     }
 
-    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager {
-        val glmResults = GridLayoutManager(context, 2);
-        glmResults.orientation = LinearLayoutManager.VERTICAL;
+    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): StaggeredGridLayoutManager {
+        val glmResults = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
 
         _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
             rightMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8.0f, context.resources.displayMetrics).toInt();

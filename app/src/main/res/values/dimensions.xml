@@ -2,4 +2,5 @@
 <resources>
     <dimen name="video_view_right_padding"></dimen>
     <dimen name="app_bar_height">200dp</dimen>
+    <dimen name="landscape_threshold">300dp</dimen>
 </resources>

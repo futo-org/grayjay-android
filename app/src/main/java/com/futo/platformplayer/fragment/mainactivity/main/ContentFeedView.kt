@@ -4,8 +4,10 @@ import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.LinearLayout
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -45,7 +47,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     private var _videoOptionsOverlay: SlideUpMenuOverlay? = null;
     protected open val shouldShowTimeBar: Boolean get() = true
 
-    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
 
     }
 
@@ -53,18 +55,34 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         return results;
     }
 
-    override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<IPlatformContent>): InsertedViewAdapterWithLoader<ContentPreviewViewHolder> {
+    override fun createAdapter(
+        recyclerResults: RecyclerView,
+        context: Context,
+        dataset: ArrayList<IPlatformContent>
+    ): InsertedViewAdapterWithLoader<ContentPreviewViewHolder> {
         val player = StatePlayer.instance.getThumbnailPlayerOrCreate(context);
         player.modifyState("ThumbnailPlayer", { state -> state.muted = true });
         _exoPlayer = player;
 
         val v = LinearLayout(context).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            );
             orientation = LinearLayout.VERTICAL;
         };
         headerView = v;
 
-        return PreviewContentListAdapter(context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(v), arrayListOf(), shouldShowTimeBar).apply {
+        return PreviewContentListAdapter(
+            context,
+            feedStyle,
+            dataset,
+            player,
+            _previewsEnabled,
+            arrayListOf(v),
+            arrayListOf(),
+            shouldShowTimeBar
+        ).apply {
             attachAdapterEvents(this);
         }
     }
@@ -160,10 +178,13 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         adapter.onLongPress.remove(this);
     }
 
-    override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
+    override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
         super.onRestoreCachedData(cachedData)
         val v = LinearLayout(context).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            );
             orientation = LinearLayout.VERTICAL;
         };
         headerView = v;
@@ -171,10 +192,16 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         (cachedData.adapter as PreviewContentListAdapter?)?.let { attachAdapterEvents(it) };
     }
 
-    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager {
-        val llmResults = LinearLayoutManager(context);
-        llmResults.orientation = LinearLayoutManager.VERTICAL;
-        return llmResults;
+    override fun createLayoutManager(
+        recyclerResults: RecyclerView,
+        context: Context
+    ): StaggeredGridLayoutManager {
+        val glmResults =
+            StaggeredGridLayoutManager(
+                if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold)) 2 else 1,
+                StaggeredGridLayoutManager.VERTICAL
+            );
+        return glmResults;
     }
 
     override fun onScrollStateChanged(newState: Int) {
@@ -220,8 +247,8 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         if(feedStyle == FeedStyle.THUMBNAIL)
             return;
 
-        val firstVisible = recyclerData.layoutManager.findFirstVisibleItemPosition();
-        val lastVisible = recyclerData.layoutManager.findLastVisibleItemPosition();
+        val firstVisible = recyclerData.layoutManager.findFirstVisibleItemPositions(IntArray(recyclerData.layoutManager.spanCount))[0]
+        val lastVisible = recyclerData.layoutManager.findLastVisibleItemPositions(IntArray(recyclerData.layoutManager.spanCount))[0]
         val itemsVisible = lastVisible - firstVisible + 1;
         val autoPlayIndex = (firstVisible + floor(itemsVisible / 2.0 + 0.49).toInt()).coerceAtLeast(0).coerceAtMost((recyclerData.results.size - 1));
 
