@@ -118,8 +118,13 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
 
     private fun showVideoOptionsOverlay(content: IPlatformVideo) {
         _overlayContainer.let {
-            _videoOptionsOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(context, R.drawable.ic_visibility_off, context.getString(R.string.hide), context.getString(R.string.hide_from_home), "hide",
-                { StateMeta.instance.addHiddenVideo(content.url);
+            _videoOptionsOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(
+                context,
+                R.drawable.ic_visibility_off,
+                context.getString(R.string.hide),
+                context.getString(R.string.hide_from_home),
+                tag = "hide",
+                call = { StateMeta.instance.addHiddenVideo(content.url);
                     if (fragment is HomeFragment) {
                         val removeIndex = recyclerData.results.indexOf(content);
                         if (removeIndex >= 0) {
@@ -128,8 +133,12 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                         }
                     }
                 }),
-                SlideUpMenuItem(context, R.drawable.ic_playlist, context.getString(R.string.play_feed_as_queue), context.getString(R.string.play_entire_feed), "playFeed",
-                    {
+                SlideUpMenuItem(context,
+                    R.drawable.ic_playlist,
+                    context.getString(R.string.play_feed_as_queue),
+                    context.getString(R.string.play_entire_feed),
+                    tag = "playFeed",
+                    call = {
                         val newQueue = listOf(content) + recyclerData.results
                             .filterIsInstance<IPlatformVideo>()
                             .filter { it != content };

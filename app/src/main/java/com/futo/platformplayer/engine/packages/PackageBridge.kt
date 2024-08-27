@@ -2,12 +2,14 @@ package com.futo.platformplayer.engine.packages
 
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
+import com.caoccao.javet.values.V8Value
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.JSClientConstants
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
@@ -48,6 +50,16 @@ class PackageBridge : V8Package {
     @V8Property
     fun buildFlavor(): String {
         return BuildConfig.FLAVOR;
+    }
+    @V8Property
+    fun buildSpecVersion(): Int {
+        return JSClientConstants.PLUGIN_SPEC_VERSION;
+    }
+
+    @V8Function
+    fun dispose(value: V8Value) {
+        Logger.e(TAG, "Manual dispose: " + value.javaClass.name);
+        value.close();
     }
 
     @V8Function

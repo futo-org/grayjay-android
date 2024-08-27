@@ -13,6 +13,8 @@ import androidx.annotation.VisibleForTesting;
 
 import com.futo.platformplayer.api.media.models.modifier.IRequest;
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier;
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequest;
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor;
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier;
 import androidx.media3.common.C;
 import androidx.media3.common.PlaybackException;
@@ -26,12 +28,16 @@ import androidx.media3.datasource.HttpUtil;
 import androidx.media3.datasource.TransferListener;
 
 import com.futo.platformplayer.engine.dev.V8RemoteObject;
+import com.futo.platformplayer.engine.exceptions.PluginException;
+import com.futo.platformplayer.engine.exceptions.ScriptException;
 import com.futo.platformplayer.logging.Logger;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -67,6 +73,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         private boolean allowCrossProtocolRedirects;
         private boolean keepPostFor302Redirects;
         @Nullable private IRequestModifier requestModifier = null;
+        @Nullable public JSRequestExecutor requestExecutor = null;
+        @Nullable public JSRequestExecutor requestExecutor2 = null;
+
 
         /** Creates an instance. */
         public Factory() {
@@ -91,6 +100,30 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          */
         public Factory setRequestModifier(@Nullable IRequestModifier requestModifier) {
             this.requestModifier = requestModifier;
+            return this;
+        }
+        /**
+         * Sets the request executor that will be used.
+         *
+         * <p>The default is {@code null}, which results in no request modification
+         *
+         * @param requestExecutor The request modifier that will be used, or {@code null} to use no request modifier
+         * @return This factory.
+         */
+        public Factory setRequestExecutor(@Nullable JSRequestExecutor requestExecutor) {
+            this.requestExecutor = requestExecutor;
+            return this;
+        }
+        /**
+         * Sets the secondary request executor that will be used.
+         *
+         * <p>The default is {@code null}, which results in no request modification
+         *
+         * @param requestExecutor The request modifier that will be used, or {@code null} to use no request modifier
+         * @return This factory.
+         */
+        public Factory setRequestExecutor2(@Nullable JSRequestExecutor requestExecutor) {
+            this.requestExecutor2 = requestExecutor;
             return this;
         }
 
@@ -199,7 +232,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
                             defaultRequestProperties,
                             contentTypePredicate,
                             keepPostFor302Redirects,
-                            requestModifier);
+                            requestModifier,
+                            requestExecutor,
+                            requestExecutor2);
             if (transferListener != null) {
                 dataSource.addTransferListener(transferListener);
             }
@@ -235,6 +270,10 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
     private long bytesToRead;
     private long bytesRead;
     @Nullable private IRequestModifier requestModifier;
+    @Nullable public JSRequestExecutor requestExecutor;
+    @Nullable public JSRequestExecutor requestExecutor2; //Not ideal, but required for now to have 2 executors under 1 datasource
+
+    private Uri fallbackUri = null;
 
     private JSHttpDataSource(
             @Nullable String userAgent,
@@ -244,7 +283,9 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             @Nullable RequestProperties defaultRequestProperties,
             @Nullable Predicate<String> contentTypePredicate,
             boolean keepPostFor302Redirects,
-            @Nullable IRequestModifier requestModifier) {
+            @Nullable IRequestModifier requestModifier,
+            @Nullable JSRequestExecutor requestExecutor,
+            @Nullable JSRequestExecutor requestExecutor2) {
         super(/* isNetwork= */ true);
         this.userAgent = userAgent;
         this.connectTimeoutMillis = connectTimeoutMillis;
@@ -255,12 +296,14 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         this.requestProperties = new RequestProperties();
         this.keepPostFor302Redirects = keepPostFor302Redirects;
         this.requestModifier = requestModifier;
+        this.requestExecutor = requestExecutor;
+        this.requestExecutor2 = requestExecutor2;
     }
 
     @Override
     @Nullable
     public Uri getUri() {
-        return connection == null ? null : Uri.parse(connection.getURL().toString());
+        return connection == null ? fallbackUri : Uri.parse(connection.getURL().toString());
     }
 
     @Override
@@ -310,119 +353,147 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
         bytesToRead = 0;
         transferInitializing(dataSpec);
 
-        String responseMessage;
-        HttpURLConnection connection;
-        try {
-            this.connection = makeConnection(dataSpec);
-            connection = this.connection;
-            responseCode = connection.getResponseCode();
-            responseMessage = connection.getResponseMessage();
-        } catch (IOException e) {
-            closeConnectionQuietly();
-            throw HttpDataSourceException.createForIOException(
-                    e, dataSpec, HttpDataSourceException.TYPE_OPEN);
-        }
+        //Use executor 2 if it matches the urlPrefix
+        JSRequestExecutor executor = (requestExecutor2 != null && requestExecutor2.getUrlPrefix() != null && dataSpec.uri.toString().startsWith(requestExecutor2.getUrlPrefix())) ?
+                requestExecutor2 : requestExecutor;
 
-        // Check for a valid response code.
-        if (responseCode < 200 || responseCode > 299) {
-            Map<String, List<String>> headers = connection.getHeaderFields();
-            if (responseCode == 416) {
-                long documentSize = HttpUtil.getDocumentSize(connection.getHeaderField(HttpHeaders.CONTENT_RANGE));
-                if (dataSpec.position == documentSize) {
-                    opened = true;
-                    transferStarted(dataSpec);
-                    return dataSpec.length != C.LENGTH_UNSET ? dataSpec.length : 0;
-                }
-            }
-
-            @Nullable InputStream errorStream = connection.getErrorStream();
-            byte[] errorResponseBody;
+        if(executor != null) {
             try {
-                errorResponseBody =
-                        errorStream != null ? Util.toByteArray(errorStream) : Util.EMPTY_BYTE_ARRAY;
+                Logger.Companion.i(TAG, "Executor for " + dataSpec.uri.toString(), null);
+                byte[] data = executor.executeRequest(dataSpec.uri.toString(), dataSpec.httpRequestHeaders);
+                Logger.Companion.i(TAG, "Executor result for " + dataSpec.uri.toString() + " : " + data.length, null);
+                if (data == null)
+                    throw new HttpDataSourceException(
+                            "No response",
+                            dataSpec,
+                            PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                            HttpDataSourceException.TYPE_OPEN);
+                inputStream = new ByteArrayInputStream(data);
+                fallbackUri = dataSpec.uri;
+                bytesToRead = data.length;
+
+                transferStarted(dataSpec);
+                return data.length;
+            }
+            catch(PluginException ex) {
+                throw HttpDataSourceException.createForIOException(new IOException("Executor failed: " + ex.getMessage(), ex), dataSpec, HttpDataSourceException.TYPE_OPEN);
+            }
+        }
+        else {
+            String responseMessage;
+            HttpURLConnection connection;
+            try {
+                this.connection = makeConnection(dataSpec);
+                connection = this.connection;
+                responseCode = connection.getResponseCode();
+                responseMessage = connection.getResponseMessage();
             } catch (IOException e) {
-                errorResponseBody = Util.EMPTY_BYTE_ARRAY;
+                closeConnectionQuietly();
+                throw HttpDataSourceException.createForIOException(
+                        e, dataSpec, HttpDataSourceException.TYPE_OPEN);
             }
-            closeConnectionQuietly();
-            @Nullable
-            IOException cause = responseCode == 416
-                ? new DataSourceException(PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE)
-                : null;
 
-            throw new InvalidResponseCodeException(
-                    responseCode, responseMessage, cause, headers, dataSpec, errorResponseBody);
-        }
+            // Check for a valid response code.
+            if (responseCode < 200 || responseCode > 299) {
+                Map<String, List<String>> headers = connection.getHeaderFields();
+                if (responseCode == 416) {
+                    long documentSize = HttpUtil.getDocumentSize(connection.getHeaderField(HttpHeaders.CONTENT_RANGE));
+                    if (dataSpec.position == documentSize) {
+                        opened = true;
+                        transferStarted(dataSpec);
+                        return dataSpec.length != C.LENGTH_UNSET ? dataSpec.length : 0;
+                    }
+                }
 
-        // Check for a valid content type.
-        String contentType = connection.getContentType();
-        if (contentTypePredicate != null && !contentTypePredicate.apply(contentType)) {
-            closeConnectionQuietly();
-            throw new InvalidContentTypeException(contentType, dataSpec);
-        }
+                @Nullable InputStream errorStream = connection.getErrorStream();
+                byte[] errorResponseBody;
+                try {
+                    errorResponseBody =
+                            errorStream != null ? Util.toByteArray(errorStream) : Util.EMPTY_BYTE_ARRAY;
+                } catch (IOException e) {
+                    errorResponseBody = Util.EMPTY_BYTE_ARRAY;
+                }
+                closeConnectionQuietly();
+                @Nullable
+                IOException cause = responseCode == 416
+                        ? new DataSourceException(PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE)
+                        : null;
 
-        // If we requested a range starting from a non-zero position and received a 200 rather than a
-        // 206, then the server does not support partial requests. We'll need to manually skip to the
-        // requested position.
-        long bytesToSkip;
-        if (requestModifier != null && !requestModifier.getAllowByteSkip()) {
-            bytesToSkip = 0;
-        } else {
-            bytesToSkip = responseCode == 200 && dataSpec.position != 0 ? dataSpec.position : 0;
-        }
+                throw new InvalidResponseCodeException(
+                        responseCode, responseMessage, cause, headers, dataSpec, errorResponseBody);
+            }
 
-        // Determine the length of the data to be read, after skipping.
-        boolean isCompressed = isCompressed(connection);
-        if (!isCompressed) {
-            if (dataSpec.length != C.LENGTH_UNSET) {
-                bytesToRead = dataSpec.length;
+            // Check for a valid content type.
+            String contentType = connection.getContentType();
+            if (contentTypePredicate != null && !contentTypePredicate.apply(contentType)) {
+                closeConnectionQuietly();
+                throw new InvalidContentTypeException(contentType, dataSpec);
+            }
+
+            // If we requested a range starting from a non-zero position and received a 200 rather than a
+            // 206, then the server does not support partial requests. We'll need to manually skip to the
+            // requested position.
+            long bytesToSkip;
+            if (requestModifier != null && !requestModifier.getAllowByteSkip()) {
+                bytesToSkip = 0;
             } else {
-                long contentLength = HttpUtil.getContentLength(
-                    connection.getHeaderField(HttpHeaders.CONTENT_LENGTH),
-                    connection.getHeaderField(HttpHeaders.CONTENT_RANGE)
-                );
-
-                bytesToRead = contentLength != C.LENGTH_UNSET ? (contentLength - bytesToSkip) : C.LENGTH_UNSET;
+                bytesToSkip = responseCode == 200 && dataSpec.position != 0 ? dataSpec.position : 0;
             }
-        } else {
-            // Gzip is enabled. If the server opts to use gzip then the content length in the response
-            // will be that of the compressed data, which isn't what we want. Always use the dataSpec
-            // length in this case.
-            bytesToRead = dataSpec.length;
-        }
 
-        try {
-            inputStream = connection.getInputStream();
-            if (isCompressed) {
-                inputStream = new GZIPInputStream(inputStream);
+            // Determine the length of the data to be read, after skipping.
+            boolean isCompressed = isCompressed(connection);
+            if (!isCompressed) {
+                if (dataSpec.length != C.LENGTH_UNSET) {
+                    bytesToRead = dataSpec.length;
+                } else {
+                    long contentLength = HttpUtil.getContentLength(
+                            connection.getHeaderField(HttpHeaders.CONTENT_LENGTH),
+                            connection.getHeaderField(HttpHeaders.CONTENT_RANGE)
+                    );
+
+                    bytesToRead = contentLength != C.LENGTH_UNSET ? (contentLength - bytesToSkip) : C.LENGTH_UNSET;
+                }
+            } else {
+                // Gzip is enabled. If the server opts to use gzip then the content length in the response
+                // will be that of the compressed data, which isn't what we want. Always use the dataSpec
+                // length in this case.
+                bytesToRead = dataSpec.length;
             }
-        } catch (IOException e) {
-            closeConnectionQuietly();
-            throw new HttpDataSourceException(
-                    e,
-                    dataSpec,
-                    PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
-                    HttpDataSourceException.TYPE_OPEN);
-        }
 
-        opened = true;
-        transferStarted(dataSpec);
-
-        try {
-            skipFully(bytesToSkip, dataSpec);
-        } catch (IOException e) {
-            closeConnectionQuietly();
-
-            if (e instanceof HttpDataSourceException) {
-                throw (HttpDataSourceException) e;
+            try {
+                inputStream = connection.getInputStream();
+                if (isCompressed) {
+                    inputStream = new GZIPInputStream(inputStream);
+                }
+            } catch (IOException e) {
+                closeConnectionQuietly();
+                throw new HttpDataSourceException(
+                        e,
+                        dataSpec,
+                        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                        HttpDataSourceException.TYPE_OPEN);
             }
-            throw new HttpDataSourceException(
-                    e,
-                    dataSpec,
-                    PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
-                    HttpDataSourceException.TYPE_OPEN);
-        }
 
-        return bytesToRead;
+            opened = true;
+            transferStarted(dataSpec);
+
+            try {
+                skipFully(bytesToSkip, dataSpec);
+            } catch (IOException e) {
+                closeConnectionQuietly();
+
+                if (e instanceof HttpDataSourceException) {
+                    throw (HttpDataSourceException) e;
+                }
+                throw new HttpDataSourceException(
+                        e,
+                        dataSpec,
+                        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                        HttpDataSourceException.TYPE_OPEN);
+            }
+
+            return bytesToRead;
+        }
     }
 
     @Override

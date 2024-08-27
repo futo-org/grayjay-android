@@ -21,7 +21,7 @@ enum class ContentType(val value: Int) {
     companion object {
         fun fromInt(value: Int): ContentType
         {
-            val result = ContentType.values().firstOrNull { it.value == value };
+            val result = ContentType.entries.firstOrNull { it.value == value };
             if(result == null)
                 throw UnknownPlatformException(value.toString());
             return result;

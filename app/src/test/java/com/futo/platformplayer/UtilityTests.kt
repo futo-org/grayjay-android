@@ -1,6 +1,8 @@
 package com.futo.platformplayer
 
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -51,5 +53,22 @@ class UtilityTests {
         assertEquals("\uABCD", "\\uabcd".decodeUnicode())
         assertEquals("\ud83d\udc80\ud83d\udd14", "\\ud83d\\udc80\\ud83d\\udd14".decodeUnicode())
         assertEquals("String with a slash (/) in it", "String with a slash (/) in it".decodeUnicode())
+    }
+
+
+    @Test
+    fun testMatchDomain() {
+        //TLD
+        assertTrue("test.abc.com".matchesDomain(".abc.com"))
+        assertTrue("abc.com".matchesDomain("abc.com"))
+        assertFalse("test.abc.com".matchesDomain("abc.com"))
+        assertThrows(IllegalStateException::class.java, { "test.uk".matchesDomain(".uk") });
+
+
+        //SLD
+        assertTrue("abc.co.uk".matchesDomain("abc.co.uk"))
+        assertTrue("test.abc.co.uk".matchesDomain("test.abc.co.uk"))
+        assertTrue("test.abc.co.uk".matchesDomain(".abc.co.uk"))
+        assertThrows(IllegalStateException::class.java, { "test.abc.co.uk".matchesDomain(".co.uk") });
     }
 }

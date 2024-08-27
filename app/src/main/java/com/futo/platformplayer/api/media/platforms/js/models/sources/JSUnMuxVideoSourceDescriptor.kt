@@ -23,9 +23,11 @@ class JSUnMuxVideoSourceDescriptor: VideoUnMuxedSourceDescriptor {
         this.isUnMuxed = obj.getOrThrow(config, "isUnMuxed", contextName);
         this.videoSources = obj.getOrThrow<V8ValueArray>(config, "videoSources", contextName).toArray()
             .map { JSSource.fromV8Video(plugin, it as V8ValueObject) }
+            .filterNotNull()
             .toTypedArray();
         this.audioSources = obj.getOrThrow<V8ValueArray>(config, "audioSources", contextName).toArray()
             .map { JSSource.fromV8Audio(plugin, it as V8ValueObject) }
+            .filterNotNull()
             .toTypedArray();
     }
 }

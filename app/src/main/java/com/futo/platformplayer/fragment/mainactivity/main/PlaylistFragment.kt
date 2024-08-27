@@ -109,19 +109,31 @@ class PlaylistFragment : MainFragment() {
                 val reconstruction = StatePlaylists.instance.playlistStore.getReconstructionString(playlist);
 
                 UISlideOverlays.showOverlay(overlayContainer, context.getString(R.string.playlist) + " [${playlist.name}]", null, {},
-                    SlideUpMenuItem(context, R.drawable.ic_list, context.getString(R.string.share_as_text), context.getString(R.string.share_as_a_list_of_video_urls), 1, {
-                        _fragment.startActivity(ShareCompat.IntentBuilder(context)
-                            .setType("text/plain")
-                            .setText(reconstruction)
-                            .intent);
-                    }),
-                    SlideUpMenuItem(context, R.drawable.ic_move_up, context.getString(R.string.share_as_import), context.getString(R.string.share_as_a_import_file_for_grayjay), 2, {
-                        val shareUri = StatePlaylists.instance.createPlaylistShareJsonUri(context, playlist);
-                        _fragment.startActivity(ShareCompat.IntentBuilder(context)
-                            .setType("application/json")
-                            .setStream(shareUri)
-                            .intent);
-                    })
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_list,
+                        context.getString(R.string.share_as_text),
+                        context.getString(R.string.share_as_a_list_of_video_urls),
+                        tag = 1,
+                        call = {
+                            _fragment.startActivity(ShareCompat.IntentBuilder(context)
+                                .setType("text/plain")
+                                .setText(reconstruction)
+                                .intent);
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_move_up,
+                        context.getString(R.string.share_as_import),
+                        context.getString(R.string.share_as_a_import_file_for_grayjay),
+                        tag = 2,
+                        call = {
+                            val shareUri = StatePlaylists.instance.createPlaylistShareJsonUri(context, playlist);
+                            _fragment.startActivity(ShareCompat.IntentBuilder(context)
+                                .setType("application/json")
+                                .setStream(shareUri)
+                                .intent);
+                        })
                 );
             };
 

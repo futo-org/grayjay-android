@@ -23,7 +23,7 @@ enum class ChapterType(val value: Int) {
     companion object {
         fun fromInt(value: Int): ChapterType
         {
-            val result = ChapterType.values().firstOrNull { it.value == value };
+            val result = ChapterType.entries.firstOrNull { it.value == value };
             if(result == null)
                 throw UnknownPlatformException(value.toString());
             return result;

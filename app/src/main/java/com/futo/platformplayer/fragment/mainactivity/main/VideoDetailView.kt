@@ -23,7 +23,6 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
-import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -59,8 +58,6 @@ import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.DashManifestSource
-import com.futo.platformplayer.api.media.models.streams.sources.HLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
@@ -75,6 +72,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -115,6 +113,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.toHumanBitrate
+import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
@@ -695,6 +694,7 @@ class VideoDetailView : ConstraintLayout {
             _lastAudioSource = null;
             _lastSubtitleSource = null;
             video = null;
+            _player.clear();
             cleanupPlaybackTracker();
             Logger.i(TAG, "Keep screen on unset onClose")
             fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1674,7 +1674,7 @@ class VideoDetailView : ConstraintLayout {
                 _didTriggerDatasourceErrroCount++;
 
                 UIDialogs.toast("Block detected, attempting bypass");
-
+                //return;
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
                     val previousVideoSource = _lastVideoSource;
@@ -1808,7 +1808,7 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        val doDedup = false;
+        val doDedup = Settings.instance.playback.simplifySources;
 
         val bestVideoSources = if(doDedup) (videoSources?.map { it.height * it.width }
             ?.distinct()
@@ -1851,40 +1851,56 @@ class VideoDetailView : ConstraintLayout {
                 SlideUpMenuGroup(this.context, context.getString(R.string.offline_video), "video",
                     *localVideoSources
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", it,
-                                { handleSelectVideoTrack(it) });
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "${it.width}x${it.height}",
+                                tag = it,
+                                call = { handleSelectVideoTrack(it) });
                         }.toList().toTypedArray())
             else null,
             if(localAudioSource?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.offline_audio), "audio",
                     *localAudioSource
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), it,
-                                { handleSelectAudioTrack(it) });
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_music,
+                                it.name,
+                                it.bitrate.toHumanBitrate(),
+                                tag = it,
+                                call = { handleSelectAudioTrack(it) });
                         }.toList().toTypedArray())
             else null,
             if(localSubtitleSources?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.offline_subtitles), "subtitles",
                     *localSubtitleSources
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", it,
-                                { handleSelectSubtitleTrack(it) })
+                            SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it,
+                                call = { handleSelectSubtitleTrack(it) })
                         }.toList().toTypedArray())
             else null,
             if(liveStreamVideoFormats?.isEmpty() == false)
                 SlideUpMenuGroup(this.context, context.getString(R.string.stream_video), "video",
                     *liveStreamVideoFormats
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label ?: it.containerMimeType ?: it.bitrate.toString(), "${it.width}x${it.height}", it,
-                                { _player.selectVideoTrack(it.height) });
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_movie,
+                                it.label ?: it.containerMimeType ?: it.bitrate.toString(),
+                                "${it.width}x${it.height}",
+                                tag = it,
+                                call = { _player.selectVideoTrack(it.height) });
                         }.toList().toTypedArray())
             else null,
             if(liveStreamAudioFormats?.isEmpty() == false)
                 SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio",
                     *liveStreamAudioFormats
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", it,
-                                { _player.selectAudioTrack(it.bitrate) });
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_music,
+                                "${it.label ?: it.containerMimeType} ${it.bitrate}",
+                                "",
+                                tag = it,
+                                call = { _player.selectAudioTrack(it.bitrate) });
                         }.toList().toTypedArray())
             else null,
 
@@ -1892,24 +1908,38 @@ class VideoDetailView : ConstraintLayout {
                 SlideUpMenuGroup(this.context, context.getString(R.string.video), "video",
                     *bestVideoSources
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_movie, it!!.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", it,
-                                { handleSelectVideoTrack(it) });
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_movie,
+                                it!!.name,
+                                if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "",
+                                (prefix + it.codec.trim()).trim(),
+                                tag = it,
+                                call = { handleSelectVideoTrack(it) });
                         }.toList().toTypedArray())
             else null,
             if(bestAudioSources.isNotEmpty())
                 SlideUpMenuGroup(this.context, context.getString(R.string.audio), "audio",
                     *bestAudioSources
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), it,
-                                { handleSelectAudioTrack(it) });
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            SlideUpMenuItem(this.context,
+                                R.drawable.ic_music,
+                                it.name,
+                                it.bitrate.toHumanBitrate(),
+                                (prefix + it.codec.trim()).trim(),
+                                tag = it,
+                                call = { handleSelectAudioTrack(it) });
                         }.toList().toTypedArray())
             else null,
             if(video?.subtitles?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",
                     *video.subtitles
                         .map {
-                            SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", it,
-                                { handleSelectSubtitleTrack(it) })
+                            SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it,
+                                call = { handleSelectSubtitleTrack(it) })
                         }.toList().toTypedArray())
             else null);
     }

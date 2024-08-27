@@ -6,6 +6,8 @@ import com.caoccao.javet.exceptions.JavetException
 import com.caoccao.javet.exceptions.JavetExecutionException
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.V8Runtime
+import com.caoccao.javet.interop.options.V8Flags
+import com.caoccao.javet.interop.options.V8RuntimeOptions
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
@@ -133,9 +135,10 @@ class V8Plugin {
         synchronized(_runtimeLock) {
             if (_runtime != null)
                 return;
-
+            //V8RuntimeOptions.V8_FLAGS.setUseStrict(true);
             val host = V8Host.getV8Instance();
             val options = host.jsRuntimeType.getRuntimeOptions();
+
             _runtime = host.createV8Runtime(options);
             if (!host.isIsolateCreated)
                 throw IllegalStateException("Isolate not created");

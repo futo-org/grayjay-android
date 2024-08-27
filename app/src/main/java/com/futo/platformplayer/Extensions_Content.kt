@@ -18,7 +18,10 @@ fun IAudioSource.isDownloadable(): Boolean = VideoHelper.isDownloadable(this);
 @UnstableApi
 fun JSSource.getHttpDataSourceFactory(): HttpDataSource.Factory {
     val requestModifier = getRequestModifier();
-    return if (requestModifier != null) {
+    val requestExecutor = getRequestExecutor();
+    return if (requestExecutor != null) {
+        JSHttpDataSource.Factory().setRequestExecutor(requestExecutor);
+    } else if (requestModifier != null) {
         JSHttpDataSource.Factory().setRequestModifier(requestModifier);
     } else {
         DefaultHttpDataSource.Factory();
