@@ -14,7 +14,7 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
 
-class JSDashManifestRawAudioSource : JSSource, IAudioSource {
+class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource {
     override val container : String = "application/dash+xml";
     override val name : String;
     override val codec: String;
@@ -25,9 +25,9 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource {
     override val language: String;
 
     val url: String;
-    var manifest: String?;
+    override var manifest: String?;
 
-    val hasGenerate: Boolean;
+    override val hasGenerate: Boolean;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH_RAW, plugin, obj) {
         val contextName = "DashRawSource";
@@ -43,7 +43,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource {
         hasGenerate = _obj.has("generate");
     }
 
-    fun generate(): String? {
+    override fun generate(): String? {
         if(!hasGenerate)
             return manifest;
         if(_obj.isClosed)

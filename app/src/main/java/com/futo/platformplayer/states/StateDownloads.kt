@@ -8,7 +8,9 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
@@ -334,7 +336,7 @@ class StateDownloads {
     fun download(video: IPlatformVideo, targetPixelcount: Long?, targetBitrate: Long?) {
         download(VideoDownload(video, targetPixelcount, targetBitrate));
     }
-    fun download(video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: SubtitleRawSource?) {
+    fun download(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
         download(VideoDownload(video, videoSource, audioSource, subtitleSource));
     }
 

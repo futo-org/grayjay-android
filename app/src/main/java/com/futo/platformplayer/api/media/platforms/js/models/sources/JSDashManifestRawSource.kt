@@ -15,7 +15,12 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.states.StateDeveloper
 
-open class JSDashManifestRawSource: JSSource, IVideoSource {
+interface IJSDashManifestRawSource {
+    val hasGenerate: Boolean;
+    var manifest: String?;
+    fun generate(): String?;
+}
+open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource {
     override val container : String = "application/dash+xml";
     override val name : String;
     override val width: Int;
@@ -26,9 +31,9 @@ open class JSDashManifestRawSource: JSSource, IVideoSource {
     override val priority: Boolean;
 
     var url: String?;
-    var manifest: String?;
+    override var manifest: String?;
 
-    val hasGenerate: Boolean;
+    override val hasGenerate: Boolean;
     val canMerge: Boolean;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH_RAW, plugin, obj) {
@@ -47,7 +52,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource {
         hasGenerate = _obj.has("generate");
     }
 
-    open fun generate(): String? {
+    override open fun generate(): String? {
         if(!hasGenerate)
             return manifest;
         if(_obj.isClosed)

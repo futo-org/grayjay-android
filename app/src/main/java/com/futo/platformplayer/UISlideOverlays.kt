@@ -15,14 +15,18 @@ import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
 import com.futo.platformplayer.helpers.VideoHelper
@@ -392,8 +396,8 @@ class UISlideOverlays {
 
 
             val requiresAudio = descriptor is VideoUnMuxedSourceDescriptor;
-            var selectedVideo: IVideoUrlSource? = null;
-            var selectedAudio: IAudioUrlSource? = null;
+            var selectedVideo: IVideoSource? = null;
+            var selectedAudio: IAudioSource? = null;
             var selectedSubtitle: ISubtitleSource? = null;
 
             val videoSources = descriptor.videoSources;
@@ -450,6 +454,26 @@ class UISlideOverlays {
                             )
                         }
 
+                        is JSDashManifestRawSource -> {
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "${it.width}x${it.height}",
+                                (prefix + it.codec).trim(),
+                                tag = it,
+                                call = {
+                                    selectedVideo = it
+                                    menu?.selectOption(videoSources, it);
+                                    if(selectedAudio != null || !requiresAudio)
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                },
+                                invokeParent = false
+                            )
+                        }
+
                         is IHLSManifestSource -> {
                             SlideUpMenuItem(
                                 container.context,
@@ -465,19 +489,20 @@ class UISlideOverlays {
                         }
 
                         else -> {
-                            throw Exception("Unhandled source type")
+                            Logger.w(TAG, "Unhandled source type for UISlideOverlay download items");
+                            null;//throw Exception("Unhandled source type")
                         }
                     }
-                }).flatten().toList()
+                }.filterNotNull()).flatten().toList()
             ));
 
             if(Settings.instance.downloads.getDefaultVideoQualityPixels() > 0 && videoSources.isNotEmpty()) {
                 //TODO: Add HLS support here
                 selectedVideo = VideoHelper.selectBestVideoSource(
-                    videoSources.filter { it is IVideoUrlSource && it.isDownloadable() }.asIterable(),
+                    videoSources.filter { it is IVideoSource && it.isDownloadable() }.asIterable(),
                     Settings.instance.downloads.getDefaultVideoQualityPixels(),
                     FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS
-                ) as IVideoUrlSource?;
+                ) as IVideoSource?;
             }
 
             if (audioSources != null) {
@@ -486,6 +511,25 @@ class UISlideOverlays {
                     .map {
                         when (it) {
                             is IAudioUrlSource -> {
+                                val estSize = VideoHelper.estimateSourceSize(it);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_music,
+                                    it.name,
+                                    "${it.bitrate}",
+                                    (prefix + it.codec).trim(),
+                                    tag = it,
+                                    call = {
+                                        selectedAudio = it
+                                        menu?.selectOption(audioSources, it);
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                    },
+                                    invokeParent = false
+                                );
+                            }
+
+                            is JSDashManifestRawAudioSource -> {
                                 val estSize = VideoHelper.estimateSourceSize(it);
                                 val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
                                 SlideUpMenuItem(
@@ -519,16 +563,17 @@ class UISlideOverlays {
                             }
 
                             else -> {
-                                throw Exception("Unhandled source type")
+                                Logger.w(TAG, "Unhandled source type for UISlideOverlay download items");
+                                null;//throw Exception("Unhandled source type")
                             }
                         }
-                    }));
+                    }.filterNotNull()));
 
                 //TODO: Add HLS support here
-                selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioUrlSource && it.isDownloadable() }.asIterable(),
+                selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioSource && it.isDownloadable() }.asIterable(),
                     FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
                     Settings.instance.playback.getPrimaryLanguage(container.context),
-                    if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioUrlSource?;
+                    if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioSource?;
             }
 
             if(contentResolver != null && subtitleSources.isNotEmpty()) {
@@ -623,8 +668,9 @@ class UISlideOverlays {
                             }
                         }
                         catch(ex: Throwable) {
+                            Logger.e(TAG, "Fetching details for download failed due to: " + ex.message, ex);
                             withContext(Dispatchers.Main) {
-                                UIDialogs.toast(container.context.getString(R.string.failed_to_fetch_details_for_download));
+                                UIDialogs.toast(container.context.getString(R.string.failed_to_fetch_details_for_download) + "\n" + ex.message);
                                 handleUnknownDownload();
                                 loader.hide(true);
                             }

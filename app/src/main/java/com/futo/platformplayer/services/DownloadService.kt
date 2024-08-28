@@ -183,14 +183,21 @@ class DownloadService : Service() {
             Logger.w(TAG, "Video Download [${download.name}] expired, re-preparing");
             download.videoDetails = null;
 
+            if(download.targetVideoName == null && download.videoSource != null)
+                download.targetVideoName = download.videoSource!!.name;
             if(download.targetPixelCount == null && download.videoSource != null)
                 download.targetPixelCount = (download.videoSource!!.width * download.videoSource!!.height).toLong();
             download.videoSource = null;
+
+            if(download.targetAudioName == null && download.audioSource != null)
+                download.targetAudioName = download.audioSource!!.name;
             if(download.targetBitrate == null && download.audioSource != null)
                 download.targetBitrate = download.audioSource!!.bitrate.toLong();
             download.audioSource = null;
         }
-        if(download.videoDetails == null || (download.videoSource == null && download.audioSource == null))
+        if(download.videoDetails == null ||
+            ((download.videoSource == null && download.audioSource == null) &&
+                (download.requiresLiveVideoSource && !download.isLiveVideoSourceValid) && (download.requiresLiveAudioSource && !download.isLiveAudioSourceValid)))
             download.changeState(VideoDownload.State.PREPARING);
         notifyDownload(download);
 
