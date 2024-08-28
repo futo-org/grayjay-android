@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.21'
-    id 'org.ajoberstar.grgit' version '1.7.2'
+    id 'org.ajoberstar.grgit' version '5.2.2'
     id 'com.google.protobuf'
     id 'kotlin-parcelize'
     id 'com.google.devtools.ksp'
@@ -144,10 +144,18 @@ android {
     buildFeatures {
         buildConfig true
     }
+    sourceSets {
+        main {
+            assets {
+                srcDirs 'src/main/assets', 'src/tests/assets', 'src/test/assets'
+            }
+        }
+    }
 }
 
 dependencies {
     implementation 'com.google.dagger:dagger:2.48'
+    implementation 'androidx.test:monitor:1.7.2'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.48'
 
     //Core
@@ -186,7 +194,6 @@ dependencies {
     implementation 'androidx.media:media:1.7.0'
 
     //Other
-    implementation 'org.jmdns:jmdns:3.5.1'
     implementation 'org.jsoup:jsoup:1.15.3'
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'

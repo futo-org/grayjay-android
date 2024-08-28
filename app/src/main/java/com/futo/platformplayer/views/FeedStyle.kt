@@ -16,7 +16,7 @@ enum class FeedStyle(val value: Int) {
 
         fun fromInt(value: Int): FeedStyle
         {
-            val result = FeedStyle.values().firstOrNull { it.value == value };
+            val result = FeedStyle.entries.firstOrNull { it.value == value };
             if(result == null)
                 throw UnknownPlatformException(value.toString());
             return result;

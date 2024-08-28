@@ -10,7 +10,7 @@ enum class LiveEventType(val value : Int) {
 
     companion object{
         fun fromInt(value : Int) : LiveEventType{
-            return LiveEventType.values().first { it.value == value };
+            return LiveEventType.entries.first { it.value == value };
         }
     }
 }

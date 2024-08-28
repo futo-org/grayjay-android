@@ -2,7 +2,7 @@ package com.futo.platformplayer.api.http.server
 
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.exceptions.EmptyRequestException
-import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpFunctionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpOptionsAllowHandler
 import com.futo.platformplayer.logging.Logger
@@ -208,20 +208,20 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
 
         for(getMethod in getMethods)
             if(getMethod.first.parameterTypes.firstOrNull() == HttpContext::class.java && getMethod.first.parameterCount == 1)
-                addHandler(HttpFuntionHandler("GET", getMethod.second.path) { getMethod.first.invoke(obj, it) }).apply {
+                addHandler(HttpFunctionHandler("GET", getMethod.second.path) { getMethod.first.invoke(obj, it) }).apply {
                     if(!getMethod.second.contentType.isEmpty())
                         this.withContentType(getMethod.second.contentType);
                 }.withContentType(getMethod.second.contentType);
         for(postMethod in postMethods)
             if(postMethod.first.parameterTypes.firstOrNull() == HttpContext::class.java && postMethod.first.parameterCount == 1)
-                addHandler(HttpFuntionHandler("POST", postMethod.second.path) { postMethod.first.invoke(obj, it) }).apply {
+                addHandler(HttpFunctionHandler("POST", postMethod.second.path) { postMethod.first.invoke(obj, it) }).apply {
                     if(!postMethod.second.contentType.isEmpty())
                         this.withContentType(postMethod.second.contentType);
                 }.withContentType(postMethod.second.contentType);
 
         for(getField in getFields) {
             getField.first.isAccessible = true;
-            addHandler(HttpFuntionHandler("GET", getField.second.path) {
+            addHandler(HttpFunctionHandler("GET", getField.second.path) {
                 val value = getField.first.get(obj) as String?;
                 if(value != null) {
                     val headers = HttpHeaders(
