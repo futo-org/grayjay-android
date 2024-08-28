@@ -221,8 +221,8 @@ class CommentsFragment : MainFragment() {
 
             Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
             if(c.author.id.value?.startsWith("polycentric://") ?: false) {
-                //val navUrl = "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
-                val navUrl = "https://polycentric.io/user/" + c.author.id.value?.substring("polycentric://".length);
+                val navUrl = "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
+                //val navUrl = "https://polycentric.io/user/" + c.author.id.value?.substring("polycentric://".length);
                 _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
                 //_fragment.navigate<BrowserFragment>(navUrl);
             }
