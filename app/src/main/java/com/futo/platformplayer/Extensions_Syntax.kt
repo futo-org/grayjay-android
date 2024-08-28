@@ -1,6 +1,9 @@
 package com.futo.platformplayer
 
 import android.net.Uri
+import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLEncoder
@@ -25,4 +28,18 @@ fun String?.yesNoToBoolean(): Boolean {
 
 fun Boolean?.toYesNo(): String {
     return if (this == true) "YES" else "NO"
+}
+
+fun InetAddress?.toUrlAddress(): String {
+    return when (this) {
+        is Inet6Address -> {
+            "[${toString()}]"
+        }
+        is Inet4Address -> {
+            toString()
+        }
+        else -> {
+            throw Exception("Invalid address type")
+        }
+    }
 }

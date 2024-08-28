@@ -6,14 +6,17 @@ import android.net.Uri
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
-import com.futo.platformplayer.BuildConfig
+import android.util.Xml
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.http.server.HttpHeaders
 import com.futo.platformplayer.api.http.server.ManagedHttpServer
 import com.futo.platformplayer.api.http.server.handlers.HttpConstantHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFileHandler
-import com.futo.platformplayer.api.http.server.handlers.HttpFuntionHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpFunctionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpProxyHandler
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
@@ -26,6 +29,10 @@ import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSou
 import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestMergingRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -38,6 +45,7 @@ import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.CastingDeviceInfoStorage
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.toUrlAddress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -45,7 +53,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayInputStream
 import java.net.InetAddress
+import java.net.URLDecoder
+import java.net.URLEncoder
 import java.util.UUID
 
 class StateCasting {
@@ -67,6 +78,8 @@ class StateCasting {
     val onActiveDeviceDurationChanged = Event1<Double>();
     val onActiveDeviceVolumeChanged = Event1<Double>();
     var activeDevice: CastingDevice? = null;
+    private var _videoExecutor: JSRequestExecutor? = null
+    private var _audioExecutor: JSRequestExecutor? = null
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
     val _serviceDiscoverer = ServiceDiscoverer(arrayOf(
@@ -361,15 +374,26 @@ class StateCasting {
             } else {
                 StateApp.instance.scope.launch(Dispatchers.IO) {
                     try {
-                        if (ad is FCastCastingDevice) {
-                            Logger.i(TAG, "Casting as DASH direct");
-                            castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
-                        } else if (ad is AirPlayCastingDevice) {
-                            Logger.i(TAG, "Casting as HLS indirect");
-                            castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                        val isRawDash = videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
+                        if (isRawDash) {
+                            Logger.i(TAG, "Casting as raw DASH");
+
+                            try {
+                                castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed);
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource} audioSource=${audioSource}.", e);
+                            }
                         } else {
-                            Logger.i(TAG, "Casting as DASH indirect");
-                            castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                            if (ad is FCastCastingDevice) {
+                                Logger.i(TAG, "Casting as DASH direct");
+                                castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                            } else if (ad is AirPlayCastingDevice) {
+                                Logger.i(TAG, "Casting as HLS indirect");
+                                castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                            } else {
+                                Logger.i(TAG, "Casting as DASH indirect");
+                                castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                            }
                         }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to start casting DASH videoSource=${videoSource} audioSource=${audioSource}.", e);
@@ -378,7 +402,7 @@ class StateCasting {
             }
         } else {
             val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
-            val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+            val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
             val id = UUID.randomUUID();
 
             if (videoSource is IVideoUrlSource) {
@@ -413,6 +437,26 @@ class StateCasting {
             } else if (audioSource is LocalAudioSource) {
                 Logger.i(TAG, "Casting as local audio");
                 castLocalAudio(video, audioSource, resumePosition, speed);
+            } else if (videoSource is JSDashManifestRawSource) {
+                Logger.i(TAG, "Casting as JSDashManifestRawSource video");
+
+                StateApp.instance.scope.launch(Dispatchers.IO) {
+                    try {
+                        castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource}.", e);
+                    }
+                }
+            } else if (audioSource is JSDashManifestRawAudioSource) {
+                Logger.i(TAG, "Casting as JSDashManifestRawSource audio");
+
+                StateApp.instance.scope.launch(Dispatchers.IO) {
+                    try {
+                        castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to start casting DASH raw audioSource=${audioSource}.", e);
+                    }
+                }
             } else {
                 var str = listOf(
                     if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
@@ -453,7 +497,7 @@ class StateCasting {
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
         val videoPath = "/video-${id}"
         val videoUrl = url + videoPath;
@@ -472,7 +516,7 @@ class StateCasting {
     private fun castLocalAudio(video: IPlatformVideoDetails, audioSource: LocalAudioSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
         val audioPath = "/audio-${id}"
         val audioUrl = url + audioPath;
@@ -491,7 +535,7 @@ class StateCasting {
     private fun castLocalHls(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?): List<String> {
         val ad = activeDevice ?: return listOf()
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}"
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}"
         val id = UUID.randomUUID()
 
         val hlsPath = "/hls-${id}"
@@ -587,7 +631,7 @@ class StateCasting {
     private fun castLocalDash(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -637,7 +681,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
 
         val videoPath = "/video-${id}"
@@ -695,20 +739,21 @@ class StateCasting {
         Logger.v(TAG) { "Dash manifest: $content" };
         ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), speed);
 
-        return listOf(videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());    }
+        return listOf(videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
+    }
 
     private fun castProxiedHls(video: IPlatformVideoDetails, sourceUrl: String, codec: String?, resumePosition: Double, speed: Double?): List<String> {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
 
         val id = UUID.randomUUID();
         val hlsPath = "/hls-${id}"
         val hlsUrl = url + hlsPath
         Logger.i(TAG, "HLS url: $hlsUrl");
 
-        _castServer.addHandlerWithAllowAllOptions(HttpFuntionHandler("GET", hlsPath) { masterContext ->
+        _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", hlsPath) { masterContext ->
             _castServer.removeAllHandlers("castProxiedHlsVariant")
 
             val headers = masterContext.headers.clone()
@@ -735,7 +780,7 @@ class StateCasting {
                     val proxiedVariantPlaylist = proxyVariantPlaylist(url, id, variantPlaylist, video.isLive)
                     val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
                     masterContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
-                    return@HttpFuntionHandler
+                    return@HttpFunctionHandler
                 } else {
                     throw e
                 }
@@ -752,7 +797,7 @@ class StateCasting {
                 val newPlaylistPath = "/hls-playlist-${playlistId}"
                 val newPlaylistUrl = url + newPlaylistPath;
 
-                _castServer.addHandlerWithAllowAllOptions(HttpFuntionHandler("GET", newPlaylistPath) { vpContext ->
+                _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", newPlaylistPath) { vpContext ->
                     val vpHeaders = vpContext.headers.clone()
                     vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
@@ -782,7 +827,7 @@ class StateCasting {
                     val newPlaylistPath = "/hls-playlist-${playlistId}"
                     newPlaylistUrl = url + newPlaylistPath
 
-                    _castServer.addHandlerWithAllowAllOptions(HttpFuntionHandler("GET", newPlaylistPath) { vpContext ->
+                    _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", newPlaylistPath) { vpContext ->
                         val vpHeaders = vpContext.headers.clone()
                         vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
@@ -871,7 +916,7 @@ class StateCasting {
 
     private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
 
         val hlsPath = "/hls-${id}"
@@ -1001,7 +1046,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toString().trim('/')}:${_castServer.port}";
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -1073,6 +1118,166 @@ class StateCasting {
         ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
 
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
+    }
+
+    private fun cleanExecutors() {
+        if (_videoExecutor != null) {
+            _videoExecutor?.cleanup()
+            _videoExecutor = null
+        }
+
+        if (_audioExecutor != null) {
+            _audioExecutor?.cleanup()
+            _audioExecutor = null
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
+        val ad = activeDevice ?: return listOf();
+
+        cleanExecutors()
+        _castServer.removeAllHandlers("castDashRaw")
+
+        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val id = UUID.randomUUID();
+
+        val dashPath = "/dash-${id}"
+        val videoPath = "/video-${id}"
+        val audioPath = "/audio-${id}"
+        val subtitlePath = "/subtitle-${id}"
+
+        val dashUrl = url + dashPath;
+        Logger.i(TAG, "DASH url: $dashUrl");
+
+        val videoUrl = url + videoPath
+        val audioUrl = url + audioPath
+
+        val subtitlesUri = if (subtitleSource != null) withContext(Dispatchers.IO) {
+            return@withContext subtitleSource.getSubtitlesURI();
+        } else null;
+
+        var subtitlesUrl: String? = null;
+        if (subtitlesUri != null) {
+            if(subtitlesUri.scheme == "file") {
+                var content: String? = null;
+                val inputStream = contentResolver.openInputStream(subtitlesUri);
+                inputStream?.use { stream ->
+                    val reader = stream.bufferedReader();
+                    content = reader.use { it.readText() };
+                }
+
+                if (content != null) {
+                    _castServer.addHandlerWithAllowAllOptions(
+                        HttpConstantHandler("GET", subtitlePath, content!!, subtitleSource?.format ?: "text/vtt")
+                            .withHeader("Access-Control-Allow-Origin", "*"), true
+                    ).withTag("cast");
+                }
+
+                subtitlesUrl = url + subtitlePath;
+            } else {
+                subtitlesUrl = subtitlesUri.toString();
+            }
+        }
+
+        var dashContent = withContext(Dispatchers.IO) {
+            //TODO: Include subtitlesURl in the future
+            return@withContext if (audioSource != null && videoSource != null) {
+                JSDashManifestMergingRawSource(videoSource, audioSource).generate()
+            } else if (audioSource != null) {
+                audioSource.generate()
+            } else if (videoSource != null) {
+                videoSource.generate()
+            } else {
+                Logger.e(TAG, "Expected at least audio or video to be set")
+                null
+            }
+        } ?: throw Exception("Dash is null")
+
+        for (representation in representationRegex.findAll(dashContent)) {
+            val mediaType = representation.groups[1]?.value ?: throw Exception("Media type should be found")
+            dashContent = mediaInitializationRegex.replace(dashContent) {
+                if (it.range.first < representation.range.first || it.range.last > representation.range.last) {
+                    return@replace it.value
+                }
+
+                if (mediaType.startsWith("video/")) {
+                    return@replace "${it.groups[1]!!.value}=\"${videoUrl}?url=${URLEncoder.encode(it.groups[2]!!.value, "UTF-8").replace("%24Number%24", "\$Number\$")}&amp;mediaType=${URLEncoder.encode(mediaType, "UTF-8")}\""
+                } else if (mediaType.startsWith("audio/")) {
+                    return@replace "${it.groups[1]!!.value}=\"${audioUrl}?url=${URLEncoder.encode(it.groups[2]!!.value, "UTF-8").replace("%24Number%24", "\$Number\$")}&amp;mediaType=${URLEncoder.encode(mediaType, "UTF-8")}\""
+                } else {
+                    throw Exception("Expected audio or video")
+                }
+            }
+        }
+
+        if (videoSource != null && !videoSource.hasRequestExecutor) {
+            throw Exception("Video source without request executor not supported")
+        }
+
+        if (audioSource != null && !audioSource.hasRequestExecutor) {
+            throw Exception("Audio source without request executor not supported")
+        }
+
+        if (audioSource != null && audioSource.hasRequestExecutor) {
+            _audioExecutor = audioSource.getRequestExecutor()
+        }
+
+        if (videoSource != null && videoSource.hasRequestExecutor) {
+            _videoExecutor = videoSource.getRequestExecutor()
+        }
+
+        //TOOD: Else also handle the non request executor case, perhaps add ?url=$originalUrl to the query parameters, ... propagate this for all other flows also
+
+        Logger.v(TAG) { "Dash manifest: $dashContent" };
+
+        _castServer.addHandlerWithAllowAllOptions(
+            HttpConstantHandler("GET", dashPath, dashContent,
+                "application/dash+xml")
+                .withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("castDashRaw");
+
+        if (videoSource != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", videoPath) { httpContext ->
+                    val originalUrl = httpContext.query["url"]?.let { URLDecoder.decode(it, "UTF-8") } ?: return@HttpFunctionHandler
+                    val mediaType = httpContext.query["mediaType"]?.let { URLDecoder.decode(it, "UTF-8") } ?: return@HttpFunctionHandler
+
+                    val videoExecutor = _videoExecutor;
+                    if (videoExecutor != null) {
+                        val data = videoExecutor.executeRequest(originalUrl, httpContext.headers)
+                        httpContext.respondBytes(200, HttpHeaders().apply {
+                            put("Content-Type", mediaType)
+                        }, data);
+                    } else {
+                        throw NotImplementedError()
+                    }
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castDashRaw");
+        }
+        if (audioSource != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", audioPath) { httpContext ->
+                    val originalUrl = httpContext.query["url"]?.let { URLDecoder.decode(it, "UTF-8") } ?: return@HttpFunctionHandler
+                    val mediaType = httpContext.query["mediaType"]?.let { URLDecoder.decode(it, "UTF-8") } ?: return@HttpFunctionHandler
+
+                    val audioExecutor = _audioExecutor;
+                    if (audioExecutor != null) {
+                        val data = audioExecutor.executeRequest(originalUrl, httpContext.headers)
+                        httpContext.respondBytes(200, HttpHeaders().apply {
+                            put("Content-Type", mediaType)
+                        }, data);
+                    } else {
+                        throw NotImplementedError()
+                    }
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castDashRaw");
+        }
+
+        Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
+
+        return listOf()
     }
 
     private fun deviceFromCastingDeviceInfo(deviceInfo: CastingDeviceInfo): CastingDevice {
@@ -1183,7 +1388,7 @@ class StateCasting {
     fun enableDeveloper(enableDev: Boolean){
         _castServer.removeAllHandlers("dev");
         if(enableDev) {
-            _castServer.addHandler(HttpFuntionHandler("GET", "/dashPlayer") { context ->
+            _castServer.addHandler(HttpFunctionHandler("GET", "/dashPlayer") { context ->
                 if (context.query.containsKey("dashUrl")) {
                     val dashUrl = context.query["dashUrl"];
                     val html = "<div>\n" +
@@ -1222,6 +1427,9 @@ class StateCasting {
 
     companion object {
         val instance: StateCasting = StateCasting();
+
+        private val representationRegex = Regex("<Representation .*?mimeType=\"(.*?)\".*?>(.*?)<\\/Representation>", RegexOption.DOT_MATCHES_ALL)
+        private val mediaInitializationRegex = Regex("(media|initiali[sz]ation)=\"([^\"]+)\"", RegexOption.DOT_MATCHES_ALL);
 
         private val TAG = "StateCasting";
     }

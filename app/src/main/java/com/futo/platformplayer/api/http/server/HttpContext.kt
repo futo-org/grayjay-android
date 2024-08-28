@@ -210,6 +210,20 @@ class HttpContext : AutoCloseable {
             }
         }
     }
+    fun respondBytes(status: Int, headers: HttpHeaders, body: ByteArray? = null) {
+        if(headers.get("content-length").isNullOrEmpty()) {
+            if (body != null) {
+                headers.put("content-length", body.size.toString());
+            } else {
+                headers.put("content-length", "0")
+            }
+        }
+        respond(status, headers) { responseStream ->
+            if(body != null) {
+                responseStream.write(body);
+            }
+        }
+    }
     fun respond(status: Int, headers: HttpHeaders, writing: (OutputStream)->Unit) {
         val responseStream = _responseStream ?: throw IllegalStateException("No response stream set");
 
