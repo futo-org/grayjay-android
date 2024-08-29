@@ -54,7 +54,7 @@ class DownloadService : Service() {
         .readTimeout(Duration.ofMinutes(30))
         .writeTimeout(Duration.ofMinutes(30))
         .connectTimeout(Duration.ofSeconds(30))
-        .callTimeout(Duration.ofMinutes(30)))
+        .callTimeout(Duration.ofMinutes(0)))
 
     private var _started = false;
 

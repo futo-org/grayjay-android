@@ -767,7 +767,7 @@ class VideoDownload {
             totalRead += read;
 
             readSinceLastSpeedTest += read;
-            if (totalRead / progressRate > lastProgressCount) {
+            if (totalRead.toDouble() / progressRate > lastProgressCount) {
                 onProgress(sourceLength, totalRead, lastSpeed);
                 lastProgressCount++;
             }
