@@ -17,13 +17,14 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.time.Duration
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 import kotlin.system.measureTimeMillis
 
 open class ManagedHttpClient {
-    protected val _builderTemplate: OkHttpClient.Builder;
+    protected var _builderTemplate: OkHttpClient.Builder;
 
     private var client: OkHttpClient;
 
@@ -31,6 +32,15 @@ open class ManagedHttpClient {
     private var onAfterRequest : ((Request, Response) -> Unit)? = null;
 
     var user_agent = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
+
+    fun setTimeout(timeout: Long) {
+        rebuildClient {
+            it.callTimeout(Duration.ofMillis(client.callTimeoutMillis.toLong()))
+                .writeTimeout(Duration.ofMillis(client.writeTimeoutMillis.toLong()))
+                .readTimeout(Duration.ofMillis(client.readTimeoutMillis.toLong()))
+                .connectTimeout(Duration.ofMillis(timeout));
+        }
+    }
 
     private val trustAllCerts = arrayOf<TrustManager>(
       object: X509TrustManager {
@@ -56,6 +66,15 @@ open class ManagedHttpClient {
         if(SettingsDev.instance.developerMode && SettingsDev.instance.networking.allowAllCertificates)
             trustAllCertificates(builder);
         client = builder.addNetworkInterceptor { chain ->
+            val request = beforeRequest(chain.request());
+            val response = afterRequest(chain.proceed(request));
+            return@addNetworkInterceptor response;
+        }.build();
+    }
+
+    fun rebuildClient(modify: (OkHttpClient.Builder) -> OkHttpClient.Builder) {
+        _builderTemplate = modify(_builderTemplate);
+        client = _builderTemplate.addNetworkInterceptor { chain ->
             val request = beforeRequest(chain.request());
             val response = afterRequest(chain.proceed(request));
             return@addNetworkInterceptor response;

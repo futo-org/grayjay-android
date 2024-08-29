@@ -13,6 +13,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
@@ -281,14 +282,17 @@ class VideoDownload {
                     vsource = VideoHelper.selectBestVideoSource(videoSources, targetPixelCount!!.toInt(), arrayOf())
                 //    ?: throw IllegalStateException("Could not find a valid video source for video");
 
-                if(vsource == null)
+                if(vsource == null) {
                     videoSource = null;
+                    if(original.video.videoSources.size == 0)
+                        requireVideoSource = false;
+                }
                 else if(vsource is IVideoUrlSource)
                     videoSource = VideoUrlSource.fromUrlSource(vsource)
                 else if(vsource is JSSource && requiresLiveVideoSource)
                     videoSourceLive = vsource;
                 else
-                    throw DownloadException("Video source is not supported for downloading (yet)", false);
+                    throw DownloadException("Video source is not supported for downloading (yet) [" + vsource?.javaClass?.name + "]", false);
             }
 
             if(audioSource == null && targetBitrate != null) {
@@ -296,7 +300,7 @@ class VideoDownload {
                 val video = original.video
                 if (video is VideoUnMuxedSourceDescriptor) {
                     for (source in video.audioSources) {
-                        if (source is IHLSManifestSource) {
+                        if (source is IHLSManifestAudioSource) {
                             try {
                                 val playlistResponse = client.get(source.url)
                                 if (playlistResponse.isOk) {
@@ -328,14 +332,17 @@ class VideoDownload {
                     asource = VideoHelper.selectBestAudioSource(audioSources, arrayOf(), null, targetBitrate)
                         ?: if(videoSource != null ) null
                         else throw DownloadException("Could not find a valid video or audio source for download")
-                if(asource == null)
+                if(asource == null) {
                     audioSource = null;
+                    if(!original.video.isUnMuxed || original.video.videoSources.size == 0)
+                        requireVideoSource = false;
+                }
                 else if(asource is IAudioUrlSource)
                     audioSource = AudioUrlSource.fromUrlSource(asource)
                 else if(asource is JSSource && requiresLiveAudioSource)
                     audioSourceLive = asource;
                 else
-                    throw DownloadException("Audio source is not supported for downloading (yet)", false);
+                    throw DownloadException("Audio source is not supported for downloading (yet) [" + asource?.javaClass?.name + "]", false);
             }
 
             if(!isVideoDownloadReady)

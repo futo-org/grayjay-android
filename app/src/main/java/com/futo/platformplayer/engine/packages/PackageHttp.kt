@@ -296,6 +296,12 @@ class PackageHttp: V8Package {
             if(_client is JSHttpClient)
                 _client.doAllowNewCookies = allow;
         }
+        @V8Function
+        fun setTimeout(timeoutMs: Int) {
+            if(_client is JSHttpClient) {
+                _client.setTimeout(timeoutMs.toLong());
+            }
+        }
 
         @V8Function
         fun request(method: String, url: String, headers: MutableMap<String, String> = HashMap(), returnType: ReturnType) : IBridgeHttpResponse {
