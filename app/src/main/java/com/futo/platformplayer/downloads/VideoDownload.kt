@@ -706,7 +706,12 @@ class VideoDownload {
             }
             else {
                 Logger.i(TAG, "Download $name Sequential");
-                sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                try {
+                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
+                    throw e
+                }
             }
 
             Logger.i(TAG, "$name downloadSource Finished");

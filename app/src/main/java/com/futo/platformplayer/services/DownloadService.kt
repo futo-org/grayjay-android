@@ -51,8 +51,8 @@ class DownloadService : Service() {
 
     private val _client = ManagedHttpClient(OkHttpClient.Builder()
         //.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(InetAddress.getByName("192.168.1.175"), 8081)))
-        .readTimeout(Duration.ofSeconds(30))
-        .writeTimeout(Duration.ofSeconds(30))
+        .readTimeout(Duration.ofMinutes(30))
+        .writeTimeout(Duration.ofMinutes(30))
         .connectTimeout(Duration.ofSeconds(30))
         .callTimeout(Duration.ofMinutes(30)))
 
