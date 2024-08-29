@@ -70,3 +70,15 @@
 [submodule "app/src/unstable/assets/sources/spotify"]
 	path = app/src/unstable/assets/sources/spotify
 	url = ../plugins/spotify.git
+[submodule "app/src/stable/assets/sources/bitchute"]
+	path = app/src/stable/assets/sources/bitchute
+	url = ../plugins/bitchute.git
+[submodule "app/src/unstable/assets/sources/bitchute"]
+	path = app/src/unstable/assets/sources/bitchute
+	url = ../plugins/bitchute.git
+[submodule "app/src/unstable/assets/sources/dailymotion"]
+	path = app/src/unstable/assets/sources/dailymotion
+	url = ../plugins/dailymotion.git
+[submodule "app/src/stable/assets/sources/dailymotion"]
+	path = app/src/stable/assets/sources/dailymotion
+	url = ../plugins/dailymotion.git

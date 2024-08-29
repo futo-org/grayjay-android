@@ -205,9 +205,7 @@ class DownloadService : Service() {
                 download.targetBitrate = download.audioSource!!.bitrate.toLong();
             download.audioSource = null;
         }
-        if(download.videoDetails == null ||
-            ((download.videoSource == null && download.audioSource == null) &&
-                (download.requiresLiveVideoSource && !download.isLiveVideoSourceValid) && (download.requiresLiveAudioSource && !download.isLiveAudioSourceValid)))
+        if(download.videoDetails == null || (!download.isVideoDownloadReady || !download.isAudioDownloadReady))
             download.changeState(VideoDownload.State.PREPARING);
         notifyDownload(download);
 
@@ -224,7 +222,7 @@ class DownloadService : Service() {
             download.progress = progress;
 
             val currentTime = System.currentTimeMillis();
-            if (currentTime - lastNotifyTime > 500) {
+            if (currentTime - lastNotifyTime > 800) {
                 notifyDownload(download);
                 lastNotifyTime = currentTime;
             }

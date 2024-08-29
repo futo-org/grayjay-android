@@ -50,7 +50,7 @@ abstract class JSSource {
         _requestExecutor = obj.getOrDefault<V8ValueObject>(_config, "requestExecutor", "JSSource.requestExecutor", null)?.let {
             JSRequest(plugin, it, null, null, true);
         }
-        hasRequestExecutor = _requestModifier != null || obj.has("getRequestExecutor");
+        hasRequestExecutor = _requestExecutor != null || obj.has("getRequestExecutor");
     }
 
     fun getRequestModifier(): IRequestModifier? {
