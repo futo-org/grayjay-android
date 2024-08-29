@@ -58,6 +58,7 @@ import kotlinx.serialization.Transient
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Thread.sleep
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -156,6 +157,7 @@ class VideoDownload {
         this.targetBitrate = targetBitrate;
         this.hasVideoRequestExecutor = video is JSSource && video.hasRequestExecutor;
         this.requiresLiveVideoSource = false;
+        this.requiresLiveAudioSource = false;
         this.targetVideoName = videoSource?.name;
     }
     constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
@@ -320,8 +322,15 @@ class VideoDownload {
                     throw DownloadException("Audio source is not supported for downloading (yet)", false);
             }
 
-            if(((!requiresLiveVideoSource && videoSource == null) || (requiresLiveVideoSource && !isLiveVideoSourceValid)) || ((!requiresLiveAudioSource && audioSource == null) || (requiresLiveAudioSource && !isLiveAudioSourceValid)))
-                throw DownloadException("No valid sources found for video/audio");
+            if (requiresLiveVideoSource) {
+                if (!isLiveVideoSourceValid && !isLiveAudioSourceValid) {
+                    throw DownloadException("No valid sources found for video and audio")
+                }
+            } else {
+                if (videoSource == null && audioSource == null) {
+                    throw DownloadException("No valid sources found for video and audio")
+                }
+            }
         }
     }
 
@@ -667,14 +676,29 @@ class VideoDownload {
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
                 val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
-                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency})");
+                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
                 sourceLength = head["content-length"]!!.toLong();
                 onProgress(sourceLength, 0, 0);
                 downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
             }
             else {
-                Logger.i(TAG, "Download $name Sequential");
-                sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                if (head == null) {
+                    val rangeResp = client.get(videoUrl, mutableMapOf("Range" to "bytes=0-0"))
+                    if(rangeResp.isOk && rangeResp.headers.containsKey("content-range"))
+                    {
+                        val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
+                        Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
+                        sourceLength = rangeResp.headers["content-range"]?.firstOrNull()?.split('/')?.get(1)?.toLong()!!;
+                        onProgress(sourceLength, 0, 0);
+                        downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
+                    } else {
+                        Logger.i(TAG, "Download $name Sequential: $videoUrl");
+                        sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                    }
+                } else {
+                    Logger.i(TAG, "Download $name Sequential: $videoUrl");
+                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                }
             }
 
             Logger.i(TAG, "$name downloadSource Finished");
@@ -823,18 +847,42 @@ class VideoDownload {
         return tasks.map { it.get() };
     }
     private fun requestByteRange(client: ManagedHttpClient, url: String, rangeStart: Long, rangeEnd: Long): Triple<ByteArray, Long, Long> {
-        val toRead = rangeEnd - rangeStart;
-        val req = client.get(url, mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}")));
-        if(!req.isOk)
-            throw IllegalStateException("Range request failed Code [${req.code}] due to: ${req.message}");
-        if(req.body == null)
-            throw IllegalStateException("Range request failed, No body");
-        val read = req.body.contentLength();
+        var retryCount = 0
+        var lastException: Throwable? = null
 
-        if(read < toRead)
-            throw IllegalStateException("Byte-Range request attempted to provide less (${read} < ${toRead})");
+        while (retryCount <= 3) {
+            try {
+                val toRead = rangeEnd - rangeStart;
+                val req = client.get(url, mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}")));
+                if (!req.isOk) {
+                    val bodyString = req.body?.string()
+                    req.body?.close()
+                    throw IllegalStateException("Range request failed Code [${req.code}] due to: ${req.message}");
+                }
+                if (req.body == null)
+                    throw IllegalStateException("Range request failed, No body");
+                val read = req.body.contentLength();
 
-        return Triple(req.body.bytes(), rangeStart, rangeEnd);
+                if (read < toRead)
+                    throw IllegalStateException("Byte-Range request attempted to provide less (${read} < ${toRead})");
+
+                return Triple(req.body.bytes(), rangeStart, rangeEnd);
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to download range (url=${url} bytes=${rangeStart}-${rangeEnd})", e)
+
+                retryCount++
+                lastException = e
+
+                sleep(when (retryCount) {
+                    1 -> 1000 + ((Math.random() * 300.0).toLong() - 150)
+                    2 -> 2000 + ((Math.random() * 300.0).toLong() - 150)
+                    3 -> 4000 + ((Math.random() * 300.0).toLong() - 150)
+                    else -> 1000 + ((Math.random() * 300.0).toLong() - 150)
+                })
+            }
+        }
+
+        throw lastException!!
     }
 
     fun validate() {
