@@ -93,6 +93,18 @@ class VideoDownload {
     @Transient
     val audioSourceToUse: IAudioSource? get () = if(requiresLiveAudioSource) audioSourceLive as IAudioSource? else audioSource as IAudioSource?;
 
+    var requireVideoSource: Boolean = false;
+    var requireAudioSource: Boolean = false;
+
+    @Contextual
+    @Transient
+    val isVideoDownloadReady: Boolean get() = !requireVideoSource ||
+            ((requiresLiveVideoSource && isLiveVideoSourceValid) || (!requiresLiveVideoSource && videoSource != null));
+    @Contextual
+    @Transient
+    val isAudioDownloadReady: Boolean get() = !requireAudioSource ||
+            ((requiresLiveAudioSource && isLiveAudioSourceValid) || (!requiresLiveAudioSource && audioSource != null));
+
 
     var subtitleSource: SubtitleRawSource?;
     @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
@@ -157,6 +169,8 @@ class VideoDownload {
         this.hasVideoRequestExecutor = video is JSSource && video.hasRequestExecutor;
         this.requiresLiveVideoSource = false;
         this.targetVideoName = videoSource?.name;
+        this.requireVideoSource = targetPixelCount != null
+        this.requireAudioSource = targetBitrate != null; //TODO: May not be a valid check.. can only be determined after live fetch?
     }
     constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
         this.video = SerializedPlatformVideo.fromVideo(video);
@@ -175,6 +189,8 @@ class VideoDownload {
         this.targetAudioName = audioSource?.name;
         this.targetPixelCount = if(videoSource != null) (videoSource.width * videoSource.height).toLong() else null;
         this.targetBitrate = if(audioSource != null) audioSource.bitrate.toLong() else null;
+        this.requireVideoSource = videoSource != null;
+        this.requireAudioSource = audioSource != null;
     }
 
     fun withGroup(groupType: String, groupID: String): VideoDownload {
@@ -320,8 +336,10 @@ class VideoDownload {
                     throw DownloadException("Audio source is not supported for downloading (yet)", false);
             }
 
-            if(((!requiresLiveVideoSource && videoSource == null) || (requiresLiveVideoSource && !isLiveVideoSourceValid)) || ((!requiresLiveAudioSource && audioSource == null) || (requiresLiveAudioSource && !isLiveAudioSourceValid)))
-                throw DownloadException("No valid sources found for video/audio");
+            if(!isVideoDownloadReady)
+                throw DownloadException("No valid sources found for video");
+            if(!isAudioDownloadReady)
+                throw DownloadException("No valid sources found for audio");
         }
     }
 
@@ -367,6 +385,7 @@ class VideoDownload {
             sourcesToDownload.add(async {
                 Logger.i(TAG, "Started downloading video");
 
+                var lastEmit = 0L;
                 val progressCallback = { length: Long, totalRead: Long, speed: Long ->
                     synchronized(progressLock) {
                         lastVideoLength = length;
@@ -379,9 +398,14 @@ class VideoDownload {
                         val total = lastVideoRead + lastAudioRead;
                         if(totalLength > 0) {
                             val percentage = (total / totalLength.toDouble());
-                            onProgress?.invoke(percentage);
                             progress = percentage;
-                            onProgressChanged.emit(percentage);
+
+                            val now = System.currentTimeMillis();
+                            if(now - lastEmit > 200) {
+                                lastEmit = System.currentTimeMillis();
+                                onProgress?.invoke(percentage);
+                                onProgressChanged.emit(percentage);
+                            }
                         }
                     }
                 }
@@ -401,6 +425,7 @@ class VideoDownload {
             sourcesToDownload.add(async {
                 Logger.i(TAG, "Started downloading audio");
 
+                var lastEmit = 0L;
                 val progressCallback = { length: Long, totalRead: Long, speed: Long ->
                     synchronized(progressLock) {
                         lastAudioLength = length;
@@ -413,9 +438,14 @@ class VideoDownload {
                         val total = lastVideoRead + lastAudioRead;
                         if(totalLength > 0) {
                             val percentage = (total / totalLength.toDouble());
-                            onProgress?.invoke(percentage);
                             progress = percentage;
-                            onProgressChanged.emit(percentage);
+
+                            val now = System.currentTimeMillis();
+                            if(now - lastEmit > 200) {
+                                lastEmit = System.currentTimeMillis();
+                                onProgress?.invoke(percentage);
+                                onProgressChanged.emit(percentage);
+                            }
                         }
                     }
                 }
