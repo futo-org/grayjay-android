@@ -322,15 +322,8 @@ class VideoDownload {
                     throw DownloadException("Audio source is not supported for downloading (yet)", false);
             }
 
-            if (requiresLiveVideoSource) {
-                if (!isLiveVideoSourceValid && !isLiveAudioSourceValid) {
-                    throw DownloadException("No valid sources found for video and audio")
-                }
-            } else {
-                if (videoSource == null && audioSource == null) {
-                    throw DownloadException("No valid sources found for video and audio")
-                }
-            }
+            if(((!requiresLiveVideoSource && videoSource == null) || (requiresLiveVideoSource && !isLiveVideoSourceValid)) || ((!requiresLiveAudioSource && audioSource == null) || (requiresLiveAudioSource && !isLiveAudioSourceValid)))
+                throw DownloadException("No valid sources found for video/audio");
         }
     }
 
@@ -682,23 +675,8 @@ class VideoDownload {
                 downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
             }
             else {
-                if (head == null) {
-                    val rangeResp = client.get(videoUrl, mutableMapOf("Range" to "bytes=0-0"))
-                    if(rangeResp.isOk && rangeResp.headers.containsKey("content-range"))
-                    {
-                        val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
-                        Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
-                        sourceLength = rangeResp.headers["content-range"]?.firstOrNull()?.split('/')?.get(1)?.toLong()!!;
-                        onProgress(sourceLength, 0, 0);
-                        downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
-                    } else {
-                        Logger.i(TAG, "Download $name Sequential: $videoUrl");
-                        sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
-                    }
-                } else {
-                    Logger.i(TAG, "Download $name Sequential: $videoUrl");
-                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
-                }
+                Logger.i(TAG, "Download $name Sequential");
+                sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
             }
 
             Logger.i(TAG, "$name downloadSource Finished");
@@ -775,6 +753,76 @@ class VideoDownload {
         onProgress(sourceLength, totalRead, 0);
         return sourceLength;
     }
+    /*private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, onProgress: (Long, Long, Long) -> Unit): Long {
+        val progressRate: Int = 4096 * 25
+        var lastProgressCount: Int = 0
+        val speedRate: Int = 4096 * 25
+        var readSinceLastSpeedTest: Long = 0
+        var timeSinceLastSpeedTest: Long = System.currentTimeMillis()
+
+        var lastSpeed: Long = 0
+
+        var totalRead: Long = 0
+        var sourceLength: Long
+        val buffer = ByteArray(4096)
+
+        var isPartialDownload = false
+        var result: ManagedHttpClient.Response? = null
+        do {
+            result = client.get(url, if (isPartialDownload) hashMapOf("Range" to "bytes=$totalRead-") else hashMapOf())
+            if (isPartialDownload) {
+                if (result.code != 206)
+                    throw IllegalStateException("Failed to download source, byte range fallback failed. Web[${result.code}] Error")
+            } else {
+                if (!result.isOk)
+                    throw IllegalStateException("Failed to download source. Web[${result.code}] Error")
+            }
+            if (result.body == null)
+                throw IllegalStateException("Failed to download source. Web[${result.code}] No response")
+
+            isPartialDownload = true
+            sourceLength = result.body!!.contentLength()
+            val sourceStream = result.body!!.byteStream()
+
+            try {
+                while (true) {
+                    val read = sourceStream.read(buffer)
+                    if (read <= 0) {
+                        break
+                    }
+
+                    fileStream.write(buffer, 0, read)
+
+                    totalRead += read
+                    readSinceLastSpeedTest += read
+
+                    if (totalRead / progressRate > lastProgressCount) {
+                        onProgress(sourceLength, totalRead, lastSpeed)
+                        lastProgressCount++
+                    }
+                    if (readSinceLastSpeedTest > speedRate) {
+                        val lastSpeedTime = timeSinceLastSpeedTest
+                        timeSinceLastSpeedTest = System.currentTimeMillis()
+                        val timeSince = timeSinceLastSpeedTest - lastSpeedTime
+                        if (timeSince > 0)
+                            lastSpeed = (readSinceLastSpeedTest / (timeSince / 1000.0)).toLong()
+                        readSinceLastSpeedTest = 0
+                    }
+
+                    if (isCancelled)
+                        throw CancellationException("Cancelled")
+                }
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Sequential download was interrupted, trying to fallback to byte ranges", e)
+            } finally {
+                sourceStream.close()
+                result.body?.close()
+            }
+        } while (totalRead < sourceLength)
+
+        onProgress(sourceLength, totalRead, 0)
+        return sourceLength
+    }*/
     private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit) {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
