@@ -28,7 +28,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.net.SocketException
+import java.time.Duration
 import java.time.OffsetDateTime
 
 class DownloadService : Service() {
@@ -44,7 +49,12 @@ class DownloadService : Service() {
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
 
-    private val _client = ManagedHttpClient();
+    private val _client = ManagedHttpClient(OkHttpClient.Builder()
+        //.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(InetAddress.getByName("192.168.1.175"), 8081)))
+        .readTimeout(Duration.ofSeconds(30))
+        .writeTimeout(Duration.ofSeconds(30))
+        .connectTimeout(Duration.ofSeconds(30))
+        .callTimeout(Duration.ofMinutes(30)))
 
     private var _started = false;
 

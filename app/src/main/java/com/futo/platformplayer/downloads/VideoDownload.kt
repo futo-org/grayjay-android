@@ -58,6 +58,7 @@ import kotlinx.serialization.Transient
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Thread.sleep
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -168,6 +169,7 @@ class VideoDownload {
         this.targetBitrate = targetBitrate;
         this.hasVideoRequestExecutor = video is JSSource && video.hasRequestExecutor;
         this.requiresLiveVideoSource = false;
+        this.requiresLiveAudioSource = false;
         this.targetVideoName = videoSource?.name;
         this.requireVideoSource = targetPixelCount != null
         this.requireAudioSource = targetBitrate != null; //TODO: May not be a valid check.. can only be determined after live fetch?
@@ -697,7 +699,7 @@ class VideoDownload {
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
                 val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
-                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency})");
+                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
                 sourceLength = head["content-length"]!!.toLong();
                 onProgress(sourceLength, 0, 0);
                 downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
@@ -781,6 +783,76 @@ class VideoDownload {
         onProgress(sourceLength, totalRead, 0);
         return sourceLength;
     }
+    /*private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, onProgress: (Long, Long, Long) -> Unit): Long {
+        val progressRate: Int = 4096 * 25
+        var lastProgressCount: Int = 0
+        val speedRate: Int = 4096 * 25
+        var readSinceLastSpeedTest: Long = 0
+        var timeSinceLastSpeedTest: Long = System.currentTimeMillis()
+
+        var lastSpeed: Long = 0
+
+        var totalRead: Long = 0
+        var sourceLength: Long
+        val buffer = ByteArray(4096)
+
+        var isPartialDownload = false
+        var result: ManagedHttpClient.Response? = null
+        do {
+            result = client.get(url, if (isPartialDownload) hashMapOf("Range" to "bytes=$totalRead-") else hashMapOf())
+            if (isPartialDownload) {
+                if (result.code != 206)
+                    throw IllegalStateException("Failed to download source, byte range fallback failed. Web[${result.code}] Error")
+            } else {
+                if (!result.isOk)
+                    throw IllegalStateException("Failed to download source. Web[${result.code}] Error")
+            }
+            if (result.body == null)
+                throw IllegalStateException("Failed to download source. Web[${result.code}] No response")
+
+            isPartialDownload = true
+            sourceLength = result.body!!.contentLength()
+            val sourceStream = result.body!!.byteStream()
+
+            try {
+                while (true) {
+                    val read = sourceStream.read(buffer)
+                    if (read <= 0) {
+                        break
+                    }
+
+                    fileStream.write(buffer, 0, read)
+
+                    totalRead += read
+                    readSinceLastSpeedTest += read
+
+                    if (totalRead / progressRate > lastProgressCount) {
+                        onProgress(sourceLength, totalRead, lastSpeed)
+                        lastProgressCount++
+                    }
+                    if (readSinceLastSpeedTest > speedRate) {
+                        val lastSpeedTime = timeSinceLastSpeedTest
+                        timeSinceLastSpeedTest = System.currentTimeMillis()
+                        val timeSince = timeSinceLastSpeedTest - lastSpeedTime
+                        if (timeSince > 0)
+                            lastSpeed = (readSinceLastSpeedTest / (timeSince / 1000.0)).toLong()
+                        readSinceLastSpeedTest = 0
+                    }
+
+                    if (isCancelled)
+                        throw CancellationException("Cancelled")
+                }
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Sequential download was interrupted, trying to fallback to byte ranges", e)
+            } finally {
+                sourceStream.close()
+                result.body?.close()
+            }
+        } while (totalRead < sourceLength)
+
+        onProgress(sourceLength, totalRead, 0)
+        return sourceLength
+    }*/
     private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit) {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
@@ -853,18 +925,42 @@ class VideoDownload {
         return tasks.map { it.get() };
     }
     private fun requestByteRange(client: ManagedHttpClient, url: String, rangeStart: Long, rangeEnd: Long): Triple<ByteArray, Long, Long> {
-        val toRead = rangeEnd - rangeStart;
-        val req = client.get(url, mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}")));
-        if(!req.isOk)
-            throw IllegalStateException("Range request failed Code [${req.code}] due to: ${req.message}");
-        if(req.body == null)
-            throw IllegalStateException("Range request failed, No body");
-        val read = req.body.contentLength();
+        var retryCount = 0
+        var lastException: Throwable? = null
 
-        if(read < toRead)
-            throw IllegalStateException("Byte-Range request attempted to provide less (${read} < ${toRead})");
+        while (retryCount <= 3) {
+            try {
+                val toRead = rangeEnd - rangeStart;
+                val req = client.get(url, mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}")));
+                if (!req.isOk) {
+                    val bodyString = req.body?.string()
+                    req.body?.close()
+                    throw IllegalStateException("Range request failed Code [${req.code}] due to: ${req.message}");
+                }
+                if (req.body == null)
+                    throw IllegalStateException("Range request failed, No body");
+                val read = req.body.contentLength();
 
-        return Triple(req.body.bytes(), rangeStart, rangeEnd);
+                if (read < toRead)
+                    throw IllegalStateException("Byte-Range request attempted to provide less (${read} < ${toRead})");
+
+                return Triple(req.body.bytes(), rangeStart, rangeEnd);
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to download range (url=${url} bytes=${rangeStart}-${rangeEnd})", e)
+
+                retryCount++
+                lastException = e
+
+                sleep(when (retryCount) {
+                    1 -> 1000 + ((Math.random() * 300.0).toLong() - 150)
+                    2 -> 2000 + ((Math.random() * 300.0).toLong() - 150)
+                    3 -> 4000 + ((Math.random() * 300.0).toLong() - 150)
+                    else -> 1000 + ((Math.random() * 300.0).toLong() - 150)
+                })
+            }
+        }
+
+        throw lastException!!
     }
 
     fun validate() {
