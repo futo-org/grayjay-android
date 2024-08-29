@@ -50,6 +50,7 @@ class SourcePluginConfig(
     var primaryClaimFieldType: Int? = null,
     var developerSubmitUrl: String? = null,
     var allowAllHttpHeaderAccess: Boolean = false,
+    var maxDownloadParallelism: Int = 0
 ) : IV8PluginConfig {
 
     val absoluteIconUrl: String? get() = resolveAbsoluteUrl(iconUrl, sourceUrl);

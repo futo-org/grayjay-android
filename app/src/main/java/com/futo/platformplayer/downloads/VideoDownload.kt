@@ -27,6 +27,8 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideo
 import com.futo.platformplayer.api.media.platforms.js.models.sources.IJSDashManifestRawSource
@@ -42,6 +44,7 @@ import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
 import hasAnySource
@@ -703,9 +706,12 @@ class VideoDownload {
 
         try{
             val head = client.tryHead(videoUrl);
+            val relatedPlugin = (video?.url ?: videoDetails?.url)?.let { StatePlatform.instance.getContentClient(it) }?.let { if(it is JSClient) it else null };
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
-                val concurrency = Settings.instance.downloads.getByteRangeThreadCount();
+                val maxParallel = if(relatedPlugin != null && relatedPlugin.config.maxDownloadParallelism > 0)
+                    relatedPlugin.config.maxDownloadParallelism else 99;
+                val concurrency = Math.min(maxParallel, Settings.instance.downloads.getByteRangeThreadCount());
                 Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
                 sourceLength = head["content-length"]!!.toLong();
                 onProgress(sourceLength, 0, 0);
