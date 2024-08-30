@@ -7,7 +7,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -55,12 +54,6 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
     fun onBackPressed() : Boolean {
         return _view?.onBackPressed() ?: false;
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        _view?.updateAllButtonVisibility()
     }
 
     @SuppressLint("ViewConstructor")
@@ -258,19 +251,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 button.updateActive(_fragment);
         }
 
-        override fun onConfigurationChanged(newConfig: Configuration?) {
-            super.onConfigurationChanged(newConfig)
-
-            updateAllButtonVisibility()
-        }
-
         fun updateAllButtonVisibility() {
-            if(_moreVisible) {
-                setMoreVisible(false);
-            }
-
             val defs = currentButtonDefinitions?.toMutableList() ?: return
-            val metrics = resources.displayMetrics;
+            val metrics = StateApp.instance.displayMetrics ?: resources.displayMetrics;
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
             if (_buttonsVisible >= defs.size) {
                 updateBottomMenuButtons(defs.toMutableList(), false);

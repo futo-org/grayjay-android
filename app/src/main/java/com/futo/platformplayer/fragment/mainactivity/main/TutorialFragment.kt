@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.IPlatformClient
@@ -59,15 +58,7 @@ class TutorialFragment : MainFragment() {
     }
 
     @SuppressLint("ViewConstructor")
-    class TutorialView(fragment: TutorialFragment, inflater: LayoutInflater) :
-        ScrollView(inflater.context) {
-        init {
-            addView(TutorialContainer(fragment, inflater))
-        }
-    }
-
-    @SuppressLint("ViewConstructor")
-    class TutorialContainer : LinearLayout {
+    class TutorialView : LinearLayout {
         val fragment: TutorialFragment
 
         constructor(fragment: TutorialFragment, inflater: LayoutInflater) : super(inflater.context) {

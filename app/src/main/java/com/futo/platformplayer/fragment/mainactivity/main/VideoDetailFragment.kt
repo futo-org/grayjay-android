@@ -29,7 +29,6 @@ import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
-import kotlin.math.min
 
 
 class VideoDetailFragment : MainFragment {
@@ -97,18 +96,17 @@ class VideoDetailFragment : MainFragment {
         val currentOrientation = _currentOrientation
         val isFs = isFullscreen
 
-        if (StatePlayer.instance.rotationLock && isMaximized) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-        } else if (isFullscreen && !isFullScreenPortraitAllowed) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+        if (isFs && isMaximized) {
+            if (isFullScreenPortraitAllowed) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            } else {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
         } else {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         }
 
-        Log.i(
-            TAG,
-            "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}"
-        );
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -286,23 +284,15 @@ class VideoDetailFragment : MainFragment {
         _orientationListener = SimpleOrientationListener(requireActivity(), lifecycleScope)
         _orientationListener.onOrientationChanged.subscribe {
             _currentOrientation = it
-            Logger.i(
-                TAG,
-                "Current orientation changed (_currentOrientation = ${_currentOrientation})"
-            )
+            Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
 
-            val isSmallWindow = min(
-                resources.configuration.screenWidthDp,
-                resources.configuration.screenHeightDp
-            ) < resources.getDimension(R.dimen.landscape_threshold)
-
-            if (Settings.instance.playback.isAutoRotate() && isSmallWindow) {
-                if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+            if (Settings.instance.playback.isAutoRotate()) {
+                if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
                     _viewDetail?.setFullscreen(true)
                     return@subscribe
                 }
 
-                if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
+                if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
                     _viewDetail?.setFullscreen(false)
                     return@subscribe
                 }
