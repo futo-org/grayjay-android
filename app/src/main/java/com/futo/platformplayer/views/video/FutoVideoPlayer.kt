@@ -19,6 +19,7 @@ import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
@@ -123,7 +124,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private var _currentChapterLoopId: Int = 0;
     private var _currentChapter: IChapter? = null;
     private var _promptedForPermissions: Boolean = false;
-
+    @UnstableApi
+    private var _desiredResizeModePortrait: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
     //Events
     val onMinimize = Event1<FutoVideoPlayer>();
@@ -593,7 +595,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
             gestureControl.hideControls();
             //videoControlsBar.visibility = View.VISIBLE;
-            _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
+            _videoView.resizeMode = _desiredResizeModePortrait;
 
             videoControls.show();
             _videoControls_fullscreen.hideImmediately();
@@ -730,9 +732,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 Log.d(TAG, "WEIRD HEIGHT DETECTED: ${_lastSourceFit}, Width: ${w}, Height: ${h}, VWidth: ${viewWidth}");
             }
             if(_lastSourceFit != determinedHeight)
-                _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
+                _desiredResizeModePortrait = AspectRatioFrameLayout.RESIZE_MODE_FIT;
             else
-                _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
+                _desiredResizeModePortrait = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
+            _videoView.resizeMode = _desiredResizeModePortrait
         }
 
         val marginBottom = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7f, resources.displayMetrics).toInt();
