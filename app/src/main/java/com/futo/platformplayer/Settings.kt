@@ -476,6 +476,10 @@ class Settings : FragmentedStorageFileJson() {
         var preferWebmVideo: Boolean = false;
         @FormField(R.string.prefer_webm_audio, FieldForm.TOGGLE, R.string.prefer_webm_audio_description, 15)
         var preferWebmAudio: Boolean = false;
+
+        @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 16)
+        @FormFieldWarning(R.string.changing_this_field_requires_restart)
+        var allowVideoToGoUnderCutout: Boolean = true;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

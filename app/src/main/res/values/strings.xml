@@ -377,6 +377,8 @@
     <string name="prefer_webm_description">If player should prefer Webm codecs (vp9/opus) over mp4 codecs (h264/AAC), may result in worse compatibility.</string>
     <string name="prefer_webm_audio">Prefer Webm Audio Codecs</string>
     <string name="prefer_webm_audio_description">If player should prefer Webm codecs (opus) over mp4 codecs (AAC), may result in worse compatibility.</string>
+    <string name="allow_under_cutout">Allow video under cutout</string>
+    <string name="allow_under_cutout_description">Allow video to go underneath the screen cutout in full-screen.</string>
     <string name="allow_full_screen_portrait">Allow fullscreen portrait</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
     <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
@@ -399,6 +401,7 @@
     <string name="can_be_disabled_when_you_are_experiencing_issues">Can be disabled when you are experiencing issues</string>
     <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>
     <string name="bypass_rotation_prevention_warning">This may cause unexpected behavior, and is mostly untested.</string>
+    <string name="changing_this_field_requires_restart">Changing this field will require an app restart.</string>
     <string name="player">Player</string>
     <string name="plugins">Plugins</string>
     <string name="preferred_casting_quality">Preferred Casting Quality</string>
