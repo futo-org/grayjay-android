@@ -612,6 +612,18 @@ class UISlideOverlays {
             }
 
             menu.onOK.subscribe {
+                val sv = selectedVideo
+                if (sv is IHLSManifestSource) {
+                    showHlsPicker(video, sv, sv.url, container)
+                    return@subscribe
+                }
+
+                val sa = selectedAudio
+                if (sa is IHLSManifestAudioSource) {
+                    showHlsPicker(video, sa, sa.url, container)
+                    return@subscribe
+                }
+
                 menu.hide();
                 val subtitleToDownload = selectedSubtitle;
                 if(selectedAudio != null || !requiresAudio) {
