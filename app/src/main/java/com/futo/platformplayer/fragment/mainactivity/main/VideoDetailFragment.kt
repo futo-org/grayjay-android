@@ -287,12 +287,12 @@ class VideoDetailFragment : MainFragment {
             Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
 
             if (Settings.instance.playback.isAutoRotate()) {
-                if (!isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                if (state == State.MAXIMIZED && !isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
                     _viewDetail?.setFullscreen(true)
                     return@subscribe
                 }
 
-                if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                if (state == State.MAXIMIZED && isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
                     _viewDetail?.setFullscreen(false)
                     return@subscribe
                 }
