@@ -4,11 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.VmPolicy
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
@@ -21,19 +22,45 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.futo.platformplayer.*
+import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
-import com.futo.platformplayer.fragment.mainactivity.main.*
+import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
+import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
+import com.futo.platformplayer.fragment.mainactivity.main.CommentsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ContentSearchResultsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.CreatorSearchResultsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.CreatorsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.DownloadsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.HistoryFragment
+import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ImportPlaylistsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ImportSubscriptionsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
+import com.futo.platformplayer.fragment.mainactivity.main.PlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.PostDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.RemotePlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupListFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
+import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
@@ -41,7 +68,15 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
-import com.futo.platformplayer.states.*
+import com.futo.platformplayer.setNavigationBarColorAndIcons
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateBackup
+import com.futo.platformplayer.states.StateDeveloper
+import com.futo.platformplayer.states.StatePayment
+import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -49,14 +84,21 @@ import com.futo.platformplayer.views.ToastView
 import com.futo.polycentric.core.ApiMethods
 import com.google.gson.JsonParser
 import com.google.zxing.integration.android.IntentIntegrator
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
-import java.util.*
+import java.util.LinkedList
+import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
+
 
 class MainActivity : AppCompatActivity, IWithResultLauncher {
 
@@ -154,6 +196,15 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     constructor() : super() {
+        if (BuildConfig.DEBUG) {
+            StrictMode.setVmPolicy(
+                VmPolicy.Builder()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build()
+            )
+        }
+
         ApiMethods.UserAgent = "Grayjay Android (${BuildConfig.VERSION_CODE})";
 
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->

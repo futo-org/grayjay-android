@@ -540,15 +540,20 @@ class VideoDownload {
 
                 Logger.i(TAG, "Download '$name' segment $index Sequential");
                 val segmentFile = File(context.cacheDir, "segment-${UUID.randomUUID()}")
-                segmentFiles.add(segmentFile)
+                val outputStream = segmentFile.outputStream()
+                try {
+                    segmentFiles.add(segmentFile)
 
-                val segmentLength = downloadSource_Sequential(client, segmentFile.outputStream(), segment.uri) { segmentLength, totalRead, lastSpeed ->
-                    val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
-                    val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
-                    onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
+                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri) { segmentLength, totalRead, lastSpeed ->
+                        val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
+                        val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
+                        onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
+                    }
+
+                    downloadedTotalLength += segmentLength
+                } finally {
+                    outputStream.close()
                 }
-
-                downloadedTotalLength += segmentLength
             }
 
             Logger.i(TAG, "Combining segments into $targetFile");
@@ -757,8 +762,10 @@ class VideoDownload {
         var lastSpeed: Long = 0;
 
         val result = client.get(url);
-        if (!result.isOk)
+        if (!result.isOk) {
+            result.body?.close()
             throw IllegalStateException("Failed to download source. Web[${result.code}] Error");
+        }
         if (result.body == null)
             throw IllegalStateException("Failed to download source. Web[${result.code}] No response");
 
@@ -766,38 +773,41 @@ class VideoDownload {
         val sourceStream = result.body.byteStream();
 
         var totalRead: Long = 0;
-        var read: Int;
+        try {
+            var read: Int;
+            val buffer = ByteArray(4096);
 
-        val buffer = ByteArray(4096);
+            do {
+                read = sourceStream.read(buffer);
+                if (read < 0)
+                    break;
 
-        do {
-            read = sourceStream.read(buffer);
-            if (read < 0)
-                break;
+                fileStream.write(buffer, 0, read);
 
-            fileStream.write(buffer, 0, read);
+                totalRead += read;
 
-            totalRead += read;
+                readSinceLastSpeedTest += read;
+                if (totalRead.toDouble() / progressRate > lastProgressCount) {
+                    onProgress(sourceLength, totalRead, lastSpeed);
+                    lastProgressCount++;
+                }
+                if (readSinceLastSpeedTest > speedRate) {
+                    val lastSpeedTime = timeSinceLastSpeedTest;
+                    timeSinceLastSpeedTest = System.currentTimeMillis();
+                    val timeSince = timeSinceLastSpeedTest - lastSpeedTime;
+                    if (timeSince > 0)
+                        lastSpeed = (readSinceLastSpeedTest / (timeSince / 1000.0)).toLong();
+                    readSinceLastSpeedTest = 0;
+                }
 
-            readSinceLastSpeedTest += read;
-            if (totalRead.toDouble() / progressRate > lastProgressCount) {
-                onProgress(sourceLength, totalRead, lastSpeed);
-                lastProgressCount++;
-            }
-            if (readSinceLastSpeedTest > speedRate) {
-                val lastSpeedTime = timeSinceLastSpeedTest;
-                timeSinceLastSpeedTest = System.currentTimeMillis();
-                val timeSince = timeSinceLastSpeedTest - lastSpeedTime;
-                if (timeSince > 0)
-                    lastSpeed = (readSinceLastSpeedTest / (timeSince / 1000.0)).toLong();
-                readSinceLastSpeedTest = 0;
-            }
+                if (isCancelled)
+                    throw CancellationException("Cancelled");
+            } while (read > 0);
+        } finally {
+            sourceStream.close()
+            result.body.close()
+        }
 
-            if (isCancelled)
-                throw CancellationException("Cancelled");
-        } while (read > 0);
-
-        lastSpeed = 0;
         onProgress(sourceLength, totalRead, 0);
         return sourceLength;
     }
