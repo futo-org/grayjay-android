@@ -748,9 +748,9 @@ class VideoDownload {
         return sourceLength!!;
     }
     private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, onProgress: (Long, Long, Long) -> Unit): Long {
-        val progressRate: Int = 4096 * 25;
+        val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
-        val speedRate: Int = 4096 * 25;
+        val speedRate: Int = 4096 * 5;
         var readSinceLastSpeedTest: Long = 0;
         var timeSinceLastSpeedTest: Long = System.currentTimeMillis();
 
