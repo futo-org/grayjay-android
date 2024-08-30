@@ -13,6 +13,7 @@ import android.os.OperationCanceledException
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -148,6 +149,7 @@ fun Activity.setNavigationBarColorAndIcons() {
     window.navigationBarColor = ContextCompat.getColor(this, android.R.color.black);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         window.insetsController?.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
     } else {
         val decorView = window.decorView;
