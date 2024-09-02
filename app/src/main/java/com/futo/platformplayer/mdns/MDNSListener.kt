@@ -18,9 +18,9 @@ class MDNSListener {
     }
 
     private val _lockObject = ReentrantLock()
-    private var _receiver4: DatagramSocket? = null
-    private var _receiver6: DatagramSocket? = null
-    private val _senders = mutableListOf<DatagramSocket>()
+    private var _receiver4: MulticastSocket? = null
+    private var _receiver6: MulticastSocket? = null
+    private val _senders = mutableListOf<MulticastSocket>()
     private val _nicMonitor = NICMonitor()
     private val _serviceRecordAggregator = ServiceRecordAggregator()
     private var _started = false
@@ -53,13 +53,13 @@ class MDNSListener {
 
         Logger.i(TAG, "Starting")
         _lockObject.withLock {
-            val receiver4 = DatagramSocket(null).apply {
+            val receiver4 = MulticastSocket(null).apply {
                 reuseAddress = true
                 bind(InetSocketAddress(InetAddress.getByName("0.0.0.0"), MulticastPort))
             }
             _receiver4 = receiver4
 
-            val receiver6 = DatagramSocket(null).apply {
+            val receiver6 = MulticastSocket(null).apply {
                 reuseAddress = true
                 bind(InetSocketAddress(InetAddress.getByName("::"), MulticastPort))
             }
@@ -166,6 +166,11 @@ class MDNSListener {
                 try {
                     when (address) {
                         is Inet4Address -> {
+                            _receiver4?.let { receiver4 ->
+                                //receiver4.setOption(StandardSocketOptions.IP_MULTICAST_IF, NetworkInterface.getByInetAddress(address))
+                                receiver4.joinGroup(InetSocketAddress(MulticastAddressIPv4, MulticastPort), NetworkInterface.getByInetAddress(address))
+                            }
+
                             val sender = MulticastSocket(null).apply {
                                 reuseAddress = true
                                 bind(InetSocketAddress(address, MulticastPort))
@@ -175,6 +180,11 @@ class MDNSListener {
                         }
 
                         is Inet6Address -> {
+                            _receiver6?.let { receiver6 ->
+                                //receiver6.setOption(StandardSocketOptions.IP_MULTICAST_IF, NetworkInterface.getByInetAddress(address))
+                                receiver6.joinGroup(InetSocketAddress(MulticastAddressIPv6, MulticastPort), NetworkInterface.getByInetAddress(address))
+                            }
+
                             val sender = MulticastSocket(null).apply {
                                 reuseAddress = true
                                 bind(InetSocketAddress(address, MulticastPort))
