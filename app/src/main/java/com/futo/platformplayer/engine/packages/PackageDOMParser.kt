@@ -68,6 +68,10 @@ class PackageDOMParser : V8Package {
             return result;
         }
         @V8Property
+        fun parentElement(): DOMNode? {
+            return parentNode();
+        }
+        @V8Property
         fun attributes(): Map<String, String> = _element.attributes().associate { Pair(it.key, it.value) }
         @V8Property
         fun innerHTML(): String = _element.html();
@@ -75,6 +79,8 @@ class PackageDOMParser : V8Package {
         fun outerHTML(): String = _element.outerHtml();
         @V8Property
         fun textContent(): String = _element.text();
+        @V8Property
+        fun tagName(): String = _element.tagName().uppercase();
         @V8Property
         fun text(): String = _element.text().ifEmpty { data() };
         @V8Property
