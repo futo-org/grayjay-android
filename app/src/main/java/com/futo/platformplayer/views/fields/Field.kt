@@ -13,6 +13,10 @@ annotation class FormField(val title: Int, val type: String, val subtitle: Int =
 @Retention(AnnotationRetention.RUNTIME)
 annotation class FormFieldWarning(val messageRes: Int)
 
+@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class FormFieldHint(val messageRes: Int)
+
 interface IField {
     var descriptor: FormField?;
     val obj : Any?;
