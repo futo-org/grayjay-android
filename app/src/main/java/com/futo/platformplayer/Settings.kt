@@ -478,7 +478,6 @@ class Settings : FragmentedStorageFileJson() {
         var preferWebmAudio: Boolean = false;
 
         @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 16)
-        @FormFieldWarning(R.string.changing_this_field_requires_restart)
         var allowVideoToGoUnderCutout: Boolean = true;
     }
 

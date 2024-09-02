@@ -293,6 +293,12 @@ class FieldForm : LinearLayout {
                                     }, UIDialogs.ActionStyle.PRIMARY));
                         }
                     }
+                    val hint = propertyMap[field.field]?.findAnnotation<FormFieldHint>();
+                    if(hint != null){
+                        field.onChanged.subscribe { f, value, oldValue ->
+                            UIDialogs.appToast(context.getString(hint.messageRes), false);
+                        }
+                    }
                 }
             }
 
