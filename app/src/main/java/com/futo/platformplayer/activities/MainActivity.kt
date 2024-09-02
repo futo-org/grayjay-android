@@ -7,6 +7,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -111,6 +112,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private lateinit var _overlayContainer: FrameLayout;
     private lateinit var _toastView: ToastView;
+    private lateinit var _multicastLock: WifiManager.MulticastLock
 
     //Segment Containers
     private lateinit var _fragContainerTopBar: FragmentContainerView;
@@ -245,6 +247,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Logger.i(TAG, "Acquiring multicast lock")
+        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
+        _multicastLock = wifiManager.createMulticastLock("mdnsLock")
+        _multicastLock.setReferenceCounted(true)
+        _multicastLock.acquire()
+
         Logger.i(TAG, "MainActivity Starting");
         StateApp.instance.setGlobalContext(this, lifecycleScope);
         StateApp.instance.mainAppStarting(this);
@@ -513,7 +521,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
         }
     }
-
 
     /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -970,6 +977,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     override fun onDestroy() {
         super.onDestroy();
         Logger.v(TAG, "onDestroy")
+        _multicastLock.release()
         StateApp.instance.mainAppDestroyed(this);
     }
 
