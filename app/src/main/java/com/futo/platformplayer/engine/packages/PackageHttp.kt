@@ -99,6 +99,8 @@ class PackageHttp: V8Package {
 
         if(body is V8ValueString)
             return client.POST(url, body.value, headers, if(useByteResponse) ReturnType.BYTES else ReturnType.STRING);
+        else if(body is String)
+            return client.POST(url, body, headers, if(useByteResponse) ReturnType.BYTES else ReturnType.STRING);
         else if(body is V8ValueTypedArray)
             return client.POST(url, body.toBytes(), headers, if(useByteResponse) ReturnType.BYTES else ReturnType.STRING);
         else if(body is ByteArray)
