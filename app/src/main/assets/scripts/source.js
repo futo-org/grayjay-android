@@ -795,3 +795,99 @@ class URLSearchParams {
         return searchString;
     }
 }
+
+
+var __REGEX_SPACE_CHARACTERS = /<%= spaceCharacters %>/g;
+var __btoa_TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function btoa(input) {
+	input = String(input);
+	if (/[^\0-\xFF]/.test(input)) {
+		// Note: no need to special-case astral symbols here, as surrogates are
+		// matched, and the input is supposed to only contain ASCII anyway.
+		error(
+			'The string to be encoded contains characters outside of the ' +
+			'Latin1 range.'
+		);
+	}
+	var padding = input.length % 3;
+	var output = '';
+	var position = -1;
+	var a;
+	var b;
+	var c;
+	var buffer;
+	// Make sure any padding is handled outside of the loop.
+	var length = input.length - padding;
+
+	while (++position < length) {
+		// Read three bytes, i.e. 24 bits.
+		a = input.charCodeAt(position) << 16;
+		b = input.charCodeAt(++position) << 8;
+		c = input.charCodeAt(++position);
+		buffer = a + b + c;
+		// Turn the 24 bits into four chunks of 6 bits each, and append the
+		// matching character for each of them to the output.
+		output += (
+			__btoa_TABLE.charAt(buffer >> 18 & 0x3F) +
+			__btoa_TABLE.charAt(buffer >> 12 & 0x3F) +
+			__btoa_TABLE.charAt(buffer >> 6 & 0x3F) +
+			__btoa_TABLE.charAt(buffer & 0x3F)
+		);
+	}
+
+	if (padding == 2) {
+		a = input.charCodeAt(position) << 8;
+		b = input.charCodeAt(++position);
+		buffer = a + b;
+		output += (
+			__btoa_TABLE.charAt(buffer >> 10) +
+			__btoa_TABLE.charAt((buffer >> 4) & 0x3F) +
+			__btoa_TABLE.charAt((buffer << 2) & 0x3F) +
+			'='
+		);
+	} else if (padding == 1) {
+		buffer = input.charCodeAt(position);
+		output += (
+			__btoa_TABLE.charAt(buffer >> 2) +
+			__btoa_TABLE.charAt((buffer << 4) & 0x3F) +
+			'=='
+		);
+	}
+
+	return output;
+};
+function atob(input) {
+	input = String(input)
+		.replace(__REGEX_SPACE_CHARACTERS, '');
+	var length = input.length;
+	if (length % 4 == 0) {
+		input = input.replace(/==?$/, '');
+		length = input.length;
+	}
+	if (
+		length % 4 == 1 ||
+		// http://whatwg.org/C#alphanumeric-ascii-characters
+		/[^+a-zA-Z0-9/]/.test(input)
+	) {
+		error(
+			'Invalid character: the string to be decoded is not correctly encoded.'
+		);
+	}
+	var bitCounter = 0;
+	var bitStorage;
+	var buffer;
+	var output = '';
+	var position = -1;
+	while (++position < length) {
+		buffer = __btoa_TABLE.indexOf(input.charAt(position));
+		bitStorage = bitCounter % 4 ? bitStorage * 64 + buffer : buffer;
+		// Unless this is the first of a group of 4 characters…
+		if (bitCounter++ % 4) {
+			// …convert the first 8 bits to a single ASCII character.
+			output += String.fromCharCode(
+				0xFF & bitStorage >> (-2 * bitCounter & 6)
+			);
+		}
+	}
+	return output;
+};
