@@ -77,10 +77,14 @@ class AdvancedOrientationListener(private val activity: Activity, private val li
                             lastStableOrientation = newOrientation
 
                             lifecycleScope.launch(Dispatchers.Main) {
-                                delay(stabilityThresholdTime)
-                                if (newOrientation == lastStableOrientation) {
-                                    lastOrientation = newOrientation
-                                    onOrientationChanged.emit(newOrientation)
+                                try {
+                                    delay(stabilityThresholdTime)
+                                    if (newOrientation == lastStableOrientation) {
+                                        lastOrientation = newOrientation
+                                        onOrientationChanged.emit(newOrientation)
+                                    }
+                                } catch (e: Throwable) {
+                                    Logger.i(TAG, "Failed to trigger onOrientationChanged", e)
                                 }
                             }
                         }
@@ -110,5 +114,9 @@ class AdvancedOrientationListener(private val activity: Activity, private val li
 
     fun stopListening() {
         sensorManager.unregisterListener(sensorListener)
+    }
+
+    companion object {
+        private val TAG = "AdvancedOrientationListener"
     }
 }

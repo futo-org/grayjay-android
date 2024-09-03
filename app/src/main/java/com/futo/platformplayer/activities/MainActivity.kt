@@ -14,6 +14,7 @@ import android.os.StrictMode.VmPolicy
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.activity.result.ActivityResult
@@ -253,6 +254,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
+        if (Settings.instance.playback.allowVideoToGoUnderCutout)
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         runBlocking {
             StatePlatform.instance.updateAvailableClients(this@MainActivity);
