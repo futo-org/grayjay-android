@@ -112,7 +112,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private lateinit var _overlayContainer: FrameLayout;
     private lateinit var _toastView: ToastView;
-    private lateinit var _multicastLock: WifiManager.MulticastLock
 
     //Segment Containers
     private lateinit var _fragContainerTopBar: FragmentContainerView;
@@ -247,12 +246,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Logger.i(TAG, "Acquiring multicast lock")
-        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-        _multicastLock = wifiManager.createMulticastLock("mdnsLock")
-        _multicastLock.setReferenceCounted(true)
-        _multicastLock.acquire()
-
         Logger.i(TAG, "MainActivity Starting");
         StateApp.instance.setGlobalContext(this, lifecycleScope);
         StateApp.instance.mainAppStarting(this);
@@ -260,7 +253,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
-
 
         runBlocking {
             StatePlatform.instance.updateAvailableClients(this@MainActivity);
@@ -977,7 +969,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     override fun onDestroy() {
         super.onDestroy();
         Logger.v(TAG, "onDestroy")
-        _multicastLock.release()
         StateApp.instance.mainAppDestroyed(this);
     }
 
