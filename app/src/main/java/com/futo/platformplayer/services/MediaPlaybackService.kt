@@ -55,11 +55,15 @@ class MediaPlaybackService : Service() {
     private var _notificationChannel: NotificationChannel? = null;
     private var _mediaSession: MediaSessionCompat? = null;
     private var _hasFocus: Boolean = false;
+    private var _isTransientLoss: Boolean = false;
     private var _focusRequest: AudioFocusRequest? = null;
     private var _audioFocusLossTime_ms: Long? = null
     private var _playbackState = PlaybackStateCompat.STATE_NONE;
-    private val _handler = Handler(Looper.getMainLooper())
-    private val _audioFocusRunnable = Runnable { setAudioFocus(false) }
+    private var _lastAudioFocusAttempt_ms: Long? = null
+    private val isPlaying get() = _playbackState != PlaybackStateCompat.STATE_PAUSED &&
+        _playbackState != PlaybackStateCompat.STATE_STOPPED &&
+        _playbackState != PlaybackStateCompat.STATE_NONE &&
+        _playbackState != PlaybackStateCompat.STATE_ERROR
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Logger.v(TAG, "onStartCommand");
@@ -161,14 +165,7 @@ class MediaPlaybackService : Service() {
         Logger.v(TAG, "closeMediaSession");
         stopForeground(STOP_FOREGROUND_REMOVE);
 
-        val focusRequest = _focusRequest;
-        if (focusRequest != null) {
-            Logger.i(TAG, "Audio focus abandoned")
-            _handler.removeCallbacks(_audioFocusRunnable)
-            _audioManager?.abandonAudioFocusRequest(focusRequest);
-            _focusRequest = null;
-        }
-        _hasFocus = false;
+        abandonAudioFocus()
 
         val notifManager = _notificationManager;
         Logger.i(TAG, "Cancelling playback notification (notifManager: ${notifManager != null})");
@@ -339,27 +336,34 @@ class MediaPlaybackService : Service() {
                 .setState(state, pos, 1f, SystemClock.elapsedRealtime())
                 .build());
 
-        if(_focusRequest == null)
-            setAudioFocus();
-
         _playbackState = state;
+        try {
+            setAudioFocus()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to set audio focus", e)
+        }
     }
 
     //TODO: (TBD) This code probably more fitting inside FutoVideoPlayer, as this service is generally only used for global events
-    private fun setAudioFocus(createFocusRequest: Boolean = true) {
-        _handler.removeCallbacks(_audioFocusRunnable)
+    private fun setAudioFocus() {
+        if (!isPlaying) {
+            return
+        }
 
-        if (_hasFocus) {
-            Log.i(TAG, "Skipped trying to get audio focus because audio focus is already obtained.");
+        if (_hasFocus || _isTransientLoss) {
             return;
         }
 
-        if (_focusRequest == null) {
-            if (!createFocusRequest) {
-                Log.i(TAG, "Skipped trying to get audio focus because createFocusRequest = false and no focus request exists.");
-                return;
-            }
+        val now = System.currentTimeMillis()
+        val lastAudioFocusAttempt_ms = _lastAudioFocusAttempt_ms
+        if (lastAudioFocusAttempt_ms == null || now - lastAudioFocusAttempt_ms > 1000) {
+            _lastAudioFocusAttempt_ms = now
+        } else {
+            Log.v(TAG, "Skipped trying to get audio focus because gaining audio focus was recently attempted.");
+            return
+        }
 
+        if (_focusRequest == null) {
             val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAcceptsDelayedFocusGain(true)
                 .setOnAudioFocusChangeListener(_audioFocusChangeListener)
@@ -374,18 +378,30 @@ class MediaPlaybackService : Service() {
         val result = _audioManager?.requestAudioFocus(_focusRequest!!)
         Log.i(TAG, "Audio focus request result $result");
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            _hasFocus = true;
+            _hasFocus = true
             Log.i(TAG, "Audio focus received");
         } else if (result == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
             _hasFocus = false
+            _isTransientLoss = false
             Log.i(TAG, "Audio focus delayed, waiting for focus")
         } else {
             _hasFocus = false
-            Log.i(TAG, "Audio focus not granted, retrying in 1 second")
-            _handler.postDelayed(_audioFocusRunnable, 1000)
+            _isTransientLoss = false
+            Log.i(TAG, "Audio focus not granted, retrying later")
         }
 
         Log.i(TAG, "Audio focus requested.");
+    }
+
+    private fun abandonAudioFocus() {
+        val focusRequest = _focusRequest;
+        if (focusRequest != null) {
+            Logger.i(TAG, "Audio focus abandoned")
+            _audioManager?.abandonAudioFocusRequest(focusRequest);
+            _focusRequest = null;
+        }
+        _hasFocus = false;
+        _isTransientLoss = false;
     }
 
     private val _audioFocusChangeListener =
@@ -393,8 +409,8 @@ class MediaPlaybackService : Service() {
             try {
                 when (focusChange) {
                     AudioManager.AUDIOFOCUS_GAIN -> {
-                        _handler.removeCallbacks(_audioFocusRunnable)
                         _hasFocus = true;
+                        _isTransientLoss = false;
                         Log.i(TAG, "Audio focus gained (restartPlaybackAfterLoss = ${Settings.instance.playback.restartPlaybackAfterLoss}, _audioFocusLossTime_ms = $_audioFocusLossTime_ms)");
 
                         if (Settings.instance.playback.restartPlaybackAfterLoss == 1) {
@@ -412,31 +428,27 @@ class MediaPlaybackService : Service() {
                         }
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                        if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
-                            _playbackState != PlaybackStateCompat.STATE_STOPPED &&
-                            _playbackState != PlaybackStateCompat.STATE_NONE &&
-                            _playbackState != PlaybackStateCompat.STATE_ERROR) {
+                        if (isPlaying) {
                             _audioFocusLossTime_ms = System.currentTimeMillis()
                         }
 
                         _hasFocus = false;
+                        _isTransientLoss = true;
                         MediaControlReceiver.onPauseReceived.emit();
                         Log.i(TAG, "Audio focus transient loss (_audioFocusLossTime_ms = ${_audioFocusLossTime_ms})");
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         Log.i(TAG, "Audio focus transient loss, can duck");
                         _hasFocus = true;
+                        _isTransientLoss = true;
                     }
                     AudioManager.AUDIOFOCUS_LOSS -> {
-                        if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
-                            _playbackState != PlaybackStateCompat.STATE_STOPPED &&
-                            _playbackState != PlaybackStateCompat.STATE_NONE &&
-                            _playbackState != PlaybackStateCompat.STATE_ERROR) {
+                        if (isPlaying) {
                             _audioFocusLossTime_ms = System.currentTimeMillis()
                         }
 
-                        _hasFocus = false;
                         MediaControlReceiver.onPauseReceived.emit();
+                        abandonAudioFocus();
                         Log.i(TAG, "Audio focus lost");
                     }
                 }
