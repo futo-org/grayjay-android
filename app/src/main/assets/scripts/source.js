@@ -201,7 +201,7 @@ class PlatformContent {
         obj = obj ?? {};
         this.id = obj.id ?? PlatformID();   //PlatformID
         this.name = obj.name ?? ""; //string
-        this.thumbnails = obj.thumbnails; //Thumbnail[]
+        this.thumbnails = obj.thumbnails ?? new Thumbnails([]); //Thumbnail[]
         this.author = obj.author; //PlatformAuthorLink
         this.datetime = obj.datetime ?? obj.uploadDate ?? 0; //OffsetDateTime (Long)
         this.url = obj.url ?? ""; //String
@@ -278,11 +278,48 @@ class PlatformPostDetails extends PlatformPost {
         super(obj);
         obj = obj ?? {};
         this.plugin_type = "PlatformPostDetails";
-        this.rating = obj.rating ?? RatingLikes(-1);
+        this.rating = obj.rating ?? new RatingLikes(-1);
         this.textType = obj.textType ?? 0;
         this.content = obj.content ?? "";
     }
 }
+
+class PlatformArticleDetails extends PlatformContent {
+    constructor(obj) {
+        super(obj, 3);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformArticleDetails";
+        this.rating = obj.rating ?? new RatingLikes(-1);
+        this.summary = obj.summary ?? "";
+        this.segments = obj.segments ?? [];
+        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
+    }
+}
+class ArticleSegment {
+    constructor(type) {
+        this.type = type;
+    }
+}
+class ArticleTextSegment extends ArticleSegment {
+    constructor(content, textType) {
+        super(1);
+        this.textType = textType;
+        this.content = content;
+    }
+}
+class ArticleImagesSegment extends ArticleSegment {
+    constructor(images) {
+        super(2);
+        this.images = images;
+    }
+}
+class ArticleNestedSegment extends ArticleSegment {
+    constructor(nested) {
+        super(9);
+        this.nested = nested;
+    }
+}
+
 
 //Sources
 class VideoSourceDescriptor {

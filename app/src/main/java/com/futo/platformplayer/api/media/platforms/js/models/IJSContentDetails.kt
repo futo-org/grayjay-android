@@ -16,6 +16,7 @@ interface IJSContentDetails: IPlatformContent  {
             return when(ContentType.fromInt(type)) {
                 ContentType.MEDIA -> JSVideoDetails(plugin, obj);
                 ContentType.POST -> JSPostDetails(plugin.config, obj);
+                ContentType.ARTICLE -> JSArticleDetails(plugin, obj);
                 else -> throw NotImplementedError("Unknown content type ${type}");
             }
         }
