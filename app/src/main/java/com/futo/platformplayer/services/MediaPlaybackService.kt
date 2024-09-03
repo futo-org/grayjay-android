@@ -379,6 +379,7 @@ class MediaPlaybackService : Service() {
         Log.i(TAG, "Audio focus request result $result");
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             _hasFocus = true
+            _isTransientLoss = false
             Log.i(TAG, "Audio focus received");
         } else if (result == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
             _hasFocus = false
