@@ -58,6 +58,8 @@ class MediaPlaybackService : Service() {
     private var _focusRequest: AudioFocusRequest? = null;
     private var _audioFocusLossTime_ms: Long? = null
     private var _playbackState = PlaybackStateCompat.STATE_NONE;
+    private val _handler = Handler(Looper.getMainLooper())
+    private val _audioFocusRunnable = Runnable { setAudioFocus(false) }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Logger.v(TAG, "onStartCommand");
@@ -161,6 +163,8 @@ class MediaPlaybackService : Service() {
 
         val focusRequest = _focusRequest;
         if (focusRequest != null) {
+            Logger.i(TAG, "Audio focus abandoned")
+            _handler.removeCallbacks(_audioFocusRunnable)
             _audioManager?.abandonAudioFocusRequest(focusRequest);
             _focusRequest = null;
         }
@@ -342,22 +346,46 @@ class MediaPlaybackService : Service() {
     }
 
     //TODO: (TBD) This code probably more fitting inside FutoVideoPlayer, as this service is generally only used for global events
-    private fun setAudioFocus() {
-        Log.i(TAG, "Requested audio focus.");
+    private fun setAudioFocus(createFocusRequest: Boolean = true) {
+        _handler.removeCallbacks(_audioFocusRunnable)
 
-        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-            .setAcceptsDelayedFocusGain(true)
-            .setOnAudioFocusChangeListener(_audioFocusChangeListener)
-            .build()
+        if (_hasFocus) {
+            Log.i(TAG, "Skipped trying to get audio focus because audio focus is already obtained.");
+            return;
+        }
 
-        _focusRequest = focusRequest;
-        val result = _audioManager?.requestAudioFocus(focusRequest)
+        if (_focusRequest == null) {
+            if (!createFocusRequest) {
+                Log.i(TAG, "Skipped trying to get audio focus because createFocusRequest = false and no focus request exists.");
+                return;
+            }
+
+            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAcceptsDelayedFocusGain(true)
+                .setOnAudioFocusChangeListener(_audioFocusChangeListener)
+                .build()
+
+            _focusRequest = focusRequest;
+            Log.i(TAG, "Created audio focus request.");
+        }
+
+        Log.i(TAG, "Requesting audio focus.");
+
+        val result = _audioManager?.requestAudioFocus(_focusRequest!!)
         Log.i(TAG, "Audio focus request result $result");
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            //TODO: Handle when not possible to get audio focus
             _hasFocus = true;
             Log.i(TAG, "Audio focus received");
+        } else if (result == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
+            _hasFocus = false
+            Log.i(TAG, "Audio focus delayed, waiting for focus")
+        } else {
+            _hasFocus = false
+            Log.i(TAG, "Audio focus not granted, retrying in 1 second")
+            _handler.postDelayed(_audioFocusRunnable, 1000)
         }
+
+        Log.i(TAG, "Audio focus requested.");
     }
 
     private val _audioFocusChangeListener =
@@ -365,8 +393,7 @@ class MediaPlaybackService : Service() {
             try {
                 when (focusChange) {
                     AudioManager.AUDIOFOCUS_GAIN -> {
-                        //Do not start playing on gaining audo focus
-                        //MediaControlReceiver.onPlayReceived.emit();
+                        _handler.removeCallbacks(_audioFocusRunnable)
                         _hasFocus = true;
                         Log.i(TAG, "Audio focus gained (restartPlaybackAfterLoss = ${Settings.instance.playback.restartPlaybackAfterLoss}, _audioFocusLossTime_ms = $_audioFocusLossTime_ms)");
 
@@ -385,7 +412,6 @@ class MediaPlaybackService : Service() {
                         }
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                        MediaControlReceiver.onPauseReceived.emit();
                         if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
                             _playbackState != PlaybackStateCompat.STATE_STOPPED &&
                             _playbackState != PlaybackStateCompat.STATE_NONE &&
@@ -393,10 +419,13 @@ class MediaPlaybackService : Service() {
                             _audioFocusLossTime_ms = System.currentTimeMillis()
                         }
 
-                        Log.i(TAG, "Audio focus transient loss");
+                        _hasFocus = false;
+                        MediaControlReceiver.onPauseReceived.emit();
+                        Log.i(TAG, "Audio focus transient loss (_audioFocusLossTime_ms = ${_audioFocusLossTime_ms})");
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         Log.i(TAG, "Audio focus transient loss, can duck");
+                        _hasFocus = true;
                     }
                     AudioManager.AUDIOFOCUS_LOSS -> {
                         if (_playbackState != PlaybackStateCompat.STATE_PAUSED &&
@@ -409,16 +438,6 @@ class MediaPlaybackService : Service() {
                         _hasFocus = false;
                         MediaControlReceiver.onPauseReceived.emit();
                         Log.i(TAG, "Audio focus lost");
-
-                        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                        val runningAppProcesses = activityManager.runningAppProcesses
-                        for (processInfo in runningAppProcesses) {
-                            // Check the importance of the running app process
-                            if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                                // This app is in the foreground, which might have caused the loss of audio focus
-                                Log.i("AudioFocus", "App ${processInfo.processName} might have caused the loss of audio focus")
-                            }
-                        }
                     }
                 }
             } catch(ex: Throwable) {
