@@ -10,7 +10,6 @@ import com.futo.platformplayer.constructs.Event1
 
 
 class MediaControlReceiver : BroadcastReceiver() {
-
     override fun onReceive(context: Context?, intent: Intent?) {
         val act = intent?.getStringExtra(EXTRA_MEDIA_ACTION);
         Logger.i(TAG, "Received MediaControl Event $act");

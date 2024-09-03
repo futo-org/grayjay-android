@@ -2,6 +2,7 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.WindowManager
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
@@ -426,22 +428,42 @@ class VideoDetailFragment : MainFragment {
         onMaximized.clear();
     }
 
-
     private fun hideSystemUI() {
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-        activity?.window?.insetsController?.let { controller ->
-            controller.hide(WindowInsets.Type.statusBars())
-            controller.hide(WindowInsets.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
+            activity?.window?.insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.statusBars())
+                controller.hide(WindowInsets.Type.systemBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.window?.setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
+            @Suppress("DEPRECATION")
+            activity?.window?.decorView?.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
         }
     }
 
     private fun showSystemUI() {
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, true)
-        activity?.window?.insetsController?.let { controller ->
-            controller.show(WindowInsets.Type.statusBars())
-            controller.show(WindowInsets.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowCompat.setDecorFitsSystemWindows(requireActivity().window, true)
+            activity?.window?.insetsController?.let { controller ->
+                controller.show(WindowInsets.Type.statusBars())
+                controller.show(WindowInsets.Type.systemBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            @Suppress("DEPRECATION")
+            activity?.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
     }
 

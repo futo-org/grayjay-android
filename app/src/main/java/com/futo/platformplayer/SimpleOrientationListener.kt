@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.hardware.SensorManager
 import android.view.OrientationEventListener
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -34,10 +35,14 @@ class SimpleOrientationListener(
                 lastStableOrientation = newOrientation
 
                 lifecycleScope.launch(Dispatchers.Main) {
-                    delay(stabilityThresholdTime)
-                    if (newOrientation == lastStableOrientation) {
-                        lastOrientation = newOrientation
-                        onOrientationChanged.emit(newOrientation)
+                    try {
+                        delay(stabilityThresholdTime)
+                        if (newOrientation == lastStableOrientation) {
+                            lastOrientation = newOrientation
+                            onOrientationChanged.emit(newOrientation)
+                        }
+                    } catch (e: Throwable) {
+                        Logger.i(TAG, "Failed to trigger onOrientationChanged", e)
                     }
                 }
             }
@@ -51,5 +56,9 @@ class SimpleOrientationListener(
 
     fun stopListening() {
         orientationListener.disable()
+    }
+
+    companion object {
+        private val TAG = "SimpleOrientationListener"
     }
 }

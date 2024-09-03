@@ -147,8 +147,6 @@ fun InputStream.copyToOutputStream(inputStreamLength: Long, outputStream: Output
 @Suppress("DEPRECATION")
 fun Activity.setNavigationBarColorAndIcons() {
     window.navigationBarColor = ContextCompat.getColor(this, android.R.color.black);
-    if (Settings.instance.playback.allowVideoToGoUnderCutout)
-        window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         window.insetsController?.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);

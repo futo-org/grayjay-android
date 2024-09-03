@@ -232,7 +232,7 @@ class MDNSListener {
     private fun receiveLoop(client: DatagramSocket) {
         Logger.i(TAG, "Started receive loop")
 
-        val buffer = ByteArray(1024)
+        val buffer = ByteArray(8972)
         val packet = DatagramPacket(buffer, buffer.size)
         while (_started) {
             try {
