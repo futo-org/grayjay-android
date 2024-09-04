@@ -235,13 +235,17 @@ class SettingsDev : FragmentedStorageFileJson() {
         R.string.test_background_worker_description, 4)
     fun triggerBackgroundUpdate() {
         val act = SettingsActivity.getActivity()!!;
-        UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
+        try {
+            UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
 
-        val wm = WorkManager.getInstance(act);
-        val req = OneTimeWorkRequestBuilder<BackgroundWorker>()
-            .setInputData(Data.Builder().putBoolean("bypassMainCheck", true).build())
-            .build();
-        wm.enqueue(req);
+            val wm = WorkManager.getInstance(act);
+            val req = OneTimeWorkRequestBuilder<BackgroundWorker>()
+                .setInputData(Data.Builder().putBoolean("bypassMainCheck", true).build())
+                .build();
+            wm.enqueue(req);
+        } catch (e: Throwable) {
+            UIDialogs.showGeneralErrorDialog(act, "Failed to trigger background update", e)
+        }
     }
     @FormField(R.string.clear_channel_cache, FieldForm.BUTTON,
         R.string.test_background_worker_description, 4)

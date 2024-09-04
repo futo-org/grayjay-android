@@ -627,21 +627,25 @@ class StateApp {
 
 
     fun scheduleBackgroundWork(context: Context, active: Boolean = true, intervalMinutes: Int = 60 * 12) {
-        val wm = WorkManager.getInstance(context);
+        try {
+            val wm = WorkManager.getInstance(context);
 
-        if(active) {
-            if(BuildConfig.DEBUG)
-                UIDialogs.toast(context, "Scheduling background every ${intervalMinutes} minutes");
+            if(active) {
+                if(BuildConfig.DEBUG)
+                    UIDialogs.toast(context, "Scheduling background every ${intervalMinutes} minutes");
 
-            val req = PeriodicWorkRequest.Builder(BackgroundWorker::class.java, intervalMinutes.toLong(), TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
-                .setConstraints(Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.UNMETERED)
-                    .build())
-                .build();
-            wm.enqueueUniquePeriodicWork("backgroundSubscriptions", ExistingPeriodicWorkPolicy.UPDATE, req);
+                val req = PeriodicWorkRequest.Builder(BackgroundWorker::class.java, intervalMinutes.toLong(), TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
+                    .setConstraints(Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.UNMETERED)
+                        .build())
+                    .build();
+                wm.enqueueUniquePeriodicWork("backgroundSubscriptions", ExistingPeriodicWorkPolicy.UPDATE, req);
+            }
+            else
+                wm.cancelAllWork();
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to schedule background subscription updates.", e)
         }
-        else
-            wm.cancelAllWork();
     }
 
 
