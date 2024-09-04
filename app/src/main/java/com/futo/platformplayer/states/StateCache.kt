@@ -64,8 +64,20 @@ class StateCache {
         Logger.i(TAG, "Subscriptions CachePager get pagers");
         val pagers: List<IPager<IPlatformContent>>;
 
+        val splitAmount = 900;
         val timeCacheRetrieving = measureTimeMillis {
-            pagers = listOf(getAllChannelCachePager(allUrls));
+            if(allUrls.size > splitAmount) {
+                var done = 0;
+                var subsetPagers = mutableListOf<IPager<IPlatformContent>>();
+                while(done < allUrls.size) {
+                    val subsetUrls = allUrls.subList(done, Math.min(allUrls.size - 1, done + splitAmount));
+                    subsetPagers.add(getAllChannelCachePager(subsetUrls));
+                    done += splitAmount;
+                }
+                pagers = subsetPagers;
+            }
+            else
+                pagers = listOf(getAllChannelCachePager(allUrls));
         }
 
         Logger.i(TAG, "Subscriptions CachePager compiling (retrieved in ${timeCacheRetrieving}ms)");

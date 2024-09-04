@@ -117,8 +117,14 @@ class SuggestionsFragment : MainFragment {
                     } else if (_searchType == SearchType.PLAYLIST) {
                         navigate<PlaylistSearchResultsFragment>(it);
                     } else {
-                        if(it.isHttpUrl())
-                            navigate<VideoDetailFragment>(it);
+                        if(it.isHttpUrl()) {
+                            if(StatePlatform.instance.hasEnabledPlaylistClient(it))
+                                navigate<RemotePlaylistFragment>(it);
+                            else if(StatePlatform.instance.hasEnabledChannelClient(it))
+                                navigate<ChannelFragment>(it);
+                            else
+                                navigate<VideoDetailFragment>(it);
+                        }
                         else
                             navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, SearchType.VIDEO, _channelUrl));
                     }

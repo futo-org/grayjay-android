@@ -12,10 +12,10 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.StoreSerializer
 import kotlinx.serialization.KSerializer
-import java.lang.IllegalArgumentException
 import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import kotlin.IllegalArgumentException
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
@@ -318,8 +318,12 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         });
     }
 
+    private val inLimit = 990;
     fun <X> queryInPager(field: KProperty<*>, obj: List<String>, pageSize: Int, convert: (I)->X): IPager<X> = queryInPager(validateFieldName(field), obj, pageSize, convert);
     fun <X> queryInPager(field: String, obj: List<String>, pageSize: Int, convert: (I)->X): IPager<X> {
+        if(obj.size > inLimit) {
+            throw IllegalArgumentException("Too many objects requested (IN query), create subqueries of ${inLimit}");
+        }
         return AdhocPager({
             queryInPage(field, obj, it - 1, pageSize).map(convert);
         });

@@ -27,6 +27,8 @@ open class PlatformAuthorLink {
     }
 
     companion object {
+        val UNKNOWN = PlatformAuthorLink(PlatformID.NONE, "Unknown", "", null, null);
+
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformAuthorLink {
             if(value.has("membershipUrl"))
                 return PlatformAuthorMembershipLink.fromV8(config, value);

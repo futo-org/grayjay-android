@@ -42,7 +42,12 @@ open class JSContent : IPlatformContent, IPluginSourced {
 
         id = PlatformID.fromV8(_pluginConfig, _content.getOrThrow(config, "id", contextName));
         name = HtmlCompat.fromHtml(_content.getOrThrow<String>(config, "name", contextName).decodeUnicode(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString();
-        author = PlatformAuthorLink.fromV8(_pluginConfig, _content.getOrThrow(config, "author", contextName));
+
+        val authorObj = _content.getOrDefault<V8ValueObject>(config, "author", contextName, null);
+        if(authorObj != null)
+            author = PlatformAuthorLink.fromV8(_pluginConfig, authorObj);
+        else
+            author = PlatformAuthorLink.UNKNOWN;
 
         val datetimeInt = _content.getOrThrow<Int>(config, "datetime", contextName).toLong();
         if(datetimeInt == 0.toLong())
