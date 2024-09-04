@@ -209,7 +209,17 @@ class StatePlatform {
                 }
 
                 if(_availableClients.distinctBy { it.id }.count() < _availableClients.size) {
-                    throw IllegalStateException("Attempted to add 2 clients with the same ID");
+                    val dups = _availableClients.filter { x-> _availableClients.count { it.id == x.id } > 1 };
+                    val overrideClients = _availableClients.distinctBy { it.id }
+                    _availableClients.clear();
+                    _availableClients.addAll(overrideClients);
+
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        UIDialogs.showDialog(context, R.drawable.ic_error_pred, "Duplicate plugin ids detected", "This can cause unexpected behavior, ideally uninstall duplicate plugins (ids)",
+                            dups.map { it.name }.joinToString("\n"), 0, UIDialogs.Action("Ok", { }));
+                    }
+
+                    //throw IllegalStateException("Attempted to add 2 clients with the same ID");
                 }
 
                 enabled = _enabledClientsPersistent.getAllValues()

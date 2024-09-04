@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.text.method.ScrollingMovementMethod
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -223,6 +224,7 @@ class UIDialogs {
                     this.visibility = View.GONE;
                 else {
                     this.text = code;
+                    this.movementMethod = ScrollingMovementMethod.getInstance();
                     this.visibility = View.VISIBLE;
                 }
             };
