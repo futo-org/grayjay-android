@@ -645,6 +645,7 @@ class StateApp {
                 wm.cancelAllWork();
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to schedule background subscription updates.", e)
+            UIDialogs.toast(context, "Background subscription update failed: " + e.message)
         }
     }
 
