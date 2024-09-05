@@ -68,8 +68,18 @@ class ExtensionsFormattingTests {
     @Test
     fun testMatchesDomain() {
         assertTrue("google.com".matchesDomain("google.com"))
+        assertTrue("google.com".matchesDomain(".google.com"))
         assertFalse("yahoo.com".matchesDomain("google.com"))
         assertTrue("mail.google.com".matchesDomain(".google.com"))
+    }
+    @Test
+    fun testPrimaryDomain() {
+        assertEquals(".google.com", "google.com".getSubdomainWildcardQuery());
+        assertEquals(".google.com", "test.google.com".getSubdomainWildcardQuery());
+        assertEquals(".google.com", "test1.test2.google.com".getSubdomainWildcardQuery());
+        assertEquals(".google.co.uk", "google.co.uk".getSubdomainWildcardQuery());
+        assertEquals(".google.co.uk", "test.google.co.uk".getSubdomainWildcardQuery());
+        assertEquals(".google.co.uk", "test1.test2.google.co.uk".getSubdomainWildcardQuery());
     }
 
     @Test

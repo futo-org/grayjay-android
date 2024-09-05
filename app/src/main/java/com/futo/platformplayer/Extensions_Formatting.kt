@@ -360,11 +360,11 @@ fun String.matchesDomain(queryDomain: String): Boolean {
 
         val parts = queryDomain.lowercase().split(".");
         if(parts.size < 3)
-            throw IllegalStateException("Illegal use of wildcards on First-Level-Domain");
+            throw IllegalStateException("Illegal use of wildcards on First-Level-Domain (" + queryDomain + ")");
         if(parts.size >= 3){
             val isSLD = slds.contains("." + parts[parts.size - 2] + "." + parts[parts.size - 1]);
             if(isSLD && parts.size <= 3)
-                throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain");
+                throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain (" + queryDomain + ")");
         }
 
         //TODO: Should be safe, but double verify if can't be exploited
@@ -372,4 +372,13 @@ fun String.matchesDomain(queryDomain: String): Boolean {
     }
     else
         return this == queryDomain;
+}
+
+fun String.getSubdomainWildcardQuery(): String {
+    val domainParts = this.split(".");
+    val sldParts = "." + domainParts[domainParts.size - 2].lowercase() + "." + domainParts[domainParts.size - 1].lowercase();
+    if(slds.contains(sldParts))
+        return "." + domainParts.drop(domainParts.size - 3).joinToString(".");
+    else
+        return "." + domainParts.drop(domainParts.size - 2).joinToString(".");
 }
