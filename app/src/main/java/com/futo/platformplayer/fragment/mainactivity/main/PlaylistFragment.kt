@@ -156,6 +156,14 @@ class PlaylistFragment : MainFragment() {
                 };
         }
 
+        private fun copyPlaylist(playlist: Playlist) {
+            StatePlaylists.instance.playlistStore.save(playlist)
+            _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(
+                arrayListOf()
+            )
+            UIDialogs.toast("Playlist saved")
+        }
+
         fun onShown(parameter: Any?) {
             _taskLoadPlaylist.cancel()
 
@@ -170,14 +178,10 @@ class PlaylistFragment : MainFragment() {
                     setButtonDownloadVisible(true)
                     setButtonEditVisible(true)
 
-                    if (!StatePlaylists.instance.playlistStore.getItems().contains(parameter)) {
+                    if (!StatePlaylists.instance.playlistStore.hasItem { it.id == parameter.id }) {
                         _fragment.topBar?.assume<NavigationTopBarFragment>()
                             ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
-                                StatePlaylists.instance.playlistStore.save(parameter)
-                                _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(
-                                    arrayListOf()
-                                )
-                                UIDialogs.toast("Playlist saved")
+                                copyPlaylist(parameter)
                             }))
                     }
                 } else {
@@ -242,6 +246,15 @@ class PlaylistFragment : MainFragment() {
         }
 
         private fun download() {
+            val playlist = _playlist ?: return
+            if (!StatePlaylists.instance.playlistStore.hasItem { it.id == playlist.id }) {
+                UIDialogs.showConfirmationDialog(context, "Playlist must be saved to download", {
+                    copyPlaylist(playlist)
+                    download()
+                })
+                return
+            }
+
             _playlist?.let {
                 UISlideOverlays.showDownloadPlaylistOverlay(it, overlayContainer);
             }
@@ -266,6 +279,15 @@ class PlaylistFragment : MainFragment() {
         override fun canEdit(): Boolean { return _playlist != null; }
 
         override fun onEditClick() {
+            val playlist = _playlist ?: return
+            if (!StatePlaylists.instance.playlistStore.hasItem { it.id == playlist.id }) {
+                UIDialogs.showConfirmationDialog(context, "Playlist must be saved to edit the name", {
+                    copyPlaylist(playlist)
+                    onEditClick()
+                })
+                return
+            }
+
             _editPlaylistNameInput?.activate();
             _editPlaylistOverlay?.show();
         }

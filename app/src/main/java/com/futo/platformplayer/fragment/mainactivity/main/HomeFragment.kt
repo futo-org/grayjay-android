@@ -141,10 +141,9 @@ class HomeFragment : MainFragment() {
 
             val feedstyleChanged = recyclerData.loadedFeedStyle != feedStyle;
             val clientsChanged = lastClients == null || lastClients.size != clients.size || !lastClients.containsAll(clients);
-            val outdated = recyclerData.lastLoad.getNowDiffSeconds() > 60;
-            Logger.i(TAG, "onShown (recyclerData.loadedFeedStyle=${recyclerData.loadedFeedStyle}, recyclerData.lastLoad=${recyclerData.lastLoad}, feedstyleChanged=$feedstyleChanged, clientsChanged=$clientsChanged, outdated=$outdated)")
+            Logger.i(TAG, "onShown (recyclerData.loadedFeedStyle=${recyclerData.loadedFeedStyle}, recyclerData.lastLoad=${recyclerData.lastLoad}, feedstyleChanged=$feedstyleChanged, clientsChanged=$clientsChanged)")
 
-            if(feedstyleChanged || outdated || clientsChanged) {
+            if(feedstyleChanged || clientsChanged) {
                 recyclerData.lastLoad = OffsetDateTime.now();
                 recyclerData.loadedFeedStyle = feedStyle;
                 recyclerData.lastClients = clients;
