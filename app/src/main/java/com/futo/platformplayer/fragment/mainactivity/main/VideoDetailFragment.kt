@@ -93,22 +93,35 @@ class VideoDetailFragment : MainFragment {
     }
 
     private fun updateOrientation() {
+        val a = activity ?: return
         val isMaximized = state == State.MAXIMIZED
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
-        val currentOrientation = _currentOrientation
+        val currentRequestedOrientation = a.requestedOrientation
+        val currentOrientation = if (_currentOrientation == -1) currentRequestedOrientation else _currentOrientation
+        val isAutoRotate = Settings.instance.playback.isAutoRotate()
         val isFs = isFullscreen
 
         if (isFs && isMaximized) {
             if (isFullScreenPortraitAllowed) {
-                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                if (isAutoRotate) {
+                    a.requestedOrientation = currentOrientation
+                }
+            } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                if (isAutoRotate) {
+                    a.requestedOrientation = currentOrientation
+                }
             } else {
-                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
+        } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+            if (isAutoRotate) {
+                a.requestedOrientation = currentOrientation
             }
         } else {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
-        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, isMaximized = ${isMaximized}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, currentRequestedOrientation = ${currentRequestedOrientation}, isMaximized = ${isMaximized}, isAutoRotate = ${isAutoRotate}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -269,6 +282,9 @@ class VideoDetailFragment : MainFragment {
         }
 
         _autoRotateChangeListener = AutoRotateChangeListener(requireContext(), Handler()) { _ ->
+            if (updateAutoFullscreen()) {
+                return@AutoRotateChangeListener
+            }
             updateOrientation()
         }
 
@@ -280,6 +296,9 @@ class VideoDetailFragment : MainFragment {
         }
 
         StatePlayer.instance.onRotationLockChanged.subscribe(this) {
+            if (updateAutoFullscreen()) {
+                return@subscribe
+            }
             updateOrientation()
         }
 
@@ -288,21 +307,27 @@ class VideoDetailFragment : MainFragment {
             _currentOrientation = it
             Logger.i(TAG, "Current orientation changed (_currentOrientation = ${_currentOrientation})")
 
-            if (Settings.instance.playback.isAutoRotate()) {
-                if (state == State.MAXIMIZED && !isFullscreen && (it == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
-                    _viewDetail?.setFullscreen(true)
-                    return@subscribe
-                }
-
-                if (state == State.MAXIMIZED && isFullscreen && !Settings.instance.playback.fullscreenPortrait && (it == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || it == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
-                    _viewDetail?.setFullscreen(false)
-                    return@subscribe
-                }
+            if (updateAutoFullscreen()) {
+                return@subscribe
             }
-
             updateOrientation()
         }
         return _view!!;
+    }
+
+    private fun updateAutoFullscreen(): Boolean {
+        if (Settings.instance.playback.isAutoRotate()) {
+            if (state == State.MAXIMIZED && !isFullscreen && (_currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)) {
+                _viewDetail?.setFullscreen(true)
+                return true
+            }
+
+            if (state == State.MAXIMIZED && isFullscreen && !Settings.instance.playback.fullscreenPortrait && (_currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                _viewDetail?.setFullscreen(false)
+                return true
+            }
+        }
+        return false
     }
 
     fun onUserLeaveHint() {
