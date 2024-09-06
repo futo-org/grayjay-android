@@ -545,7 +545,7 @@ class Settings : FragmentedStorageFileJson() {
     class Browsing {
         @FormField(R.string.enable_video_cache, FieldForm.TOGGLE, R.string.cache_to_quickly_load_previously_fetched_videos, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
-        var videoCache: Boolean = true;
+        var videoCache: Boolean = false; //Temporary default disabled to prevent ui freeze?
     }
 
     @FormField(R.string.casting, "group", R.string.configure_casting, 9)

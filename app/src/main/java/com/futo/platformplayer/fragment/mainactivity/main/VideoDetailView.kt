@@ -1334,6 +1334,7 @@ class VideoDetailView : ConstraintLayout {
         setDescription(video.description.fixHtmlLinks());
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
 
+
         val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url, true);
         if (cachedPolycentricProfile != null) {
             setPolycentricProfile(cachedPolycentricProfile, animate = false);
@@ -1493,6 +1494,7 @@ class VideoDetailView : ConstraintLayout {
         if(video.isLive && video.live == null && !video.video.videoSources.any())
             startLiveTry(video);
 
+
         _player.updateNextPrevious();
         updateMoreButtons();
 
@@ -1618,7 +1620,6 @@ class VideoDetailView : ConstraintLayout {
                         });
                 else
                     _player.setArtwork(null);
-
                 _player.setSource(videoSource, audioSource, _playWhenReady, false);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
