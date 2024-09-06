@@ -130,6 +130,11 @@ open class PreviewVideoView : LinearLayout {
         _button_add_to_watch_later.setOnClickListener { currentVideo?.let { onAddToWatchLaterClicked.emit(it); } }
     }
 
+    fun hideAddTo() {
+        _button_add_to.visibility = View.GONE
+        _button_add_to_queue.visibility = View.GONE
+    }
+
     protected open fun inflate(feedStyle: FeedStyle) {
         inflate(context, when(feedStyle) {
             FeedStyle.PREVIEW -> R.layout.list_video_preview

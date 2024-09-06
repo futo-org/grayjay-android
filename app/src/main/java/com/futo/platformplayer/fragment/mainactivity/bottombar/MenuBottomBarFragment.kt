@@ -371,8 +371,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(0, R.drawable.ic_home, R.drawable.ic_home_filled, R.string.home, canToggle = true, { it.currentMain is HomeFragment }, {
                 val currentMain = it.currentMain
                 if (currentMain is HomeFragment) {
+                    currentMain.scrollToTop(false)
                     currentMain.reloadFeed()
-                    currentMain.scrollToTop()
                 } else {
                     it.navigate<HomeFragment>()
                 }
