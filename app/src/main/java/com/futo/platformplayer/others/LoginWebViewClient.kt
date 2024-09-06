@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.getSubdomainWildcardQuery
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.matchesDomain
 import kotlinx.serialization.encodeToString
@@ -109,8 +110,9 @@ class LoginWebViewClient : WebViewClient {
         //TODO: For now we assume cookies are legit for all subdomains of a top-level domain, this is the most common scenario anyway
         val cookieString = CookieManager.getInstance().getCookie(request.url.toString());
         if(cookieString != null) {
-            val domainParts = domain!!.split(".");
-            val cookieDomain = "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+            //val domainParts = domain!!.split(".");
+            //val cookieDomain = "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+            val cookieDomain = domain!!.getSubdomainWildcardQuery();
             if(_pluginConfig == null || _pluginConfig.allowUrls.any { it == "everywhere" || it.lowercase().matchesDomain(cookieDomain) })
                 _authConfig.cookiesToFind?.let { cookiesToFind ->
                     val cookies = cookieString.split(";");
