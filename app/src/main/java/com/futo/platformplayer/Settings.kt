@@ -489,6 +489,9 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.comment_sections)
         var defaultCommentSection: Int = 1;
 
+        @FormField(R.string.default_recommendations, FieldForm.TOGGLE, R.string.default_recommendations_description, 0)
+        var recommendationsDefault: Boolean = false;
+
         @FormField(R.string.bad_reputation_comments_fading, FieldForm.TOGGLE, R.string.bad_reputation_comments_fading_description, 0)
         var badReputationCommentsFading: Boolean = true;
     }

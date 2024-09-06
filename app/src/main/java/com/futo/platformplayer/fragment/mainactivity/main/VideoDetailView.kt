@@ -1294,8 +1294,12 @@ class VideoDetailView : ConstraintLayout {
         if (video is TutorialFragment.TutorialVideo) {
             setTabIndex(0, true)
         } else {
-            val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
-            setTabIndex(if (commentType) 1 else 0, true)
+            if (Settings.instance.comments.recommendationsDefault) {
+                setTabIndex(2)
+            } else {
+                val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
+                setTabIndex(if (commentType) 1 else 0, true)
+            }
         }
 
         //UI

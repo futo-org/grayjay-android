@@ -412,6 +412,8 @@
     <string name="preferred_preview_quality_description">Default quality while previewing a video in a feed</string>
     <string name="primary_language">Primary Language</string>
     <string name="default_comment_section">Default Comment Section</string>
+    <string name="default_recommendations">Recommendations as Default</string>
+    <string name="default_recommendations_description">Show recommendations as default, instead of comments.</string>
     <string name="bad_reputation_comments_fading">Bad Reputation Comment Fading</string>
     <string name="bad_reputation_comments_fading_description">If comments with a very bad reputation should be faded. Disabling may worsen experience.</string>
     <string name="reinstall_embedded_plugins">Reinstall Embedded Plugins</string>
