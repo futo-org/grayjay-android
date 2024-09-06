@@ -1298,12 +1298,12 @@ class VideoDetailView : ConstraintLayout {
             setTabIndex(0, true)
         } else {
             if (Settings.instance.comments.recommendationsDefault) {
-                setTabIndex(2)
+                setTabIndex(2, true)
             } else {
                 when(Settings.instance.comments.defaultCommentSection) {
-                    0 -> if(Settings.instance.other.polycentricEnabled) setTabIndex(0) else setTabIndex(1);
-                    1 -> setTabIndex(1);
-                    2 -> setTabIndex(StateMeta.instance.getLastCommentSection())
+                    0 -> if(Settings.instance.other.polycentricEnabled) setTabIndex(0, true) else setTabIndex(1, true);
+                    1 -> setTabIndex(1, true);
+                    2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
                 }
             }
         }
