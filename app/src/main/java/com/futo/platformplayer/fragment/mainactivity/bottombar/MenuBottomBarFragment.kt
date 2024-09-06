@@ -368,7 +368,15 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
         //Add configurable buttons here
         var buttonDefinitions = listOf(
-            ButtonDefinition(0, R.drawable.ic_home, R.drawable.ic_home_filled, R.string.home, canToggle = true, { it.currentMain is HomeFragment }, { it.navigate<HomeFragment>() }),
+            ButtonDefinition(0, R.drawable.ic_home, R.drawable.ic_home_filled, R.string.home, canToggle = true, { it.currentMain is HomeFragment }, {
+                val currentMain = it.currentMain
+                if (currentMain is HomeFragment) {
+                    currentMain.reloadFeed()
+                    currentMain.scrollToTop()
+                } else {
+                    it.navigate<HomeFragment>()
+                }
+            }),
             ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>() }),
             ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>() }),
             ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>() }),

@@ -46,6 +46,14 @@ class HomeFragment : MainFragment() {
     private var _view: HomeView? = null;
     private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
+    fun reloadFeed() {
+        _view?.reloadFeed()
+    }
+
+    fun scrollToTop() {
+        _view?.scrollToTop()
+    }
+
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
         _view?.onShown();
@@ -138,21 +146,28 @@ class HomeFragment : MainFragment() {
         fun onShown() {
             val lastClients = recyclerData.lastClients;
             val clients = StatePlatform.instance.getSortedEnabledClient().filter { if (it is JSClient) it.enableInHome else true };
-
             val feedstyleChanged = recyclerData.loadedFeedStyle != feedStyle;
             val clientsChanged = lastClients == null || lastClients.size != clients.size || !lastClients.containsAll(clients);
             Logger.i(TAG, "onShown (recyclerData.loadedFeedStyle=${recyclerData.loadedFeedStyle}, recyclerData.lastLoad=${recyclerData.lastLoad}, feedstyleChanged=$feedstyleChanged, clientsChanged=$clientsChanged)")
 
             if(feedstyleChanged || clientsChanged) {
-                recyclerData.lastLoad = OffsetDateTime.now();
-                recyclerData.loadedFeedStyle = feedStyle;
-                recyclerData.lastClients = clients;
-                loadResults();
+                reloadFeed()
             } else {
                 setLoading(false);
             }
 
             finishRefreshLayoutLoader();
+        }
+
+        fun scrollToTop() {
+            _recyclerResults.smoothScrollToPosition(0)
+        }
+
+        fun reloadFeed() {
+            recyclerData.lastLoad = OffsetDateTime.now();
+            recyclerData.loadedFeedStyle = feedStyle;
+            recyclerData.lastClients = StatePlatform.instance.getSortedEnabledClient().filter { if (it is JSClient) it.enableInHome else true };
+            loadResults();
         }
 
         override fun getEmptyPagerView(): View? {
