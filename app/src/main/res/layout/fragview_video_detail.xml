@@ -467,49 +467,64 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/layout_change_bottom_section"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:layout_marginTop="10dp">
+                    android:background="@drawable/background_videodetail_description"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginLeft="14dp"
+                    android:layout_marginRight="14dp">
 
-                    <TextView
-                        android:id="@+id/text_comments"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:fontFamily="@font/inter_medium"
-                        android:textColor="@color/white"
-                        android:textSize="17dp"
-                        android:text="@string/comments" />
-
-                    <Space
+                    <Button
+                        android:id="@+id/button_polycentric"
                         android:layout_width="0dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_height="match_parent" />
+                        android:background="?android:attr/selectableItemBackground"
+                        android:text="Polycentric"
+                        android:textColor="#fff"
+                        android:textSize="10dp"
+                        android:lines="1"
+                        android:ellipsize="marquee"
+                        android:padding="10dp" />
 
-                    <LinearLayout
-                        android:id="@+id/layout_toggle_comment_section"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
+                    <Button
+                        android:id="@+id/button_platform"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:text="Platform"
+                        android:textColor="#fff"
+                        android:textSize="10dp"
+                        android:lines="1"
+                        android:ellipsize="marquee"
+                        android:padding="10dp" />
 
-                        <TextView
-                            android:id="@+id/text_comment_type"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/inter_extra_light"
-                            android:textSize="14dp"
-                            android:textColor="@color/white"
-                            android:text="@string/polycentric"
-                            android:layout_marginEnd="8dp" />
+                    <Button
+                        android:id="@+id/button_recommended"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:text="Recommended"
+                        android:textColor="#fff"
+                        android:textSize="10dp"
+                        android:lines="1"
+                        android:ellipsize="marquee"
+                        android:padding="10dp" />
+                </LinearLayout>
 
-                        <com.futo.platformplayer.views.others.Toggle
-                            android:id="@+id/toggle_comment_type"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:toggleEnabled="false"
-                            android:layout_marginEnd="14dp" />
-                    </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/layout_recommended"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginLeft="12dp"
+                    android:layout_marginRight="12dp">
                 </LinearLayout>
 
                 <com.futo.platformplayer.views.comments.AddCommentView

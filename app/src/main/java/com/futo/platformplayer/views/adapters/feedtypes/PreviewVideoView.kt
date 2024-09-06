@@ -130,6 +130,11 @@ open class PreviewVideoView : LinearLayout {
         _button_add_to_watch_later.setOnClickListener { currentVideo?.let { onAddToWatchLaterClicked.emit(it); } }
     }
 
+    fun hideAddTo() {
+        _button_add_to.visibility = View.GONE
+        _button_add_to_queue.visibility = View.GONE
+    }
+
     protected open fun inflate(feedStyle: FeedStyle) {
         inflate(context, when(feedStyle) {
             FeedStyle.PREVIEW -> R.layout.list_video_preview
@@ -165,11 +170,18 @@ open class PreviewVideoView : LinearLayout {
 
         _imageNeopassChannel?.visibility = View.GONE;
         _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
-        _imageChannel?.let {
-            Glide.with(_imageChannel)
-                .load(content.author.thumbnail)
-                .placeholder(R.drawable.placeholder_channel_thumbnail)
-                .into(_imageChannel);
+
+        val thumbnail = content.author.thumbnail
+        if (thumbnail != null) {
+            _imageChannel?.visibility = View.VISIBLE
+            _imageChannel?.let {
+                Glide.with(_imageChannel)
+                    .load(content.author.thumbnail)
+                    .placeholder(R.drawable.placeholder_channel_thumbnail)
+                    .into(_imageChannel);
+            }
+        } else {
+            _imageChannel?.visibility = View.GONE
         }
 
         _textChannelName.text = content.author.name

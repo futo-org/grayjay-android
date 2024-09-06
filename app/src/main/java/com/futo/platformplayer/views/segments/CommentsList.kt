@@ -254,6 +254,7 @@ class CommentsList : ConstraintLayout {
 
     fun clear() {
         cancel();
+        setLoading(false);
         _comments.clear();
         _commentsPager = null;
         _adapterComments.notifyDataSetChanged();

@@ -50,8 +50,8 @@ class HomeFragment : MainFragment() {
         _view?.reloadFeed()
     }
 
-    fun scrollToTop() {
-        _view?.scrollToTop()
+    fun scrollToTop(smooth: Boolean) {
+        _view?.scrollToTop(smooth)
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -159,8 +159,12 @@ class HomeFragment : MainFragment() {
             finishRefreshLayoutLoader();
         }
 
-        fun scrollToTop() {
-            _recyclerResults.smoothScrollToPosition(0)
+        fun scrollToTop(smooth: Boolean) {
+            if (smooth) {
+                _recyclerResults.smoothScrollToPosition(0)
+            } else {
+                _recyclerResults.scrollToPosition(0)
+            }
         }
 
         fun reloadFeed() {

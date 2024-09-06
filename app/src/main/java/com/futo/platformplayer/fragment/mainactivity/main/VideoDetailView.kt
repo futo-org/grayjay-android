@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -52,6 +53,7 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
@@ -72,7 +74,6 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
-import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -117,12 +118,14 @@ import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
+import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.MonetizationView
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewVideoView
 import com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
 import com.futo.platformplayer.views.casting.CastView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.platformplayer.views.others.Toggle
 import com.futo.platformplayer.views.overlays.DescriptionOverlay
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
@@ -156,6 +159,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.Dispatcher
+import org.w3c.dom.Text
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
@@ -226,10 +231,8 @@ class VideoDetailView : ConstraintLayout {
 
     var preventPictureInPicture: Boolean = false;
 
-    private val _textComments: TextView;
-    private val _textCommentType: TextView;
     private val _addCommentView: AddCommentView;
-    private val _toggleCommentType: Toggle;
+    private var _tabIndex: Int? = null;
 
     private val _layoutSkip: LinearLayout;
     private val _textSkip: TextView;
@@ -237,6 +240,7 @@ class VideoDetailView : ConstraintLayout {
     private val _layoutResume: LinearLayout;
     private var _jobHideResume: Job? = null;
     private val _layoutPlayerContainer: TouchInterceptFrameLayout;
+    private val _layoutChangeBottomSection: LinearLayout;
 
     //Overlays
     private val _overlayContainer: FrameLayout;
@@ -260,11 +264,15 @@ class VideoDetailView : ConstraintLayout {
     private val _layoutRating: LinearLayout;
     private val _imageDislikeIcon: ImageView;
     private val _imageLikeIcon: ImageView;
-    private val _layoutToggleCommentSection: LinearLayout;
 
     private val _monetization: MonetizationView;
 
     private val _buttonMore: RoundButton;
+
+    private val _buttonPolycentric: Button
+    private val _buttonPlatform: Button
+    private val _buttonRecommended: Button
+    private val _layoutRecommended: LinearLayout
 
     private var _didStop: Boolean = false;
     private var _onPauseCalled = false;
@@ -335,9 +343,8 @@ class VideoDetailView : ConstraintLayout {
         _overlay_loading_spinner = findViewById(R.id.videodetail_loader);
         _rating = findViewById(R.id.videodetail_rating);
         _upNext = findViewById(R.id.up_next);
-        _textCommentType = findViewById(R.id.text_comment_type);
-        _toggleCommentType = findViewById(R.id.toggle_comment_type);
-        _layoutToggleCommentSection = findViewById(R.id.layout_toggle_comment_section);
+        _layoutChangeBottomSection = findViewById(R.id.layout_change_bottom_section);
+        _layoutRecommended = findViewById(R.id.layout_recommended)
 
         _overlayContainer = findViewById(R.id.overlay_container);
         _overlay_quality_container = findViewById(R.id.videodetail_quality_overview);
@@ -359,7 +366,6 @@ class VideoDetailView : ConstraintLayout {
         _container_content_support = findViewById(R.id.videodetail_container_support);
         _container_content_browser = findViewById(R.id.videodetail_container_webview)
 
-        _textComments = findViewById(R.id.text_comments);
         _addCommentView = findViewById(R.id.add_comment_view);
         _commentsList = findViewById(R.id.comments_list);
 
@@ -375,6 +381,10 @@ class VideoDetailView : ConstraintLayout {
         _textLikes = findViewById(R.id.text_likes);
         _imageLikeIcon = findViewById(R.id.image_like_icon);
         _imageDislikeIcon = findViewById(R.id.image_dislike_icon);
+
+        _buttonPolycentric = findViewById(R.id.button_polycentric)
+        _buttonPlatform = findViewById(R.id.button_platform)
+        _buttonRecommended = findViewById(R.id.button_recommended)
 
         _monetization = findViewById(R.id.monetization);
         _player.attachPlayer();
@@ -429,17 +439,24 @@ class VideoDetailView : ConstraintLayout {
 
         _commentsList.onCommentsLoaded.subscribe { count ->
             _commentsCount = count;
-            updateCommentType(false);
+            //TODO: Why is this here ? updateTabs(false);
         };
 
-        _toggleCommentType.onValueChanged.subscribe {
-            updateCommentType(true);
-        };
+        if (StatePolycentric.instance.enabled) {
+            _buttonPolycentric.setOnClickListener {
+                setTabIndex(0)
+            }
+        } else {
+            _buttonPolycentric.visibility = View.GONE
+        }
 
-        _textCommentType.setOnClickListener {
-            _toggleCommentType.setValue(!_toggleCommentType.value, true);
-            updateCommentType(true);
-        };
+        _buttonRecommended.setOnClickListener {
+            setTabIndex(2)
+        }
+
+        _buttonPlatform.setOnClickListener {
+            setTabIndex(1)
+        }
 
         val layoutTop: LinearLayout = findViewById(R.id.layout_top);
         _container_content_main.removeView(layoutTop);
@@ -676,7 +693,7 @@ class VideoDetailView : ConstraintLayout {
 
             if (c is PolycentricPlatformComment) {
                 var parentComment: PolycentricPlatformComment = c;
-                _container_content_replies.load(_toggleCommentType.value, metadata, c.contextUrl, c.reference, c,
+                _container_content_replies.load(if (_tabIndex!! == 0) false else true, metadata, c.contextUrl, c.reference, c,
                     { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
                     {
                         val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
@@ -684,7 +701,7 @@ class VideoDetailView : ConstraintLayout {
                         parentComment = newComment;
                     });
             } else {
-                _container_content_replies.load(_toggleCommentType.value, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                _container_content_replies.load(if (_tabIndex!! == 0) false else true, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
             }
             switchContentView(_container_content_replies);
         };
@@ -1023,7 +1040,6 @@ class VideoDetailView : ConstraintLayout {
         setDescription("".fixHtmlWhitespace());
         _descriptionContainer.visibility = View.GONE;
         _player.clear();
-        _textComments.visibility = View.INVISIBLE;
         _commentsList.clear();
 
         _lastVideoSource = null;
@@ -1047,7 +1063,7 @@ class VideoDetailView : ConstraintLayout {
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
         _addCommentView.setContext(null, null);
 
-        _toggleCommentType.setValue(false, false);
+        setTabIndex(0)
         _commentsList.clear();
 
         setEmpty();
@@ -1087,12 +1103,11 @@ class VideoDetailView : ConstraintLayout {
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
         _addCommentView.setContext(null, null);
 
-        _toggleCommentType.setValue(false, false);
+        setTabIndex(null)
 
         _title.text = video.name;
         _rating.visibility = View.GONE;
         _layoutRating.visibility = View.GONE;
-        _textComments.visibility = View.VISIBLE;
 
         _minimize_title.text = video.name;
         _minimize_meta.text = video.author.name;
@@ -1277,12 +1292,15 @@ class VideoDetailView : ConstraintLayout {
         _player.setMetadata(video.name, video.author.name);
 
         if (video is TutorialFragment.TutorialVideo) {
-            _toggleCommentType.setValue(false, false);
+            setTabIndex(0, true)
         } else {
-            _toggleCommentType.setValue(!Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1, false);
+            if (Settings.instance.comments.recommendationsDefault) {
+                setTabIndex(2)
+            } else {
+                val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
+                setTabIndex(if (commentType) 1 else 0, true)
+            }
         }
-
-        updateCommentType(true);
 
         //UI
         _title.text = video.name;
@@ -1477,13 +1495,13 @@ class VideoDetailView : ConstraintLayout {
             _buttonMore.visibility = View.GONE
             _buttonPins.visibility = View.GONE
             _layoutRating.visibility = View.GONE
-            _layoutToggleCommentSection.visibility = View.GONE
+            _layoutChangeBottomSection.visibility = View.GONE
         } else {
             _buttonSubscribe.visibility = View.VISIBLE
             _buttonMore.visibility = View.VISIBLE
             _buttonPins.visibility = View.VISIBLE
             _layoutRating.visibility = View.VISIBLE
-            _layoutToggleCommentSection.visibility = View.VISIBLE
+            _layoutChangeBottomSection.visibility = View.VISIBLE
         }
     }
     fun loadLiveChat(video: IPlatformVideoDetails) {
@@ -2271,24 +2289,93 @@ class VideoDetailView : ConstraintLayout {
         };
     }
 
-    private fun updateCommentType(reloadComments: Boolean) {
-        if (_toggleCommentType.value) {
-            _textCommentType.text = "Platform";
-            _addCommentView.visibility = View.GONE;
+    private fun setTabIndex(index: Int?, forceReload: Boolean = false) {
+        Logger.i(TAG, "setTabIndex (index: ${index}, forceReload: ${forceReload})")
+        val changed = _tabIndex != index || forceReload
+        if (!changed) {
+            return
+        }
 
-            if (reloadComments) {
-                fetchComments();
-            }
-        } else {
-            _textCommentType.text = "Polycentric";
-            _addCommentView.visibility = View.VISIBLE;
+        _taskLoadRecommendations.cancel()
+        _tabIndex = index
+        _buttonRecommended.setTextColor(resources.getColor(if (index == 2) R.color.white else R.color.gray_ac))
+        _buttonPlatform.setTextColor(resources.getColor(if (index == 1) R.color.white else R.color.gray_ac))
+        _buttonPolycentric.setTextColor(resources.getColor(if (index == 0) R.color.white else R.color.gray_ac))
+        _layoutRecommended.removeAllViews()
 
-            if (reloadComments) {
-                fetchPolycentricComments()
+        if (index == null) {
+            _addCommentView.visibility = View.GONE
+            _commentsList.clear()
+            _layoutRecommended.visibility = View.GONE
+        } else if (index == 0) {
+            _addCommentView.visibility = View.VISIBLE
+            _layoutRecommended.visibility = View.GONE
+            fetchPolycentricComments()
+        } else if (index == 1) {
+            _addCommentView.visibility = View.VISIBLE
+            _layoutRecommended.visibility = View.GONE
+            fetchComments()
+        } else if (index == 2) {
+            _addCommentView.visibility = View.GONE
+            _layoutRecommended.visibility = View.VISIBLE
+            _commentsList.clear()
+
+            val url = _url
+            if (url != null) {
+                _layoutRecommended.addView(LoaderView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
+                    start()
+                })
+                _taskLoadRecommendations.run(url)
+            } else {
+                _layoutRecommended.addView(TextView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
+                    textSize = 12.0f
+                    text = "No recommendations found"
+                })
             }
         }
     }
 
+    private fun setRecommendations(pager: IPager<IPlatformContent>?, message: String? = null) {
+        _layoutRecommended.removeAllViews()
+        if (pager == null) {
+            _layoutRecommended.addView(TextView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                    setMargins(20.dp(resources), 20.dp(resources), 20.dp(resources), 20.dp(resources))
+                }
+                textAlignment = TEXT_ALIGNMENT_CENTER
+                textSize = 14.0f
+                text = message
+            })
+            return
+        }
+
+        val results = pager.getResults().filter { it is IPlatformVideo }
+        for (result in results) {
+            _layoutRecommended.addView(PreviewVideoView(context, FeedStyle.THUMBNAIL, null, false).apply {
+                layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+                bind(result)
+
+                hideAddTo()
+
+                onVideoClicked.subscribe { video, _ ->
+                    fragment.navigate<VideoDetailFragment>(video).maximizeVideoDetail()
+                }
+
+                onChannelClicked.subscribe {
+                    fragment.navigate<ChannelFragment>(it)
+                }
+
+                onAddToWatchLaterClicked.subscribe(this) {
+                    if(it is IPlatformVideo) {
+                        StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it));
+                        UIDialogs.toast("Added to watch later\n[${it.name}]");
+                    }
+                }
+            })
+        }
+    }
 
     //Picture2Picture
     fun startPictureInPicture() {
@@ -2633,6 +2720,13 @@ class VideoDetailView : ConstraintLayout {
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
+
+    private val _taskLoadRecommendations = TaskHandler<String, IPager<IPlatformContent>?>(StateApp.instance.scopeGetter, { video?.getContentRecommendations(StatePlatform.instance.getContentClient(it)) })
+        .success { setRecommendations(it, "No recommendations found") }
+        .exception<Throwable> {
+            setRecommendations(null, it.message)
+            Logger.w(TAG, "Failed to load recommendations.", it);
+        };
 
     private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(StateApp.instance.scopeGetter, { PolycentricCache.instance.getProfileAsync(it) })
         .success { it -> setPolycentricProfile(it, animate = true) }
