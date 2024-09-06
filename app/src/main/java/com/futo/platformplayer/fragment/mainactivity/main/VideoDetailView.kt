@@ -104,6 +104,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
@@ -444,7 +445,8 @@ class VideoDetailView : ConstraintLayout {
 
         if (StatePolycentric.instance.enabled) {
             _buttonPolycentric.setOnClickListener {
-                setTabIndex(0)
+                setTabIndex(0);
+                StateMeta.instance.setLastCommentSection(0);
             }
         } else {
             _buttonPolycentric.visibility = View.GONE
@@ -456,6 +458,7 @@ class VideoDetailView : ConstraintLayout {
 
         _buttonPlatform.setOnClickListener {
             setTabIndex(1)
+            StateMeta.instance.setLastCommentSection(1);
         }
 
         val layoutTop: LinearLayout = findViewById(R.id.layout_top);
@@ -1297,8 +1300,11 @@ class VideoDetailView : ConstraintLayout {
             if (Settings.instance.comments.recommendationsDefault) {
                 setTabIndex(2)
             } else {
-                val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
-                setTabIndex(if (commentType) 1 else 0, true)
+                when(Settings.instance.comments.defaultCommentSection) {
+                    0 -> if(Settings.instance.other.polycentricEnabled) setTabIndex(0) else setTabIndex(1);
+                    1 -> setTabIndex(1);
+                    2 -> setTabIndex(StateMeta.instance.getLastCommentSection())
+                }
             }
         }
 

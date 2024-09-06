@@ -2,10 +2,28 @@ package com.futo.platformplayer.states
 
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringHashSetStorage
+import com.futo.platformplayer.stores.StringStorage
 
 class StateMeta {
     val hiddenVideos = FragmentedStorage.get<StringHashSetStorage>("hiddenVideos");
     val hiddenCreators = FragmentedStorage.get<StringHashSetStorage>("hiddenCreators");
+
+    val lastCommentSection = FragmentedStorage.get<StringStorage>("defaultCommentSection");
+
+    fun getLastCommentSection(): Int{
+        return when(lastCommentSection.value){
+            "Polycentric" -> 0;
+            "Platform" -> 1;
+            else -> 1
+        }
+    }
+    fun setLastCommentSection(value: Int) {
+        when(value) {
+            0 -> lastCommentSection.setAndSave("Polycentric");
+            1 -> lastCommentSection.setAndSave("Platform");
+            else -> lastCommentSection.setAndSave("");
+        }
+    }
 
     fun isVideoHidden(videoUrl: String) : Boolean {
         return hiddenVideos.contains(videoUrl);

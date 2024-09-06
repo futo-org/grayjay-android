@@ -489,7 +489,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.default_comment_section, FieldForm.DROPDOWN, -1, 0)
         @DropdownFieldOptionsId(R.array.comment_sections)
-        var defaultCommentSection: Int = 1;
+        var defaultCommentSection: Int = 2;
 
         @FormField(R.string.default_recommendations, FieldForm.TOGGLE, R.string.default_recommendations_description, 0)
         var recommendationsDefault: Boolean = false;

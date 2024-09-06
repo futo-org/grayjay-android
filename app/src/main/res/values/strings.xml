@@ -916,6 +916,7 @@
     <string-array name="comment_sections">
         <item>Polycentric</item>
         <item>Platform</item>
+        <item>Last Selected</item>
     </string-array>
     <string-array name="audio_languages">
         <item>English</item>
