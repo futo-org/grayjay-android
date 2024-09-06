@@ -183,10 +183,12 @@ class MediaPlaybackService : Service() {
         Logger.v(TAG, "updateMediaSession");
         var isUpdating = false;
         val video: IPlatformVideo;
+        var lastBitmap: Bitmap? = null
         if(videoUpdated == null) {
             val notifLastVideo = _notif_last_video ?: return;
             video = notifLastVideo;
             isUpdating = true;
+            lastBitmap = _notif_last_bitmap;
         }
         else
             video = videoUpdated;
@@ -199,6 +201,7 @@ class MediaPlaybackService : Service() {
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
                 .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
                 .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
+                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, lastBitmap)
                 .build());
 
         val thumbnail = video.thumbnails.getHQThumbnail();
@@ -214,8 +217,16 @@ class MediaPlaybackService : Service() {
                 .load(thumbnail)
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap,transition: Transition<in Bitmap>?) {
-                        if(tag == _notif_last_video)
+                        if(tag == _notif_last_video) {
                             notifyMediaSession(video, resource)
+                            _mediaSession?.setMetadata(
+                                MediaMetadataCompat.Builder()
+                                    .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
+                                    .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
+                                    .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
+                                    .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, resource)
+                                    .build());
+                        }
                     }
                     override fun onLoadCleared(placeholder: Drawable?) {
                         if(tag == _notif_last_video)
