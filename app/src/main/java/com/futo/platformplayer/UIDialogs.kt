@@ -229,14 +229,15 @@ class UIDialogs {
                 }
             };
             view.findViewById<LinearLayout>(R.id.dialog_buttons).apply {
+                val center = actions.any { it?.center == true };
                 val buttons = actions.map<Action, TextView> { act ->
                     val buttonView = TextView(context);
                     val dp10 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, resources.displayMetrics).toInt();
                     val dp28 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28f, resources.displayMetrics).toInt();
                     val dp14 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14.0f, resources.displayMetrics).toInt();
                     buttonView.layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-                        if(actions.size > 1)
-                            this.marginEnd = if(actions.size > 2) dp14 else dp28;
+                        this.marginStart = if(actions.size >= 2) dp14 / 2 else dp28 / 2;
+                        this.marginEnd = if(actions.size >= 2) dp14 / 2 else dp28 / 2;
                     };
                     buttonView.setTextColor(Color.WHITE);
                     buttonView.textSize = 14f;
@@ -258,7 +259,7 @@ class UIDialogs {
 
                     return@map buttonView;
                 };
-                if(actions.size <= 1)
+                if(actions.size <= 1 || center)
                     this.gravity = Gravity.CENTER;
                 else
                     this.gravity = Gravity.END;
@@ -509,11 +510,13 @@ class UIDialogs {
         val text: String;
         val action: ()->Unit;
         val style: ActionStyle;
+        var center: Boolean;
 
-        constructor(text: String, action: ()->Unit, style: ActionStyle = ActionStyle.NONE) {
+        constructor(text: String, action: ()->Unit, style: ActionStyle = ActionStyle.NONE, center: Boolean = false) {
             this.text = text;
             this.action = action;
             this.style = style;
+            this.center = center;
         }
     }
     enum class ActionStyle {

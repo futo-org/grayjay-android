@@ -612,6 +612,20 @@ class StateApp {
             Settings.instance.didFirstStart = true;
             Settings.instance.save();
         }
+        /*
+        if(!Settings.instance.comments.didAskPolycentricDefault) {
+            UIDialogs.showDialog(context, R.drawable.neopass, "Default Comment Section", "Grayjay supports 2 comment sections, the Platform comments and Polycentric comments. You can easily toggle between them, but which would you like to be selected by default? This choice can be changed in settings.\n\nPolycentric is still under active development.", null, 1,
+                UIDialogs.Action("Polycentric", {
+                    Settings.instance.comments.didAskPolycentricDefault = true;
+                    Settings.instance.comments.defaultCommentSection = 0;
+                    Settings.instance.save();
+                }, UIDialogs.ActionStyle.PRIMARY, true),
+                UIDialogs.Action("Platform", {
+                    Settings.instance.comments.didAskPolycentricDefault = true;
+                    Settings.instance.comments.defaultCommentSection = 1;
+                    Settings.instance.save();
+                }, UIDialogs.ActionStyle.PRIMARY, true))
+        }*/
         if(Settings.instance.backup.shouldAutomaticBackup()) {
             try {
                 StateBackup.startAutomaticBackup();
