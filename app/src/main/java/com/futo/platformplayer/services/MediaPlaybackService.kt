@@ -215,7 +215,7 @@ class MediaPlaybackService : Service() {
             val tag = video;
             Glide.with(this).asBitmap()
                 .load(thumbnail)
-                .into(object: CustomTarget<Bitmap>(1200, 750) {
+                .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap,transition: Transition<in Bitmap>?) {
                         if(tag == _notif_last_video) {
                             notifyMediaSession(video, resource)
