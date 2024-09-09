@@ -18,6 +18,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
 import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
@@ -74,6 +75,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     //Custom buttons
     private val _control_fullscreen: ImageButton;
+    private val _control_autoplay: ImageButton;
     private val _control_videosettings: ImageButton;
     private val _control_minimize: ImageButton;
     private val _control_rotate_lock: ImageButton;
@@ -92,6 +94,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_videosettings_fullscreen: ImageButton;
     private val _control_minimize_fullscreen: ImageButton;
     private val _control_rotate_lock_fullscreen: ImageButton;
+    private val _control_autoplay_fullscreen: ImageButton;
     private val _control_loop_fullscreen: ImageButton;
     private val _control_cast_fullscreen: ImageButton;
     private val _control_play_fullscreen: ImageButton;
@@ -149,6 +152,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         videoControls = findViewById(R.id.video_player_controller);
         _control_fullscreen = videoControls.findViewById(R.id.button_fullscreen);
+        _control_autoplay = videoControls.findViewById(R.id.button_autoplay);
         _control_videosettings = videoControls.findViewById(R.id.button_settings);
         _control_minimize = videoControls.findViewById(R.id.button_minimize);
         _control_rotate_lock = videoControls.findViewById(R.id.button_rotate_lock);
@@ -164,6 +168,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_duration = videoControls.findViewById(R.id.text_duration);
 
         _videoControls_fullscreen = findViewById(R.id.video_player_controller_fullscreen);
+        _control_autoplay_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_autoplay);
         _control_fullscreen_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_fullscreen);
         _control_minimize_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_minimize);
         _control_videosettings_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_settings);
@@ -386,6 +391,18 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             UIDialogs.showCastingDialog(context);
         };
 
+        _control_autoplay.setOnClickListener {
+            StatePlayer.instance.autoplay = !StatePlayer.instance.autoplay;
+            updateAutoplayButton()
+        }
+        updateAutoplayButton()
+
+        _control_autoplay_fullscreen.setOnClickListener {
+            StatePlayer.instance.autoplay = !StatePlayer.instance.autoplay;
+            updateAutoplayButton()
+        }
+        updateAutoplayButton()
+
         val progressUpdateListener = { position: Long, bufferedPosition: Long ->
             val currentTime = position.formatDuration()
             val currentDuration = duration.formatDuration()
@@ -431,6 +448,11 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         if(!isInEditMode) {
             gestureControl.hideControls();
         }
+    }
+
+    private fun updateAutoplayButton() {
+        _control_autoplay.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
+        _control_autoplay_fullscreen.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
     }
 
     private fun setSystemBrightness(brightness: Float) {

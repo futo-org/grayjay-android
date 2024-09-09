@@ -148,6 +148,20 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <ImageButton
+        android:id="@+id/button_autoplay"
+        android:layout_width="55dp"
+        android:layout_height="40dp"
+        android:clickable="true"
+        app:srcCompat="@drawable/autoplay_24px"
+        app:layout_constraintRight_toLeftOf="@id/button_fullscreen"
+        app:layout_constraintBottom_toBottomOf="@id/button_fullscreen"
+        app:layout_constraintTop_toTopOf="@id/button_fullscreen"
+        android:paddingStart="5dp"
+        android:paddingTop="15dp"
+        android:paddingEnd="5dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageButton
         android:id="@+id/button_fullscreen"
         android:layout_width="55dp"
         android:layout_height="40dp"

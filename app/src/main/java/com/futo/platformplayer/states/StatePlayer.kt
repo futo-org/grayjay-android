@@ -45,6 +45,33 @@ class StatePlayer {
             onRotationLockChanged.emit(value)
         }
     val onRotationLockChanged = Event1<Boolean>()
+    var autoplay: Boolean = false
+        get() = field
+        set(value) {
+            if (field != value)
+                _autoplayed.clear()
+            field = value
+            autoplayChanged.emit(value)
+        }
+    private val _autoplayed = hashSetOf<String>()
+    fun wasAutoplayed(url: String?): Boolean {
+        if (url == null) {
+            return false
+        }
+        synchronized(_autoplayed) {
+            return _autoplayed.contains(url)
+        }
+    }
+    fun setAutoplayed(url: String?) {
+        if (url == null) {
+            return
+        }
+        synchronized(_autoplayed) {
+            _autoplayed.add(url)
+        }
+    }
+
+    val autoplayChanged = Event1<Boolean>()
     var loopVideo : Boolean = false;
 
     val isPlaying: Boolean get() = _exoplayer?.player?.playWhenReady ?: false;
@@ -135,6 +162,12 @@ class StatePlayer {
     fun isInQueue(id : String) : Boolean {
         synchronized(_queue) {
             return _queue.any { it.id.value == id };
+        }
+    }
+
+    fun isUrlInQueue(url : String) : Boolean {
+        synchronized(_queue) {
+            return _queue.any { it.url == url };
         }
     }
 

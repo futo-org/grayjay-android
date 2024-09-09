@@ -290,6 +290,7 @@ class VideoDetailView : ConstraintLayout {
     private var _commentsCount = 0;
     private var _polycentricProfile: PolycentricCache.CachedPolycentricProfile? = null;
     private var _slideUpOverlay: SlideUpMenuOverlay? = null;
+    private var _autoplayVideo: IPlatformVideo? = null
 
     //Events
     val onMinimize = Event0();
@@ -720,6 +721,17 @@ class VideoDetailView : ConstraintLayout {
             fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         };
 
+        StatePlayer.instance.autoplayChanged.subscribe(this) {
+            if (it) {
+                val url = _url
+                val autoPlayVideo = _autoplayVideo
+                if (url != null && autoPlayVideo == null) {
+                    _taskLoadRecommendations.cancel()
+                    _taskLoadRecommendations.run(url)
+                }
+            }
+        }
+
         _layoutResume.setOnClickListener {
             handleSeek(_historicalPosition * 1000);
 
@@ -1006,6 +1018,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_queue.cleanup();
         _container_content_description.cleanup();
         _container_content_support.cleanup();
+        StatePlayer.instance.autoplayChanged.remove(this)
         StateCasting.instance.onActiveDevicePlayChanged.remove(this);
         StateCasting.instance.onActiveDeviceTimeChanged.remove(this);
         StateCasting.instance.onActiveDeviceConnectionStateChanged.remove(this);
@@ -1102,6 +1115,8 @@ class VideoDetailView : ConstraintLayout {
         this.video = null;
         cleanupPlaybackTracker();
         _searchVideo = video;
+        _autoplayVideo = null
+        Logger.i(TAG, "Autoplay video cleared (setVideoOverview)")
         _videoResumePositionMilliseconds = resumeSeconds * 1000;
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
         _addCommentView.setContext(null, null);
@@ -1191,6 +1206,8 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
         _didTriggerDatasourceErrroCount = 0;
         _didTriggerDatasourceError = false;
+        _autoplayVideo = null
+        Logger.i(TAG, "Autoplay video cleared (setVideoDetails)")
 
         if(newVideo && this.video?.url == videoDetail.url)
             return;
@@ -1511,6 +1528,11 @@ class VideoDetailView : ConstraintLayout {
             _layoutRating.visibility = View.VISIBLE
             _layoutChangeBottomSection.visibility = View.VISIBLE
         }
+
+        if (StatePlayer.instance.autoplay) {
+            _taskLoadRecommendations.cancel()
+            _taskLoadRecommendations.run(videoDetail.url)
+        }
     }
     fun loadLiveChat(video: IPlatformVideoDetails) {
         _liveChat?.stop();
@@ -1779,6 +1801,14 @@ class VideoDetailView : ConstraintLayout {
     fun nextVideo(forceLoop: Boolean = false, withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
         var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9, bypassVideoLoop);
+        val autoplayVideo = _autoplayVideo
+        if (next == null && autoplayVideo != null && StatePlayer.instance.autoplay) {
+            Logger.i(TAG, "Found autoplay video!")
+            StatePlayer.instance.setAutoplayed(autoplayVideo.url)
+            next = autoplayVideo
+        }
+        _autoplayVideo = null
+        Logger.i(TAG, "Autoplay video cleared (nextVideo)")
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {
@@ -2347,43 +2377,49 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private fun setRecommendations(pager: IPager<IPlatformContent>?, message: String? = null) {
-        _layoutRecommended.removeAllViews()
-        if (pager == null) {
-            _layoutRecommended.addView(TextView(context).apply {
-                layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
-                    setMargins(20.dp(resources), 20.dp(resources), 20.dp(resources), 20.dp(resources))
-                }
-                textAlignment = TEXT_ALIGNMENT_CENTER
-                textSize = 14.0f
-                text = message
-            })
-            return
+    private fun setRecommendations(results: List<IPlatformVideo>?, message: String? = null) {
+        if (results != null && StatePlayer.instance.autoplay) {
+            _autoplayVideo = results.firstOrNull { !StatePlayer.instance.wasAutoplayed(it.url) }
+            Logger.i(TAG, "Autoplay video set (url = ${_autoplayVideo?.url})")
         }
 
-        val results = pager.getResults().filter { it is IPlatformVideo }
-        for (result in results) {
-            _layoutRecommended.addView(PreviewVideoView(context, FeedStyle.THUMBNAIL, null, false).apply {
-                layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-                bind(result)
-
-                hideAddTo()
-
-                onVideoClicked.subscribe { video, _ ->
-                    fragment.navigate<VideoDetailFragment>(video).maximizeVideoDetail()
-                }
-
-                onChannelClicked.subscribe {
-                    fragment.navigate<ChannelFragment>(it)
-                }
-
-                onAddToWatchLaterClicked.subscribe(this) {
-                    if(it is IPlatformVideo) {
-                        StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it));
-                        UIDialogs.toast("Added to watch later\n[${it.name}]");
+        if (_tabIndex == 2) {
+            _layoutRecommended.removeAllViews()
+            if (results == null) {
+                _layoutRecommended.addView(TextView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                        setMargins(20.dp(resources), 20.dp(resources), 20.dp(resources), 20.dp(resources))
                     }
-                }
-            })
+                    textAlignment = TEXT_ALIGNMENT_CENTER
+                    textSize = 14.0f
+                    text = message
+                })
+                return
+            }
+
+            for (result in results) {
+                _layoutRecommended.addView(PreviewVideoView(context, FeedStyle.THUMBNAIL, null, false).apply {
+                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+                    bind(result)
+
+                    hideAddTo()
+
+                    onVideoClicked.subscribe { video, _ ->
+                        fragment.navigate<VideoDetailFragment>(video).maximizeVideoDetail()
+                    }
+
+                    onChannelClicked.subscribe {
+                        fragment.navigate<ChannelFragment>(it)
+                    }
+
+                    onAddToWatchLaterClicked.subscribe(this) {
+                        if(it is IPlatformVideo) {
+                            StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it));
+                            UIDialogs.toast("Added to watch later\n[${it.name}]");
+                        }
+                    }
+                })
+            }
         }
     }
 
@@ -2732,7 +2768,7 @@ class VideoDetailView : ConstraintLayout {
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 
     private val _taskLoadRecommendations = TaskHandler<String, IPager<IPlatformContent>?>(StateApp.instance.scopeGetter, { video?.getContentRecommendations(StatePlatform.instance.getContentClient(it)) })
-        .success { setRecommendations(it, "No recommendations found") }
+        .success { setRecommendations(it?.getResults()?.filter { it is IPlatformVideo }?.map { it as IPlatformVideo }, "No recommendations found") }
         .exception<Throwable> {
             setRecommendations(null, it.message)
             Logger.w(TAG, "Failed to load recommendations.", it);
