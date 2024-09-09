@@ -2352,7 +2352,7 @@ class VideoDetailView : ConstraintLayout {
             _layoutRecommended.visibility = View.GONE
             fetchPolycentricComments()
         } else if (index == 1) {
-            _addCommentView.visibility = View.VISIBLE
+            _addCommentView.visibility = View.GONE
             _layoutRecommended.visibility = View.GONE
             fetchComments()
         } else if (index == 2) {
