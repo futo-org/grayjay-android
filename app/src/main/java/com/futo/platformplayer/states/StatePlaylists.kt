@@ -61,8 +61,17 @@ class StatePlaylists {
     }
     fun updateWatchLater(updated: List<SerializedPlatformVideo>) {
         synchronized(_watchlistStore) {
-            _watchlistStore.deleteAll();
-            _watchlistStore.saveAllAsync(updated);
+            //_watchlistStore.deleteAll();
+            val existing = _watchlistStore.getItems();
+            val toAdd = updated.filter { u -> !existing.any { u.url == it.url } };
+            val toRemove = existing.filter { u -> !updated.any { u.url == it.url } };
+            Logger.i(TAG, "WatchLater changed:\nTo Add:\n" +
+                    (if(toAdd.size == 0) "None" else toAdd.map { " + " + it.name }.joinToString("\n")) +
+                    "\nTo Remove:\n" +
+                    (if(toRemove.size == 0) "None" else toRemove.map { " - " + it.name }.joinToString("\n")));
+            for(remove in toRemove)
+                _watchlistStore.delete(remove);
+            _watchlistStore.saveAllAsync(toAdd);
             _watchlistOrderStore.set(*updated.map { it.url }.toTypedArray());
             _watchlistOrderStore.save();
         }
