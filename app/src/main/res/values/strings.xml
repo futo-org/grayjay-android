@@ -373,6 +373,10 @@
     <string name="system_volume_descr">Gesture controls adjust system volume</string>
     <string name="live_chat_webview">Live Chat Webview</string>
     <string name="full_screen_portrait">Fullscreen portrait</string>
+    <string name="reverse_portrait">Allow reverse portrait</string>
+    <string name="reverse_portrait_description">Allow app to flip into reverse portrait</string>
+    <string name="rotation_zone">Rotation zone</string>
+    <string name="rotation_zone_description">Specify the sensitivity of rotation zones (decrease to make less sensitive)</string>
     <string name="prefer_webm">Prefer Webm Video Codecs</string>
     <string name="prefer_webm_description">If player should prefer Webm codecs (vp9/opus) over mp4 codecs (h264/AAC), may result in worse compatibility.</string>
     <string name="prefer_webm_audio">Prefer Webm Audio Codecs</string>
@@ -412,6 +416,8 @@
     <string name="preferred_preview_quality_description">Default quality while previewing a video in a feed</string>
     <string name="primary_language">Primary Language</string>
     <string name="default_comment_section">Default Comment Section</string>
+    <string name="hide_recommendations">Hide Recommendations</string>
+    <string name="hide_recommendations_description">Fully hide the recommendations tab.</string>
     <string name="default_recommendations">Recommendations as Default</string>
     <string name="default_recommendations_description">Show recommendations as default, instead of comments.</string>
     <string name="bad_reputation_comments_fading">Bad Reputation Comment Fading</string>
@@ -952,5 +958,10 @@
         <item>Within 10 seconds of loss</item>
         <item>Within 30 seconds of loss</item>
         <item>Always</item>
+    </string-array>
+    <string-array name="rotation_zone">
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
     </string-array>
 </resources>

@@ -1297,7 +1297,7 @@ class VideoDetailView : ConstraintLayout {
         if (video is TutorialFragment.TutorialVideo) {
             setTabIndex(0, true)
         } else {
-            if (Settings.instance.comments.recommendationsDefault) {
+            if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
                 setTabIndex(2, true)
             } else {
                 when(Settings.instance.comments.defaultCommentSection) {
@@ -2302,6 +2302,9 @@ class VideoDetailView : ConstraintLayout {
         if (!changed) {
             return
         }
+
+        val recommendationsHidden = Settings.instance.comments.hideRecommendations
+        _buttonRecommended.visibility = if (recommendationsHidden) View.GONE else View.VISIBLE
 
         _taskLoadRecommendations.cancel()
         _tabIndex = index

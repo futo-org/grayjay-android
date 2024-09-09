@@ -23,11 +23,19 @@ class SimpleOrientationListener(
 
     private val orientationListener = object : OrientationEventListener(activity, SensorManager.SENSOR_DELAY_UI) {
         override fun onOrientationChanged(orientation: Int) {
+            //val rotationZone = 45
+            val rotationZone = when (Settings.instance.playback.rotationZone) {
+                0 -> 15
+                1 -> 30
+                2 -> 45
+                else -> 45
+            }
+
             val newOrientation = when {
-                orientation in 45..134 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-                orientation in 135..224 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-                orientation in 225..314 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                orientation in 315..360 || orientation in 0..44 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                orientation in (90 - rotationZone)..(90 + rotationZone - 1) -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                orientation in (180 - rotationZone)..(180 + rotationZone - 1) -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                orientation in (270 - rotationZone)..(270 + rotationZone - 1) -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                orientation in (360 - rotationZone)..(360 + rotationZone - 1) || orientation in 0..(rotationZone - 1) -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 else -> lastOrientation
             }
 

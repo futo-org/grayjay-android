@@ -98,7 +98,10 @@ class VideoDetailFragment : MainFragment {
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
         val bypassRotationPrevention = Settings.instance.other.bypassRotationPrevention;
         val currentRequestedOrientation = a.requestedOrientation
-        val currentOrientation = if (_currentOrientation == -1) currentRequestedOrientation else _currentOrientation
+        var currentOrientation = if (_currentOrientation == -1) currentRequestedOrientation else _currentOrientation
+        if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT && !Settings.instance.playback.reversePortrait)
+            currentOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
         val isAutoRotate = Settings.instance.playback.isAutoRotate()
         val isFs = isFullscreen
 
@@ -108,20 +111,16 @@ class VideoDetailFragment : MainFragment {
                     a.requestedOrientation = currentOrientation
                 }
             } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
-                if (isAutoRotate) {
+                if (isAutoRotate || currentOrientation != currentRequestedOrientation && (currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
                     a.requestedOrientation = currentOrientation
                 }
             } else {
                 a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
         } else if (bypassRotationPrevention) {
-            if (isAutoRotate) {
-                a.requestedOrientation = currentOrientation
-            }
+            a.requestedOrientation = currentOrientation
         } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
-            if (isAutoRotate) {
-                a.requestedOrientation = currentOrientation
-            }
+            a.requestedOrientation = currentOrientation
         } else {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }

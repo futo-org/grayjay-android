@@ -471,13 +471,19 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.full_screen_portrait, FieldForm.TOGGLE, R.string.allow_full_screen_portrait, 13)
         var fullscreenPortrait: Boolean = false;
 
+        @FormField(R.string.reverse_portrait, FieldForm.TOGGLE, R.string.reverse_portrait_description, 14)
+        var reversePortrait: Boolean = false;
 
-        @FormField(R.string.prefer_webm, FieldForm.TOGGLE, R.string.prefer_webm_description, 14)
+        @FormField(R.string.rotation_zone, FieldForm.DROPDOWN, R.string.rotation_zone_description, 15)
+        @DropdownFieldOptionsId(R.array.rotation_zone)
+        var rotationZone: Int = 2;
+
+        @FormField(R.string.prefer_webm, FieldForm.TOGGLE, R.string.prefer_webm_description, 16)
         var preferWebmVideo: Boolean = false;
-        @FormField(R.string.prefer_webm_audio, FieldForm.TOGGLE, R.string.prefer_webm_audio_description, 15)
+        @FormField(R.string.prefer_webm_audio, FieldForm.TOGGLE, R.string.prefer_webm_audio_description, 17)
         var preferWebmAudio: Boolean = false;
 
-        @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 16)
+        @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 18)
         var allowVideoToGoUnderCutout: Boolean = true;
     }
 
@@ -493,6 +499,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.default_recommendations, FieldForm.TOGGLE, R.string.default_recommendations_description, 0)
         var recommendationsDefault: Boolean = false;
+
+        @FormField(R.string.hide_recommendations, FieldForm.TOGGLE, R.string.hide_recommendations_description, 0)
+        var hideRecommendations: Boolean = false;
 
         @FormField(R.string.bad_reputation_comments_fading, FieldForm.TOGGLE, R.string.bad_reputation_comments_fading_description, 0)
         var badReputationCommentsFading: Boolean = true;
