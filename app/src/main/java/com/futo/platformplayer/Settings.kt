@@ -485,6 +485,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 18)
         var allowVideoToGoUnderCutout: Boolean = true;
+
+        @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 19)
+        var autoplay: Boolean = false;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

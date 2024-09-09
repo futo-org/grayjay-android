@@ -8,6 +8,7 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -45,7 +46,7 @@ class StatePlayer {
             onRotationLockChanged.emit(value)
         }
     val onRotationLockChanged = Event1<Boolean>()
-    var autoplay: Boolean = false
+    var autoplay: Boolean = Settings.instance.playback.autoplay
         get() = field
         set(value) {
             if (field != value)
