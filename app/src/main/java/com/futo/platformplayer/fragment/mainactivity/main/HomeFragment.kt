@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -18,13 +18,9 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.SearchType
-import com.futo.platformplayer.states.AnnouncementType
-import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
-import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
@@ -32,11 +28,8 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.OffsetDateTime
-import java.util.UUID
 
 class HomeFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -44,7 +37,7 @@ class HomeFragment : MainFragment() {
     override val hasBottomBar: Boolean get() = true;
 
     private var _view: HomeView? = null;
-    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
     fun reloadFeed() {
         _view?.reloadFeed()
@@ -101,15 +94,14 @@ class HomeFragment : MainFragment() {
     class HomeView : ContentFeedView<HomeFragment> {
         override val feedStyle: FeedStyle get() = Settings.instance.home.getHomeFeedStyle();
 
-        private var _announcementsView: AnnouncementView;
+        private var _announcementsView: AnnouncementView = AnnouncementView(context, null).apply {
+            headerView.addView(this);
+        };
 
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
-        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
-            _announcementsView = AnnouncementView(context, null).apply {
-                headerView.addView(this);
-            };
+        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {;
 
             _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({ fragment.lifecycleScope }, {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
@@ -174,7 +166,7 @@ class HomeFragment : MainFragment() {
             loadResults();
         }
 
-        override fun getEmptyPagerView(): View? {
+        override fun getEmptyPagerView(): View {
             val dp10 = 10.dp(resources);
             val dp30 = 30.dp(resources);
 
@@ -206,8 +198,7 @@ class HomeFragment : MainFragment() {
                     listOf(BigButton(context, "Sources", "Go to the sources tab", R.drawable.ic_creators) {
                         fragment.navigate<SourcesFragment>();
                     }.withMargin(dp10, dp30))
-                );
-            return null;
+                )
         }
 
         override fun reload() {
@@ -227,7 +218,7 @@ class HomeFragment : MainFragment() {
                 //StateAnnouncement.instance.registerAnnouncement(UUID.randomUUID().toString(), context.getString(R.string.no_home_available), context.getString(R.string.no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh), AnnouncementType.SESSION);
             }
 
-            Logger.i(TAG, "Got new home pager ${pager}");
+            Logger.i(TAG, "Got new home pager $pager");
             finishRefreshLayoutLoader();
             setLoading(false);
             setPager(pager);
@@ -237,7 +228,7 @@ class HomeFragment : MainFragment() {
     }
 
     companion object {
-        val TAG = "HomeFragment";
+        const val TAG = "HomeFragment";
 
         fun newInstance() = HomeFragment().apply {}
     }

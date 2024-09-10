@@ -7,10 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -46,7 +45,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.nio.channels.Channel
 import java.time.OffsetDateTime
 import kotlin.system.measureTimeMillis
 
@@ -57,7 +55,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
     private var _view: SubscriptionsFeedView? = null;
     private var _group: SubscriptionGroup? = null;
-    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
@@ -110,7 +108,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         var subGroup: SubscriptionGroup? = null;
 
-        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
             };
@@ -214,7 +212,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount(group);
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
                 val rateLimitPlugins = subRequestCounts.filter { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true }
-                Logger.w(TAG, "Trying to refreshing subscriptions with requests:\n" + reqCountStr);
+                Logger.w(TAG, "Trying to refreshing subscriptions with requests:\n$reqCountStr");
                 if(rateLimitPlugins.any())
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }
@@ -276,7 +274,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         private fun initializeToolbarContent() {
             _subscriptionBar = SubscriptionBar(context).apply {
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             };
             _subscriptionBar?.onClickChannel?.subscribe { c -> fragment.navigate<ChannelFragment>(c); };
             _subscriptionBar?.onToggleGroup?.subscribe { g ->
@@ -395,7 +393,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             _taskGetPager.run(withRefetch);
         }
 
-        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, LinearLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
+        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
             super.onRestoreCachedData(cachedData);
             setEmptyPager(cachedData.results.isEmpty());
         }
@@ -450,7 +448,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                                 if (toShow is PluginException)
                                     UIDialogs.appToast(ToastView.Toast(
                                                 toShow.message +
-                                                (if(channel != null) "\nChannel: " + channel else ""), false, null,
+                                                (if(channel != null) "\nChannel: $channel" else ""), false, null,
                                         "Plugin ${toShow.config.name} failed")
                                     );
                                 else
@@ -461,14 +459,14 @@ class SubscriptionsFeedFragment : MainFragment() {
                             val failedChannels = exs.filterIsInstance<ChannelException>().map { it.channelNameOrUrl }.distinct().toList();
                             val failedPlugins = exs.filter { it is PluginException || (it is ChannelException && it.cause is PluginException) }
                                 .map { if(it is ChannelException) (it.cause as PluginException) else if(it is PluginException) it else null  }
-                                .filter { it != null }
+                                .filterNotNull()
                                 .distinctBy { it?.config?.name }
                                 .map { it!! }
                                 .toList();
                             for(distinctPluginFail in failedPlugins)
                                 UIDialogs.appToast(context.getString(R.string.plugin_pluginname_failed_message).replace("{pluginName}", distinctPluginFail.config.name).replace("{message}", distinctPluginFail.message ?: ""));
                             if(failedChannels.isNotEmpty())
-                                UIDialogs.appToast(ToastView.Toast(failedChannels.take(3).map { "- ${it}" }.joinToString("\n") +
+                                UIDialogs.appToast(ToastView.Toast(failedChannels.take(3).map { "- $it" }.joinToString("\n") +
                                         (if(failedChannels.size >= 3) "\nAnd ${failedChannels.size - 3} more" else ""), false, null, "Failed Channels"));
                         }
                     } catch (e: Throwable) {
@@ -480,7 +478,7 @@ class SubscriptionsFeedFragment : MainFragment() {
     }
 
     companion object {
-        val TAG = "SubscriptionsFeedFragment";
+        const val TAG = "SubscriptionsFeedFragment";
 
         fun newInstance() = SubscriptionsFeedFragment().apply {}
     }

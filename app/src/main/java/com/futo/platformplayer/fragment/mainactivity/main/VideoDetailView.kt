@@ -154,20 +154,19 @@ import com.futo.polycentric.core.Opinion
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import okhttp3.Dispatcher
-import org.w3c.dom.Text
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
-@androidx.media3.common.util.UnstableApi
+@UnstableApi
 class VideoDetailView : ConstraintLayout {
     private val TAG = "VideoDetailView"
 
@@ -180,7 +179,7 @@ class VideoDetailView : ConstraintLayout {
     private var _searchVideo: IPlatformVideo? = null;
     var video: IPlatformVideoDetails? = null
         private set;
-    var videoLocal: VideoLocal? = null;
+    private var videoLocal: VideoLocal? = null;
     private var _playbackTracker: IPlaybackTracker? = null;
     private var _historyIndex: DBHistory.Index? = null;
 
@@ -195,7 +194,7 @@ class VideoDetailView : ConstraintLayout {
     private val _timeBar: TimeBar;
     private var _upNext: UpNextView;
 
-    val rootView: ConstraintLayout;
+    private val rootView: ConstraintLayout;
 
     private val _title: TextView;
     private val _subTitle: TextView;
@@ -284,7 +283,7 @@ class VideoDetailView : ConstraintLayout {
 
     var isPlaying: Boolean = false
         private set;
-    var lastPositionMilliseconds: Long = 0
+    private var lastPositionMilliseconds: Long = 0
         private set;
     private var _historicalPosition: Long = 0;
     private var _commentsCount = 0;
@@ -524,12 +523,14 @@ class VideoDetailView : ConstraintLayout {
         _cast.onChapterChanged.subscribe(onChapterChanged);
 
         _cast.onMinimizeClick.subscribe {
-            _player.setFullScreen(false);
-            onMinimize.emit();
+            // emit minimize before toggling fullscreen so we know that the full screen toggle is happening during a minimize operation
+            onMinimize.emit()
+            _player.setFullScreen(false)
         };
         _player.onMinimize.subscribe {
-            _player.setFullScreen(false);
-            onMinimize.emit();
+            // emit minimize before toggling fullscreen so we know that the full screen toggle is happening during a minimize operation
+            onMinimize.emit()
+            _player.setFullScreen(false)
         };
 
         _player.onTimeBarChanged.subscribe { position, _ ->
@@ -697,7 +698,8 @@ class VideoDetailView : ConstraintLayout {
 
             if (c is PolycentricPlatformComment) {
                 var parentComment: PolycentricPlatformComment = c;
-                _container_content_replies.load(if (_tabIndex!! == 0) false else true, metadata, c.contextUrl, c.reference, c,
+                _container_content_replies.load(
+                    _tabIndex!! != 0, metadata, c.contextUrl, c.reference, c,
                     { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
                     {
                         val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
@@ -705,7 +707,7 @@ class VideoDetailView : ConstraintLayout {
                         parentComment = newComment;
                     });
             } else {
-                _container_content_replies.load(if (_tabIndex!! == 0) false else true, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                _container_content_replies.load(_tabIndex!! != 0, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
             }
             switchContentView(_container_content_replies);
         };
@@ -887,7 +889,7 @@ class VideoDetailView : ConstraintLayout {
         else {
             val selectedButtons = _buttonPinStore.getAllValues()
                 .map { x-> buttons.find { it.tagRef == x } }
-                .filter { it != null }
+                .filterNotNull()
                 .map { it!! };
             _buttonPins.setButtons(*(selectedButtons +
                     buttons.filter { !selectedButtons.contains(it) } +
@@ -1201,7 +1203,7 @@ class VideoDetailView : ConstraintLayout {
 
         switchContentView(_container_content_main);
     }
-    //@OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
         _didTriggerDatasourceErrroCount = 0;
@@ -1870,7 +1872,7 @@ class VideoDetailView : ConstraintLayout {
             ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
             ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))
             ?.distinct()
-            ?.filter { it != null }
+            ?.filterNotNull()
             ?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
         val bestAudioSources = if(doDedup) audioSources
@@ -2171,7 +2173,7 @@ class VideoDetailView : ConstraintLayout {
         cleanupPlaybackTracker();
 
         val url = _url;
-        if (url != null && url.isNotBlank()) {
+        if (!url.isNullOrBlank()) {
             setLoading(true);
             _taskLoadVideo.run(url);
         }
@@ -2183,7 +2185,7 @@ class VideoDetailView : ConstraintLayout {
         if(fullscreen) {
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
 
-            val lp = _container_content.layoutParams as ConstraintLayout.LayoutParams;
+            val lp = _container_content.layoutParams as LayoutParams;
             lp.topMargin = 0;
             _container_content.layoutParams = lp;
 
@@ -2196,7 +2198,7 @@ class VideoDetailView : ConstraintLayout {
         else {
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
 
-            val lp = _container_content.layoutParams as ConstraintLayout.LayoutParams;
+            val lp = _container_content.layoutParams as LayoutParams;
             lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, -18.0f, Resources.getSystem().displayMetrics).toInt();
             _container_content.layoutParams = lp;
 
@@ -2239,7 +2241,7 @@ class VideoDetailView : ConstraintLayout {
 
     fun setFullscreen(fullscreen : Boolean) {
         Logger.i(TAG, "setFullscreen(fullscreen=$fullscreen)")
-        _player.setFullScreen(fullscreen);
+        _player.setFullScreen(fullscreen)
     }
     private fun setLoading(isLoading : Boolean) {
         if(isLoading){

@@ -7,7 +7,6 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
-import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -515,6 +514,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
         }
+
+        _fragVideoDetail.detectWindowSize()
+        _fragVideoDetail.updateOrientation()
     }
 
     /*
