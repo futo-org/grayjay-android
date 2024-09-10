@@ -132,6 +132,8 @@ class VideoDetailFragment : MainFragment {
                     a.requestedOrientation = currentOrientation
                 } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
                     a.requestedOrientation = currentOrientation
+                } else if (currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                    //Don't change anything
                 } else {
                     a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }

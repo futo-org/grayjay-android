@@ -397,23 +397,43 @@ class SourceDetailFragment : MainFragment() {
                     UIDialogs.Action("Cancel", {}, UIDialogs.ActionStyle.NONE),
                     UIDialogs.Action("Login", {
                         LoginActivity.showLogin(StateApp.instance.context, config) {
-                            StatePlugins.instance.setPluginAuth(config.id, it);
-                            reloadSource(config.id);
+                            try {
+                                StatePlugins.instance.setPluginAuth(config.id, it);
+                                reloadSource(config.id);
+                            } catch (e: Throwable) {
+                                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                                    context?.let { c -> UIDialogs.showGeneralErrorDialog(c, "Failed to set plugin authentication (loginSource, loginWarning)", e) }
+                                }
+                                Logger.e(TAG, "Failed to set plugin authentication (loginSource, loginWarning)", e)
+                            }
                         };
                     }, UIDialogs.ActionStyle.PRIMARY))
             }
             else
                 LoginActivity.showLogin(StateApp.instance.context, config) {
-                    StatePlugins.instance.setPluginAuth(config.id, it);
-                    reloadSource(config.id);
+                    try {
+                        StatePlugins.instance.setPluginAuth(config.id, it);
+                        reloadSource(config.id);
+                    } catch (e: Throwable) {
+                        StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                            context?.let { c -> UIDialogs.showGeneralErrorDialog(c, "Failed to set plugin authentication (loginSource)", e) }
+                        }
+                        Logger.e(TAG, "Failed to set plugin authentication (loginSource)", e)
+                    }
                 };
         }
         private fun logoutSource(clear: Boolean = true) {
             val config = _config ?: return;
 
-            StatePlugins.instance.setPluginAuth(config.id, null);
-            reloadSource(config.id);
-
+            try {
+                StatePlugins.instance.setPluginAuth(config.id, null);
+                reloadSource(config.id);
+            } catch (e: Throwable) {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    context?.let { c -> UIDialogs.showGeneralErrorDialog(c, "Failed to clear plugin authentication", e) }
+                }
+                Logger.e(TAG, "Failed to clear plugin authentication", e)
+            }
 
             //TODO: Maybe add a dialog option..
             if(Settings.instance.plugins.clearCookiesOnLogout && clear) {
