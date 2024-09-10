@@ -2360,20 +2360,11 @@ class VideoDetailView : ConstraintLayout {
             _layoutRecommended.visibility = View.VISIBLE
             _commentsList.clear()
 
-            val url = _url
-            if (url != null) {
-                _layoutRecommended.addView(LoaderView(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
-                    start()
-                })
-                _taskLoadRecommendations.run(url)
-            } else {
-                _layoutRecommended.addView(TextView(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
-                    textSize = 12.0f
-                    text = "No recommendations found"
-                })
-            }
+            _layoutRecommended.addView(LoaderView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
+                start()
+            })
+            _taskLoadRecommendations.run(null)
         }
     }
 
@@ -2767,7 +2758,15 @@ class VideoDetailView : ConstraintLayout {
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 
-    private val _taskLoadRecommendations = TaskHandler<String, IPager<IPlatformContent>?>(StateApp.instance.scopeGetter, { video?.getContentRecommendations(StatePlatform.instance.getContentClient(it)) })
+    private val _taskLoadRecommendations = TaskHandler<String?, IPager<IPlatformContent>?>(StateApp.instance.scopeGetter, {
+        video?.let { v ->
+            if (v is VideoLocal) {
+                StatePlatform.instance.getContentRecommendations(v.url)
+            } else {
+                video?.getContentRecommendations(StatePlatform.instance.getContentClient(v.url))
+            }
+        }
+    })
         .success { setRecommendations(it?.getResults()?.filter { it is IPlatformVideo }?.map { it as IPlatformVideo }, "No recommendations found") }
         .exception<Throwable> {
             setRecommendations(null, it.message)
