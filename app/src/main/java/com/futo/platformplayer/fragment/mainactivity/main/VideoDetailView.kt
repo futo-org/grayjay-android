@@ -2376,7 +2376,7 @@ class VideoDetailView : ConstraintLayout {
 
         if (_tabIndex == 2) {
             _layoutRecommended.removeAllViews()
-            if (results == null) {
+            if (results == null || results.isEmpty()) {
                 _layoutRecommended.addView(TextView(context).apply {
                     layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
                         setMargins(20.dp(resources), 20.dp(resources), 20.dp(resources), 20.dp(resources))
