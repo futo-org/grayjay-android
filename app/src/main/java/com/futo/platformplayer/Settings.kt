@@ -478,15 +478,18 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.rotation_zone)
         var rotationZone: Int = 2;
 
-        @FormField(R.string.prefer_webm, FieldForm.TOGGLE, R.string.prefer_webm_description, 16)
+        @FormField(R.string.full_autorotate_lock, FieldForm.TOGGLE, R.string.full_autorotate_lock_description, 16)
+        var fullAutorotateLock: Boolean = false;
+
+        @FormField(R.string.prefer_webm, FieldForm.TOGGLE, R.string.prefer_webm_description, 17)
         var preferWebmVideo: Boolean = false;
-        @FormField(R.string.prefer_webm_audio, FieldForm.TOGGLE, R.string.prefer_webm_audio_description, 17)
+        @FormField(R.string.prefer_webm_audio, FieldForm.TOGGLE, R.string.prefer_webm_audio_description, 18)
         var preferWebmAudio: Boolean = false;
 
-        @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 18)
+        @FormField(R.string.allow_under_cutout, FieldForm.TOGGLE, R.string.allow_under_cutout_description, 19)
         var allowVideoToGoUnderCutout: Boolean = true;
 
-        @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 19)
+        @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 20)
         var autoplay: Boolean = false;
     }
 

@@ -379,6 +379,8 @@
     <string name="rotation_zone_description">Specify the sensitivity of rotation zones (decrease to make less sensitive)</string>
     <string name="prefer_webm">Prefer Webm Video Codecs</string>
     <string name="prefer_webm_description">If player should prefer Webm codecs (vp9/opus) over mp4 codecs (h264/AAC), may result in worse compatibility.</string>
+    <string name="full_autorotate_lock">Full auto rotate lock</string>
+    <string name="full_autorotate_lock_description">Prevent any rotation while rotation lock is engaged (even flipping between landscape and landscape reverse).</string>
     <string name="prefer_webm_audio">Prefer Webm Audio Codecs</string>
     <string name="prefer_webm_audio_description">If player should prefer Webm codecs (opus) over mp4 codecs (AAC), may result in worse compatibility.</string>
     <string name="allow_under_cutout">Allow video under cutout</string>
