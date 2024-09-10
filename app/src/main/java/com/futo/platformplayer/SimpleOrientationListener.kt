@@ -8,6 +8,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -17,13 +18,23 @@ class SimpleOrientationListener(
 ) {
     private var lastOrientation: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     private var lastStableOrientation: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-    private val stabilityThresholdTime = 500L
+    private var _currentJob: Job? = null
 
     val onOrientationChanged = Event1<Int>()
 
     private val orientationListener = object : OrientationEventListener(activity, SensorManager.SENSOR_DELAY_UI) {
         override fun onOrientationChanged(orientation: Int) {
             //val rotationZone = 45
+            val stabilityThresholdTime = when (Settings.instance.playback.stabilityThresholdTime) {
+                0 -> 100L
+                1 -> 500L
+                2 -> 750L
+                3 -> 1000L
+                4 -> 1500L
+                5 -> 2000L
+                else -> 500L
+            }
+
             val rotationZone = when (Settings.instance.playback.rotationZone) {
                 0 -> 15
                 1 -> 30
@@ -42,7 +53,8 @@ class SimpleOrientationListener(
             if (newOrientation != lastStableOrientation) {
                 lastStableOrientation = newOrientation
 
-                lifecycleScope.launch(Dispatchers.Main) {
+                _currentJob?.cancel()
+                _currentJob = lifecycleScope.launch(Dispatchers.Main) {
                     try {
                         delay(stabilityThresholdTime)
                         if (newOrientation == lastStableOrientation) {
@@ -63,6 +75,8 @@ class SimpleOrientationListener(
     }
 
     fun stopListening() {
+        _currentJob?.cancel()
+        _currentJob = null
         orientationListener.disable()
     }
 

@@ -377,6 +377,8 @@
     <string name="reverse_portrait_description">Allow app to flip into reverse portrait</string>
     <string name="rotation_zone">Rotation zone</string>
     <string name="rotation_zone_description">Specify the sensitivity of rotation zones (decrease to make less sensitive)</string>
+    <string name="stability_threshold_time">Stability threshold time</string>
+    <string name="stability_threshold_time_description">Specify the duration the orientation needs to be the same to trigger a rotation</string>
     <string name="prefer_webm">Prefer Webm Video Codecs</string>
     <string name="prefer_webm_description">If player should prefer Webm codecs (vp9/opus) over mp4 codecs (h264/AAC), may result in worse compatibility.</string>
     <string name="full_autorotate_lock">Full auto rotate lock</string>
@@ -967,5 +969,13 @@
         <item>15</item>
         <item>30</item>
         <item>45</item>
+    </string-array>
+    <string-array name="rotation_threshold_time">
+        <item>100</item>
+        <item>500</item>
+        <item>750</item>
+        <item>1000</item>
+        <item>1500</item>
+        <item>2000</item>
     </string-array>
 </resources>
