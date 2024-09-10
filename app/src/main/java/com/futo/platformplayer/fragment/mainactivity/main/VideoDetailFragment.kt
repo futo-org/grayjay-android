@@ -97,6 +97,7 @@ class VideoDetailFragment : MainFragment {
         val isMaximized = state == State.MAXIMIZED
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
         val bypassRotationPrevention = Settings.instance.other.bypassRotationPrevention;
+        val fullAutorotateLock = Settings.instance.playback.fullAutorotateLock
         val currentRequestedOrientation = a.requestedOrientation
         var currentOrientation = if (_currentOrientation == -1) currentRequestedOrientation else _currentOrientation
         if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT && !Settings.instance.playback.reversePortrait)
@@ -105,27 +106,47 @@ class VideoDetailFragment : MainFragment {
         val isAutoRotate = Settings.instance.playback.isAutoRotate()
         val isFs = isFullscreen
 
-        if (isFs && isMaximized) {
-            if (isFullScreenPortraitAllowed) {
-                if (isAutoRotate) {
-                    a.requestedOrientation = currentOrientation
+        if (fullAutorotateLock) {
+            if (isFs && isMaximized) {
+                if (isFullScreenPortraitAllowed) {
+                    if (isAutoRotate) {
+                        a.requestedOrientation = currentOrientation
+                    }
+                } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                    if (isAutoRotate || currentOrientation != currentRequestedOrientation && (currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+                        a.requestedOrientation = currentOrientation
+                    }
+                } else {
+                    a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }
-            } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
-                if (isAutoRotate || currentOrientation != currentRequestedOrientation && (currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
-                    a.requestedOrientation = currentOrientation
-                }
+            } else if (bypassRotationPrevention) {
+                a.requestedOrientation = currentOrientation
+            } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+                a.requestedOrientation = currentOrientation
             } else {
-                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
-        } else if (bypassRotationPrevention) {
-            a.requestedOrientation = currentOrientation
-        } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
-            a.requestedOrientation = currentOrientation
         } else {
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            if (isFs && isMaximized) {
+                if (isFullScreenPortraitAllowed) {
+                    a.requestedOrientation = currentOrientation
+                } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                    a.requestedOrientation = currentOrientation
+                } else if (currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || currentRequestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                    //Don't change anything
+                } else {
+                    a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                }
+            } else if (bypassRotationPrevention) {
+                a.requestedOrientation = currentOrientation
+            } else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+                a.requestedOrientation = currentOrientation
+            } else {
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
         }
 
-        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, currentRequestedOrientation = ${currentRequestedOrientation}, isMaximized = ${isMaximized}, isAutoRotate = ${isAutoRotate}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
+        Log.i(TAG, "updateOrientation (isFs = ${isFs}, currentOrientation = ${currentOrientation}, fullAutorotateLock = ${fullAutorotateLock}, currentRequestedOrientation = ${currentRequestedOrientation}, isMaximized = ${isMaximized}, isAutoRotate = ${isAutoRotate}, isFullScreenPortraitAllowed = ${isFullScreenPortraitAllowed}) resulted in requested orientation ${activity?.requestedOrientation}");
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
