@@ -310,19 +310,6 @@ class MenuBottomBarFragment : MainActivityFragment() {
             if (!StatePayment.instance.hasPaid) {
                 newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid_filled, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
             }
-            newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = false, { false }, {
-                it.navigate<BrowserFragment>(Settings.URL_FAQ);
-            }))
-            newCurrentButtonDefinitions.add(ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = false, { false }, {
-                UIDialogs.showDialog(context, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
-                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
-                    UIDialogs.Action("Cancel", {
-                        StateApp.instance.setPrivacyMode(false);
-                    }, UIDialogs.ActionStyle.NONE),
-                    UIDialogs.Action("Enable", {
-                        StateApp.instance.setPrivacyMode(true);
-                    }, UIDialogs.ActionStyle.PRIMARY));
-            }))
 
             //Add conditional buttons here, when you add a conditional button, be sure to add the register and unregister events for when the button needs to be updated
 
@@ -379,13 +366,26 @@ class MenuBottomBarFragment : MainActivityFragment() {
             }),
             ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>() }),
             ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>() }),
-            ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>() }),
+            ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = true, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>() }),
             ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>() }),
             ButtonDefinition(5, R.drawable.ic_history, R.drawable.ic_history, R.string.history, canToggle = false, { it.currentMain is HistoryFragment }, { it.navigate<HistoryFragment>() }),
             ButtonDefinition(6, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigate<DownloadsFragment>() }),
             ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigate<CommentsFragment>() }),
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>() }),
             ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>() }),
+            ButtonDefinition(11, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = true, { false }, {
+                it.navigate<BrowserFragment>(Settings.URL_FAQ)
+            }),
+            ButtonDefinition(12, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = true, { false }, {
+                UIDialogs.showDialog(it.requireContext(), R.drawable.ic_disabled_visible_purple, "Privacy Mode",
+                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
+                    UIDialogs.Action("Cancel", {
+                        StateApp.instance.setPrivacyMode(false);
+                    }, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action("Enable", {
+                        StateApp.instance.setPrivacyMode(true);
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            }),
             ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { false }, {
                 val c = it.context ?: return@ButtonDefinition;
                 Logger.i(TAG, "settings preventPictureInPicture()");
@@ -396,7 +396,6 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     c.overridePendingTransition(R.anim.slide_in_up, R.anim.slide_darken);
                 }
             })
-            //96 is reserved for privacy button
             //98 is reserved for buy button
             //99 is reserved for more button
         );
