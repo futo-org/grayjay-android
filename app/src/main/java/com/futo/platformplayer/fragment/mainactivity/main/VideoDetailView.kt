@@ -4,6 +4,7 @@ import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Rect
@@ -164,6 +165,7 @@ import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToLong
 
 @UnstableApi
@@ -2650,13 +2652,29 @@ class VideoDetailView : ConstraintLayout {
         if(_minimize_controls.isClickable != clickable)
             _minimize_controls.isClickable = clickable;
     }
-    fun setVideoMinimize(value : Float) {
-        val padRight = (resources.displayMetrics.widthPixels * 0.70 * value).toInt();
-        _player.setPadding(0, _player.paddingTop, padRight, 0);
-        _cast.setPadding(0, _cast.paddingTop, padRight, 0);
+
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+
+        setVideoMinimize(_minimizeProgress)
     }
-    fun setTopPadding(value : Float) {
-        _player.setPadding(0, value.toInt(), _player.paddingRight, 0);
+
+    fun setVideoMinimize(value: Float) {
+        val totalPaddingNeeded = value * max(
+            (resources.displayMetrics.widthPixels - resources.getDimension(R.dimen.minimized_player_max_width)).toInt(),
+            0
+        )
+        val outerPadding = (totalPaddingNeeded / 2).toInt()
+        val padRight =
+            ((resources.displayMetrics.widthPixels - totalPaddingNeeded) * 0.70 * value).toInt()
+
+        rootView.setPadding(outerPadding, 0, outerPadding, 0)
+        _player.setPadding(0, _player.paddingTop, padRight, 0)
+        _cast.setPadding(0, _cast.paddingTop, padRight, 0)
+    }
+
+    fun setTopPadding(value: Float) {
+        _player.setPadding(_player.paddingLeft, value.toInt(), _player.paddingRight, 0)
     }
 
     //Tasks

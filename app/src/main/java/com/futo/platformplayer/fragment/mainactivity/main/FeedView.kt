@@ -180,14 +180,13 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
                 val firstVisibleView = layoutManager.findViewByPosition(firstVisibleItemPosition)
                 val itemHeight = firstVisibleView?.height ?: 0
-                val occupiedSpace = recyclerData.results.size * itemHeight
+                val occupiedSpace = recyclerData.results.size / recyclerData.layoutManager.spanCount * itemHeight
                 val recyclerViewHeight = _recyclerResults.height
                 Logger.i(TAG, "ensureEnoughContentVisible loadNextPage occupiedSpace=$occupiedSpace recyclerViewHeight=$recyclerViewHeight")
                 occupiedSpace >= recyclerViewHeight
             } else {
                 false
             }
-
         }
         Logger.i(TAG, "ensureEnoughContentVisible loadNextPage canScroll=$canScroll _automaticNextPageCounter=$_automaticNextPageCounter")
         if (!canScroll || filteredResults.isEmpty()) {
@@ -228,11 +227,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
 
     private fun updateSpanCount() {
-        if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 2) {
-            recyclerData.layoutManager.spanCount = 2
-        } else if (resources.configuration.screenWidthDp < resources.getDimension(R.dimen.landscape_threshold) && recyclerData.layoutManager.spanCount != 1) {
-            recyclerData.layoutManager.spanCount = 1
-        }
+        recyclerData.layoutManager.spanCount = (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1
     }
 
     override fun onConfigurationChanged(newConfig: Configuration?) {

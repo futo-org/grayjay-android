@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="video_view_right_padding"></dimen>
+    <dimen name="minimized_player_max_width">500dp</dimen>
     <dimen name="app_bar_height">200dp</dimen>
     <dimen name="landscape_threshold">300dp</dimen>
 </resources>

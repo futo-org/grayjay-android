@@ -178,7 +178,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     ): StaggeredGridLayoutManager {
         val glmResults =
             StaggeredGridLayoutManager(
-                if (resources.configuration.screenWidthDp >= resources.getDimension(R.dimen.landscape_threshold)) 2 else 1,
+                (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1,
                 StaggeredGridLayoutManager.VERTICAL
             );
         return glmResults
