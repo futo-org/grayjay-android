@@ -10,6 +10,8 @@ import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
+import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment.Companion
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -128,7 +130,15 @@ class StatePlugins {
             return false;
 
         LoginActivity.showLogin(context, config) {
-            StatePlugins.instance.setPluginAuth(config.id, it);
+            try {
+                StatePlugins.instance.setPluginAuth(config.id, it);
+            } catch (e: Throwable) {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    UIDialogs.showGeneralErrorDialog(context, "Failed to set plugin authentication (loginPlugin)", e)
+                }
+                Logger.e(SourceDetailFragment.TAG, "Failed to set plugin authentication (loginPlugin)", e)
+                return@showLogin
+            }
 
             StateApp.instance.scope.launch(Dispatchers.IO) {
                 StatePlatform.instance.reloadClient(context, id);

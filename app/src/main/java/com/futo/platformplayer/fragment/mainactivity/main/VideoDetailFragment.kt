@@ -116,17 +116,18 @@ class VideoDetailFragment : MainFragment {
     fun updateOrientation() {
         val a = activity ?: return
         // only applies to small windows
-        val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait;
-        val isReversePortraitAllowed = Settings.instance.playback.reversePortrait;
+        val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
+        val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
+        val fullAutorotateLock = Settings.instance.playback.fullAutorotateLock
         val rotationLock = StatePlayer.instance.rotationLock
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
         else if (isSmallWindow && !isMinimizing && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         } else if (rotationLock) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         } else {

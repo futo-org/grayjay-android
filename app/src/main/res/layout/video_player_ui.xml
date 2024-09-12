@@ -30,6 +30,14 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent">
         <ImageButton
+            android:id="@+id/button_autoplay"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/autoplay_24px" />
+        <ImageButton
             android:id="@+id/button_cast"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -132,20 +140,6 @@
         android:paddingEnd="5dp"
         android:scaleType="fitCenter"
         android:layout_marginBottom="18dp" />
-
-    <ImageButton
-        android:id="@+id/button_autoplay"
-        android:layout_width="55dp"
-        android:layout_height="40dp"
-        android:clickable="true"
-        app:srcCompat="@drawable/autoplay_24px"
-        app:layout_constraintRight_toLeftOf="@id/button_fullscreen"
-        app:layout_constraintBottom_toBottomOf="@id/button_fullscreen"
-        app:layout_constraintTop_toTopOf="@id/button_fullscreen"
-        android:paddingStart="5dp"
-        android:paddingTop="15dp"
-        android:paddingEnd="5dp"
-        android:scaleType="fitCenter"/>
 
     <TextView
         android:id="@+id/text_position"

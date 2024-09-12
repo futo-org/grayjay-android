@@ -216,26 +216,30 @@ class MenuBottomBarFragment : MainActivityFragment() {
             _moreButtons.clear();
             _layoutMoreButtons.removeAllViews();
 
+            var insertedButtons = 0;
             //Force buy to be on top for more buttons
             val buyIndex = buttons.indexOfFirst { b -> b.id == 98 };
             if (buyIndex != -1) {
                 val button = buttons[buyIndex]
                 buttons.removeAt(buyIndex)
                 buttons.add(0, button)
+                insertedButtons++;
             }
             //Force faq to be second
             val faqIndex = buttons.indexOfFirst { b -> b.id == 97 };
             if (faqIndex != -1) {
                 val button = buttons[faqIndex]
                 buttons.removeAt(faqIndex)
-                buttons.add(if (buttons.size == 1) 1 else 0, button)
+                buttons.add(if (insertedButtons == 1) 1 else 0, button)
+                insertedButtons++;
             }
             //Force privacy to be third
             val privacyIndex = buttons.indexOfFirst { b -> b.id == 96 };
             if (privacyIndex != -1) {
                 val button = buttons[privacyIndex]
                 buttons.removeAt(privacyIndex)
-                buttons.add(if (buttons.size == 2) 2 else 1, button)
+                buttons.add(if (insertedButtons == 2) 2 else (if(insertedButtons == 1) 1 else 0), button)
+                insertedButtons++;
             }
 
             for (data in buttons) {
@@ -327,19 +331,6 @@ class MenuBottomBarFragment : MainActivityFragment() {
             if (!StatePayment.instance.hasPaid) {
                 newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid_filled, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>() }))
             }
-            newCurrentButtonDefinitions.add(ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = false, { false }, {
-                it.navigate<BrowserFragment>(Settings.URL_FAQ);
-            }))
-            newCurrentButtonDefinitions.add(ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = false, { false }, {
-                UIDialogs.showDialog(context, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
-                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
-                    UIDialogs.Action("Cancel", {
-                        StateApp.instance.setPrivacyMode(false);
-                    }, UIDialogs.ActionStyle.NONE),
-                    UIDialogs.Action("Enable", {
-                        StateApp.instance.setPrivacyMode(true);
-                    }, UIDialogs.ActionStyle.PRIMARY));
-            }))
 
             //Add conditional buttons here, when you add a conditional button, be sure to add the register and unregister events for when the button needs to be updated
 
@@ -412,6 +403,19 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 if (c is Activity) {
                     c.overridePendingTransition(R.anim.slide_in_up, R.anim.slide_darken);
                 }
+            }),
+            ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = true, { false }, {
+                UIDialogs.showDialog(it.context ?: return@ButtonDefinition, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
+                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
+                    UIDialogs.Action("Cancel", {
+                        StateApp.instance.setPrivacyMode(false);
+                    }, UIDialogs.ActionStyle.NONE),
+                    UIDialogs.Action("Enable", {
+                        StateApp.instance.setPrivacyMode(true);
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            }),
+            ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = true, { false }, {
+                it.navigate<BrowserFragment>(Settings.URL_FAQ);
             })
             //96 is reserved for privacy button
             //98 is reserved for buy button

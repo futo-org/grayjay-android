@@ -237,7 +237,8 @@ open class JSClient : IPlatformClient {
             hasGetLiveChatWindow = plugin.executeBoolean("!!source.getLiveChatWindow") ?: false,
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
             hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false,
-            hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false
+            hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false,
+            hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false
         );
 
         try {
