@@ -117,8 +117,8 @@ class VideoDetailFragment : MainFragment {
         val a = activity ?: return
         // only applies to small windows
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
+
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
-        val fullAutorotateLock = Settings.instance.playback.fullAutorotateLock
         val rotationLock = StatePlayer.instance.rotationLock
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
