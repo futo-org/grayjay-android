@@ -2434,7 +2434,7 @@ class VideoDetailView : ConstraintLayout {
         _overlayContainer.removeAllViews();
         _overlay_quality_selector?.hide();
 
-        _player.fillHeight();
+        _player.fillHeight(false)
         _layoutPlayerContainer.setPadding(0, 0, 0, 0);
     }
     fun handleLeavePictureInPicture() {
@@ -2570,7 +2570,7 @@ class VideoDetailView : ConstraintLayout {
         else {
             if(_player.layoutParams.height == WRAP_CONTENT) {
                 _player.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-                _player.fillHeight();
+                _player.fillHeight(true)
                 _cast.layoutParams = _cast.layoutParams.apply {
                     (this as MarginLayoutParams).bottomMargin = 0;
                 };
@@ -2646,8 +2646,12 @@ class VideoDetailView : ConstraintLayout {
 
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
-
-        setVideoMinimize(_minimizeProgress)
+        if (fragment.state == VideoDetailFragment.State.MINIMIZED) {
+            setVideoMinimize(_minimizeProgress)
+        }
+        if (!fragment.isFullscreen) {
+            _player.fitHeight()
+        }
     }
 
     fun setVideoMinimize(value: Float) {

@@ -41,7 +41,7 @@ class VideoDetailFragment : MainFragment {
     private var _viewDetail : VideoDetailView? = null;
     private var _view : SingleViewTouchableMotionLayout? = null;
 
-    private var isFullscreen : Boolean = false;
+    var isFullscreen : Boolean = false;
     var isMinimizing : Boolean = false;
     private var isSmallWindow : Boolean = true;
     val onFullscreenChanged = Event1<Boolean>();
