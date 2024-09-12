@@ -95,11 +95,11 @@ class VideoDetailFragment : MainFragment {
 
         detectWindowSize()
 
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullscreen && state == State.MAXIMIZED) {
+        if (isSmallWindow && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullscreen && state == State.MAXIMIZED) {
             _viewDetail?.setFullscreen(true)
         }
 
-        if (isFullscreen && !Settings.instance.playback.fullscreenPortrait && newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (isSmallWindow && isFullscreen && !Settings.instance.playback.fullscreenPortrait && newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             _viewDetail?.setFullscreen(false)
         }
     }
