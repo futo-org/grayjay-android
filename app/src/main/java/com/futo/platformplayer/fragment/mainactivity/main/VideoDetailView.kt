@@ -2648,8 +2648,8 @@ class VideoDetailView : ConstraintLayout {
         super.onConfigurationChanged(newConfig)
         if (fragment.state == VideoDetailFragment.State.MINIMIZED) {
             setVideoMinimize(_minimizeProgress)
-        }
-        if (!fragment.isFullscreen) {
+            _player.fillHeight(true)
+        } else if (!fragment.isFullscreen) {
             _player.fitHeight()
         }
     }

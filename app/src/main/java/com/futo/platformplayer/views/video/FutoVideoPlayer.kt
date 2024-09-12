@@ -753,7 +753,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             val determinedHeight = (aspectRatio * windowWidth)
 
             _lastSourceFit = determinedHeight
-            _lastSourceFit = _lastSourceFit!!.coerceAtLeast(250f)
+            _lastSourceFit = _lastSourceFit!!.coerceAtLeast(220f)
             _lastSourceFit = _lastSourceFit!!.coerceAtMost(maxHeight)
 
             _desiredResizeModePortrait = if (_lastSourceFit != determinedHeight)
