@@ -1,3 +1,13 @@
+# Notice
+The base repository for this project is.
+https://gitlab.futo.org/videostreaming/grayjay 
+
+This repository only includes some "extra stuff/quality of life" i would like to see in the original repository, but since contributions are currently closed i maintain them here.
+And hope that they end up in the feature end up in the main repro at some point.
+
+## Stuff i changed/added
+- Allow to enable background video play from with the PictureInPicturePlayer
+
 # PlatformPlayer
 
 The FUTO media app endeavours creating infrastructure for creators to have their content hosted by someone else but at the same time having creators retain full ownership of their content. We want creators to feel like they are publishing to the world, and we want multiple indexers competing with each other to do a good job connecting consumers to creators and their content.
