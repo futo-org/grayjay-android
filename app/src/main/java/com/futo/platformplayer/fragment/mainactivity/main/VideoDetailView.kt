@@ -303,6 +303,9 @@ class VideoDetailView : ConstraintLayout {
     var allowBackground : Boolean = false
         private set;
 
+    var videoModeOnResume : Boolean = false
+        private set;
+
     val onTouchCancel = Event0();
     private var _lastPositionSaveTime: Long = -1;
 
@@ -640,6 +643,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
+        MediaControlReceiver.onBackgroundReceived.subscribe { handleBackground() }
         MediaControlReceiver.onNextReceived.subscribe(this) { nextVideo(true, true, true) };
         MediaControlReceiver.onPreviousReceived.subscribe(this) { prevVideo(true) };
         MediaControlReceiver.onCloseReceived.subscribe(this) {
@@ -956,8 +960,11 @@ class VideoDetailView : ConstraintLayout {
         }
 
         if(_player.isAudioMode) {
+            if (videoModeOnResume) {
+                allowBackground = false
+            }
             //Requested behavior to leave it in audio mode. leaving it commented if it causes issues, revert?
-            if(!allowBackground) {
+            if(!allowBackground || videoModeOnResume) {
                 _player.switchToVideoMode();
                 _buttonPins.getButtonByTag(TAG_BACKGROUND)?.text?.text = resources.getString(R.string.background);
             }
@@ -2030,6 +2037,13 @@ class VideoDetailView : ConstraintLayout {
             _player.pause();
         }
     }
+    private fun handleBackground() {
+        Logger.i(TAG, "handleBackground")
+        _player.switchToAudioMode();
+        this.allowBackground = true;
+        this.videoModeOnResume = true;
+        fragment.activity?.moveTaskToBack(true);
+    }
     private fun handleSeek(ms: Long) {
         Logger.i(TAG, "handleSeek(ms=$ms)")
         if (!StateCasting.instance.videoSeekTo(ms.toDouble() / 1000.0)) {
@@ -2469,10 +2483,18 @@ class VideoDetailView : ConstraintLayout {
         else
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
+        val backgroundIcon = RemoteAction(Icon.createWithResource(
+            context,
+            android.R.drawable.stat_sys_headset),
+            context.getString(R.string.video_background),
+            context.getString(R.string.backgrounds_the_video),
+            MediaControlReceiver.getBackgroundIntent(context, 7)
+        )
+
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
             .setSourceRectHint(r)
-            .setActions(listOf(playpauseAction))
+            .setActions(listOf(backgroundIcon, playpauseAction))
             .build();
     }
 
