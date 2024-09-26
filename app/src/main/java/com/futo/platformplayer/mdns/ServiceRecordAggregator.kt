@@ -1,5 +1,6 @@
 package com.futo.platformplayer.mdns
 
+import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -67,7 +68,7 @@ class ServiceRecordAggregator {
                         _currentServices.addAll(newServices)
                     }
 
-                    onServicesUpdated?.invoke(_currentServices)
+                    onServicesUpdated?.invoke(_currentServices.toList())
                     delay(5000)
                 }
             }
@@ -91,14 +92,12 @@ class ServiceRecordAggregator {
 
         /*val builder = StringBuilder()
         builder.appendLine("Received records:")
-        srvRecords.forEach { builder.appendLine(" ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: (Port: ${it.second.port}, Target: ${it.second.target}, Priority: ${it.second.priority}, Weight: ${it.second.weight})") }
-        ptrRecords.forEach { builder.appendLine(" ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.domainName}") }
-        txtRecords.forEach { builder.appendLine(" ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.texts.joinToString(", ")}") }
-        aRecords.forEach { builder.appendLine(" ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.address}") }
-        aaaaRecords.forEach { builder.appendLine(" ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.address}") }
-        synchronized(lockObject) {
-            // Save to file if necessary
-        }*/
+        srvRecords.forEach { builder.appendLine("SRV ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: (Port: ${it.second.port}, Target: ${it.second.target}, Priority: ${it.second.priority}, Weight: ${it.second.weight})") }
+        ptrRecords.forEach { builder.appendLine("PTR ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.domainName}") }
+        txtRecords.forEach { builder.appendLine("TXT ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.texts.joinToString(", ")}") }
+        aRecords.forEach { builder.appendLine("A ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.address}") }
+        aaaaRecords.forEach { builder.appendLine("AAAA ${it.first.name} ${it.first.type} ${it.first.clazz} TTL ${it.first.timeToLive}: ${it.second.address}") }
+        Logger.i(TAG, "$builder")*/
 
         val currentServices: MutableList<DnsService>
         synchronized(this._currentServices) {
@@ -106,18 +105,18 @@ class ServiceRecordAggregator {
                 val cachedPtrRecord = _cachedPtrRecords.getOrPut(record.first.name) { mutableListOf() }
                 val newPtrRecord = CachedDnsPtrRecord(Date(System.currentTimeMillis() + record.first.timeToLive.toLong() * 1000L), record.second.domainName)
                 cachedPtrRecord.replaceOrAdd(newPtrRecord) { it.target == record.second.domainName }
+            }
 
-                aRecords.forEach { aRecord ->
-                    val cachedARecord = _cachedAddressRecords.getOrPut(aRecord.first.name) { mutableListOf() }
-                    val newARecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aRecord.first.timeToLive.toLong() * 1000L), aRecord.second.address)
-                    cachedARecord.replaceOrAdd(newARecord) { it.address == newARecord.address }
-                }
+            aRecords.forEach { aRecord ->
+                val cachedARecord = _cachedAddressRecords.getOrPut(aRecord.first.name) { mutableListOf() }
+                val newARecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aRecord.first.timeToLive.toLong() * 1000L), aRecord.second.address)
+                cachedARecord.replaceOrAdd(newARecord) { it.address == newARecord.address }
+            }
 
-                aaaaRecords.forEach { aaaaRecord ->
-                    val cachedAaaaRecord = _cachedAddressRecords.getOrPut(aaaaRecord.first.name) { mutableListOf() }
-                    val newAaaaRecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aaaaRecord.first.timeToLive.toLong() * 1000L), aaaaRecord.second.address)
-                    cachedAaaaRecord.replaceOrAdd(newAaaaRecord) { it.address == newAaaaRecord.address }
-                }
+            aaaaRecords.forEach { aaaaRecord ->
+                val cachedAaaaRecord = _cachedAddressRecords.getOrPut(aaaaRecord.first.name) { mutableListOf() }
+                val newAaaaRecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aaaaRecord.first.timeToLive.toLong() * 1000L), aaaaRecord.second.address)
+                cachedAaaaRecord.replaceOrAdd(newAaaaRecord) { it.address == newAaaaRecord.address }
             }
 
             txtRecords.forEach { txtRecord ->
@@ -215,5 +214,9 @@ class ServiceRecordAggregator {
         } else {
             add(newElement)
         }
+    }
+
+    private companion object {
+        private const val TAG = "ServiceRecordAggregator"
     }
 }

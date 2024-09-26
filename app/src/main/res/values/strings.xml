@@ -354,6 +354,14 @@
     <string name="give_feedback_on_the_application">Give feedback on the application</string>
     <string name="info">Info</string>
     <string name="networking">Networking</string>
+    <string name="synchronization">Synchronization</string>
+    <string name="enabled_description">Enable feature</string>
+    <string name="broadcast">Broadcast</string>
+    <string name="broadcast_description">Allow device to broadcast presence</string>
+    <string name="connect_discovered">Connect discovered</string>
+    <string name="connect_discovered_description">Allow device to search for and initiate connection with known paired devices</string>
+    <string name="connect_last">Try connect last</string>
+    <string name="connect_last_description">Allow device to automatically connect to last known</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
     <string name="volume_slider_descr">Enable slide gesture to change volume</string>
@@ -399,6 +407,8 @@
     <string name="preview_feed_items_description">When the preview feedstyle is used, if items should auto-preview when scrolling over them</string>
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
+    <string name="sync_grayjay">Sync Grayjay</string>
+    <string name="sync_grayjay_description">Sync your settings across multiple devices</string>
     <string name="manage_polycentric_identity">Manage Polycentric identity</string>
     <string name="manage_your_polycentric_identity">Manage your Polycentric identity</string>
     <string name="manual_check">Manual check</string>
