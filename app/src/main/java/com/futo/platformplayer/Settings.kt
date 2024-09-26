@@ -14,6 +14,7 @@ import com.futo.platformplayer.activities.ManageTabsActivity
 import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.activities.PolycentricProfileActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.activities.SyncHomeActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
@@ -62,6 +63,15 @@ class Settings : FragmentedStorageFileJson() {
 
     @Transient
     val onTabsChanged = Event0();
+
+    @FormField(R.string.sync_grayjay, FieldForm.BUTTON, R.string.sync_grayjay_description, -8)
+    @FormFieldButton(R.drawable.ic_update)
+    fun syncGrayjay() {
+        SettingsActivity.getActivity()?.let {
+            it.startActivity(Intent(it, SyncHomeActivity::class.java))
+        }
+    }
+
 
     @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -7)
     @FormFieldButton(R.drawable.ic_person)
@@ -901,7 +911,24 @@ class Settings : FragmentedStorageFileJson() {
         var pan: Boolean = true;
     }
 
-    @FormField(R.string.info, FieldForm.GROUP, -1, 20)
+    @FormField(R.string.synchronization, FieldForm.GROUP, -1, 20)
+    var synchronization = Synchronization();
+    @Serializable
+    class Synchronization {
+        @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enabled_description, 1)
+        var enabled: Boolean = true;
+
+        @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
+        var broadcast: Boolean = true;
+
+        @FormField(R.string.connect_discovered, FieldForm.TOGGLE, R.string.connect_discovered_description, 2)
+        var connectDiscovered: Boolean = true;
+
+        @FormField(R.string.connect_last, FieldForm.TOGGLE, R.string.connect_last_description, 3)
+        var connectLast: Boolean = true;
+    }
+
+    @FormField(R.string.info, FieldForm.GROUP, -1, 21)
     var info = Info();
     @Serializable
     class Info {

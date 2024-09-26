@@ -74,7 +74,7 @@ class DnsWriter {
                     namePositions[nameAtOffset] = nameStartPos
                 }
             }
-            write(0.toByte())  // End of domain name
+            write(0.toByte())
         }
     }
 
