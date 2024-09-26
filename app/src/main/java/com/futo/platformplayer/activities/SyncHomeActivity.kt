@@ -12,8 +12,8 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.sync.LinkType
-import com.futo.platformplayer.sync.SyncSession
+import com.futo.platformplayer.sync.internal.LinkType
+import com.futo.platformplayer.sync.internal.SyncSession
 import com.futo.platformplayer.views.sync.SyncDeviceView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

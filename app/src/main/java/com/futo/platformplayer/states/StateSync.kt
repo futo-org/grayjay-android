@@ -20,10 +20,10 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
-import com.futo.platformplayer.sync.SyncDeviceInfo
-import com.futo.platformplayer.sync.SyncKeyPair
-import com.futo.platformplayer.sync.SyncSession
-import com.futo.platformplayer.sync.SyncSocketSession
+import com.futo.platformplayer.sync.internal.SyncDeviceInfo
+import com.futo.platformplayer.sync.internal.SyncKeyPair
+import com.futo.platformplayer.sync.internal.SyncSession
+import com.futo.platformplayer.sync.internal.SyncSocketSession
 import com.futo.polycentric.core.base64ToByteArray
 import com.futo.polycentric.core.toBase64
 import kotlinx.coroutines.Dispatchers

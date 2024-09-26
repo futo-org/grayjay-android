@@ -1,4 +1,4 @@
-package com.futo.platformplayer.sync;
+package com.futo.platformplayer.sync.internal;
 
 public enum LinkType {
     None,

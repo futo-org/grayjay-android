@@ -1,4 +1,4 @@
-package com.futo.platformplayer.sync
+package com.futo.platformplayer.sync.internal
 
 import com.futo.platformplayer.LittleEndianDataInputStream
 import com.futo.platformplayer.LittleEndianDataOutputStream
@@ -95,7 +95,7 @@ class SyncSocketSession {
             try {
                 val messageSize = _inputStream.readInt()
                 if (messageSize > MAXIMUM_PACKET_SIZE_ENCRYPTED) {
-                    throw Exception("Message size (${messageSize}) cannot exceed MAXIMUM_PACKET_SIZE (${MAXIMUM_PACKET_SIZE_ENCRYPTED})")
+                    throw Exception("Message size (${messageSize}) cannot exceed MAXIMUM_PACKET_SIZE ($MAXIMUM_PACKET_SIZE_ENCRYPTED)")
                 }
 
                 //Logger.i(TAG, "Receiving message (size = ${messageSize})")

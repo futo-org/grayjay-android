@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Base64
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.ImageButton
@@ -21,7 +20,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.sync.SyncDeviceInfo
+import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix

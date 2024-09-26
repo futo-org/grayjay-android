@@ -8,9 +8,9 @@ import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.noise.protocol.Noise
 import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.sync.IAuthorizable
-import com.futo.platformplayer.sync.SyncSocketSession
-import com.futo.platformplayer.sync.SyncStream
+import com.futo.platformplayer.sync.internal.IAuthorizable
+import com.futo.platformplayer.sync.internal.SyncSocketSession
+import com.futo.platformplayer.sync.internal.SyncStream
 import junit.framework.TestCase.assertEquals
 import org.junit.Assert.assertArrayEquals
 import org.junit.Test
@@ -24,7 +24,6 @@ import java.util.Base64
 import java.util.Random
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.math.exp
 
 
 class NoiseProtocolTest {

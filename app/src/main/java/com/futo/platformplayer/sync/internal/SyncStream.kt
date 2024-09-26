@@ -1,4 +1,4 @@
-package com.futo.platformplayer.sync
+package com.futo.platformplayer.sync.internal
 
 class SyncStream(expectedSize: Int, val opcode: UByte) {
     companion object {

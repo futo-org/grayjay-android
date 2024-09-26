@@ -1,7 +1,13 @@
-package com.futo.platformplayer.sync
+package com.futo.platformplayer.sync.internal
 
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.sync.SyncSocketSession.Opcode
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.sync.internal.SyncSocketSession.Opcode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
 interface IAuthorizable {
@@ -110,6 +116,19 @@ class SyncSession : IAuthorizable {
         }
 
         Logger.i(TAG, "Received ${opcode} (${data.remaining()} bytes)")
+        //TODO: Abstract this out
+        when(opcode) {
+            GJSyncOpcodes.sendToDevices -> {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    val context = StateApp.instance.contextOrNull;
+                    if(context != null && context is MainActivity) {
+                        val url = String(data.array(), Charsets.UTF_8);
+                        UIDialogs.appToast("Received url from device [${socketSession.remotePublicKey}]:\n{$url}");
+                        context.handleUrl(url);
+                    }
+                };
+            }
+        }
     }
 
     private companion object {

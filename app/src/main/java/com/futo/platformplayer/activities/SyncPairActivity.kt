@@ -3,7 +3,6 @@ package com.futo.platformplayer.activities
 import android.content.Context
 import android.os.Bundle
 import android.util.Base64
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
@@ -17,17 +16,12 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.sync.SyncDeviceInfo
-import com.futo.platformplayer.sync.SyncSocketSession
+import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.nio.ByteBuffer
-import java.util.Random
 
 class SyncPairActivity : AppCompatActivity() {
     private lateinit var _editCode: EditText

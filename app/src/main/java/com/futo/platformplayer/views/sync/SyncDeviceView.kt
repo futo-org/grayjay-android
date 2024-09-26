@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.sync.LinkType
+import com.futo.platformplayer.sync.internal.LinkType
 
 class SyncDeviceView : ConstraintLayout {
     val _imageLinkType: ImageView
