@@ -412,6 +412,10 @@ class StateApp {
             StateTelemetry.instance.upload();
         }
 
+        if (Settings.instance.synchronization.enabled) {
+            StateSync.instance.start()
+        }
+
         Logger.onLogSubmitted.subscribe {
             scopeOrNull?.launch(Dispatchers.Main) {
                 try {
