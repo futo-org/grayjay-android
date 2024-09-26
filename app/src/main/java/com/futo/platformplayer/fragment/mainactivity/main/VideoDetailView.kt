@@ -2688,7 +2688,7 @@ class VideoDetailView : ConstraintLayout {
                     }
                     if(!didLogin)
                         UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login");
-                }));
+                }, UIDialogs.ActionStyle.PRIMARY));
         }
         .exception<ContentNotAvailableYetException> {
             Logger.w(TAG, "exception<ContentNotAvailableYetException>", it)
