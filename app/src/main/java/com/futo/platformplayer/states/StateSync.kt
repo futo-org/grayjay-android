@@ -20,6 +20,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.futo.platformplayer.sync.internal.SyncKeyPair
 import com.futo.platformplayer.sync.internal.SyncSession
@@ -37,6 +38,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.util.Base64
 import java.util.Locale
+import kotlin.system.measureTimeMillis
 
 class StateSync {
     private val _authorizedDevices = FragmentedStorage.get<StringArrayStorage>("authorized_devices")
@@ -182,6 +184,11 @@ class StateSync {
             _sessions[publicKey]
         }
     }
+    fun getSessions(): List<SyncSession> {
+        return synchronized(_sessions) {
+            return _sessions.values.toList()
+        };
+    }
 
     private fun handleServiceUpdated(services: List<DnsService>) {
         if (!Settings.instance.synchronization.connectDiscovered) {
@@ -260,6 +267,8 @@ class StateSync {
                             _authorizedDevices.addDistinct(remotePublicKey)
                             _authorizedDevices.save()
                             deviceUpdatedOrAdded.emit(it.remotePublicKey, session!!)
+
+                            checkForSync(it);
                         }, onUnauthorized = {
                             unauthorize(remotePublicKey)
 
@@ -332,6 +341,31 @@ class StateSync {
             onData = { s, opcode, data ->
                 session?.handlePacket(s, opcode, data)
             })
+    }
+
+    fun broadcast(opcode: UByte, data: String) {
+        broadcast(opcode, data.toByteArray(Charsets.UTF_8));
+    }
+    fun broadcast(opcode: UByte, data: ByteArray) {
+        for(session in getSessions()) {
+            try {
+                if (session.isAuthorized && session.connected) {
+                    session.send(opcode, data);
+                }
+            }
+            catch(ex: Exception) {
+                Logger.w(TAG, "Failed to broadcast ${opcode} to ${session.remotePublicKey}: ${ex.message}}", ex);
+            }
+        }
+    }
+
+    fun checkForSync(session: SyncSession) {
+        val time = measureTimeMillis {
+            //val export = StateBackup.export();
+            //session.send(GJSyncOpcodes.syncExport, export.asZip());
+            session.send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+        }
+        Logger.i(TAG, "Generated and sent sync export in ${time}ms");
     }
 
     fun stop() {

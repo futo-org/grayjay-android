@@ -2,12 +2,20 @@ package com.futo.platformplayer.sync.internal
 
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.sync.internal.SyncSocketSession.Opcode
+import com.futo.platformplayer.sync.models.SendToDevicePackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 interface IAuthorizable {
@@ -117,18 +125,105 @@ class SyncSession : IAuthorizable {
 
         Logger.i(TAG, "Received ${opcode} (${data.remaining()} bytes)")
         //TODO: Abstract this out
-        when(opcode) {
-            GJSyncOpcodes.sendToDevices -> {
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
-                    val context = StateApp.instance.contextOrNull;
-                    if(context != null && context is MainActivity) {
-                        val url = String(data.array(), Charsets.UTF_8);
-                        UIDialogs.appToast("Received url from device [${socketSession.remotePublicKey}]:\n{$url}");
-                        context.handleUrl(url);
+        try {
+            when (opcode) {
+                GJSyncOpcodes.sendToDevices -> {
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        val context = StateApp.instance.contextOrNull;
+                        if (context != null && context is MainActivity) {
+                            val dataBody = ByteArray(data.remaining());
+                            val remainder = data.remaining();
+                            data.get(dataBody, 0, remainder);
+                            val json = String(dataBody, Charsets.UTF_8);
+                            val obj = Json.decodeFromString<SendToDevicePackage>(json);
+                            UIDialogs.appToast("Received url from device [${socketSession.remotePublicKey}]:\n{${obj.url}");
+                            context.handleUrl(obj.url, obj.position);
+                        }
+                    };
+                }
+
+                GJSyncOpcodes.syncExport -> {
+                    val dataBody = ByteArray(data.remaining());
+                    val bytesStr = ByteArrayInputStream(data.array(), data.position(), data.remaining());
+                    try {
+                        val exportStruct = StateBackup.ExportStructure.fromZipBytes(bytesStr);
+                        for (store in exportStruct.stores) {
+                            if (store.key.equals("subscriptions", true)) {
+                                val subStore =
+                                    StateSubscriptions.instance.getUnderlyingSubscriptionsStore();
+                                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                                    val pack = SyncSubscriptionsPackage(
+                                        store.value.map {
+                                            subStore.fromReconstruction(it, exportStruct.cache)
+                                        },
+                                        StateSubscriptions.instance.getSubscriptionRemovals()
+                                    );
+                                    handleSyncSubscriptionPackage(this@SyncSession, pack);
+                                }
+                            }
+                        }
+                    } finally {
+                        bytesStr.close();
                     }
-                };
+                }
+
+                GJSyncOpcodes.syncSubscriptions -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
+                    handleSyncSubscriptionPackage(this, subPackage);
+                }
             }
         }
+        catch(ex: Exception) {
+            Logger.w(TAG, "Failed to handle sync package ${opcode}: ${ex.message}", ex);
+        }
+    }
+
+    private fun handleSyncSubscriptionPackage(origin: SyncSession, pack: SyncSubscriptionsPackage) {
+        val added = mutableListOf<Subscription>()
+        for(sub in pack.subscriptions) {
+            if(!StateSubscriptions.instance.isSubscribed(sub.channel)) {
+                val removalTime = StateSubscriptions.instance.getSubscriptionRemovalTime(sub.channel.url);
+                if(sub.creationTime > removalTime) {
+                    val newSub =
+                        StateSubscriptions.instance.addSubscription(sub.channel, sub.creationTime);
+                    added.add(newSub);
+                }
+            }
+        }
+        if(added.size > 3)
+            UIDialogs.appToast("${added.size} Subscriptions from ${origin.remotePublicKey.substring(0, Math.min(8, origin.remotePublicKey.length))}");
+        else if(added.size > 0)
+            UIDialogs.appToast("Subscriptions from ${origin.remotePublicKey.substring(0, Math.min(8, origin.remotePublicKey.length))}:\n" +
+                added.map { it.channel.name }.joinToString("\n"));
+
+
+        if(pack.subscriptions != null && pack.subscriptions.size > 0) {
+            for (subRemoved in pack.subscriptionRemovals) {
+                val removed = StateSubscriptions.instance.applySubscriptionRemovals(pack.subscriptionRemovals);
+                if(removed.size > 3)
+                    UIDialogs.appToast("Removed ${removed.size} Subscriptions from ${origin.remotePublicKey.substring(0, Math.min(8, origin.remotePublicKey.length))}");
+                else if(removed.size > 0)
+                    UIDialogs.appToast("Subscriptions removed from ${origin.remotePublicKey.substring(0, Math.min(8, origin.remotePublicKey.length))}:\n" +
+                            removed.map { it.channel.name }.joinToString("\n"));
+
+            }
+        }
+    }
+
+
+    fun send(opcode: UByte, data: String) {
+        send(opcode, data.toByteArray(Charsets.UTF_8));
+    }
+    fun send(opcode: UByte, data: ByteArray) {
+        val sock = _socketSessions.firstOrNull();
+        if(sock != null){
+            sock.send(opcode, ByteBuffer.wrap(data));
+        }
+        else
+            throw IllegalStateException("Session has no active sockets");
     }
 
     private companion object {

@@ -70,6 +70,7 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
@@ -731,7 +732,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
-    suspend fun handleUrl(url: String): Boolean {
+    suspend fun handleUrl(url: String, position: Int = 0): Boolean {
         Logger.i(TAG, "handleUrl(url=$url)")
 
         return withContext(Dispatchers.IO) {
@@ -739,7 +740,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (StatePlatform.instance.hasEnabledVideoClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 lifecycleScope.launch(Dispatchers.Main) {
-                    navigate(_fragVideoDetail, url);
+                    if(position > 0)
+                        navigate(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
+                    else
+                        navigate(_fragVideoDetail, url);
 
                     _fragVideoDetail.maximizeVideoDetail(true);
                 }
