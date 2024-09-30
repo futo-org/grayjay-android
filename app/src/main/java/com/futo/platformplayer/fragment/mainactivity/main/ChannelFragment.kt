@@ -1,7 +1,10 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Animatable
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +15,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
@@ -52,7 +56,9 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.polycentric.core.OwnedClaim
 import com.futo.polycentric.core.PublicKey
+import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -64,7 +70,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PolycentricProfile(
     val system: PublicKey, val systemState: SystemState, val ownedClaims: List<OwnedClaim>
-)
+) {
+    fun getHarborUrl(context: Context): String{
+        val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system));
+        val url = system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable());
+        return "https://harbor.social/" + url.substring("polycentric://".length);
+    }
+}
 
 class ChannelFragment : MainFragment() {
     override val isMainView: Boolean = true

@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -28,6 +29,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _buttonNewProfile: BigButton;
     private lateinit var _buttonImportProfile: BigButton;
     private lateinit var _layoutButtons: LinearLayout;
+    private lateinit var _scroll: ScrollView;
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
@@ -42,6 +44,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
         _buttonNewProfile = findViewById(R.id.button_new_profile);
         _buttonImportProfile = findViewById(R.id.button_import_profile);
         _layoutButtons = findViewById(R.id.layout_buttons);
+        _scroll = findViewById(R.id.scroll);
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             finish();
         };
@@ -78,6 +81,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
 
             _layoutButtons.addView(profileButton, 0);
         }
+        _scroll.invalidate();
 
         _buttonHelp.setOnClickListener {
             startActivity(Intent(this, PolycentricWhyActivity::class.java));

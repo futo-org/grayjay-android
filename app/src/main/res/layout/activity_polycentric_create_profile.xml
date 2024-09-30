@@ -92,5 +92,13 @@
             android:textSize="16dp"
             android:text="@string/create_profile" />
     </LinearLayout>
+    <com.futo.platformplayer.views.LoaderView
+        android:id="@+id/loader"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/button_create_profile"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

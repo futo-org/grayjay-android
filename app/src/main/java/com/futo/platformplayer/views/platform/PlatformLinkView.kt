@@ -42,11 +42,17 @@ class PlatformLinkView : LinearLayout {
     }
 
     fun setPlatform(name: String, url: String) {
-        val icon = StatePlatform.instance.getClientOrNullByUrl(url)?.icon;
-        if (icon != null) {
-            icon.setImageView(_imagePlatform, R.drawable.ic_web_white);
-        } else {
-            _imagePlatform.setImageResource(R.drawable.ic_web_white);
+
+        if(url.startsWith("https://harbor.social")) {
+            _imagePlatform.setImageResource(R.drawable.neopass);
+        }
+        else {
+            val icon = StatePlatform.instance.getClientOrNullByUrl(url)?.icon;
+            if (icon != null) {
+                icon.setImageView(_imagePlatform, R.drawable.ic_web_white);
+            } else {
+                _imagePlatform.setImageResource(R.drawable.ic_web_white);
+            }
         }
 
         _textName.text = name;

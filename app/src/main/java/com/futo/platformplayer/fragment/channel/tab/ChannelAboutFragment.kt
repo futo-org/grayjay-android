@@ -133,6 +133,10 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
                 Logger.w(TAG, "Failed to parse claim=$c", e)
             }
         }
+        if(!map.containsKey("Harbor"))
+            this.context?.let {
+                map.set("Harbor", polycentricProfile.getHarborUrl(it));
+            }
 
         if (map.isNotEmpty())
             setLinks(map, if (polycentricProfile.systemState.username.isNotBlank()) polycentricProfile.systemState.username else _lastChannel?.name ?: "")
