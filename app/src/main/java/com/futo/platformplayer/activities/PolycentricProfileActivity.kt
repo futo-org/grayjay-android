@@ -76,6 +76,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _buttonDelete = findViewById(R.id.button_delete);
         _loaderOverlay = findViewById(R.id.loader_overlay);
         _textSystem = findViewById(R.id.text_system)
+        findViewById<TextView>(R.id.text_cta2).setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://harbor.social")))
+        }
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             saveIfRequired();
             finish();
