@@ -4,19 +4,25 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.states.StateSync
+import com.futo.platformplayer.sync.SyncSessionData
 import com.futo.platformplayer.sync.internal.SyncSocketSession.Opcode
 import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.time.OffsetDateTime
 
 interface IAuthorizable {
     val isAuthorized: Boolean
@@ -142,6 +148,22 @@ class SyncSession : IAuthorizable {
                     };
                 }
 
+                GJSyncOpcodes.syncStateExchange -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val syncSessionData = Serializer.json.decodeFromString<SyncSessionData>(json);
+
+                    Logger.i(TAG, "Received SyncSessionData from " + remotePublicKey);
+
+
+                    send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+
+                    val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
+                    if(recentHistory.size > 0)
+                        sendJson(GJSyncOpcodes.syncHistory, recentHistory);
+                }
+
                 GJSyncOpcodes.syncExport -> {
                     val dataBody = ByteArray(data.remaining());
                     val bytesStr = ByteArrayInputStream(data.array(), data.position(), data.remaining());
@@ -173,6 +195,39 @@ class SyncSession : IAuthorizable {
                     val json = String(dataBody, Charsets.UTF_8);
                     val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
                     handleSyncSubscriptionPackage(this, subPackage);
+
+                    val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
+
+                    val sesData = StateSync.instance.getSyncSessionData(remotePublicKey);
+                    if(newestSub > sesData.lastSubscription) {
+                        sesData.lastSubscription = newestSub;
+                        StateSync.instance.saveSyncSessionData(sesData);
+                    }
+                }
+
+                GJSyncOpcodes.syncHistory -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val history = Serializer.json.decodeFromString<List<HistoryVideo>>(json);
+                    Logger.i(TAG, "SyncHistory received ${history.size} videos from ${remotePublicKey}");
+
+                    var lastHistory = OffsetDateTime.MIN;
+                    for(video in history){
+                        val hist = StateHistory.instance.getHistoryByVideo(video.video, true, video.date);
+                        if(hist != null)
+                            StateHistory.instance.updateHistoryPosition(video.video, hist, true, video.position, video.date)
+                        if(lastHistory < video.date)
+                            lastHistory = video.date;
+                    }
+
+                    if(lastHistory != OffsetDateTime.MIN && history.size > 1) {
+                        val sesData = StateSync.instance.getSyncSessionData(remotePublicKey);
+                        if (lastHistory > sesData.lastHistory) {
+                            sesData.lastHistory = lastHistory;
+                            StateSync.instance.saveSyncSessionData(sesData);
+                        }
+                    }
                 }
             }
         }
@@ -214,6 +269,9 @@ class SyncSession : IAuthorizable {
     }
 
 
+    inline fun <reified T> sendJson(opcode: UByte, data: T) {
+        send(opcode, Json.encodeToString<T>(data));
+    }
     fun send(opcode: UByte, data: String) {
         send(opcode, data.toByteArray(Charsets.UTF_8));
     }

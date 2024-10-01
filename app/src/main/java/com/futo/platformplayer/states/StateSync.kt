@@ -20,6 +20,8 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
+import com.futo.platformplayer.stores.StringTMapStorage
+import com.futo.platformplayer.sync.SyncSessionData
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.futo.platformplayer.sync.internal.SyncKeyPair
@@ -44,6 +46,7 @@ class StateSync {
     private val _authorizedDevices = FragmentedStorage.get<StringArrayStorage>("authorized_devices")
     private val _syncKeyPair = FragmentedStorage.get<StringStorage>("sync_key_pair")
     private val _lastAddressStorage = FragmentedStorage.get<StringStringMapStorage>("sync_last_address_storage")
+    private val _syncSessionData = FragmentedStorage.get<StringTMapStorage<SyncSessionData>>("syncSessionData")
 
     private var _serverSocket: ServerSocket? = null
     private var _thread: Thread? = null
@@ -188,6 +191,16 @@ class StateSync {
         return synchronized(_sessions) {
             return _sessions.values.toList()
         };
+    }
+
+    fun getSyncSessionData(key: String): SyncSessionData {
+        return _syncSessionData.get(key) ?: SyncSessionData(key);
+    }
+    fun getSyncSessionDataString(key: String): String {
+        return Json.encodeToString(getSyncSessionData(key));
+    }
+    fun saveSyncSessionData(data: SyncSessionData){
+        _syncSessionData.setAndSave(data.publicKey, data);
     }
 
     private fun handleServiceUpdated(services: List<DnsService>) {
@@ -343,6 +356,9 @@ class StateSync {
             })
     }
 
+    inline fun <reified T> broadcastJson(opcode: UByte, data: T) {
+        broadcast(opcode, Json.encodeToString(data));
+    }
     fun broadcast(opcode: UByte, data: String) {
         broadcast(opcode, data.toByteArray(Charsets.UTF_8));
     }
@@ -363,7 +379,7 @@ class StateSync {
         val time = measureTimeMillis {
             //val export = StateBackup.export();
             //session.send(GJSyncOpcodes.syncExport, export.asZip());
-            session.send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+            session.send(GJSyncOpcodes.syncStateExchange, getSyncSessionDataString(session.remotePublicKey));
         }
         Logger.i(TAG, "Generated and sent sync export in ${time}ms");
     }
@@ -396,6 +412,11 @@ class StateSync {
     fun hasAtLeastOneDevice(): Boolean {
         synchronized(_authorizedDevices) {
             return _authorizedDevices.values.isNotEmpty()
+        }
+    }
+    fun hasAtLeastOneOnlineDevice(): Boolean {
+        synchronized(_sessions) {
+            return _sessions.any{ it.value.connected && it.value.isAuthorized };
         }
     }
 

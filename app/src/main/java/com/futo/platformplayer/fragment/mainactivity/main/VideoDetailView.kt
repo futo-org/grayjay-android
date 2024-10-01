@@ -1477,7 +1477,7 @@ class VideoDetailView : ConstraintLayout {
                 val historyItem = getHistoryIndex(videoDetail) ?: return@launch;
 
                 withContext(Dispatchers.Main) {
-                    _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong());
+                    _historicalPosition = StateHistory.instance.updateHistoryPosition(video,  historyItem,false, (toResume.toFloat() / 1000.0f).toLong(), null, true);
                     Logger.i(TAG, "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds");
                     if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(_historicalPosition - lastPositionMilliseconds / 1000) > 5.0) {
                         _layoutResume.visibility = View.VISIBLE;
@@ -2497,7 +2497,7 @@ class VideoDetailView : ConstraintLayout {
             if (v !is TutorialFragment.TutorialVideo) {
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     val history = getHistoryIndex(v) ?: return@launch;
-                    StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong());
+                    StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong(), null, true);
                 }
             }
             _lastPositionSaveTime = currentTime;
