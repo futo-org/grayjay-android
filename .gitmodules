@@ -1,84 +1,84 @@
 [submodule "dep/polycentricandroid"]
 	path = dep/polycentricandroid
-	url = ../polycentricandroid.git
+	url = https://gitlab.futo.org/videostreaming/polycentricandroid.git
 [submodule "app/src/stable/assets/sources/kick"]
 	path = app/src/stable/assets/sources/kick
-	url = ../plugins/kick.git
+	url = https://gitlab.futo.org/videostreaming/plugins/kick.git
 [submodule "app/src/stable/assets/sources/odysee"]
 	path = app/src/stable/assets/sources/odysee
-	url = ../plugins/odysee.git
+	url = https://gitlab.futo.org/videostreaming/plugins/odysee.git
 [submodule "app/src/stable/assets/sources/nebula"]
 	path = app/src/stable/assets/sources/nebula
-	url = ../plugins/nebula.git
+	url = https://gitlab.futo.org/videostreaming/plugins/nebula.git
 [submodule "app/src/stable/assets/sources/patreon"]
 	path = app/src/stable/assets/sources/patreon
-	url = ../plugins/patreon.git
+	url = https://gitlab.futo.org/videostreaming/plugins/patreon.git
 [submodule "app/src/stable/assets/sources/peertube"]
 	path = app/src/stable/assets/sources/peertube
-	url = ../plugins/peertube.git
+	url = https://gitlab.futo.org/videostreaming/plugins/peertube.git
 [submodule "app/src/stable/assets/sources/rumble"]
 	path = app/src/stable/assets/sources/rumble
-	url = ../plugins/rumble.git
+	url = https://gitlab.futo.org/videostreaming/plugins/rumble.git
 [submodule "app/src/stable/assets/sources/soundcloud"]
 	path = app/src/stable/assets/sources/soundcloud
-	url = ../plugins/soundcloud.git
+	url = https://gitlab.futo.org/videostreaming/plugins/soundcloud.git
 [submodule "app/src/stable/assets/sources/twitch"]
 	path = app/src/stable/assets/sources/twitch
-	url = ../plugins/twitch.git
+	url = https://gitlab.futo.org/videostreaming/plugins/twitch.git
 [submodule "app/src/stable/assets/sources/youtube"]
 	path = app/src/stable/assets/sources/youtube
-	url = ../plugins/youtube.git
+	url = https://gitlab.futo.org/videostreaming/plugins/youtube.git
 [submodule "app/src/unstable/assets/sources/kick"]
 	path = app/src/unstable/assets/sources/kick
-	url = ../plugins/kick.git
+	url = https://gitlab.futo.org/videostreaming/plugins/kick.git
 [submodule "app/src/unstable/assets/sources/nebula"]
 	path = app/src/unstable/assets/sources/nebula
-	url = ../plugins/nebula.git
+	url = https://gitlab.futo.org/videostreaming/plugins/nebula.git
 [submodule "app/src/unstable/assets/sources/odysee"]
 	path = app/src/unstable/assets/sources/odysee
-	url = ../plugins/odysee.git
+	url = https://gitlab.futo.org/videostreaming/plugins/odysee.git
 [submodule "app/src/unstable/assets/sources/patreon"]
 	path = app/src/unstable/assets/sources/patreon
-	url = ../plugins/patreon.git
+	url = https://gitlab.futo.org/videostreaming/plugins/patreon.git
 [submodule "app/src/unstable/assets/sources/peertube"]
 	path = app/src/unstable/assets/sources/peertube
-	url = ../plugins/peertube.git
+	url = https://gitlab.futo.org/videostreaming/plugins/peertube.git
 [submodule "app/src/unstable/assets/sources/rumble"]
 	path = app/src/unstable/assets/sources/rumble
-	url = ../plugins/rumble.git
+	url = https://gitlab.futo.org/videostreaming/plugins/rumble.git
 [submodule "app/src/unstable/assets/sources/soundcloud"]
 	path = app/src/unstable/assets/sources/soundcloud
-	url = ../plugins/soundcloud.git
+	url = https://gitlab.futo.org/videostreaming/plugins/soundcloud.git
 [submodule "app/src/unstable/assets/sources/twitch"]
 	path = app/src/unstable/assets/sources/twitch
-	url = ../plugins/twitch.git
+	url = https://gitlab.futo.org/videostreaming/plugins/twitch.git
 [submodule "app/src/unstable/assets/sources/youtube"]
 	path = app/src/unstable/assets/sources/youtube
-	url = ../plugins/youtube.git
+	url = https://gitlab.futo.org/videostreaming/plugins/youtube.git
 [submodule "dep/futopay"]
 	path = dep/futopay
-	url = ../futopayclientlibraries.git
+	url = https://gitlab.futo.org/videostreaming/futopayclientlibraries.git
 [submodule "app/src/unstable/assets/sources/bilibili"]
 	path = app/src/unstable/assets/sources/bilibili
-	url = ../plugins/bilibili.git
+	url = https://gitlab.futo.org/videostreaming/plugins/bilibili.git
 [submodule "app/src/stable/assets/sources/bilibili"]
 	path = app/src/stable/assets/sources/bilibili
-	url = ../plugins/bilibili.git
+	url = https://gitlab.futo.org/videostreaming/plugins/bilibili.git
 [submodule "app/src/stable/assets/sources/spotify"]
 	path = app/src/stable/assets/sources/spotify
-	url = ../plugins/spotify.git
+	url = https://gitlab.futo.org/videostreaming/plugins/spotify.git
 [submodule "app/src/unstable/assets/sources/spotify"]
 	path = app/src/unstable/assets/sources/spotify
-	url = ../plugins/spotify.git
+	url = https://gitlab.futo.org/videostreaming/plugins/spotify.git
 [submodule "app/src/stable/assets/sources/bitchute"]
 	path = app/src/stable/assets/sources/bitchute
-	url = ../plugins/bitchute.git
+	url = https://gitlab.futo.org/videostreaming/plugins/bitchute.git
 [submodule "app/src/unstable/assets/sources/bitchute"]
 	path = app/src/unstable/assets/sources/bitchute
-	url = ../plugins/bitchute.git
+	url = https://gitlab.futo.org/videostreaming/plugins/bitchute.git
 [submodule "app/src/unstable/assets/sources/dailymotion"]
 	path = app/src/unstable/assets/sources/dailymotion
-	url = ../plugins/dailymotion.git
+	url = https://gitlab.futo.org/videostreaming/plugins/dailymotion.git
 [submodule "app/src/stable/assets/sources/dailymotion"]
 	path = app/src/stable/assets/sources/dailymotion
-	url = ../plugins/dailymotion.git
+	url = https://gitlab.futo.org/videostreaming/plugins/dailymotion.git

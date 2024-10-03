@@ -705,8 +705,10 @@
     <string name="back">Back</string>
     <string name="pause">Pause</string>
     <string name="play">Play</string>
+    <string name="video_background" translatable="false">Background</string>
     <string name="pauses_the_video">Pauses the video</string>
     <string name="resumes_the_video">Resumes the video</string>
+    <string name="backgrounds_the_video" translatable="false">Brings the video to background play</string>
     <string name="video_without_source">Video without source</string>
     <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">There was a in your queue [{videoName}] by [{authorName}] without the required source being enabled, playback was skipped.</string>
     <string name="failed_to_load_video_scriptimplementationexception">Failed to load video (ScriptImplementationException)</string>

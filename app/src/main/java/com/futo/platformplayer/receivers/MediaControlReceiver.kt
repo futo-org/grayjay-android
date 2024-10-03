@@ -21,6 +21,7 @@ class MediaControlReceiver : BroadcastReceiver() {
                 EVENT_NEXT -> onNextReceived.emit();
                 EVENT_PREV -> onPreviousReceived.emit();
                 EVENT_CLOSE -> onCloseReceived.emit();
+                EVENT_BACKGROUND -> onBackgroundReceived.emit()
             }
         }
         catch(ex: Throwable) {
@@ -38,11 +39,13 @@ class MediaControlReceiver : BroadcastReceiver() {
         const val EVENT_NEXT = "Next";
         const val EVENT_PREV = "Prev";
         const val EVENT_CLOSE = "Close";
+        const val EVENT_BACKGROUND = "Background"
 
         val onPlayReceived = Event0();
         val onPauseReceived = Event0();
         val onNextReceived = Event0();
         val onPreviousReceived = Event0();
+        val onBackgroundReceived = Event0();
         val onSeekToReceived = Event1<Long>();
 
         val onLowerVolumeReceived = Event0();
@@ -63,6 +66,9 @@ class MediaControlReceiver : BroadcastReceiver() {
         },PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT);
         fun getCloseIntent(context: Context, code: Int = 0) : PendingIntent = PendingIntent.getBroadcast(context, code, Intent(context, MediaControlReceiver::class.java).apply {
             this.putExtra(EXTRA_MEDIA_ACTION, EVENT_CLOSE);
+        },PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT);
+        fun getBackgroundIntent(context: Context, code: Int = 0) : PendingIntent = PendingIntent.getBroadcast(context, code, Intent(context, MediaControlReceiver::class.java).apply {
+            this.putExtra(EXTRA_MEDIA_ACTION, EVENT_BACKGROUND);
         },PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT);
     }
 }
