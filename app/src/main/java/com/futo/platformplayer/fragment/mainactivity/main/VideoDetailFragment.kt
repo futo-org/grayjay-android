@@ -99,8 +99,9 @@ class VideoDetailFragment : MainFragment {
         val bypassRotationPrevention = Settings.instance.other.bypassRotationPrevention;
         val fullAutorotateLock = Settings.instance.playback.fullAutorotateLock
         val currentRequestedOrientation = a.requestedOrientation
+        val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         var currentOrientation = if (_currentOrientation == -1) currentRequestedOrientation else _currentOrientation
-        if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT && !Settings.instance.playback.reversePortrait)
+        if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT && !isReversePortraitAllowed)
             currentOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         val isAutoRotate = Settings.instance.playback.isAutoRotate()
@@ -347,7 +348,7 @@ class VideoDetailFragment : MainFragment {
                 return true
             }
 
-            if (state == State.MAXIMIZED && isFullscreen && !Settings.instance.playback.fullscreenPortrait && (_currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || _currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)) {
+            if (state == State.MAXIMIZED && isFullscreen && !Settings.instance.playback.fullscreenPortrait && (_currentOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || (_currentOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT && Settings.instance.playback.reversePortrait ))) {
                 _viewDetail?.setFullscreen(false)
                 return true
             }
