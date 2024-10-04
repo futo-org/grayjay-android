@@ -7,6 +7,7 @@ And hope that they end up in the feature end up in the main repro at some point.
 
 ## Stuff i changed/added
 - Allow to enable background video play from with the PictureInPicturePlayer
+- When reverse portrait is of the player will no longer change its display mode to normal portrait mode when we flip the phone and we are in fullscreen.
 
 # PlatformPlayer
 
