@@ -27,6 +27,20 @@ echo $VERSION > $DOCUMENT_ROOT/version.txt
 mkdir -p $DOCUMENT_ROOT/changelogs
 git tag -l --format='%(contents)' $VERSION > $DOCUMENT_ROOT/changelogs/$VERSION
 
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-x86_64-release.apk s3://artifacts-grayjay-app/app-x86_64-release.apk
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-arm64-v8a-release.apk s3://artifacts-grayjay-app/app-arm64-v8a-release.apk
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-armeabi-v7a-release.apk s3://artifacts-grayjay-app/app-armeabi-v7a-release.apk
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-universal-release.apk s3://artifacts-grayjay-app/app-universal-release.apk
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-x86-release.apk s3://artifacts-grayjay-app/app-x86-release.apk
+aws s3 cp ./app/build/outputs/apk/stable/release/app-stable-arm64-v8a-release.apk s3://artifacts-grayjay-app/app-release.apk
+
+VERSION=$(git describe --tags)
+echo $VERSION > ./version.txt
+git tag -l --format='%(contents)' $VERSION > ./changelog.txt
+
+aws s3 cp ./version.txt s3://artifacts-grayjay-app/version.txt
+aws s3 cp ./changelog.txt s3://artifacts-grayjay-app/changelogs/$VERSION
+
 # Notify Cloudflare to wipe the CDN cache
 echo "Purging Cloudflare cache for zone $CLOUDFLARE_ZONE_ID..."
 curl -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
