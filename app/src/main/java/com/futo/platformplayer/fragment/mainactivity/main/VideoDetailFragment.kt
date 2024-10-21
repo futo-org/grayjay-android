@@ -13,6 +13,7 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.WindowCompat
+import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -29,7 +30,7 @@ import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
 import kotlin.math.min
 
-
+@UnstableApi
 class VideoDetailFragment : MainFragment {
     override val isMainView : Boolean = false;
     override val hasBottomBar: Boolean = true;
@@ -95,11 +96,22 @@ class VideoDetailFragment : MainFragment {
 
         detectWindowSize()
 
-        if (isSmallWindow && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullscreen && state == State.MAXIMIZED) {
-            _viewDetail?.setFullscreen(true)
-        }
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
 
-        if (isSmallWindow && isFullscreen && !Settings.instance.playback.fullscreenPortrait && newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (
+            isSmallWindow
+            && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+            && !isFullscreen
+            && state == State.MAXIMIZED
+        ) {
+            _viewDetail?.setFullscreen(true)
+        } else if (
+            isSmallWindow
+            && isFullscreen
+            && !Settings.instance.playback.fullscreenPortrait
+            && newConfig.orientation == Configuration.ORIENTATION_PORTRAIT
+            && isLandscapeVideo
+        ) {
             _viewDetail?.setFullscreen(false)
         }
     }
@@ -121,8 +133,10 @@ class VideoDetailFragment : MainFragment {
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
 
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
+
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
-        if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock) {
+        if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait

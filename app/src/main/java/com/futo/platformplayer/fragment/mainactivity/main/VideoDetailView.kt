@@ -2241,6 +2241,17 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    fun isLandscapeVideo(): Boolean {
+        var videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
+        var videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
+
+        return if (videoSourceHeight != null && videoSourceWidth != null) {
+            videoSourceWidth > videoSourceHeight
+        } else {
+            true
+        }
+    }
+
     fun setFullscreen(fullscreen : Boolean) {
         Logger.i(TAG, "setFullscreen(fullscreen=$fullscreen)")
         _player.setFullScreen(fullscreen)
