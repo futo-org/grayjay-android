@@ -1,4 +1,4 @@
-# Grayjay Core License 1.0
+# Source First License 1.1
 
 ## Acceptance
 By using the software, you agree to all of the terms and conditions below.
