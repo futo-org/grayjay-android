@@ -202,7 +202,6 @@
         <activity
             android:name=".activities.ManageTabsActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
-
         <activity
             android:name=".activities.QRCaptureActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
@@ -210,20 +209,13 @@
             android:name=".activities.FCastGuideActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
-            android:name=".activities.PolycentricWhyActivity"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
-        <activity
             android:name=".activities.SyncHomeActivity"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.SyncPairActivity"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.SyncShowPairingCodeActivity"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
     </application>
 </manifest>
