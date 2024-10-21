@@ -15,6 +15,9 @@ import java.time.OffsetDateTime
 class Subscription {
     var channel: SerializedChannel;
 
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
+    var creationTime: OffsetDateTime = OffsetDateTime.MIN;
+
     //Settings
     var doNotifications: Boolean = false;
     var doFetchLive: Boolean = false;
@@ -55,6 +58,8 @@ class Subscription {
 
     constructor(channel : SerializedChannel) {
         this.channel = channel;
+        if(this.creationTime == OffsetDateTime.MIN)
+            this.creationTime = OffsetDateTime.now();
     }
 
     fun isChannel(url: String): Boolean {

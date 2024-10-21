@@ -5,6 +5,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.polycentric.core.ProcessSecret
+import com.futo.polycentric.core.PublicKey
 import com.futo.polycentric.core.base64ToByteArray
 import com.futo.polycentric.core.toBase64
 import userpackage.Protocol
@@ -27,6 +28,18 @@ class PolycentricStorage {
             }
         }
         return processSecrets
+    }
+
+    fun removeProcessSecret(publicKey: PublicKey) {
+        for(p in _processSecrets.getAllValues()){
+            try {
+                val key = ProcessSecret.fromProto(Protocol.StorageTypeProcessSecret.parseFrom(GEncryptionProviderV1.instance.decrypt(p.base64ToByteArray())));
+                if(key.system.publicKey.equals(publicKey))
+                    _processSecrets.remove(p);
+            } catch (e: Throwable) {
+                Logger.i(TAG, "Failed to decrypt process secret", e);
+            }
+        }
     }
 
     companion object {

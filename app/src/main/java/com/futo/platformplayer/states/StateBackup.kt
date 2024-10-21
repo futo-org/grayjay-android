@@ -35,6 +35,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.InputStream
 import java.time.OffsetDateTime
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -509,6 +510,16 @@ class StateBackup {
         }
 
         companion object {
+            fun fromZipBytes(str: ByteArrayInputStream): ExportStructure {
+                var zip: ZipInputStream? = null;
+                try {
+                        zip = ZipInputStream(str);
+                    return fromZip(zip);
+                }
+                finally {
+                    zip?.close();
+                }
+            }
             fun fromZip(zipStream: ZipInputStream): ExportStructure {
                 var entry: ZipEntry?
 

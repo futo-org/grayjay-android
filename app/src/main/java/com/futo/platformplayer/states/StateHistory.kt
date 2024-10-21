@@ -12,9 +12,13 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ReconstructStore
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import kotlin.math.min
 
 class StateHistory {
     //Legacy
@@ -56,7 +60,7 @@ class StateHistory {
     }
 
 
-    fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L): Long {
+    fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L, date: OffsetDateTime? = null, isUserAction: Boolean = false): Long {
         val pos = if(position < 0) 0 else position;
         val historyVideo = index.obj;
 
@@ -76,16 +80,49 @@ class StateHistory {
                     historyVideo.video = SerializedPlatformVideo.fromVideo(liveObj);
 
                 historyVideo.position = pos;
-                historyVideo.date = OffsetDateTime.now();
+                historyVideo.date = date ?: OffsetDateTime.now();
                 _historyDBStore.update(index.id!!, historyVideo);
                 onHistoricVideoChanged.emit(liveObj, pos);
             }
 
+
+            if(isUserAction) {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                        Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
+                        StateSync.instance.broadcastJson(
+                            GJSyncOpcodes.syncHistory,
+                            listOf(historyVideo)
+                        );
+                    }
+                };
+            }
             return positionBefore;
         }
-
         return positionBefore;
     }
+
+    fun getRecentHistory(minDate: OffsetDateTime, max: Int = 1000): List<HistoryVideo> {
+        val pager = getHistoryPager();
+        val videos = pager.getResults().filter { it.date > minDate }.toMutableList();
+        while(pager.hasMorePages() && videos.size < max) {
+            pager.nextPage();
+            val newResults = pager.getResults();
+            var foundEnd = false;
+            for(item in newResults) {
+                if(item.date < minDate) {
+                    foundEnd = true;
+                    break;
+                }
+                else
+                    videos.add(item);
+            }
+            if(foundEnd)
+                break;
+        }
+        return videos;
+    }
+
     fun getHistoryPager(): IPager<HistoryVideo> {
         return _historyDBStore.getObjectPager();
     }

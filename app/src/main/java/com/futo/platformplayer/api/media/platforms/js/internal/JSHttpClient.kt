@@ -38,7 +38,7 @@ class JSHttpClient : ManagedHttpClient {
 
     constructor(jsClient: JSClient?, auth: SourceAuth? = null, captcha: SourceCaptchaData? = null, config: SourcePluginConfig? = null) : super(
             //Temporary ugly solution for DevPortal proxy support
-            (if(jsClient?.config?.id == StateDeveloper.DEV_ID && StateDeveloper.instance.devProxy != null)
+            (if((jsClient?.config?.id == StateDeveloper.DEV_ID || jsClient == null) && StateDeveloper.instance.devProxy != null)
                 OkHttpClient.Builder().proxy(Proxy(Proxy.Type.HTTP,
                     InetSocketAddress(StateDeveloper.instance.devProxy!!.url, StateDeveloper.instance.devProxy!!.port)
                 ))

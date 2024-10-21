@@ -209,7 +209,7 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "94d36959-e3fc-4c24-a988-89147067a179",
                 name = "Casting",
-                description = "Learn about casting in Grayjay. How do I show video on my TV?",
+                description = "Learn about casting in Grayjay. How do I show video on my TV?\nhttps://fcast.org/",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/how-to-cast.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/how-to-cast.mp4",
                 duration = 79

@@ -18,13 +18,22 @@ import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringDateMapStorage
+import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithm
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithms
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
+import com.google.gson.JsonSerializer
 import kotlinx.coroutines.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.concurrent.ForkJoinPool
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -45,6 +54,9 @@ class StateSubscriptions {
     private val _subscriptionOthers = FragmentedStorage.storeJson<Subscription>("subscriptions_others")
         .withUnique { it.channel.url }
         .load();
+    private val _subscriptionsRemoved = FragmentedStorage.get<StringDateMapStorage>("subscriptions_removed");
+
+
     private val _subscriptionsPool = ForkJoinPool(Settings.instance.subscriptions.getSubscriptionsConcurrency());
     private val _legacySubscriptions = FragmentedStorage.get<SubscriptionStorage>();
 
@@ -222,18 +234,67 @@ class StateSubscriptions {
     fun getSubscriptions(): List<Subscription> {
         return _subscriptions.getItems();
     }
+    fun getSubscriptionRemovals(): Map<String, Long> {
+        return _subscriptionsRemoved.all();
+    }
+    fun getSubscriptionRemovalTime(url: String): OffsetDateTime{
+        return _subscriptionsRemoved.get(url) ?: OffsetDateTime.MIN;
+    }
 
-    fun addSubscription(channel : IPlatformChannel) : Subscription {
+    fun addSubscription(channel : IPlatformChannel, creationDate: OffsetDateTime? = null) : Subscription {
         val subObj = Subscription(SerializedChannel.fromChannel(channel));
+        if(creationDate != null)
+            subObj.creationTime = creationDate;
         _subscriptions.save(subObj);
         onSubscriptionsChanged.emit(getSubscriptions(), true);
+
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                StateSync.instance.broadcast(
+                    GJSyncOpcodes.syncSubscriptions, Json.encodeToString(
+                        SyncSubscriptionsPackage(
+                            listOf(subObj),
+                            mapOf<String, Long>()
+                        )
+                    )
+                );
+            }
+            catch(ex: Exception) {
+                Logger.w(TAG, "Failed to send subs changes to sync clients", ex);
+            }
+        }
+
         return subObj;
     }
-    fun removeSubscription(url: String) : Subscription? {
+
+    fun applySubscriptionRemovals(removals: Map<String, Long>): List<Subscription> {
+        val removed = mutableListOf<Subscription>()
+        val subs = getSubscriptions().associate { Pair(it.channel.url.lowercase(), it) };
+        for(removal in removals) {
+            if(subs.containsKey(removal.key.lowercase())) {
+                val sub = subs[removal.key.lowercase()];
+                val datetime = OffsetDateTime.of(LocalDateTime.ofEpochSecond(removal.value, 0, ZoneOffset.UTC), ZoneOffset.UTC);
+                if(datetime > sub!!.creationTime)
+                {
+                    removeSubscription(sub.channel.url);
+                    removed.add(sub);
+                }
+            }
+        }
+        _subscriptionsRemoved.setAllAndSave(removals) { key, value, oldValue ->
+            return@setAllAndSave oldValue == null || value > oldValue;
+        }
+        return removed;
+    }
+
+
+    fun removeSubscription(url: String, isUserAction: Boolean = false) : Subscription? {
         var sub : Subscription? = getSubscription(url);
         if(sub != null) {
             _subscriptions.delete(sub);
             onSubscriptionsChanged.emit(getSubscriptions(), false);
+            if(isUserAction)
+                _subscriptionsRemoved.setAndSave(sub.channel.url, OffsetDateTime.now());
         }
         return sub;
     }
@@ -328,6 +389,9 @@ class StateSubscriptions {
     fun toMigrateCheck(): List<ManagedStore<*>> {
         return listOf(_subscriptions);
     }
+    fun getUnderlyingSubscriptionsStore(): ManagedStore<Subscription> {
+        return _subscriptions;
+    }
 
     //Old migrate
     fun shouldMigrate(): Boolean {
@@ -344,6 +408,16 @@ class StateSubscriptions {
             }
         }
         _legacySubscriptions.delete();
+    }
+
+
+    fun getSyncSubscriptionsPackageString(): String{
+        return Json.encodeToString(
+            SyncSubscriptionsPackage(
+                getSubscriptions(),
+                getSubscriptionRemovals()
+            )
+        );
     }
 
     companion object {

@@ -19,9 +19,9 @@ open class SerializedPlatformVideo(
     override val thumbnails: Thumbnails,
     override val author: PlatformAuthorLink,
     @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
-    override val datetime: OffsetDateTime?,
+    override val datetime: OffsetDateTime? = null,
     override val url: String,
-    override val shareUrl: String,
+    override val shareUrl: String = "",
 
     override val duration: Long,
     override val viewCount: Long,

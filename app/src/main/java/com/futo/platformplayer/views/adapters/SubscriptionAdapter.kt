@@ -1,12 +1,16 @@
 package com.futo.platformplayer.views.adapters
 
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSubscriptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     private lateinit var _sortedDataset: List<Subscription>;
@@ -30,7 +34,10 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         _inflater = inflater;
         _confirmationMessage = confirmationMessage;
 
-        StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> updateDataset(); }
+        StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> if(Looper.myLooper() != Looper.getMainLooper())
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) { updateDataset() }
+            else
+                updateDataset(); }
         updateDataset();
     }
 
@@ -43,7 +50,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         holder.onTrash.subscribe {
             val sub = holder.subscription ?: return@subscribe;
             UIDialogs.showConfirmationDialog(_inflater.context, _confirmationMessage, {
-                StateSubscriptions.instance.removeSubscription(sub.channel.url);
+                StateSubscriptions.instance.removeSubscription(sub.channel.url, true);
             });
         };
         holder.onSettings.subscribe {

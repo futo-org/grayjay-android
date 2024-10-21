@@ -273,6 +273,14 @@ class ManagedStore<T>{
             save(obj, withReconstruction, onlyExisting);
     }
 
+    suspend fun fromReconstruction(reconstruction: String, cache: ImportCache? = null): T {
+        if(_reconstructStore == null)
+            throw IllegalStateException("Can't reconstruct as no reconstruction is implemented for this type");
+
+        val id = UUID.randomUUID().toString();
+        return _reconstructStore!!.toObjectWithHeader(id, reconstruction, ReconstructStore.Builder(), cache);
+    }
+
     suspend fun createFromReconstruction(reconstruction: String, builder: ReconstructStore.Builder, cache: ImportCache? = null): String {
         if(_reconstructStore == null)
             throw IllegalStateException("Can't reconstruct as no reconstruction is implemented for this type");

@@ -25,6 +25,7 @@ import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricCache
+import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
@@ -33,6 +34,7 @@ import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.overlays.LoaderOverlay
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.polycentric.core.toBase64Url
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
@@ -47,6 +49,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
     private lateinit var _editName: EditText;
     private lateinit var _buttonExport: BigButton;
+    private lateinit var _buttonOpenHarborProfile: BigButton;
     private lateinit var _buttonLogout: BigButton;
     private lateinit var _buttonDelete: BigButton;
     private lateinit var _username: String;
@@ -68,10 +71,14 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _imagePolycentric = findViewById(R.id.image_polycentric);
         _editName = findViewById(R.id.edit_profile_name);
         _buttonExport = findViewById(R.id.button_export);
+        _buttonOpenHarborProfile = findViewById(R.id.button_open_harbor_profile);
         _buttonLogout = findViewById(R.id.button_logout);
         _buttonDelete = findViewById(R.id.button_delete);
         _loaderOverlay = findViewById(R.id.loader_overlay);
         _textSystem = findViewById(R.id.text_system)
+        findViewById<TextView>(R.id.text_cta2).setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://harbor.social")))
+        }
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             saveIfRequired();
             finish();
@@ -92,6 +99,16 @@ class PolycentricProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, PolycentricBackupActivity::class.java));
         };
 
+        _buttonOpenHarborProfile.onClick.subscribe {
+            val processHandle = StatePolycentric.instance.processHandle!!;
+            processHandle?.let {
+                val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(it.system));
+                val url = it.system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable());
+                val navUrl = "https://harbor.social/" + url.substring("polycentric://".length)
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
+            }
+        }
+
         _buttonLogout.onClick.subscribe {
             StatePolycentric.instance.setProcessHandle(null);
             startActivity(Intent(this, PolycentricHomeActivity::class.java));
@@ -108,6 +125,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
                 StatePolycentric.instance.setProcessHandle(null);
                 Store.instance.removeProcessSecret(processHandle.system);
+                PolycentricStorage.instance.removeProcessSecret(processHandle.system);
                 startActivity(Intent(this, PolycentricHomeActivity::class.java));
                 finish();
             });
