@@ -96,7 +96,7 @@ class VideoDetailFragment : MainFragment {
 
         detectWindowSize()
 
-        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
 
         if (
             isSmallWindow
@@ -117,11 +117,27 @@ class VideoDetailFragment : MainFragment {
     }
 
     private fun onStateChanged(state: State) {
-        if (isSmallWindow && state == State.MAXIMIZED && !isFullscreen && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        if (
+            isSmallWindow
+            && state == State.MAXIMIZED
+            && !isFullscreen
+            && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        ) {
             _viewDetail?.setFullscreen(true)
         }
 
         updateOrientation()
+    }
+
+    private fun onVideoChanged(videoWidth : Int, videoHeight: Int) {
+        if (
+            isSmallWindow
+            && state == State.MAXIMIZED
+            && !isFullscreen
+            && videoHeight > videoWidth
+        ) {
+            _viewDetail?.setFullscreen(true)
+        }
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -133,7 +149,7 @@ class VideoDetailFragment : MainFragment {
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
 
-        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
@@ -247,6 +263,7 @@ class VideoDetailFragment : MainFragment {
         _viewDetail = _view!!.findViewById<VideoDetailView>(R.id.fragview_videodetail).also {
             it.applyFragment(this);
             it.onFullscreenChanged.subscribe(::onFullscreenChanged);
+            it.onVideoChanged.subscribe(::onVideoChanged)
             it.onMinimize.subscribe {
                 isMinimizing = true
                 _view!!.transitionToStart();
