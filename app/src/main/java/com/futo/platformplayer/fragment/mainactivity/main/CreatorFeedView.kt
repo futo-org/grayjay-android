@@ -28,6 +28,10 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
         );
     }
 
+    override fun updateSpanCount(){
+
+    }
+
     override fun createLayoutManager(
         recyclerResults: RecyclerView,
         context: Context

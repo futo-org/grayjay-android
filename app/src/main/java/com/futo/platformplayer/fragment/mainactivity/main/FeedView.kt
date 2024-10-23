@@ -226,7 +226,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
 
-    private fun updateSpanCount() {
+    open fun updateSpanCount() {
         recyclerData.layoutManager.spanCount = (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1
     }
 
