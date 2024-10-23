@@ -33,6 +33,7 @@ import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
@@ -88,6 +89,7 @@ import com.futo.polycentric.core.ApiMethods
 import com.google.gson.JsonParser
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,7 +103,9 @@ import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
-
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import org.json.JSONArray
 
 class MainActivity : AppCompatActivity, IWithResultLauncher {
 
@@ -444,7 +448,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragSubGroupList.topBar = _fragTopBarAdd;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
-        
+
         fragCurrent = _fragMainHome;
 
         val defaultTab = Settings.instance.tabs.mapNotNull {
@@ -507,14 +511,68 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         //startActivity(Intent(this, TestActivity::class.java));
 
-        val sharedPreferences = getSharedPreferences("GrayjayFirstBoot", Context.MODE_PRIVATE)
-        val isFirstBoot = sharedPreferences.getBoolean("IsFirstBoot", true)
+        val sharedPreferencesFirstBoot = getSharedPreferences("GrayjayFirstBoot", Context.MODE_PRIVATE)
+        val isFirstBoot = sharedPreferencesFirstBoot.getBoolean("IsFirstBoot", true)
         if (isFirstBoot) {
             UIDialogs.showConfirmationDialog(this, getString(R.string.do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button), {
                 navigate(_fragMainTutorial)
             })
 
-            sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
+            sharedPreferencesFirstBoot.edit().putBoolean("IsFirstBoot", false).apply()
+        }
+
+        val sharedPreferencesSubmitSubscriptions =
+            getSharedPreferences("GrayjaySubmitSubscriptions", Context.MODE_PRIVATE)
+        val alreadyViewed = sharedPreferencesSubmitSubscriptions.getBoolean("AlreadyViewed", false)
+
+        @Serializable
+        data class CreatorInfo(val pluginId: String, val plugin: String, val id: String, val name: String, val url: String, val description: String, val subscribers: Long)
+
+        val subscriptions = StateSubscriptions.instance.getSubscriptions().map { original ->
+            CreatorInfo(
+                pluginId = original.channel.id.pluginId ?: "",
+                plugin = original.channel.id.platform,
+                id = original.channel.id.value ?: "",
+                name = original.channel.name,
+                url = original.channel.url,
+                description = original.channel.description ?: "",
+                subscribers = original.channel.subscribers,
+            )
+        }
+
+        val subscriptionsThreshold = 20
+
+        if (
+            !alreadyViewed
+            && StateApp.instance.getCurrentNetworkState() != StateApp.NetworkState.DISCONNECTED
+            && subscriptions.size >= subscriptionsThreshold
+        ) {
+            val json = Json.encodeToString(subscriptions)
+            UIDialogs.showDialog(
+                this,
+                R.drawable.ic_internet,
+                getString(R.string.donate_personal_subscriptions_list),
+                getString(R.string.donate_personal_subscriptions_list_description),
+                JSONArray(json).toString(4),
+                0,
+                UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.NONE),
+                UIDialogs.Action("Upload", {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        val url = "https://logs.grayjay.app/subscriptions"
+                        val client = ManagedHttpClient();
+                        val headers = hashMapOf(
+                            "Content-Type" to "application/json"
+                        )
+                        val response = client.post(url, json, headers)
+                        // if it failed retry one time
+                        if (!response.isOk) {
+                            client.post(url, json, headers)
+                        }
+                    }
+                }, UIDialogs.ActionStyle.PRIMARY)
+            )
+
+            sharedPreferencesSubmitSubscriptions.edit().putBoolean("AlreadyViewed", true).apply()
         }
     }
 
@@ -992,7 +1050,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.i(TAG, "Navigate to $segment (parameter=$parameter, withHistory=$withHistory, isBack=$isBack)")
 
         if(segment != fragCurrent) {
-            
+
             if(segment is VideoDetailFragment) {
                 if(_fragContainerVideoDetail.visibility != View.VISIBLE)
                     _fragContainerVideoDetail.visibility = View.VISIBLE;
@@ -1004,8 +1062,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 segment.onShown(parameter, isBack);
                 return;
             }
-            
-            
+
             fragCurrent.onHide();
 
             if(segment.isMainView) {

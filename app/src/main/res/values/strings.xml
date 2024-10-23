@@ -803,6 +803,8 @@
     <string name="scroll_to_top">Scroll to top</string>
     <string name="disable_battery_optimization">Disable Battery Optimization</string>
     <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Click to go to battery optimization settings. Disabling battery optimization will prevent the OS from killing media sessions.</string>
+    <string name="donate_personal_subscriptions_list">Donate Personal Subscriptions List</string>
+    <string name="donate_personal_subscriptions_list_description">\nWould you liked to donate your current creator subscriptions list to Grayjay?\n\nThe data will be handled according to the Grayjay privacy policy. That is the list will be anonymized and stored without any reference to whomever the list of creators belonged to.\n\nThe intention is for Grayjay and FUTO to use these data to build a cross platform creator recommendation system to make it easier to find new creators you might like from within Grayjay.\n\nThe following data will be uploaded:</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
