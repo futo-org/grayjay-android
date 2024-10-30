@@ -558,15 +558,19 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.NONE),
                 UIDialogs.Action("Upload", {
                     GlobalScope.launch(Dispatchers.IO) {
-                        val url = "https://logs.grayjay.app/subscriptions"
+                        val url = "https://data.grayjay.app/donate-subscription-list"
                         val client = ManagedHttpClient();
                         val headers = hashMapOf(
                             "Content-Type" to "application/json"
                         )
-                        val response = client.post(url, json, headers)
-                        // if it failed retry one time
-                        if (!response.isOk) {
-                            client.post(url, json, headers)
+                        try {
+                            val response = client.post(url, json, headers)
+                            // if it failed retry one time
+                            if (!response.isOk) {
+                                client.post(url, json, headers)
+                            }
+                        } catch (e: Exception) {
+                            Logger.i(TAG, "Failed to submit subscription list.", e)
                         }
                     }
                 }, UIDialogs.ActionStyle.PRIMARY)
