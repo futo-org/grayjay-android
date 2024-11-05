@@ -204,6 +204,7 @@
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.QRCaptureActivity"
+            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.FCastGuideActivity"
