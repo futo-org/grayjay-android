@@ -180,7 +180,7 @@ class SubscriptionGroupFragment : MainFragment() {
                     UIDialogs.showDialog(context, R.drawable.ic_trash, "Delete Group", "Are you sure you want to this group?\n[${g.name}]?", null, 0,
                         UIDialogs.Action("Cancel", {}),
                         UIDialogs.Action("Delete", {
-                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id);
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id, true);
                             _didDelete = true;
                             fragment.close(true);
                         }, UIDialogs.ActionStyle.DANGEROUS))

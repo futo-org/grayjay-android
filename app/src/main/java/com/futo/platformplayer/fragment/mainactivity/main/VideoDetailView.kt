@@ -111,9 +111,12 @@ import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
@@ -637,6 +640,27 @@ class VideoDetailView : ConstraintLayout {
         StatePlayer.instance.onVideoChanging.subscribe(this) {
             setVideoOverview(it);
         };
+
+        var hadDevice = false;
+        StateSync.instance.deviceUpdatedOrAdded.subscribe(this) { id, session ->
+            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
+            if(hasDevice != hadDevice) {
+                hadDevice = hasDevice;
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateMoreButtons();
+                }
+            }
+        };
+        StateSync.instance.deviceRemoved.subscribe(this) { id ->
+            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
+            if(hasDevice != hadDevice) {
+                hadDevice = hasDevice;
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateMoreButtons();
+                }
+            }
+        }
+
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
@@ -878,6 +902,22 @@ class VideoDetailView : ConstraintLayout {
                 };
                 _slideUpOverlay?.hide();
             },
+            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                RoundButton(context, R.drawable.ic_device, context.getString(R.string.send_to_device), TAG_SEND_TO_DEVICE) {
+                    val devices = StateSync.instance.getSessions();
+                    val videoToSend = video ?: return@RoundButton;
+                    if(devices.size > 1) {
+                        //not implemented
+                    }
+                    else if(devices.size == 1){
+                        val device = devices.first();
+                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
+                            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                device.sendJson(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                            }
+                        })
+                    }
+                }} else null,
             RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
                 reloadVideo();
                 _slideUpOverlay?.hide();
@@ -1025,6 +1065,8 @@ class VideoDetailView : ConstraintLayout {
         StateApp.instance.preventPictureInPicture.remove(this);
         StatePlayer.instance.onQueueChanged.remove(this);
         StatePlayer.instance.onVideoChanging.remove(this);
+        StateSync.instance.deviceUpdatedOrAdded.remove(this);
+        StateSync.instance.deviceRemoved.remove(this);
         MediaControlReceiver.onLowerVolumeReceived.remove(this);
         MediaControlReceiver.onPlayReceived.remove(this);
         MediaControlReceiver.onPauseReceived.remove(this);
@@ -2860,6 +2902,7 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_OVERLAY = "overlay";
         const val TAG_LIVECHAT = "livechat";
         const val TAG_OPEN = "open";
+        const val TAG_SEND_TO_DEVICE = "send_to_device";
         const val TAG_MORE = "MORE";
 
         private val _buttonPinStore = FragmentedStorage.get<StringArrayStorage>("videoPinnedButtons");

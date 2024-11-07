@@ -17,10 +17,18 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.stores.StringDateMapStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -45,6 +53,7 @@ class StatePlaylists {
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
         .load();
+    private val _playlistRemoved = FragmentedStorage.get<StringDateMapStorage>("playlist_removed");
 
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
 
@@ -118,6 +127,9 @@ class StatePlaylists {
         return playlistStore.findItem { it.id == id };
     }
 
+    fun getPlaylistRemovals(): Map<String, Long> {
+        return _playlistRemoved.all();
+    }
 
     fun didPlay(playlistId: String) {
         val playlist = getPlaylist(playlistId);
@@ -148,13 +160,15 @@ class StatePlaylists {
         createOrUpdatePlaylist(newPlaylist);
         return newPlaylist;
     }
-    fun createOrUpdatePlaylist(playlist: Playlist) {
+    fun createOrUpdatePlaylist(playlist: Playlist, isUserInteraction: Boolean = true) {
         playlist.dateUpdate = OffsetDateTime.now();
         playlistStore.saveAsync(playlist, true);
         if(playlist.id.isNotEmpty()) {
             if (StateDownloads.instance.isPlaylistCached(playlist.id)) {
                 StateDownloads.instance.checkForOutdatedPlaylistVideos(playlist.id);
             }
+            if(isUserInteraction)
+                broadcastSyncPlaylist(playlist);
         }
     }
     fun addToPlaylist(id: String, video: IPlatformVideo) {
@@ -163,13 +177,40 @@ class StatePlaylists {
             playlist.videos.add(SerializedPlatformVideo.fromVideo(video));
             playlist.dateUpdate = OffsetDateTime.now();
             playlistStore.saveAsync(playlist, true);
+
+            broadcastSyncPlaylist(playlist);
         }
     }
 
-    fun removePlaylist(playlist: Playlist) {
+    private fun broadcastSyncPlaylist(playlist: Playlist){
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
+                StateSync.instance.broadcastJson(
+                    GJSyncOpcodes.syncPlaylists,
+                    SyncPlaylistsPackage(listOf(playlist), mapOf())
+                );
+            }
+        };
+    }
+
+    fun removePlaylist(playlist: Playlist, isUserInteraction: Boolean = true) {
         playlistStore.delete(playlist);
         if(StateDownloads.instance.isPlaylistCached(playlist.id)) {
             StateDownloads.instance.deleteCachedPlaylist(playlist.id);
+        }
+        if(isUserInteraction) {
+            _playlistRemoved.setAndSave(playlist.id, OffsetDateTime.now());
+
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                    Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
+                    StateSync.instance.broadcastJson(
+                        GJSyncOpcodes.syncPlaylists,
+                        SyncPlaylistsPackage(listOf(), mapOf(Pair(playlist.id, OffsetDateTime.now().toEpochSecond())))
+                    );
+                }
+            };
         }
     }
 
@@ -192,6 +233,16 @@ class StatePlaylists {
         )), Charsets.UTF_8);
 
         return FileProvider.getUriForFile(context, context.resources.getString(R.string.authority), newFile);
+    }
+
+
+    fun getSyncPlaylistsPackageString(): String{
+        return Json.encodeToString(
+            SyncPlaylistsPackage(
+                getPlaylists(),
+                getPlaylistRemovals()
+            )
+        );
     }
 
     companion object {

@@ -6,15 +6,20 @@ import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StateSubscriptionGroups
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.SyncSessionData
 import com.futo.platformplayer.sync.internal.SyncSocketSession.Opcode
 import com.futo.platformplayer.sync.models.SendToDevicePackage
+import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,7 +27,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 interface IAuthorizable {
     val isAuthorized: Boolean
@@ -158,6 +165,8 @@ class SyncSession : IAuthorizable {
 
 
                     send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+                    send(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
+                    send(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
 
                     val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
                     if(recentHistory.size > 0)
@@ -205,6 +214,67 @@ class SyncSession : IAuthorizable {
                     }
                 }
 
+                GJSyncOpcodes.syncSubscriptionGroups -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val pack = Serializer.json.decodeFromString<SyncSubscriptionGroupsPackage>(json);
+
+                    var lastSubgroupChange = OffsetDateTime.MIN;
+                    for(group in pack.groups){
+                        if(group.lastChange > lastSubgroupChange)
+                            lastSubgroupChange = group.lastChange;
+
+                        val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+
+                        if(existing == null)
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(group, false, true);
+                        else if(existing.lastChange < group.lastChange) {
+                            existing.name = group.name;
+                            existing.urls = group.urls;
+                            existing.image = group.image;
+                            existing.priority = group.priority;
+                            existing.lastChange = group.lastChange;
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(existing, false, true);
+                        }
+                    }
+                    for(removal in pack.groupRemovals) {
+                        val creation = StateSubscriptionGroups.instance.getSubscriptionGroup(removal.key);
+                        val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                        if(creation != null && creation.creationTime < removalTime)
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(removal.key, false);
+                    }
+                }
+
+                GJSyncOpcodes.syncPlaylists -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val pack = Serializer.json.decodeFromString<SyncPlaylistsPackage>(json);
+
+                    for(playlist in pack.playlists) {
+                        val existing = StatePlaylists.instance.getPlaylist(playlist.id);
+
+                        if(existing == null)
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
+                        else if(existing.dateUpdate.toLocalDateTime() < playlist.dateUpdate.toLocalDateTime()) {
+                            existing.dateUpdate = playlist.dateUpdate;
+                            existing.name = playlist.name;
+                            existing.videos = playlist.videos;
+                            existing.dateCreation = playlist.dateCreation;
+                            existing.datePlayed = playlist.datePlayed;
+                            StatePlaylists.instance.createOrUpdatePlaylist(existing, false);
+                        }
+                    }
+                    for(removal in pack.playlistRemovals) {
+                        val creation = StatePlaylists.instance.getPlaylist(removal.key);
+                        val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                        if(creation != null && creation.dateCreation < removalTime)
+                            StatePlaylists.instance.removePlaylist(creation, false);
+
+                    }
+                }
+
                 GJSyncOpcodes.syncHistory -> {
                     val dataBody = ByteArray(data.remaining());
                     data.get(dataBody);
@@ -242,8 +312,7 @@ class SyncSession : IAuthorizable {
             if(!StateSubscriptions.instance.isSubscribed(sub.channel)) {
                 val removalTime = StateSubscriptions.instance.getSubscriptionRemovalTime(sub.channel.url);
                 if(sub.creationTime > removalTime) {
-                    val newSub =
-                        StateSubscriptions.instance.addSubscription(sub.channel, sub.creationTime);
+                    val newSub = StateSubscriptions.instance.addSubscription(sub.channel, sub.creationTime);
                     added.add(newSub);
                 }
             }

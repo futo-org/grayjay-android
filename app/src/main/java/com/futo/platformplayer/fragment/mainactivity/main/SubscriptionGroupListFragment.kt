@@ -60,7 +60,7 @@ class SubscriptionGroupListFragment : MainFragment() {
                 val loc = _subs.indexOf(group);
                 _subs.remove(group);
                 _list?.adapter?.notifyItemRangeRemoved(loc);
-                StateSubscriptionGroups.instance.deleteSubscriptionGroup(group.id);
+                StateSubscriptionGroups.instance.deleteSubscriptionGroup(group.id, true);
             };
             it.onDragDrop.subscribe {
                 _touchHelper?.startDrag(it);
