@@ -53,7 +53,8 @@ class StateSync {
     private var _connectThread: Thread? = null
     private var _started = false
     private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
-    private val _lastConnectTimes: MutableMap<String, Long> = mutableMapOf()
+    private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
+    private val _lastConnectTimesIp: MutableMap<String, Long> = mutableMapOf()
     //TODO: Should sync mdns and casting mdns be merged?
     //TODO: Decrease interval that devices are updated
     //TODO: Send less data
@@ -148,7 +149,21 @@ class StateSync {
                     for (connectPair in addressesToConnect) {
                         try {
                             val syncDeviceInfo = SyncDeviceInfo(connectPair.first, arrayOf(connectPair.second), PORT)
-                            connect(syncDeviceInfo)
+
+                            val now = System.currentTimeMillis()
+                            val lastConnectTime = synchronized(_lastConnectTimesIp) {
+                                _lastConnectTimesIp[connectPair.first] ?: 0
+                            }
+
+                            //Connect once every 30 seconds, max
+                            if (now - lastConnectTime > 30000) {
+                                synchronized(_lastConnectTimesIp) {
+                                    _lastConnectTimesIp[connectPair.first] = now
+                                }
+
+                                Logger.i(TAG, "Attempting to connect to authorized device by last known IP '${connectPair.first}' with pkey=${connectPair.first}")
+                                connect(syncDeviceInfo)
+                            }
                         } catch (e: Throwable) {
                             Logger.i(TAG, "Failed to connect to " + connectPair.first, e)
                         }
@@ -222,14 +237,14 @@ class StateSync {
 
                 if (authorized && !isConnected(pkey)) {
                     val now = System.currentTimeMillis()
-                    val lastConnectTime = synchronized(_lastConnectTimes) {
-                        _lastConnectTimes[pkey] ?: 0
+                    val lastConnectTime = synchronized(_lastConnectTimesMdns) {
+                        _lastConnectTimesMdns[pkey] ?: 0
                     }
 
                     //Connect once every 30 seconds, max
                     if (now - lastConnectTime > 30000) {
-                        synchronized(_lastConnectTimes) {
-                            _lastConnectTimes[pkey] = now
+                        synchronized(_lastConnectTimesMdns) {
+                            _lastConnectTimesMdns[pkey] = now
                         }
 
                         Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
@@ -237,7 +252,7 @@ class StateSync {
                         try {
                             connect(syncDeviceInfo)
                         } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to connect to $pkey", e)
+                            Logger.i(TAG, "Failed to connect to $pkey", e)
                         }
                     }
                 }
