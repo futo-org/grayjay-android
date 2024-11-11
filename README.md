@@ -9,11 +9,11 @@ technologies that frustrate centralization and industry consolidation.
 
 <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
   <div style="flex: 1 1 45%; max-width: 45%; text-align: center;">
-    <img src="./images/video.png" alt="Image 1" style="width: 100%; max-width: 400px;">
+    <img src="./images/video.png" style="width: 100%; max-width: 200px;">
     <p style="margin-top: 5px;">Video</p>
   </div>
   <div style="flex: 1 1 45%; max-width: 45%; text-align: center;">
-    <img src="./images/video-details.png" alt="Image 2" style="width: 100%; max-width: 400px;">
+    <img src="./images/video-details.png" style="width: 100%; max-width: 200px;">
     <p style="margin-top: 5px;">Video (details)</p>
   </div>
 </div>
