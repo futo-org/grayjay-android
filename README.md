@@ -7,6 +7,17 @@ One part of the solution is to create an application that allows users to search
 FUTO is an organization dedicated to developing, both through in-house engineering and investment,
 technologies that frustrate centralization and industry consolidation.
 
+<div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+  <div style="flex: 1 1 45%; max-width: 45%; text-align: center;">
+    <img src="./images/video.png" alt="Image 1" style="width: 100%; max-width: 400px;">
+    <p style="margin-top: 5px;">Video</p>
+  </div>
+  <div style="flex: 1 1 45%; max-width: 45%; text-align: center;">
+    <img src="./images/video-details.png" alt="Image 2" style="width: 100%; max-width: 400px;">
+    <p style="margin-top: 5px;">Video (details)</p>
+  </div>
+</div>
+
 <table border="0">
  <tr>
     <td><b style="font-size:30px"><img src="images/video.jpg" height="700" /></b></td>
@@ -203,3 +214,16 @@ Click on the CI/CD tab, you should now see the tests and build are in progress. 
 ## Documentation
 
 The documentation can be found [here](https://gitlab.futo.org/videostreaming/documents/-/wikis/API-Overview).
+
+<style>
+  /* Responsive behavior: Stack images and descriptions vertically on screens smaller than 600px */
+  @media (max-width: 600px) {
+    div[style*="display: flex"] {
+      flex-direction: column;
+      align-items: center;
+    }
+    div[style*="flex: 1 1 45%"] {
+      max-width: 100%;
+    }
+  }
+</style>
