@@ -608,6 +608,7 @@
     <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Do you want to convert channel {channelName} to a playlist?</string>
     <string name="failed_to_convert_channel">Failed to convert channel</string>
     <string name="page">Page</string>
+    <string name="send_to_device">Sync Video</string>
     <string name="hide">Hide</string>
     <string name="hide_from_home">Hide from Home</string>
     <string name="hide_creator_from_home">Hide Creator from Home</string>
