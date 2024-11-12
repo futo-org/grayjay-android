@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.futo.futopay.PaymentConfigurations
 import com.futo.futopay.PaymentManager
+import com.futo.futopay.formatMoney
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
@@ -94,9 +95,8 @@ class BuyFragment : MainFragment() {
 
                     if(currency != null && prices.containsKey(currency.id)) {
                         val price = prices[currency.id]!!;
-                        val priceDecimal = (price.toDouble() / 100);
                         withContext(Dispatchers.Main) {
-                            _buttonBuyText.text = currency.symbol + String.format("%.2f", priceDecimal) + context.getString(R.string.plus_tax);
+                            _buttonBuyText.text = formatMoney(country.id, currency.id, price) + context.getString(R.string.plus_tax);
                         }
                     }
                 }
