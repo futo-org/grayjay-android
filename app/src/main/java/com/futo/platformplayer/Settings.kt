@@ -505,6 +505,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 21)
         var autoplay: Boolean = false;
+
+        @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
+        var deleteFromWatchLaterAuto: Boolean = true;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

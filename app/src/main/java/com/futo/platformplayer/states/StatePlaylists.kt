@@ -90,6 +90,18 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
+    fun getWatchLaterFromUrl(url: String): SerializedPlatformVideo?{
+        synchronized(_watchlistStore) {
+            val order = _watchlistOrderStore.getAllValues();
+            return _watchlistStore.getItems().firstOrNull { it.url == url };
+        }
+    }
+    fun removeFromWatchLater(url: String) {
+        val item = getWatchLaterFromUrl(url);
+        if(item != null){
+            removeFromWatchLater(item);
+        }
+    }
     fun removeFromWatchLater(video: SerializedPlatformVideo) {
         synchronized(_watchlistStore) {
             _watchlistStore.delete(video);

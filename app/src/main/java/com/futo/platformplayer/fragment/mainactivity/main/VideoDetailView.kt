@@ -735,6 +735,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         onClose.subscribe {
+            checkAndRemoveWatchLater();
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
@@ -1834,6 +1835,8 @@ class VideoDetailView : ConstraintLayout {
 
     fun prevVideo(withoutRemoval: Boolean = false) {
         Logger.i(TAG, "prevVideo")
+        checkAndRemoveWatchLater();
+
         val next = StatePlayer.instance.prevQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
         if(next != null) {
             setVideoOverview(next, true, 0, true);
@@ -1842,6 +1845,8 @@ class VideoDetailView : ConstraintLayout {
 
     fun nextVideo(forceLoop: Boolean = false, withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
+        checkAndRemoveWatchLater();
+
         var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9, bypassVideoLoop);
         val autoplayVideo = _autoplayVideo
         if (next == null && autoplayVideo != null && StatePlayer.instance.autoplay) {
@@ -1850,7 +1855,8 @@ class VideoDetailView : ConstraintLayout {
             next = autoplayVideo
         }
         _autoplayVideo = null
-        Logger.i(TAG, "Autoplay video cleared (nextVideo)")
+        Logger.i(TAG, "Autoplay video cleared (nextVideo)");
+
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {
@@ -1861,6 +1867,20 @@ class VideoDetailView : ConstraintLayout {
             StatePlayer.instance.setCurrentlyPlaying(null);
         return false;
     }
+
+    fun checkAndRemoveWatchLater(){
+        val watchCurrent = video ?: videoLocal ?: _searchVideo;
+        if(Settings.instance.playback.deleteFromWatchLaterAuto) {
+            if(watchCurrent?.duration != null &&
+                watchCurrent.duration > 0 &&
+                (lastPositionMilliseconds / 1000) > watchCurrent.duration * 0.7) {
+                if(!watchCurrent.url.isNullOrEmpty()) {
+                    StatePlaylists.instance.removeFromWatchLater(watchCurrent.url);
+                }
+            }
+        }
+    }
+
 
     //Quality Selector data
     private fun updateQualityFormatsOverlay(liveStreamVideoFormats : List<Format>?, liveStreamAudioFormats : List<Format>?) {
