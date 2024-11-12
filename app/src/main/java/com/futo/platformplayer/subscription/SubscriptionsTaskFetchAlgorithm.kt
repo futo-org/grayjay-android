@@ -22,6 +22,7 @@ import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.coroutines.CoroutineScope
 import java.time.OffsetDateTime
@@ -138,6 +139,18 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
         for(task in tasks) {
             val forkTask = threadPool.submit<SubscriptionTaskResult> {
+                if(StatePlugins.instance.isUpdating(task.client.id)){
+                    val isUpdatingException = ScriptCriticalException(task.client.config, "Plugin is updating");
+                    synchronized(failedPlugins) {
+                        //Fail all subscription calls to plugin if it has a critical issue
+                        if(isUpdatingException.config is SourcePluginConfig && !failedPlugins.contains(isUpdatingException.config.id)) {
+                            Logger.w(StateSubscriptions.TAG, "Subscriptions ignoring plugin [${isUpdatingException.config.name}] due to critical exception:\n" + isUpdatingException.message);
+                            failedPlugins.add(isUpdatingException.config.id);
+                        }
+                    }
+                    return@submit SubscriptionTaskResult(task, StateCache.instance.getChannelCachePager(task.sub.channel.url), isUpdatingException);
+                }
+
                 if(task.fromPeek) {
                     try {
 
