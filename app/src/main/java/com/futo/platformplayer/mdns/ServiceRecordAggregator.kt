@@ -100,33 +100,34 @@ class ServiceRecordAggregator {
         Logger.i(TAG, "$builder")*/
 
         val currentServices: MutableList<DnsService>
+        ptrRecords.forEach { record ->
+            val cachedPtrRecord = _cachedPtrRecords.getOrPut(record.first.name) { mutableListOf() }
+            val newPtrRecord = CachedDnsPtrRecord(Date(System.currentTimeMillis() + record.first.timeToLive.toLong() * 1000L), record.second.domainName)
+            cachedPtrRecord.replaceOrAdd(newPtrRecord) { it.target == record.second.domainName }
+        }
+
+        aRecords.forEach { aRecord ->
+            val cachedARecord = _cachedAddressRecords.getOrPut(aRecord.first.name) { mutableListOf() }
+            val newARecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aRecord.first.timeToLive.toLong() * 1000L), aRecord.second.address)
+            cachedARecord.replaceOrAdd(newARecord) { it.address == newARecord.address }
+        }
+
+        aaaaRecords.forEach { aaaaRecord ->
+            val cachedAaaaRecord = _cachedAddressRecords.getOrPut(aaaaRecord.first.name) { mutableListOf() }
+            val newAaaaRecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aaaaRecord.first.timeToLive.toLong() * 1000L), aaaaRecord.second.address)
+            cachedAaaaRecord.replaceOrAdd(newAaaaRecord) { it.address == newAaaaRecord.address }
+        }
+
+        txtRecords.forEach { txtRecord ->
+            _cachedTxtRecords[txtRecord.first.name] = CachedDnsTxtRecord(Date(System.currentTimeMillis() + txtRecord.first.timeToLive.toLong() * 1000L), txtRecord.second.texts)
+        }
+
+        srvRecords.forEach { srvRecord ->
+            _cachedSrvRecords[srvRecord.first.name] = CachedDnsSrvRecord(Date(System.currentTimeMillis() + srvRecord.first.timeToLive.toLong() * 1000L), srvRecord.second)
+        }
+
+        //TODO: Maybe this can be debounced?
         synchronized(this._currentServices) {
-            ptrRecords.forEach { record ->
-                val cachedPtrRecord = _cachedPtrRecords.getOrPut(record.first.name) { mutableListOf() }
-                val newPtrRecord = CachedDnsPtrRecord(Date(System.currentTimeMillis() + record.first.timeToLive.toLong() * 1000L), record.second.domainName)
-                cachedPtrRecord.replaceOrAdd(newPtrRecord) { it.target == record.second.domainName }
-            }
-
-            aRecords.forEach { aRecord ->
-                val cachedARecord = _cachedAddressRecords.getOrPut(aRecord.first.name) { mutableListOf() }
-                val newARecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aRecord.first.timeToLive.toLong() * 1000L), aRecord.second.address)
-                cachedARecord.replaceOrAdd(newARecord) { it.address == newARecord.address }
-            }
-
-            aaaaRecords.forEach { aaaaRecord ->
-                val cachedAaaaRecord = _cachedAddressRecords.getOrPut(aaaaRecord.first.name) { mutableListOf() }
-                val newAaaaRecord = CachedDnsAddressRecord(Date(System.currentTimeMillis() + aaaaRecord.first.timeToLive.toLong() * 1000L), aaaaRecord.second.address)
-                cachedAaaaRecord.replaceOrAdd(newAaaaRecord) { it.address == newAaaaRecord.address }
-            }
-
-            txtRecords.forEach { txtRecord ->
-                _cachedTxtRecords[txtRecord.first.name] = CachedDnsTxtRecord(Date(System.currentTimeMillis() + txtRecord.first.timeToLive.toLong() * 1000L), txtRecord.second.texts)
-            }
-
-            srvRecords.forEach { srvRecord ->
-                _cachedSrvRecords[srvRecord.first.name] = CachedDnsSrvRecord(Date(System.currentTimeMillis() + srvRecord.first.timeToLive.toLong() * 1000L), srvRecord.second)
-            }
-
             currentServices = getCurrentServices()
             this._currentServices.clear()
             this._currentServices.addAll(currentServices)

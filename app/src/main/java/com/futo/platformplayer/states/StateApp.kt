@@ -2,6 +2,8 @@ package com.futo.platformplayer.states
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -20,9 +22,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.work.*
 import com.futo.platformplayer.*
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs.Action
+import com.futo.platformplayer.UIDialogs.ActionStyle
+import com.futo.platformplayer.UIDialogs.Companion.showDialog
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -419,8 +425,17 @@ class StateApp {
         Logger.onLogSubmitted.subscribe {
             scopeOrNull?.launch(Dispatchers.Main) {
                 try {
-                    if (it != null) {
-                        UIDialogs.toast("Uploaded $it", true);
+                    if (!it.isNullOrEmpty()) {
+                        (SettingsActivity.getActivity() ?: contextOrNull)?.let { c ->
+                            val okButtonAction = Action(c.getString(R.string.ok), {}, ActionStyle.PRIMARY)
+                            val copyButtonAction = Action(c.getString(R.string.copy), {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Log id", it)
+                                clipboard.setPrimaryClip(clip)
+                            }, ActionStyle.NONE)
+
+                            showDialog(c, R.drawable.ic_error, "Uploaded $it", null, null, 0, copyButtonAction, okButtonAction)
+                        }
                     } else {
                         UIDialogs.toast("Failed to upload");
                     }
