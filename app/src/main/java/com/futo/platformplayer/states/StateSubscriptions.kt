@@ -202,13 +202,13 @@ class StateSubscriptions {
             return _subscriptionOthers.findItem { it.isChannel(url)};
         }
     }
-    fun getSubscriptionOtherOrCreate(url: String) : Subscription {
+    fun getSubscriptionOtherOrCreate(url: String, name: String? = null, thumbnail: String? = null) : Subscription {
         synchronized(_subscriptionOthers) {
             val sub = getSubscriptionOther(url);
             if(sub == null) {
-                val newSub = Subscription(SerializedChannel(PlatformID.NONE, url, null, null, 0, null, url, mapOf()));
+                val newSub = Subscription(SerializedChannel(PlatformID.NONE, name ?: url, thumbnail, null, 0, null, url, mapOf()));
                 newSub.isOther = true;
-                _subscriptions.save(newSub);
+                _subscriptionOthers.save(newSub);
                 return newSub;
             }
             else return sub;
@@ -295,6 +295,9 @@ class StateSubscriptions {
             onSubscriptionsChanged.emit(getSubscriptions(), false);
             if(isUserAction)
                 _subscriptionsRemoved.setAndSave(sub.channel.url, OffsetDateTime.now());
+
+            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url))
+                getSubscriptionOtherOrCreate(sub.channel.url, sub.channel.name, sub.channel.thumbnail);
         }
         return sub;
     }

@@ -191,21 +191,21 @@ class VideoHelper {
         }
 
 
-        fun estimateSourceSize(source: IVideoSource?): Int {
+        fun estimateSourceSize(source: IVideoSource?): Long {
             if(source == null) return 0;
             if(source is IVideoSource) {
                 if(source.bitrate ?: 0 <= 0 || source.duration.toInt() == 0)
                     return 0;
-                return (source.duration / 8).toInt() * source.bitrate!!;
+                return (source.duration / 8) * source.bitrate!!;
             }
             else return 0;
         }
-        fun estimateSourceSize(source: IAudioSource?): Int {
+        fun estimateSourceSize(source: IAudioSource?): Long {
             if(source == null) return 0;
             if(source is IAudioSource) {
                 if(source.bitrate <= 0 || source.duration?.toInt() ?: 0 == 0)
                     return 0;
-                return (source.duration!! / 8).toInt() * source.bitrate;
+                return (source.duration!! / 8) * source.bitrate;
             }
             else return 0;
         }

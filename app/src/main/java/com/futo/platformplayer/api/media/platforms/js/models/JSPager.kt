@@ -71,6 +71,8 @@ abstract class JSPager<T> : IPager<T> {
 
         warnIfMainThread("JSPager.getResults");
         val items = pager.getOrThrow<V8ValueArray>(config, "results", "JSPager");
+        if(items.v8Runtime.isDead || items.v8Runtime.isClosed)
+            throw IllegalStateException("Runtime closed");
         val newResults = items.toArray()
             .map { convertResult(it as V8ValueObject) }
             .toList();

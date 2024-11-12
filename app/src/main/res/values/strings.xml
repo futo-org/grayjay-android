@@ -180,6 +180,7 @@
     <string name="set_a_password_for_your_daily_backup">Set a password for your daily backup</string>
     <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Set a password used to encrypt your daily backup that is written to external storage.</string>
     <string name="backup_password">Backup Password</string>
+    <string name="repeat_password">Repeat Password</string>
     <string name="restore_from_automatic_backup">Restore from Automatic Backup</string>
     <string name="it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password">It appears an automatic backup exists on your device, if you would like to restore, enter your backup password.</string>
     <string name="restore">Restore</string>

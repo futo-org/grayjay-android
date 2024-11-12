@@ -110,6 +110,15 @@ class StateSubscriptionGroups {
         }
     }
 
+    fun hasSubscriptionGroup(url: String): Boolean {
+        val groups = getSubscriptionGroups();
+        for(group in groups){
+            if(group.urls.contains(url))
+                return true;
+        }
+        return false;
+    }
+
 
     fun getSyncSubscriptionGroupsPackageString(): String{
         return Json.encodeToString(

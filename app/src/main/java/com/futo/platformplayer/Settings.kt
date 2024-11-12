@@ -862,10 +862,14 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 2)
         fun clearPayment() {
-            StatePayment.instance.clearLicenses();
-            SettingsActivity.getActivity()?.let {
-                UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
-                it.reloadSettings();
+            SettingsActivity.getActivity()?.let { context ->
+                UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete your license?", {
+                    StatePayment.instance.clearLicenses();
+                    SettingsActivity.getActivity()?.let {
+                        UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
+                        it.reloadSettings();
+                    }
+                })
             }
         }
     }
