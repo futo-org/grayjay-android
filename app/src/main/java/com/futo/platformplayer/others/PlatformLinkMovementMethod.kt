@@ -12,6 +12,8 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.timestampRegex
+import com.futo.platformplayer.views.behavior.NonScrollingTextView
+import com.futo.platformplayer.views.behavior.NonScrollingTextView.Companion
 import kotlinx.coroutines.runBlocking
 
 class PlatformLinkMovementMethod : LinkMovementMethod {
@@ -23,6 +25,7 @@ class PlatformLinkMovementMethod : LinkMovementMethod {
 
     override fun onTouchEvent(widget: TextView, buffer: Spannable, event: MotionEvent): Boolean {
         val action = event.action;
+        Logger.i(TAG, "onTouchEvent (action = $action)")
         if (action == MotionEvent.ACTION_UP) {
             val x = event.x.toInt() - widget.totalPaddingLeft + widget.scrollX;
             val y = event.y.toInt() - widget.totalPaddingTop + widget.scrollY;

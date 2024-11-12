@@ -82,6 +82,7 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="confirm">Confirm</string>
+    <string name="do_not_ask_again">Don\'t ask again</string>
     <string name="confirm_delete_playlist">Are you sure you want to delete this playlist?</string>
     <string name="confirm_delete_subscription">Are you sure you want to delete this subscription?</string>
     <string name="confirm_remove_source">Removing this source will result in some of your subscriptions not being resolved.</string>
@@ -418,6 +419,8 @@
     <string name="payment">Payment</string>
     <string name="payment_status">Payment Status</string>
     <string name="bypass_rotation_prevention">Bypass Rotation Prevention</string>
+    <string name="playlist_delete_confirmation">Playlist Delete Confirmation</string>
+    <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
     <string name="enable_polycentric">Enable Polycentric</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Can be disabled when you are experiencing issues</string>
     <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>

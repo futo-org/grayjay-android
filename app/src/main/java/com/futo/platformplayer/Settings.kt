@@ -882,7 +882,10 @@ class Settings : FragmentedStorageFileJson() {
         @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
         var bypassRotationPrevention: Boolean = false;
 
-        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 1)
+        @FormField(R.string.playlist_delete_confirmation, FieldForm.TOGGLE, R.string.playlist_delete_confirmation_description, 2)
+        var playlistDeleteConfirmation: Boolean = true;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 3)
         var polycentricEnabled: Boolean = true;
     }
 

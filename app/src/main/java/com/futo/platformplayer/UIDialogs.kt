@@ -348,6 +348,13 @@ class UIDialogs {
             showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction)
         }
 
+        fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null, doNotAskAgainAction: (() -> Unit)? = null) {
+            val confirmButtonAction = Action(context.getString(R.string.confirm), action, ActionStyle.PRIMARY)
+            val cancelButtonAction = Action(context.getString(R.string.cancel), cancelAction ?: {}, ActionStyle.ACCENT)
+            val doNotAskAgain = Action(context.getString(R.string.do_not_ask_again), doNotAskAgainAction ?: {}, ActionStyle.NONE)
+            showDialog(context, R.drawable.ic_error, text, null, null, 0, doNotAskAgain, cancelButtonAction, confirmButtonAction)
+        }
+
         fun showUpdateAvailableDialog(context: Context, lastVersion: Int, hideExceptionButtons: Boolean = false) {
             val dialog = AutoUpdateDialog(context);
             registerDialogOpened(dialog);
