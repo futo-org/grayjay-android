@@ -19,6 +19,7 @@ import com.futo.platformplayer.stores.PluginIconStorage
 import com.futo.platformplayer.stores.PluginScriptsDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -47,6 +48,8 @@ class StatePlugins {
 
     private var _updatesAvailableMap: HashSet<String> = hashSetOf();
 
+    private val _isUpdating: HashSet<String> = hashSetOf();
+
     fun getPluginIconOrNull(id: String): ImageVariable? {
         if(iconsDir.hasIcon(id))
             return iconsDir.getIconBinary(id);
@@ -56,6 +59,38 @@ class StatePlugins {
     fun reloadPluginFile(){
         _plugins = FragmentedStorage.storeJson<SourcePluginDescriptor>("plugins")
             .load();
+    }
+
+    fun isUpdating(id: String): Boolean{
+        synchronized(_isUpdating){
+            return _isUpdating.contains(id);
+        }
+    }
+    fun setIsUpdating(id: String, value: Boolean){
+        synchronized(_isUpdating){
+            if(value && !_isUpdating.contains(id)) {
+                Logger.i(TAG, "PLUGIN [${id}] UPDATING");
+                _isUpdating.add(id);
+            }
+            if(!value && _isUpdating.contains(id)) {
+                Logger.i(TAG, "PLUGIN [${id}] NOT UPDATING");
+                _isUpdating.remove(id);
+            }
+        }
+    }
+    suspend fun whileUpdating(id: String, handle: suspend ()->Unit){
+        try {
+            setIsUpdating(id, true);
+            handle();
+        }
+        finally {
+            setIsUpdating(id, false);
+        }
+    }
+    fun clearUpdating(){
+        synchronized(_isUpdating) {
+            _isUpdating.clear();
+        }
     }
 
 
@@ -430,42 +465,49 @@ class StatePlugins {
 
     fun installPluginBackground(context: Context, scope: CoroutineScope, config: SourcePluginConfig, script: String, onProgress: (text: String, progress: Double)->Unit, onConcluded: (ex: Throwable?)->Unit) {
         scope.launch(Dispatchers.IO) {
-            val client = ManagedHttpClient();
-            try {
+            whileUpdating(config.id) {
                 withContext(Dispatchers.Main) {
-                    onProgress.invoke("Validating script", 0.25);
+                    onProgress.invoke("Waiting for plugins to finish", 0.1);
                 }
+                delay(500);
 
-                val tempDescriptor = SourcePluginDescriptor(config);
-                val plugin = JSClient(context, tempDescriptor, null, script);
-                plugin.validate();
-
-                withContext(Dispatchers.Main) {
-                    onProgress.invoke("Downloading Icon", 0.5);
-                }
-
-                val icon = config.absoluteIconUrl?.let { absIconUrl ->
+                val client = ManagedHttpClient();
+                try {
                     withContext(Dispatchers.Main) {
-                        onProgress.invoke("Saving plugin", 0.75);
+                        onProgress.invoke("Validating script", 0.25);
                     }
-                    val iconResp = client.get(absIconUrl);
-                    if(iconResp.isOk)
-                        return@let iconResp.body?.byteStream()?.use { it.readBytes() };
-                    return@let null;
-                }
-                val installEx = StatePlugins.instance.createPlugin(config, script, icon, true);
-                if(installEx != null)
-                    throw installEx;
-                StatePlatform.instance.updateAvailableClients(context);
 
-                withContext(Dispatchers.Main) {
-                    onProgress.invoke("Finished", 1.0)
-                    onConcluded.invoke(null);
-                }
-            } catch (ex: Exception) {
-                Logger.e(TAG, ex.message ?: "null", ex);
-                withContext(Dispatchers.Main) {
-                    onConcluded.invoke(ex);
+                    val tempDescriptor = SourcePluginDescriptor(config);
+                    val plugin = JSClient(context, tempDescriptor, null, script);
+                    plugin.validate();
+
+                    withContext(Dispatchers.Main) {
+                        onProgress.invoke("Downloading Icon", 0.5);
+                    }
+
+                    val icon = config.absoluteIconUrl?.let { absIconUrl ->
+                        withContext(Dispatchers.Main) {
+                            onProgress.invoke("Saving plugin", 0.75);
+                        }
+                        val iconResp = client.get(absIconUrl);
+                        if (iconResp.isOk)
+                            return@let iconResp.body?.byteStream()?.use { it.readBytes() };
+                        return@let null;
+                    }
+                    val installEx = StatePlugins.instance.createPlugin(config, script, icon, true);
+                    if (installEx != null)
+                        throw installEx;
+                    StatePlatform.instance.updateAvailableClients(context);
+
+                    withContext(Dispatchers.Main) {
+                        onProgress.invoke("Finished", 1.0)
+                        onConcluded.invoke(null);
+                    }
+                } catch (ex: Exception) {
+                    Logger.e(TAG, ex.message ?: "null", ex);
+                    withContext(Dispatchers.Main) {
+                        onConcluded.invoke(ex);
+                    }
                 }
             }
         }
