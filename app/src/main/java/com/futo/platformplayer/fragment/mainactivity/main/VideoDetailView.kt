@@ -40,6 +40,7 @@ import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -72,6 +73,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
@@ -844,6 +846,11 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun updateMoreButtons() {
+        val isLimitedVersion = video?.url != null && StatePlatform.instance.getContentClientOrNull(video!!.url)?.let {
+            if (it is JSClient)
+                return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
+            else false;
+        } ?: false;
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {
@@ -863,38 +870,44 @@ class VideoDetailView : ConstraintLayout {
                     }
                     _slideUpOverlay?.hide();
                 } else null,
-            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
-                if(!allowBackground) {
-                    _player.switchToAudioMode();
-                    allowBackground = true;
-                    it.text.text = resources.getString(R.string.background_revert);
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
+                    if(!allowBackground) {
+                        _player.switchToAudioMode();
+                        allowBackground = true;
+                        it.text.text = resources.getString(R.string.background_revert);
+                    }
+                    else {
+                        _player.switchToVideoMode();
+                        allowBackground = false;
+                        it.text.text = resources.getString(R.string.background);
+                    }
+                    _slideUpOverlay?.hide();
                 }
-                else {
-                    _player.switchToVideoMode();
-                    allowBackground = false;
-                    it.text.text = resources.getString(R.string.background);
+            else null,
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
+                    video?.let {
+                        _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
+                    };
                 }
-                _slideUpOverlay?.hide();
-            },
-            RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
-                video?.let {
-                    _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
-                };
-            },
-            RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
-                video?.let {
-                    Logger.i(TAG, "Share preventPictureInPicture = true");
-                    preventPictureInPicture = true;
-                    shareVideo();
-                };
-                _slideUpOverlay?.hide();
-            },
-            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
-                this.startPictureInPicture();
-                fragment.forcePictureInPicture();
-                //PiPActivity.startPiP(context);
-                _slideUpOverlay?.hide();
-            },
+            else null,
+                RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
+                    video?.let {
+                        Logger.i(TAG, "Share preventPictureInPicture = true");
+                        preventPictureInPicture = true;
+                        shareVideo();
+                    };
+                    _slideUpOverlay?.hide();
+                },
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
+                    this.startPictureInPicture();
+                    fragment.forcePictureInPicture();
+                    //PiPActivity.startPiP(context);
+                    _slideUpOverlay?.hide();
+                }
+            else null,
             RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
                 video?.let {
                     val url = video?.shareUrl ?: _searchVideo?.shareUrl ?: _url;
