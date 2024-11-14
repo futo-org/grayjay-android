@@ -24,7 +24,7 @@ The FUTO media app is a player that exposes multiple video websites as sources i
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/sources.png" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/source.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Sources</td>
