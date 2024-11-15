@@ -56,6 +56,7 @@
             android:id="@+id/button_close"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_close"
             android:padding="5dp"
             android:src="@drawable/ic_close" />
     </LinearLayout>

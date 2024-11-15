@@ -108,6 +108,7 @@
                 android:id="@+id/creator_thumbnail"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:contentDescription="@string/cd_creator_thumbnail"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_marginStart="10dp"
@@ -161,6 +162,7 @@
                     android:id="@+id/thumbnail_platform"
                     android:layout_width="25dp"
                     android:layout_height="25dp"
+                    android:contentDescription="@string/cd_platform_indicator"
                     android:scaleType="centerInside" />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>

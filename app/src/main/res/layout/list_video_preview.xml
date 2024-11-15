@@ -134,6 +134,7 @@
                     android:id="@+id/creator_thumbnail"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
+                    android:contentDescription="@string/cd_creator_thumbnail"
                     android:layout_marginStart="10dp"
                     android:layout_marginTop="10dp"
                     app:layout_constraintLeft_toLeftOf="parent"
@@ -205,6 +206,7 @@
                         <ImageView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:contentDescription="@string/cd_button_download"
                             android:scaleType="fitXY"
                             app:srcCompat="@drawable/download_for_offline" />
                     </FrameLayout>
@@ -213,6 +215,7 @@
                         android:id="@+id/thumbnail_platform"
                         android:layout_width="25dp"
                         android:layout_height="25dp"
+                        android:contentDescription="@string/cd_platform_indicator"
                         android:scaleType="centerInside"
                         tools:src="@drawable/ic_peertube" />
                 </LinearLayout>
@@ -230,6 +233,7 @@
                         android:id="@+id/button_add_to_watch_later"
                         android:layout_width="30dp"
                         android:layout_height="30dp"
+                        android:contentDescription="@string/cd_button_add_to_watch_later"
                         android:layout_marginEnd="5dp"
                         android:background="@drawable/edit_text_background"
                         app:srcCompat="@drawable/ic_clock_white" />

@@ -24,6 +24,7 @@
             android:id="@+id/image_source"
             android:layout_width="35dp"
             android:layout_height="35dp"
+            android:contentDescription="@string/cd_platform_indicator"
             app:srcCompat="@drawable/ic_peertube"
             android:scaleType="fitCenter" />
 

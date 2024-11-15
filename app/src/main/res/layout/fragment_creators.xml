@@ -48,6 +48,7 @@
                         android:id="@+id/button_clear_search"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
+                        android:contentDescription="@string/cd_button_clear_search"
                         android:paddingStart="18dp"
                         android:paddingEnd="18dp"
                         android:layout_gravity="right|center_vertical"

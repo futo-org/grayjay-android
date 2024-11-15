@@ -103,6 +103,7 @@
             android:id="@+id/minimize_play"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_minimize_play"
             android:padding="10dp"
             android:clickable="true"
             android:scaleType="fitCenter"
@@ -111,6 +112,7 @@
             android:id="@+id/minimize_pause"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_minimize_pause"
             android:padding="5dp"
             android:scaleType="fitCenter"
             android:clickable="true"
@@ -119,6 +121,7 @@
             android:id="@+id/minimize_close"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_minimize_close"
             android:padding="5dp"
             android:scaleType="fitCenter"
             android:layout_marginStart="2dp"
@@ -337,7 +340,8 @@
                         <com.futo.platformplayer.views.others.CreatorThumbnail
                             android:id="@+id/creator_thumbnail"
                             android:layout_width="35dp"
-                            android:layout_height="35dp" />
+                            android:layout_height="35dp"
+                            android:contentDescription="@string/cd_creator_thumbnail" />
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
