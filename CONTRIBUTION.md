@@ -49,9 +49,23 @@ We encourage developers to write their own plugins. Please refer to the "Getting
 
 ## Contributing to Core
 
-**We are currently not accepting contributions to the core.**
 
-The core is currently licensed under the FUTO Temporary License (FTL). The licensing and ownership of contributions to the core are complex topics that we are still working on. We'll update these guidelines when we have more clarity.
+### License
+
+The core is currently licensed under the [Source First License 1.1](./LICENSE.md). All contributors have to sign FUTO Individual Contributor License Agreement before contributions can be accepted. You can read more about it at [https://cla.futo.org/](https://cla.futo.org/).
+
+### How to Contribute
+
+1. Fork the core repository.
+2. Clone your fork.
+3. Make your changes.
+4. Commit and push your changes.
+5. Open a pull request.
+
+### Guidelines
+
+- Ensure your code adheres to the existing style.
+- Include documentation and unit tests (where applicable).
 
 ---
 
