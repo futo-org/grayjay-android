@@ -143,9 +143,7 @@ class VideoDetailFragment : MainFragment {
     @SuppressLint("SourceLockedOrientationActivity")
     fun updateOrientation() {
         val a = activity ?: return
-        // only applies to small windows
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
-
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
 

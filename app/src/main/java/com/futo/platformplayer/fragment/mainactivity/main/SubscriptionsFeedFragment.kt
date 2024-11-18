@@ -26,6 +26,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
@@ -362,6 +363,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         }
 
         override fun reload() {
+            StatePlugins.instance.clearUpdating(); //Fallback in case it doesnt clear, UI should be blocked.
             loadResults(true);
         }
 

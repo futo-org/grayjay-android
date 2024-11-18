@@ -11,6 +11,7 @@ import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.copyTo
 import com.futo.platformplayer.encryption.GPasswordEncryptionProvider
@@ -18,7 +19,9 @@ import com.futo.platformplayer.encryption.GPasswordEncryptionProviderV0
 import com.futo.platformplayer.fragment.mainactivity.main.ImportSubscriptionsFragment
 import com.futo.platformplayer.getNowDiffHours
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -61,9 +64,9 @@ class StateBackup {
             StatePlaylists.instance.toMigrateCheck()
         ).flatten();
 
-        fun getCache(): ImportCache {
+        fun getCache(additionalVideos: List<SerializedPlatformVideo> = listOf()): ImportCache {
             val allPlaylists = StatePlaylists.instance.getPlaylists();
-            val videos = allPlaylists.flatMap { it.videos }.distinctBy { it.url };
+            val videos = allPlaylists.flatMap { it.videos }.plus(additionalVideos).distinctBy { it.url };
 
             val allSubscriptions = StateSubscriptions.instance.getSubscriptions();
             val channels = allSubscriptions.map { it.channel };
@@ -240,6 +243,23 @@ class StateBackup {
                 .associateBy { it.name }
                 .mapValues { it.value.getAllReconstructionStrings() }
                 .toMutableMap();
+
+            var historyVideos: List<SerializedPlatformVideo>? = null;
+            try {
+                storesToSave.set("subscription_groups", StateSubscriptionGroups.instance.getSubscriptionGroups().map { Json.encodeToString(it) });
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to serialize subscription groups");
+            }
+            try {
+                val history = StateHistory.instance.getRecentHistory(OffsetDateTime.MIN, 2000);
+                historyVideos = history.map { it.video };
+                storesToSave.set("history", history.map { it.toReconString() });
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to serialize history");
+            }
+
             val settings = Settings.instance.encode();
             val pluginSettings = StatePlugins.instance.getPlugins()
                 .associateBy { it.config.id }
@@ -249,7 +269,7 @@ class StateBackup {
                 .associateBy { it.config.id }
                 .mapValues { it.value.config.sourceUrl!! };
 
-            val cache = getCache();
+            val cache = getCache(historyVideos ?: listOf());
 
             val export = ExportStructure(exportInfo, settings, storesToSave, pluginUrls, pluginSettings, cache);
 
@@ -333,19 +353,64 @@ class StateBackup {
                                 if(doImportStores) {
                                     for(store in export.stores) {
                                         Logger.i(TAG, "Importing store [${store.key}]");
-                                        val relevantStore = availableStores.find { it.name == store.key };
-                                        if(relevantStore == null) {
-                                            Logger.w(TAG, "Unknown store [${store.key}] import");
-                                            continue;
+                                        if(store.key == "history") {
+                                            withContext(Dispatchers.Main) {
+                                                UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import History", "Would you like to import history?", null, 0,
+                                                    UIDialogs.Action("No", {
+                                                    }, UIDialogs.ActionStyle.NONE),
+                                                    UIDialogs.Action("Yes", {
+                                                        for(historyStr in store.value) {
+                                                            try {
+                                                                val histObj = HistoryVideo.fromReconString(historyStr) { url ->
+                                                                    return@fromReconString export.cache?.videos?.firstOrNull { it.url == url };
+                                                                }
+                                                                val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
+                                                                if(hist != null)
+                                                                    StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false);
+                                                            }
+                                                            catch(ex: Throwable) {
+                                                                Logger.e(TAG, "Failed to import subscription group", ex);
+                                                            }
+                                                        }
+                                                    }, UIDialogs.ActionStyle.PRIMARY))
+                                            }
                                         }
-                                        withContext(Dispatchers.Main) {
-                                            UIDialogs.showImportDialog(context, relevantStore, store.key, store.value, export.cache) {
-                                                synchronized(toAwait) {
-                                                    toAwait.remove(store.key);
-                                                    if(toAwait.isEmpty())
-                                                        onConclusion();
-                                                }
-                                            };
+                                        else if(store.key == "subscription_groups") {
+                                            withContext(Dispatchers.Main) {
+                                                UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import Subscription Groups", "Would you like to import subscription groups?\nExisting groups with the same id will be overridden!", null, 0,
+                                                    UIDialogs.Action("No", {
+                                                    }, UIDialogs.ActionStyle.NONE),
+                                                    UIDialogs.Action("Yes", {
+                                                        for(groupStr in store.value) {
+                                                            try {
+                                                                val group = Json.decodeFromString<SubscriptionGroup>(groupStr);
+                                                                val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+                                                                if(existing != null)
+                                                                    StateSubscriptionGroups.instance.deleteSubscriptionGroup(existing.id, false);
+                                                                StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
+                                                            }
+                                                            catch(ex: Throwable) {
+                                                                Logger.e(TAG, "Failed to import subscription group", ex);
+                                                            }
+                                                        }
+                                                    }, UIDialogs.ActionStyle.PRIMARY))
+                                            }
+                                        }
+                                        else {
+                                            val relevantStore = availableStores.find { it.name == store.key };
+                                            if (relevantStore == null) {
+                                                Logger.w(TAG, "Unknown store [${store.key}] import");
+                                                continue;
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                UIDialogs.showImportDialog(context, relevantStore, store.key, store.value, export.cache) {
+                                                    synchronized(toAwait) {
+                                                        toAwait.remove(store.key);
+                                                        if(toAwait.isEmpty())
+                                                            onConclusion();
+                                                    }
+                                                };
+                                            }
                                         }
                                     }
                                 }

@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.AddSourceOptionsActivity
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
@@ -57,10 +58,19 @@ class SubscriptionGroupListFragment : MainFragment() {
 
             };
             it.onDelete.subscribe { group ->
-                val loc = _subs.indexOf(group);
-                _subs.remove(group);
-                _list?.adapter?.notifyItemRangeRemoved(loc);
-                StateSubscriptionGroups.instance.deleteSubscriptionGroup(group.id);
+                context?.let { context ->
+                    UIDialogs.showDialog(context, R.drawable.ic_trash, "Delete Group", "Are you sure you want to this group?\n[${group.name}]?", null, 0,
+                        UIDialogs.Action("Cancel", {}),
+                        UIDialogs.Action("Delete", {
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(group.id, true);
+
+                            val loc = _subs.indexOf(group);
+                            _subs.remove(group);
+                            _list?.adapter?.notifyItemRangeRemoved(loc);
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(group.id, true);
+
+                        }, UIDialogs.ActionStyle.DANGEROUS));
+                }
             };
             it.onDragDrop.subscribe {
                 _touchHelper?.startDrag(it);

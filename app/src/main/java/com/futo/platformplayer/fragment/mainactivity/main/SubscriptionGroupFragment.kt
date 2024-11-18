@@ -180,7 +180,7 @@ class SubscriptionGroupFragment : MainFragment() {
                     UIDialogs.showDialog(context, R.drawable.ic_trash, "Delete Group", "Are you sure you want to this group?\n[${g.name}]?", null, 0,
                         UIDialogs.Action("Cancel", {}),
                         UIDialogs.Action("Delete", {
-                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id);
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(g.id, true);
                             _didDelete = true;
                             fragment.close(true);
                         }, UIDialogs.ActionStyle.DANGEROUS))
@@ -253,7 +253,7 @@ class SubscriptionGroupFragment : MainFragment() {
                     if(g.urls.isEmpty() && g.image == null) {
                         //Obtain image
                         for(sub in it) {
-                            val sub = StateSubscriptions.instance.getSubscription(sub);
+                            val sub = StateSubscriptions.instance.getSubscription(sub) ?: StateSubscriptions.instance.getSubscriptionOther(sub);
                             if(sub != null && sub.channel.thumbnail != null) {
                                 g.image = ImageVariable.fromUrl(sub.channel.thumbnail!!);
                                 g.image?.setImageView(_imageGroup);
@@ -308,8 +308,10 @@ class SubscriptionGroupFragment : MainFragment() {
 
             if(group != null) {
                 val urls = group.urls.toList();
-                val subs = StateSubscriptions.instance.getSubscriptions().map { it.channel }
-                _enabledCreators.addAll(subs.filter { urls.contains(it.url) });
+                val subs = urls.map {
+                    (StateSubscriptions.instance.getSubscription(it) ?: StateSubscriptions.instance.getSubscriptionOther(it))?.channel
+                }.filterNotNull();
+                _enabledCreators.addAll(subs);
             }
             updateMeta();
             filterCreators();

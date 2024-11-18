@@ -6,6 +6,8 @@ import android.widget.FrameLayout
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -53,14 +55,30 @@ class VideoListEditorView : FrameLayout {
         };
 
         adapterVideos.onRemove.subscribe { v ->
-            synchronized(_videos) {
-                val index = _videos.indexOf(v);
-                if(index >= 0) {
-                    _videos.removeAt(index);
-                    onVideoRemoved.emit(v);
+            val executeDelete = {
+                synchronized(_videos) {
+                    val index = _videos.indexOf(v);
+                    if(index >= 0) {
+                        _videos.removeAt(index);
+                        onVideoRemoved.emit(v);
+                    }
+                    adapterVideos.notifyItemRemoved(index);
                 }
-                adapterVideos.notifyItemRemoved(index);
             }
+
+            if (Settings.instance.other.playlistDeleteConfirmation) {
+                UIDialogs.showConfirmationDialog(context, "Please confirm to delete", action = {
+                    executeDelete()
+                }, cancelAction = {
+
+                }, doNotAskAgainAction = {
+                    Settings.instance.other.playlistDeleteConfirmation = false
+                    Settings.instance.save()
+                })
+            } else {
+                executeDelete()
+            }
+
         };
         adapterVideos.onClick.subscribe(onVideoClicked::emit);
 

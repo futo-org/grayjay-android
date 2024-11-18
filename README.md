@@ -9,8 +9,8 @@ technologies that frustrate centralization and industry consolidation.
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/video.jpg" height="700" /></b></td>
-    <td><b style="font-size:30px"><img src="images/video-details.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/video.png" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/video-details.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Video</td>
@@ -24,12 +24,10 @@ The FUTO media app is a player that exposes multiple video websites as sources i
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/sources.jpg" height="700" /></b></td>
-    <td><b style="font-size:30px"><img src="images/sources-disabled.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/source.png" height="700" /></b></td>
  </tr>
  <tr>
-    <td>Sources (all enabled)</td>
-    <td>Sources (one disabled)</td>
+    <td>Sources</td>
  </tr>
 </table>
 
@@ -38,7 +36,7 @@ Additional sources can also be installed. These sources are JavaScript sources, 
 <table border="0">
  <tr>
     <td><b style="font-size:30px"><img src="images/source-install.png" height="700" /></b></td>
-    <td><b style="font-size:30px"><img src="images/source-settings.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/source-settings.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Install a new source</td>
@@ -54,8 +52,8 @@ When a user enters a search term into the search bar,  the query is posted to th
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/search-list.jpg" height="700" /></b></td>
-    <td><b style="font-size:30px"><img src="images/search-preview.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/search-list.png" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/search-preview.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Search (list)</td>
@@ -71,7 +69,7 @@ Creators are able to configure their profile using NeoPass.
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/channel.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/channel.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Channel</td>
@@ -112,7 +110,7 @@ The app offers a lot of settings customizing how the app looks and feels. An exa
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/settings.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/settings.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Settings</td>
@@ -125,8 +123,8 @@ Playlists allow you to make a collection of videos that you can create and custo
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/playlists.jpg" height="700" /></b></td>
-    <td><b style="font-size:30px"><img src="images/playlist.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/playlists.png" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/playlist.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Playlists</td>
@@ -142,7 +140,7 @@ Both individual videos and playlists can be downloaded for local, offline playba
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/downloads.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/downloads.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Downloads</td>
@@ -157,7 +155,7 @@ For more information about casting please click [here](./docs/casting.md).
 
 <table border="0">
  <tr>
-    <td><b style="font-size:30px"><img src="images/casting.jpg" height="700" /></b></td>
+    <td><b style="font-size:30px"><img src="images/casting.png" height="700" /></b></td>
  </tr>
  <tr>
     <td>Casting</td>
@@ -182,6 +180,12 @@ In the future we hope to offer users the choice of their desired recommendation 
 
 1. Download a copy of the repository.
 2. Open the project in Android Studio: Once the repository is cloned, you can open it in Android Studio by selecting "Open an Existing Project" from the welcome screen and navigating to the directory where you cloned the repository.
+3. Open the terminal in Android Studio by clicking on the terminal icon on bottom left and run the following command:
+
+```sh
+git submodule update --init --recursive
+```
+
 3. Build the project: With the project open in Android Studio, you can build it by selecting "Build > Make Project" from the main menu. This will compile the code and generate an APK file that you can install on your device or emulator.
 4. Run the project: To run the project, select "Run > Run 'app'" from the main menu. This will launch the app on your device or emulator, allowing you to test it and make any necessary changes.
 
@@ -198,7 +202,6 @@ Tests will always run and are required to pass before a merge request is allowed
 Create a tag on the master branch, incrementing the last version number by 1 (for example `25` to `26`).
 
 Click on the CI/CD tab, you should now see the tests and build are in progress. If the build succeeds the last step will become available. The last step is a manual action which can be triggered by clicking the run button on the action. This action will deploy the build to all users using the app through auto-update.
-
 
 ## Documentation
 

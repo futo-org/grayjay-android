@@ -59,7 +59,6 @@ class StateHistory {
         return getHistoryPosition(url) > duration * 0.7;
     }
 
-
     fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L, date: OffsetDateTime? = null, isUserAction: Boolean = false): Long {
         val pos = if(position < 0) 0 else position;
         val historyVideo = index.obj;

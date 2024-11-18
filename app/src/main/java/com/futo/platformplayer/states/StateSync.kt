@@ -66,6 +66,10 @@ class StateSync {
     val deviceUpdatedOrAdded: Event2<String, SyncSession> = Event2()
 
     fun start() {
+        if (_started) {
+            Logger.i(TAG, "Already started.")
+            return
+        }
         _started = true
 
         if (Settings.instance.synchronization.broadcast || Settings.instance.synchronization.connectDiscovered) {
