@@ -150,7 +150,6 @@ class Settings : FragmentedStorageFileJson() {
     fun import() {
         val act = SettingsActivity.getActivity() ?: return;
         val intent = MainActivity.getImportOptionsIntent(act);
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK;
         act.startActivity(intent);
     }
 
