@@ -274,7 +274,7 @@ class SyncSocketSession {
             _sendBuffer.asUByteArray()[4] = opcode
             _sendBuffer.asUByteArray()[5] = subOpcode
 
-            //Logger.i(TAG, "Encrypting message (size = ${HEADER_SIZE})")
+            //Logger.i(TAG, "Encrypting message (opcode = ${opcode}, subOpcode = ${subOpcode}, size = ${HEADER_SIZE})")
 
             val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 0, HEADER_SIZE)
             //Logger.i(TAG, "Sending encrypted message (size = ${len})")

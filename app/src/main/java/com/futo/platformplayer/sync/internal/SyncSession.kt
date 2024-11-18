@@ -121,32 +121,32 @@ class SyncSession : IAuthorizable {
     }
 
     fun handlePacket(socketSession: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
-        Logger.i(TAG, "Handle packet (opcode: ${opcode}, subOpcode: ${subOpcode}, data.length: ${data.remaining()})")
-
-        when (opcode) {
-            Opcode.NOTIFY_AUTHORIZED.value -> {
-                _remoteAuthorized = true
-                checkAuthorized()
-            }
-            Opcode.NOTIFY_UNAUTHORIZED.value -> {
-                _remoteAuthorized = false
-                _onUnauthorized(this)
-            }
-            //TODO: Handle any kind of packet (that is not necessarily authorized)
-        }
-
-        if (!isAuthorized) {
-            return
-        }
-
-        if (opcode != Opcode.DATA.value) {
-            Logger.w(TAG, "Unknown opcode received: (opcode = ${opcode}, subOpcode = ${subOpcode})}")
-            return
-        }
-
-        Logger.i(TAG, "Received (opcode = ${opcode}, subOpcode = ${subOpcode}) (${data.remaining()} bytes)")
-        //TODO: Abstract this out
         try {
+            Logger.i(TAG, "Handle packet (opcode: ${opcode}, subOpcode: ${subOpcode}, data.length: ${data.remaining()})")
+
+            when (opcode) {
+                Opcode.NOTIFY_AUTHORIZED.value -> {
+                    _remoteAuthorized = true
+                    checkAuthorized()
+                }
+                Opcode.NOTIFY_UNAUTHORIZED.value -> {
+                    _remoteAuthorized = false
+                    _onUnauthorized(this)
+                }
+                //TODO: Handle any kind of packet (that is not necessarily authorized)
+            }
+
+            if (!isAuthorized) {
+                return
+            }
+
+            if (opcode != Opcode.DATA.value) {
+                Logger.w(TAG, "Unknown opcode received: (opcode = ${opcode}, subOpcode = ${subOpcode})}")
+                return
+            }
+
+            Logger.i(TAG, "Received (opcode = ${opcode}, subOpcode = ${subOpcode}) (${data.remaining()} bytes)")
+            //TODO: Abstract this out
             when (subOpcode) {
                 GJSyncOpcodes.sendToDevices -> {
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
