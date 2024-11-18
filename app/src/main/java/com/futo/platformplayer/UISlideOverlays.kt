@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.downloads.VideoLocal
@@ -879,6 +880,12 @@ class UISlideOverlays {
             val items = arrayListOf<View>();
             val lastUpdated = StatePlaylists.instance.getLastUpdatedPlaylist();
 
+            val isLimited = video?.url != null && StatePlatform.instance.getContentClientOrNull(video!!.url)?.let {
+                if (it is JSClient)
+                    return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
+                else false;
+            } ?: false;
+
             if (lastUpdated != null) {
                 items.add(
                     SlideUpMenuGroup(container.context, container.context.getString(R.string.recently_used_playlist), "recentlyusedplaylist",
@@ -899,17 +906,18 @@ class UISlideOverlays {
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.actions), "actions",
                 (listOf(
-                    SlideUpMenuItem(
-                        container.context,
-                        R.drawable.ic_download,
-                        container.context.getString(R.string.download),
-                        container.context.getString(R.string.download_the_video),
-                        tag = "download",
-                        call = {
-                            showDownloadVideoOverlay(video, container, true);
-                        },
-                        invokeParent = false
-                    ),
+                    if(!isLimited)
+                        SlideUpMenuItem(
+                            container.context,
+                            R.drawable.ic_download,
+                            container.context.getString(R.string.download),
+                            container.context.getString(R.string.download_the_video),
+                            tag = "download",
+                            call = {
+                                showDownloadVideoOverlay(video, container, true);
+                            },
+                            invokeParent = false
+                        ) else null,
                     SlideUpMenuItem(
                         container.context,
                         R.drawable.ic_share,
@@ -936,7 +944,7 @@ class UISlideOverlays {
                             StateMeta.instance.addHiddenCreator(video.author.url);
                             UIDialogs.toast(container.context, "[${video.author.name}] hidden, you may need to reload home");
                         }))
-                        + actions)
+                        + actions).filterNotNull()
             ));
             items.add(
                 SlideUpMenuGroup(container.context, container.context.getString(R.string.add_to), "addto",
@@ -1033,15 +1041,7 @@ class UISlideOverlays {
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
                         call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
-                    SlideUpMenuItem(
-                        container.context,
-                        R.drawable.ic_download,
-                        container.context.getString(R.string.download),
-                        container.context.getString(R.string.download_the_video),
-                        tag = container.context.getString(R.string.download),
-                        call = { showDownloadVideoOverlay(video, container, true); },
-                        invokeParent = false
-                    ))
+                    )
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();

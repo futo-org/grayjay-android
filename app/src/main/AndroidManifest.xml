@@ -227,10 +227,6 @@
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
-            android:name=".activities.PolycentricWhyActivity"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
-        <activity
             android:name=".activities.SyncHomeActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />

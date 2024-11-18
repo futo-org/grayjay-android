@@ -91,6 +91,7 @@
             android:id="@+id/button_replies"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/cd_button_replies"
             app:pillIcon="@drawable/ic_forum"
             app:pillText="55 Replies"
             android:layout_marginStart="15dp" />
@@ -112,6 +113,7 @@
                 android:id="@+id/pill_text"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:contentDescription="@string/cd_button_delete"
                 android:textColor="@color/white"
                 android:textSize="13dp"
                 android:gravity="center_vertical"

@@ -2,6 +2,7 @@ package com.futo.platformplayer.sync.internal
 
 import com.futo.platformplayer.LittleEndianDataInputStream
 import com.futo.platformplayer.LittleEndianDataOutputStream
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.DHState
@@ -18,7 +19,8 @@ class SyncSocketSession {
         NOTIFY_UNAUTHORIZED(3u),
         STREAM_START(4u),
         STREAM_DATA(5u),
-        STREAM_END(6u)
+        STREAM_END(6u),
+        DATA(7u)
     }
 
     private val _inputStream: LittleEndianDataInputStream
@@ -41,12 +43,12 @@ class SyncSocketSession {
     private val _localKeyPair: DHState
     private var _localPublicKey: String
     val localPublicKey: String get() = _localPublicKey
-    private val _onData: (session: SyncSocketSession, opcode: UByte, data: ByteBuffer) -> Unit
+    private val _onData: (session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit
     var authorizable: IAuthorizable? = null
 
     val remoteAddress: String
 
-    constructor(remoteAddress: String, localKeyPair: DHState, inputStream: LittleEndianDataInputStream, outputStream: LittleEndianDataOutputStream, onClose: (session: SyncSocketSession) -> Unit, onHandshakeComplete: (session: SyncSocketSession) -> Unit, onData: (session: SyncSocketSession, opcode: UByte, data: ByteBuffer) -> Unit) {
+    constructor(remoteAddress: String, localKeyPair: DHState, inputStream: LittleEndianDataInputStream, outputStream: LittleEndianDataOutputStream, onClose: (session: SyncSocketSession) -> Unit, onHandshakeComplete: (session: SyncSocketSession) -> Unit, onData: (session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit) {
         _inputStream = inputStream
         _outputStream = outputStream
         _onClose = onClose
@@ -159,10 +161,11 @@ class SyncSocketSession {
     }
 
     private fun performVersionCheck() {
-        _outputStream.writeInt(1)
+        val CURRENT_VERSION = 2
+        _outputStream.writeInt(CURRENT_VERSION)
         val version = _inputStream.readInt()
         Logger.i(TAG, "performVersionCheck (version = $version)")
-        if (version != 1)
+        if (version != CURRENT_VERSION)
             throw Exception("Invalid version")
     }
 
@@ -205,8 +208,9 @@ class SyncSocketSession {
         throw Exception("Handshake finished without completing")
     }
 
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+        ensureNotMainThread()
 
-    fun send(opcode: UByte, data: ByteBuffer) {
         if (data.remaining() + HEADER_SIZE > MAXIMUM_PACKET_SIZE) {
             val segmentSize = MAXIMUM_PACKET_SIZE - HEADER_SIZE
             val segmentData = ByteArray(segmentSize)
@@ -223,8 +227,8 @@ class SyncSocketSession {
 
                 if (sendOffset == 0) {
                     segmentOpcode = Opcode.STREAM_START.value
-                    bytesToSend = segmentSize - 4 - 4 - 1
-                    segmentPacketSize = bytesToSend + 4 + 4 + 1
+                    bytesToSend = segmentSize - 4 - 4 - 1 - 1
+                    segmentPacketSize = bytesToSend + 4 + 4 + 1 + 1
                 } else {
                     bytesToSend = minOf(segmentSize - 4 - 4, bytesRemaining)
                     segmentOpcode = if (bytesToSend >= bytesRemaining) Opcode.STREAM_END.value else Opcode.STREAM_DATA.value
@@ -236,18 +240,20 @@ class SyncSocketSession {
                     putInt(if (segmentOpcode == Opcode.STREAM_START.value) data.remaining() else sendOffset)
                     if (segmentOpcode == Opcode.STREAM_START.value) {
                         put(opcode.toByte())
+                        put(subOpcode.toByte())
                     }
                     put(data.array(), data.position() + sendOffset, bytesToSend)
                 }
 
-                send(segmentOpcode, ByteBuffer.wrap(segmentData, 0, segmentPacketSize))
+                send(segmentOpcode, 0u, ByteBuffer.wrap(segmentData, 0, segmentPacketSize))
                 sendOffset += bytesToSend
             }
         } else {
             synchronized(_sendLockObject) {
                 ByteBuffer.wrap(_sendBuffer).order(ByteOrder.LITTLE_ENDIAN).apply {
-                    putInt(data.remaining() + 1)
+                    putInt(data.remaining() + 2)
                     put(opcode.toByte())
+                    put(subOpcode.toByte())
                     put(data.array(), data.position(), data.remaining())
                 }
 
@@ -260,12 +266,15 @@ class SyncSocketSession {
         }
     }
 
-    fun send(opcode: UByte) {
-        synchronized(_sendLockObject) {
-            ByteBuffer.wrap(_sendBuffer, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
-            _sendBuffer.asUByteArray()[4] = opcode
+    fun send(opcode: UByte, subOpcode: UByte = 0u) {
+        ensureNotMainThread()
 
-            //Logger.i(TAG, "Encrypting message (size = ${HEADER_SIZE})")
+        synchronized(_sendLockObject) {
+            ByteBuffer.wrap(_sendBuffer, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(2)
+            _sendBuffer.asUByteArray()[4] = opcode
+            _sendBuffer.asUByteArray()[5] = subOpcode
+
+            //Logger.i(TAG, "Encrypting message (opcode = ${opcode}, subOpcode = ${subOpcode}, size = ${HEADER_SIZE})")
 
             val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 0, HEADER_SIZE)
             //Logger.i(TAG, "Sending encrypted message (size = ${len})")
@@ -277,19 +286,19 @@ class SyncSocketSession {
 
     private fun handleData(data: ByteArray, length: Int) {
         if (length < HEADER_SIZE)
-            throw Exception("Packet must be at least 5 bytes (header size)")
+            throw Exception("Packet must be at least 6 bytes (header size)")
 
         val size = ByteBuffer.wrap(data, 0, 4).order(ByteOrder.LITTLE_ENDIAN).int
         if (size != length - 4)
             throw Exception("Incomplete packet received")
 
         val opcode = data.asUByteArray()[4]
-        val packetData = ByteBuffer.wrap(data, HEADER_SIZE, size - 1)
-
-        handlePacket(opcode, packetData.order(ByteOrder.LITTLE_ENDIAN))
+        val subOpcode = data.asUByteArray()[5]
+        val packetData = ByteBuffer.wrap(data, HEADER_SIZE, size - 2)
+        handlePacket(opcode, subOpcode, packetData.order(ByteOrder.LITTLE_ENDIAN))
     }
 
-    private fun handlePacket(opcode: UByte, data: ByteBuffer) {
+    private fun handlePacket(opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
         when (opcode) {
             Opcode.PING.value -> {
                 send(Opcode.PONG.value)
@@ -302,7 +311,7 @@ class SyncSocketSession {
             }
             Opcode.NOTIFY_AUTHORIZED.value,
             Opcode.NOTIFY_UNAUTHORIZED.value -> {
-                _onData.invoke(this, opcode, data)
+                _onData.invoke(this, opcode, subOpcode, data)
                 return
             }
         }
@@ -316,8 +325,9 @@ class SyncSocketSession {
                 val id = data.int
                 val expectedSize = data.int
                 val op = data.get().toUByte()
+                val subOp = data.get().toUByte()
 
-                val syncStream = SyncStream(expectedSize, op)
+                val syncStream = SyncStream(expectedSize, op, subOp)
                 if (data.remaining() > 0) {
                     syncStream.add(data.array(), data.position(), data.remaining())
                 }
@@ -362,10 +372,13 @@ class SyncSocketSession {
                     throw Exception("After sync stream end, the stream must be complete")
                 }
 
-                handlePacket(syncStream.opcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) })
+                handlePacket(syncStream.opcode, syncStream.subOpcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) })
+            }
+            Opcode.DATA.value -> {
+                _onData.invoke(this, opcode, subOpcode, data)
             }
             else -> {
-                _onData.invoke(this, opcode, data)
+                Logger.w(TAG, "Unknown opcode received (opcode = ${opcode}, subOpcode = ${subOpcode})")
             }
         }
     }
@@ -374,6 +387,6 @@ class SyncSocketSession {
         private const val TAG = "SyncSocketSession"
         const val MAXIMUM_PACKET_SIZE = 65535 - 16
         const val MAXIMUM_PACKET_SIZE_ENCRYPTED = MAXIMUM_PACKET_SIZE + 16
-        const val HEADER_SIZE = 5
+        const val HEADER_SIZE = 6
     }
 }

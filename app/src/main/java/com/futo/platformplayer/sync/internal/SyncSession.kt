@@ -6,15 +6,20 @@ import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
+import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StateSubscriptionGroups
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.SyncSessionData
 import com.futo.platformplayer.sync.internal.SyncSocketSession.Opcode
 import com.futo.platformplayer.sync.models.SendToDevicePackage
+import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,7 +27,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 interface IAuthorizable {
     val isAuthorized: Boolean
@@ -38,6 +45,7 @@ class SyncSession : IAuthorizable {
     private val _onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit
     val remotePublicKey: String
     override val isAuthorized get() = _authorized && _remoteAuthorized
+    private var _wasAuthorized = false
 
     var connected: Boolean = false
         private set(v) {
@@ -87,8 +95,10 @@ class SyncSession : IAuthorizable {
     }
 
     private fun checkAuthorized() {
-        if (isAuthorized)
+        if (!_wasAuthorized && isAuthorized) {
+            _wasAuthorized = true
             _onAuthorized.invoke(this)
+        }
     }
 
     fun removeSocketSession(socketSession: SyncSocketSession) {
@@ -110,29 +120,34 @@ class SyncSession : IAuthorizable {
         _onClose.invoke(this)
     }
 
-    fun handlePacket(socketSession: SyncSocketSession, opcode: UByte, data: ByteBuffer) {
-        Logger.i(TAG, "Handle packet (opcode: ${opcode}, data.length: ${data.remaining()})")
-
-        when (opcode) {
-            Opcode.NOTIFY_AUTHORIZED.value -> {
-                _remoteAuthorized = true
-                checkAuthorized()
-            }
-            Opcode.NOTIFY_UNAUTHORIZED.value -> {
-                _remoteAuthorized = false
-                _onUnauthorized(this)
-            }
-            //TODO: Handle any kind of packet (that is not necessarily authorized)
-        }
-
-        if (!isAuthorized) {
-            return
-        }
-
-        Logger.i(TAG, "Received ${opcode} (${data.remaining()} bytes)")
-        //TODO: Abstract this out
+    fun handlePacket(socketSession: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
         try {
+            Logger.i(TAG, "Handle packet (opcode: ${opcode}, subOpcode: ${subOpcode}, data.length: ${data.remaining()})")
+
             when (opcode) {
+                Opcode.NOTIFY_AUTHORIZED.value -> {
+                    _remoteAuthorized = true
+                    checkAuthorized()
+                }
+                Opcode.NOTIFY_UNAUTHORIZED.value -> {
+                    _remoteAuthorized = false
+                    _onUnauthorized(this)
+                }
+                //TODO: Handle any kind of packet (that is not necessarily authorized)
+            }
+
+            if (!isAuthorized) {
+                return
+            }
+
+            if (opcode != Opcode.DATA.value) {
+                Logger.w(TAG, "Unknown opcode received: (opcode = ${opcode}, subOpcode = ${subOpcode})}")
+                return
+            }
+
+            Logger.i(TAG, "Received (opcode = ${opcode}, subOpcode = ${subOpcode}) (${data.remaining()} bytes)")
+            //TODO: Abstract this out
+            when (subOpcode) {
                 GJSyncOpcodes.sendToDevices -> {
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                         val context = StateApp.instance.contextOrNull;
@@ -157,11 +172,13 @@ class SyncSession : IAuthorizable {
                     Logger.i(TAG, "Received SyncSessionData from " + remotePublicKey);
 
 
-                    send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+                    sendData(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+                    sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
+                    sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
 
                     val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
                     if(recentHistory.size > 0)
-                        sendJson(GJSyncOpcodes.syncHistory, recentHistory);
+                        sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
                 }
 
                 GJSyncOpcodes.syncExport -> {
@@ -205,6 +222,67 @@ class SyncSession : IAuthorizable {
                     }
                 }
 
+                GJSyncOpcodes.syncSubscriptionGroups -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val pack = Serializer.json.decodeFromString<SyncSubscriptionGroupsPackage>(json);
+
+                    var lastSubgroupChange = OffsetDateTime.MIN;
+                    for(group in pack.groups){
+                        if(group.lastChange > lastSubgroupChange)
+                            lastSubgroupChange = group.lastChange;
+
+                        val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+
+                        if(existing == null)
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(group, false, true);
+                        else if(existing.lastChange < group.lastChange) {
+                            existing.name = group.name;
+                            existing.urls = group.urls;
+                            existing.image = group.image;
+                            existing.priority = group.priority;
+                            existing.lastChange = group.lastChange;
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(existing, false, true);
+                        }
+                    }
+                    for(removal in pack.groupRemovals) {
+                        val creation = StateSubscriptionGroups.instance.getSubscriptionGroup(removal.key);
+                        val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                        if(creation != null && creation.creationTime < removalTime)
+                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(removal.key, false);
+                    }
+                }
+
+                GJSyncOpcodes.syncPlaylists -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val pack = Serializer.json.decodeFromString<SyncPlaylistsPackage>(json);
+
+                    for(playlist in pack.playlists) {
+                        val existing = StatePlaylists.instance.getPlaylist(playlist.id);
+
+                        if(existing == null)
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
+                        else if(existing.dateUpdate.toLocalDateTime() < playlist.dateUpdate.toLocalDateTime()) {
+                            existing.dateUpdate = playlist.dateUpdate;
+                            existing.name = playlist.name;
+                            existing.videos = playlist.videos;
+                            existing.dateCreation = playlist.dateCreation;
+                            existing.datePlayed = playlist.datePlayed;
+                            StatePlaylists.instance.createOrUpdatePlaylist(existing, false);
+                        }
+                    }
+                    for(removal in pack.playlistRemovals) {
+                        val creation = StatePlaylists.instance.getPlaylist(removal.key);
+                        val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                        if(creation != null && creation.dateCreation < removalTime)
+                            StatePlaylists.instance.removePlaylist(creation, false);
+
+                    }
+                }
+
                 GJSyncOpcodes.syncHistory -> {
                     val dataBody = ByteArray(data.remaining());
                     data.get(dataBody);
@@ -242,8 +320,7 @@ class SyncSession : IAuthorizable {
             if(!StateSubscriptions.instance.isSubscribed(sub.channel)) {
                 val removalTime = StateSubscriptions.instance.getSubscriptionRemovalTime(sub.channel.url);
                 if(sub.creationTime > removalTime) {
-                    val newSub =
-                        StateSubscriptions.instance.addSubscription(sub.channel, sub.creationTime);
+                    val newSub = StateSubscriptions.instance.addSubscription(sub.channel, sub.creationTime);
                     added.add(newSub);
                 }
             }
@@ -269,16 +346,19 @@ class SyncSession : IAuthorizable {
     }
 
 
-    inline fun <reified T> sendJson(opcode: UByte, data: T) {
-        send(opcode, Json.encodeToString<T>(data));
+    inline fun <reified T> sendJsonData(subOpcode: UByte, data: T) {
+        send(Opcode.DATA.value, subOpcode, Json.encodeToString<T>(data));
     }
-    fun send(opcode: UByte, data: String) {
-        send(opcode, data.toByteArray(Charsets.UTF_8));
+    fun sendData(subOpcode: UByte, data: String) {
+        send(Opcode.DATA.value, subOpcode, data.toByteArray(Charsets.UTF_8));
     }
-    fun send(opcode: UByte, data: ByteArray) {
+    fun send(opcode: UByte, subOpcode: UByte, data: String) {
+        send(opcode, subOpcode, data.toByteArray(Charsets.UTF_8));
+    }
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteArray) {
         val sock = _socketSessions.firstOrNull();
         if(sock != null){
-            sock.send(opcode, ByteBuffer.wrap(data));
+            sock.send(opcode, subOpcode, ByteBuffer.wrap(data));
         }
         else
             throw IllegalStateException("Session has no active sockets");

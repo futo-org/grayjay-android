@@ -22,6 +22,7 @@ class AutomaticBackupDialog(context: Context) : AlertDialog(context) {
     private lateinit var _buttonCancel: ImageButton;
 
     private lateinit var _editPassword: EditText;
+    private lateinit var _editPassword2: EditText;
 
     private lateinit var _inputMethodManager: InputMethodManager;
 
@@ -34,6 +35,7 @@ class AutomaticBackupDialog(context: Context) : AlertDialog(context) {
         _buttonStop = findViewById(R.id.button_stop);
         _buttonStart = findViewById(R.id.button_start);
         _editPassword = findViewById(R.id.edit_password);
+        _editPassword2 = findViewById(R.id.edit_password2);
 
         _inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager;
 
@@ -52,6 +54,13 @@ class AutomaticBackupDialog(context: Context) : AlertDialog(context) {
         }
 
         _buttonStart.setOnClickListener {
+            val p1 = _editPassword.text.toString();
+            val p2 = _editPassword2.text.toString();
+            if(!(p1?.equals(p2) ?: false)) {
+                UIDialogs.toast(context, "Password fields do not match, confirm that you typed it correctly.");
+                return@setOnClickListener;
+            }
+
             val pbytes = _editPassword.text.toString().toByteArray();
             if(pbytes.size < 4 || pbytes.size > 32) {
                 UIDialogs.toast(context, "Password needs to be atleast 4 bytes long and smaller than 32 bytes", false);

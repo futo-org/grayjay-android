@@ -25,13 +25,20 @@ import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
+import com.futo.platformplayer.states.StateHistory.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringDateMapStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithm
 import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithms
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
+import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import kotlinx.coroutines.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
@@ -51,6 +58,9 @@ class StateSubscriptionGroups {
         .withUnique { it.id }
         .load();
 
+
+    private val _groupsRemoved = FragmentedStorage.get<StringDateMapStorage>("group_removed");
+
     val onGroupsChanged = Event0();
 
     fun getSubscriptionGroup(id: String): SubscriptionGroup? {
@@ -59,17 +69,64 @@ class StateSubscriptionGroups {
     fun getSubscriptionGroups(): List<SubscriptionGroup> {
         return _subGroups.getItems();
     }
-    fun updateSubscriptionGroup(subGroup: SubscriptionGroup, preventNotify: Boolean = false) {
+    fun getSubscriptionGroupsRemovals(): Map<String, Long> {
+        return _groupsRemoved.all();
+    }
+    fun updateSubscriptionGroup(subGroup: SubscriptionGroup, preventNotify: Boolean = false, preventSync: Boolean = false) {
+        subGroup.lastChange = OffsetDateTime.now();
         _subGroups.save(subGroup);
         if(!preventNotify)
             onGroupsChanged.emit();
+        if(!preventSync) {
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                    Logger.i(TAG, "SyncSubscriptionGroup (${subGroup.name})");
+                    StateSync.instance.broadcastJsonData(
+                        GJSyncOpcodes.syncSubscriptionGroups,
+                        SyncSubscriptionGroupsPackage(listOf(subGroup), mapOf())
+                    );
+                }
+            };
+        }
     }
-    fun deleteSubscriptionGroup(id: String){
+    fun deleteSubscriptionGroup(id: String, isUserInteraction: Boolean = true){
         val group = getSubscriptionGroup(id);
         if(group != null) {
             _subGroups.delete(group);
             onGroupsChanged.emit();
+
+            if(isUserInteraction) {
+                _groupsRemoved.setAndSave(id, OffsetDateTime.now());
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                        Logger.i(TAG, "SyncSubscriptionGroup delete (${group.name})");
+                        StateSync.instance.broadcastJsonData(
+                            GJSyncOpcodes.syncSubscriptionGroups,
+                            SyncSubscriptionGroupsPackage(listOf(), mapOf(Pair(id, OffsetDateTime.now().toEpochSecond())))
+                        );
+                    }
+                };
+            }
         }
+    }
+
+    fun hasSubscriptionGroup(url: String): Boolean {
+        val groups = getSubscriptionGroups();
+        for(group in groups){
+            if(group.urls.contains(url))
+                return true;
+        }
+        return false;
+    }
+
+
+    fun getSyncSubscriptionGroupsPackageString(): String{
+        return Json.encodeToString(
+            SyncSubscriptionGroupsPackage(
+                getSubscriptionGroups(),
+                getSubscriptionGroupsRemovals()
+            )
+        );
     }
 
 

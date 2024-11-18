@@ -40,6 +40,7 @@ import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -72,6 +73,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
@@ -111,9 +113,12 @@ import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
+import com.futo.platformplayer.sync.internal.GJSyncOpcodes
+import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
@@ -637,6 +642,27 @@ class VideoDetailView : ConstraintLayout {
         StatePlayer.instance.onVideoChanging.subscribe(this) {
             setVideoOverview(it);
         };
+
+        var hadDevice = false;
+        StateSync.instance.deviceUpdatedOrAdded.subscribe(this) { id, session ->
+            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
+            if(hasDevice != hadDevice) {
+                hadDevice = hasDevice;
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateMoreButtons();
+                }
+            }
+        };
+        StateSync.instance.deviceRemoved.subscribe(this) { id ->
+            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
+            if(hasDevice != hadDevice) {
+                hadDevice = hasDevice;
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateMoreButtons();
+                }
+            }
+        }
+
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
         MediaControlReceiver.onPauseReceived.subscribe(this) { handlePause() };
@@ -711,6 +737,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         onClose.subscribe {
+            checkAndRemoveWatchLater();
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
@@ -819,6 +846,11 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun updateMoreButtons() {
+        val isLimitedVersion = video?.url != null && StatePlatform.instance.getContentClientOrNull(video!!.url)?.let {
+            if (it is JSClient)
+                return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
+            else false;
+        } ?: false;
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {
@@ -838,38 +870,44 @@ class VideoDetailView : ConstraintLayout {
                     }
                     _slideUpOverlay?.hide();
                 } else null,
-            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
-                if(!allowBackground) {
-                    _player.switchToAudioMode();
-                    allowBackground = true;
-                    it.text.text = resources.getString(R.string.background_revert);
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
+                    if(!allowBackground) {
+                        _player.switchToAudioMode();
+                        allowBackground = true;
+                        it.text.text = resources.getString(R.string.background_revert);
+                    }
+                    else {
+                        _player.switchToVideoMode();
+                        allowBackground = false;
+                        it.text.text = resources.getString(R.string.background);
+                    }
+                    _slideUpOverlay?.hide();
                 }
-                else {
-                    _player.switchToVideoMode();
-                    allowBackground = false;
-                    it.text.text = resources.getString(R.string.background);
+            else null,
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
+                    video?.let {
+                        _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
+                    };
                 }
-                _slideUpOverlay?.hide();
-            },
-            RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
-                video?.let {
-                    _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
-                };
-            },
-            RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
-                video?.let {
-                    Logger.i(TAG, "Share preventPictureInPicture = true");
-                    preventPictureInPicture = true;
-                    shareVideo();
-                };
-                _slideUpOverlay?.hide();
-            },
-            RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
-                this.startPictureInPicture();
-                fragment.forcePictureInPicture();
-                //PiPActivity.startPiP(context);
-                _slideUpOverlay?.hide();
-            },
+            else null,
+                RoundButton(context, R.drawable.ic_share, context.getString(R.string.share), TAG_SHARE) {
+                    video?.let {
+                        Logger.i(TAG, "Share preventPictureInPicture = true");
+                        preventPictureInPicture = true;
+                        shareVideo();
+                    };
+                    _slideUpOverlay?.hide();
+                },
+            if(!isLimitedVersion)
+                RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.overlay), TAG_OVERLAY) {
+                    this.startPictureInPicture();
+                    fragment.forcePictureInPicture();
+                    //PiPActivity.startPiP(context);
+                    _slideUpOverlay?.hide();
+                }
+            else null,
             RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
                 video?.let {
                     val url = video?.shareUrl ?: _searchVideo?.shareUrl ?: _url;
@@ -878,6 +916,22 @@ class VideoDetailView : ConstraintLayout {
                 };
                 _slideUpOverlay?.hide();
             },
+            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                RoundButton(context, R.drawable.ic_device, context.getString(R.string.send_to_device), TAG_SEND_TO_DEVICE) {
+                    val devices = StateSync.instance.getSessions();
+                    val videoToSend = video ?: return@RoundButton;
+                    if(devices.size > 1) {
+                        //not implemented
+                    }
+                    else if(devices.size == 1){
+                        val device = devices.first();
+                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
+                            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                            }
+                        })
+                    }
+                }} else null,
             RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
                 reloadVideo();
                 _slideUpOverlay?.hide();
@@ -1025,6 +1079,8 @@ class VideoDetailView : ConstraintLayout {
         StateApp.instance.preventPictureInPicture.remove(this);
         StatePlayer.instance.onQueueChanged.remove(this);
         StatePlayer.instance.onVideoChanging.remove(this);
+        StateSync.instance.deviceUpdatedOrAdded.remove(this);
+        StateSync.instance.deviceRemoved.remove(this);
         MediaControlReceiver.onLowerVolumeReceived.remove(this);
         MediaControlReceiver.onPlayReceived.remove(this);
         MediaControlReceiver.onPauseReceived.remove(this);
@@ -1642,7 +1698,7 @@ class VideoDetailView : ConstraintLayout {
                         });
                 else
                     _player.setArtwork(null);
-                _player.setSource(videoSource, audioSource, _playWhenReady, false);
+                _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);
@@ -1792,6 +1848,8 @@ class VideoDetailView : ConstraintLayout {
 
     fun prevVideo(withoutRemoval: Boolean = false) {
         Logger.i(TAG, "prevVideo")
+        checkAndRemoveWatchLater();
+
         val next = StatePlayer.instance.prevQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9);
         if(next != null) {
             setVideoOverview(next, true, 0, true);
@@ -1800,6 +1858,8 @@ class VideoDetailView : ConstraintLayout {
 
     fun nextVideo(forceLoop: Boolean = false, withoutRemoval: Boolean = false, bypassVideoLoop: Boolean = false): Boolean {
         Logger.i(TAG, "nextVideo")
+        checkAndRemoveWatchLater();
+
         var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9, bypassVideoLoop);
         val autoplayVideo = _autoplayVideo
         if (next == null && autoplayVideo != null && StatePlayer.instance.autoplay) {
@@ -1808,7 +1868,8 @@ class VideoDetailView : ConstraintLayout {
             next = autoplayVideo
         }
         _autoplayVideo = null
-        Logger.i(TAG, "Autoplay video cleared (nextVideo)")
+        Logger.i(TAG, "Autoplay video cleared (nextVideo)");
+
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {
@@ -1819,6 +1880,20 @@ class VideoDetailView : ConstraintLayout {
             StatePlayer.instance.setCurrentlyPlaying(null);
         return false;
     }
+
+    fun checkAndRemoveWatchLater(){
+        val watchCurrent = video ?: videoLocal ?: _searchVideo;
+        if(Settings.instance.playback.deleteFromWatchLaterAuto) {
+            if(watchCurrent?.duration != null &&
+                watchCurrent.duration > 0 &&
+                (lastPositionMilliseconds / 1000) > watchCurrent.duration * 0.7) {
+                if(!watchCurrent.url.isNullOrEmpty()) {
+                    StatePlaylists.instance.removeFromWatchLater(watchCurrent.url);
+                }
+            }
+        }
+    }
+
 
     //Quality Selector data
     private fun updateQualityFormatsOverlay(liveStreamVideoFormats : List<Format>?, liveStreamAudioFormats : List<Format>?) {
@@ -2860,6 +2935,7 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_OVERLAY = "overlay";
         const val TAG_LIVECHAT = "livechat";
         const val TAG_OPEN = "open";
+        const val TAG_SEND_TO_DEVICE = "send_to_device";
         const val TAG_MORE = "MORE";
 
         private val _buttonPinStore = FragmentedStorage.get<StringArrayStorage>("videoPinnedButtons");

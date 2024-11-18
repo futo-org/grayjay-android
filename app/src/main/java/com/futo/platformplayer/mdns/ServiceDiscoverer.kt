@@ -37,7 +37,10 @@ class ServiceDiscoverer(names: Array<String>, private val _onServicesUpdated: (L
     }
 
     fun start() {
-        if (_started) throw Exception("Already running.")
+        if (_started) {
+            Logger.i(TAG, "Already started.")
+            return
+        }
         _started = true
 
         val listener = MDNSListener()

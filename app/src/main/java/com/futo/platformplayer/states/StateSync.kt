@@ -66,6 +66,10 @@ class StateSync {
     val deviceUpdatedOrAdded: Event2<String, SyncSession> = Event2()
 
     fun start() {
+        if (_started) {
+            Logger.i(TAG, "Already started.")
+            return
+        }
         _started = true
 
         if (Settings.instance.synchronization.broadcast || Settings.instance.synchronization.connectDiscovered) {
@@ -366,26 +370,29 @@ class StateSync {
                     Logger.i(TAG, "Connection authorized for ${remotePublicKey} because initiator")
                 }
             },
-            onData = { s, opcode, data ->
-                session?.handlePacket(s, opcode, data)
+            onData = { s, opcode, subOpcode, data ->
+                session?.handlePacket(s, opcode, subOpcode, data)
             })
     }
 
-    inline fun <reified T> broadcastJson(opcode: UByte, data: T) {
-        broadcast(opcode, Json.encodeToString(data));
+    inline fun <reified T> broadcastJsonData(subOpcode: UByte, data: T) {
+        broadcast(SyncSocketSession.Opcode.DATA.value, subOpcode, Json.encodeToString(data));
     }
-    fun broadcast(opcode: UByte, data: String) {
-        broadcast(opcode, data.toByteArray(Charsets.UTF_8));
+    fun broadcastData(subOpcode: UByte, data: String) {
+        broadcast(SyncSocketSession.Opcode.DATA.value, subOpcode, data.toByteArray(Charsets.UTF_8));
     }
-    fun broadcast(opcode: UByte, data: ByteArray) {
+    fun broadcast(opcode: UByte, subOpcode: UByte, data: String) {
+        broadcast(opcode, subOpcode, data.toByteArray(Charsets.UTF_8));
+    }
+    fun broadcast(opcode: UByte, subOpcode: UByte, data: ByteArray) {
         for(session in getSessions()) {
             try {
                 if (session.isAuthorized && session.connected) {
-                    session.send(opcode, data);
+                    session.send(opcode, subOpcode, data);
                 }
             }
             catch(ex: Exception) {
-                Logger.w(TAG, "Failed to broadcast ${opcode} to ${session.remotePublicKey}: ${ex.message}}", ex);
+                Logger.w(TAG, "Failed to broadcast (opcode = ${opcode}, subOpcode = ${subOpcode}) to ${session.remotePublicKey}: ${ex.message}}", ex);
             }
         }
     }
@@ -394,7 +401,7 @@ class StateSync {
         val time = measureTimeMillis {
             //val export = StateBackup.export();
             //session.send(GJSyncOpcodes.syncExport, export.asZip());
-            session.send(GJSyncOpcodes.syncStateExchange, getSyncSessionDataString(session.remotePublicKey));
+            session.sendData(GJSyncOpcodes.syncStateExchange, getSyncSessionDataString(session.remotePublicKey));
         }
         Logger.i(TAG, "Generated and sent sync export in ${time}ms");
     }

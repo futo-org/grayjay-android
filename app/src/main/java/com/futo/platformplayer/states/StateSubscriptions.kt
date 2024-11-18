@@ -202,13 +202,13 @@ class StateSubscriptions {
             return _subscriptionOthers.findItem { it.isChannel(url)};
         }
     }
-    fun getSubscriptionOtherOrCreate(url: String) : Subscription {
+    fun getSubscriptionOtherOrCreate(url: String, name: String? = null, thumbnail: String? = null) : Subscription {
         synchronized(_subscriptionOthers) {
             val sub = getSubscriptionOther(url);
             if(sub == null) {
-                val newSub = Subscription(SerializedChannel(PlatformID.NONE, url, null, null, 0, null, url, mapOf()));
+                val newSub = Subscription(SerializedChannel(PlatformID.NONE, name ?: url, thumbnail, null, 0, null, url, mapOf()));
                 newSub.isOther = true;
-                _subscriptions.save(newSub);
+                _subscriptionOthers.save(newSub);
                 return newSub;
             }
             else return sub;
@@ -250,7 +250,7 @@ class StateSubscriptions {
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
-                StateSync.instance.broadcast(
+                StateSync.instance.broadcastData(
                     GJSyncOpcodes.syncSubscriptions, Json.encodeToString(
                         SyncSubscriptionsPackage(
                             listOf(subObj),
@@ -293,8 +293,29 @@ class StateSubscriptions {
         if(sub != null) {
             _subscriptions.delete(sub);
             onSubscriptionsChanged.emit(getSubscriptions(), false);
-            if(isUserAction)
-                _subscriptionsRemoved.setAndSave(sub.channel.url, OffsetDateTime.now());
+            if(isUserAction) {
+                val removalTime = OffsetDateTime.now();
+                _subscriptionsRemoved.setAndSave(sub.channel.url, removalTime);
+
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    try {
+                        StateSync.instance.broadcastData(
+                            GJSyncOpcodes.syncSubscriptions, Json.encodeToString(
+                                SyncSubscriptionsPackage(
+                                    listOf(),
+                                    mapOf(Pair(sub.channel.url, removalTime.toEpochSecond()))
+                                )
+                            )
+                        );
+                    }
+                    catch(ex: Exception) {
+                        Logger.w(TAG, "Failed to send subs changes to sync clients", ex);
+                    }
+                }
+            }
+
+            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url))
+                getSubscriptionOtherOrCreate(sub.channel.url, sub.channel.name, sub.channel.thumbnail);
         }
         return sub;
     }

@@ -1310,7 +1310,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "TAB";
             sourcesIntent.putExtra("TAB", tab);
-            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             return sourcesIntent;
         }
 
@@ -1318,7 +1318,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "VIDEO";
             sourcesIntent.putExtra("VIDEO", videoUrl);
-            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             return sourcesIntent;
         }
 
@@ -1326,14 +1326,14 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "ACTION";
             sourcesIntent.putExtra("ACTION", action);
-            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             return sourcesIntent;
         }
 
         fun getImportOptionsIntent(context: Context): Intent {
             val sourcesIntent = Intent(context, MainActivity::class.java);
             sourcesIntent.action = "IMPORT_OPTIONS";
-            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            sourcesIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             return sourcesIntent;
         }
     }

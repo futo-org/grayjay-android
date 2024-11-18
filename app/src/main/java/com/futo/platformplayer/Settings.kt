@@ -150,7 +150,6 @@ class Settings : FragmentedStorageFileJson() {
     fun import() {
         val act = SettingsActivity.getActivity() ?: return;
         val intent = MainActivity.getImportOptionsIntent(act);
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK;
         act.startActivity(intent);
     }
 
@@ -505,6 +504,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 21)
         var autoplay: Boolean = false;
+
+        @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
+        var deleteFromWatchLaterAuto: Boolean = true;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
@@ -862,10 +864,14 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 2)
         fun clearPayment() {
-            StatePayment.instance.clearLicenses();
-            SettingsActivity.getActivity()?.let {
-                UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
-                it.reloadSettings();
+            SettingsActivity.getActivity()?.let { context ->
+                UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete your license?", {
+                    StatePayment.instance.clearLicenses();
+                    SettingsActivity.getActivity()?.let {
+                        UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
+                        it.reloadSettings();
+                    }
+                })
             }
         }
     }
@@ -878,7 +884,10 @@ class Settings : FragmentedStorageFileJson() {
         @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
         var bypassRotationPrevention: Boolean = false;
 
-        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 1)
+        @FormField(R.string.playlist_delete_confirmation, FieldForm.TOGGLE, R.string.playlist_delete_confirmation_description, 2)
+        var playlistDeleteConfirmation: Boolean = true;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 3)
         var polycentricEnabled: Boolean = true;
     }
 
@@ -919,7 +928,7 @@ class Settings : FragmentedStorageFileJson() {
         var enabled: Boolean = true;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
-        var broadcast: Boolean = true;
+        var broadcast: Boolean = false;
 
         @FormField(R.string.connect_discovered, FieldForm.TOGGLE, R.string.connect_discovered_description, 2)
         var connectDiscovered: Boolean = true;

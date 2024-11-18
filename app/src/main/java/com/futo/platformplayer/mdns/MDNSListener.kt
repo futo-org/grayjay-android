@@ -46,7 +46,10 @@ class MDNSListener {
     }
 
     fun start() {
-        if (_started) throw Exception("Already running.")
+        if (_started) {
+            Logger.i(TAG, "Already started.")
+            return
+        }
         _started = true
 
         _scope = CoroutineScope(Dispatchers.IO);
