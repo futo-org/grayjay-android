@@ -20,6 +20,7 @@
             android:id="@+id/donation_author_image"
             android:layout_width="20dp"
             android:layout_height="20dp"
+            android:contentDescription="@string/cd_donation_author_image"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"

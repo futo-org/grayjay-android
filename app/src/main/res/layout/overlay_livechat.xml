@@ -66,6 +66,7 @@
             android:id="@+id/button_close"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_close"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_margin="7dp"
@@ -126,6 +127,7 @@
                 android:scaleType="fitCenter"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:contentDescription="@string/cd_creator_thumbnail"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_margin="20dp"
@@ -159,6 +161,7 @@
                     android:id="@+id/donation_amount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:contentDescription="@string/cd_donation_amount"
                     android:gravity="center"
                     tools:text="$100" />
             </LinearLayout>
@@ -229,6 +232,7 @@
                 android:scaleType="fitCenter"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:contentDescription="@string/cd_creator_thumbnail"
                 android:layout_marginEnd="10dp"
                 android:layout_marginStart="-20dp"
                 android:src="@drawable/placeholder_profile" />
