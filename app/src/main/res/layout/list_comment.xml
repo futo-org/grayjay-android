@@ -100,6 +100,7 @@
                 android:id="@+id/image_like_icon"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
+                android:contentDescription="@string/cd_image_like_icon"
                 app:srcCompat="@drawable/ic_thumb_up" />
 
             <TextView
@@ -116,6 +117,7 @@
                 android:id="@+id/image_dislike_icon"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
+                android:contentDescription="@string/cd_image_dislike_icon"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="2dp"
                 app:srcCompat="@drawable/ic_thumb_down" />
@@ -134,6 +136,7 @@
             android:id="@+id/button_replies"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/cd_button_replies"
             app:pillIcon="@drawable/ic_forum"
             app:pillText="55 Replies"
             android:layout_marginStart="15dp" />

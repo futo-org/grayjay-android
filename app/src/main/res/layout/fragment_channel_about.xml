@@ -17,6 +17,7 @@
             android:id="@+id/image_channel_thumbnail"
             android:layout_width="80dp"
             android:layout_height="80dp"
+            android:contentDescription="@string/cd_creator_thumbnail"
             app:srcCompat="@drawable/ic_peertube"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"

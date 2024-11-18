@@ -306,6 +306,7 @@
                 android:id="@+id/thumbnail_platform"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@string/cd_platform_indicator"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 android:layout_margin="4dp" />

@@ -72,6 +72,7 @@
         android:id="@+id/button_trash"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:contentDescription="@string/cd_button_delete"
         app:srcCompat="@drawable/ic_trash"
         android:padding="10dp"
         android:scaleType="fitCenter"

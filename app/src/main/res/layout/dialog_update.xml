@@ -23,6 +23,7 @@
                 android:id="@+id/update_spinner"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
+                android:contentDescription="@string/cd_update_spinner"
                 app:srcCompat="@drawable/ic_update_animated" />
 
             <TextView

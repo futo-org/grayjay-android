@@ -10,6 +10,7 @@
         android:id="@+id/button_back"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:contentDescription="@string/cd_button_back"
         android:padding="10dp"
         android:scaleType="fitCenter"
         app:srcCompat="@drawable/ic_back_thin_white_16dp"

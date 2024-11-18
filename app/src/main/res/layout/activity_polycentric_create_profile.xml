@@ -10,6 +10,7 @@
         android:id="@+id/button_back"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:contentDescription="@string/cd_button_back"
         android:padding="10dp"
         android:scaleType="fitCenter"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -20,6 +21,8 @@
         android:id="@+id/button_help"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:contentDescription="@string/cd_button_help"
+        app:srcCompat="@drawable/ic_help"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_help" />

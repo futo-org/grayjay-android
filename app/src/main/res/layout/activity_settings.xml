@@ -24,6 +24,7 @@
                 android:id="@+id/button_back"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:contentDescription="@string/cd_button_back"
                 android:paddingRight="20dp"
                 app:srcCompat="@drawable/ic_back_thin_white_16dp" />
 

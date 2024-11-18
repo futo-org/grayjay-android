@@ -59,6 +59,7 @@
             android:id="@+id/donation_amount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/cd_donation_amount"
             android:gravity="center"
             tools:text="$100" />
     </LinearLayout>

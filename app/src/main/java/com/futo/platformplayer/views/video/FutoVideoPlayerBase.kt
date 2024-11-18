@@ -327,8 +327,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd && (toIgnore.isEmpty() || !toIgnore.contains(it)) } };
     }
 
-    fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false) {
-        swapSources(videoSource, audioSource,false, play, keepSubtitles);
+    fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false, resume: Boolean = false) {
+        swapSources(videoSource, audioSource,resume, play, keepSubtitles);
     }
     fun swapSources(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true, keepSubtitles: Boolean = false): Boolean {
         var videoSourceUsed = videoSource;

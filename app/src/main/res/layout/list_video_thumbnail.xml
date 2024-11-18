@@ -104,6 +104,7 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:contentDescription="@string/cd_download_indicator"
                         android:scaleType="fitXY"
                         app:srcCompat="@drawable/download_for_offline" />
                 </FrameLayout>
@@ -112,6 +113,7 @@
                     android:id="@+id/thumbnail_platform"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:contentDescription="@string/cd_platform_indicator"
                     android:layout_alignParentStart="true"
                     android:layout_alignParentBottom="true"
                     android:layout_gravity="end"
@@ -188,6 +190,7 @@
                 android:id="@+id/button_add_to_watch_later"
                 android:layout_width="wrap_content"
                 android:layout_height="27dp"
+                android:contentDescription="@string/cd_button_add_to_watch_later"
                 android:src="@drawable/ic_clock_white"
                 android:paddingTop="7dp"
                 android:paddingBottom="6dp"

@@ -250,7 +250,7 @@ class StateSubscriptions {
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
-                StateSync.instance.broadcast(
+                StateSync.instance.broadcastData(
                     GJSyncOpcodes.syncSubscriptions, Json.encodeToString(
                         SyncSubscriptionsPackage(
                             listOf(subObj),
@@ -299,7 +299,7 @@ class StateSubscriptions {
 
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
-                        StateSync.instance.broadcast(
+                        StateSync.instance.broadcastData(
                             GJSyncOpcodes.syncSubscriptions, Json.encodeToString(
                                 SyncSubscriptionsPackage(
                                     listOf(),

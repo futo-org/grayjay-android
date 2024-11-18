@@ -90,6 +90,7 @@
             android:id="@+id/platform_indicator"
             android:layout_width="20dp"
             android:layout_height="20dp"
+            android:contentDescription="@string/cd_platform_indicator"
             android:scaleType="centerInside"
             tools:src="@drawable/ic_peertube"
             android:layout_marginEnd="8dp"

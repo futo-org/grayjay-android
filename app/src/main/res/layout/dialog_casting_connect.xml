@@ -97,6 +97,7 @@
             android:id="@+id/button_scan_qr"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_scan_qr"
             android:scaleType="centerCrop"
             app:srcCompat="@drawable/ic_qr"
             app:tint="@color/primary" />
@@ -109,6 +110,7 @@
             android:id="@+id/button_add"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_add"
             android:scaleType="centerCrop"
             app:srcCompat="@drawable/ic_add"
             app:tint="@color/primary"

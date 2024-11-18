@@ -933,7 +933,7 @@ class VideoDetailView : ConstraintLayout {
                         val device = devices.first();
                         UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                device.sendJson(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                                device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
                             }
                         })
                     }
@@ -1759,7 +1759,7 @@ class VideoDetailView : ConstraintLayout {
                         });
                 else
                     _player.setArtwork(null);
-                _player.setSource(videoSource, audioSource, _playWhenReady, false);
+                _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);
