@@ -1698,7 +1698,7 @@ class VideoDetailView : ConstraintLayout {
                         });
                 else
                     _player.setArtwork(null);
-                _player.setSource(videoSource, audioSource, _playWhenReady, false);
+                _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);
