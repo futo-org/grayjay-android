@@ -89,7 +89,7 @@ class StateHistory {
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
                         Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
-                        StateSync.instance.broadcastJson(
+                        StateSync.instance.broadcastJsonData(
                             GJSyncOpcodes.syncHistory,
                             listOf(historyVideo)
                         );

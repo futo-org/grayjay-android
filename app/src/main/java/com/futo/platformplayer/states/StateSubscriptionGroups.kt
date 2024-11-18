@@ -81,7 +81,7 @@ class StateSubscriptionGroups {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
                     Logger.i(TAG, "SyncSubscriptionGroup (${subGroup.name})");
-                    StateSync.instance.broadcastJson(
+                    StateSync.instance.broadcastJsonData(
                         GJSyncOpcodes.syncSubscriptionGroups,
                         SyncSubscriptionGroupsPackage(listOf(subGroup), mapOf())
                     );
@@ -100,7 +100,7 @@ class StateSubscriptionGroups {
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
                         Logger.i(TAG, "SyncSubscriptionGroup delete (${group.name})");
-                        StateSync.instance.broadcastJson(
+                        StateSync.instance.broadcastJsonData(
                             GJSyncOpcodes.syncSubscriptionGroups,
                             SyncSubscriptionGroupsPackage(listOf(), mapOf(Pair(id, OffsetDateTime.now().toEpochSecond())))
                         );

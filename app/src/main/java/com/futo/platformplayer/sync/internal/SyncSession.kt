@@ -45,6 +45,7 @@ class SyncSession : IAuthorizable {
     private val _onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit
     val remotePublicKey: String
     override val isAuthorized get() = _authorized && _remoteAuthorized
+    private var _wasAuthorized = false
 
     var connected: Boolean = false
         private set(v) {
@@ -94,8 +95,10 @@ class SyncSession : IAuthorizable {
     }
 
     private fun checkAuthorized() {
-        if (isAuthorized)
+        if (!_wasAuthorized && isAuthorized) {
+            _wasAuthorized = true
             _onAuthorized.invoke(this)
+        }
     }
 
     fun removeSocketSession(socketSession: SyncSocketSession) {
@@ -117,8 +120,8 @@ class SyncSession : IAuthorizable {
         _onClose.invoke(this)
     }
 
-    fun handlePacket(socketSession: SyncSocketSession, opcode: UByte, data: ByteBuffer) {
-        Logger.i(TAG, "Handle packet (opcode: ${opcode}, data.length: ${data.remaining()})")
+    fun handlePacket(socketSession: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+        Logger.i(TAG, "Handle packet (opcode: ${opcode}, subOpcode: ${subOpcode}, data.length: ${data.remaining()})")
 
         when (opcode) {
             Opcode.NOTIFY_AUTHORIZED.value -> {
@@ -136,10 +139,15 @@ class SyncSession : IAuthorizable {
             return
         }
 
-        Logger.i(TAG, "Received ${opcode} (${data.remaining()} bytes)")
+        if (opcode != Opcode.DATA.value) {
+            Logger.w(TAG, "Unknown opcode received: (opcode = ${opcode}, subOpcode = ${subOpcode})}")
+            return
+        }
+
+        Logger.i(TAG, "Received (opcode = ${opcode}, subOpcode = ${subOpcode}) (${data.remaining()} bytes)")
         //TODO: Abstract this out
         try {
-            when (opcode) {
+            when (subOpcode) {
                 GJSyncOpcodes.sendToDevices -> {
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                         val context = StateApp.instance.contextOrNull;
@@ -164,13 +172,13 @@ class SyncSession : IAuthorizable {
                     Logger.i(TAG, "Received SyncSessionData from " + remotePublicKey);
 
 
-                    send(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
-                    send(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
-                    send(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
+                    sendData(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
+                    sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
+                    sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
 
                     val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
                     if(recentHistory.size > 0)
-                        sendJson(GJSyncOpcodes.syncHistory, recentHistory);
+                        sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
                 }
 
                 GJSyncOpcodes.syncExport -> {
@@ -338,16 +346,19 @@ class SyncSession : IAuthorizable {
     }
 
 
-    inline fun <reified T> sendJson(opcode: UByte, data: T) {
-        send(opcode, Json.encodeToString<T>(data));
+    inline fun <reified T> sendJsonData(subOpcode: UByte, data: T) {
+        send(Opcode.DATA.value, subOpcode, Json.encodeToString<T>(data));
     }
-    fun send(opcode: UByte, data: String) {
-        send(opcode, data.toByteArray(Charsets.UTF_8));
+    fun sendData(subOpcode: UByte, data: String) {
+        send(Opcode.DATA.value, subOpcode, data.toByteArray(Charsets.UTF_8));
     }
-    fun send(opcode: UByte, data: ByteArray) {
+    fun send(opcode: UByte, subOpcode: UByte, data: String) {
+        send(opcode, subOpcode, data.toByteArray(Charsets.UTF_8));
+    }
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteArray) {
         val sock = _socketSessions.firstOrNull();
         if(sock != null){
-            sock.send(opcode, ByteBuffer.wrap(data));
+            sock.send(opcode, subOpcode, ByteBuffer.wrap(data));
         }
         else
             throw IllegalStateException("Session has no active sockets");

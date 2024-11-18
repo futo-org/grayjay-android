@@ -927,7 +927,7 @@ class VideoDetailView : ConstraintLayout {
                         val device = devices.first();
                         UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                device.sendJson(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                                device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
                             }
                         })
                     }

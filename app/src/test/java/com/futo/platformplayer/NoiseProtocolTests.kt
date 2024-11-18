@@ -524,8 +524,8 @@ class NoiseProtocolTest {
                 println("Initiator handshake complete")
                 handshakeLatch.countDown()  // Handshake complete for initiator
             },
-            onData = { session, opcode, data ->
-                println("Initiator received: Opcode $opcode, Data Length: ${data.remaining()}")
+            onData = { session, opcode, subOpcode, data ->
+                println("Initiator received: Opcode: $opcode, SubOpcode: $subOpcode, Data Length: ${data.remaining()}")
 
                 when (data.remaining()) {
                     randomBytesExactlyOnePacket.remaining() -> {
@@ -556,8 +556,8 @@ class NoiseProtocolTest {
                 println("Responder handshake complete")
                 handshakeLatch.countDown()  // Handshake complete for responder
             },
-            onData = { session, opcode, data ->
-                println("Responder received: Opcode $opcode, Data Length: ${data.remaining()}")
+            onData = { session, opcode, subOpcode, data ->
+                println("Responder received: Opcode $opcode, SubOpcode $subOpcode, Data Length: ${data.remaining()}")
 
                 when (data.remaining()) {
                     randomBytesExactlyOnePacket.remaining() -> {
@@ -590,12 +590,12 @@ class NoiseProtocolTest {
         responderSession.send(SyncSocketSession.Opcode.PONG.value)
 
         // Test data transfer
-        responderSession.send(SyncSocketSession.Opcode.NOTIFY_AUTHORIZED.value, randomBytesExactlyOnePacket)
-        initiatorSession.send(SyncSocketSession.Opcode.NOTIFY_AUTHORIZED.value, randomBytes)
+        responderSession.send(SyncSocketSession.Opcode.DATA.value, 0u, randomBytesExactlyOnePacket)
+        initiatorSession.send(SyncSocketSession.Opcode.DATA.value, 1u, randomBytes)
 
         // Send large data to test stream handling
         val start = System.currentTimeMillis()
-        responderSession.send(SyncSocketSession.Opcode.NOTIFY_AUTHORIZED.value, randomBytesBig)
+        responderSession.send(SyncSocketSession.Opcode.DATA.value, 0u, randomBytesBig)
         println("Sent 10MB in ${System.currentTimeMillis() - start}ms")
 
         // Wait for a brief period to simulate delay and allow communication
