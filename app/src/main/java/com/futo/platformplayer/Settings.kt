@@ -929,7 +929,7 @@ class Settings : FragmentedStorageFileJson() {
         var enabled: Boolean = true;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
-        var broadcast: Boolean = true;
+        var broadcast: Boolean = false;
 
         @FormField(R.string.connect_discovered, FieldForm.TOGGLE, R.string.connect_discovered_description, 2)
         var connectDiscovered: Boolean = true;
