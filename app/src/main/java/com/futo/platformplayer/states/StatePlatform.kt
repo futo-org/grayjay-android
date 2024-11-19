@@ -537,7 +537,7 @@ class StatePlatform {
             else getSortedEnabledClient().filter { if (it is JSClient) it.enableInSearch else true };
 
         clients.parallelStream().forEach {
-            val searchCapabilities = it.getSearchCapabilities();
+            val searchCapabilities = it.getSearchChannelContentsCapabilities();
             val mappedFilters = filters.map { pair -> Pair(pair.key, pair.value.map { v -> searchCapabilities.filters.first { g -> g.idOrName == pair.key }.filters.first { f -> f.idOrName == v }.value }) }.toMap();
 
             if (it.isChannelUrl(channelUrl)) {
