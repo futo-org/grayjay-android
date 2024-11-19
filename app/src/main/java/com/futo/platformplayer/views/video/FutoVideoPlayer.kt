@@ -601,6 +601,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             val lp = background.layoutParams as ConstraintLayout.LayoutParams;
             lp.bottomMargin = 0;
             background.layoutParams = lp;
+            _videoView.setBackgroundColor(Color.parseColor("#FF000000"))
 
             gestureControl.hideControls();
             //videoControlsBar.visibility = View.GONE;
@@ -614,6 +615,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             val lp = background.layoutParams as ConstraintLayout.LayoutParams;
             lp.bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt();
             background.layoutParams = lp;
+            _videoView.setBackgroundColor(Color.parseColor("#00000000"))
 
             gestureControl.hideControls();
             //videoControlsBar.visibility = View.VISIBLE;
