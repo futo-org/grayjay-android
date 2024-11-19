@@ -46,53 +46,36 @@ class HLS {
                 }
             }
 
-            return MasterPlaylist(
-                variantPlaylists, mediaRenditions, sessionDataList, independentSegments
-            )
+            return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments)
         }
 
         fun parseVariantPlaylist(content: String, sourceUrl: String): VariantPlaylist {
             val lines = content.lines()
-            val version =
-                lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull()
-            val targetDuration =
-                lines.find { it.startsWith("#EXT-X-TARGETDURATION:") }?.substringAfter(":")
-                    ?.toIntOrNull()
-            val mediaSequence =
-                lines.find { it.startsWith("#EXT-X-MEDIA-SEQUENCE:") }?.substringAfter(":")
-                    ?.toLongOrNull()
-            val discontinuitySequence =
-                lines.find { it.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") }?.substringAfter(":")
-                    ?.toIntOrNull()
-            val programDateTime =
-                lines.find { it.startsWith("#EXT-X-PROGRAM-DATE-TIME:") }?.substringAfter(":")
-                    ?.let {
-                        ZonedDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME)
-                    }
-            val playlistType =
-                lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
-            val streamInfo =
-                lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
+            val version = lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull()
+            val targetDuration = lines.find { it.startsWith("#EXT-X-TARGETDURATION:") }?.substringAfter(":")?.toIntOrNull()
+            val mediaSequence = lines.find { it.startsWith("#EXT-X-MEDIA-SEQUENCE:") }?.substringAfter(":")?.toLongOrNull()
+            val discontinuitySequence = lines.find { it.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") }?.substringAfter(":")?.toIntOrNull()
+            val programDateTime = lines.find { it.startsWith("#EXT-X-PROGRAM-DATE-TIME:") }?.substringAfter(":")?.let {
+                ZonedDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME)
+            }
+            val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
+            val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
             val segments = mutableListOf<Segment>()
             var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
                     line.startsWith("#EXTINF:") -> {
-                        val duration =
-                            line.substringAfter(":").substringBefore(",").toDoubleOrNull()
-                                ?: throw Exception("Invalid segment duration format")
+                        val duration = line.substringAfter(":").substringBefore(",").toDoubleOrNull()
+                            ?: throw Exception("Invalid segment duration format")
                         currentSegment = MediaSegment(duration = duration)
                     }
-
                     line == "#EXT-X-DISCONTINUITY" -> {
                         segments.add(DiscontinuitySegment())
                     }
-
-                    line == "#EXT-X-ENDLIST" -> {
+                    line =="#EXT-X-ENDLIST" -> {
                         segments.add(EndListSegment())
                     }
-
                     else -> {
                         currentSegment?.let {
                             it.uri = resolveUrl(sourceUrl, line)
@@ -106,29 +89,19 @@ class HLS {
             return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments)
         }
 
-        fun parseAndGetVideoSources(
-            source: Any, content: String, url: String
-        ): List<HLSVariantVideoUrlSource> {
+        fun parseAndGetVideoSources(source: Any, content: String, url: String): List<HLSVariantVideoUrlSource> {
             val masterPlaylist: MasterPlaylist
             try {
                 masterPlaylist = parseMasterPlaylist(content, url)
                 return masterPlaylist.getVideoSources()
             } catch (e: Throwable) {
                 if (content.lines().any { it.startsWith("#EXTINF:") }) {
-                    return when (source) {
-                        is IHLSManifestSource -> {
-                            listOf(
-                                HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, url)
-                            )
-                        }
-
-                        is IHLSManifestAudioSource -> {
-                            listOf()
-                        }
-
-                        else -> {
-                            throw NotImplementedError()
-                        }
+                    return if (source is IHLSManifestSource) {
+                        listOf(HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, url))
+                    } else if (source is IHLSManifestAudioSource) {
+                        listOf()
+                    } else {
+                        throw NotImplementedError()
                     }
                 } else {
                     throw e
@@ -136,29 +109,19 @@ class HLS {
             }
         }
 
-        fun parseAndGetAudioSources(
-            source: Any, content: String, url: String
-        ): List<HLSVariantAudioUrlSource> {
+        fun parseAndGetAudioSources(source: Any, content: String, url: String): List<HLSVariantAudioUrlSource> {
             val masterPlaylist: MasterPlaylist
             try {
                 masterPlaylist = parseMasterPlaylist(content, url)
                 return masterPlaylist.getAudioSources()
             } catch (e: Throwable) {
                 if (content.lines().any { it.startsWith("#EXTINF:") }) {
-                    return when (source) {
-                        is IHLSManifestSource -> {
-                            listOf()
-                        }
-
-                        is IHLSManifestAudioSource -> {
-                            listOf(
-                                HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, url)
-                            )
-                        }
-
-                        else -> {
-                            throw NotImplementedError()
-                        }
+                    return if (source is IHLSManifestSource) {
+                        listOf()
+                    } else if (source is IHLSManifestAudioSource) {
+                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, url))
+                    } else {
+                        throw NotImplementedError()
                     }
                 } else {
                     throw e
@@ -183,7 +146,15 @@ class HLS {
         private fun parseStreamInfo(content: String): StreamInfo {
             val attributes = parseAttributes(content)
             return StreamInfo(
-                bandwidth = attributes["BANDWIDTH"]?.toIntOrNull(), resolution = attributes["RESOLUTION"], codecs = attributes["CODECS"], frameRate = attributes["FRAME-RATE"], videoRange = attributes["VIDEO-RANGE"], audio = attributes["AUDIO"], video = attributes["VIDEO"], subtitles = attributes["SUBTITLES"], closedCaptions = attributes["CLOSED-CAPTIONS"]
+                bandwidth = attributes["BANDWIDTH"]?.toIntOrNull(),
+                resolution = attributes["RESOLUTION"],
+                codecs = attributes["CODECS"],
+                frameRate = attributes["FRAME-RATE"],
+                videoRange = attributes["VIDEO-RANGE"],
+                audio = attributes["AUDIO"],
+                video = attributes["VIDEO"],
+                subtitles = attributes["SUBTITLES"],
+                closedCaptions = attributes["CLOSED-CAPTIONS"]
             )
         }
 
@@ -191,7 +162,14 @@ class HLS {
             val attributes = parseAttributes(line)
             val uri = attributes["URI"]?.let { resolveUrl(baseUrl, it) }
             return MediaRendition(
-                type = attributes["TYPE"], uri = uri, groupID = attributes["GROUP-ID"], language = attributes["LANGUAGE"], name = attributes["NAME"], isDefault = attributes["DEFAULT"]?.yesNoToBoolean(), isAutoSelect = attributes["AUTOSELECT"]?.yesNoToBoolean(), isForced = attributes["FORCED"]?.yesNoToBoolean()
+                type = attributes["TYPE"],
+                uri = uri,
+                groupID = attributes["GROUP-ID"],
+                language = attributes["LANGUAGE"],
+                name = attributes["NAME"],
+                isDefault = attributes["DEFAULT"]?.yesNoToBoolean(),
+                isAutoSelect = attributes["AUTOSELECT"]?.yesNoToBoolean(),
+                isForced = attributes["FORCED"]?.yesNoToBoolean()
             )
         }
 
@@ -224,55 +202,99 @@ class HLS {
 
         private val _quoteList = listOf("GROUP-ID", "NAME", "URI", "CODECS", "AUDIO", "VIDEO")
         private fun shouldQuote(key: String, value: String?): Boolean {
-            if (value == null) return false
+            if (value == null)
+                return false;
 
-            if (value.contains(',')) return true
+            if (value.contains(','))
+                return true;
 
             return _quoteList.contains(key)
         }
-
-        private fun appendAttributes(
-            stringBuilder: StringBuilder, vararg attributes: Pair<String, String?>
-        ) {
-            attributes.filter { it.second != null }.joinToString(",") {
-                val value = it.second
-                "${it.first}=${if (shouldQuote(it.first, it.second)) "\"$value\"" else value}"
-            }.let { if (it.isNotEmpty()) stringBuilder.append(it) }
+        private fun appendAttributes(stringBuilder: StringBuilder, vararg attributes: Pair<String, String?>) {
+            attributes.filter { it.second != null }
+                .joinToString(",") {
+                    val value = it.second
+                    "${it.first}=${if (shouldQuote(it.first, it.second)) "\"$value\"" else value}"
+                }
+                .let { if (it.isNotEmpty()) stringBuilder.append(it) }
         }
     }
 
     data class SessionData(
-        val dataId: String, val value: String
+        val dataId: String,
+        val value: String
     ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-SESSION-DATA:")
-            appendAttributes(
-                this, "DATA-ID" to dataId, "VALUE" to value
+            appendAttributes(this,
+                "DATA-ID" to dataId,
+                "VALUE" to value
             )
             append("\n")
         }
     }
 
-    data class StreamInfo(val bandwidth: Int?, val resolution: String?, val codecs: String?, val frameRate: String?, val videoRange: String?, val audio: String?, val video: String?, val subtitles: String?, val closedCaptions: String?) {
+    data class StreamInfo(
+        val bandwidth: Int?,
+        val resolution: String?,
+        val codecs: String?,
+        val frameRate: String?,
+        val videoRange: String?,
+        val audio: String?,
+        val video: String?,
+        val subtitles: String?,
+        val closedCaptions: String?
+    ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-STREAM-INF:")
-            appendAttributes(this, "BANDWIDTH" to bandwidth?.toString(), "RESOLUTION" to resolution, "CODECS" to codecs, "FRAME-RATE" to frameRate, "VIDEO-RANGE" to videoRange, "AUDIO" to audio, "VIDEO" to video, "SUBTITLES" to subtitles, "CLOSED-CAPTIONS" to closedCaptions)
+            appendAttributes(this,
+                "BANDWIDTH" to bandwidth?.toString(),
+                "RESOLUTION" to resolution,
+                "CODECS" to codecs,
+                "FRAME-RATE" to frameRate,
+                "VIDEO-RANGE" to videoRange,
+                "AUDIO" to audio,
+                "VIDEO" to video,
+                "SUBTITLES" to subtitles,
+                "CLOSED-CAPTIONS" to closedCaptions
+            )
             append("\n")
         }
     }
 
     data class MediaRendition(
-        val type: String?, val uri: String?, val groupID: String?, val language: String?, val name: String?, val isDefault: Boolean?, val isAutoSelect: Boolean?, val isForced: Boolean?
+        val type: String?,
+        val uri: String?,
+        val groupID: String?,
+        val language: String?,
+        val name: String?,
+        val isDefault: Boolean?,
+        val isAutoSelect: Boolean?,
+        val isForced: Boolean?
     ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-MEDIA:")
-            appendAttributes(this, "TYPE" to type, "URI" to uri, "GROUP-ID" to groupID, "LANGUAGE" to language, "NAME" to name, "DEFAULT" to isDefault.toYesNo(), "AUTOSELECT" to isAutoSelect.toYesNo(), "FORCED" to isForced.toYesNo())
+            appendAttributes(this,
+                "TYPE" to type,
+                "URI" to uri,
+                "GROUP-ID" to groupID,
+                "LANGUAGE" to language,
+                "NAME" to name,
+                "DEFAULT" to isDefault.toYesNo(),
+                "AUTOSELECT" to isAutoSelect.toYesNo(),
+                "FORCED" to isForced.toYesNo()
+            )
             append("\n")
         }
     }
 
 
-    data class MasterPlaylist(val variantPlaylistsRefs: List<VariantPlaylistReference>, val mediaRenditions: List<MediaRendition>, val sessionDataList: List<SessionData>, val independentSegments: Boolean) {
+    data class MasterPlaylist(
+        val variantPlaylistsRefs: List<VariantPlaylistReference>,
+        val mediaRenditions: List<MediaRendition>,
+        val sessionDataList: List<SessionData>,
+        val independentSegments: Boolean
+    ) {
         fun buildM3U8(): String {
             val builder = StringBuilder()
             builder.append("#EXTM3U\n")
@@ -305,14 +327,8 @@ class HLS {
                     height = resolutionTokens[1].toIntOrNull()
                 }
 
-                val suffix = listOf(
-                    it.streamInfo.video, it.streamInfo.codecs
-                ).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
-                HLSVariantVideoUrlSource(
-                    suffix, width ?: 0, height
-                        ?: 0, "application/vnd.apple.mpegurl", it.streamInfo.codecs
-                        ?: "", it.streamInfo.bandwidth, 0, false, it.url
-                )
+                val suffix = listOf(it.streamInfo.video, it.streamInfo.codecs).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+                HLSVariantVideoUrlSource(suffix, width ?: 0, height ?: 0, "application/vnd.apple.mpegurl", it.streamInfo.codecs ?: "", it.streamInfo.bandwidth, 0, false, it.url)
             }
         }
 
@@ -322,13 +338,9 @@ class HLS {
                     return@mapNotNull null
                 }
 
-                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }
-                    .joinToString(", ")
+                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
                 return@mapNotNull when (it.type) {
-                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" }
-                        ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language
-                        ?: "", null, false, it.uri)
-
+                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language ?: "", null, false, it.uri)
                     else -> null
                 }
             }
@@ -340,12 +352,9 @@ class HLS {
                     return@mapNotNull null
                 }
 
-                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }
-                    .joinToString(", ")
+                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
                 return@mapNotNull when (it.type) {
-                    "SUBTITLE" -> HLSVariantSubtitleUrlSource(it.name?.ifEmpty { "Subtitle (${suffix})" }
-                        ?: "Subtitle (${suffix})", it.uri, "application/vnd.apple.mpegurl")
-
+                    "SUBTITLE" -> HLSVariantSubtitleUrlSource(it.name?.ifEmpty { "Subtitle (${suffix})" } ?: "Subtitle (${suffix})", it.uri, "application/vnd.apple.mpegurl")
                     else -> null
                 }
             }
@@ -360,7 +369,14 @@ class HLS {
     }
 
     data class VariantPlaylist(
-        val version: Int?, val targetDuration: Int?, val mediaSequence: Long?, val discontinuitySequence: Int?, val programDateTime: ZonedDateTime?, val playlistType: String?, val streamInfo: StreamInfo?, val segments: List<Segment>
+        val version: Int?,
+        val targetDuration: Int?,
+        val mediaSequence: Long?,
+        val discontinuitySequence: Int?,
+        val programDateTime: ZonedDateTime?,
+        val playlistType: String?,
+        val streamInfo: StreamInfo?,
+        val segments: List<Segment>
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")
@@ -369,9 +385,7 @@ class HLS {
             mediaSequence?.let { append("#EXT-X-MEDIA-SEQUENCE:$it\n") }
             discontinuitySequence?.let { append("#EXT-X-DISCONTINUITY-SEQUENCE:$it\n") }
             playlistType?.let { append("#EXT-X-PLAYLIST-TYPE:$it\n") }
-            programDateTime?.let {
-                append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n")
-            }
+            programDateTime?.let { append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n") }
             streamInfo?.let { append(it.toM3U8Line()) }
 
             segments.forEach { segment ->
@@ -384,8 +398,9 @@ class HLS {
         abstract fun toM3U8Line(): String
     }
 
-    data class MediaSegment(
-        val duration: Double, var uri: String = ""
+    data class MediaSegment (
+        val duration: Double,
+        var uri: String = ""
     ) : Segment() {
         override fun toM3U8Line(): String = buildString {
             append("#EXTINF:${duration},\n")
