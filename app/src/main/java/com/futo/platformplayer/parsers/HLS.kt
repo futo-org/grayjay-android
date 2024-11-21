@@ -182,13 +182,14 @@ class HLS {
 
         private fun parseAttributes(content: String): Map<String, String> {
             val attributes = mutableMapOf<String, String>()
-            val attributePairs = content.substringAfter(":").splitToSequence(',')
+            val maybeAttributePairs = content.substringAfter(":").splitToSequence(',')
 
             var currentPair = StringBuilder()
-            for (pair in attributePairs) {
+            for (pair in maybeAttributePairs) {
                 currentPair.append(pair)
                 if (currentPair.count { it == '\"' } % 2 == 0) {  // Check if the number of quotes is even
-                    val (key, value) = currentPair.toString().split('=')
+                    val key = currentPair.toString().substringBefore("=")
+                    val value = currentPair.toString().substringAfter("=")
                     attributes[key.trim()] = value.trim().removeSurrounding("\"")
                     currentPair = StringBuilder()  // Reset for the next attribute
                 } else {
