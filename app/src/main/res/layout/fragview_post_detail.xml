@@ -36,7 +36,8 @@
                 <com.futo.platformplayer.views.others.CreatorThumbnail
                     android:id="@+id/creator_thumbnail"
                     android:layout_width="27dp"
-                    android:layout_height="27dp" />
+                    android:layout_height="27dp"
+                    android:contentDescription="@string/cd_creator_thumbnail" />
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -128,6 +129,7 @@
                         android:id="@+id/image_like_icon"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
+                        android:contentDescription="@string/cd_image_like_icon"
                         app:srcCompat="@drawable/ic_thumb_up" />
 
                     <TextView
@@ -144,6 +146,7 @@
                         android:id="@+id/image_dislike_icon"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
+                        android:contentDescription="@string/cd_image_dislike_icon"
                         android:layout_marginStart="8dp"
                         android:layout_marginTop="2dp"
                         app:srcCompat="@drawable/ic_thumb_down" />
@@ -285,6 +288,7 @@
                 android:id="@+id/button_share"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:contentDescription="@string/cd_button_share"
                 android:background="@drawable/background_button_round"
                 android:gravity="center"
                 android:layout_marginStart="5dp"

@@ -45,7 +45,8 @@
         <com.futo.platformplayer.views.platform.PlatformIndicator
             android:id="@+id/platform"
             android:layout_width="25dp"
-            android:layout_height="25dp" />
+            android:layout_height="25dp"
+            android:contentDescription="@string/cd_platform_indicator" />
     </LinearLayout>
 
 </LinearLayout>

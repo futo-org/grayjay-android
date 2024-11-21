@@ -933,7 +933,7 @@ class VideoDetailView : ConstraintLayout {
                         val device = devices.first();
                         UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                device.sendJson(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                                device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
                             }
                         })
                     }
@@ -1362,11 +1362,9 @@ class VideoDetailView : ConstraintLayout {
                         me._playbackTracker = null;
                 } catch (ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
-                    if (me.video?.isLive == true) withContext(Dispatchers.Main) {
-                        UIDialogs.toast(
-                            context,
-                            context.getString(R.string.failed_to_get_playback_tracker)
-                        );
+
+                    if(me.video?.isLive == true || ex.message?.contains("Unable to resolve host") == true) withContext(Dispatchers.Main) {
+                        UIDialogs.toast(context, context.getString(R.string.failed_to_get_playback_tracker));
                     };
                     else withContext(Dispatchers.Main) {
                         UIDialogs.showGeneralErrorDialog(
@@ -1759,7 +1757,7 @@ class VideoDetailView : ConstraintLayout {
                         });
                 else
                     _player.setArtwork(null);
-                _player.setSource(videoSource, audioSource, _playWhenReady, false);
+                _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);
@@ -2915,13 +2913,15 @@ class VideoDetailView : ConstraintLayout {
         .exception<Throwable> {
             Logger.w(ChannelFragment.TAG, "Failed to load video.", it);
 
-            handleErrorOrCall {
-                _retryCount = 0;
-                _retryJob?.cancel();
-                _retryJob = null;
-                _liveTryJob?.cancel();
-                _liveTryJob = null;
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
+            if(!(it.message?.contains("Unable to resolve host") ?: false && nextVideo())){
+                handleErrorOrCall {
+                    _retryCount = 0;
+                    _retryJob?.cancel();
+                    _retryJob = null;
+                    _liveTryJob?.cancel();
+                    _liveTryJob = null;
+                    UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, ::fetchVideo, null, fragment);
+                }
             }
         } else TaskHandler(IPlatformVideoDetails::class.java, {fragment.lifecycleScope});
 

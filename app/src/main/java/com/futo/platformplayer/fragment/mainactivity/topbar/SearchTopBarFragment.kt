@@ -26,6 +26,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SearchHistoryStorage
 
 class SearchTopBarFragment : TopFragment() {
+    @Suppress("PrivatePropertyName")
     private val TAG = "SearchTopBarFragment"
 
     private var _editSearch: EditText? = null;
@@ -191,29 +192,32 @@ class SearchTopBarFragment : TopFragment() {
     }
 
     private fun onDone() {
-        val editSearch = _editSearch;
+        val editSearch = _editSearch
         if (editSearch != null) {
-            val text = editSearch.text.toString();
-            if (text.length < 3) {
-                UIDialogs.toast(getString(R.string.please_use_at_least_3_characters));
-                return;
+            val text = editSearch.text.toString()
+            if (text.isEmpty()) {
+                UIDialogs.toast(getString(R.string.please_use_at_least_1_character))
+                return
             }
 
-            editSearch.clearFocus();
-            _inputMethodManager?.hideSoftInputFromWindow(editSearch.windowToken, 0);
+            editSearch.clearFocus()
+            _inputMethodManager?.hideSoftInputFromWindow(editSearch.windowToken, 0)
 
             if (Settings.instance.search.searchHistory) {
-                val storage = FragmentedStorage.get<SearchHistoryStorage>();
-                storage.add(text);
+                val storage = FragmentedStorage.get<SearchHistoryStorage>()
+                storage.add(text)
             }
 
             if (_searchType == SearchType.CREATOR) {
-                onSearch.emit(text);
+                onSearch.emit(text)
             } else {
-                onSearch.emit(text);
+                onSearch.emit(text)
             }
         } else {
-            Logger.w(TAG, "Unexpected condition happened where done is edit search is null but done is triggered.");
+            Logger.w(
+                TAG,
+                "Unexpected condition happened where done is edit search is null but done is triggered."
+            )
         }
     }
 

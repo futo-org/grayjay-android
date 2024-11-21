@@ -198,7 +198,7 @@ class StatePlaylists {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
                 Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
-                StateSync.instance.broadcastJson(
+                StateSync.instance.broadcastJsonData(
                     GJSyncOpcodes.syncPlaylists,
                     SyncPlaylistsPackage(listOf(playlist), mapOf())
                 );
@@ -217,7 +217,7 @@ class StatePlaylists {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
                     Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
-                    StateSync.instance.broadcastJson(
+                    StateSync.instance.broadcastJsonData(
                         GJSyncOpcodes.syncPlaylists,
                         SyncPlaylistsPackage(listOf(), mapOf(Pair(playlist.id, OffsetDateTime.now().toEpochSecond())))
                     );

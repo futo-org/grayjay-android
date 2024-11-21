@@ -14,6 +14,7 @@
         android:id="@+id/image_drag_drop"
         android:layout_width="40dp"
         android:layout_height="40dp"
+        android:contentDescription="@string/cd_drag_drop"
         app:srcCompat="@drawable/ic_dragdrop_white"
         android:scaleType="fitCenter"
         android:paddingTop="10dp"
@@ -116,6 +117,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitXY"
+                android:contentDescription="@string/cd_download_indicator"
                 app:srcCompat="@drawable/download_for_offline" />
         </FrameLayout>
     </FrameLayout>
@@ -174,6 +176,7 @@
         android:id="@+id/image_trash"
         android:layout_width="40dp"
         android:layout_height="40dp"
+        android:contentDescription="@string/cd_button_delete"
         app:srcCompat="@drawable/ic_trash_18dp"
         android:scaleType="fitCenter"
         android:paddingTop="10dp"

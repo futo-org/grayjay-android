@@ -41,6 +41,7 @@
                     <ImageView
                         android:layout_width="26dp"
                         android:layout_height="match_parent"
+                        android:contentDescription="@string/cd_search_icon"
                         app:srcCompat="@drawable/ic_search_thin"
                         android:scaleType="fitCenter"
                         android:layout_marginStart="10dp"
@@ -65,6 +66,7 @@
                         android:id="@+id/button_clear_search"
                         android:layout_width="46dp"
                         android:layout_height="match_parent"
+                        android:contentDescription="@string/cd_button_clear_search"
                         android:scaleType="fitCenter"
                         app:srcCompat="@drawable/ic_close_thin"
                         app:tint="@color/gray_ac"
