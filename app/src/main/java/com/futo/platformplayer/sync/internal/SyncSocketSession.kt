@@ -10,6 +10,7 @@ import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateSync
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.UUID
 
 class SyncSocketSession {
     enum class Opcode(val value: UByte) {

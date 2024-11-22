@@ -726,7 +726,7 @@
     <string name="not_yet_available_retrying_in_time_s">Not yet available, retrying in {time}s</string>
     <string name="failed_to_retry_for_live_stream">Failed to retry for live stream</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">This app is in development. Please submit bug reports and understand that many features are incomplete.</string>
-    <string name="please_use_at_least_3_characters">Please use at least 3 characters</string>
+    <string name="please_use_at_least_1_character">Please use at least 1 character</string>
     <string name="are_you_sure_you_want_to_delete_this_video">Are you sure you want to delete this video?</string>
     <string name="tap_to_open">Tap to open</string>
     <string name="update_available_exclamation">Update available!</string>
@@ -810,6 +810,8 @@
     <string name="scroll_to_top">Scroll to top</string>
     <string name="disable_battery_optimization">Disable Battery Optimization</string>
     <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Click to go to battery optimization settings. Disabling battery optimization will prevent the OS from killing media sessions.</string>
+    <string name="contribute_personal_subscriptions_list">Contribute Personal Subscriptions List</string>
+    <string name="contribute_personal_subscriptions_list_description">\nWould you liked to contribute your current creator subscriptions list to FUTO?\n\nThe data will be handled according to the Grayjay privacy policy. That is the list will be anonymized and stored without any reference to whomever the list of creators belonged to.\n\nThe intention is for Grayjay and FUTO to use these data to build a cross platform creator recommendation system to make it easier to find new creators you might like from within Grayjay.</string>
     <string name="cd_cast_button">Cast button</string>
     <string name="cd_incognito_button">Incognito button</string>
     <string name="cd_creator_thumbnail">Creator thumbnail</string>

@@ -32,6 +32,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -271,4 +272,10 @@ fun <T> findNewIndex(originalArr: List<T>, newArr: List<T>, item: T): Int{
         return originalArr.size;
     else
         return newIndex;
+}
+
+fun ByteBuffer.toUtf8String(): String {
+    val remainingBytes = ByteArray(remaining())
+    get(remainingBytes)
+    return String(remainingBytes, Charsets.UTF_8)
 }

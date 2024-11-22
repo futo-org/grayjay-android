@@ -23,6 +23,7 @@ import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import com.futo.platformplayer.sync.models.SyncWatchLaterPackage
+import com.futo.platformplayer.toUtf8String
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -32,6 +33,7 @@ import java.nio.ByteBuffer
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 
 interface IAuthorizable {
     val isAuthorized: Boolean
@@ -41,13 +43,16 @@ class SyncSession : IAuthorizable {
     private val _socketSessions: MutableList<SyncSocketSession> = mutableListOf()
     private var _authorized: Boolean = false
     private var _remoteAuthorized: Boolean = false
-    private val _onAuthorized: (session: SyncSession) -> Unit
+    private val _onAuthorized: (session: SyncSession, isNewlyAuthorized: Boolean, isNewSession: Boolean) -> Unit
     private val _onUnauthorized: (session: SyncSession) -> Unit
     private val _onClose: (session: SyncSession) -> Unit
     private val _onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit
     val remotePublicKey: String
     override val isAuthorized get() = _authorized && _remoteAuthorized
     private var _wasAuthorized = false
+    private val _id = UUID.randomUUID()
+    private var _remoteId: UUID? = null
+    private var _lastAuthorizedRemoteId: UUID? = null
 
     var connected: Boolean = false
         private set(v) {
@@ -57,7 +62,7 @@ class SyncSession : IAuthorizable {
         }
     }
 
-    constructor(remotePublicKey: String, onAuthorized: (session: SyncSession) -> Unit, onUnauthorized: (session: SyncSession) -> Unit, onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit, onClose: (session: SyncSession) -> Unit) {
+    constructor(remotePublicKey: String, onAuthorized: (session: SyncSession, isNewlyAuthorized: Boolean, isNewSession: Boolean) -> Unit, onUnauthorized: (session: SyncSession) -> Unit, onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit, onClose: (session: SyncSession) -> Unit) {
         this.remotePublicKey = remotePublicKey
         _onAuthorized = onAuthorized
         _onUnauthorized = onUnauthorized
@@ -79,7 +84,8 @@ class SyncSession : IAuthorizable {
     }
 
     fun authorize(socketSession: SyncSocketSession) {
-        socketSession.send(Opcode.NOTIFY_AUTHORIZED.value)
+        Logger.i(TAG, "Sent AUTHORIZED with session id $_id")
+        socketSession.send(Opcode.NOTIFY_AUTHORIZED.value, 0u, ByteBuffer.wrap(_id.toString().toByteArray()))
         _authorized = true
         checkAuthorized()
     }
@@ -97,9 +103,13 @@ class SyncSession : IAuthorizable {
     }
 
     private fun checkAuthorized() {
-        if (!_wasAuthorized && isAuthorized) {
+        if (isAuthorized) {
+            val isNewlyAuthorized = !_wasAuthorized;
+            val isNewSession = _lastAuthorizedRemoteId != _remoteId;
+            Logger.i(TAG, "onAuthorized (isNewlyAuthorized = $isNewlyAuthorized, isNewSession = $isNewSession)");
+            _onAuthorized.invoke(this, !_wasAuthorized, _lastAuthorizedRemoteId != _remoteId)
             _wasAuthorized = true
-            _onAuthorized.invoke(this)
+            _lastAuthorizedRemoteId = _remoteId
         }
     }
 
@@ -128,12 +138,19 @@ class SyncSession : IAuthorizable {
 
             when (opcode) {
                 Opcode.NOTIFY_AUTHORIZED.value -> {
+                    val str = data.toUtf8String()
+                    _remoteId = if (data.remaining() >= 0) UUID.fromString(str) else UUID.fromString("00000000-0000-0000-0000-000000000000")
                     _remoteAuthorized = true
+                    Logger.i(TAG, "Received AUTHORIZED with session id $_remoteId")
                     checkAuthorized()
+                    return
                 }
                 Opcode.NOTIFY_UNAUTHORIZED.value -> {
+                    _remoteId = null
+                    _lastAuthorizedRemoteId = null
                     _remoteAuthorized = false
                     _onUnauthorized(this)
+                    return
                 }
                 //TODO: Handle any kind of packet (that is not necessarily authorized)
             }
