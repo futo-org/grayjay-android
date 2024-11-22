@@ -87,15 +87,19 @@ class StatePlaylists {
         return OffsetDateTime.ofInstant(Instant.ofEpochSecond(tryParse), ZoneOffset.UTC);
     }
     private fun setWatchLaterReorderTime() {
-        val now = OffsetDateTime.now().toEpochSecond();
-        _watchLaterReorderTime.setAndSave(now.toString());
+        val now = OffsetDateTime.now(ZoneOffset.UTC);
+        val nowEpoch = now.toEpochSecond();
+        _watchLaterReorderTime.setAndSave(nowEpoch.toString());
     }
 
     fun getWatchLaterOrdering() = _watchlistOrderStore.getAllValues().toList();
 
-    fun updateWatchLaterOrdering(order: List<String>) {
+    fun updateWatchLaterOrdering(order: List<String>, notify: Boolean = false) {
         _watchlistOrderStore.set(*smartMerge(order, getWatchLaterOrdering()).toTypedArray());
         _watchlistOrderStore.save();
+        if(notify) {
+            onWatchLaterChanged.emit();
+        }
     }
 
     fun toMigrateCheck(): List<ManagedStore<*>> {
@@ -245,8 +249,8 @@ class StatePlaylists {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
                 listOf(),
-                mapOf(Pair(url, time.toEpochSecond())),
-                mapOf()
+                mapOf(),
+                mapOf(Pair(url, time.toEpochSecond()))
             ))
         };
     }

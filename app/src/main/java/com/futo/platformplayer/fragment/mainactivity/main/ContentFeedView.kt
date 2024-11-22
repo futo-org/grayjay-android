@@ -89,7 +89,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         };
         adapter.onAddToWatchLaterClicked.subscribe(this) {
             if(it is IPlatformVideo) {
-                StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it));
+                StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true);
                 UIDialogs.toast("Added to watch later\n[${it.name}]");
             }
         };

@@ -330,8 +330,10 @@ class SyncSession : IAuthorizable {
                     }
 
                     val packReorderTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.reorderTime), ZoneOffset.UTC);
-                    if(StatePlaylists.instance.getWatchLaterLastReorderTime() < packReorderTime && pack.ordering != null)
-                        StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()));
+                    val localReorderTime = StatePlaylists.instance.getWatchLaterLastReorderTime();
+                    if(localReorderTime < packReorderTime && pack.ordering != null) {
+                        StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()), true);
+                    }
                 }
 
                 GJSyncOpcodes.syncHistory -> {

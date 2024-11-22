@@ -959,7 +959,7 @@ class UISlideOverlays {
                         "${container.context.getString(R.string.add_to)} " + StatePlayer.TYPE_WATCHLATER + "",
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
-                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
+                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true); }),
                     SlideUpMenuItem(container.context,
                         R.drawable.ic_history,
                         container.context.getString(R.string.add_to_history),
@@ -1040,7 +1040,7 @@ class UISlideOverlays {
                         StatePlayer.TYPE_WATCHLATER,
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
-                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video)); }),
+                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true); }),
                     )
             );
 

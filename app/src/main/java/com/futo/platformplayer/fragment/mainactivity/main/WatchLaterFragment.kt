@@ -100,7 +100,7 @@ class WatchLaterFragment : MainFragment() {
         }
         override fun onVideoRemoved(video: IPlatformVideo) {
             if (video is SerializedPlatformVideo) {
-                StatePlaylists.instance.removeFromWatchLater(video);
+                StatePlaylists.instance.removeFromWatchLater(video, true);
             }
         }
 
