@@ -389,7 +389,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             }),
             ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = true, { false }, {
                 UIDialogs.showDialog(it.context ?: return@ButtonDefinition, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
-                    "All requests will be processed anonymously (unauthenticated), playback and history tracking will be disabled.\n\nTap the icon to disable.", null, 0,
+                    "All requests will be processed anonymously (any logins will be disabled except for the personalized home page), local playback and history tracking will also be disabled.\n\nTap the icon to disable.", null, 0,
                     UIDialogs.Action("Cancel", {
                         StateApp.instance.setPrivacyMode(false);
                     }, UIDialogs.ActionStyle.NONE),

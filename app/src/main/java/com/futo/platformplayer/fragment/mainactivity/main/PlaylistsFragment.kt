@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
@@ -23,6 +24,8 @@ import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.views.adapters.*
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.google.android.material.appbar.AppBarLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class PlaylistsFragment : MainFragment() {
@@ -119,7 +122,9 @@ class PlaylistsFragment : MainFragment() {
 
             findViewById<TextView>(R.id.text_view_all).setOnClickListener { _fragment.navigate<WatchLaterFragment>(context.getString(R.string.watch_later)); };
             StatePlaylists.instance.onWatchLaterChanged.subscribe(this) {
-                updateWatchLater();
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateWatchLater();
+                }
             };
         }
 

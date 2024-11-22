@@ -3,6 +3,7 @@ package com.futo.platformplayer.states
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.fragment.app.Fragment
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -17,22 +18,27 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringDateMapStorage
+import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
+import com.futo.platformplayer.sync.models.SyncWatchLaterPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 /***
  * Used to maintain playlists
@@ -50,6 +56,11 @@ class StatePlaylists {
         .load();
     private val _watchlistOrderStore = FragmentedStorage.get<StringArrayStorage>("watchListOrder"); //Temporary workaround to add order..
 
+    private val _watchLaterReorderTime = FragmentedStorage.get<StringStorage>("watchLaterReorderTime");
+    private val _watchLaterAdds = FragmentedStorage.get<StringDateMapStorage>("watchLaterAdds");
+    private val _watchLaterRemovals = FragmentedStorage.get<StringDateMapStorage>("watchLaterRemovals");
+
+
     val playlistStore = FragmentedStorage.storeJson<Playlist>("playlists")
         .withRestore(PlaylistBackup())
         .load();
@@ -58,6 +69,34 @@ class StatePlaylists {
     val playlistShareDir = FragmentedStorage.getOrCreateDirectory("shares");
 
     val onWatchLaterChanged = Event0();
+
+    fun getWatchLaterAddTime(url: String): OffsetDateTime? {
+        return _watchLaterAdds.get(url)
+    }
+    fun setWatchLaterAddTime(url: String, time: OffsetDateTime) {
+        _watchLaterAdds.setAndSave(url, time);
+    }
+    fun getWatchLaterRemovalTime(url: String): OffsetDateTime? {
+        return _watchLaterRemovals.get(url);
+    }
+    fun getWatchLaterLastReorderTime(): OffsetDateTime{
+        val value = _watchLaterReorderTime.value;
+        if(value.isEmpty())
+            return OffsetDateTime.MIN;
+        val tryParse = value.toLongOrNull() ?: 0;
+        return OffsetDateTime.ofInstant(Instant.ofEpochSecond(tryParse), ZoneOffset.UTC);
+    }
+    private fun setWatchLaterReorderTime() {
+        val now = OffsetDateTime.now().toEpochSecond();
+        _watchLaterReorderTime.setAndSave(now.toString());
+    }
+
+    fun getWatchLaterOrdering() = _watchlistOrderStore.getAllValues().toList();
+
+    fun updateWatchLaterOrdering(order: List<String>) {
+        _watchlistOrderStore.set(*smartMerge(order, getWatchLaterOrdering()).toTypedArray());
+        _watchlistOrderStore.save();
+    }
 
     fun toMigrateCheck(): List<ManagedStore<*>> {
         return listOf(playlistStore, _watchlistStore);
@@ -68,12 +107,14 @@ class StatePlaylists {
             return _watchlistStore.getItems().sortedBy { order.indexOf(it.url) };
         }
     }
-    fun updateWatchLater(updated: List<SerializedPlatformVideo>) {
+    fun updateWatchLater(updated: List<SerializedPlatformVideo>, isUserInteraction: Boolean = false) {
+        var wasModified = false;
         synchronized(_watchlistStore) {
             //_watchlistStore.deleteAll();
             val existing = _watchlistStore.getItems();
             val toAdd = updated.filter { u -> !existing.any { u.url == it.url } };
             val toRemove = existing.filter { u -> !updated.any { u.url == it.url } };
+            wasModified = toAdd.size > 0 || toRemove.size > 0;
             Logger.i(TAG, "WatchLater changed:\nTo Add:\n" +
                     (if(toAdd.size == 0) "None" else toAdd.map { " + " + it.name }.joinToString("\n")) +
                     "\nTo Remove:\n" +
@@ -86,6 +127,11 @@ class StatePlaylists {
         }
         onWatchLaterChanged.emit();
 
+        if(isUserInteraction) {
+            setWatchLaterReorderTime();
+            broadcastWatchLater(!wasModified);
+        }
+
         if(StateDownloads.instance.getWatchLaterDescriptor() != null) {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
@@ -96,31 +142,55 @@ class StatePlaylists {
             return _watchlistStore.getItems().firstOrNull { it.url == url };
         }
     }
-    fun removeFromWatchLater(url: String) {
+    fun removeFromWatchLater(url: String, isUserInteraction: Boolean = false) {
         val item = getWatchLaterFromUrl(url);
         if(item != null){
-            removeFromWatchLater(item);
+            removeFromWatchLater(item, isUserInteraction);
         }
     }
-    fun removeFromWatchLater(video: SerializedPlatformVideo) {
+    fun removeFromWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, time: OffsetDateTime? = null) {
         synchronized(_watchlistStore) {
             _watchlistStore.delete(video);
             _watchlistOrderStore.set(*_watchlistOrderStore.values.filter { it != video.url }.toTypedArray());
             _watchlistOrderStore.save();
+            if(time != null)
+                _watchLaterRemovals.setAndSave(video.url, time);
         }
         onWatchLaterChanged.emit();
+
+        if(isUserInteraction) {
+            val now = OffsetDateTime.now();
+            if(time == null) {
+                _watchLaterRemovals.setAndSave(video.url, now);
+                broadcastWatchLaterRemoval(video.url, now);
+            }
+            else
+                broadcastWatchLaterRemoval(video.url, time);
+        }
 
         if(StateDownloads.instance.getWatchLaterDescriptor() != null) {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo) {
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1) {
         synchronized(_watchlistStore) {
             _watchlistStore.saveAsync(video);
-            _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+            if(orderPosition == -1)
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+            else {
+                val existing = _watchlistOrderStore.getAllValues().toMutableList();
+                existing.add(orderPosition, video.url);
+                _watchlistOrderStore.set(*existing.toTypedArray());
+            }
             _watchlistOrderStore.save();
         }
         onWatchLaterChanged.emit();
+
+        if(isUserInteraction) {
+            val now = OffsetDateTime.now();
+            _watchLaterAdds.setAndSave(video.url, now);
+            broadcastWatchLaterAddition(video, now);
+        }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
     }
@@ -149,6 +219,36 @@ class StatePlaylists {
             playlist.datePlayed = OffsetDateTime.now();
             playlistStore.saveAsync(playlist);
         }
+    }
+
+    private fun broadcastWatchLater(orderOnly: Boolean = false) {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                if(orderOnly) listOf() else getWatchLater(),
+                if(orderOnly) mapOf() else _watchLaterAdds.all(),
+                if(orderOnly) mapOf() else _watchLaterRemovals.all(),
+                getWatchLaterLastReorderTime().toEpochSecond(),
+                _watchlistOrderStore.values.toList()));
+        };
+    }
+    private fun broadcastWatchLaterAddition(video: SerializedPlatformVideo, time: OffsetDateTime) {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                listOf(video),
+                mapOf(Pair(video.url, time.toEpochSecond())),
+                mapOf(),
+
+            ))
+        };
+    }
+    private fun broadcastWatchLaterRemoval(url: String, time: OffsetDateTime) {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                listOf(),
+                mapOf(Pair(url, time.toEpochSecond())),
+                mapOf()
+            ))
+        };
     }
 
     suspend fun createPlaylistFromChannel(channelUrl: String, onPage: (Int) -> Unit): Playlist {

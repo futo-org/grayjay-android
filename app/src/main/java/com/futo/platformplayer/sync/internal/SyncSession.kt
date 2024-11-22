@@ -7,6 +7,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
+import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateHistory
@@ -21,6 +22,7 @@ import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
+import com.futo.platformplayer.sync.models.SyncWatchLaterPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -281,6 +283,38 @@ class SyncSession : IAuthorizable {
                             StatePlaylists.instance.removePlaylist(creation, false);
 
                     }
+                }
+
+                GJSyncOpcodes.syncWatchLater -> {
+                    val dataBody = ByteArray(data.remaining());
+                    data.get(dataBody);
+                    val json = String(dataBody, Charsets.UTF_8);
+                    val pack = Serializer.json.decodeFromString<SyncWatchLaterPackage>(json);
+
+                    Logger.i(TAG, "SyncWatchLater received ${pack.videos.size} (${pack.videoAdds?.size}, ${pack.videoRemovals?.size})");
+
+                    val allExisting = StatePlaylists.instance.getWatchLater();
+                    for(video in pack.videos) {
+                        val existing = allExisting.firstOrNull { it.url == video.url };
+                        val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.videoAdds[video.url] ?: 0), ZoneOffset.UTC) else OffsetDateTime.MIN;
+
+                        if(existing == null) {
+                            StatePlaylists.instance.addToWatchLater(video, false);
+                            if(time > OffsetDateTime.MIN)
+                                StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
+                        }
+                    }
+                    for(removal in pack.videoRemovals) {
+                        val watchLater = allExisting.firstOrNull { it.url == removal.key } ?: continue;
+                        val creation = StatePlaylists.instance.getWatchLaterRemovalTime(watchLater.url) ?: OffsetDateTime.MIN;
+                        val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value), ZoneOffset.UTC);
+                        if(creation < removalTime)
+                            StatePlaylists.instance.removeFromWatchLater(watchLater, false, removalTime);
+                    }
+
+                    val packReorderTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.reorderTime), ZoneOffset.UTC);
+                    if(StatePlaylists.instance.getWatchLaterLastReorderTime() < packReorderTime && pack.ordering != null)
+                        StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()));
                 }
 
                 GJSyncOpcodes.syncHistory -> {

@@ -233,3 +233,42 @@ fun String.decodeUnicode(): String {
     }
     return sb.toString()
 }
+
+fun <T> smartMerge(targetArr: List<T>, toMerge: List<T>) : List<T>{
+    val missingToMerge = toMerge.filter { !targetArr.contains(it) }.toList();
+    val newArrResult = targetArr.toMutableList();
+
+    for(missing in missingToMerge) {
+        val newIndex = findNewIndex(toMerge, newArrResult, missing);
+        newArrResult.add(newIndex, missing);
+    }
+
+    return newArrResult;
+}
+fun <T> findNewIndex(originalArr: List<T>, newArr: List<T>, item: T): Int{
+    var originalIndex = originalArr.indexOf(item);
+    var newIndex = -1;
+
+    for(i in originalIndex-1 downTo 0) {
+        val previousItem = originalArr[i];
+        val indexInNewArr = newArr.indexOfFirst { it == previousItem };
+        if(indexInNewArr >= 0) {
+            newIndex = indexInNewArr + 1;
+            break;
+        }
+    }
+    if(newIndex < 0) {
+        for(i in originalIndex+1 until originalArr.size) {
+            val previousItem = originalArr[i];
+            val indexInNewArr = newArr.indexOfFirst { it == previousItem };
+            if(indexInNewArr >= 0) {
+                newIndex = indexInNewArr - 1;
+                break;
+            }
+        }
+    }
+    if(newIndex < 0)
+        return originalArr.size;
+    else
+        return newIndex;
+}
