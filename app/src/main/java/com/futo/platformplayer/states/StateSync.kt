@@ -284,12 +284,16 @@ class StateSync {
                     return@SyncSocketSession
                 }
 
-                Logger.i(TAG, "Handshake complete with ${s.remotePublicKey}")
+                Logger.i(TAG, "Handshake complete with (LocalPublicKey = ${s.localPublicKey}, RemotePublicKey = ${s.remotePublicKey})")
 
                 synchronized(_sessions) {
                     session = _sessions[s.remotePublicKey]
                     if (session == null) {
-                        session = SyncSession(remotePublicKey, onAuthorized = {
+                        session = SyncSession(remotePublicKey, onAuthorized = { it, isNewlyAuthorized, isNewSession ->
+                            if (!isNewSession) {
+                                return@SyncSession
+                            }
+
                             Logger.i(TAG, "${s.remotePublicKey} authorized")
                             synchronized(_lastAddressStorage) {
                                 _lastAddressStorage.setAndSave(remotePublicKey, s.remoteAddress)
@@ -358,6 +362,16 @@ class StateSync {
                                     }
                                 })
                             }
+                        } else {
+                            val publicKey = session!!.remotePublicKey
+                            session!!.unauthorize(s)
+                            session!!.close()
+
+                            synchronized(_sessions) {
+                                _sessions.remove(publicKey)
+                            }
+
+                            Logger.i(TAG, "Connection unauthorized for ${remotePublicKey} because not authorized and not on pairing activity to ask")
                         }
                     } else {
                         //Responder does not need to check because already approved

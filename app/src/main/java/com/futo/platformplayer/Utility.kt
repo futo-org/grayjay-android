@@ -32,6 +32,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -232,4 +233,10 @@ fun String.decodeUnicode(): String {
         i++
     }
     return sb.toString()
+}
+
+fun ByteBuffer.toUtf8String(): String {
+    val remainingBytes = ByteArray(remaining())
+    get(remainingBytes)
+    return String(remainingBytes, Charsets.UTF_8)
 }
