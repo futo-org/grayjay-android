@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -250,6 +251,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
     }
 
+    @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
         Logger.i(TAG, "MainActivity Starting");
         StateApp.instance.setGlobalContext(this, lifecycleScope);
@@ -513,6 +515,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         //startActivity(Intent(this, TestActivity::class.java));
 
+        // updates the requestedOrientation based on user settings
+        _fragVideoDetail.updateOrientation()
+
         val sharedPreferences =
             getSharedPreferences("GrayjayFirstBoot", Context.MODE_PRIVATE)
         val isFirstBoot = sharedPreferences.getBoolean("IsFirstBoot", true)
@@ -523,9 +528,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
         }
-
-        _fragVideoDetail.detectWindowSize()
-        _fragVideoDetail.updateOrientation()
 
         val submissionStatus = FragmentedStorage.get<StringStorage>("subscriptionSubmissionStatus")
 

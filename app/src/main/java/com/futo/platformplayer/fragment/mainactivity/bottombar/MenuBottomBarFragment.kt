@@ -269,6 +269,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         }
 
         fun updateAllButtonVisibility() {
+            // if the more fly-out menu is open the we should close it
             if(_moreVisible) {
                 setMoreVisible(false)
             }

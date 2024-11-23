@@ -5,9 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.ContentType
@@ -56,7 +55,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
     private var _view: SubscriptionsFeedView? = null;
     private var _group: SubscriptionGroup? = null;
-    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
@@ -109,7 +108,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         var subGroup: SubscriptionGroup? = null;
 
-        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+        constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
             };
@@ -150,16 +149,16 @@ class SubscriptionsFeedFragment : MainFragment() {
             val homeTab = Settings.instance.tabs.find { it.id == 0 };
             val isHomeEnabled = homeTab?.enabled == true;
             if (announcementsView != null && isHomeEnabled) {
-                headerView.removeView(announcementsView);
-                _announcementsView = null;
+                recyclerData.adapter.viewsToPrepend.remove(announcementsView)
+                _announcementsView = null
             }
 
             if (announcementsView == null && !isHomeEnabled) {
                 val c = context;
                 if (c != null) {
                     _announcementsView = AnnouncementView(c, null).apply {
-                        headerView.addView(this)
-                    };
+                        recyclerData.adapter.viewsToPrepend.add(this)
+                    }
                 }
             }
 
@@ -395,7 +394,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             _taskGetPager.run(withRefetch);
         }
 
-        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, StaggeredGridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
+        override fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>) {
             super.onRestoreCachedData(cachedData);
             setEmptyPager(cachedData.results.isEmpty());
         }

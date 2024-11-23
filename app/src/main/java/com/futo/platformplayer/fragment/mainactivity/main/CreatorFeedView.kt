@@ -3,8 +3,8 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.Context
 import android.util.TypedValue
 import android.view.LayoutInflater
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.views.FeedStyle
@@ -35,8 +35,8 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
     override fun createLayoutManager(
         recyclerResults: RecyclerView,
         context: Context
-    ): StaggeredGridLayoutManager {
-        val glmResults = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+    ): GridLayoutManager {
+        val glmResults = GridLayoutManager(context, 2)
 
         _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
             rightMargin = TypedValue.applyDimension(

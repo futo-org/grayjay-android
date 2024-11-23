@@ -43,8 +43,11 @@ class VideoDetailFragment : MainFragment {
     private var _view : SingleViewTouchableMotionLayout? = null;
 
     var isFullscreen : Boolean = false;
-    var isMinimizing : Boolean = false;
-    private var isSmallWindow : Boolean = true;
+    /**
+     * whether the view is in the process of switching from full-screen maximized to minimized
+     * this is used to detect that the app is skipping the non full-screen maximized state
+     */
+    var isMinimizingFromFullScreen : Boolean = false;
     val onFullscreenChanged = Event1<Boolean>();
     var isTransitioning : Boolean = false
         private set;
@@ -84,8 +87,8 @@ class VideoDetailFragment : MainFragment {
         _viewDetail?.prevVideo(true);
     }
 
-    fun detectWindowSize() {
-        isSmallWindow = min(
+    private fun isSmallWindow(): Boolean {
+        return min(
             resources.configuration.screenWidthDp,
             resources.configuration.screenHeightDp
         ) < resources.getDimension(R.dimen.landscape_threshold)
@@ -94,9 +97,9 @@ class VideoDetailFragment : MainFragment {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        detectWindowSize()
-
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
+
+        val isSmallWindow = isSmallWindow()
 
         if (
             isSmallWindow
@@ -118,7 +121,7 @@ class VideoDetailFragment : MainFragment {
 
     private fun onStateChanged(state: State) {
         if (
-            isSmallWindow
+            isSmallWindow()
             && state == State.MAXIMIZED
             && !isFullscreen
             && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -131,7 +134,7 @@ class VideoDetailFragment : MainFragment {
 
     private fun onVideoChanged(videoWidth : Int, videoHeight: Int) {
         if (
-            isSmallWindow
+            isSmallWindow()
             && state == State.MAXIMIZED
             && !isFullscreen
             && videoHeight > videoWidth
@@ -149,12 +152,14 @@ class VideoDetailFragment : MainFragment {
 
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
 
+        val isSmallWindow = isSmallWindow()
+
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
-        else if (isSmallWindow && !isMinimizing && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         } else if (rotationLock) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
@@ -263,7 +268,7 @@ class VideoDetailFragment : MainFragment {
             it.onFullscreenChanged.subscribe(::onFullscreenChanged);
             it.onVideoChanged.subscribe(::onVideoChanged)
             it.onMinimize.subscribe {
-                isMinimizing = true
+                isMinimizingFromFullScreen = true
                 _view!!.transitionToStart();
             };
             it.onClose.subscribe {
@@ -300,7 +305,7 @@ class VideoDetailFragment : MainFragment {
 
                 if (state != State.MINIMIZED && progress < 0.1) {
                     state = State.MINIMIZED;
-                    isMinimizing = false
+                    isMinimizingFromFullScreen = false
                     onMinimize.emit();
                 }
                 else if (state != State.MAXIMIZED && progress > 0.9) {

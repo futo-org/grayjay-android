@@ -8,9 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.IPlatformClient
@@ -59,14 +59,14 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private var _activeTags: List<String>? = null;
 
     private var _nextPageHandler: TaskHandler<TPager, List<TResult>>;
-    val recyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, StaggeredGridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>;
+    val recyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>;
 
     val fragment: TFragment;
 
     private val _scrollListener: RecyclerView.OnScrollListener;
     private var _automaticNextPageCounter = 0;
 
-    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, StaggeredGridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
+    constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
         this.fragment = fragment;
         inflater.inflate(R.layout.fragment_feed, this);
 
@@ -159,7 +159,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
                 super.onScrolled(recyclerView, dx, dy);
 
                 val visibleItemCount = _recyclerResults.childCount;
-                val firstVisibleItem = recyclerData.layoutManager.findFirstVisibleItemPositions(IntArray(recyclerData.layoutManager.spanCount))[0]
+                val firstVisibleItem = recyclerData.layoutManager.findFirstVisibleItemPosition()
                 //Logger.i(TAG, "onScrolled loadNextPage visibleItemCount=$visibleItemCount firstVisibleItem=$visibleItemCount")
 
                 if (!_loading && firstVisibleItem + visibleItemCount + visibleThreshold >= recyclerData.results.size && firstVisibleItem > 0) {
@@ -175,7 +175,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private fun ensureEnoughContentVisible(filteredResults: List<TConverted>) {
         val canScroll = if (recyclerData.results.isEmpty()) false else {
             val layoutManager = recyclerData.layoutManager
-            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPositions(IntArray(recyclerData.layoutManager.spanCount))[0]
+            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
             if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
                 val firstVisibleView = layoutManager.findViewByPosition(firstVisibleItemPosition)
@@ -289,8 +289,8 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         }
     }
     protected abstract fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<TConverted>): InsertedViewAdapterWithLoader<TViewHolder>;
-    protected abstract fun createLayoutManager(recyclerResults: RecyclerView, context: Context): StaggeredGridLayoutManager;
-    protected open fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, StaggeredGridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>) {}
+    protected abstract fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager;
+    protected open fun onRestoreCachedData(cachedData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>) {}
 
     protected fun setProgress(fin: Int, total: Int) {
         val progress = (fin.toFloat() / total);

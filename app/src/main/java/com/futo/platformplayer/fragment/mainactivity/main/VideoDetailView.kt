@@ -2575,6 +2575,7 @@ class VideoDetailView : ConstraintLayout {
         _overlayContainer.removeAllViews();
         _overlay_quality_selector?.hide();
 
+        _player.setFullScreen(true)
         _player.fillHeight(false)
         _layoutPlayerContainer.setPadding(0, 0, 0, 0);
     }
@@ -2788,23 +2789,14 @@ class VideoDetailView : ConstraintLayout {
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
         if (fragment.state == VideoDetailFragment.State.MINIMIZED) {
-            setVideoMinimize(_minimizeProgress)
             _player.fillHeight(true)
         } else if (!fragment.isFullscreen) {
             _player.fitHeight()
         }
     }
 
-    fun setVideoMinimize(value: Float) {
-        val totalPaddingNeeded = value * max(
-            (resources.displayMetrics.widthPixels - resources.getDimension(R.dimen.minimized_player_max_width)).toInt(),
-            0
-        )
-        val outerPadding = (totalPaddingNeeded / 2).toInt()
-        val padRight =
-            ((resources.displayMetrics.widthPixels - totalPaddingNeeded) * 0.70 * value).toInt()
-
-        rootView.setPadding(outerPadding, 0, outerPadding, 0)
+    fun setVideoMinimize(value : Float) {
+        val padRight = (resources.displayMetrics.widthPixels * 0.70 * value).toInt()
         _player.setPadding(0, _player.paddingTop, padRight, 0)
         _cast.setPadding(0, _cast.paddingTop, padRight, 0)
     }
