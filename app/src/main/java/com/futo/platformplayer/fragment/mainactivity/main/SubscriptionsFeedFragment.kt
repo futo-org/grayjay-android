@@ -158,6 +158,9 @@ class SubscriptionsFeedFragment : MainFragment() {
                 if (c != null) {
                     _announcementsView = AnnouncementView(c, null).apply {
                         recyclerData.adapter.viewsToPrepend.add(this)
+                        this.onClose.subscribe {
+                            recyclerData.adapter.viewsToPrepend.remove(this)
+                        }
                     }
                 }
             }
