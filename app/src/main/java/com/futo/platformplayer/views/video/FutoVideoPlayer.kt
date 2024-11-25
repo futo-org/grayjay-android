@@ -20,7 +20,6 @@ import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
-import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
@@ -111,7 +110,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _author_fullscreen: TextView;
     private var _shouldRestartHideJobOnPlaybackStateChange: Boolean = false;
 
-    private var _lastSourceFit: Int? = null;
+    private var _lastSourceFit: Float? = null;
+    private var _lastWindowWidth: Int = resources.configuration.screenWidthDp
+    private var _lastWindowHeight: Int = resources.configuration.screenHeightDp
     private var _originalBottomMargin: Int = 0;
 
     private var _isControlsLocked: Boolean = false;
@@ -632,7 +633,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     private fun fitOrFill(fullScreen: Boolean) {
         if (fullScreen) {
-            fillHeight();
+            fillHeight(false);
         } else {
             fitHeight();
         }
@@ -655,7 +656,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         gestureControl.resetZoomPan()
         _lastSourceFit = null;
         if(isFullScreen)
-            fillHeight();
+            fillHeight(false);
         else if(_root.layoutParams.height != MATCH_PARENT)
             fitHeight(videoSize);
     }
@@ -718,58 +719,73 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     //Sizing
     @OptIn(UnstableApi::class)
-    fun fitHeight(videoSize : VideoSize? = null){
-        Logger.i(TAG, "Video Fit Height");
-        if(_originalBottomMargin != 0) {
-            val layoutParams = _videoView.layoutParams as ConstraintLayout.LayoutParams;
-            layoutParams.setMargins(0, 0, 0, _originalBottomMargin);
-            _videoView.layoutParams = layoutParams;
+    fun fitHeight(videoSize: VideoSize? = null) {
+        Logger.i(TAG, "Video Fit Height")
+        if (_originalBottomMargin != 0) {
+            val layoutParams = _videoView.layoutParams as ConstraintLayout.LayoutParams
+            layoutParams.setMargins(0, 0, 0, _originalBottomMargin)
+            _videoView.layoutParams = layoutParams
         }
 
-        var h = videoSize?.height ?: lastVideoSource?.height ?: exoPlayer?.player?.videoSize?.height ?: 0;
-        var w = videoSize?.width ?: lastVideoSource?.width ?: exoPlayer?.player?.videoSize?.width ?: 0;
+        var h = videoSize?.height ?: lastVideoSource?.height ?: exoPlayer?.player?.videoSize?.height
+        ?: 0
+        var w =
+            videoSize?.width ?: lastVideoSource?.width ?: exoPlayer?.player?.videoSize?.width ?: 0
 
-        if(h == 0 && w == 0) {
-            Logger.i(TAG, "UNKNOWN VIDEO FIT: (videoSize: ${videoSize != null}, player.videoSize: ${exoPlayer?.player?.videoSize != null})");
-            w = 1280;
-            h = 720;
+        if (h == 0 && w == 0) {
+            Logger.i(
+                TAG,
+                "UNKNOWN VIDEO FIT: (videoSize: ${videoSize != null}, player.videoSize: ${exoPlayer?.player?.videoSize != null})"
+            );
+            w = 1280
+            h = 720
         }
 
+        val configuration = resources.configuration
 
-        if(_lastSourceFit == null){
-            val metrics = StateApp.instance.displayMetrics ?: resources.displayMetrics;
+        val windowWidth = configuration.screenWidthDp
+        val windowHeight = configuration.screenHeightDp
 
-            val viewWidth = Math.min(metrics.widthPixels, metrics.heightPixels); //TODO: Get parent width. was this.width
-            val deviceHeight = Math.max(metrics.widthPixels, metrics.heightPixels);
-            val maxHeight = deviceHeight * 0.4;
+        if (_lastSourceFit == null || windowWidth != _lastWindowWidth || windowHeight != _lastWindowHeight) {
+            val maxHeight = windowHeight * 0.4f
 
-            val determinedHeight = if(w > h)
-                ((h * (viewWidth.toDouble() / w)).toInt())
+            val aspectRatio = h.toFloat() / w
+            val determinedHeight = (aspectRatio * windowWidth)
+
+            _lastSourceFit = determinedHeight
+            _lastSourceFit = _lastSourceFit!!.coerceAtLeast(220f)
+            _lastSourceFit = _lastSourceFit!!.coerceAtMost(maxHeight)
+
+            _desiredResizeModePortrait = if (_lastSourceFit != determinedHeight)
+                AspectRatioFrameLayout.RESIZE_MODE_FIT
             else
-                ((h * (viewWidth.toDouble() / w)).toInt());
-            _lastSourceFit = determinedHeight;
-            _lastSourceFit = Math.max(_lastSourceFit!!, 250);
-            _lastSourceFit = Math.min(_lastSourceFit!!, maxHeight.toInt());
-            if((_lastSourceFit ?: 0) < 300 || (_lastSourceFit ?: 0) > viewWidth) {
-                Log.d(TAG, "WEIRD HEIGHT DETECTED: ${_lastSourceFit}, Width: ${w}, Height: ${h}, VWidth: ${viewWidth}");
-            }
-            if(_lastSourceFit != determinedHeight)
-                _desiredResizeModePortrait = AspectRatioFrameLayout.RESIZE_MODE_FIT;
-            else
-                _desiredResizeModePortrait = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
-            _videoView.resizeMode = _desiredResizeModePortrait
-        }
+                AspectRatioFrameLayout.RESIZE_MODE_ZOOM
 
-        val marginBottom = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7f, resources.displayMetrics).toInt();
-        val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, _lastSourceFit!! + marginBottom)
-        rootParams.bottomMargin = marginBottom;
+            _lastWindowWidth = windowWidth
+            _lastWindowHeight = windowHeight
+        }
+        _videoView.resizeMode = _desiredResizeModePortrait
+
+        val marginBottom =
+            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7f, resources.displayMetrics)
+                .toInt()
+        val height = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            _lastSourceFit!!,
+            resources.displayMetrics
+        )
+        val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, (height + marginBottom).toInt())
+        rootParams.bottomMargin = marginBottom
         _root.layoutParams = rootParams
-        isFitMode = true;
+        isFitMode = true
     }
-    fun fillHeight(){
+
+    @OptIn(UnstableApi::class)
+    fun fillHeight(isMiniPlayer: Boolean) {
         Logger.i(TAG, "Video Fill Height");
         val layoutParams = _videoView.layoutParams as ConstraintLayout.LayoutParams;
-        _originalBottomMargin = if(layoutParams.bottomMargin > 0) layoutParams.bottomMargin else _originalBottomMargin;
+        _originalBottomMargin =
+            if (layoutParams.bottomMargin > 0) layoutParams.bottomMargin else _originalBottomMargin;
         layoutParams.setMargins(0);
         _videoView.layoutParams = layoutParams;
         _videoView.invalidate();
@@ -777,6 +793,11 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         _root.layoutParams = rootParams;
         _root.invalidate();
+
+        if(isMiniPlayer){
+            _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        }
+
         isFitMode = false;
     }
 

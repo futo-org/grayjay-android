@@ -3,13 +3,9 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.Context
 import android.util.TypedValue
 import android.view.LayoutInflater
-import android.view.ViewGroup.MarginLayoutParams
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.*
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.*
@@ -18,9 +14,7 @@ import com.futo.platformplayer.views.adapters.viewholders.CreatorViewHolder
 abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLink, PlatformAuthorLink, IPager<PlatformAuthorLink>, CreatorViewHolder> where TFragment : MainFragment {
     override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
 
-    constructor(fragment: TFragment, inflater: LayoutInflater) : super(fragment, inflater) {
-
-    }
+    constructor(fragment: TFragment, inflater: LayoutInflater) : super(fragment, inflater)
 
     override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<PlatformAuthorLink>): InsertedViewAdapterWithLoader<CreatorViewHolder> {
         return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
@@ -34,18 +28,31 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
         );
     }
 
-    override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): LinearLayoutManager {
-        val glmResults = GridLayoutManager(context, 2);
-        glmResults.orientation = LinearLayoutManager.VERTICAL;
+    /*
+     * An empty override to remove the inherited span count update functionality
+     */
+    override fun updateSpanCount(){
+
+    }
+
+    override fun createLayoutManager(
+        recyclerResults: RecyclerView,
+        context: Context
+    ): GridLayoutManager {
+        val glmResults = GridLayoutManager(context, 2)
 
         _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
-            rightMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8.0f, context.resources.displayMetrics).toInt();
-        };
+            rightMargin = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                8.0f,
+                context.resources.displayMetrics
+            ).toInt()
+        }
 
-        return glmResults;
+        return glmResults
     }
 
     companion object {
-        private val TAG = "CreatorFeedView";
+        private const val TAG = "CreatorFeedView";
     }
 }

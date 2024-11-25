@@ -51,7 +51,6 @@
             android:name=".activities.MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
@@ -146,11 +145,9 @@
                 <data android:scheme="polycentric" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activities.TestActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
-
         <activity
             android:name=".activities.SettingsActivity"
             android:screenOrientation="sensorPortrait"
@@ -173,7 +170,6 @@
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.AddSourceActivity"
-            android:screenOrientation="sensorPortrait"
             android:exported="true"
             android:theme="@style/Theme.FutoVideo.NoActionBar">
             <intent-filter>
@@ -217,7 +213,6 @@
             android:name=".activities.ManageTabsActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
-
         <activity
             android:name=".activities.QRCaptureActivity"
             android:screenOrientation="sensorPortrait"

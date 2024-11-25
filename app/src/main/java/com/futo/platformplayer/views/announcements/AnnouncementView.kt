@@ -10,6 +10,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.Announcement
@@ -34,6 +35,8 @@ class AnnouncementView : LinearLayout {
     private val _textTime: TextView;
     private val _category: String?;
     private var _currentAnnouncement: Announcement? = null;
+
+    val onClose = Event0();
 
     private val _scope: CoroutineScope?;
 
@@ -101,6 +104,10 @@ class AnnouncementView : LinearLayout {
         setAnnouncement(announcements.firstOrNull(), announcements.size);
     }
 
+    fun isClosed(): Boolean{
+        return _currentAnnouncement == null
+    }
+
     private fun setAnnouncement(announcement: Announcement?, count: Int) {
         if(count == 0 && announcement == null)
             Logger.i(TAG, "setAnnouncement announcement=$announcement count=$count");
@@ -108,11 +115,12 @@ class AnnouncementView : LinearLayout {
         _currentAnnouncement = announcement;
 
         if (announcement == null) {
-            _root.visibility = View.GONE;
+            visibility = View.GONE
+            onClose.emit()
             return;
         }
 
-        _root.visibility = View.VISIBLE;
+        visibility = View.VISIBLE
 
         _textTitle.text = announcement.title;
         _textBody.text = announcement.msg;
