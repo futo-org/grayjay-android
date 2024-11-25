@@ -28,6 +28,9 @@ abstract class CreatorFeedView<TFragment> : FeedView<TFragment, PlatformAuthorLi
         );
     }
 
+    /*
+     * An empty override to remove the inherited span count update functionality
+     */
     override fun updateSpanCount(){
 
     }
