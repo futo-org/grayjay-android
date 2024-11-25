@@ -7,6 +7,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -34,7 +35,7 @@ import kotlin.math.roundToInt
 class MenuBottomBarFragment : MainActivityFragment() {
     private var _view: MenuBottomBarView? = null;
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = MenuBottomBarView(this, inflater);
         _view = view;
         return view;
@@ -56,7 +57,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
         return _view?.onBackPressed() ?: false;
     }
 
-    @SuppressLint("ViewConstructor")
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        _view?.updateAllButtonVisibility()
+    }
+
+        @SuppressLint("ViewConstructor")
     class MenuBottomBarView : LinearLayout {
         private val _fragment: MenuBottomBarFragment;
         private val _inflater: LayoutInflater;
@@ -76,7 +83,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private var _buttonsVisible = 0;
         private var _subscriptionsVisible = true;
 
-        var currentButtonDefinitions: List<ButtonDefinition>? = null;
+        private var currentButtonDefinitions: List<ButtonDefinition>? = null;
 
         constructor(fragment: MenuBottomBarFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -132,7 +139,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             val staggerFactor = 3.0f
 
             if (visible) {
-                moreOverlay.visibility = LinearLayout.VISIBLE
+                moreOverlay.visibility = VISIBLE
                 val animations = arrayListOf<Animator>()
                 animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 0.0f, 1.0f).setDuration(duration))
 
@@ -161,7 +168,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 animatorSet.doOnEnd {
                     _moreVisibleAnimating = false
                     _moreVisible = false
-                    moreOverlay.visibility = LinearLayout.INVISIBLE
+                    moreOverlay.visibility = INVISIBLE
                 }
                 animatorSet.playTogether(animations)
                 animatorSet.start()
@@ -178,7 +185,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             _layoutBottomBarButtons.removeAllViews();
 
             _layoutBottomBarButtons.addView(Space(context).apply {
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
             })
 
             for ((index, button) in buttons.withIndex()) {
@@ -192,7 +199,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 _layoutBottomBarButtons.addView(menuButton)
                 if (index < buttonDefinitions.size - 1) {
                     _layoutBottomBarButtons.addView(Space(context).apply {
-                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
                     })
                 }
 
@@ -200,7 +207,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             }
 
             _layoutBottomBarButtons.addView(Space(context).apply {
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
             })
         }
 
@@ -255,9 +262,20 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 button.updateActive(_fragment);
         }
 
+        override fun onConfigurationChanged(newConfig: Configuration?) {
+            super.onConfigurationChanged(newConfig)
+
+            updateAllButtonVisibility()
+        }
+
         fun updateAllButtonVisibility() {
+            // if the more fly-out menu is open the we should close it
+            if(_moreVisible) {
+                setMoreVisible(false)
+            }
+
             val defs = currentButtonDefinitions?.toMutableList() ?: return
-            val metrics = StateApp.instance.displayMetrics ?: resources.displayMetrics;
+            val metrics = resources.displayMetrics
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
             if (_buttonsVisible >= defs.size) {
                 updateBottomMenuButtons(defs.toMutableList(), false);

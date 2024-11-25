@@ -2,11 +2,8 @@ package com.futo.platformplayer
 
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Context.POWER_SERVICE
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.os.PowerManager
 import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
@@ -27,7 +24,6 @@ import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePayment
-import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -37,9 +33,7 @@ import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FormFieldButton
-import com.futo.platformplayer.views.fields.FormFieldWarning
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
-import com.stripe.android.customersheet.injection.CustomerSheetViewModelModule_Companion_ContextFactory.context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -426,8 +420,6 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
         var autoRotate: Int = 2;
 
-        fun isAutoRotate() = (autoRotate == 1 && !StatePlayer.instance.rotationLock) || (autoRotate == 2 && StateApp.instance.getCurrentSystemAutoRotate() && !StatePlayer.instance.rotationLock);
-
         @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
@@ -482,17 +474,6 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.reverse_portrait, FieldForm.TOGGLE, R.string.reverse_portrait_description, 14)
         var reversePortrait: Boolean = false;
-
-        @FormField(R.string.rotation_zone, FieldForm.DROPDOWN, R.string.rotation_zone_description, 15)
-        @DropdownFieldOptionsId(R.array.rotation_zone)
-        var rotationZone: Int = 2;
-
-        @FormField(R.string.stability_threshold_time, FieldForm.DROPDOWN, R.string.stability_threshold_time_description, 16)
-        @DropdownFieldOptionsId(R.array.rotation_threshold_time)
-        var stabilityThresholdTime: Int = 1;
-
-        @FormField(R.string.full_autorotate_lock, FieldForm.TOGGLE, R.string.full_autorotate_lock_description, 17)
-        var fullAutorotateLock: Boolean = false;
 
         @FormField(R.string.prefer_webm, FieldForm.TOGGLE, R.string.prefer_webm_description, 18)
         var preferWebmVideo: Boolean = false;
@@ -880,10 +861,6 @@ class Settings : FragmentedStorageFileJson() {
     var other = Other();
     @Serializable
     class Other {
-        @FormField(R.string.bypass_rotation_prevention, FieldForm.TOGGLE, R.string.bypass_rotation_prevention_description, 1)
-        @FormFieldWarning(R.string.bypass_rotation_prevention_warning)
-        var bypassRotationPrevention: Boolean = false;
-
         @FormField(R.string.playlist_delete_confirmation, FieldForm.TOGGLE, R.string.playlist_delete_confirmation_description, 2)
         var playlistDeleteConfirmation: Boolean = true;
 
