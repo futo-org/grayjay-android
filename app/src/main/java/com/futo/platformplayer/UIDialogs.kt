@@ -218,7 +218,6 @@ class UIDialogs {
                     this.visibility = View.GONE;
                 else {
                     this.text = textDetails;
-                    this.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
                 }
             };
             view.findViewById<TextView>(R.id.dialog_text_code).apply {
