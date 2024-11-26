@@ -98,6 +98,7 @@ abstract class JSSource {
         const val TYPE_AUDIO_WITH_METADATA = "AudioUrlRangeSource";
         const val TYPE_VIDEO_WITH_METADATA = "VideoUrlRangeSource";
         const val TYPE_DASH = "DashSource";
+        const val TYPE_DASH_WIDEVINE = "DashWidevineSource";
         const val TYPE_DASH_RAW = "DashRawSource";
         const val TYPE_DASH_RAW_AUDIO = "DashRawAudioSource";
         const val TYPE_HLS = "HLSSource";
@@ -110,6 +111,7 @@ abstract class JSSource {
                 TYPE_VIDEOURL -> JSVideoUrlSource(plugin, obj);
                 TYPE_VIDEO_WITH_METADATA -> JSVideoUrlRangeSource(plugin, obj);
                 TYPE_HLS -> fromV8HLS(plugin, obj);
+                TYPE_DASH_WIDEVINE -> JSDashManifestWidevineSource(plugin, obj)
                 TYPE_DASH -> fromV8Dash(plugin, obj);
                 TYPE_DASH_RAW -> fromV8DashRaw(plugin, obj);
                 else -> {

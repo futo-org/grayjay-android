@@ -3,14 +3,11 @@ package com.futo.platformplayer.views.video
 import android.content.Context
 import android.net.Uri
 import android.util.AttributeSet
-import android.util.Xml
 import android.widget.RelativeLayout
 import androidx.annotation.OptIn
-import androidx.fragment.app.findFragment
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.common.C
-import androidx.media3.common.C.Encoding
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -22,9 +19,9 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
-import androidx.media3.exoplayer.dash.manifest.DashManifest
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
-import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
@@ -34,18 +31,17 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
-import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
@@ -55,15 +51,13 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
-import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlSource
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.engine.dev.V8RemoteObject
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.video.PlayerManager
+import com.futo.platformplayer.views.video.datasources.Base64MediaDrmCallback
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
-import com.google.gson.Gson
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -417,6 +411,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val didSet = when(videoSource) {
             is LocalVideoSource -> { swapVideoSourceLocal(videoSource); true; }
             is JSVideoUrlRangeSource -> { swapVideoSourceUrlRange(videoSource); true; }
+            is IDashManifestWidevineSource -> { swapVideoSourceDashWidevine(videoSource); true }
             is IDashManifestSource -> { swapVideoSourceDash(videoSource); true;}
             is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource, play, resume);
             is IHLSManifestSource -> { swapVideoSourceHLS(videoSource); true; }
@@ -492,6 +487,29 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
             .createMediaSource(MediaItem.fromUri(videoSource.url))
+    }
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceDashWidevine(videoSource: IDashManifestWidevineSource) {
+        Logger.i(TAG, "Loading VideoSource [DashWidevine]")
+        val dataSource =
+            if (videoSource is JSSource && (videoSource.requiresCustomDatasource)) videoSource.getHttpDataSourceFactory()
+            else DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
+
+        val baseCallback = HttpMediaDrmCallback(videoSource.licenseUri, dataSource)
+
+        videoSource.licenseHeaders?.forEach { (key, value) ->
+            baseCallback.setKeyRequestProperty(key, value)
+        }
+
+        val callback = if (videoSource.decodeLicenseResponse) {
+            Base64MediaDrmCallback(baseCallback)
+        } else {
+            baseCallback
+        }
+
+        _lastVideoMediaSource = DashMediaSource.Factory(dataSource).setDrmSessionManagerProvider {
+                DefaultDrmSessionManager.Builder().setMultiSession(true).build(callback)
+            }.createMediaSource(MediaItem.fromUri(videoSource.url))
     }
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceDashRaw(videoSource: JSDashManifestRawSource, play: Boolean, resume: Boolean): Boolean {
@@ -639,6 +657,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             return true;
         }
     }
+
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlWidevine(audioSource: IAudioUrlWidevineSource) {
         Logger.i(TAG, "Loading AudioSource [UrlWidevine]")
@@ -647,20 +666,26 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
 
-        val httpRequestHeaders = mapOf("Authorization" to "Bearer " + audioSource.bearerToken)
-        val provider = DefaultDrmSessionManagerProvider()
-        provider.setDrmHttpDataSourceFactory(dataSource)
+        val baseCallback = HttpMediaDrmCallback(audioSource.licenseUri, dataSource)
+
+        audioSource.licenseHeaders?.forEach { (key, value) ->
+            baseCallback.setKeyRequestProperty(key, value)
+        }
+
+        val callback = if(audioSource.decodeLicenseResponse){
+            Base64MediaDrmCallback(baseCallback)
+        }else{
+            baseCallback
+        }
+
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
-            .setDrmSessionManagerProvider(provider)
+            .setDrmSessionManagerProvider {
+                DefaultDrmSessionManager.Builder()
+                    .setMultiSession(true)
+                    .build(callback)
+            }
             .createMediaSource(
-                MediaItem.Builder()
-                    .setUri(audioSource.getAudioUrl()).setDrmConfiguration(
-                        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                            .setLicenseUri(audioSource.licenseUri)
-                            .setMultiSession(true)
-                            .setLicenseRequestHeaders(httpRequestHeaders)
-                            .build()
-                    ).build()
+                MediaItem.fromUri(audioSource.getAudioUrl())
             )
     }
 

@@ -399,8 +399,16 @@ class AudioUrlWidevineSource extends AudioUrlSource {
         super(obj);
         this.plugin_type = "AudioUrlWidevineSource";
 
-        this.bearerToken = obj.bearerToken;
+        if(obj.bearerToken) {
+            this.licenseHeaders = {
+                Authorization: `Bearer ${obj.bearerToken}`
+            }
+        }
         this.licenseUri = obj.licenseUri;
+        if(obj.licenseHeaders) {
+            this.licenseHeaders = obj.licenseHeaders;
+        }
+        this.decodeLicenseResponse = obj.decodeLicenseResponse
     }
 }
 class AudioUrlRangeSource extends AudioUrlSource {
@@ -441,6 +449,18 @@ class DashSource {
             this.language = obj.language;
         if(obj.requestModifier)
             this.requestModifier = obj.requestModifier;
+    }
+}
+class DashWidevineSource extends DashSource {
+    constructor(obj) {
+        super(obj);
+        this.plugin_type = "DashWidevineSource";
+
+        this.licenseUri = obj.licenseUri;
+        if(obj.licenseHeaders) {
+            this.licenseHeaders = obj.licenseHeaders;
+        }
+        this.decodeLicenseResponse = obj.decodeLicenseResponse
     }
 }
 class DashManifestRawSource {
