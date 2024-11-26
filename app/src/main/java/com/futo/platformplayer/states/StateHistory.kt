@@ -59,6 +59,7 @@ class StateHistory {
         return getHistoryPosition(url) > duration * 0.7;
     }
 
+    private var _lastHistoryBroadcast = "";
     fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L, date: OffsetDateTime? = null, isUserAction: Boolean = false): Long {
         val pos = if(position < 0) 0 else position;
         val historyVideo = index.obj;
@@ -82,19 +83,21 @@ class StateHistory {
                 historyVideo.date = date ?: OffsetDateTime.now();
                 _historyDBStore.update(index.id!!, historyVideo);
                 onHistoricVideoChanged.emit(liveObj, pos);
-            }
 
 
-            if(isUserAction) {
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
-                        Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
-                        StateSync.instance.broadcastJsonData(
-                            GJSyncOpcodes.syncHistory,
-                            listOf(historyVideo)
-                        );
-                    }
-                };
+                val historyBroadcastSig = "${historyVideo.position}${historyVideo.video.id.value ?: historyVideo.video.url}"
+                if(isUserAction && _lastHistoryBroadcast != historyBroadcastSig) {
+                    _lastHistoryBroadcast = historyBroadcastSig;
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                        if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                            Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
+                            StateSync.instance.broadcastJsonData(
+                                GJSyncOpcodes.syncHistory,
+                                listOf(historyVideo)
+                            );
+                        }
+                    };
+                }
             }
             return positionBefore;
         }
