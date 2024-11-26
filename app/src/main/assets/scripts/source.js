@@ -408,7 +408,7 @@ class AudioUrlWidevineSource extends AudioUrlSource {
         if(obj.licenseHeaders) {
             this.licenseHeaders = obj.licenseHeaders;
         }
-        this.decodeLicenseResponse = obj.decodeLicenseResponse
+        this.decodeLicenseResponse = obj.decodeLicenseResponse ?? false
     }
 }
 class AudioUrlRangeSource extends AudioUrlSource {
