@@ -1322,7 +1322,14 @@ class VideoDetailView : ConstraintLayout {
         this.video = video;
         cleanupPlaybackTracker();
 
-        onVideoChanged.emit(video.video.videoSources[0].width, video.video.videoSources[0].height)
+        if (video.video.videoSources.isNotEmpty()) {
+            onVideoChanged.emit(
+                video.video.videoSources[0].width,
+                video.video.videoSources[0].height
+            )
+        } else {
+            onVideoChanged.emit(0, 0)
+        }
 
         if (video is JSVideoDetails) {
             val me = this;
