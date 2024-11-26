@@ -750,12 +750,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         if (_lastSourceFit == null || windowWidth != _lastWindowWidth || windowHeight != _lastWindowHeight) {
             val maxHeight = windowHeight * 0.4f
+            val minHeight = windowHeight * 0.1f
 
-            val aspectRatio = h.toFloat() / w
-            val determinedHeight = (aspectRatio * windowWidth)
+            val determinedHeight = windowWidth / w.toFloat() * h.toFloat()
 
             _lastSourceFit = determinedHeight
-            _lastSourceFit = _lastSourceFit!!.coerceAtLeast(220f)
+            _lastSourceFit = _lastSourceFit!!.coerceAtLeast(minHeight)
             _lastSourceFit = _lastSourceFit!!.coerceAtMost(maxHeight)
 
             _desiredResizeModePortrait = if (_lastSourceFit != determinedHeight)
@@ -770,14 +770,13 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         val marginBottom =
             TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7f, resources.displayMetrics)
-                .toInt()
         val height = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             _lastSourceFit!!,
             resources.displayMetrics
         )
         val rootParams = LayoutParams(LayoutParams.MATCH_PARENT, (height + marginBottom).toInt())
-        rootParams.bottomMargin = marginBottom
+        rootParams.bottomMargin = marginBottom.toInt()
         _root.layoutParams = rootParams
         isFitMode = true
     }
