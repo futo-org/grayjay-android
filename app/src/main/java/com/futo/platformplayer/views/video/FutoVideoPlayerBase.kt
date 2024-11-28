@@ -490,8 +490,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         val baseCallback = HttpMediaDrmCallback(videoSource.licenseUri, dataSource)
 
-        val callback = if (videoSource.hasLicenseExecutor) {
-            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseExecutor()!!, videoSource.licenseUri)
+        val callback = if (videoSource.hasLicenseRequestExecutor) {
+            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseRequestExecutor()!!, videoSource.licenseUri)
         } else {
             baseCallback
         }
@@ -525,8 +525,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         val baseCallback = HttpMediaDrmCallback(videoSource.licenseUri, dataSource)
 
-        val callback = if (videoSource.hasLicenseExecutor) {
-            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseExecutor()!!, videoSource.licenseUri)
+        val callback = if (videoSource.hasLicenseRequestExecutor) {
+            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseRequestExecutor()!!, videoSource.licenseUri)
         } else {
             baseCallback
         }
@@ -692,8 +692,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         val baseCallback = HttpMediaDrmCallback(audioSource.licenseUri, dataSource)
 
-        val callback = if (audioSource.hasLicenseExecutor) {
-            PluginMediaDrmCallback(baseCallback, audioSource.getLicenseExecutor()!!, audioSource.licenseUri)
+        val callback = if (audioSource.hasLicenseRequestExecutor) {
+            PluginMediaDrmCallback(baseCallback, audioSource.getLicenseRequestExecutor()!!, audioSource.licenseUri)
         } else {
             baseCallback
         }

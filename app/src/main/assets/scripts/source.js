@@ -373,8 +373,8 @@ class VideoUrlWidevineSource extends VideoUrlSource {
         this.plugin_type = "VideoUrlWidevineSource";
 
         this.licenseUri = obj.licenseUri;
-        if(obj.getLicenseExecutor)
-            this.getLicenseExecutor = obj.getLicenseExecutor;
+        if(obj.getLicenseRequestExecutor)
+            this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
     }
 }
 class VideoUrlRangeSource extends VideoUrlSource {
@@ -410,12 +410,12 @@ class AudioUrlWidevineSource extends AudioUrlSource {
         this.plugin_type = "AudioUrlWidevineSource";
 
         this.licenseUri = obj.licenseUri;
-        if(obj.getLicenseExecutor)
-            this.getLicenseExecutor = obj.getLicenseExecutor;
+        if(obj.getLicenseRequestExecutor)
+            this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
 
         // deprecated api conversion
         if(obj.bearerToken) {
-            this.getLicenseExecutor = () => {
+            this.getLicenseRequestExecutor = () => {
                 return {
                     executeRequest: (url, _headers, _method, license_request_data) => {
                         return http.POST(
@@ -477,8 +477,8 @@ class DashWidevineSource extends DashSource {
         this.plugin_type = "DashWidevineSource";
 
         this.licenseUri = obj.licenseUri;
-        if(obj.getLicenseExecutor)
-            this.getLicenseExecutor = obj.getLicenseExecutor;
+        if(obj.getLicenseRequestExecutor)
+            this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
     }
 }
 class DashManifestRawSource {

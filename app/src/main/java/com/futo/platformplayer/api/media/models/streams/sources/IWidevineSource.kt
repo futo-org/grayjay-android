@@ -4,6 +4,6 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 
 interface IWidevineSource {
     val licenseUri: String
-    val hasLicenseExecutor: Boolean
-    fun getLicenseExecutor(): JSRequestExecutor?
+    val hasLicenseRequestExecutor: Boolean
+    fun getLicenseRequestExecutor(): JSRequestExecutor?
 }

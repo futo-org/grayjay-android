@@ -24,7 +24,7 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
     override var priority: Boolean = false
 
     override val licenseUri: String
-    override val hasLicenseExecutor: Boolean
+    override val hasLicenseRequestExecutor: Boolean
 
     @Suppress("ConvertSecondaryConstructorToPrimary")
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH, plugin, obj) {
@@ -37,15 +37,15 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
         priority = obj.getOrNull(config, "priority", contextName) ?: false
 
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName)
-        hasLicenseExecutor = obj.has("getLicenseExecutor")
+        hasLicenseRequestExecutor = obj.has("getLicenseRequestExecutor")
     }
 
-    override fun getLicenseExecutor(): JSRequestExecutor? {
-        if (!hasLicenseExecutor || _obj.isClosed)
+    override fun getLicenseRequestExecutor(): JSRequestExecutor? {
+        if (!hasLicenseRequestExecutor || _obj.isClosed)
             return null
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseExecutor()") {
-            _obj.invoke("getLicenseExecutor", arrayOf<Any>())
+        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseRequestExecutor()") {
+            _obj.invoke("getLicenseRequestExecutor", arrayOf<Any>())
         }
 
         if (result !is V8ValueObject)
