@@ -42,7 +42,7 @@ class JSRequestExecutor {
 
     //TODO: Executor properties?
     @Throws(ScriptException::class)
-    open fun executeRequest(url: String, headers: Map<String, String>): ByteArray {
+    open fun executeRequest(method: String, url: String, body: ByteArray?, headers: Map<String, String>): ByteArray {
         if (_executor.isClosed)
             throw IllegalStateException("Executor object is closed");
 
@@ -53,7 +53,7 @@ class JSRequestExecutor {
                     "[${_config.name}] JSRequestExecutor",
                     "builder.modifyRequest()"
                 ) {
-                    _executor.invoke("executeRequest", url, headers);
+                    _executor.invoke("executeRequest", url, headers, method, body);
                 } as V8Value;
             }
             else V8Plugin.catchScriptErrors<Any>(
@@ -61,7 +61,7 @@ class JSRequestExecutor {
                 "[${_config.name}] JSRequestExecutor",
                 "builder.modifyRequest()"
             ) {
-                _executor.invoke("executeRequest", url, headers);
+                _executor.invoke("executeRequest", url, headers, method, body);
             } as V8Value;
 
         try {
