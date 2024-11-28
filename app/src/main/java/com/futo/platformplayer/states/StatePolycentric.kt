@@ -10,6 +10,7 @@ import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
@@ -46,6 +47,7 @@ import com.google.protobuf.ByteString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import userpackage.Protocol
@@ -53,6 +55,7 @@ import userpackage.Protocol.Reference
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ForkJoinPool
 
 class StatePolycentric {
     private data class LikeDislikeEntry(val unixMilliseconds: Long, val hasLiked: Boolean, val hasDisliked: Boolean);
@@ -62,6 +65,9 @@ class StatePolycentric {
     private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
     private var _transientEnabled = true
     val enabled get() = _transientEnabled && Settings.instance.other.polycentricEnabled
+
+    private val _commentPool = ForkJoinPool(2);
+    private val _commentPoolDispatcher = _commentPool.asCoroutineDispatcher();
 
     fun load(context: Context) {
         if (!enabled) {
@@ -510,7 +516,7 @@ class StatePolycentric {
         };
     }
 
-    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<PolycentricPlatformComment> {
+    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<IPlatformComment> {
         return response.itemsList.mapNotNull {
             val sev = SignedEvent.fromProto(it.event);
             val ev = sev.event;
@@ -524,49 +530,53 @@ class StatePolycentric {
                 val dislikes = it.countsList[1];
                 val replies = it.countsList[2];
 
-                val profileEvents = ApiMethods.getQueryLatest(
-                    PolycentricCache.SERVER,
-                    ev.system.toProto(),
-                    listOf(
-                        ContentType.AVATAR.value,
-                        ContentType.USERNAME.value
-                    )
-                ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
-                    .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
+                val scope = StateApp.instance.scopeOrNull ?: return@mapNotNull null;
+                return@mapNotNull LazyComment(scope.async(_commentPoolDispatcher){
+                    Logger.i(TAG, "Fetching comment data for [" + ev.system.key.toBase64() + "]");
+                    val profileEvents = ApiMethods.getQueryLatest(
+                        PolycentricCache.SERVER,
+                        ev.system.toProto(),
+                        listOf(
+                            ContentType.AVATAR.value,
+                            ContentType.USERNAME.value
+                        )
+                    ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
+                        .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
 
-                val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
-                val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };
-                val imageBundle = if (avatarEvent != null) {
-                    val lwwElementValue = avatarEvent.event.lwwElement?.value;
-                    if (lwwElementValue != null) {
-                        Protocol.ImageBundle.parseFrom(lwwElementValue)
+                    val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
+                    val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };
+                    val imageBundle = if (avatarEvent != null) {
+                        val lwwElementValue = avatarEvent.event.lwwElement?.value;
+                        if (lwwElementValue != null) {
+                            Protocol.ImageBundle.parseFrom(lwwElementValue)
+                        } else {
+                            null
+                        }
                     } else {
                         null
                     }
-                } else {
-                    null
-                }
 
-                val unixMilliseconds = ev.unixMilliseconds
-                //TODO: Don't use single hardcoded sderver here
-                val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(PolycentricCache.SERVER));
-                val dp_25 = 25.dp(StateApp.instance.context.resources)
-                return@mapNotNull PolycentricPlatformComment(
-                    contextUrl = contextUrl,
-                    author = PlatformAuthorLink(
-                        id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
-                        name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
-                        url = systemLinkUrl,
-                        thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
-                        subscribers = null
-                    ),
-                    msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
-                    rating = RatingLikeDislikes(likes, dislikes),
-                    date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
-                    replyCount = replies.toInt(),
-                    eventPointer = sev.toPointer(),
-                    parentReference = sev.event.references.getOrNull(0)
-                );
+                    val unixMilliseconds = ev.unixMilliseconds
+                    //TODO: Don't use single hardcoded sderver here
+                    val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(PolycentricCache.SERVER));
+                    val dp_25 = 25.dp(StateApp.instance.context.resources)
+                    return@async PolycentricPlatformComment(
+                        contextUrl = contextUrl,
+                        author = PlatformAuthorLink(
+                            id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
+                            name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
+                            url = systemLinkUrl,
+                            thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                            subscribers = null
+                        ),
+                        msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
+                        rating = RatingLikeDislikes(likes, dislikes),
+                        date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
+                        replyCount = replies.toInt(),
+                        eventPointer = sev.toPointer(),
+                        parentReference = sev.event.references.getOrNull(0)
+                    );
+                });
             } catch (e: Throwable) {
                 return@mapNotNull null;
             }

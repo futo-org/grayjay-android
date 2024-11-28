@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
@@ -24,6 +25,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
@@ -46,6 +48,9 @@ class CommentViewHolder : ViewHolder {
     private val _layoutComment: ConstraintLayout;
     private val _buttonDelete: FrameLayout;
 
+    private val _containerComments: ConstraintLayout;
+    private val _loader: LoaderView;
+
     var onRepliesClick = Event1<IPlatformComment>();
     var onDelete = Event1<IPlatformComment>();
     var onAuthorClick = Event1<IPlatformComment>();
@@ -66,6 +71,9 @@ class CommentViewHolder : ViewHolder {
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete);
+
+        _containerComments = itemView.findViewById(R.id.comment_container);
+        _loader = itemView.findViewById(R.id.loader);
 
         _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
@@ -123,6 +131,33 @@ class CommentViewHolder : ViewHolder {
     }
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {
+
+        if(comment is LazyComment){
+            if(comment.isAvailable)
+            {
+                comment.getUnderlyingComment()?.let {
+                    bind(it, readonly);
+                }
+                return;
+            }
+            else {
+                _loader.visibility = View.VISIBLE;
+                _loader.start();
+                _containerComments.visibility = View.GONE;
+                comment.setUIHandler {
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        if (it.isAvailable && it == this@CommentViewHolder.comment)
+                            bind(it, readonly);
+                    }
+                }
+            }
+        }
+        else {
+            _loader.stop();
+            _loader.visibility = View.GONE;
+            _containerComments.visibility = View.VISIBLE;
+        }
+
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
         val polycentricComment = if (comment is PolycentricPlatformComment) comment else null
         _creatorThumbnail.setHarborAvailable(polycentricComment != null,false, polycentricComment?.eventPointer?.system?.toProto());

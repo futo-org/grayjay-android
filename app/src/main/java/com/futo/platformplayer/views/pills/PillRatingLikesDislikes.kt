@@ -90,12 +90,42 @@ class PillRatingLikesDislikes : LinearLayout {
                 setRating(rating, hasLiked, hasDisliked);
             }
             is RatingLikes -> {
-                setRating(rating, hasLiked, hasDisliked);
+                setRating(rating, hasLiked);
             }
             else -> {
                 throw Exception("Unknown rating type");
             }
         }
+    }
+
+    fun setRating(rating: RatingLikeDislikes, hasLiked: Boolean = false, hasDisliked: Boolean = false) {
+        setLoading(false)
+
+        _textLikes.text = rating.likes.toHumanNumber();
+        _textDislikes.text = rating.dislikes.toHumanNumber();
+        _textLikes.visibility = View.VISIBLE;
+        _textDislikes.visibility = View.VISIBLE;
+        _seperator.visibility = View.VISIBLE;
+        _iconDislikes.visibility = View.VISIBLE;
+        _likes = rating.likes;
+        _dislikes = rating.dislikes;
+        _hasLiked = hasLiked;
+        _hasDisliked = hasDisliked;
+        updateColors();
+    }
+    fun setRating(rating: RatingLikes, hasLiked: Boolean = false) {
+        setLoading(false)
+
+        _textLikes.text = rating.likes.toHumanNumber();
+        _textLikes.visibility = View.VISIBLE;
+        _textDislikes.visibility = View.GONE;
+        _seperator.visibility = View.GONE;
+        _iconDislikes.visibility = View.GONE;
+        _likes = rating.likes;
+        _dislikes = 0;
+        _hasLiked = hasLiked;
+        _hasDisliked = false;
+        updateColors();
     }
 
     fun like(processHandle: ProcessHandle) {
@@ -154,35 +184,5 @@ class PillRatingLikesDislikes : LinearLayout {
             _textDislikes.setTextColor(ContextCompat.getColor(context, R.color.white));
             _iconDislikes.setColorFilter(ContextCompat.getColor(context, R.color.white));
         }
-    }
-
-    fun setRating(rating: RatingLikeDislikes, hasLiked: Boolean = false, hasDisliked: Boolean = false) {
-        setLoading(false)
-
-        _textLikes.text = rating.likes.toHumanNumber();
-        _textDislikes.text = rating.dislikes.toHumanNumber();
-        _textLikes.visibility = View.VISIBLE;
-        _textDislikes.visibility = View.VISIBLE;
-        _seperator.visibility = View.VISIBLE;
-        _iconDislikes.visibility = View.VISIBLE;
-        _likes = rating.likes;
-        _dislikes = rating.dislikes;
-        _hasLiked = hasLiked;
-        _hasDisliked = hasDisliked;
-        updateColors();
-    }
-    fun setRating(rating: RatingLikes, hasLiked: Boolean = false) {
-        setLoading(false)
-
-        _textLikes.text = rating.likes.toHumanNumber();
-        _textLikes.visibility = View.VISIBLE;
-        _textDislikes.visibility = View.GONE;
-        _seperator.visibility = View.GONE;
-        _iconDislikes.visibility = View.GONE;
-        _likes = rating.likes;
-        _dislikes = 0;
-        _hasLiked = hasLiked;
-        _hasDisliked = false;
-        updateColors();
     }
 }
