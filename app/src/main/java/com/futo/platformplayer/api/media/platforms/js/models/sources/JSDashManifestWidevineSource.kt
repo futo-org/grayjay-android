@@ -5,7 +5,8 @@ import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSou
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.getOrDefault
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
+import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 
@@ -22,9 +23,8 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
 
     override var priority: Boolean = false
 
-    override val licenseHeaders: Map<String, String>?
     override val licenseUri: String
-    override val decodeLicenseResponse: Boolean
+    override val hasLicenseExecutor: Boolean
 
     @Suppress("ConvertSecondaryConstructorToPrimary")
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH, plugin, obj) {
@@ -36,10 +36,22 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false
 
-        licenseHeaders =
-            obj.getOrDefault<Map<String, String>>(config, "licenseHeaders", contextName, null)
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName)
-        decodeLicenseResponse = _obj.getOrThrow(config, "decodeLicenseResponse", contextName)
+        hasLicenseExecutor = obj.has("getLicenseExecutor")
+    }
+
+    override fun getLicenseExecutor(): JSRequestExecutor? {
+        if (!hasLicenseExecutor || _obj.isClosed)
+            return null
+
+        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseExecutor()") {
+            _obj.invoke("getLicenseExecutor", arrayOf<Any>())
+        }
+
+        if (result !is V8ValueObject)
+            return null
+
+        return JSRequestExecutor(_plugin, result)
     }
 
     override fun getVideoUrl(): String {

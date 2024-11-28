@@ -663,7 +663,7 @@ class VideoDownload {
                 val url = foundTemplateUrl.replace("\$Number\$", indexCounter.toString());
 
                 val data = if(executor != null)
-                    executor.executeRequest(url, mapOf());
+                    executor.executeRequest("GET", url, null, mapOf());
                 else {
                     val resp = client.get(url, mutableMapOf());
                     if(!resp.isOk)

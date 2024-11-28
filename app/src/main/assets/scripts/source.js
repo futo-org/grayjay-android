@@ -367,6 +367,16 @@ class VideoUrlSource {
             this.requestModifier = obj.requestModifier;
     }
 }
+class VideoUrlWidevineSource extends VideoUrlSource {
+    constructor(obj) {
+        super(obj);
+        this.plugin_type = "VideoUrlWidevineSource";
+
+        this.licenseUri = obj.licenseUri;
+        if(obj.getLicenseExecutor)
+            this.getLicenseExecutor = obj.getLicenseExecutor;
+    }
+}
 class VideoUrlRangeSource extends VideoUrlSource {
     constructor(obj) {
         super(obj);
@@ -399,16 +409,26 @@ class AudioUrlWidevineSource extends AudioUrlSource {
         super(obj);
         this.plugin_type = "AudioUrlWidevineSource";
 
+        this.licenseUri = obj.licenseUri;
+        if(obj.getLicenseExecutor)
+            this.getLicenseExecutor = obj.getLicenseExecutor;
+
+        // deprecated api conversion
         if(obj.bearerToken) {
-            this.licenseHeaders = {
-                Authorization: `Bearer ${obj.bearerToken}`
+            this.getLicenseExecutor = () => {
+                return {
+                    executeRequest: (url, _headers, _method, license_request_data) => {
+                        return http.POST(
+                           url,
+                           license_request_data,
+                           { Authorization: `Bearer ${obj.bearerToken}` },
+                           false,
+                           true
+                       ).body
+                    }
+                }
             }
         }
-        this.licenseUri = obj.licenseUri;
-        if(obj.licenseHeaders) {
-            this.licenseHeaders = obj.licenseHeaders;
-        }
-        this.decodeLicenseResponse = obj.decodeLicenseResponse ?? false
     }
 }
 class AudioUrlRangeSource extends AudioUrlSource {
@@ -457,10 +477,8 @@ class DashWidevineSource extends DashSource {
         this.plugin_type = "DashWidevineSource";
 
         this.licenseUri = obj.licenseUri;
-        if(obj.licenseHeaders) {
-            this.licenseHeaders = obj.licenseHeaders;
-        }
-        this.decodeLicenseResponse = obj.decodeLicenseResponse
+        if(obj.getLicenseExecutor)
+            this.getLicenseExecutor = obj.getLicenseExecutor;
     }
 }
 class DashManifestRawSource {

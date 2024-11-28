@@ -1,13 +1,13 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
 import com.caoccao.javet.values.reference.V8ValueObject
-import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlWidevineSource
+import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlWidevineSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
 
-class JSAudioUrlWidevineSource : JSAudioUrlSource, IAudioUrlWidevineSource {
+class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
     override val licenseUri: String
     override val hasLicenseExecutor: Boolean
 
@@ -35,7 +35,7 @@ class JSAudioUrlWidevineSource : JSAudioUrlSource, IAudioUrlWidevineSource {
     }
 
     override fun toString(): String {
-        val url = getAudioUrl()
-        return "(name=$name, container=$container, bitrate=$bitrate, codec=$codec, url=$url, language=$language, duration=$duration, hasLicenseExecutor=${hasLicenseExecutor}, licenseUri=$licenseUri)"
+        val url = getVideoUrl()
+        return "(width=$width, height=$height, container=$container, codec=$codec, name=$name, bitrate=$bitrate, duration=$duration, url=$url, hasLicenseExecutor=$hasLicenseExecutor, licenseUri=$licenseUri)"
     }
 }

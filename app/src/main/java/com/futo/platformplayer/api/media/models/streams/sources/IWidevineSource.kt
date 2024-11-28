@@ -1,10 +1,9 @@
 package com.futo.platformplayer.api.media.models.streams.sources
 
+import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
+
 interface IWidevineSource {
     val licenseUri: String
-    val licenseHeaders: Map<String, String>?
-    /**
-     * Set this to true if the license response is Base64 encoded
-     */
-    val decodeLicenseResponse: Boolean
+    val hasLicenseExecutor: Boolean
+    fun getLicenseExecutor(): JSRequestExecutor?
 }
