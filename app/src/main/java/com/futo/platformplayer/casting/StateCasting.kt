@@ -1245,7 +1245,7 @@ class StateCasting {
 
                     val videoExecutor = _videoExecutor;
                     if (videoExecutor != null) {
-                        val data = videoExecutor.executeRequest(originalUrl, httpContext.headers)
+                        val data = videoExecutor.executeRequest("GET", originalUrl, null, httpContext.headers)
                         httpContext.respondBytes(200, HttpHeaders().apply {
                             put("Content-Type", mediaType)
                         }, data);
@@ -1263,7 +1263,7 @@ class StateCasting {
 
                     val audioExecutor = _audioExecutor;
                     if (audioExecutor != null) {
-                        val data = audioExecutor.executeRequest(originalUrl, httpContext.headers)
+                        val data = audioExecutor.executeRequest("GET", originalUrl, null, httpContext.headers)
                         httpContext.respondBytes(200, HttpHeaders().apply {
                             put("Content-Type", mediaType)
                         }, data);
