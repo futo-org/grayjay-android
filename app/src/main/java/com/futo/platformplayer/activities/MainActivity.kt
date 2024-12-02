@@ -834,7 +834,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found playlist client");
                 lifecycleScope.launch(Dispatchers.Main) {
-                    navigate(_fragMainPlaylist, url);
+                    navigate(_fragMainRemotePlaylist, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
                 };

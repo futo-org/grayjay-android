@@ -70,7 +70,7 @@ class PlaylistFragment : MainFragment() {
         private var _editPlaylistOverlay: SlideUpMenuOverlay? = null;
         private var _url: String? = null;
 
-        private val _taskLoadPlaylist: TaskHandler<String, IPlatformPlaylistDetails>;
+        private val _taskLoadPlaylist: TaskHandler<String, Playlist>;
 
         constructor(fragment: PlaylistFragment, inflater: LayoutInflater) : super(inflater) {
             _fragment = fragment;
@@ -137,16 +137,16 @@ class PlaylistFragment : MainFragment() {
                 );
             };
 
-            _taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails>(
+            _taskLoadPlaylist = TaskHandler<String, Playlist>(
                 StateApp.instance.scopeGetter,
                 {
-                    return@TaskHandler StatePlatform.instance.getPlaylist(it);
+                    return@TaskHandler StatePlatform.instance.getPlaylist(it).toPlaylist();
                 })
                 .success {
                     setName(it.name);
                     //TODO: Implement support for pagination
-                    setVideos(it.toPlaylist().videos, false);
-                    setVideoCount(it.videoCount);
+                    setVideos(it.videos, false);
+                    setVideoCount(it.videos.size);
                     setLoading(false);
                 }
                 .exception<Throwable> {
