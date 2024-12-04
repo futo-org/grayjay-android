@@ -47,6 +47,7 @@ import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
+import com.futo.polycentric.core.ApiMethods
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -156,6 +157,7 @@ class StateApp {
 
     //Files
     private var _tempDirectory: File? = null;
+    private var _cacheDirectory: File? = null;
     private var _persistentDirectory: File? = null;
 
 
@@ -324,6 +326,9 @@ class StateApp {
                 _tempDirectory?.deleteRecursively();
             }
             _tempDirectory?.mkdirs();
+            _cacheDirectory = File(context.filesDir, "cache");
+            if(_cacheDirectory?.exists() == false)
+                _cacheDirectory?.mkdirs();
             _persistentDirectory = File(context.filesDir, "persist");
             if(_persistentDirectory?.exists() == false) {
                 _persistentDirectory?.mkdirs();
@@ -382,6 +387,11 @@ class StateApp {
     fun mainAppStarting(context: Context) {
         Logger.i(TAG, "MainApp Starting");
         initializeFiles(true);
+
+        if(Settings.instance.other.polycentricLocalCache) {
+            Logger.i(TAG, "Initialize Polycentric Disk Cache")
+            _cacheDirectory?.let { ApiMethods.initCache(it) };
+        }
 
         val logFile = File(context.filesDir, "log.txt");
         if (Settings.instance.logging.logLevel > LogLevel.NONE.value) {

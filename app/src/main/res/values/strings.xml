@@ -424,6 +424,8 @@
     <string name="playlist_delete_confirmation">Playlist Delete Confirmation</string>
     <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
     <string name="enable_polycentric">Enable Polycentric</string>
+    <string name="polycentric_local_cache">Enable Polycentric Local Caching</string>
+    <string name="polycentric_local_cache_description">Caches polycentric results on-device to reduce load times, changing requires app reboot</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Can be disabled when you are experiencing issues</string>
     <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>
     <string name="bypass_rotation_prevention_warning">This may cause unexpected behavior, and is mostly untested.</string>

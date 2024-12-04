@@ -866,6 +866,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 3)
         var polycentricEnabled: Boolean = true;
+
+        @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 4)
+        var polycentricLocalCache: Boolean = true;
     }
 
     @FormField(R.string.gesture_controls, FieldForm.GROUP, -1, 19)
