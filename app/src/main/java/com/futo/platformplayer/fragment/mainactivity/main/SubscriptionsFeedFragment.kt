@@ -124,7 +124,9 @@ class SubscriptionsFeedFragment : MainFragment() {
             initializeToolbarContent();
 
             setPreviewsEnabled(Settings.instance.subscriptions.previewFeedItems);
-            showAnnouncementView()
+            if (Settings.instance.tabs.find { it.id == 0 }?.enabled != true) {
+                showAnnouncementView()
+            }
         }
 
         fun onShown() {
