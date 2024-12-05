@@ -45,9 +45,6 @@ class AnnouncementView : LinearLayout {
 
         _scope = findViewTreeLifecycleOwner()?.lifecycleScope ?: StateApp.instance.scopeOrNull; //TODO: Fetch correct scope
 
-        val dp10 = 10.dp(resources);
-        setPadding(dp10, dp10, dp10, dp10);
-
         _root = findViewById(R.id.root);
         _textTitle = findViewById(R.id.text_title);
         _textCounter = findViewById(R.id.text_counter);

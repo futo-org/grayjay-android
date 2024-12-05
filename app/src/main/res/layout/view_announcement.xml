@@ -12,7 +12,8 @@
         android:background="@drawable/background_16_round_4dp"
         android:paddingLeft="10dp"
         android:paddingTop="10dp"
-        android:paddingRight="10dp">
+        android:paddingRight="10dp"
+        android:layout_margin="10dp">
 
         <TextView android:id="@+id/text_title"
             android:layout_width="0dp"
