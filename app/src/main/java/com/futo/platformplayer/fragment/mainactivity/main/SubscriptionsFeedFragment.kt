@@ -35,7 +35,6 @@ import com.futo.platformplayer.views.ToastView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
@@ -125,6 +124,7 @@ class SubscriptionsFeedFragment : MainFragment() {
             initializeToolbarContent();
 
             setPreviewsEnabled(Settings.instance.subscriptions.previewFeedItems);
+            showAnnouncementView()
         }
 
         fun onShown() {
@@ -142,26 +142,6 @@ class SubscriptionsFeedFragment : MainFragment() {
                 else if(recyclerData.results.size == 0) {
                     loadCache();
                     setLoading(false);
-                }
-            }
-
-            val announcementsView = _announcementsView;
-            val homeTab = Settings.instance.tabs.find { it.id == 0 };
-            val isHomeEnabled = homeTab?.enabled == true;
-            if (announcementsView != null && isHomeEnabled) {
-                recyclerData.adapter.viewsToPrepend.remove(announcementsView)
-                _announcementsView = null
-            }
-
-            if (announcementsView == null && !isHomeEnabled) {
-                val c = context;
-                if (c != null) {
-                    _announcementsView = AnnouncementView(c, null).apply {
-                        recyclerData.adapter.viewsToPrepend.add(this)
-                        this.onClose.subscribe {
-                            recyclerData.adapter.viewsToPrepend.remove(this)
-                        }
-                    }
                 }
             }
 
@@ -191,8 +171,6 @@ class SubscriptionsFeedFragment : MainFragment() {
         override val feedStyle: FeedStyle get() = Settings.instance.subscriptions.getSubscriptionsFeedStyle();
 
         private var _subscriptionBar: SubscriptionBar? = null;
-
-        private var _announcementsView: AnnouncementView? = null;
 
         @Serializable
         class FeedFilterSettings: FragmentedStorageFileJson() {

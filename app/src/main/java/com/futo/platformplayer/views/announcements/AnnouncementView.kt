@@ -115,12 +115,12 @@ class AnnouncementView : LinearLayout {
         _currentAnnouncement = announcement;
 
         if (announcement == null) {
-            visibility = View.GONE
+            _root.visibility = View.GONE
             onClose.emit()
             return;
         }
 
-        visibility = View.VISIBLE
+        _root.visibility = View.VISIBLE
 
         _textTitle.text = announcement.title;
         _textBody.text = announcement.msg;

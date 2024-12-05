@@ -94,20 +94,10 @@ class HomeFragment : MainFragment() {
     class HomeView : ContentFeedView<HomeFragment> {
         override val feedStyle: FeedStyle get() = Settings.instance.home.getHomeFeedStyle();
 
-        private var _announcementsView: AnnouncementView = AnnouncementView(context, null).apply {
-            if(!this.isClosed()) {
-                recyclerData.adapter.viewsToPrepend.add(this)
-                this.onClose.subscribe {
-                    recyclerData.adapter.viewsToPrepend.remove(this)
-                }
-            }
-        };
-
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
         constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
-
             _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({ fragment.lifecycleScope }, {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
@@ -138,6 +128,7 @@ class HomeFragment : MainFragment() {
             };
 
             setPreviewsEnabled(Settings.instance.home.previewFeedItems);
+            showAnnouncementView()
         }
 
         fun onShown() {
