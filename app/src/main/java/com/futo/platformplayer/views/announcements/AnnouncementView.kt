@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AnnouncementView : LinearLayout {
-    private val _root: ConstraintLayout;
+    private val _root: FrameLayout;
     private val _textTitle: TextView;
     private val _textCounter: TextView;
     private val _textBody: TextView;
