@@ -15,6 +15,7 @@ touch $DOCUMENT_ROOT/maintenance.file
 
 # Swap over the content
 echo "Deploying content..."
+cp ./app/build/outputs/bundle/playstoreRelease/app-playstore-release.aab $DOCUMENT_ROOT/app-playstore-release.aab
 aws s3 cp ./app/build/outputs/bundle/playstoreRelease/app-playstore-release.aab s3://artifacts-grayjay-app/app-playstore-release.aab
 
 # Notify Cloudflare to wipe the CDN cache
