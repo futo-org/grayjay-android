@@ -275,6 +275,8 @@
     <string name="manage_your_polycentric_identity">あなたのポリセントリックアイデンティティを管理</string>
     <string name="manual_check">手動チェック</string>
     <string name="manually_check_for_updates">手動で更新を確認</string>
+    <string name="minimum_playback_speed">最小再生速度</string>
+    <string name="maximum_playback_speed">最大再生速度</string>
     <string name="payment">支払い</string>
     <string name="payment_status">支払い状況</string>
     <string name="player">プレイヤー</string>
@@ -612,6 +614,23 @@
     <string-array name="home_screen_array">
         <item>おすすめ</item>
         <item>定期購読</item>
+    </string-array>
+    <string-array name="minimum_playback_speed">
+        <item>デフォルト</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="maximum_playback_speed">
+        <item>デフォルト</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>自動（720p）</item>

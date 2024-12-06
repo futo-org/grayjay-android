@@ -2026,7 +2026,7 @@ class VideoDetailView : ConstraintLayout {
                     R.string.quality), null, true,
             if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
             if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate!!.toString());
+                setButtons(Settings.instance.playback.getPlaybackSpeedList(), currentPlaybackRate!!.toString());
                 onClick.subscribe { v ->
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
