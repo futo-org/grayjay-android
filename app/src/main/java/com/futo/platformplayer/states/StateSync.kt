@@ -112,18 +112,23 @@ class StateSync {
         Logger.i(TAG, "Sync key pair initialized (public key = ${publicKey})")
 
         _thread = Thread {
-            val serverSocket = ServerSocket(PORT)
-            _serverSocket = serverSocket
+            try {
+                val serverSocket = ServerSocket(PORT)
+                _serverSocket = serverSocket
 
-            Log.i(TAG, "Running on port ${PORT} (TCP)")
+                Log.i(TAG, "Running on port ${PORT} (TCP)")
 
-            while (_started) {
-                val socket = serverSocket.accept()
-                val session = createSocketSession(socket, true) { session, socketSession ->
+                while (_started) {
+                    val socket = serverSocket.accept()
+                    val session = createSocketSession(socket, true) { session, socketSession ->
 
+                    }
+
+                    session.startAsResponder()
                 }
-                
-                session.startAsResponder()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
+                UIDialogs.toast("Failed to start sync, port in use")
             }
         }.apply { start() }
 
