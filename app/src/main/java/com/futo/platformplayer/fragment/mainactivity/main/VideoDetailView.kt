@@ -2382,6 +2382,11 @@ class VideoDetailView : ConstraintLayout {
         var videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
         var videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
 
+        if (videoSourceWidth == null || videoSourceHeight == null || videoSourceWidth == 0 || videoSourceHeight == 0){
+            videoSourceWidth = this.video?.video?.videoSources?.get(0)?.width
+            videoSourceHeight = this.video?.video?.videoSources?.get(0)?.height
+        }
+
         return if (videoSourceWidth == null || videoSourceHeight == null || videoSourceWidth == 0 || videoSourceHeight == 0){
             null
         } else{
