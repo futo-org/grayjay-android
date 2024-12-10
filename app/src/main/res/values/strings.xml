@@ -199,6 +199,7 @@
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="comment">Comment</string>
+    <string name="not_empty_close">Comment is not empty, close anyway?</string>
     <string name="str_import">Import</string>
     <string name="my_playlist_name">My Playlist Name</string>
     <string name="do_you_want_to_import_this_store">Do you want to import this store?</string>
