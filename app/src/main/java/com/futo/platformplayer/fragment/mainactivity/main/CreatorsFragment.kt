@@ -8,6 +8,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.Spinner
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,11 +26,20 @@ class CreatorsFragment : MainFragment() {
     private var _overlayContainer: FrameLayout? = null;
     private var _containerSearch: FrameLayout? = null;
     private var _editSearch: EditText? = null;
+    private var _buttonClearSearch: ImageButton? = null
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_creators, container, false);
         _containerSearch = view.findViewById(R.id.container_search);
-        _editSearch = view.findViewById(R.id.edit_search);
+        val editSearch: EditText = view.findViewById(R.id.edit_search);
+        val buttonClearSearch: ImageButton = view.findViewById(R.id.button_clear_search)
+        _editSearch = editSearch
+        _buttonClearSearch = buttonClearSearch
+        buttonClearSearch.setOnClickListener {
+            editSearch.text.clear()
+            editSearch.requestFocus()
+            _buttonClearSearch?.visibility = View.INVISIBLE;
+        }
 
         val adapter = SubscriptionAdapter(inflater, getString(R.string.confirm_delete_subscription));
         adapter.onClick.subscribe { platformUser -> navigate<ChannelFragment>(platformUser) };
@@ -51,7 +61,12 @@ class CreatorsFragment : MainFragment() {
         _spinnerSortBy = spinnerSortBy;
 
         _editSearch?.addTextChangedListener {
-            adapter.query = it.toString();
+            adapter.query = it.toString()
+            if (it?.isEmpty() == true) {
+                _buttonClearSearch?.visibility = View.INVISIBLE
+            } else {
+                _buttonClearSearch?.visibility = View.VISIBLE
+            }
         }
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_subscriptions);

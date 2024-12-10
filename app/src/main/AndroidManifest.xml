@@ -52,7 +52,7 @@
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
             android:theme="@style/Theme.FutoVideo.NoActionBar"
-            android:launchMode="singleTask"
+            android:launchMode="singleInstance"
             android:resizeableActivity="true"
             android:supportsPictureInPicture="true">
 

@@ -1799,8 +1799,13 @@ class VideoDetailView : ConstraintLayout {
     private fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean){
         Logger.i(TAG, "onSourceChanged(videoSource=$videoSource, audioSource=$audioSource, resume=$resume)")
 
-        if((videoSource == null || videoSource is LocalVideoSource) && (audioSource == null || audioSource is LocalAudioSource))
-            UIDialogs.toast(context, context.getString(R.string.offline_playback), false);
+        if((videoSource == null || videoSource is LocalVideoSource) && (audioSource == null || audioSource is LocalAudioSource)) {
+            Logger.i(TAG, "Time since last offline playback toast: " + (System.currentTimeMillis() - _lastOfflinePlaybackToastTime).toString())
+            if (System.currentTimeMillis() - _lastOfflinePlaybackToastTime > 5000) {
+                UIDialogs.toast(context, context.getString(R.string.offline_playback), false);
+                _lastOfflinePlaybackToastTime = System.currentTimeMillis()
+            }
+        }
         //If LiveStream, set to end
         if(videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
             if (video?.isLive == true) {
@@ -2379,8 +2384,8 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun isLandscapeVideo(): Boolean? {
-        var videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
-        var videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
+        val videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
+        val videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
 
         return if (videoSourceWidth == null || videoSourceHeight == null || videoSourceWidth == 0 || videoSourceHeight == 0){
             null
@@ -3030,8 +3035,6 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_MORE = "MORE";
 
         private val _buttonPinStore = FragmentedStorage.get<StringArrayStorage>("videoPinnedButtons");
-
-
-
+        private var _lastOfflinePlaybackToastTime: Long = 0
     }
 }
