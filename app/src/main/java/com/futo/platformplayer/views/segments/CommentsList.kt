@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.IAsyncPager
@@ -267,9 +268,13 @@ class CommentsList : ConstraintLayout {
     }
 
     fun replaceComment(c: PolycentricPlatformComment, newComment: PolycentricPlatformComment) {
-        val index = _comments.indexOf(c);
-        _comments[index] = newComment;
-        _adapterComments.notifyItemChanged(_adapterComments.childToParentPosition(index));
+        val index = _comments.indexOfFirst { it == c || (it is LazyComment && it.getUnderlyingComment() == c) };
+        if (index >= 0) {
+            _comments[index] = newComment;
+            _adapterComments.notifyItemChanged(_adapterComments.childToParentPosition(index));
+        } else {
+            Logger.w(TAG, "Parent comment not found")
+        }
     }
 
     companion object {
