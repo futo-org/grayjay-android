@@ -91,7 +91,7 @@ class VideoDetailFragment : MainFragment {
         return min(
             resources.configuration.screenWidthDp,
             resources.configuration.screenHeightDp
-        ) < resources.getInteger(R.integer.landscape_threshold) * 2
+        ) < resources.getInteger(R.integer.column_width_dp) * 2
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

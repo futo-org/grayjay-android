@@ -236,7 +236,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
     open fun updateSpanCount() {
         recyclerData.layoutManager.spanCount =
-            max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.landscape_threshold)).toInt(), 1)
+            max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration?) {

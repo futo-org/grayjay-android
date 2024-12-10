@@ -169,7 +169,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         val glmResults =
             GridLayoutManager(
                 context,
-                max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.landscape_threshold)).toInt(), 1)
+                max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
             );
         return glmResults
     }
