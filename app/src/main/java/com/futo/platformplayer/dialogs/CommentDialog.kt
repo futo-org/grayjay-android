@@ -71,8 +71,9 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
         _editComment.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) = Unit
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                _textCharacterCount.text = (s?.length ?: 0).toString();
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, c: Int) {
+                val count = s?.length ?: 0;
+                _textCharacterCount.text = count.toString();
 
                 if (count > PolycentricPlatformComment.MAX_COMMENT_SIZE) {
                     _textCharacterCount.setTextColor(Color.RED);
