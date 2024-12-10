@@ -251,7 +251,7 @@ class StateDownloads {
                 }
                 else {
                     Logger.i(TAG, "New watchlater video ${item.name}");
-                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate)
+                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate, true)
                         .withGroup(VideoDownload.GROUP_WATCHLATER, VideoDownload.GROUP_WATCHLATER), false);
                     hasNew = true;
                 }
@@ -296,7 +296,7 @@ class StateDownloads {
                 }
                 else {
                     Logger.i(TAG, "New playlist video ${item.name}");
-                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate)
+                    download(VideoDownload(item, playlistDownload.targetPxCount, playlistDownload.targetBitrate, true)
                         .withGroup(VideoDownload.GROUP_PLAYLIST, playlist.id), false);
                     hasNew = true;
                 }
