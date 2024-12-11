@@ -90,7 +90,7 @@ class BuyFragment : MainFragment() {
                 try {
                     val currencies = StatePayment.instance.getAvailableCurrencies("grayjay");
                     val prices = StatePayment.instance.getAvailableCurrencyPrices("grayjay");
-                    val country = StatePayment.instance.getPaymentCountryFromIP()?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
+                    val country = StatePayment.instance.getPaymentCountryFromIP(true)?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
                     val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id)) } };
 
                     if(currency != null && prices.containsKey(currency.id)) {
