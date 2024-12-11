@@ -2587,7 +2587,6 @@ class VideoDetailView : ConstraintLayout {
         _overlayContainer.removeAllViews();
         _overlay_quality_selector?.hide();
 
-        _player.setFullScreen(true)
         _player.fillHeight(false)
         _layoutPlayerContainer.setPadding(0, 0, 0, 0);
     }
@@ -2802,7 +2801,7 @@ class VideoDetailView : ConstraintLayout {
         super.onConfigurationChanged(newConfig)
         if (fragment.state == VideoDetailFragment.State.MINIMIZED) {
             _player.fillHeight(true)
-        } else if (!fragment.isFullscreen) {
+        } else if (!fragment.isFullscreen && !fragment.isInPictureInPicture) {
             _player.fitHeight()
         }
     }
