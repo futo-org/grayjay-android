@@ -1,12 +1,13 @@
 package com.futo.platformplayer.fragment.channel.tab
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -15,7 +16,6 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
-import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSPager
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
@@ -41,10 +41,11 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 class ChannelContentsFragment : Fragment(), IChannelTabFragment {
     private var _recyclerResults: RecyclerView? = null;
-    private var _llmVideo: LinearLayoutManager? = null;
+    private var _glmVideo: GridLayoutManager? = null;
     private var _loading = false;
     private var _pager_parent: IPager<IPlatformContent>? = null;
     private var _pager: IPager<IPlatformContent>? = null;
@@ -118,7 +119,7 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
             super.onScrolled(recyclerView, dx, dy);
 
             val recyclerResults = _recyclerResults ?: return;
-            val llmVideo = _llmVideo ?: return;
+            val llmVideo = _glmVideo ?: return;
 
             val visibleItemCount = recyclerResults.childCount;
             val firstVisibleItem = llmVideo.findFirstVisibleItemPosition();
@@ -163,9 +164,10 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
             this.onLongPress.subscribe(this@ChannelContentsFragment.onLongPress::emit);
         }
 
-        _llmVideo = LinearLayoutManager(view.context);
+        val numColumns = max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
+        _glmVideo = GridLayoutManager(view.context, numColumns);
         _recyclerResults?.adapter = _adapterResults;
-        _recyclerResults?.layoutManager = _llmVideo;
+        _recyclerResults?.layoutManager = _glmVideo;
         _recyclerResults?.addOnScrollListener(_scrollListener);
 
         return view;
@@ -179,6 +181,13 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
         _taskLoadVideos.cancel();
         _nextPageHandler.cancel();
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        _glmVideo?.spanCount =
+            max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
     }
 
     /*

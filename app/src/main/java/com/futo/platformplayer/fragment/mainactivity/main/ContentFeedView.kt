@@ -33,6 +33,7 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.withTimestamp
 import kotlin.math.floor
+import kotlin.math.max
 
 abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent, IPlatformContent, IPager<IPlatformContent>, ContentPreviewViewHolder> where TFragment : MainFragment {
     private var _exoPlayer: PlayerManager? = null;
@@ -168,7 +169,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         val glmResults =
             GridLayoutManager(
                 context,
-                (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1
+                max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
             );
         return glmResults
     }
