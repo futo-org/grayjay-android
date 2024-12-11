@@ -100,6 +100,7 @@ class VideoDownload {
 
     var requireVideoSource: Boolean = false;
     var requireAudioSource: Boolean = false;
+    var requiredCheck: Boolean = false;
 
     @Contextual
     @Transient
@@ -164,7 +165,7 @@ class VideoDownload {
         onStateChanged.emit(newState);
     }
 
-    constructor(video: IPlatformVideo, targetPixelCount: Long? = null, targetBitrate: Long? = null) {
+    constructor(video: IPlatformVideo, targetPixelCount: Long? = null, targetBitrate: Long? = null, optionalSources: Boolean = false) {
         this.video = SerializedPlatformVideo.fromVideo(video);
         this.videoSource = null;
         this.audioSource = null;
@@ -175,8 +176,9 @@ class VideoDownload {
         this.requiresLiveVideoSource = false;
         this.requiresLiveAudioSource = false;
         this.targetVideoName = videoSource?.name;
-        this.requireVideoSource = targetPixelCount != null
+        this.requireVideoSource = targetPixelCount != null;
         this.requireAudioSource = targetBitrate != null; //TODO: May not be a valid check.. can only be determined after live fetch?
+        this.requiredCheck = optionalSources;
     }
     constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
         this.video = SerializedPlatformVideo.fromVideo(video);
@@ -249,6 +251,30 @@ class VideoDownload {
             val original = StatePlatform.instance.getContentDetails(video!!.url).await();
             if(original !is IPlatformVideoDetails)
                 throw IllegalStateException("Original content is not media?");
+
+            if(requiredCheck) {
+                if(original.video is VideoUnMuxedSourceDescriptor) {
+                    if(requireVideoSource) {
+                        if((original.video as VideoUnMuxedSourceDescriptor).audioSources.any() && !original.video.videoSources.any()) {
+                            requireVideoSource = false;
+                            targetPixelCount = null;
+                        }
+                    }
+                    if(requireAudioSource) {
+                        if(!(original.video as VideoUnMuxedSourceDescriptor).audioSources.any() && original.video.videoSources.any()) {
+                            requireAudioSource = false;
+                            targetBitrate = null;
+                        }
+                    }
+                }
+                else {
+                    if(requireAudioSource) {
+                        requireAudioSource = false;
+                        targetBitrate = null;
+                    }
+                }
+                requiredCheck = false;
+            }
 
             if(original.video.hasAnySource() && !original.isDownloadable()) {
                 Logger.i(TAG, "Attempted to download unsupported video [${original.name}]:${original.url}");
