@@ -33,6 +33,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.receivers.MediaButtonReceiver
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
@@ -149,7 +150,7 @@ class MediaPlaybackService : Service() {
         _mediaSession?.setMediaButtonReceiver(PendingIntent.getBroadcast(
             this@MediaPlaybackService,
             0,
-            Intent(Intent.ACTION_MEDIA_BUTTON).setClass(this@MediaPlaybackService, MediaControlReceiver::class.java),
+            Intent(Intent.ACTION_MEDIA_BUTTON).setClass(this@MediaPlaybackService, MediaButtonReceiver::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         ))
     }
