@@ -30,6 +30,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
+import kotlin.math.max
 
 abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : LinearLayout where TPager : IPager<TResult>, TViewHolder : RecyclerView.ViewHolder, TFragment : MainFragment {
     protected val  _recyclerResults: RecyclerView;
@@ -234,7 +235,8 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
 
     open fun updateSpanCount() {
-        recyclerData.layoutManager.spanCount = (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1
+        recyclerData.layoutManager.spanCount =
+            max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration?) {

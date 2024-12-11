@@ -2,5 +2,5 @@
 <resources>
     <dimen name="minimized_player_max_width">500dp</dimen>
     <dimen name="app_bar_height">200dp</dimen>
-    <dimen name="landscape_threshold">300dp</dimen>
+    <integer name="column_width_dp">400</integer>
 </resources>

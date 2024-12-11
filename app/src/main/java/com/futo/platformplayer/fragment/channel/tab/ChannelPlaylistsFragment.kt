@@ -1,12 +1,13 @@
 package com.futo.platformplayer.fragment.channel.tab
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -36,10 +37,11 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 class ChannelPlaylistsFragment : Fragment(), IChannelTabFragment {
     private var _recyclerResults: RecyclerView? = null
-    private var _llmPlaylist: LinearLayoutManager? = null
+    private var _glmPlaylist: GridLayoutManager? = null
     private var _loading = false
     private var _pagerParent: IPager<IPlatformPlaylist>? = null
     private var _pager: IPager<IPlatformPlaylist>? = null
@@ -109,7 +111,7 @@ class ChannelPlaylistsFragment : Fragment(), IChannelTabFragment {
             super.onScrolled(recyclerView, dx, dy)
 
             val recyclerResults = _recyclerResults ?: return
-            val llmPlaylist = _llmPlaylist ?: return
+            val llmPlaylist = _glmPlaylist ?: return
 
             val visibleItemCount = recyclerResults.childCount
             val firstVisibleItem = llmPlaylist.findFirstVisibleItemPosition()
@@ -158,9 +160,10 @@ class ChannelPlaylistsFragment : Fragment(), IChannelTabFragment {
             this.onLongPress.subscribe(this@ChannelPlaylistsFragment.onLongPress::emit)
         }
 
-        _llmPlaylist = LinearLayoutManager(view.context)
+        val numColumns = max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
+        _glmPlaylist = GridLayoutManager(view.context, numColumns)
         _recyclerResults?.adapter = _adapterResults
-        _recyclerResults?.layoutManager = _llmPlaylist
+        _recyclerResults?.layoutManager = _glmPlaylist
         _recyclerResults?.addOnScrollListener(_scrollListener)
 
         return view
@@ -174,6 +177,13 @@ class ChannelPlaylistsFragment : Fragment(), IChannelTabFragment {
 
         _taskLoadPlaylists.cancel()
         _nextPageHandler.cancel()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        _glmPlaylist?.spanCount =
+            max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
     }
 
     private fun setPager(
