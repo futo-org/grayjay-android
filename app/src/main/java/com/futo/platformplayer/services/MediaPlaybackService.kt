@@ -23,6 +23,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -91,6 +92,7 @@ class MediaPlaybackService : Service() {
 
         return START_STICKY;
     }
+
     fun setupNotificationRequirements() {
         _audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager;
         _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
@@ -101,6 +103,7 @@ class MediaPlaybackService : Service() {
         _notificationManager!!.createNotificationChannel(_notificationChannel!!);
 
         _mediaSession = MediaSessionCompat(this, "PlayerState");
+        _mediaSession?.isActive = true
         _mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
             .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1f)
             .build());
@@ -143,6 +146,12 @@ class MediaPlaybackService : Service() {
                 MediaControlReceiver.onNextReceived.emit();
             }
         });
+        _mediaSession?.setMediaButtonReceiver(PendingIntent.getBroadcast(
+            this@MediaPlaybackService,
+            0,
+            Intent(Intent.ACTION_MEDIA_BUTTON).setClass(this@MediaPlaybackService, MediaControlReceiver::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        ))
     }
 
     override fun onCreate() {
