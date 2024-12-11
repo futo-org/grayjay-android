@@ -143,7 +143,6 @@ class VideoDetailFragment : MainFragment {
         }
     }
 
-    @SuppressLint("SourceLockedOrientationActivity")
     fun updateOrientation() {
         val a = activity ?: return
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
@@ -156,7 +155,11 @@ class VideoDetailFragment : MainFragment {
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            if(Settings.instance.playback.forceAllowFullScreenRotation){
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }else{
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            }
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
         else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -164,26 +167,10 @@ class VideoDetailFragment : MainFragment {
         } else if (rotationLock) {
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         } else {
-            when (Settings.instance.playback.autoRotate) {
-                0 -> {
-                    a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                }
-
-                1 -> {
-                    a.requestedOrientation = if (isReversePortraitAllowed) {
-                        ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-                    } else {
-                        ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                    }
-                }
-
-                2 -> {
-                    a.requestedOrientation = if (isReversePortraitAllowed) {
-                        ActivityInfo.SCREEN_ORIENTATION_FULL_USER
-                    } else {
-                        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    }
-                }
+            a.requestedOrientation = if (isReversePortraitAllowed) {
+                ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             }
         }
     }
