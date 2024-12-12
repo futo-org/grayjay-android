@@ -256,8 +256,6 @@
     <string name="announcement">Anúncio</string>
     <string name="attempt_to_utilize_byte_ranges">Tentar utilizar intervalos de bytes</string>
     <string name="auto_update">Atualização Automática</string>
-    <string name="auto_rotate">Rotação Automática</string>
-    <string name="auto_rotate_dead_zone">Zona Morta de Rotação Automática</string>
     <string name="automatic_backup">Backup Automático</string>
     <string name="background_behavior">Comportamento em Segundo Plano</string>
     <string name="background_update">Atualização em Segundo Plano</string>
@@ -557,7 +555,6 @@
     <string name="not_yet_available_retrying_in_time_s">Ainda não disponível, tentando novamente em {time}s</string>
     <string name="failed_to_retry_for_live_stream">Falha ao tentar novamente para transmissão ao vivo</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">Este aplicativo está em desenvolvimento. Envie relatórios de erros e entenda que muitos recursos estão incompletos.</string>
-    <string name="please_use_at_least_3_characters">Use pelo menos 3 caracteres</string>
     <string name="are_you_sure_you_want_to_delete_this_video">Tem certeza de que deseja excluir este vídeo?</string>
     <string name="tap_to_open">Toque para abrir</string>
     <string name="watching">Assistindo</string>
@@ -660,11 +657,6 @@
     <string-array name="auto_update_when_array">
         <item>Ao Iniciar</item>
         <item>Nunca</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>Desativado</item>
-        <item>Ativado</item>
-        <item>Como no Sistema</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>Desativado</item>

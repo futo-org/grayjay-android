@@ -256,8 +256,6 @@
     <string name="announcement">Annonce</string>
     <string name="attempt_to_utilize_byte_ranges">Tentative d\'utilisation de plages d\'octets</string>
     <string name="auto_update">Mise à jour automatique</string>
-    <string name="auto_rotate">Rotation automatique</string>
-    <string name="auto_rotate_dead_zone">Zone morte de rotation automatique</string>
     <string name="automatic_backup">Sauvegarde automatique</string>
     <string name="background_behavior">Comportement en arrière-plan</string>
     <string name="background_update">Mise à jour en arrière-plan</string>
@@ -562,7 +560,6 @@
     <string name="not_yet_available_retrying_in_time_s">Pas encore disponible, réessai dans {time}s</string>
     <string name="failed_to_retry_for_live_stream">Échec de la tentative de réessai pour la diffusion en direct</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">Cette application est en développement. Veuillez soumettre des rapports de bug et comprendre que de nombreuses fonctionnalités ne sont pas encore complètes.</string>
-    <string name="please_use_at_least_3_characters">Veuillez utiliser au moins 3 caractères</string>
     <string name="are_you_sure_you_want_to_delete_this_video">Êtes-vous sûr de vouloir supprimer cette vidéo ?</string>
     <string name="tap_to_open">Appuyez pour ouvrir</string>
     <string name="watching">en train de regarder</string>
@@ -660,11 +657,6 @@
     <string-array name="auto_update_when_array">
         <item>Au démarrage</item>
         <item>Jamais</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>Désactivé</item>
-        <item>Activé</item>
-        <item>Même que le système</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>Désactivé</item>

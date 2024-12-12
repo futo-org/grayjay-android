@@ -220,8 +220,6 @@
     <string name="announcement">お知らせ</string>
     <string name="attempt_to_utilize_byte_ranges">バイト範囲を使用する試み</string>
     <string name="auto_update">自動更新</string>
-    <string name="auto_rotate">自動回転</string>
-    <string name="auto_rotate_dead_zone">自動回転デッドゾーン</string>
     <string name="automatic_backup">自動バックアップ</string>
     <string name="background_behavior">バックグラウンドの動作</string>
     <string name="background_update">バックグラウンド更新</string>
@@ -524,7 +522,6 @@
     <string name="not_yet_available_retrying_in_time_s">{time}秒後に再試行、まだ利用できません</string>
     <string name="failed_to_retry_for_live_stream">ライブストリームの再試行に失敗しました</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">このアプリは開発中です。バグレポートを提出し、多くの機能が未完成であることを理解してください。</string>
-    <string name="please_use_at_least_3_characters">少なくとも3文字を使用してください</string>
     <string name="are_you_sure_you_want_to_delete_this_video">このビデオを削除してもよろしいですか？</string>
     <string name="tap_to_open">タップして開く</string>
     <string name="watching">視聴中</string>
@@ -660,11 +657,6 @@
     <string-array name="auto_update_when_array">
         <item>起動時</item>
         <item>なし</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>無効</item>
-        <item>有効</item>
-        <item>システムと同じ</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>無効</item>

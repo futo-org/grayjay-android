@@ -255,8 +255,6 @@
     <string name="announcement">공고</string>
     <string name="attempt_to_utilize_byte_ranges">바이트 범위 사용 시도</string>
     <string name="auto_update">자동 업데이트</string>
-    <string name="auto_rotate">자동 회전</string>
-    <string name="auto_rotate_dead_zone">자동 회전 데드 존</string>
     <string name="automatic_backup">자동 백업</string>
     <string name="background_behavior">백그라운드 동작</string>
     <string name="background_update">백그라운드 업데이트</string>
@@ -561,7 +559,6 @@
     <string name="not_yet_available_retrying_in_time_s">아직 사용할 수 없습니다, {time}초 후에 다시 시도합니다</string>
     <string name="failed_to_retry_for_live_stream">라이브 스트림을 다시 시도하지 못했습니다</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">이 앱은 개발 중입니다. 버그 보고를 제출해 주시고, 많은 기능이 미완성임을 이해해 주세요.</string>
-    <string name="please_use_at_least_3_characters">최소 3자 이상 사용해 주세요</string>
     <string name="are_you_sure_you_want_to_delete_this_video">이 비디오를 삭제하시겠습니까?</string>
     <string name="tap_to_open">열려면 탭하세요</string>
     <string name="watching">시청 중</string>
@@ -660,11 +657,6 @@
     <string-array name="auto_update_when_array">
         <item>시작할 때</item>
         <item>안 함</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>비활성화</item>
-        <item>활성화</item>
-        <item>시스템과 동일</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>비활성화</item>

@@ -233,8 +233,6 @@
     <string name="announcement">إعلان</string>
     <string name="attempt_to_utilize_byte_ranges">محاولة استخدام مدى البايت</string>
     <string name="auto_update">تحديث تلقائي</string>
-    <string name="auto_rotate">تدوير تلقائي</string>
-    <string name="auto_rotate_dead_zone">منطقة ميتة للتدوير التلقائي</string>
     <string name="automatic_backup">نسخ احتياطي تلقائي</string>
     <string name="background_behavior">سلوك الخلفية</string>
     <string name="background_update">تحديث الخلفية</string>
@@ -539,7 +537,6 @@
     <string name="not_yet_available_retrying_in_time_s">لم يصبح متوفراً بعد، إعادة المحاولة في {time}s</string>
     <string name="failed_to_retry_for_live_stream">فشل في إعادة المحاولة للبث المباشر</string>
     <string name="this_app_is_in_development_please_submit_bug_reports_and_understand_that_many_features_are_incomplete">هذا التطبيق قيد التطوير. يرجى إرسال تقارير الأخطاء وفهم أن العديد من الميزات غير مكتملة.</string>
-    <string name="please_use_at_least_3_characters">يرجى استخدام 3 أحرف على الأقل</string>
     <string name="are_you_sure_you_want_to_delete_this_video">هل أنت متأكد من أنك ترغب في حذف هذا الفيديو؟</string>
     <string name="tap_to_open">انقر للفتح</string>
     <string name="watching">يشاهد</string>
@@ -660,11 +657,6 @@
     <string-array name="auto_update_when_array">
         <item>عند التشغيل</item>
         <item>أبداً</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>معطل</item>
-        <item>مفعل</item>
-        <item>كما في النظام</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>معطل</item>
