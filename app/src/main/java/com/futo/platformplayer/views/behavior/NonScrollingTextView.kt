@@ -76,7 +76,7 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
                 if (linkPressed && _lastTouchedLinks != null) {
                     val dx = event.x - downX
                     val dy = event.y - downY
-                    if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop) {
+                    if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop && isTouchInside(event)) {
                         runBlocking {
                             for (link in _lastTouchedLinks!!) {
                                 Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." }
@@ -119,7 +119,11 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
             }
         }
 
-        return super.onTouchEvent(event)
+        return false
+    }
+
+    private fun isTouchInside(event: MotionEvent): Boolean {
+        return event.x >= 0 && event.x <= width && event.y >= 0 && event.y <= height
     }
 
     companion object {

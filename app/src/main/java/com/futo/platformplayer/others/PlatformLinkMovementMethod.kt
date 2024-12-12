@@ -59,7 +59,7 @@ class PlatformLinkMovementMethod(private val _context: Context) : LinkMovementMe
                 if (linkPressed && pressedLinks != null) {
                     val dx = event.x - downX
                     val dy = event.y - downY
-                    if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop) {
+                    if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop && isTouchInside(widget, event)) {
                         runBlocking {
                             for (link in pressedLinks!!) {
                                 Logger.i(TAG) { "Link clicked '${link.url}'." }
@@ -101,7 +101,7 @@ class PlatformLinkMovementMethod(private val _context: Context) : LinkMovementMe
             }
         }
 
-        return super.onTouchEvent(widget, buffer, event)
+        return false
     }
 
     private fun findLinksAtTouchPosition(widget: TextView, buffer: Spannable, event: MotionEvent): Array<URLSpan> {
@@ -112,6 +112,10 @@ class PlatformLinkMovementMethod(private val _context: Context) : LinkMovementMe
         val line = layout.getLineForVertical(y)
         val off = layout.getOffsetForHorizontal(line, x.toFloat())
         return buffer.getSpans(off, off, URLSpan::class.java)
+    }
+
+    private fun isTouchInside(widget: TextView, event: MotionEvent): Boolean {
+        return event.x >= 0 && event.x <= widget.width && event.y >= 0 && event.y <= widget.height
     }
 
     companion object {
