@@ -287,10 +287,10 @@
     <string name="planned_content_notifications_description">Schedules discovered planned content as notifications, resulting in more accurate notifications for this content.</string>
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
     <string name="auto_update">Auto Update</string>
-    <string name="auto_rotate">Auto-Rotate</string>
+    <string name="force_allow_full_screen_rotation">Force Allow Full Screen Rotation</string>
+    <string name="force_allow_full_screen_rotation_description">Allow auto-rotation between the two landscape orientations even when you disable auto-rotate at the system level.</string>
     <string name="simplify_sources">Simplify sources</string>
     <string name="simplify_sources_description">Deduplicate sources by resolution so that only more relevant sources are visible.</string>
-    <string name="auto_rotate_dead_zone">Auto-Rotate Dead Zone</string>
     <string name="automatic_backup">Automatic Backup</string>
     <string name="background_behavior">Background Behavior</string>
     <string name="background_update">Background Update</string>
@@ -927,17 +927,6 @@
     <string-array name="auto_update_when_array">
         <item>On Startup</item>
         <item>Never</item>
-    </string-array>
-    <string-array name="system_enabled_disabled_array">
-        <item>Disabled</item>
-        <item>Enabled</item>
-        <item>Same as System</item>
-    </string-array>
-    <string-array name="auto_rotate_dead_zone" translatable="false">
-        <item>0</item>
-        <item>5</item>
-        <item>10</item>
-        <item>20</item>
     </string-array>
     <string-array name="enabled_disabled_array">
         <item>Disabled</item>

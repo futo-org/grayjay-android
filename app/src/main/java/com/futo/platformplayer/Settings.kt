@@ -412,15 +412,13 @@ class Settings : FragmentedStorageFileJson() {
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
 
-
         @FormField(R.string.simplify_sources, FieldForm.TOGGLE, R.string.simplify_sources_description, 4)
         var simplifySources: Boolean = true;
 
-        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 5)
-        @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
-        var autoRotate: Int = 2;
+        @FormField(R.string.force_allow_full_screen_rotation, FieldForm.TOGGLE, R.string.force_allow_full_screen_rotation_description, 5)
+        var forceAllowFullScreenRotation: Boolean = false
 
-        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
+        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 
