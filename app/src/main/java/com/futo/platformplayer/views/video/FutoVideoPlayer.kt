@@ -813,17 +813,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     fun updateRotateLock() {
-        if(Settings.instance.playback.autoRotate == 0) {
-            _control_rotate_lock.visibility = View.GONE;
-            _control_rotate_lock_fullscreen.visibility = View.GONE;
-        }
-        else {
-            _control_rotate_lock.visibility = View.VISIBLE;
-            _control_rotate_lock_fullscreen.visibility = View.VISIBLE;
-        }
+        _control_rotate_lock.visibility = View.VISIBLE;
+        _control_rotate_lock_fullscreen.visibility = View.VISIBLE;
+
         if(StatePlayer.instance.rotationLock) {
-            _control_rotate_lock_fullscreen.setImageResource(R.drawable.ic_screen_rotation);
-            _control_rotate_lock.setImageResource(R.drawable.ic_screen_rotation);
+            _control_rotate_lock_fullscreen.setImageResource(R.drawable.ic_screen_lock_rotation_active);
+            _control_rotate_lock.setImageResource(R.drawable.ic_screen_lock_rotation_active);
         }
         else {
             _control_rotate_lock_fullscreen.setImageResource(R.drawable.ic_screen_lock_rotation);

@@ -160,10 +160,6 @@ class StateApp {
     private var _cacheDirectory: File? = null;
     private var _persistentDirectory: File? = null;
 
-
-    //AutoRotate
-    var systemAutoRotate: Boolean = false;
-
     //Network
     private var _lastMeteredState: Boolean = false;
     private var _connectivityManager: ConnectivityManager? = null;
@@ -200,17 +196,6 @@ class StateApp {
 
         return File(_persistentDirectory, name);
     }
-
-    fun getCurrentSystemAutoRotate(): Boolean {
-        _context?.let {
-            systemAutoRotate = android.provider.Settings.System.getInt(
-                it.contentResolver,
-                android.provider.Settings.System.ACCELEROMETER_ROTATION, 0
-            ) == 1;
-        };
-        return systemAutoRotate;
-    }
-
 
     fun isCurrentMetered(): Boolean {
         ensureConnectivityManager();
@@ -312,9 +297,6 @@ class StateApp {
     fun setGlobalContext(context: Context, coroutineScope: CoroutineScope? = null) {
         _context = context;
         _scope = coroutineScope
-
-        //System checks
-        systemAutoRotate = getCurrentSystemAutoRotate();
     }
 
     fun initializeFiles(force: Boolean = false) {
