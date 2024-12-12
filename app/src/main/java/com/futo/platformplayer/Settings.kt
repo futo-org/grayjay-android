@@ -415,7 +415,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.simplify_sources, FieldForm.TOGGLE, R.string.simplify_sources_description, 4)
         var simplifySources: Boolean = true;
 
-        @FormField(R.string.force_allow_full_screen_rotation, FieldForm.TOGGLE, R.string.force_allow_full_screen_rotation_description, 5)
+        @FormField(R.string.force_enable_auto_rotate_in_full_screen, FieldForm.TOGGLE, R.string.force_enable_auto_rotate_in_full_screen_description, 5)
         var forceAllowFullScreenRotation: Boolean = false
 
         @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)

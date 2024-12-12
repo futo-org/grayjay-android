@@ -287,8 +287,8 @@
     <string name="planned_content_notifications_description">Schedules discovered planned content as notifications, resulting in more accurate notifications for this content.</string>
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
     <string name="auto_update">Auto Update</string>
-    <string name="force_allow_full_screen_rotation">Force Allow Full Screen Rotation</string>
-    <string name="force_allow_full_screen_rotation_description">Allow auto-rotation between the two landscape orientations even when you disable auto-rotate at the system level.</string>
+    <string name="force_enable_auto_rotate_in_full_screen">Force Enable Auto-Rotate In Full-Screen Mode</string>
+    <string name="force_enable_auto_rotate_in_full_screen_description">Force enable auto-rotation between the two landscape orientations in full-screen mode, even when you disable auto-rotate at the system level.</string>
     <string name="simplify_sources">Simplify sources</string>
     <string name="simplify_sources_description">Deduplicate sources by resolution so that only more relevant sources are visible.</string>
     <string name="automatic_backup">Automatic Backup</string>
