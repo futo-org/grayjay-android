@@ -311,6 +311,8 @@
     <string name="manage_your_polycentric_identity">管理您的多心身份</string>
     <string name="manual_check">手动检查</string>
     <string name="manually_check_for_updates">手动检查更新</string>
+    <string name="minimum_playback_speed">最低播放速度</string>
+    <string name="maximum_playback_speed">最高播放速度</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">用于从受限制的来源提高下载速度的并发线程数</string>
     <string name="payment">支付</string>
     <string name="payment_status">支付状态</string>
@@ -612,6 +614,23 @@
     <string-array name="home_screen_array">
         <item>推荐</item>
         <item>订阅</item>
+    </string-array>
+    <string-array name="minimum_playback_speed">
+        <item>默认</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="maximum_playback_speed">
+        <item>默认</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>自动 (720p)</item>

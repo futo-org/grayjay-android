@@ -288,6 +288,8 @@
     <string name="manage_your_polycentric_identity">إدارة هويتك المتعددة المراكز</string>
     <string name="manual_check">فحص يدوي</string>
     <string name="manually_check_for_updates">التحقق يدويًا للتحديثات</string>
+    <string name="minimum_playback_speed">الحد الأدنى لسرعة التشغيل</string>
+    <string name="maximum_playback_speed">الحد الأقصى لسرعة التشغيل</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">عدد الخيوط المتزامنة لزيادة سرعة التحميل من المصادر المقيدة</string>
     <string name="payment">الدفع</string>
     <string name="payment_status">حالة الدفع</string>
@@ -612,6 +614,23 @@
     <string-array name="home_screen_array">
         <item>التوصيات</item>
         <item>الاشتراكات</item>
+    </string-array>
+    <string-array name="minimum_playback_speed">
+        <item>افتراضي</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="maximum_playback_speed">
+        <item>افتراضي</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>تلقائي (720p)</item>

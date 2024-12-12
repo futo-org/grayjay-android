@@ -298,6 +298,8 @@
     <string name="manage_your_polycentric_identity">Ihre Polycentric Identität verwalten</string>
     <string name="manual_check">Manuelle Überprüfung</string>
     <string name="manually_check_for_updates">Manuell nach Updates suchen</string>
+    <string name="minimum_playback_speed">Minimale Wiedergabegeschwindigkeit</string>
+    <string name="maximum_playback_speed">Maximale Wiedergabegeschwindigkeit</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Anzahl der gleichzeitigen Threads zur Multiplikation der Download-Geschwindigkeiten von gedrosselten Quellen</string>
     <string name="payment">Zahlung</string>
     <string name="payment_status">Zahlungsstatus</string>
@@ -612,6 +614,23 @@
     <string-array name="home_screen_array">
         <item>Empfehlungen</item>
         <item>Abonnements</item>
+    </string-array>
+    <string-array name="minimum_playback_speed">
+        <item>Standard</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="maximum_playback_speed">
+        <item>Standard</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>Automatisch (720p)</item>
