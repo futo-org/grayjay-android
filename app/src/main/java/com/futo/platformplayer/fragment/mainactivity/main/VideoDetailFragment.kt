@@ -183,12 +183,15 @@ class VideoDetailFragment() : MainFragment() {
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
         // only do this if auto-rotate is on portrait is forced when leaving full screen for autorotate off
-        else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && autoRotateEnabled) {
-            // start listening for the device to rotate to portrait
-            // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
-            _portraitOrientationListener?.enableListener()
+        else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            @SuppressLint("SourceLockedOrientationActivity")
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-
+            if (autoRotateEnabled
+            ) {
+                // start listening for the device to rotate to portrait
+                // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
+                _portraitOrientationListener?.enableListener()
+            }
         } else if (rotationLock) {
             _portraitOrientationListener?.disableListener()
             _landscapeOrientationListener?.disableListener()
@@ -566,10 +569,10 @@ class VideoDetailFragment() : MainFragment() {
         }
 
         // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
-        @SuppressLint("SourceLockedOrientationActivity")
-        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        }
+//        @SuppressLint("SourceLockedOrientationActivity")
+//        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+//        }
         updateOrientation();
         _view?.allowMotion = !fullscreen;
     }
