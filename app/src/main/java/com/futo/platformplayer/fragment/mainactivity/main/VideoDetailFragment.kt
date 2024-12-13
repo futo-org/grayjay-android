@@ -4,8 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.database.ContentObserver
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.OrientationEventListener
 import android.view.View
@@ -85,6 +88,7 @@ class VideoDetailFragment() : MainFragment() {
 
     private var _landscapeOrientationListener: LandscapeOrientationListener? = null
     private var _portraitOrientationListener: PortraitOrientationListener? = null
+    private var _autoRotateObserver: AutoRotateObserver? = null
 
     fun nextVideo() {
         _viewDetail?.nextVideo(true, true, true);
@@ -161,6 +165,7 @@ class VideoDetailFragment() : MainFragment() {
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
+        val alwaysAllowReverseLandscapeAutoRotate = Settings.instance.playback.alwaysAllowReverseLandscapeAutoRotate
 
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
 
@@ -169,17 +174,18 @@ class VideoDetailFragment() : MainFragment() {
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
-            if (Settings.instance.playback.forceAllowFullScreenRotation) {
-                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            } else {
-                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
-            }
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
             if (autoRotateEnabled
             ) {
                 // start listening for the device to rotate to landscape
                 // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
                 _landscapeOrientationListener?.enableListener()
             }
+        }
+        // For small windows if always all reverse landscape then we'll lock the orientation to landscape when system auto-rotate is off to make sure that locking
+        // and unlockiung in the player settings keep orientation in landscape
+        else if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && alwaysAllowReverseLandscapeAutoRotate && !rotationLock && isLandscapeVideo && !autoRotateEnabled) {
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
         // only do this if auto-rotate is on portrait is forced when leaving full screen for autorotate off
@@ -392,6 +398,10 @@ class VideoDetailFragment() : MainFragment() {
                 updateOrientation()
             }
         }
+        _autoRotateObserver = AutoRotateObserver(requireContext(), Handler(Looper.getMainLooper())) {
+            updateOrientation()
+        }
+        _autoRotateObserver?.startObserving()
 
         return _view!!;
     }
@@ -496,6 +506,7 @@ class VideoDetailFragment() : MainFragment() {
 
         _landscapeOrientationListener?.disableListener()
         _portraitOrientationListener?.disableListener()
+        _autoRotateObserver?.stopObserving()
 
         _viewDetail?.let {
             _viewDetail = null;
@@ -655,5 +666,27 @@ class PortraitOrientationListener(
             isListening = false
             disable()
         }
+    }
+}
+
+class AutoRotateObserver(context: Context, handler: Handler, private val onAutoRotateChanged: () -> Unit) : ContentObserver(handler) {
+    private val contentResolver = context.contentResolver
+
+    override fun onChange(selfChange: Boolean) {
+        super.onChange(selfChange)
+
+        onAutoRotateChanged()
+    }
+
+    fun startObserving() {
+        contentResolver.registerContentObserver(
+            android.provider.Settings.System.getUriFor(android.provider.Settings.System.ACCELEROMETER_ROTATION),
+            false,
+            this
+        )
+    }
+
+    fun stopObserving() {
+        contentResolver.unregisterContentObserver(this)
     }
 }

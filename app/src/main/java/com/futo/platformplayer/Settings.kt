@@ -415,8 +415,8 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.simplify_sources, FieldForm.TOGGLE, R.string.simplify_sources_description, 4)
         var simplifySources: Boolean = true;
 
-        @FormField(R.string.force_enable_auto_rotate_in_full_screen, FieldForm.TOGGLE, R.string.force_enable_auto_rotate_in_full_screen_description, 5)
-        var forceAllowFullScreenRotation: Boolean = true
+        @FormField(R.string.always_allow_reverse_landscape_auto_rotate, FieldForm.TOGGLE, R.string.always_allow_reverse_landscape_auto_rotate_description, 5)
+        var alwaysAllowReverseLandscapeAutoRotate: Boolean = true
 
         @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
