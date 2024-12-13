@@ -82,3 +82,9 @@
 [submodule "app/src/stable/assets/sources/dailymotion"]
 	path = app/src/stable/assets/sources/dailymotion
 	url = ../plugins/dailymotion.git
+[submodule "app/src/stable/assets/sources/apple-podcast"]
+	path = app/src/stable/assets/sources/apple-podcast
+	url = ../plugins/apple-podcasts.git
+[submodule "app/src/unstable/assets/sources/apple-podcasts"]
+	path = app/src/unstable/assets/sources/apple-podcasts
+	url = ../plugins/apple-podcasts.git
