@@ -388,11 +388,13 @@ class VideoDetailFragment() : MainFragment() {
             updateOrientation()
         }
 
+        val delayBeforeRemoveRotationLock = 800L
+
         _landscapeOrientationListener = LandscapeOrientationListener(requireContext())
         {
             CoroutineScope(Dispatchers.Main).launch {
                 // delay to make sure that the system auto rotate updates
-                delay(300)
+                delay(delayBeforeRemoveRotationLock)
                 _lastSetOrientation = Configuration.ORIENTATION_LANDSCAPE
                 updateOrientation()
             }
@@ -401,7 +403,7 @@ class VideoDetailFragment() : MainFragment() {
         {
             CoroutineScope(Dispatchers.Main).launch {
                 // delay to make sure that the system auto rotate updates
-                delay(300)
+                delay(delayBeforeRemoveRotationLock)
                 _lastSetOrientation = Configuration.ORIENTATION_PORTRAIT
                 updateOrientation()
             }
