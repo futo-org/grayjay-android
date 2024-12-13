@@ -1,5 +1,6 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -565,6 +566,7 @@ class VideoDetailFragment() : MainFragment() {
         }
 
         // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
+        @SuppressLint("SourceLockedOrientationActivity")
         if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         }
