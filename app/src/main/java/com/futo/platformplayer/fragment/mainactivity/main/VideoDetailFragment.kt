@@ -1,5 +1,6 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -84,8 +85,6 @@ class VideoDetailFragment() : MainFragment() {
 
     private var _landscapeOrientationListener: LandscapeOrientationListener? = null
     private var _portraitOrientationListener: PortraitOrientationListener? = null
-    private var _lastSetOrientation: Int = Configuration.ORIENTATION_UNDEFINED
-    private var _ignoreNextNewOrientation = false
 
     fun nextVideo() {
         _viewDetail?.nextVideo(true, true, true);
@@ -102,21 +101,18 @@ class VideoDetailFragment() : MainFragment() {
         ) < resources.getInteger(R.integer.column_width_dp) * 2
     }
 
+    private fun isAutoRotateEnabled(): Boolean {
+        return android.provider.Settings.System.getInt(
+            context?.contentResolver,
+            android.provider.Settings.System.ACCELEROMETER_ROTATION, 0
+        ) == 1
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
-
         val isSmallWindow = isSmallWindow()
-
-        val temp = _lastSetOrientation
-
-        if (_ignoreNextNewOrientation) {
-            _ignoreNextNewOrientation = false
-        } else {
-            // the device has rotated so update our state tracking what the physical orientation of the device is
-            _lastSetOrientation = newConfig.orientation
-        }
 
         if (
             isSmallWindow
@@ -130,7 +126,6 @@ class VideoDetailFragment() : MainFragment() {
             && isFullscreen
             && !Settings.instance.playback.fullscreenPortrait
             && newConfig.orientation == Configuration.ORIENTATION_PORTRAIT
-            && temp == Configuration.ORIENTATION_LANDSCAPE
             && isLandscapeVideo
         ) {
             _viewDetail?.setFullscreen(false)
@@ -170,21 +165,15 @@ class VideoDetailFragment() : MainFragment() {
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
 
         val isSmallWindow = isSmallWindow()
-
-        val autoRotateEnabled = android.provider.Settings.System.getInt(
-            context?.contentResolver,
-            android.provider.Settings.System.ACCELEROMETER_ROTATION, 0
-        ) == 1
+        val autoRotateEnabled = isAutoRotateEnabled()
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
-        if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && _lastSetOrientation != Configuration.ORIENTATION_LANDSCAPE && !rotationLock && isLandscapeVideo) {
+        if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
             if (Settings.instance.playback.forceAllowFullScreenRotation) {
                 a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             } else {
                 a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
             }
-            // the next orientation change will not reflect the device because we are manually setting the orientation to landscape
-            _ignoreNextNewOrientation = true
             if (autoRotateEnabled
             ) {
                 // start listening for the device to rotate to landscape
@@ -193,19 +182,13 @@ class VideoDetailFragment() : MainFragment() {
             }
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
-        else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && _lastSetOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+        // only do this if auto-rotate is on portrait is forced when leaving full screen for autorotate off
+        else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && autoRotateEnabled) {
+            // start listening for the device to rotate to portrait
+            // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
+            _portraitOrientationListener?.enableListener()
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            // the next orientation change will not reflect the device because we are manually setting the orientation to portrait
-            _ignoreNextNewOrientation = true
-            if (autoRotateEnabled
-            ) {
-                // start listening for the device to rotate to portrait
-                // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
-                _portraitOrientationListener?.enableListener()
-            } else {
-                // the rotation state resets to portrait when changing requestedOrientation
-                _lastSetOrientation = Configuration.ORIENTATION_PORTRAIT
-            }
+
         } else if (rotationLock) {
             _portraitOrientationListener?.disableListener()
             _landscapeOrientationListener?.disableListener()
@@ -395,7 +378,6 @@ class VideoDetailFragment() : MainFragment() {
             CoroutineScope(Dispatchers.Main).launch {
                 // delay to make sure that the system auto rotate updates
                 delay(delayBeforeRemoveRotationLock)
-                _lastSetOrientation = Configuration.ORIENTATION_LANDSCAPE
                 updateOrientation()
             }
         }
@@ -404,7 +386,6 @@ class VideoDetailFragment() : MainFragment() {
             CoroutineScope(Dispatchers.Main).launch {
                 // delay to make sure that the system auto rotate updates
                 delay(delayBeforeRemoveRotationLock)
-                _lastSetOrientation = Configuration.ORIENTATION_PORTRAIT
                 updateOrientation()
             }
         }
@@ -584,6 +565,11 @@ class VideoDetailFragment() : MainFragment() {
             showSystemUI()
         }
 
+        // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
+        @SuppressLint("SourceLockedOrientationActivity")
+        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        }
         updateOrientation();
         _view?.allowMotion = !fullscreen;
     }
