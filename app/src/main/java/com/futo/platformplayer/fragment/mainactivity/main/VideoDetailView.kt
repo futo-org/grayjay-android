@@ -2384,8 +2384,13 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun isLandscapeVideo(): Boolean? {
-        val videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
-        val videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
+        var videoSourceWidth = _player.exoPlayer?.player?.videoSize?.width
+        var videoSourceHeight = _player.exoPlayer?.player?.videoSize?.height
+
+        if (video?.video?.videoSources?.isNotEmpty() == true && (videoSourceWidth == null || videoSourceHeight == null || videoSourceWidth == 0 || videoSourceHeight == 0)) {
+            videoSourceWidth = video?.video?.videoSources!![0].width
+            videoSourceHeight = video?.video?.videoSources!![0].height
+        }
 
         return if (videoSourceWidth == null || videoSourceHeight == null || videoSourceWidth == 0 || videoSourceHeight == 0){
             null
