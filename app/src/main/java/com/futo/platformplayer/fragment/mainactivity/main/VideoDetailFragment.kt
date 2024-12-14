@@ -174,7 +174,11 @@ class VideoDetailFragment() : MainFragment() {
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            if (alwaysAllowReverseLandscapeAutoRotate){
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            } else {
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            }
             if (autoRotateEnabled
             ) {
                 // start listening for the device to rotate to landscape
