@@ -99,10 +99,7 @@ class VideoDetailFragment() : MainFragment() {
     }
 
     private fun isSmallWindow(): Boolean {
-        return min(
-            resources.configuration.screenWidthDp,
-            resources.configuration.screenHeightDp
-        ) < resources.getInteger(R.integer.column_width_dp) * 2
+        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.column_width_dp) * 2
     }
 
     private fun isAutoRotateEnabled(): Boolean {
@@ -122,6 +119,7 @@ class VideoDetailFragment() : MainFragment() {
             isSmallWindow
             && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
             && !isFullscreen
+            && !isInPictureInPicture
             && state == State.MAXIMIZED
         ) {
             _viewDetail?.setFullscreen(true)
@@ -158,6 +156,8 @@ class VideoDetailFragment() : MainFragment() {
         ) {
             _viewDetail?.setFullscreen(true)
         }
+
+        updateOrientation()
     }
 
     fun updateOrientation() {
@@ -167,7 +167,7 @@ class VideoDetailFragment() : MainFragment() {
         val rotationLock = StatePlayer.instance.rotationLock
         val alwaysAllowReverseLandscapeAutoRotate = Settings.instance.playback.alwaysAllowReverseLandscapeAutoRotate
 
-        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
 
         val isSmallWindow = isSmallWindow()
         val autoRotateEnabled = isAutoRotateEnabled()

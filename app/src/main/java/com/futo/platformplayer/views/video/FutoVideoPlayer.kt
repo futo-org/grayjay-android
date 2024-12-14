@@ -592,11 +592,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     @OptIn(UnstableApi::class)
     fun setFullScreen(fullScreen: Boolean) {
-        // prevent fullscreen before the video has loaded to make sure we know whether it's a vertical or horizontal video
-        if(exoPlayer?.player?.videoSize?.height ?: 0 == 0 && fullScreen){
-            return
-        }
-
         updateRotateLock()
 
         if (isFullScreen == fullScreen) {
