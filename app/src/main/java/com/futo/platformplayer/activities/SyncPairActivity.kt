@@ -122,7 +122,11 @@ class SyncPairActivity : AppCompatActivity() {
                 } catch (e: Throwable) {
                     withContext(Dispatchers.Main) {
                         _layoutPairingError.visibility = View.VISIBLE
-                        _textError.text = e.message
+                        if(e.message == "Failed to connect") {
+                            _textError.text = "Failed to connect.\n\nThis may be due to not being on the same network, due to firewall, or vpn.\nSync currently operates only over local direct connections."
+                        }
+                        else
+                            _textError.text = e.message
                         _layoutPairing.visibility = View.GONE
                         Logger.e(TAG, "Failed to pair", e)
                     }
