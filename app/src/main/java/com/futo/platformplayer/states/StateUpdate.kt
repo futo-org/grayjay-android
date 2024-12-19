@@ -189,9 +189,9 @@ class StateUpdate {
             }
         } catch (e: Throwable) {
             Logger.w(TAG, "Failed to check for updates.", e);
-
+            android.util.Log.e(TAG, "Failed to check for updates.", e);
             withContext(Dispatchers.Main) {
-                UIDialogs.toast(context, "Failed to check for updates");
+                UIDialogs.toast(context, "Failed to check for updates\n" + e.message);
             }
         }
     }

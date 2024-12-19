@@ -5,6 +5,8 @@ import com.futo.platformplayer.SettingsDev
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.stores.FragmentedStorage
 import okhttp3.Call
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -63,7 +65,7 @@ open class ManagedHttpClient {
 
     constructor(builder: OkHttpClient.Builder = OkHttpClient.Builder()) {
         _builderTemplate = builder;
-        if(SettingsDev.instance.developerMode && SettingsDev.instance.networking.allowAllCertificates)
+        if(FragmentedStorage.isInitialized && StateApp.instance.isMainActive && SettingsDev.instance.developerMode && SettingsDev.instance.networking.allowAllCertificates)
             trustAllCertificates(builder);
         client = builder.addNetworkInterceptor { chain ->
             val request = beforeRequest(chain.request());
