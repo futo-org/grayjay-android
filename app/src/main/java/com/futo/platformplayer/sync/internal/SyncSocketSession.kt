@@ -300,6 +300,8 @@ class SyncSocketSession {
     }
 
     private fun handlePacket(opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+        Logger.i(TAG, "Handle packet (opcode = ${opcode}, subOpcode = ${subOpcode})")
+
         when (opcode) {
             Opcode.PING.value -> {
                 send(Opcode.PONG.value)
