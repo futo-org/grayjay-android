@@ -649,24 +649,18 @@ class VideoDetailView : ConstraintLayout {
         };
 
         var hadDevice = false;
-        StateSync.instance.deviceUpdatedOrAdded.subscribe(this) { id, session ->
-            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
-            if(hasDevice != hadDevice) {
-                hadDevice = hasDevice;
-                fragment.lifecycleScope.launch(Dispatchers.Main) {
-                    updateMoreButtons();
-                }
-            }
-        };
-        StateSync.instance.deviceRemoved.subscribe(this) { id ->
-            val hasDevice = StateSync.instance.hasAtLeastOneOnlineDevice();
-            if(hasDevice != hadDevice) {
+        val devicesChanged = { id: String ->
+            val hasDevice = StateSync.instance.hasAuthorizedDevice();
+            if (hasDevice != hadDevice) {
                 hadDevice = hasDevice;
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     updateMoreButtons();
                 }
             }
         }
+
+        StateSync.instance.deviceUpdatedOrAdded.subscribe(this) { id, _ -> devicesChanged(id) };
+        StateSync.instance.deviceRemoved.subscribe(this) { id -> devicesChanged(id) };
 
         MediaControlReceiver.onLowerVolumeReceived.subscribe(this) { handleLowerVolume() };
         MediaControlReceiver.onPlayReceived.subscribe(this) { handlePlay() };
@@ -922,18 +916,25 @@ class VideoDetailView : ConstraintLayout {
                 };
                 _slideUpOverlay?.hide();
             },
-            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+            if (StateSync.instance.hasAuthorizedDevice()) {
                 RoundButton(context, R.drawable.ic_device, context.getString(R.string.send_to_device), TAG_SEND_TO_DEVICE) {
-                    val devices = StateSync.instance.getSessions();
+                    val devices = StateSync.instance.getAuthorizedSessions();
                     val videoToSend = video ?: return@RoundButton;
                     if(devices.size > 1) {
                         //not implemented
-                    }
-                    else if(devices.size == 1){
+                    } else if(devices.size == 1){
                         val device = devices.first();
+                        Logger.i(TAG, "Send to device? (public key: ${device.remotePublicKey}): " + videoToSend.url)
                         UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
+                            Logger.i(TAG, "Send to device confirmed (public key: ${device.remotePublicKey}): " + videoToSend.url)
+
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                                device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds/1000).toInt()));
+                                try {
+                                    device.sendJsonData(GJSyncOpcodes.sendToDevices, SendToDevicePackage(videoToSend.url, (lastPositionMilliseconds / 1000).toInt()))
+                                    Logger.i(TAG, "Send to device packet sent (public key: ${device.remotePublicKey}): " + videoToSend.url)
+                                } catch (e: Throwable) {
+                                    Logger.e(TAG, "Send to device packet failed to send", e)
+                                }
                             }
                         })
                     }

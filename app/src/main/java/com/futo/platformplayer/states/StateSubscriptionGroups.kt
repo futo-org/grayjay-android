@@ -79,12 +79,14 @@ class StateSubscriptionGroups {
             onGroupsChanged.emit();
         if(!preventSync) {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                try {
                     Logger.i(TAG, "SyncSubscriptionGroup (${subGroup.name})");
                     StateSync.instance.broadcastJsonData(
                         GJSyncOpcodes.syncSubscriptionGroups,
                         SyncSubscriptionGroupsPackage(listOf(subGroup), mapOf())
                     );
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to broadcast update subscription group", e)
                 }
             };
         }
@@ -98,12 +100,14 @@ class StateSubscriptionGroups {
             if(isUserInteraction) {
                 _groupsRemoved.setAndSave(id, OffsetDateTime.now());
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                    try {
                         Logger.i(TAG, "SyncSubscriptionGroup delete (${group.name})");
                         StateSync.instance.broadcastJsonData(
                             GJSyncOpcodes.syncSubscriptionGroups,
                             SyncSubscriptionGroupsPackage(listOf(), mapOf(Pair(id, OffsetDateTime.now().toEpochSecond())))
                         );
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to delete subscription group", e)
                     }
                 };
             }

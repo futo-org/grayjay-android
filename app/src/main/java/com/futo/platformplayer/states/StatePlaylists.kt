@@ -227,31 +227,50 @@ class StatePlaylists {
 
     private fun broadcastWatchLater(orderOnly: Boolean = false) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                if(orderOnly) listOf() else getWatchLater(),
-                if(orderOnly) mapOf() else _watchLaterAdds.all(),
-                if(orderOnly) mapOf() else _watchLaterRemovals.all(),
-                getWatchLaterLastReorderTime().toEpochSecond(),
-                _watchlistOrderStore.values.toList()));
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                        if (orderOnly) listOf() else getWatchLater(),
+                        if (orderOnly) mapOf() else _watchLaterAdds.all(),
+                        if (orderOnly) mapOf() else _watchLaterRemovals.all(),
+                        getWatchLaterLastReorderTime().toEpochSecond(),
+                        _watchlistOrderStore.values.toList()
+                    )
+                );
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later", e)
+            }
         };
     }
     private fun broadcastWatchLaterAddition(video: SerializedPlatformVideo, time: OffsetDateTime) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                listOf(video),
-                mapOf(Pair(video.url, time.toEpochSecond())),
-                mapOf(),
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                        listOf(video),
+                        mapOf(Pair(video.url, time.toEpochSecond())),
+                        mapOf(),
 
-            ))
+                        )
+                )
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later addition", e)
+            }
         };
     }
     private fun broadcastWatchLaterRemoval(url: String, time: OffsetDateTime) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                listOf(),
-                mapOf(),
-                mapOf(Pair(url, time.toEpochSecond()))
-            ))
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                        listOf(),
+                        mapOf(),
+                        mapOf(Pair(url, time.toEpochSecond()))
+                    )
+                )
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later removal", e)
+            }
         };
     }
 
@@ -300,12 +319,14 @@ class StatePlaylists {
 
     private fun broadcastSyncPlaylist(playlist: Playlist){
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+            try {
                 Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
                 StateSync.instance.broadcastJsonData(
                     GJSyncOpcodes.syncPlaylists,
                     SyncPlaylistsPackage(listOf(playlist), mapOf())
                 );
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to broadcast sync playlist", e)
             }
         };
     }
@@ -319,12 +340,14 @@ class StatePlaylists {
             _playlistRemoved.setAndSave(playlist.id, OffsetDateTime.now());
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                try {
                     Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
                     StateSync.instance.broadcastJsonData(
                         GJSyncOpcodes.syncPlaylists,
                         SyncPlaylistsPackage(listOf(), mapOf(Pair(playlist.id, OffsetDateTime.now().toEpochSecond())))
                     );
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to broadcast sync playlists", e)
                 }
             };
         }

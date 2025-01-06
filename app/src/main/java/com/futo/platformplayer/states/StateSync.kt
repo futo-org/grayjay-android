@@ -65,6 +65,12 @@ class StateSync {
     val deviceRemoved: Event1<String> = Event1()
     val deviceUpdatedOrAdded: Event2<String, SyncSession> = Event2()
 
+    fun hasAuthorizedDevice(): Boolean {
+        synchronized(_sessions) {
+            return _sessions.any{ it.value.connected && it.value.isAuthorized };
+        }
+    }
+
     fun start() {
         if (_started) {
             Logger.i(TAG, "Already started.")
@@ -216,6 +222,11 @@ class StateSync {
             return _sessions.values.toList()
         };
     }
+    fun getAuthorizedSessions(): List<SyncSession> {
+        return synchronized(_sessions) {
+            return _sessions.values.filter { it.isAuthorized }.toList()
+        };
+    }
 
     fun getSyncSessionData(key: String): SyncSessionData {
         return _syncSessionData.get(key) ?: SyncSessionData(key);
@@ -349,8 +360,12 @@ class StateSync {
                             scope.launch(Dispatchers.Main) {
                                 UIDialogs.showConfirmationDialog(activity, "Allow connection from ${remotePublicKey}?", action = {
                                     scope.launch(Dispatchers.IO) {
-                                        session!!.authorize(s)
-                                        Logger.i(TAG, "Connection authorized for ${remotePublicKey} by confirmation")
+                                        try {
+                                            session!!.authorize(s)
+                                            Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
+                                        } catch (e: Throwable) {
+                                            Logger.e(TAG, "Failed to send authorize", e)
+                                        }
                                     }
                                 }, cancelAction = {
                                     scope.launch(Dispatchers.IO) {
@@ -404,11 +419,9 @@ class StateSync {
         broadcast(opcode, subOpcode, data.toByteArray(Charsets.UTF_8));
     }
     fun broadcast(opcode: UByte, subOpcode: UByte, data: ByteArray) {
-        for(session in getSessions()) {
+        for(session in getAuthorizedSessions()) {
             try {
-                if (session.isAuthorized && session.connected) {
-                    session.send(opcode, subOpcode, data);
-                }
+                session.send(opcode, subOpcode, data);
             }
             catch(ex: Exception) {
                 Logger.w(TAG, "Failed to broadcast (opcode = ${opcode}, subOpcode = ${subOpcode}) to ${session.remotePublicKey}: ${ex.message}}", ex);
@@ -448,17 +461,6 @@ class StateSync {
 
         session.startAsInitiator(deviceInfo.publicKey)
         return session
-    }
-
-    fun hasAtLeastOneDevice(): Boolean {
-        synchronized(_authorizedDevices) {
-            return _authorizedDevices.values.isNotEmpty()
-        }
-    }
-    fun hasAtLeastOneOnlineDevice(): Boolean {
-        synchronized(_sessions) {
-            return _sessions.any{ it.value.connected && it.value.isAuthorized };
-        }
     }
 
     fun getAll(): List<String> {
