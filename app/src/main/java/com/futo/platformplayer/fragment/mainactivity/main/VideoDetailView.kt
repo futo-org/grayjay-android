@@ -1901,13 +1901,35 @@ class VideoDetailView : ConstraintLayout {
         return super.onInterceptTouchEvent(ev);
     }
 
-
     //Actions
     private fun showVideoSettings() {
         Logger.i(TAG, "showVideoSettings")
         _overlay_quality_selector?.selectOption("video", _lastVideoSource);
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
+
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+
+            val videoTracks =
+                _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
+
+            var selectedQuality: Format? = null
+
+            if (videoTracks != null) {
+                for (i in 0 until videoTracks.mediaTrackGroup.length) {
+                    if (videoTracks.mediaTrackGroup.getFormat(i).height == _player.targetTrackVideoHeight) {
+                        selectedQuality = videoTracks.mediaTrackGroup.getFormat(i)
+                    }
+                }
+            }
+
+            if (selectedQuality != null) {
+                _overlay_quality_selector?.selectOption("video", selectedQuality)
+            } else {
+                _overlay_quality_selector?.selectOption("video", "auto")
+            }
+        }
+
         val currentPlaybackRate = (if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()) ?: 1.0
         _overlay_quality_selector?.groupItems?.firstOrNull { it is SlideUpMenuButtonList && it.id == "playback_rate" }?.let {
             (it as SlideUpMenuButtonList).setSelected(currentPlaybackRate.toString())
@@ -2081,17 +2103,15 @@ class VideoDetailView : ConstraintLayout {
                                 call = { handleSelectSubtitleTrack(it) })
                         }.toList().toTypedArray())
             else null,
-            if(liveStreamVideoFormats?.isEmpty() == false)
-                SlideUpMenuGroup(this.context, context.getString(R.string.stream_video), "video",
-                    *liveStreamVideoFormats
-                        .map {
-                            SlideUpMenuItem(this.context,
-                                R.drawable.ic_movie,
-                                it.label ?: it.containerMimeType ?: it.bitrate.toString(),
-                                "${it.width}x${it.height}",
-                                tag = it,
-                                call = { _player.selectVideoTrack(it.height) });
-                        }.toList().toTypedArray())
+            if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
+                this.context, context.getString(R.string.stream_video), "video", (listOf(
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { _player.selectVideoTrack(-1) })
+                ) + (liveStreamVideoFormats.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label
+                        ?: it.containerMimeType
+                        ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { _player.selectVideoTrack(it.height) });
+                }))
+            )
             else null,
             if(liveStreamAudioFormats?.isEmpty() == false)
                 SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio",
