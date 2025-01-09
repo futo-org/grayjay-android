@@ -403,6 +403,8 @@
     <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
+    <string name="seek_offset">Seek duration</string>
+    <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
     <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="subscription_group_menu">Groups</string>
@@ -1025,6 +1027,14 @@
         <item>Within 10 seconds of loss</item>
         <item>Within 30 seconds of loss</item>
         <item>Always</item>
+    </string-array>
+    <string-array name="seek_offset_duration">
+        <item>3 seconds</item>
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>20 seconds</item>
+        <item>30 seconds</item>
+        <item>60 seconds</item>
     </string-array>
     <string-array name="rotation_zone">
         <item>15</item>
