@@ -113,7 +113,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     var targetTrackVideoHeight = -1
         private set
-    var _targetTrackAudioBitrate = -1
+    private var _targetTrackAudioBitrate = -1
 
     private var _toResume = false;
 

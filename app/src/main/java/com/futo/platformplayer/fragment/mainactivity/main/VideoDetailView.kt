@@ -171,7 +171,6 @@ import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.roundToLong
 
 @UnstableApi
@@ -1923,9 +1922,19 @@ class VideoDetailView : ConstraintLayout {
                 }
             }
 
+            var videoMenuGroup: SlideUpMenuGroup? = null
+            for (view in _overlay_quality_selector!!.groupItems) {
+                if (view is SlideUpMenuGroup && view.groupTag == "video") {
+                    videoMenuGroup = view
+                }
+            }
+
             if (selectedQuality != null) {
+                videoMenuGroup?.getItem("auto")?.setSubText("")
                 _overlay_quality_selector?.selectOption("video", selectedQuality)
             } else {
+                videoMenuGroup?.getItem("auto")
+                    ?.setSubText("${_player.exoPlayer?.player?.videoFormat?.width}x${_player.exoPlayer?.player?.videoFormat?.height}")
                 _overlay_quality_selector?.selectOption("video", "auto")
             }
         }
