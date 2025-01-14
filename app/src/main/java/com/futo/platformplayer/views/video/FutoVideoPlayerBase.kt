@@ -298,6 +298,12 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
         }
 
+        builder = if (isAudioMode) {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+        } else {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
+        }
+
         val trackSelector = exoPlayer?.player?.trackSelector;
         if(trackSelector != null) {
             trackSelector.parameters = builder.build();
@@ -737,6 +743,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val sourceAudio = _lastAudioMediaSource;
         val sourceSubs = _lastSubtitleMediaSource;
 
+        updateTrackSelector()
 
         beforeSourceChanged();
 

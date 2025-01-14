@@ -870,20 +870,18 @@ class VideoDetailView : ConstraintLayout {
                     }
                     _slideUpOverlay?.hide();
                 } else null,
-            if(!isLimitedVersion)
-                RoundButton(context, R.drawable.ic_screen_share, context.getString(R.string.background), TAG_BACKGROUND) {
-                    if(!allowBackground) {
-                        _player.switchToAudioMode();
-                        allowBackground = true;
-                        it.text.text = resources.getString(R.string.background_revert);
-                    }
-                    else {
-                        _player.switchToVideoMode();
-                        allowBackground = false;
-                        it.text.text = resources.getString(R.string.background);
-                    }
-                    _slideUpOverlay?.hide();
+            if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (allowBackground) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
+                if (!allowBackground) {
+                    _player.switchToAudioMode();
+                    allowBackground = true;
+                    it.text.text = resources.getString(R.string.background_revert);
+                } else {
+                    _player.switchToVideoMode();
+                    allowBackground = false;
+                    it.text.text = resources.getString(R.string.background);
                 }
+                _slideUpOverlay?.hide();
+            }
             else null,
             if(!isLimitedVersion)
                 RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
