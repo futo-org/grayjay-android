@@ -400,7 +400,7 @@
     <string name="allow_under_cutout_description">Allow video to go underneath the screen cutout in full screen.\nMay require restart</string>
     <string name="autoplay">Enable autoplay by default</string>
     <string name="autoplay_description">Autoplay will be enabled by default whenever you watch a video</string>
-    <string name="allow_full_screen_portrait">Allow full-screen portrait</string>
+    <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
