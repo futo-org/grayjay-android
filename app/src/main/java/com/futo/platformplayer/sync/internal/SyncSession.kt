@@ -398,7 +398,6 @@ class SyncSession : IAuthorizable {
         }
     }
 
-
     inline fun <reified T> sendJsonData(subOpcode: UByte, data: T) {
         send(Opcode.DATA.value, subOpcode, Json.encodeToString<T>(data));
     }
@@ -409,12 +408,29 @@ class SyncSession : IAuthorizable {
         send(opcode, subOpcode, data.toByteArray(Charsets.UTF_8));
     }
     fun send(opcode: UByte, subOpcode: UByte, data: ByteArray) {
-        val sock = _socketSessions.firstOrNull();
-        if(sock != null){
-            sock.send(opcode, subOpcode, ByteBuffer.wrap(data));
+        val socketSessions = synchronized(_socketSessions) {
+            _socketSessions.toList()
         }
-        else
-            throw IllegalStateException("Session has no active sockets");
+
+        if (socketSessions.isEmpty()) {
+            Logger.v(TAG, "Packet was not sent (opcode = ${opcode}, subOpcode = ${subOpcode}) due to no connected sockets")
+            return
+        }
+
+        var sent = false
+        for (socketSession in socketSessions) {
+            try {
+                socketSession.send(opcode, subOpcode, ByteBuffer.wrap(data))
+                sent = true
+                break
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Packet failed to send (opcode = ${opcode}, subOpcode = ${subOpcode})", e)
+            }
+        }
+
+        if (!sent) {
+            throw Exception("Packet was not sent (opcode = ${opcode}, subOpcode = ${subOpcode}) due to send errors and no remaining candidates")
+        }
     }
 
     private companion object {

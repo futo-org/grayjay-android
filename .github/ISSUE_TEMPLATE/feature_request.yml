@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest a new feature or other enhancement.
-labels: ["enhancement", "new"]
+labels: ["Enhancement"]
 body:
   - type: markdown
     attributes:
@@ -8,8 +8,6 @@ body:
         # Thank you for opening a feature request.
 
         The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application
-
-        [External Contributions are closed at this time](https://github.com/tom-futo/grayjay-android/blob/master/CONTRIBUTION.md#contributing-to-core)
 
         For discussion related to enhancements, please see: [The FUTO Grayjay Zulip Channel](https://chat.futo.org/#narrow/stream/46-Grayjay)
 
@@ -55,4 +53,4 @@ body:
     attributes:
       value: |
         **Note:** If the submit button is disabled and you have filled out all required fields, please check that you did not forget a **Title** for the issue.
-        
+

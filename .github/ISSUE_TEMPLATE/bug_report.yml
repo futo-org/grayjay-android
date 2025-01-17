@@ -1,19 +1,19 @@
 name: Bug Report
 description: Let us know about an unexpected error, a crash, or an incorrect behavior.
-labels: ["bug", "new"]
+labels: ["Bug"]
 body:
   - type: markdown
     attributes:
       value: |
         # Thank you for taking the time to fill out this bug report.
-        
+
         The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application
 
         For general usage questions, please see: [The Official FUTO Grayjay Zulip Channel](https://chat.futo.org/#narrow/stream/46-Grayjay)
 
         ## Filing a bug report
 
-        To fix your issues faster, we need clear reproduction cases - ideally allowing us to make it happen locally. 
+        To fix your issues faster, we need clear reproduction cases - ideally allowing us to make it happen locally.
         * Please include all needed context. For example, Device, OS, Application, your Grayjay Configurations and Plugin versioning info.
         * if you've found out a particular series of UI interactions can introduce buggy behavior, please label those steps 1-n with markdown
 
@@ -41,18 +41,21 @@ body:
       label: What plugins are you seeing the problem on?
       multiple: true
       options:
-        - All
-        - Youtube
-        - BiliBili (CN)
-        - Twitch
-        - Odysee
-        - Rumble
-        - Kick
-        - PeerTube
-        - Patreon
-        - Nebula
-        - SoundCloud
-        - Other
+        - "All"
+        - "Youtube"
+        - "Odysee"
+        - "Rumble"
+        - "Kick"
+        - "Twitch"
+        - "PeerTube"
+        - "Patreon"
+        - "Nebula"
+        - "BiliBili (CN)"
+        - "Bitchute"
+        - "SoundCloud"
+        - "Dailymotion"
+        - "Apple Podcasts"
+        - "Other"
     validations:
       required: true
 
@@ -71,6 +74,17 @@ body:
       - label: While logged in
       - label: While logged out
       - label: N/A
+
+  - type: dropdown
+    id: vpn
+    attributes:
+      label: Are you using a VPN?
+      multiple: false
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
 
   - type: textarea
     id: logs

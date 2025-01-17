@@ -8,6 +8,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.states.StatePlaylists.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
@@ -89,12 +90,14 @@ class StateHistory {
                 if(isUserAction && _lastHistoryBroadcast != historyBroadcastSig) {
                     _lastHistoryBroadcast = historyBroadcastSig;
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                        if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                        try {
                             Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
                             StateSync.instance.broadcastJsonData(
                                 GJSyncOpcodes.syncHistory,
                                 listOf(historyVideo)
                             );
+                        } catch (e: Throwable) {
+                            Logger.e(StatePlaylists.TAG, "Failed to broadcast sync history", e)
                         }
                     };
                 }

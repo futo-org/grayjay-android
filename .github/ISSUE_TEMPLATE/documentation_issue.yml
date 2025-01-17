@@ -1,13 +1,13 @@
 name: Documentation Issue
 description: Report an issue or suggest a change in the documentation.
-labels: ["documentation", "new"]
+labels: ["Documentation"]
 body:
   - type: markdown
     attributes:
       value: |
         # Thank you for opening a documentation change request.
 
-        The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application. Use the `Documentation` issue type to report problems with the documentation in our code repositories, inside the application, or on [https://grayjay.app](https://grayjay.app) 
+        The [grayjay-android](https://github.com/futo-org/grayjay-android) issue tracker is reserved for issues relating to the Grayjay Android Application. Use the `Documentation` issue type to report problems with the documentation in our code repositories, inside the application, or on [https://grayjay.app](https://grayjay.app)
         Technical writers monitor this issue type, so report Grayjay bugs or feature requests with the `Bug report` or `Feature Request` issue types instead to get engineering attention.
 
         For general usage questions, please see: [The Official FUTO Grayjay Zulip Channel](https://chat.futo.org/#narrow/stream/46-Grayjay)
