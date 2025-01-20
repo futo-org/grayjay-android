@@ -6,8 +6,8 @@ sign_scripts() {
   local plugin_dir=$1
 
   if [[ -d "$plugin_dir" ]]; then
-    script_file=$(find "$plugin_dir" -maxdepth 2 -name '*Script.js')
-    config_file=$(find "$plugin_dir" -maxdepth 2 -name '*Config.json')
+    script_file=$(find "$plugin_dir" -maxdepth 2 -name '*Script.js' | head -n 1)
+    config_file=$(find "$plugin_dir" -maxdepth 2 -name '*Config.json' | head -n 1)
     sign_script="$plugin_dir/sign.sh"
     
     if [[ -f "$sign_script" && -n "$script_file" && -n "$config_file" ]]; then
