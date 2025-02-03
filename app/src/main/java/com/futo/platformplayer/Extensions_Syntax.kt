@@ -33,10 +33,10 @@ fun Boolean?.toYesNo(): String {
 fun InetAddress?.toUrlAddress(): String {
     return when (this) {
         is Inet6Address -> {
-            "[${toString()}]"
+            "[${hostAddress}]"
         }
         is Inet4Address -> {
-            toString()
+            hostAddress
         }
         else -> {
             throw Exception("Invalid address type")
