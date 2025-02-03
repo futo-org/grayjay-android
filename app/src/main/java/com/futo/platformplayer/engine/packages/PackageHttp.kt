@@ -21,6 +21,7 @@ import com.futo.platformplayer.engine.internal.IV8Convertable
 import com.futo.platformplayer.engine.internal.V8BindObject
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
@@ -176,8 +177,6 @@ class PackageHttp: V8Package {
             obj.set("url", url);
             obj.set("code", code);
             if(body != null) {
-                val buffer = runtime.createV8ValueArrayBuffer(body.size);
-                buffer.fromBytes(body);
                 obj.set("body", body);
             }
             obj.set("headers", headers);
