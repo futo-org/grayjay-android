@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
 open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
@@ -17,6 +18,7 @@ open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
     final override val viewCount: Long;
 
     final override val isLive: Boolean;
+    final override val isShort: Boolean;
 
     constructor(config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
         val contextName = "PlatformVideo";
@@ -26,5 +28,6 @@ open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
         duration = _content.getOrThrow<Int>(config, "duration", contextName).toLong();
         viewCount = _content.getOrThrow(config, "viewCount", contextName);
         isLive = _content.getOrThrow(config, "isLive", contextName);
+        isShort = _content.getOrDefault(config, "isShort", contextName, false) ?: false;
     }
 }

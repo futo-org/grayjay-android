@@ -310,6 +310,10 @@ class VideoDownload {
                 if(vsource == null)
                     vsource = VideoHelper.selectBestVideoSource(videoSources, targetPixelCount!!.toInt(), arrayOf())
                 //    ?: throw IllegalStateException("Could not find a valid video source for video");
+                if(vsource is JSSource) {
+                    this.hasVideoRequestExecutor = this.hasVideoRequestExecutor || vsource.hasRequestExecutor;
+                    this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (vsource is JSDashManifestRawSource && vsource.hasGenerate);
+                }
 
                 if(vsource == null) {
                     videoSource = null;
@@ -361,6 +365,12 @@ class VideoDownload {
                     asource = VideoHelper.selectBestAudioSource(audioSources, arrayOf(), null, targetBitrate)
                         ?: if(videoSource != null ) null
                         else throw DownloadException("Could not find a valid video or audio source for download")
+
+                if(asource is JSSource) {
+                    this.hasVideoRequestExecutor = this.hasVideoRequestExecutor || asource.hasRequestExecutor;
+                    this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (asource is JSDashManifestRawSource && asource.hasGenerate);
+                }
+
                 if(asource == null) {
                     audioSource = null;
                     if(!original.video.isUnMuxed || original.video.videoSources.size == 0)

@@ -43,7 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
-class ChannelContentsFragment : Fragment(), IChannelTabFragment {
+class ChannelContentsFragment(private val subType: String? = null) : Fragment(), IChannelTabFragment {
     private var _recyclerResults: RecyclerView? = null;
     private var _glmVideo: GridLayoutManager? = null;
     private var _loading = false;
@@ -73,9 +73,12 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
         if (lastPolycentricProfile != null)
             pager= StatePolycentric.instance.getChannelContent(lifecycleScope, lastPolycentricProfile);
 
-        if(pager == null)
-            pager = StatePlatform.instance.getChannelContent(channel.url);
-
+        if(pager == null) {
+            if(subType != null)
+                pager = StatePlatform.instance.getChannelContent(channel.url, subType);
+            else
+                pager = StatePlatform.instance.getChannelContent(channel.url);
+        }
         return pager;
     }
 
@@ -367,6 +370,6 @@ class ChannelContentsFragment : Fragment(), IChannelTabFragment {
 
     companion object {
         val TAG = "VideoListFragment";
-        fun newInstance() = ChannelContentsFragment().apply { }
+        fun newInstance(subType: String? = null) = ChannelContentsFragment(subType).apply { }
     }
 }

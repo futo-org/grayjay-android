@@ -13,4 +13,6 @@ interface IPlatformVideo : IPlatformContent {
     val viewCount: Long;
 
     val isLive : Boolean;
+
+    val isShort: Boolean;
 }

@@ -151,6 +151,7 @@ class TutorialFragment : MainFragment() {
         override val rating: IRating = RatingLikes(-1)
         override val viewCount: Long = -1
         override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration, width, height)
+        override val isShort: Boolean = false;
         override fun getComments(client: IPlatformClient): IPager<IPlatformComment> {
             return EmptyPager()
         }

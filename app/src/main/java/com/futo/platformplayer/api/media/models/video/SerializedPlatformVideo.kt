@@ -25,6 +25,7 @@ open class SerializedPlatformVideo(
 
     override val duration: Long,
     override val viewCount: Long,
+    override val isShort: Boolean = false
 ) : IPlatformVideo, SerializedPlatformContent {
     override val contentType: ContentType = ContentType.MEDIA;
 

@@ -1,5 +1,7 @@
 package com.futo.platformplayer.engine.packages
 
+import android.media.MediaCodec
+import android.media.MediaCodecList
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
 import com.caoccao.javet.utils.JavetResourceUtils
@@ -187,7 +189,44 @@ class PackageBridge : V8Package {
         return false;
     }
 
+    @V8Function
+    fun getHardwareCodecs(): List<String>{
+        return getSupportedHardwareMediaCodecs();
+    }
+
+
     companion object {
         private const val TAG = "PackageBridge";
+
+        private var _mediaCodecList: MutableList<String> = mutableListOf();
+        private var _mediaCodecListHardware: MutableList<String> = mutableListOf();
+
+        fun getSupportedMediaCodecs(): List<String>{
+            synchronized(_mediaCodecList) {
+                if(_mediaCodecList.size <= 0)
+                    updateMediaCodecList();
+                return _mediaCodecList;
+            }
+        }
+        fun getSupportedHardwareMediaCodecs(): List<String>{
+            synchronized(_mediaCodecList) {
+                if(_mediaCodecList.size <= 0)
+                    updateMediaCodecList();
+                return _mediaCodecListHardware;
+            }
+        }
+        private fun updateMediaCodecList() {
+            _mediaCodecList.clear();
+            _mediaCodecListHardware.clear();
+            for(codec in MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos) {
+                if(!codec.isEncoder) {
+                    _mediaCodecList.add(codec.canonicalName);
+                    if (codec.isHardwareAccelerated)
+                        _mediaCodecListHardware.add(codec.canonicalName);
+                }
+            }
+        }
+
+
     }
 }

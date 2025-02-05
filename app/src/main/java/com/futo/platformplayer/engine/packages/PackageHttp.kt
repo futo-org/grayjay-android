@@ -25,6 +25,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
+import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.ForkJoinTask
+import kotlin.concurrent.thread
 import kotlin.streams.asSequence
 
 class PackageHttp: V8Package {
@@ -43,6 +46,9 @@ class PackageHttp: V8Package {
     override val name: String get() = "Http";
     override val variableName: String get() = "http";
 
+    private var _batchPoolLock: Any = Any();
+    private var _batchPool: ForkJoinPool? = null;
+
 
     constructor(plugin: V8Plugin, config: IV8PluginConfig): super(plugin) {
         _config = config;
@@ -50,6 +56,37 @@ class PackageHttp: V8Package {
         _clientAuth = plugin.httpClientAuth;
         _packageClient = PackageHttpClient(this, _client);
         _packageClientAuth = PackageHttpClient(this, _clientAuth);
+    }
+
+
+    /*
+    Automatically adjusting threadpool dedicated per PackageHttp for batch requests.
+     */
+    private fun <T, R> autoParallelPool(data: List<T>, parallelism: Int, handle: (T)->R): List<Pair<R?, Throwable?>> {
+        synchronized(_batchPoolLock) {
+            val threadsToUse = if (parallelism <= 0) data.size else Math.min(parallelism, data.size);
+            if(_batchPool == null)
+                _batchPool = ForkJoinPool(threadsToUse);
+            var pool = _batchPool ?: return listOf();
+            if(pool.poolSize < threadsToUse) { //Resize pool
+                pool.shutdown();
+                _batchPool = ForkJoinPool(threadsToUse);
+                pool = _batchPool ?: return listOf();
+            }
+
+            val resultTasks = mutableListOf<ForkJoinTask<Pair<R?, Throwable?>>>();
+            for(item in data){
+                resultTasks.add(pool.submit<Pair<R?, Throwable?>> {
+                      try {
+                          return@submit Pair<R?, Throwable?>(handle(item), null);
+                      }
+                      catch(ex: Throwable) {
+                          return@submit Pair<R?, Throwable?>(null, ex);
+                      }
+                });
+            }
+            return resultTasks.map { it.join() };
+        }
     }
 
     @V8Function
@@ -235,16 +272,19 @@ class PackageHttp: V8Package {
         //Finalizer
         @V8Function
         fun execute(): List<IBridgeHttpResponse?> {
-            return _reqs.parallelStream().map {
+            return _package.autoParallelPool(_reqs, -1) {
                 if(it.second.method == "DUMMY")
-                    return@map null;
+                    return@autoParallelPool null;
                 if(it.second.body != null)
-                    return@map it.first.requestWithBody(it.second.method, it.second.url, it.second.body!!, it.second.headers, it.second.respType);
+                    return@autoParallelPool it.first.requestWithBody(it.second.method, it.second.url, it.second.body!!, it.second.headers, it.second.respType);
                 else
-                    return@map it.first.request(it.second.method, it.second.url, it.second.headers, it.second.respType);
-            }
-                .asSequence()
-                .toList();
+                    return@autoParallelPool it.first.request(it.second.method, it.second.url, it.second.headers, it.second.respType);
+            }.map {
+                if(it.second != null)
+                    throw it.second!!;
+                else
+                    return@map it.first;
+            }.toList();
         }
     }
 
@@ -438,11 +478,8 @@ class PackageHttp: V8Package {
             else {
                 headers?.forEach { (header, values) ->
                     val lowerCaseHeader = header.lowercase()
-                    if(lowerCaseHeader == "set-cookie") {
-                        result[lowerCaseHeader] = values.filter{
-                            !it.lowercase().contains("httponly")
-                        };
-                    }
+                    if(lowerCaseHeader == "set-cookie" && !values.any { it.lowercase().contains("httponly") })
+                        result[lowerCaseHeader] = values;
                     else
                         result[lowerCaseHeader] = values;
                 }

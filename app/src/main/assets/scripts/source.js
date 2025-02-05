@@ -11,7 +11,8 @@ let Type = {
         Streams: "STREAMS",
         Mixed: "MIXED",
         Live: "LIVE",
-        Subscriptions: "SUBSCRIPTIONS"
+        Subscriptions: "SUBSCRIPTIONS",
+        Shorts: "SHORTS"
     },
     Order: {
         Chronological: "CHRONOLOGICAL"
@@ -244,6 +245,7 @@ class PlatformVideo extends PlatformContent {
         this.viewCount = obj.viewCount ?? -1; //Long
 
         this.isLive = obj.isLive ?? false; //Boolean
+        this.isShort = !!obj.isShort ?? false;
     }
 }
 class PlatformVideoDetails extends PlatformVideo {
@@ -260,6 +262,7 @@ class PlatformVideoDetails extends PlatformVideo {
 
         this.rating = obj.rating ?? null; //IRating
         this.subtitles = obj.subtitles ?? [];
+        this.isShort = !!obj.isShort ?? false;
     }
 }
 

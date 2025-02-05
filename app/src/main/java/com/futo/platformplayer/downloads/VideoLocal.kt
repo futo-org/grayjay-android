@@ -70,6 +70,8 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
 
     override val isLive: Boolean get() = videoSerialized.isLive;
 
+    override val isShort: Boolean get() = videoSerialized.isShort;
+
     //TODO: Offline subtitles
     override val subtitles: List<ISubtitleSource> = listOf();
 

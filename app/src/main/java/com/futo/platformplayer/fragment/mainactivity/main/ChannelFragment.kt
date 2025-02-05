@@ -25,6 +25,7 @@ import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
+import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
@@ -456,6 +457,12 @@ class ChannelFragment : MainFragment() {
                         })
 
                         _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons)
+                    }
+                    if(plugin != null && plugin.capabilities.hasGetChannelCapabilities) {
+                        if(plugin.getChannelCapabilities()?.types?.contains(ResultCapabilities.TYPE_SHORTS) ?: false &&
+                            !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(ChannelTab.SHORTS.ordinal.toLong())) {
+                            (_viewPager.adapter as ChannelViewPagerAdapter).insert(1, ChannelTab.SHORTS);
+                        }
                     }
                 }
             }
