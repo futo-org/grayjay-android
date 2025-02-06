@@ -23,6 +23,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.stores.v2.IStoreItem
 import java.io.File
 import java.time.OffsetDateTime
@@ -75,11 +76,16 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
     //TODO: Offline subtitles
     override val subtitles: List<ISubtitleSource> = listOf();
 
-    constructor(video: SerializedPlatformVideoDetails) {
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    var downloadDate: OffsetDateTime? = null;
+
+    constructor(video: SerializedPlatformVideoDetails, downloadDate: OffsetDateTime? = null) {
         this.videoSerialized = video;
+        this.downloadDate = downloadDate;
     }
     constructor(video: IPlatformVideoDetails, subtitleSources: List<SubtitleRawSource>) {
         this.videoSerialized = SerializedPlatformVideoDetails.fromVideo(video, subtitleSources);
+        downloadDate = OffsetDateTime.now();
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? = null;

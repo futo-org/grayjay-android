@@ -4,8 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
@@ -25,6 +30,7 @@ import com.futo.platformplayer.views.items.PlaylistDownloadItem
 import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
 
 class DownloadsFragment : MainFragment() {
     private val TAG = "DownloadsFragment";
@@ -92,7 +98,11 @@ class DownloadsFragment : MainFragment() {
 
         private val _listDownloadedHeader: LinearLayout;
         private val _listDownloadedMeta: TextView;
+        private val _listDownloadSearch: EditText;
         private val _listDownloaded: AnyInsertedAdapterView<VideoLocal, VideoDownloadViewHolder>;
+
+        private var lastDownloads: List<VideoLocal>? = null;
+        private var ordering: String? = "nameAsc";
 
         constructor(frag: DownloadsFragment, inflater: LayoutInflater): super(frag.requireContext()) {
             inflater.inflate(R.layout.fragment_downloads, this);
@@ -104,6 +114,7 @@ class DownloadsFragment : MainFragment() {
 
             _listActiveDownloadsContainer = findViewById(R.id.downloads_active_downloads_container);
             _listActiveDownloadsMeta = findViewById(R.id.downloads_active_downloads_meta);
+            _listDownloadSearch = findViewById(R.id.downloads_search);
             _listActiveDownloads = findViewById(R.id.downloads_active_downloads_list);
 
             _listPlaylistsContainer = findViewById(R.id.downloads_playlist_container);
@@ -112,6 +123,30 @@ class DownloadsFragment : MainFragment() {
 
             _listDownloadedHeader = findViewById(R.id.downloads_videos_header);
             _listDownloadedMeta = findViewById(R.id.downloads_videos_meta);
+
+            _listDownloadSearch.addTextChangedListener {
+                updateContentFilters();
+            }
+            val spinnerSortBy: Spinner = findViewById(R.id.spinner_sortby);
+            spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.downloads_sortby_array)).also {
+                it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
+            };
+            spinnerSortBy.setSelection(0);
+            spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                    when(pos) {
+                        0 -> ordering = "nameAsc"
+                        1 -> ordering = "nameDesc"
+                        2 -> ordering = "downloadDateAsc"
+                        3 -> ordering = "downloadDateDesc"
+                        4 -> ordering = "releasedAsc"
+                        5 -> ordering = "releasedDesc"
+                        else -> ordering = null
+                    }
+                    updateContentFilters()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            };
 
             _listDownloaded = findViewById<RecyclerView>(R.id.list_downloaded)
                 .asAnyWithTop(findViewById(R.id.downloads_top)) {
@@ -124,7 +159,6 @@ class DownloadsFragment : MainFragment() {
 
             reloadUI();
         }
-
 
         fun reloadUI() {
             val usage = StateDownloads.instance.getTotalUsage(true);
@@ -184,7 +218,29 @@ class DownloadsFragment : MainFragment() {
                 _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()})";
             }
 
-            _listDownloaded.setData(downloaded);
+            lastDownloads = downloaded;
+            _listDownloaded.setData(filterDownloads(downloaded));
+        }
+        fun updateContentFilters(){
+            val toFilter = lastDownloads ?: return;
+            _listDownloaded.setData(filterDownloads(toFilter));
+        }
+        fun filterDownloads(vids: List<VideoLocal>): List<VideoLocal>{
+            var vidsToReturn = vids;
+            if(!_listDownloadSearch.text.isNullOrEmpty())
+                vidsToReturn = vids.filter { it.name.contains(_listDownloadSearch.text, true) };
+            if(!ordering.isNullOrEmpty()) {
+                vidsToReturn = when(ordering){
+                    "downloadDateAsc" -> vidsToReturn.sortedBy { it.downloadDate ?: OffsetDateTime.MAX };
+                    "downloadDateDesc" -> vidsToReturn.sortedByDescending { it.downloadDate ?: OffsetDateTime.MIN };
+                    "nameAsc" -> vidsToReturn.sortedBy { it.name }
+                    "nameDesc" -> vidsToReturn.sortedByDescending { it.name }
+                    "releasedAsc" -> vidsToReturn.sortedBy { it.datetime ?: OffsetDateTime.MAX }
+                    "releasedDesc" -> vidsToReturn.sortedByDescending { it.datetime ?: OffsetDateTime.MIN }
+                    else -> vidsToReturn
+                }
+            }
+            return vidsToReturn;
         }
     }
 }

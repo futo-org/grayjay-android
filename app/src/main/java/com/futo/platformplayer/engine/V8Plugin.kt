@@ -94,7 +94,11 @@ class V8Plugin {
         withDependency(PackageBridge(this, config));
 
         for(pack in config.packages)
-            withDependency(getPackage(pack));
+            withDependency(getPackage(pack)!!);
+        for(pack in config.packagesOptional)
+            getPackage(pack, true)?.let {
+                withDependency(it);
+            }
     }
 
     fun changeAllowDevSubmit(isAllowed: Boolean) {
@@ -254,13 +258,13 @@ class V8Plugin {
         }
     }
 
-    private fun getPackage(packageName: String): V8Package {
+    private fun getPackage(packageName: String, allowNull: Boolean = false): V8Package? {
         //TODO: Auto get all package types?
         return when(packageName) {
             "DOMParser" -> PackageDOMParser(this)
             "Http" -> PackageHttp(this, config)
             "Utilities" -> PackageUtilities(this, config)
-            else -> throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
+            else -> if(allowNull) null else throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
         };
     }
 

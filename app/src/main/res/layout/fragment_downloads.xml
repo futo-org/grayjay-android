@@ -99,7 +99,6 @@
             </LinearLayout>
         </LinearLayout>
 
-
         <!--Playlists-->
         <LinearLayout
             android:id="@+id/downloads_playlist_container"
@@ -162,6 +161,37 @@
                 android:fontFamily="@font/inter_extra_light"
                 android:textColor="#ACACAC"
                 tools:text="(12 videos)" />
+        </LinearLayout>
+        <EditText
+            android:id="@+id/downloads_search"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/background_button_round"
+            android:hint="Seach.." />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14dp"
+                android:textColor="@color/gray_ac"
+                android:fontFamily="@font/inter_light"
+                android:text="@string/sort_by"
+                android:paddingStart="20dp" />
+
+            <Spinner
+                android:id="@+id/spinner_sortby"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp" />
         </LinearLayout>
     </LinearLayout>
 

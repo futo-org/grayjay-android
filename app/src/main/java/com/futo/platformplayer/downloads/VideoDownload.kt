@@ -1092,7 +1092,7 @@ class VideoDownload {
             StateDownloads.instance.updateCachedVideo(existing);
         }
         else {
-            val newVideo = VideoLocal(videoDetails!!);
+            val newVideo = VideoLocal(videoDetails!!, OffsetDateTime.now());
             if(localVideoSource != null)
                 newVideo.videoSource.add(localVideoSource);
             if(localAudioSource != null)

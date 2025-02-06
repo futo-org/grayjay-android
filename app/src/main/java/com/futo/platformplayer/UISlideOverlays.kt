@@ -895,9 +895,9 @@ class UISlideOverlays {
                             "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
                             tag = "",
                             call = {
-                                StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
+                                if(StatePlaylists.instance.addToPlaylist(lastUpdated.id, video))
+                                    UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
-                                UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                             }))
                 );
             }
@@ -992,9 +992,9 @@ class UISlideOverlays {
                     "${playlist.videos.size} " + container.context.getString(R.string.videos),
                     tag = "",
                     call = {
-                        StatePlaylists.instance.addToPlaylist(playlist.id, video);
+                        if(StatePlaylists.instance.addToPlaylist(playlist.id, video))
+                            UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                         StateDownloads.instance.checkForOutdatedPlaylists();
-                        UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                     }));
             }
 
@@ -1020,9 +1020,9 @@ class UISlideOverlays {
                             "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
                             tag = "",
                             call = {
-                                StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
+                                if(StatePlaylists.instance.addToPlaylist(lastUpdated.id, video))
+                                    UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
-                                UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                             }))
                 );
             }
@@ -1072,9 +1072,9 @@ class UISlideOverlays {
                     "${playlist.videos.size} " + container.context.getString(R.string.videos),
                     tag = "",
                     call = {
-                        StatePlaylists.instance.addToPlaylist(playlist.id, video);
+                        if(StatePlaylists.instance.addToPlaylist(playlist.id, video))
+                            UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                         StateDownloads.instance.checkForOutdatedPlaylists();
-                        UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                     }));
             }
 

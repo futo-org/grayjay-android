@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -306,14 +307,19 @@ class StatePlaylists {
                 broadcastSyncPlaylist(playlist);
         }
     }
-    fun addToPlaylist(id: String, video: IPlatformVideo) {
+    fun addToPlaylist(id: String, video: IPlatformVideo): Boolean {
         synchronized(playlistStore) {
-            val playlist = getPlaylist(id) ?: return;
+            val playlist = getPlaylist(id) ?: return false;
+            if(!Settings.instance.other.playlistAllowDups && playlist.videos.any { it.url == video.url })
+                return false;
+
+
             playlist.videos.add(SerializedPlatformVideo.fromVideo(video));
             playlist.dateUpdate = OffsetDateTime.now();
             playlistStore.saveAsync(playlist, true);
 
             broadcastSyncPlaylist(playlist);
+            return true;
         }
     }
 

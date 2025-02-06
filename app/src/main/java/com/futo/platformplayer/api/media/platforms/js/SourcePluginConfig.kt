@@ -33,6 +33,7 @@ class SourcePluginConfig(
     override val allowEval: Boolean = false,
     override val allowUrls: List<String> = listOf(),
     override val packages: List<String> = listOf(),
+    override val packagesOptional: List<String> = listOf(),
 
     val settings: List<Setting> = listOf(),
 
@@ -100,6 +101,10 @@ class SourcePluginConfig(
         //All packages should already be allowed
         for(pack in newConfig.packages) {
             if(!packages.contains(pack))
+                return false;
+        }
+        for(pack in newConfig.packagesOptional) {
+            if(!packagesOptional.contains(pack))
                 return false;
         }
         //Developer Submit Url should be same or empty

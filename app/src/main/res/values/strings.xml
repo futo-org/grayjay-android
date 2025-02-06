@@ -427,6 +427,8 @@
     <string name="bypass_rotation_prevention">Bypass Rotation Prevention</string>
     <string name="playlist_delete_confirmation">Playlist Delete Confirmation</string>
     <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
+    <string name="playlist_allow_dups">Allow duplicate playlist videos</string>
+    <string name="playlist_allow_dups_description">Allow adding duplicate videos to playlists</string>
     <string name="enable_polycentric">Enable Polycentric</string>
     <string name="polycentric_local_cache">Enable Polycentric Local Caching</string>
     <string name="polycentric_local_cache_description">Caches polycentric results on-device to reduce load times, changing requires app reboot</string>
@@ -955,6 +957,14 @@
         <item>Views Descending</item>
         <item>Watchtime Ascending</item>
         <item>Watchtime Descending</item>
+    </string-array>
+    <string-array name="downloads_sortby_array">
+        <item>Name Ascending</item>
+        <item>Name Descending</item>
+        <item>Downloaded Ascending</item>
+        <item>Downloaded Descending</item>
+        <item>Released Ascending</item>
+        <item>Released Descending</item>
     </string-array>
     <string-array name="feed_style">
         <item>Preview</item>
