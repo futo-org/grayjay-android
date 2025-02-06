@@ -52,6 +52,7 @@ class SourcePluginConfig(
     var allowAllHttpHeaderAccess: Boolean = false,
     var maxDownloadParallelism: Int = 0,
     var reduceFunctionsInLimitedVersion: Boolean = false,
+    var changelog: HashMap<String, List<String>>? = null
 ) : IV8PluginConfig {
 
     val absoluteIconUrl: String? get() = resolveAbsoluteUrl(iconUrl, sourceUrl);
@@ -129,7 +130,7 @@ class SourcePluginConfig(
 
         val currentlyInstalledPlugin = StatePlugins.instance.getPlugin(id);
         if (currentlyInstalledPlugin != null) {
-            if (currentlyInstalledPlugin.config.scriptPublicKey != scriptPublicKey) {
+            if (currentlyInstalledPlugin.config.scriptPublicKey != scriptPublicKey && !currentlyInstalledPlugin.config.scriptPublicKey.isNullOrEmpty()) {
                 list.add(Pair(
                     "Different Author",
                     "This plugin was signed by a different author. Please ensure that this is correct and that the plugin was not provided by a malicious actor."));
@@ -176,6 +177,19 @@ class SourcePluginConfig(
         val uri = Uri.parse(url);
         val host = uri.host?.lowercase() ?: "";
         return _allowUrlsLower.any { it == host || (it.length > 0 && it[0] == '.' && host.matchesDomain(it)) };
+    }
+
+    fun getChangelogString(version: String): String?{
+        if(changelog == null || !changelog!!.containsKey(version))
+            return null;
+        val changelog = changelog!![version]!!;
+        if(changelog.size > 1) {
+            return "Changelog (${version})\n" + changelog.map { " - " + it.trim() }.joinToString("\n");
+        }
+        else if(changelog.size == 1) {
+            return "Changelog (${version})\n" + changelog[0].trim();
+        }
+        return null;
     }
 
     companion object {

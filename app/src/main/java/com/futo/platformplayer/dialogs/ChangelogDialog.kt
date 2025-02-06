@@ -1,37 +1,24 @@
 package com.futo.platformplayer.dialogs
 
 import android.app.AlertDialog
-import android.app.PendingIntent.*
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageInstaller
 import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
-import com.futo.platformplayer.receivers.InstallReceiver
 import com.futo.platformplayer.api.http.ManagedHttpClient
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
-import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateUpdate
-import kotlinx.coroutines.*
-import java.io.File
-import java.io.InputStream
 
-class ChangelogDialog(context: Context?) : AlertDialog(context) {
+class ChangelogDialog(context: Context?, val changelogs: Map<Int, String>? = null) : AlertDialog(context) {
     companion object {
         private val TAG = "ChangelogDialog";
     }
@@ -48,7 +35,11 @@ class ChangelogDialog(context: Context?) : AlertDialog(context) {
     private var _maxVersion: Int = 0;
     private var _managedHttpClient = ManagedHttpClient();
 
-    private val _taskDownloadChangelog = TaskHandler<Int, String?>(StateApp.instance.scopeGetter, { version -> StateUpdate.instance.downloadChangelog(_managedHttpClient, version) })
+    private val _taskDownloadChangelog = TaskHandler<Int, String?>(StateApp.instance.scopeGetter, { version -> if(changelogs == null)
+            StateUpdate.instance.downloadChangelog(_managedHttpClient, version)
+        else
+            changelogs[version]
+    })
         .success { setChangelog(it); }
         .exception<Throwable> {
             Logger.w(TAG, "Failed to load changelog.", it);
@@ -97,7 +88,7 @@ class ChangelogDialog(context: Context?) : AlertDialog(context) {
         setVersion(version);
 
         val currentVersion = BuildConfig.VERSION_CODE;
-        _buttonUpdate.visibility = if (currentVersion == _maxVersion) View.GONE else View.VISIBLE;
+        _buttonUpdate.visibility = if (currentVersion == _maxVersion || changelogs != null) View.GONE else View.VISIBLE;
     }
 
     private fun setVersion(version: Int) {

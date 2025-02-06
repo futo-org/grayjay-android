@@ -897,6 +897,7 @@ class UISlideOverlays {
                             call = {
                                 StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
+                                UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                             }))
                 );
             }
@@ -993,6 +994,7 @@ class UISlideOverlays {
                     call = {
                         StatePlaylists.instance.addToPlaylist(playlist.id, video);
                         StateDownloads.instance.checkForOutdatedPlaylists();
+                        UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                     }));
             }
 
@@ -1020,6 +1022,7 @@ class UISlideOverlays {
                             call = {
                                 StatePlaylists.instance.addToPlaylist(lastUpdated.id, video);
                                 StateDownloads.instance.checkForOutdatedPlaylists();
+                                UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
                             }))
                 );
             }
@@ -1040,7 +1043,9 @@ class UISlideOverlays {
                         StatePlayer.TYPE_WATCHLATER,
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
-                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true); }),
+                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true);
+                            UIDialogs.appToast("Added to watch later", false);
+                        }),
                     )
             );
 
@@ -1069,6 +1074,7 @@ class UISlideOverlays {
                     call = {
                         StatePlaylists.instance.addToPlaylist(playlist.id, video);
                         StateDownloads.instance.checkForOutdatedPlaylists();
+                        UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
                     }));
             }
 

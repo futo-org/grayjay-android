@@ -254,6 +254,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
         var progressBar: Boolean = true;
 
+        @FormField(R.string.hide_hidden_from_search, FieldForm.TOGGLE, R.string.hide_hidden_from_search_description, 7)
+        var hidefromSearch: Boolean = false;
+
 
         fun getSearchFeedStyle(): FeedStyle {
             if(searchFeedStyle == 0)

@@ -55,7 +55,7 @@ class ToastView : LinearLayout {
             translationY = 20.dp(context.resources).toFloat();
             animate()
                 .alpha(1f)
-                .setDuration(700)
+                .setDuration(300)
                 .translationY(0f)
                 .start();
         }

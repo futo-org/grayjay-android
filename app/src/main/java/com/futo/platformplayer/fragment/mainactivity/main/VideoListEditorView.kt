@@ -20,6 +20,8 @@ import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.toHumanDuration
+import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.lists.VideoListEditorView
 
 abstract class VideoListEditorView : LinearLayout {
@@ -136,8 +138,14 @@ abstract class VideoListEditorView : LinearLayout {
         _textName.text = name ?: "";
     }
 
-    protected fun setVideoCount(videoCount: Int = -1) {
-        _textMetadata.text = if (videoCount == -1) "" else "${videoCount} " + context.getString(R.string.videos);
+    protected fun setMetadata(videoCount: Int = -1, duration: Long = -1) {
+        val parts = mutableListOf<String>()
+        if(videoCount >= 0)
+            parts.add("${videoCount} " + context.getString(R.string.videos));
+        if(duration > 0)
+            parts.add("${duration.toHumanDuration(false)} ");
+
+        _textMetadata.text = parts.joinToString(" • ");
     }
 
     protected fun setVideos(videos: List<IPlatformVideo>?, canEdit: Boolean) {

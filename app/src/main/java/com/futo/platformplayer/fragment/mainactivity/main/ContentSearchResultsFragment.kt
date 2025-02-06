@@ -17,6 +17,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.isHttpUrl
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
 import kotlinx.coroutines.Dispatchers
@@ -220,6 +221,12 @@ class ContentSearchResultsFragment : MainFragment() {
 
             setActiveTags(null);
             setSortByOptions(null);
+        }
+
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
+            if(Settings.instance.search.hidefromSearch)
+                return super.filterResults(results.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) });
+            return super.filterResults(results)
         }
 
         override fun reload() {

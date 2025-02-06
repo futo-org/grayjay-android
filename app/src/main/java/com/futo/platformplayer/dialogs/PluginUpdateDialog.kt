@@ -54,6 +54,7 @@ class PluginUpdateDialog : AlertDialog {
     private lateinit var _buttonInstall: LinearLayout;
 
     private lateinit var _textPlugin: TextView;
+    private lateinit var _textChangelog: TextView;
     private lateinit var _textProgres: TextView;
     private lateinit var _textError: TextView;
     private lateinit var _textResult: TextView;
@@ -94,6 +95,7 @@ class PluginUpdateDialog : AlertDialog {
         _buttonInstall = findViewById(R.id.button_install);
 
         _textPlugin = findViewById(R.id.text_plugin);
+        _textChangelog = findViewById(R.id.text_changelog);
         _textProgres = findViewById(R.id.text_progress);
         _textError = findViewById(R.id.text_error);
         _textResult = findViewById(R.id.text_result);
@@ -109,6 +111,27 @@ class PluginUpdateDialog : AlertDialog {
 
         _updateSpinner = findViewById(R.id.update_spinner);
         _iconPlugin = findViewById(R.id.icon_plugin);
+
+        try {
+            var changelogVersion = _newConfig.version.toString();
+                if (_newConfig.changelog != null && _newConfig.changelog?.containsKey(changelogVersion) == true) {
+                _textChangelog.movementMethod = ScrollingMovementMethod();
+                val changelog = _newConfig.changelog!![changelogVersion]!!;
+                if(changelog.size > 1) {
+                    _textChangelog.text = "Changelog (${_newConfig.version})\n" + changelog.map { " - " + it.trim() }.joinToString("\n");
+                }
+                else if(changelog.size == 1) {
+                    _textChangelog.text = "Changelog (${_newConfig.version})\n" + changelog[0].trim();
+                }
+                else
+                    _textChangelog.visibility = View.GONE;
+            } else
+                _textChangelog.visibility = View.GONE;
+        }
+        catch(ex: Throwable) {
+            _textChangelog.visibility = View.GONE;
+            Logger.e(TAG, "Invalid changelog? ", ex);
+        }
 
         _buttonCancel1.setOnClickListener {
             dismiss();

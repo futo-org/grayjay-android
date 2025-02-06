@@ -146,7 +146,7 @@ class PlaylistFragment : MainFragment() {
                     setName(it.name);
                     //TODO: Implement support for pagination
                     setVideos(it.videos, false);
-                    setVideoCount(it.videos.size);
+                    setMetadata(it.videos.size, it.videos.sumOf { it.duration });
                     setLoading(false);
                 }
                 .exception<Throwable> {
@@ -174,7 +174,7 @@ class PlaylistFragment : MainFragment() {
                 if (parameter != null) {
                     setName(parameter.name)
                     setVideos(parameter.videos, true)
-                    setVideoCount(parameter.videos.size)
+                    setMetadata(parameter.videos.size, parameter.videos.sumOf { it.duration })
                     setButtonDownloadVisible(true)
                     setButtonEditVisible(true)
 
@@ -187,7 +187,7 @@ class PlaylistFragment : MainFragment() {
                 } else {
                     setName(null)
                     setVideos(null, false)
-                    setVideoCount(-1)
+                    setMetadata(-1, -1);
                     setButtonDownloadVisible(false)
                     setButtonEditVisible(false)
                 }
@@ -195,7 +195,7 @@ class PlaylistFragment : MainFragment() {
                 _playlist = null
                 _url = parameter.url
 
-                setVideoCount(parameter.videoCount)
+                setMetadata(parameter.videoCount, -1);
                 setName(parameter.name)
                 setVideos(null, false)
                 setButtonDownloadVisible(false)
@@ -208,7 +208,7 @@ class PlaylistFragment : MainFragment() {
 
                 setName(null)
                 setVideos(null, false)
-                setVideoCount(-1)
+                setMetadata(-1, -1);
                 setButtonDownloadVisible(false)
                 setButtonEditVisible(false)
 

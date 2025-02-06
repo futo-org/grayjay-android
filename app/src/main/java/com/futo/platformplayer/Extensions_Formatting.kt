@@ -226,6 +226,25 @@ fun Long.toHumanTime(isMs: Boolean): String {
     else
         return  "${prefix}${minsStr}:${secsStr}"
 }
+fun Long.toHumanDuration(isMs: Boolean): String {
+    var scaler = 1;
+    if(isMs)
+        scaler = 1000;
+    val v = Math.abs(this);
+    val hours = Math.max(v/(secondsInHour*scaler), 0);
+    val mins = Math.max((v % (secondsInHour*scaler)) / (secondsInMinute * scaler), 0);
+    val minsStr = mins.toString();
+    val seconds = Math.max(((v % (secondsInHour*scaler)) % (secondsInMinute * scaler))/scaler, 0);
+    val secsStr = seconds.toString().padStart(2, '0');
+    val prefix = if (this < 0) { "-" } else { "" };
+
+    return listOf(
+        if(hours > 0) "${hours}h" else null,
+        if(mins > 0) "${mins}m" else null ,
+        if(seconds > 0) "${seconds}s" else null
+    ).filterNotNull().joinToString(" ");
+}
+
 
 //TODO: Determine if below stuff should have its own proper class, seems a bit too complex for a utility method
 fun String.fixHtmlWhitespace(): Spanned {

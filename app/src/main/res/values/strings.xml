@@ -13,6 +13,8 @@
     <string name="home">Home</string>
     <string name="progress_bar">Progress Bar</string>
     <string name="progress_bar_description">If a historical progress bar should be shown</string>
+    <string name="hide_hidden_from_search">Hide hidden from home in search</string>
+    <string name="hide_hidden_from_search_description">Hide videos and creators hidden from home also in search results</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
     <string name="playlists">Playlists</string>
@@ -195,6 +197,7 @@
     <string name="connected_to">Connected to</string>
     <string name="volume">Volume</string>
     <string name="changelog">Changelog</string>
+    <string name="changelog_plugin_description">Shows available changelogs for current and past versions</string>
     <string name="some_example_changelog">Some example changelog.</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
@@ -398,8 +401,8 @@
     <string name="prefer_webm_audio_description">If player should prefer Webm codecs (opus) over mp4 codecs (AAC), may result in worse compatibility.</string>
     <string name="allow_under_cutout">Allow video under cutout</string>
     <string name="allow_under_cutout_description">Allow video to go underneath the screen cutout in full screen.\nMay require restart</string>
-    <string name="autoplay">Enable autoplay by default</string>
-    <string name="autoplay_description">Autoplay will be enabled by default whenever you watch a video</string>
+    <string name="autoplay">Autoplay next video by default</string>
+    <string name="autoplay_description">Autoplay next video will be enabled by default whenever you watch a video</string>
     <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>

@@ -1281,7 +1281,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (toast.long)
                 delay(5000);
             else
-                delay(3000);
+                delay(2500);
         }
         Logger.i(TAG, "Ending appToast loop");
         lifecycleScope.launch(Dispatchers.Main) {

@@ -368,8 +368,8 @@ class UIDialogs {
             }
         }
 
-        fun showChangelogDialog(context: Context, lastVersion: Int) {
-            val dialog = ChangelogDialog(context);
+        fun showChangelogDialog(context: Context, lastVersion: Int, changelogs: Map<Int, String>? = null) {
+            val dialog = ChangelogDialog(context, changelogs);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();
