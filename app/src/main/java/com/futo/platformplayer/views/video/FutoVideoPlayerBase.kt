@@ -110,8 +110,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _didCallSourceChange = false;
     private var _lastState: Int = -1;
 
-    private var _targetTrackVideoHeight = -1;
-    private var _targetTrackAudioBitrate = -1;
+
+    var targetTrackVideoHeight = -1
+        private set
+    private var _targetTrackAudioBitrate = -1
 
     private var _toResume = false;
 
@@ -278,7 +280,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     //TODO: Temporary solution, Implement custom track selector without using constraints
     fun selectVideoTrack(height: Int) {
-        _targetTrackVideoHeight = height;
+        targetTrackVideoHeight = height;
         updateTrackSelector();
     }
     fun selectAudioTrack(bitrate: Int) {
@@ -288,10 +290,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
         var builder = DefaultTrackSelector.Parameters.Builder(context);
-        if(_targetTrackVideoHeight > 0) {
+        if(targetTrackVideoHeight > 0) {
             builder = builder
-                .setMinVideoSize(0, _targetTrackVideoHeight - 10)
-                .setMaxVideoSize(9999, _targetTrackVideoHeight + 10);
+                .setMinVideoSize(0, targetTrackVideoHeight - 10)
+                .setMaxVideoSize(9999, targetTrackVideoHeight + 10);
         }
 
         if(_targetTrackAudioBitrate > 0) {

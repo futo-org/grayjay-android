@@ -82,6 +82,10 @@ class SlideUpMenuItem : ConstraintLayout {
         return isSelected;
     }
 
+    fun setSubText(subText: String) {
+        _subtext.text = subText
+    }
+
     fun setParentClickListener(listener: (()->Unit)?) {
         _parentClickListener = listener;
     }
