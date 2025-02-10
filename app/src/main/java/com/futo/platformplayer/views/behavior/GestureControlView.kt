@@ -755,10 +755,6 @@ class GestureControlView : LinearLayout {
                 }
             }
 
-            if (!Settings.instance.gestureControls.useSystemBrightness) {
-                _brightnessFactor = 1.0f;
-            }
-
             if (Settings.instance.gestureControls.useSystemVolume) {
                 val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
                 val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)

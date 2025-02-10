@@ -61,6 +61,15 @@ class SlideUpMenuGroup : LinearLayout {
         return didSelect;
     }
 
+    fun getItem(tag: Any?): SlideUpMenuItem? {
+        for(item in items) {
+            if(item.itemTag == tag){
+                return item
+            }
+        }
+        return null
+    }
+
     private fun addItems(items: List<SlideUpMenuItem>) {
         for (item in items) {
             item.setParentClickListener { parentClickListener?.invoke() }
