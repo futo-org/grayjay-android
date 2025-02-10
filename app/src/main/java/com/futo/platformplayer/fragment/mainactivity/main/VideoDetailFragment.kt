@@ -11,12 +11,14 @@ import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.view.ViewCompat.getDisplay
 import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
@@ -37,7 +39,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.min
+
 
 //region Fragment
 @UnstableApi
@@ -205,7 +207,37 @@ class VideoDetailFragment() : MainFragment() {
         } else if (rotationLock) {
             _portraitOrientationListener?.disableListener()
             _landscapeOrientationListener?.disableListener()
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            val display = getDisplay(_viewDetail!!)
+            val rotation = display!!.rotation
+            val orientation = resources.configuration.orientation
+
+            a.requestedOrientation = when (orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> {
+                    if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+                        if (rotation == Surface.ROTATION_0) {
+                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                        }
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                }
+
+                Configuration.ORIENTATION_LANDSCAPE -> {
+                    if (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+                        if (rotation == Surface.ROTATION_90) {
+                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                        }
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+                }
+
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         } else {
             _portraitOrientationListener?.disableListener()
             _landscapeOrientationListener?.disableListener()
