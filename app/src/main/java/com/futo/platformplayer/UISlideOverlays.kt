@@ -280,6 +280,8 @@ class UISlideOverlays {
                 val masterPlaylistContent = masterPlaylistResponse.body?.string()
                     ?: throw Exception("Master playlist content is empty")
 
+                val resolvedPlaylistUrl = masterPlaylistResponse.url
+
                 val videoButtons = arrayListOf<SlideUpMenuItem>()
                 val audioButtons = arrayListOf<SlideUpMenuItem>()
                 //TODO: Implement subtitles
@@ -292,7 +294,7 @@ class UISlideOverlays {
 
                 val masterPlaylist: HLS.MasterPlaylist
                 try {
-                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
+                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, resolvedPlaylistUrl)
 
                     masterPlaylist.getAudioSources().forEach { it ->
 
@@ -366,11 +368,11 @@ class UISlideOverlays {
                     if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
                         withContext(Dispatchers.Main) {
                             if (source is IHLSManifestSource) {
-                                StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, sourceUrl), null, null)
+                                StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, resolvedPlaylistUrl), null, null)
                                 UIDialogs.toast(container.context, "Variant video HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else if (source is IHLSManifestAudioSource) {
-                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, sourceUrl), null)
+                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, resolvedPlaylistUrl), null)
                                 UIDialogs.toast(container.context, "Variant audio HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else {
