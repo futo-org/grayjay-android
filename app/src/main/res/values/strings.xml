@@ -959,12 +959,12 @@
         <item>Watchtime Descending</item>
     </string-array>
     <string-array name="downloads_sortby_array">
-        <item>Name Ascending</item>
-        <item>Name Descending</item>
-        <item>Downloaded Ascending</item>
-        <item>Downloaded Descending</item>
-        <item>Released Ascending</item>
-        <item>Released Descending</item>
+        <item>Name (Ascending)</item>
+        <item>Name (Descending)</item>
+        <item>Download Date (Oldest)</item>
+        <item>Download Date (Newest)</item>
+        <item>Release Date (Oldest)</item>
+        <item>Release Date (Newest)</item>
     </string-array>
     <string-array name="feed_style">
         <item>Preview</item>

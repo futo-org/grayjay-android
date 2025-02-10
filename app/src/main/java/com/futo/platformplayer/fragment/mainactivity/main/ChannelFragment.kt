@@ -476,8 +476,13 @@ class ChannelFragment : MainFragment() {
                     R.string.subscribers
                 ).lowercase() else ""
 
-            val supportsPlaylists =
-                StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists
+            var supportsPlaylists = false;
+            try {
+                supportsPlaylists = StatePlatform.instance.getChannelClient(channel.url).capabilities.hasGetChannelPlaylists
+            } catch (ex: Throwable) {
+                //Ignore error
+                Logger.e(TAG, "Failed to check if supports playlists", ex);
+            }
             val playlistPosition = 1
             if (supportsPlaylists && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
                     ChannelTab.PLAYLISTS.ordinal.toLong()

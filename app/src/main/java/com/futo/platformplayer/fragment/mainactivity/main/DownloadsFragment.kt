@@ -233,8 +233,8 @@ class DownloadsFragment : MainFragment() {
                 vidsToReturn = when(ordering){
                     "downloadDateAsc" -> vidsToReturn.sortedBy { it.downloadDate ?: OffsetDateTime.MAX };
                     "downloadDateDesc" -> vidsToReturn.sortedByDescending { it.downloadDate ?: OffsetDateTime.MIN };
-                    "nameAsc" -> vidsToReturn.sortedBy { it.name }
-                    "nameDesc" -> vidsToReturn.sortedByDescending { it.name }
+                    "nameAsc" -> vidsToReturn.sortedBy { it.name.lowercase() }
+                    "nameDesc" -> vidsToReturn.sortedByDescending { it.name.lowercase() }
                     "releasedAsc" -> vidsToReturn.sortedBy { it.datetime ?: OffsetDateTime.MAX }
                     "releasedDesc" -> vidsToReturn.sortedByDescending { it.datetime ?: OffsetDateTime.MIN }
                     else -> vidsToReturn
