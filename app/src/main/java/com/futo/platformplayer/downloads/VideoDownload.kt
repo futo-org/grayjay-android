@@ -410,11 +410,11 @@ class VideoDownload {
         else audioSource;
 
         if(actualVideoSource != null) {
-            videoFileName = "${videoDetails!!.id.value!!} [${actualVideoSource!!.width}x${actualVideoSource!!.height}].${videoContainerToExtension(actualVideoSource!!.container)}".sanitizeFileName();
+            videoFileName = "${videoDetails!!.id.value!!} [${actualVideoSource!!.width}x${actualVideoSource!!.height}].${videoContainerToExtension(actualVideoSource.container)}".sanitizeFileName();
             videoFilePath = File(downloadDir, videoFileName!!).absolutePath;
         }
         if(actualAudioSource != null) {
-            audioFileName = "${videoDetails!!.id.value!!} [${actualAudioSource!!.language}-${actualAudioSource!!.bitrate}].${audioContainerToExtension(if (actualAudioSource.container == "application/vnd.apple.mpegurl") actualAudioSource.codec else actualAudioSource.container)}".sanitizeFileName();
+            audioFileName = "${videoDetails!!.id.value!!} [${actualAudioSource!!.language}-${actualAudioSource!!.bitrate}].${audioContainerToExtension(actualAudioSource.container)}".sanitizeFileName();
             audioFilePath = File(downloadDir, audioFileName!!).absolutePath;
         }
         if(subtitleSource != null) {
@@ -1149,7 +1149,7 @@ class VideoDownload {
             else if (container.contains("video/mp4"))
                 return "mp4";
             else if (container.contains("audio/mpeg"))
-                return "mp3";
+                return "mpga";
             else if (container.contains("audio/mp3"))
                 return "mp3";
             else if (container.contains("audio/webm"))
