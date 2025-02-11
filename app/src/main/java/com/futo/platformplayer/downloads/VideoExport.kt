@@ -81,7 +81,7 @@ class VideoExport {
             outputFile = f;
         } else if (a != null) {
             val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.audioContainerToExtension(a.container);
-            val f = downloadRoot.createFile(a.container, outputFileName)
+            val f = downloadRoot.createFile(if (a.container == "application/vnd.apple.mpegurl") a.codec else a.container, outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
             Logger.i(TAG, "Copying audio.");

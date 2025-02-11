@@ -292,7 +292,7 @@ class UISlideOverlays {
 
                 val masterPlaylist: HLS.MasterPlaylist
                 try {
-                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
+                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl, source is IHLSManifestAudioSource)
 
                     masterPlaylist.getAudioSources().forEach { it ->
 
