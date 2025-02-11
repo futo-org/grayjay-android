@@ -335,7 +335,9 @@ class UISlideOverlays {
                             call = {
                                 selectedVideoVariant = it
                                 slideUpMenuOverlay.selectOption(videoButtons, it)
-                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                if (audioButtons.isEmpty()){
+                                    slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                }
                             },
                             invokeParent = false
                         ))
@@ -417,7 +419,7 @@ class UISlideOverlays {
             }
 
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoSources,
-                listOf(listOf(SlideUpMenuItem(
+                listOf((if (audioSources != null) listOf(SlideUpMenuItem(
                     container.context,
                     R.drawable.ic_movie,
                     container.context.getString(R.string.none),
@@ -430,7 +432,7 @@ class UISlideOverlays {
                             menu?.setOk(container.context.getString(R.string.download));
                     },
                     invokeParent = false
-                )) +
+                )) else listOf()) +
                 videoSources
                 .filter { it.isDownloadable() }
                 .map {
