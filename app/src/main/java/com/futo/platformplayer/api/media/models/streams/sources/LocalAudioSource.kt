@@ -33,13 +33,13 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
     }
 
     companion object {
-        fun fromSource(source: IAudioSource, path: String, fileSize: Long): LocalAudioSource {
+        fun fromSource(source: IAudioSource, path: String, fileSize: Long, overrideContainer: String? = null): LocalAudioSource {
             return LocalAudioSource(
                 source.name,
                 path,
                 fileSize,
                 source.bitrate,
-                source.container,
+                overrideContainer ?: source.container,
                 source.codec,
                 source.language
             );

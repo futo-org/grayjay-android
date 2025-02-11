@@ -17,7 +17,7 @@ import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
 
 class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource, IStreamMetaDataSource {
-    override val container : String = "application/dash+xml";
+    override val container : String;
     override val name : String;
     override val codec: String;
     override val bitrate: Int;
@@ -38,6 +38,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         val config = plugin.config;
         name = _obj.getOrThrow(config, "name", contextName);
         url = _obj.getOrThrow(config, "url", contextName);
+        container = _obj.getOrDefault<String>(config, "container", contextName, null) ?: "application/dash+xml";
         manifest = _obj.getOrThrow(config, "manifest", contextName);
         codec = _obj.getOrDefault(config, "codec", contextName, "") ?: "";
         bitrate = _obj.getOrDefault(config, "bitrate", contextName, 0) ?: 0;

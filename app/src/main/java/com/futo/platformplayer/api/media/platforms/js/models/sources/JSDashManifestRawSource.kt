@@ -23,7 +23,7 @@ interface IJSDashManifestRawSource {
     fun generate(): String?;
 }
 open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource, IStreamMetaDataSource {
-    override val container : String = "application/dash+xml";
+    override val container : String;
     override val name : String;
     override val width: Int;
     override val height: Int;
@@ -45,6 +45,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         val config = plugin.config;
         name = _obj.getOrThrow(config, "name", contextName);
         url = _obj.getOrThrow(config, "url", contextName);
+        container = _obj.getOrDefault<String>(config, "container", contextName, null) ?: "application/dash+xml";
         manifest = _obj.getOrDefault<String>(config, "manifest", contextName, null);
         width = _obj.getOrDefault(config, "width", contextName, 0) ?: 0;
         height = _obj.getOrDefault(config, "height", contextName, 0) ?: 0;

@@ -35,7 +35,7 @@ class LocalVideoSource : IVideoSource, IStreamMetaDataSource {
     }
 
     companion object {
-        fun fromSource(source: IVideoSource, path: String, fileSize: Long): LocalVideoSource {
+        fun fromSource(source: IVideoSource, path: String, fileSize: Long, overrideContainer: String? = null): LocalVideoSource {
             return LocalVideoSource(
                 source.name,
                 path,
@@ -43,7 +43,7 @@ class LocalVideoSource : IVideoSource, IStreamMetaDataSource {
                 source.width,
                 source.height,
                 source.duration,
-                source.container,
+                overrideContainer ?: source.container,
                 source.codec,
                 source.bitrate?:0
             );
