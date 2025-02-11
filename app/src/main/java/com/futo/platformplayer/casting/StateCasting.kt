@@ -64,7 +64,7 @@ class StateCasting {
     private val _scopeMain = CoroutineScope(Dispatchers.Main);
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
 
-    private val _castServer = ManagedHttpServer(9999);
+    private val _castServer = ManagedHttpServer();
     private var _started = false;
 
     var devices: HashMap<String, CastingDevice> = hashMapOf();
