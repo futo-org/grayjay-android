@@ -1,5 +1,11 @@
 package com.futo.platformplayer.parsers
 
+import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.hls.playlist.DefaultHlsPlaylistParserFactory
+import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
+import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantSubtitleUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
@@ -7,13 +13,20 @@ import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudi
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.toYesNo
 import com.futo.platformplayer.yesNoToBoolean
+import java.io.ByteArrayInputStream
 import java.net.URI
+import java.net.URLConnection
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class HLS {
     companion object {
-        fun parseMasterPlaylist(masterPlaylistContent: String, sourceUrl: String): MasterPlaylist {
+        @OptIn(UnstableApi::class)
+        fun parseMasterPlaylist(masterPlaylistContent: String, sourceUrl: String, isAudioSource: Boolean? = null): MasterPlaylist {
+            val inputStream = ByteArrayInputStream(masterPlaylistContent.toByteArray())
+            val playlist = DefaultHlsPlaylistParserFactory().createPlaylistParser()
+                .parse(Uri.parse(sourceUrl), inputStream)
+
             val baseUrl = URI(sourceUrl).resolve("./").toString()
 
             val variantPlaylists = mutableListOf<VariantPlaylistReference>()
@@ -21,27 +34,39 @@ class HLS {
             val sessionDataList = mutableListOf<SessionData>()
             var independentSegments = false
 
-            masterPlaylistContent.lines().forEachIndexed { index, line ->
-                when {
-                    line.startsWith("#EXT-X-STREAM-INF") -> {
-                        val nextLine = masterPlaylistContent.lines().getOrNull(index + 1)
-                            ?: throw Exception("Expected URI following #EXT-X-STREAM-INF, found none")
-                        val url = resolveUrl(baseUrl, nextLine)
+            if (playlist is HlsMediaPlaylist) {
+                independentSegments = playlist.hasIndependentSegments
+                if (isAudioSource == true) {
+                    val firstSegmentUrlFile =
+                        Uri.parse(playlist.segments[0].initializationSegment?.url ?: playlist.segments[0].url).buildUpon().clearQuery().fragment(null)
+                            .build().toString()
+                    mediaRenditions.add(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null, URLConnection.guessContentTypeFromName(firstSegmentUrlFile)))
+                } else {
+                    variantPlaylists.add(VariantPlaylistReference(playlist.baseUri, StreamInfo(null, null, null, null, null, null, null, null, null)))
+                }
+            } else if (playlist is HlsMultivariantPlaylist) {
+                masterPlaylistContent.lines().forEachIndexed { index, line ->
+                    when {
+                        line.startsWith("#EXT-X-STREAM-INF") -> {
+                            val nextLine = masterPlaylistContent.lines().getOrNull(index + 1)
+                                ?: throw Exception("Expected URI following #EXT-X-STREAM-INF, found none")
+                            val url = resolveUrl(baseUrl, nextLine)
 
-                        variantPlaylists.add(VariantPlaylistReference(url, parseStreamInfo(line)))
-                    }
+                            variantPlaylists.add(VariantPlaylistReference(url, parseStreamInfo(line)))
+                        }
 
-                    line.startsWith("#EXT-X-MEDIA") -> {
-                        mediaRenditions.add(parseMediaRendition(line, baseUrl))
-                    }
+                        line.startsWith("#EXT-X-MEDIA") -> {
+                            mediaRenditions.add(parseMediaRendition(line, baseUrl))
+                        }
 
-                    line == "#EXT-X-INDEPENDENT-SEGMENTS" -> {
-                        independentSegments = true
-                    }
+                        line == "#EXT-X-INDEPENDENT-SEGMENTS" -> {
+                            independentSegments = true
+                        }
 
-                    line.startsWith("#EXT-X-SESSION-DATA") -> {
-                        val sessionData = parseSessionData(line)
-                        sessionDataList.add(sessionData)
+                        line.startsWith("#EXT-X-SESSION-DATA") -> {
+                            val sessionData = parseSessionData(line)
+                            sessionDataList.add(sessionData)
+                        }
                     }
                 }
             }
@@ -61,7 +86,13 @@ class HLS {
             val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
             val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
+            val initSegment =
+                lines.find { it.startsWith("#EXT-X-MAP:") }?.substringAfter(":")?.split(",")?.get(0)
+                    ?.substringAfter("=")?.trim('"')
             val segments = mutableListOf<Segment>()
+            if (initSegment != null) {
+                segments.add(MediaSegment(0.0, resolveUrl(sourceUrl, initSegment)))
+            }
             var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
@@ -109,10 +140,10 @@ class HLS {
             }
         }
 
-        fun parseAndGetAudioSources(source: Any, content: String, url: String): List<HLSVariantAudioUrlSource> {
+        fun parseAndGetAudioSources(source: Any, content: String, url: String, isAudioSource: Boolean? = null): List<HLSVariantAudioUrlSource> {
             val masterPlaylist: MasterPlaylist
             try {
-                masterPlaylist = parseMasterPlaylist(content, url)
+                masterPlaylist = parseMasterPlaylist(content, url, isAudioSource)
                 return masterPlaylist.getAudioSources()
             } catch (e: Throwable) {
                 if (content.lines().any { it.startsWith("#EXTINF:") }) {
@@ -270,7 +301,8 @@ class HLS {
         val name: String?,
         val isDefault: Boolean?,
         val isAutoSelect: Boolean?,
-        val isForced: Boolean?
+        val isForced: Boolean?,
+        val container: String? = null,
     ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-MEDIA:")
@@ -340,7 +372,7 @@ class HLS {
 
                 val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
                 return@mapNotNull when (it.type) {
-                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language ?: "", null, false, it.uri)
+                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", it.container ?: "", it.language ?: "", null, false, it.uri)
                     else -> null
                 }
             }
@@ -376,7 +408,7 @@ class HLS {
         val programDateTime: ZonedDateTime?,
         val playlistType: String?,
         val streamInfo: StreamInfo?,
-        val segments: List<Segment>
+        val segments: List<Segment>,
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")
