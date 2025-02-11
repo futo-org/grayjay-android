@@ -6,6 +6,8 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
@@ -20,7 +22,7 @@ interface IJSDashManifestRawSource {
     var manifest: String?;
     fun generate(): String?;
 }
-open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource {
+open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource, IStreamMetaDataSource {
     override val container : String = "application/dash+xml";
     override val name : String;
     override val width: Int;
@@ -35,6 +37,8 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
 
     override val hasGenerate: Boolean;
     val canMerge: Boolean;
+
+    override var streamMetaData: StreamMetaData? = null;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH_RAW, plugin, obj) {
         val contextName = "DashRawSource";
@@ -57,17 +61,30 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
             return manifest;
         if(_obj.isClosed)
             throw IllegalStateException("Source object already closed");
+
+        var result: String? = null;
         if(_plugin is DevJSClient) {
-            return StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
+            result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                     _obj.invokeString("generate");
                 });
             }
         }
         else
-            return _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
+            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                 _obj.invokeString("generate");
             });
+
+        if(result != null){
+            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            }
+        }
+        return result;
     }
 }
 
@@ -100,12 +117,16 @@ class JSDashManifestMergingRawSource(
         if(videoDash == null) return null;
 
         //TODO: Temporary simple solution..make more reliable version
+
+        var result: String? = null;
         val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
         if(audioAdaptationSet != null) {
-            return videoDash.replace("</AdaptationSet>", "</AdaptationSet>\n" + audioAdaptationSet.value)
+            result = videoDash.replace("</AdaptationSet>", "</AdaptationSet>\n" + audioAdaptationSet.value)
         }
         else
-            return videoDash;
+            result = videoDash;
+
+        return result;
     }
 
     companion object {

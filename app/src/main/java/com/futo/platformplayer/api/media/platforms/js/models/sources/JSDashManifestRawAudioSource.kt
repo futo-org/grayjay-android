@@ -4,6 +4,8 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
@@ -14,7 +16,7 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
 
-class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource {
+class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource, IStreamMetaDataSource {
     override val container : String = "application/dash+xml";
     override val name : String;
     override val codec: String;
@@ -28,6 +30,8 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override var manifest: String?;
 
     override val hasGenerate: Boolean;
+
+    override var streamMetaData: StreamMetaData? = null;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH_RAW, plugin, obj) {
         val contextName = "DashRawSource";
@@ -50,15 +54,28 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
             throw IllegalStateException("Source object already closed");
 
         val plugin = _plugin.getUnderlyingPlugin();
+
+        var result: String? = null;
         if(_plugin is DevJSClient)
-            return StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
+            result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                     _obj.invokeString("generate");
                 }
             }
         else
-            return _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                 _obj.invokeString("generate");
             }
+
+        if(result != null){
+            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            }
+        }
+        return result;
     }
 }
