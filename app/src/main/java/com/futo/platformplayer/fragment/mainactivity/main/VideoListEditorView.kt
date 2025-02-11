@@ -34,6 +34,7 @@ abstract class VideoListEditorView : LinearLayout {
     protected var overlayContainer: FrameLayout
         private set;
     protected var _buttonDownload: ImageButton;
+    protected var _buttonExport: ImageButton;
     private var _buttonShare: ImageButton;
     private var _buttonEdit: ImageButton;
 
@@ -54,6 +55,8 @@ abstract class VideoListEditorView : LinearLayout {
         _buttonEdit = findViewById(R.id.button_edit);
         _buttonDownload = findViewById(R.id.button_download);
         _buttonDownload.visibility = View.GONE;
+        _buttonExport = findViewById(R.id.button_export);
+        _buttonExport.visibility = View.GONE;
 
         _buttonShare = findViewById(R.id.button_share);
         val onShare = _onShare;
@@ -68,6 +71,7 @@ abstract class VideoListEditorView : LinearLayout {
         buttonShuffle.setOnClickListener { onShuffleClick(); };
 
         _buttonEdit.setOnClickListener { onEditClick(); };
+        setButtonExportVisible(false);
         setButtonDownloadVisible(canEdit());
 
         videoListEditorView.onVideoOrderChanged.subscribe(::onVideoOrderChanged);
@@ -108,6 +112,7 @@ abstract class VideoListEditorView : LinearLayout {
             _buttonDownload.setBackgroundResource(R.drawable.background_button_round);
 
         if(isDownloading) {
+            setButtonExportVisible(false);
             _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
             _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
             _buttonDownload.setOnClickListener {
@@ -117,6 +122,7 @@ abstract class VideoListEditorView : LinearLayout {
             }
         }
         else if(isDownloaded) {
+            setButtonExportVisible(true)
             _buttonDownload.setImageResource(R.drawable.ic_download_off);
             _buttonDownload.setOnClickListener {
                 UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
@@ -125,6 +131,7 @@ abstract class VideoListEditorView : LinearLayout {
             }
         }
         else {
+            setButtonExportVisible(false);
             _buttonDownload.setImageResource(R.drawable.ic_download);
             _buttonDownload.setOnClickListener {
                 onDownload();
@@ -170,6 +177,9 @@ abstract class VideoListEditorView : LinearLayout {
 
     protected fun setButtonDownloadVisible(isVisible: Boolean) {
         _buttonDownload.visibility = if (isVisible) View.VISIBLE else View.GONE;
+    }
+    protected fun setButtonExportVisible(isVisible: Boolean) {
+        _buttonExport.visibility = if (isVisible) View.VISIBLE else View.GONE;
     }
 
     protected fun setButtonEditVisible(isVisible: Boolean) {

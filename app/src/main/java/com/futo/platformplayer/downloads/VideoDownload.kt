@@ -375,8 +375,8 @@ class VideoDownload {
                         else throw DownloadException("Could not find a valid video or audio source for download")
 
                 if(asource is JSSource) {
-                    this.hasVideoRequestExecutor = this.hasVideoRequestExecutor || asource.hasRequestExecutor;
-                    this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (asource is JSDashManifestRawSource && asource.hasGenerate);
+                    this.hasAudioRequestExecutor = this.hasAudioRequestExecutor || asource.hasRequestExecutor;
+                    this.requiresLiveAudioSource = this.hasAudioRequestExecutor || (asource is JSDashManifestRawSource && asource.hasGenerate);
                 }
 
                 if(asource == null) {

@@ -3,9 +3,11 @@ package com.futo.platformplayer.states
 import android.content.ContentResolver
 import android.content.Context
 import android.os.StatFs
+import androidx.documentfile.provider.DocumentFile
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -466,6 +468,54 @@ class StateDownloads {
         return _downloadsDirectory;
     }
 
+    fun exportPlaylist(context: Context, playlistId: String) {
+        if(context is IWithResultLauncher)
+            StateApp.instance.requestDirectoryAccess(context, "Export Playlist", "To export playlist to directory", null) {
+                if (it == null)
+                    return@requestDirectoryAccess;
+
+                val root = DocumentFile.fromTreeUri(context, it!!);
+
+                val localVideos = StateDownloads.instance.getDownloadedVideosPlaylist(playlistId)
+
+                var lastNotifyTime = -1L;
+
+                UIDialogs.showDialogProgress(context) {
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                        it.setText("Exporting videos..");
+                        var i = 0;
+                        for (video in localVideos) {
+                            withContext(Dispatchers.Main) {
+                                it.setText("Exporting videos...(${i}/${localVideos.size})");
+                                //it.setProgress(i.toDouble() / localVideos.size);
+                            }
+
+                            try {
+                                val export = VideoExport(video, video.videoSource.firstOrNull(), video.audioSource.firstOrNull(), video.subtitlesSources.firstOrNull());
+                                Logger.i(TAG, "Exporting [${export.videoLocal.name}] started");
+
+                                val file = export.export(context, { progress ->
+                                    val now = System.currentTimeMillis();
+                                    if (lastNotifyTime == -1L || now - lastNotifyTime > 100) {
+                                        it.setProgress(progress);
+                                        lastNotifyTime = now;
+                                    }
+                                }, root);
+                            } catch(ex: Throwable) {
+                                Logger.e(TAG, "Failed export [${video.name}]: ${ex.message}", ex);
+                            }
+                            i++;
+                        }
+                        withContext(Dispatchers.Main) {
+                            it.setProgress(1f);
+                            it.dismiss();
+                            UIDialogs.appToast("Finished exporting playlist");
+                        }
+                    };
+                }
+            }
+    }
+
     fun export(context: Context, videoLocal: VideoLocal, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?) {
         var lastNotifyTime = -1L;
 
@@ -477,13 +527,13 @@ class StateDownloads {
                 try {
                     Logger.i(TAG, "Exporting [${export.videoLocal.name}] started");
 
-                    val file = export.export(context) { progress ->
+                    val file = export.export(context, { progress ->
                         val now = System.currentTimeMillis();
                         if (lastNotifyTime == -1L || now - lastNotifyTime > 100) {
                             it.setProgress(progress);
                             lastNotifyTime = now;
                         }
-                    }
+                    }, null);
 
                     withContext(Dispatchers.Main) {
                         it.setProgress(100.0f)
