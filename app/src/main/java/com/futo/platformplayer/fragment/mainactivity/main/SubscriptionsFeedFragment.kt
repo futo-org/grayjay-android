@@ -204,8 +204,10 @@ class SubscriptionsFeedFragment : MainFragment() {
             val feed = StateSubscriptions.instance.getFeed(group?.id);
 
             val currentExs = feed?.exceptions ?: listOf();
-            if(currentExs != _lastExceptions && currentExs.any())
-                handleExceptions(currentExs);
+            if(currentExs != _lastExceptions && currentExs.any()) {
+                handleExceptions(currentExs)
+                feed?.exceptions = listOf()
+            }
 
             return@TaskHandler resp;
         })
