@@ -37,10 +37,7 @@ class HLS {
             if (playlist is HlsMediaPlaylist) {
                 independentSegments = playlist.hasIndependentSegments
                 if (isAudioSource == true) {
-                    val firstSegmentUrlFile =
-                        Uri.parse(playlist.segments[0].initializationSegment?.url ?: playlist.segments[0].url).buildUpon().clearQuery().fragment(null)
-                            .build().toString()
-                    mediaRenditions.add(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null, URLConnection.guessContentTypeFromName(firstSegmentUrlFile)))
+                    mediaRenditions.add(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null))
                 } else {
                     variantPlaylists.add(VariantPlaylistReference(playlist.baseUri, StreamInfo(null, null, null, null, null, null, null, null, null)))
                 }
@@ -302,7 +299,6 @@ class HLS {
         val isDefault: Boolean?,
         val isAutoSelect: Boolean?,
         val isForced: Boolean?,
-        val container: String? = null,
     ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-MEDIA:")
@@ -372,7 +368,7 @@ class HLS {
 
                 val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
                 return@mapNotNull when (it.type) {
-                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", it.container ?: "", it.language ?: "", null, false, it.uri)
+                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language ?: "", null, false, it.uri)
                     else -> null
                 }
             }

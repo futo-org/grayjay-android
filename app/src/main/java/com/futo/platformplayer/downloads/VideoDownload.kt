@@ -1159,7 +1159,7 @@ class VideoDownload {
             else if (container.contains("video/mp4"))
                 return "mp4";
             else if (container.contains("audio/mpeg"))
-                return "mp3";
+                return "mpga";
             else if (container.contains("audio/mp3"))
                 return "mp3";
             else if (container.contains("audio/webm"))
