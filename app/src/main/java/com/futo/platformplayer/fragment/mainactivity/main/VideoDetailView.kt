@@ -882,7 +882,7 @@ class VideoDetailView : ConstraintLayout {
                 _slideUpOverlay?.hide();
             }
             else null,
-            if(!isLimitedVersion)
+            if(!isLimitedVersion && !(video?.isLive ?: false))
                 RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
                     video?.let {
                         _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);

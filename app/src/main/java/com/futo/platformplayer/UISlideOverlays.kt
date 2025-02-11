@@ -909,7 +909,7 @@ class UISlideOverlays {
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.actions), "actions",
                 (listOf(
-                    if(!isLimited)
+                    if(!isLimited && !video.isLive)
                         SlideUpMenuItem(
                             container.context,
                             R.drawable.ic_download,
