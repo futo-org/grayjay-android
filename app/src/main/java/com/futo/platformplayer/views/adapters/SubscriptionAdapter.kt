@@ -16,6 +16,7 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
     private lateinit var _sortedDataset: List<Subscription>;
     private val _inflater: LayoutInflater;
     private val _confirmationMessage: String;
+    private val _onDatasetChanged: ((List<Subscription>)->Unit)?;
 
     var onClick = Event1<Subscription>();
     var onSettings = Event1<Subscription>();
@@ -30,9 +31,10 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
             updateDataset();
         }
 
-    constructor(inflater: LayoutInflater, confirmationMessage: String) : super() {
+    constructor(inflater: LayoutInflater, confirmationMessage: String, onDatasetChanged: ((List<Subscription>)->Unit)? = null) : super() {
         _inflater = inflater;
         _confirmationMessage = confirmationMessage;
+        _onDatasetChanged = onDatasetChanged;
 
         StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> if(Looper.myLooper() != Looper.getMainLooper())
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) { updateDataset() }
@@ -77,6 +79,8 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         }
             .filter { (queryLower.isNullOrBlank() || it.channel.name.lowercase().contains(queryLower)) }
             .toList();
+
+        _onDatasetChanged?.invoke(_sortedDataset);
 
         notifyDataSetChanged();
     }

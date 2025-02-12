@@ -79,6 +79,36 @@ class UISlideOverlays {
             return menu;
         }
 
+        fun showQueueOptionsOverlay(context: Context, container: ViewGroup) {
+            UISlideOverlays.showOverlay(container, "Queue options", null, {
+
+            }, SlideUpMenuItem(context, R.drawable.ic_playlist, "Save as playlist", "", "Creates a new playlist with queue as videos", null, {
+                val nameInput = SlideUpMenuTextInput(container.context, container.context.getString(R.string.name));
+                val addPlaylistOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.create_new_playlist), container.context.getString(R.string.ok), false, nameInput);
+
+                addPlaylistOverlay.onOK.subscribe {
+                    val text = nameInput.text.trim()
+                    if (text.isBlank()) {
+                        return@subscribe;
+                    }
+
+                    addPlaylistOverlay.hide();
+                    nameInput.deactivate();
+                    nameInput.clear();
+                    StatePlayer.instance.saveQueueAsPlaylist(text);
+                    UIDialogs.appToast("Playlist [${text}] created");
+                };
+
+                addPlaylistOverlay.onCancel.subscribe {
+                    nameInput.deactivate();
+                    nameInput.clear();
+                };
+
+                addPlaylistOverlay.show();
+                nameInput.activate();
+            }, false));
+        }
+
         fun showSubscriptionOptionsOverlay(subscription: Subscription, container: ViewGroup): SlideUpMenuOverlay {
             val items = arrayListOf<View>();
 
