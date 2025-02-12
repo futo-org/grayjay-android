@@ -30,7 +30,7 @@ class QueueEditorOverlay : LinearLayout {
         _topbar = findViewById(R.id.topbar);
         _editor = findViewById(R.id.editor);
         _btnSettings = findViewById(R.id.button_settings);
-        _overlayContainer = findViewById(R.id.overlay_container);
+        _overlayContainer = findViewById(R.id.overlay_container_queue);
 
 
         _topbar.onClose.subscribe(this, onClose::emit);

@@ -33,7 +33,7 @@
         app:srcCompat="@drawable/ic_settings" />
 
     <FrameLayout
-        android:id="@+id/overlay_container"
+        android:id="@+id/overlay_container_queue"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone" />
