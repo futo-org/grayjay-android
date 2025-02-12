@@ -48,6 +48,17 @@ class StateDownloads {
     private val _downloadsStat = StatFs(_downloadsDirectory.absolutePath);
 
     private val _downloaded = FragmentedStorage.storeJson<VideoLocal>("downloaded")
+        .withOnModified({
+            synchronized(_downloadedSet) {
+                if(!_downloadedSet.contains(it.id))
+                    _downloadedSet.add(it.id);
+            }
+        }, {
+            synchronized(_downloadedSet) {
+                if(_downloadedSet.contains(it.id))
+                    _downloadedSet.remove(it.id);
+            }
+        })
         .load()
         .apply { afterLoadingDownloaded(this) };
     private val _downloading = FragmentedStorage.storeJson<VideoDownload>("downloading")
@@ -87,9 +98,6 @@ class StateDownloads {
         Logger.i("StateDownloads", "Deleting local video ${id.value}");
         val downloaded = getCachedVideo(id);
         if(downloaded != null) {
-            synchronized(_downloadedSet) {
-                _downloadedSet.remove(id);
-            }
             _downloaded.delete(downloaded);
         }
         onDownloadedChanged.emit();
@@ -263,9 +271,6 @@ class StateDownloads {
                 if(existing.groupID == null) {
                     existing.groupID = VideoDownload.GROUP_WATCHLATER;
                     existing.groupType = VideoDownload.GROUP_WATCHLATER;
-                    synchronized(_downloadedSet) {
-                        _downloadedSet.add(existing.id);
-                    }
                     _downloaded.save(existing);
                 }
             }
@@ -308,9 +313,6 @@ class StateDownloads {
                 if(existing.groupID == null) {
                     existing.groupID = playlist.id;
                     existing.groupType = VideoDownload.GROUP_PLAYLIST;
-                    synchronized(_downloadedSet) {
-                        _downloadedSet.add(existing.id);
-                    }
                     _downloaded.save(existing);
                 }
             }
@@ -476,7 +478,16 @@ class StateDownloads {
 
                 val root = DocumentFile.fromTreeUri(context, it!!);
 
-                val localVideos = StateDownloads.instance.getDownloadedVideosPlaylist(playlistId)
+                val playlist = StatePlaylists.instance.getPlaylist(playlistId);
+                var localVideos = StateDownloads.instance.getDownloadedVideosPlaylist(playlistId);
+                if(playlist != null) {
+                    val missing = playlist.videos
+                                .filter { vid -> !localVideos.any { it.id.value == null || it.id.value == vid.id.value  } }
+                                .map { getCachedVideo(it.id) }
+                                .filterNotNull();
+                    if(missing.size > 0)
+                        localVideos = localVideos + missing;
+                };
 
                 var lastNotifyTime = -1L;
 
@@ -484,6 +495,7 @@ class StateDownloads {
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                         it.setText("Exporting videos..");
                         var i = 0;
+                        var success = 0;
                         for (video in localVideos) {
                             withContext(Dispatchers.Main) {
                                 it.setText("Exporting videos...(${i}/${localVideos.size})");
@@ -501,6 +513,7 @@ class StateDownloads {
                                         lastNotifyTime = now;
                                     }
                                 }, root);
+                                success++;
                             } catch(ex: Throwable) {
                                 Logger.e(TAG, "Failed export [${video.name}]: ${ex.message}", ex);
                             }
@@ -509,7 +522,7 @@ class StateDownloads {
                         withContext(Dispatchers.Main) {
                             it.setProgress(1f);
                             it.dismiss();
-                            UIDialogs.appToast("Finished exporting playlist");
+                            UIDialogs.appToast("Finished exporting playlist (${success} videos${if(i < success) ", ${i} errors" else ""})");
                         }
                     };
                 }
