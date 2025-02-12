@@ -102,7 +102,7 @@ class StatePlugins {
             if (availableClient !is JSClient) {
                 continue
             }
-            if(!Settings.instance.plugins.checkDisabledPluginsForUpdates && StatePlatform.instance.isClientEnabled(availableClient.id))
+            if(!Settings.instance.plugins.checkDisabledPluginsForUpdates && !StatePlatform.instance.isClientEnabled(availableClient.id))
                 continue;
 
             val newConfig = checkForUpdates(availableClient.config);
