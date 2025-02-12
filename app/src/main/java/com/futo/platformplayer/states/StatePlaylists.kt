@@ -177,8 +177,11 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1) {
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1): Boolean {
+        var wasNew = false;
         synchronized(_watchlistStore) {
+            if(!_watchlistStore.hasItem { it.url == video.url })
+                wasNew = true;
             _watchlistStore.saveAsync(video);
             if(orderPosition == -1)
                 _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
@@ -198,6 +201,7 @@ class StatePlaylists {
         }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
+        return wasNew;
     }
 
     fun getLastPlayedPlaylist() : Playlist? {

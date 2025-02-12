@@ -132,7 +132,7 @@ open class PreviewVideoView : LinearLayout {
 
     fun hideAddTo() {
         _button_add_to.visibility = View.GONE
-        _button_add_to_queue.visibility = View.GONE
+        //_button_add_to_queue.visibility = View.GONE
     }
 
     protected open fun inflate(feedStyle: FeedStyle) {

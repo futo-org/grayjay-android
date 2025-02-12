@@ -2595,8 +2595,13 @@ class VideoDetailView : ConstraintLayout {
 
                     onAddToWatchLaterClicked.subscribe(this) {
                         if(it is IPlatformVideo) {
-                            StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true);
-                            UIDialogs.toast("Added to watch later\n[${it.name}]");
+                            if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
+                                UIDialogs.toast("Added to watch later\n[${it.name}]");
+                        }
+                    }
+                    onAddToQueueClicked.subscribe(this) {
+                        if(it is IPlatformVideo) {
+                            StatePlayer.instance.addToQueue(it);
                         }
                     }
                 })

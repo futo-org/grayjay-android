@@ -1075,8 +1075,9 @@ class UISlideOverlays {
                         StatePlayer.TYPE_WATCHLATER,
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
-                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true);
-                            UIDialogs.appToast("Added to watch later", false);
+                        call = {
+                            if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true))
+                                UIDialogs.appToast("Added to watch later", false);
                         }),
                     )
             );

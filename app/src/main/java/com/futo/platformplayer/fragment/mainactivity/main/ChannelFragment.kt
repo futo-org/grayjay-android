@@ -238,8 +238,8 @@ class ChannelFragment : MainFragment() {
             }
             adapter.onAddToWatchLaterClicked.subscribe { content ->
                 if (content is IPlatformVideo) {
-                    StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content), true)
-                    UIDialogs.toast("Added to watch later\n[${content.name}]")
+                    if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content), true))
+                        UIDialogs.toast("Added to watch later\n[${content.name}]")
                 }
             }
             adapter.onUrlClicked.subscribe { url ->
