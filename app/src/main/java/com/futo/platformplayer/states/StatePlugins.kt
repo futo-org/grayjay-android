@@ -2,6 +2,7 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.LoginActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -101,6 +102,8 @@ class StatePlugins {
             if (availableClient !is JSClient) {
                 continue
             }
+            if(!Settings.instance.plugins.checkDisabledPluginsForUpdates && StatePlatform.instance.isClientEnabled(availableClient.id))
+                continue;
 
             val newConfig = checkForUpdates(availableClient.config);
             if (newConfig != null) {

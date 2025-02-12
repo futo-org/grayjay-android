@@ -644,6 +644,9 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Plugins {
 
+        @FormField(R.string.check_disabled_plugin_updates, FieldForm.TOGGLE, R.string.check_disabled_plugin_updates_description, -1)
+        var checkDisabledPluginsForUpdates: Boolean = false;
+
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
 

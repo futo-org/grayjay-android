@@ -286,6 +286,8 @@
     <string name="also_removes_any_data_related_plugin_like_login_or_settings">Also removes any data related plugin like login or settings</string>
     <string name="announcement">Announcement</string>
     <string name="notifications">Notifications</string>
+    <string name="check_disabled_plugin_updates">Check disabled plugins for updates</string>
+    <string name="check_disabled_plugin_updates_description">Check disabled plugins for updates</string>
     <string name="planned_content_notifications">Planned Content Notifications</string>
     <string name="planned_content_notifications_description">Schedules discovered planned content as notifications, resulting in more accurate notifications for this content.</string>
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
