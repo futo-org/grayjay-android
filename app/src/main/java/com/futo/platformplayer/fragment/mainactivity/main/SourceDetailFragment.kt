@@ -556,7 +556,7 @@ class SourceDetailFragment : MainFragment() {
                     Logger.i(TAG, "Downloaded source config ($sourceUrl):\n${configJson}");
 
                     val config = SourcePluginConfig.fromJson(configJson);
-                    if (config.version <= c.version && config.name != "Youtube") {
+                    if (config.version <= c.version) {
                         Logger.i(TAG, "Plugin is up to date.");
                         withContext(Dispatchers.Main) { UIDialogs.toast(context.getString(R.string.plugin_is_fully_up_to_date)); };
                         return@launch;
