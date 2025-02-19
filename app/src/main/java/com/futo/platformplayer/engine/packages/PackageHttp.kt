@@ -126,9 +126,9 @@ class PackageHttp: V8Package {
     @V8Function
     fun GET(url: String, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false, useByteResponse: Boolean = false) : IBridgeHttpResponse {
         return if(useAuth)
-            _packageClientAuth.GET(url, headers, if(useByteResponse) ReturnType.BYTES else ReturnType.STRING)
+            _packageClientAuth.GET(url, headers, useByteResponse)
         else
-            _packageClient.GET(url, headers, if(useByteResponse) ReturnType.BYTES else ReturnType.STRING);
+            _packageClient.GET(url, headers, useByteResponse);
     }
     @V8Function
     fun POST(url: String, body: Any, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false, useByteResponse: Boolean = false) : IBridgeHttpResponse {
@@ -385,7 +385,8 @@ class PackageHttp: V8Package {
         }
 
         @V8Function
-        fun GET(url: String, headers: MutableMap<String, String> = HashMap(), returnType: ReturnType = ReturnType.STRING) : IBridgeHttpResponse {
+        fun GET(url: String, headers: MutableMap<String, String> = HashMap(), useByteResponse: Boolean = false) : IBridgeHttpResponse {
+            val returnType: ReturnType = if(useByteResponse) ReturnType.BYTES else ReturnType.STRING
             applyDefaultHeaders(headers);
             return logExceptions {
                 catchHttp {
