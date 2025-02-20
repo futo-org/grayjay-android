@@ -47,6 +47,7 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
+import com.futo.polycentric.core.hexStringToByteArray
 import hasAnySource
 import isDownloadable
 import kotlinx.coroutines.CancellationException
@@ -59,6 +60,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Transient
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -69,6 +71,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.ThreadLocalRandom
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.coroutines.resumeWithException
 import kotlin.time.times
 
@@ -564,6 +569,14 @@ class VideoDownload {
         }
     }
 
+    private fun decryptSegment(encryptedSegment: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val secretKey = SecretKeySpec(key, "AES")
+        val ivSpec = IvParameterSpec(iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+        return cipher.doFinal(encryptedSegment)
+    }
+
     private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
@@ -579,6 +592,14 @@ class VideoDownload {
                 ?: throw Exception("Variant playlist content is empty")
 
             val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
+            val decryptionInfo: DecryptionInfo? = if (variantPlaylist.decryptionInfo != null) {
+                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl)
+                check(keyResponse.isOk) { "HLS request failed for decryption key: ${keyResponse.code}" }
+                DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv.hexStringToByteArray())
+            } else {
+                null
+            }
+
             variantPlaylist.segments.forEachIndexed { index, segment ->
                 if (segment !is HLS.MediaSegment) {
                     return@forEachIndexed
@@ -590,7 +611,7 @@ class VideoDownload {
                 try {
                     segmentFiles.add(segmentFile)
 
-                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri) { segmentLength, totalRead, lastSpeed ->
+                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri, if (index == 0) null else decryptionInfo) { segmentLength, totalRead, lastSpeed ->
                         val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
                         val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
                         onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
@@ -771,7 +792,7 @@ class VideoDownload {
             else {
                 Logger.i(TAG, "Download $name Sequential");
                 try {
-                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, null, onProgress);
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
                     throw e
@@ -798,7 +819,31 @@ class VideoDownload {
         }
         return sourceLength!!;
     }
-    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, onProgress: (Long, Long, Long) -> Unit): Long {
+
+    data class DecryptionInfo(
+        val key: ByteArray,
+        val iv: ByteArray
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as DecryptionInfo
+
+            if (!key.contentEquals(other.key)) return false
+            if (!iv.contentEquals(other.iv)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = key.contentHashCode()
+            result = 31 * result + iv.contentHashCode()
+            return result
+        }
+    }
+
+    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, onProgress: (Long, Long, Long) -> Unit): Long {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -818,6 +863,8 @@ class VideoDownload {
         val sourceLength = result.body.contentLength();
         val sourceStream = result.body.byteStream();
 
+        val segmentBuffer = ByteArrayOutputStream()
+
         var totalRead: Long = 0;
         try {
             var read: Int;
@@ -828,7 +875,7 @@ class VideoDownload {
                 if (read < 0)
                     break;
 
-                fileStream.write(buffer, 0, read);
+                segmentBuffer.write(buffer, 0, read);
 
                 totalRead += read;
 
@@ -852,6 +899,14 @@ class VideoDownload {
         } finally {
             sourceStream.close()
             result.body.close()
+        }
+
+        if (decryptionInfo != null) {
+            val decryptedData =
+                decryptSegment(segmentBuffer.toByteArray(), decryptionInfo.key, decryptionInfo.iv)
+            fileStream.write(decryptedData)
+        } else {
+            fileStream.write(segmentBuffer.toByteArray())
         }
 
         onProgress(sourceLength, totalRead, 0);
