@@ -69,9 +69,7 @@ class HLS {
                 keyInfo?.find { it.startsWith("IV=") }?.substringAfter("=")?.substringAfter("x")
 
             val decryptionInfo: DecryptionInfo? = key?.let { k ->
-                iv?.let { i ->
-                    DecryptionInfo(k, i)
-                }
+                DecryptionInfo(k, iv)
             }
 
             val initSegment =
@@ -390,7 +388,7 @@ class HLS {
 
     data class DecryptionInfo(
         val keyUrl: String,
-        val iv: String
+        val iv: String?
     )
 
     data class VariantPlaylist(

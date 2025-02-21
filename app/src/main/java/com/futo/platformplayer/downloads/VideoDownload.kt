@@ -65,6 +65,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.lang.Thread.sleep
+import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -593,9 +594,9 @@ class VideoDownload {
 
             val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
             val decryptionInfo: DecryptionInfo? = if (variantPlaylist.decryptionInfo != null) {
-                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl)
+                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl, mutableMapOf("Cookie" to "sails.sid=s%3AeSKom53v4W3_0CliWJFFMj9k3hcAuyhx.Nf9lF1sUSQ0GUvCKBOM64bsV%2BZMOkiKke43eHO6gTZI;"))
                 check(keyResponse.isOk) { "HLS request failed for decryption key: ${keyResponse.code}" }
-                DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv.hexStringToByteArray())
+                DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv?.hexStringToByteArray())
             } else {
                 null
             }
@@ -611,7 +612,7 @@ class VideoDownload {
                 try {
                     segmentFiles.add(segmentFile)
 
-                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri, if (index == 0) null else decryptionInfo) { segmentLength, totalRead, lastSpeed ->
+                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
                         val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
                         val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
                         onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
@@ -651,10 +652,8 @@ class VideoDownload {
 
     private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { continuation ->
-            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
-            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
-
-            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+            val cmd =
+                "-i \"concat:${segmentFiles.joinToString("|")}\" -c copy \"${targetFile.absolutePath}\""
 
             val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?
@@ -664,7 +663,6 @@ class VideoDownload {
             val session = FFmpegKit.executeAsync(cmd,
                 { session ->
                     if (ReturnCode.isSuccess(session.returnCode)) {
-                        fileList.delete()
                         continuation.resumeWith(Result.success(Unit))
                     } else {
                         val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
@@ -672,7 +670,6 @@ class VideoDownload {
                         } else {
                             "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
                         }
-                        fileList.delete()
                         continuation.resumeWithException(RuntimeException(errorMessage))
                     }
                 },
@@ -792,7 +789,7 @@ class VideoDownload {
             else {
                 Logger.i(TAG, "Download $name Sequential");
                 try {
-                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, null, onProgress);
+                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, null, 0, onProgress);
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
                     throw e
@@ -822,7 +819,7 @@ class VideoDownload {
 
     data class DecryptionInfo(
         val key: ByteArray,
-        val iv: ByteArray
+        val iv: ByteArray?
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -843,7 +840,7 @@ class VideoDownload {
         }
     }
 
-    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, index: Int, onProgress: (Long, Long, Long) -> Unit): Long {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -902,8 +899,15 @@ class VideoDownload {
         }
 
         if (decryptionInfo != null) {
-            val decryptedData =
-                decryptSegment(segmentBuffer.toByteArray(), decryptionInfo.key, decryptionInfo.iv)
+            var iv = decryptionInfo.iv
+            if (iv == null) {
+                iv = ByteBuffer.allocate(16)
+                    .putLong(0L)
+                    .putLong(index.toLong())
+                    .array()
+            }
+
+            val decryptedData = decryptSegment(segmentBuffer.toByteArray(), decryptionInfo.key, iv!!)
             fileStream.write(decryptedData)
         } else {
             fileStream.write(segmentBuffer.toByteArray())
@@ -1222,7 +1226,7 @@ class VideoDownload {
             else if (container.contains("audio/webm"))
                 return "webm";
             else if (container == "application/vnd.apple.mpegurl")
-                return "mp4a";
+                return "mp4";
             else
                 return "audio";// throw IllegalStateException("Unknown container: " + container)
         }
