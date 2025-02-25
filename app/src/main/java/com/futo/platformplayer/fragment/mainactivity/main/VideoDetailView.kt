@@ -579,6 +579,14 @@ class VideoDetailView : ConstraintLayout {
         _minimize_title.setOnClickListener { onMaximize.emit(false) };
         _minimize_meta.setOnClickListener { onMaximize.emit(false) };
 
+        _player.onStateChange.subscribe {
+            if (_player.activelyPlaying) {
+                Logger.i(TAG, "Play changed, resetting error counter _didTriggerDatasourceErrorCount = 0 (_player.activelyPlaying: ${_player.activelyPlaying})")
+                _didTriggerDatasourceErrorCount = 0;
+                _didTriggerDatasourceError = false;
+            }
+        }
+
         _player.onPlayChanged.subscribe {
             if (StateCasting.instance.activeDevice == null) {
                 handlePlayChanged(it);
@@ -963,6 +971,7 @@ class VideoDetailView : ConstraintLayout {
                         throw IllegalStateException("Expected media content, found ${video.contentType}");
 
                     withContext(Dispatchers.Main) {
+                        _videoResumePositionMilliseconds = _player.position
                         setVideoDetails(video);
                     }
                 }
@@ -1265,8 +1274,6 @@ class VideoDetailView : ConstraintLayout {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
-        _didTriggerDatasourceErrroCount = 0;
-        _didTriggerDatasourceError = false;
         _autoplayVideo = null
         Logger.i(TAG, "Autoplay video cleared (setVideoDetails)")
 
@@ -1277,6 +1284,10 @@ class VideoDetailView : ConstraintLayout {
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
+
+            Logger.i(TAG, "_didTriggerDatasourceErrorCount reset to 0 because new video")
+            _didTriggerDatasourceErrorCount = 0;
+            _didTriggerDatasourceError = false;
         }
 
         if (videoDetail.datetime != null && videoDetail.datetime!! > OffsetDateTime.now())
@@ -1831,7 +1842,7 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private var _didTriggerDatasourceErrroCount = 0;
+    private var _didTriggerDatasourceErrorCount = 0;
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
@@ -1841,32 +1852,53 @@ class VideoDetailView : ConstraintLayout {
                 return;
             val config = currentVideo.sourceConfig;
 
-            if(_didTriggerDatasourceErrroCount <= 3) {
+            if(_didTriggerDatasourceErrorCount <= 3) {
                 _didTriggerDatasourceError = true;
-                _didTriggerDatasourceErrroCount++;
+                _didTriggerDatasourceErrorCount++;
 
-                UIDialogs.toast("Block detected, attempting bypass");
+                UIDialogs.toast("Detected video error, attempting automatic reload (${_didTriggerDatasourceErrorCount})");
+                Logger.i(TAG, "Block detected, attempting bypass (_didTriggerDatasourceErrorCount = ${_didTriggerDatasourceErrorCount})");
+
                 //return;
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
-                    val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
-                    val previousVideoSource = _lastVideoSource;
-                    val previousAudioSource = _lastAudioSource;
+                    try {
+                        val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
+                        val previousVideoSource = _lastVideoSource;
+                        val previousAudioSource = _lastAudioSource;
 
-                    if(newDetails is IPlatformVideoDetails) {
-                        val newVideoSource = if(previousVideoSource != null)
-                            VideoHelper.selectBestVideoSource(newDetails.video, previousVideoSource.height * previousVideoSource.width, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS);
-                        else null;
-                        val newAudioSource = if(previousAudioSource != null)
-                            VideoHelper.selectBestAudioSource(newDetails.video, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS, previousAudioSource.language, previousAudioSource.bitrate.toLong());
-                        else null;
-                        withContext(Dispatchers.Main) {
-                            video = newDetails;
-                            _player.setSource(newVideoSource, newAudioSource, true, true);
+                        if (newDetails is IPlatformVideoDetails) {
+                            val newVideoSource = if (previousVideoSource != null)
+                                VideoHelper.selectBestVideoSource(
+                                    newDetails.video,
+                                    previousVideoSource.height * previousVideoSource.width,
+                                    FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS
+                                );
+                            else null;
+                            val newAudioSource = if (previousAudioSource != null)
+                                VideoHelper.selectBestAudioSource(
+                                    newDetails.video,
+                                    FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
+                                    previousAudioSource.language,
+                                    previousAudioSource.bitrate.toLong()
+                                );
+                            else null;
+                            withContext(Dispatchers.Main) {
+                                video = newDetails;
+                                _player.setSource(newVideoSource, newAudioSource, true, true);
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to get video details, attempting retrying without reloading.", e)
+                        fragment.lifecycleScope.launch(Dispatchers.Main) {
+                            video?.let {
+                                _videoResumePositionMilliseconds = _player.position
+                                setVideoDetails(it, false)
+                            }
                         }
                     }
                 }
             }
-            else if(_didTriggerDatasourceErrroCount > 3) {
+            else if(_didTriggerDatasourceErrorCount > 3) {
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
                     context.getString(R.string.media_error),
                     context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
