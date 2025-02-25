@@ -922,7 +922,7 @@ class VideoDetailView : ConstraintLayout {
                     } else if(devices.size == 1){
                         val device = devices.first();
                         Logger.i(TAG, "Send to device? (public key: ${device.remotePublicKey}): " + videoToSend.url)
-                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
+                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non '${device.displayName}'" , {
                             Logger.i(TAG, "Send to device confirmed (public key: ${device.remotePublicKey}): " + videoToSend.url)
 
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
