@@ -6,12 +6,10 @@ import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateHistory
-import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StateSubscriptionGroups
 import com.futo.platformplayer.states.StateSubscriptions
@@ -30,6 +28,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -53,6 +52,9 @@ class SyncSession : IAuthorizable {
     private val _id = UUID.randomUUID()
     private var _remoteId: UUID? = null
     private var _lastAuthorizedRemoteId: UUID? = null
+    var remoteDeviceName: String? = null
+        private set
+    val displayName: String get() = remoteDeviceName ?: remotePublicKey
 
     var connected: Boolean = false
         private set(v) {
@@ -62,7 +64,7 @@ class SyncSession : IAuthorizable {
         }
     }
 
-    constructor(remotePublicKey: String, onAuthorized: (session: SyncSession, isNewlyAuthorized: Boolean, isNewSession: Boolean) -> Unit, onUnauthorized: (session: SyncSession) -> Unit, onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit, onClose: (session: SyncSession) -> Unit) {
+    constructor(remotePublicKey: String, onAuthorized: (session: SyncSession, isNewlyAuthorized: Boolean, isNewSession: Boolean) -> Unit, onUnauthorized: (session: SyncSession) -> Unit, onConnectedChanged: (session: SyncSession, connected: Boolean) -> Unit, onClose: (session: SyncSession) -> Unit, remoteDeviceName: String?) {
         this.remotePublicKey = remotePublicKey
         _onAuthorized = onAuthorized
         _onUnauthorized = onUnauthorized
@@ -85,7 +87,20 @@ class SyncSession : IAuthorizable {
 
     fun authorize(socketSession: SyncSocketSession) {
         Logger.i(TAG, "Sent AUTHORIZED with session id $_id")
-        socketSession.send(Opcode.NOTIFY_AUTHORIZED.value, 0u, ByteBuffer.wrap(_id.toString().toByteArray()))
+
+        if (socketSession.remoteVersion >= 3) {
+            val idStringBytes = _id.toString().toByteArray()
+            val nameBytes = "${android.os.Build.MANUFACTURER}-${android.os.Build.MODEL}".toByteArray()
+            val buffer = ByteArray(1 + idStringBytes.size + 1 + nameBytes.size)
+            socketSession.send(Opcode.NOTIFY_AUTHORIZED.value, 0u, ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).apply {
+                put(idStringBytes.size.toByte())
+                put(idStringBytes)
+                put(nameBytes.size.toByte())
+                put(nameBytes)
+            }.apply { flip() })
+        } else {
+            socketSession.send(Opcode.NOTIFY_AUTHORIZED.value, 0u, ByteBuffer.wrap(_id.toString().toByteArray()))
+        }
         _authorized = true
         checkAuthorized()
     }
@@ -138,15 +153,37 @@ class SyncSession : IAuthorizable {
 
             when (opcode) {
                 Opcode.NOTIFY_AUTHORIZED.value -> {
-                    val str = data.toUtf8String()
-                    _remoteId = if (data.remaining() >= 0) UUID.fromString(str) else UUID.fromString("00000000-0000-0000-0000-000000000000")
+                    if (socketSession.remoteVersion >= 3) {
+                        val idByteCount = data.get().toInt()
+                        if (idByteCount > 64)
+                            throw Exception("Id should always be smaller than 64 bytes")
+
+                        val idBytes = ByteArray(idByteCount)
+                        data.get(idBytes)
+
+                        val nameByteCount = data.get().toInt()
+                        if (nameByteCount > 64)
+                            throw Exception("Name should always be smaller than 64 bytes")
+
+                        val nameBytes = ByteArray(nameByteCount)
+                        data.get(nameBytes)
+
+                        _remoteId = UUID.fromString(idBytes.toString(Charsets.UTF_8))
+                        remoteDeviceName = nameBytes.toString(Charsets.UTF_8)
+                    } else {
+                        val str = data.toUtf8String()
+                        _remoteId = if (data.remaining() >= 0) UUID.fromString(str) else UUID.fromString("00000000-0000-0000-0000-000000000000")
+                        remoteDeviceName = null
+                    }
+
                     _remoteAuthorized = true
-                    Logger.i(TAG, "Received AUTHORIZED with session id $_remoteId")
+                    Logger.i(TAG, "Received AUTHORIZED with session id $_remoteId (device name: '${remoteDeviceName ?: "not set"}')")
                     checkAuthorized()
                     return
                 }
                 Opcode.NOTIFY_UNAUTHORIZED.value -> {
                     _remoteId = null
+                    remoteDeviceName = null
                     _lastAuthorizedRemoteId = null
                     _remoteAuthorized = false
                     _onUnauthorized(this)

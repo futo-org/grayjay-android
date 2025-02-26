@@ -8,7 +8,7 @@ The goal of the authentication system is to provide plugins the ability to make 
 >
 >You should always only login (and install for that matter) plugins you trust.
 
-How to actually use the authenticated client is described in the Http package documentation  (See [Package: Http](_blank)).
+How to actually use the authenticated client is described in the Http package documentation  (See [Package: Http](docs/packages/packageHttp.md)).
 This documentation will exclusively focus on configuring authentication and how it behaves.
 
 ## How it works
@@ -58,5 +58,5 @@ Headers are exclusively applied to the domains they are retrieved from. A plugin
 By default, when authentication requests are made, the authenticated client will behave similar to that of a normal browser. Meaning that if the server you are communicating with sets new cookies, the client will use those cookies instead. These new cookies are NOT saved to disk, meaning that whenever that plugin reloads the cookies will revert to those assigned at login.
 
 This behavior can be modified by using custom http clients as described in the http package documentation.
- (See [Package: Http](_blank))
+ (See [Package: Http](docs/packages/packageHttp.md))
 
