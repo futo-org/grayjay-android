@@ -418,7 +418,7 @@
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
     <string name="sync_grayjay">Sync Grayjay</string>
-    <string name="sync_grayjay_description">Sync your settings across multiple devices</string>
+    <string name="sync_grayjay_description">Sync your data across multiple devices</string>
     <string name="manage_polycentric_identity">Manage Polycentric identity</string>
     <string name="manage_your_polycentric_identity">Manage your Polycentric identity</string>
     <string name="manual_check">Manual check</string>

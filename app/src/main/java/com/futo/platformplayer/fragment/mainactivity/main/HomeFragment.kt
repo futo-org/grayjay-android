@@ -23,6 +23,7 @@ import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
+import com.futo.platformplayer.views.ToggleBar
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
@@ -94,6 +95,8 @@ class HomeFragment : MainFragment() {
     class HomeView : ContentFeedView<HomeFragment> {
         override val feedStyle: FeedStyle get() = Settings.instance.home.getHomeFeedStyle();
 
+        private var _toggleBar: ToggleBar? = null;
+
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
@@ -126,6 +129,8 @@ class HomeFragment : MainFragment() {
                     setLoading(false);
                 }, fragment);
             };
+
+            initializeToolbarContent();
 
             setPreviewsEnabled(Settings.instance.home.previewFeedItems);
             showAnnouncementView()
@@ -201,13 +206,43 @@ class HomeFragment : MainFragment() {
             loadResults();
         }
 
-        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
-            return results.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) };
+        private val _filterLock = Object();
+        private var _toggleRecent = false;
+        fun initializeToolbarContent() {
+            //Not stable enough with current viewport paging, doesn't work with less results, and reloads content instead of just re-filtering existing
+            /*
+            _toggleBar = ToggleBar(context).apply {
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+            }
+            synchronized(_filterLock) {
+                _toggleBar?.setToggles(
+                    //TODO: loadResults needs to be replaced with an internal reload of the current content
+                    ToggleBar.Toggle("Recent", _toggleRecent) { _toggleRecent = it; loadResults(false) }
+                )
+            }
+
+            _toolbarContentView.addView(_toggleBar, 0);
+            */
         }
 
-        private fun loadResults() {
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
+            return results.filter {
+                if(StateMeta.instance.isVideoHidden(it.url))
+                    return@filter false;
+                if(StateMeta.instance.isCreatorHidden(it.author.url))
+                    return@filter false;
+
+                if(_toggleRecent && (it.datetime?.getNowDiffHours() ?: 0) > 23) {
+                    return@filter false;
+                }
+
+                return@filter true;
+            };
+        }
+
+        private fun loadResults(withRefetch: Boolean = true) {
             setLoading(true);
-            _taskGetPager.run(true);
+            _taskGetPager.run(withRefetch);
         }
         private fun loadedResult(pager : IPager<IPlatformContent>) {
             if (pager is EmptyPager<IPlatformContent>) {
