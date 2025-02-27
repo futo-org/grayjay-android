@@ -156,7 +156,6 @@
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.SettingsActivity"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.DeveloperActivity"
