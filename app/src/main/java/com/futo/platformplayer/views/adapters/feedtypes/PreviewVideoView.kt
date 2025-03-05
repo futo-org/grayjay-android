@@ -24,7 +24,6 @@ import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.images.GlideHelper.Companion.loadThumbnails
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads

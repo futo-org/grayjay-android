@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.views.SupportView
+import com.futo.polycentric.core.PolycentricProfile
 
 
 class ChannelMonetizationFragment : Fragment, IChannelTabFragment {

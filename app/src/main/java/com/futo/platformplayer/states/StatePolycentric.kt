@@ -21,9 +21,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.dp
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.selectBestImage
@@ -33,6 +31,7 @@ import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ClaimType
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Opinion
+import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.PublicKey
 import com.futo.polycentric.core.SignedEvent
@@ -234,34 +233,7 @@ class StatePolycentric {
         if (!enabled) {
             return Pair(false, listOf(url));
         }
-        var polycentricProfile: PolycentricProfile? = null;
-        try {
-            val polycentricCached = PolycentricCache.instance.getCachedProfile(url, cacheOnly)
-            polycentricProfile = polycentricCached?.profile;
-            if (polycentricCached == null && channelId != null) {
-                Logger.i("StateSubscriptions", "Get polycentric profile not cached");
-                if(!cacheOnly) {
-                    polycentricProfile = runBlocking { PolycentricCache.instance.getProfileAsync(channelId, if(doCacheNull) url else null) }?.profile;
-                    didUpdate = true;
-                }
-            } else {
-                Logger.i("StateSubscriptions", "Get polycentric profile cached");
-            }
-        }
-        catch(ex: Throwable) {
-            Logger.w(StateSubscriptions.TAG, "Polycentric getCachedProfile failed for subscriptions", ex);
-            //TODO: Some way to communicate polycentric failing without blocking here
-        }
-        if(polycentricProfile != null) {
-            val urls = polycentricProfile.ownedClaims.groupBy { it.claim.claimType }
-                .mapNotNull { it.value.firstOrNull()?.claim?.resolveChannelUrl() }.toMutableList();
-            if(urls.any { it.equals(url, true) })
-                return Pair(didUpdate, urls);
-            else
-                return Pair(didUpdate, listOf(url) + urls);
-        }
-        else
-            return Pair(didUpdate, listOf(url));
+        return Pair(didUpdate, listOf(url));
     }
 
     fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent>? {
@@ -325,7 +297,7 @@ class StatePolycentric {
                     id = PlatformID("polycentric", author, null, ClaimType.POLYCENTRIC.value.toInt()),
                     name = systemState.username,
                     url = author,
-                    thumbnail = systemState.avatar?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                    thumbnail = systemState.avatar?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
                     subscribers = null
                 ),
                 msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
@@ -349,7 +321,7 @@ class StatePolycentric {
     suspend fun getLikesDislikesReplies(reference: Protocol.Reference): LikesDislikesReplies {
         ensureEnabled()
 
-        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
+        val response = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, null,
             null,
             listOf(
                 Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
@@ -382,7 +354,7 @@ class StatePolycentric {
         }
 
         val pointer = Protocol.Pointer.parseFrom(reference.reference)
-        val events = ApiMethods.getEvents(PolycentricCache.SERVER, pointer.system, Protocol.RangesForSystem.newBuilder()
+        val events = ApiMethods.getEvents(ApiMethods.SERVER, pointer.system, Protocol.RangesForSystem.newBuilder()
             .addRangesForProcesses(Protocol.RangesForProcess.newBuilder()
                 .setProcess(pointer.process)
                 .addRanges(Protocol.Range.newBuilder()
@@ -400,11 +372,11 @@ class StatePolycentric {
         }
 
         val post = Protocol.Post.parseFrom(ev.content);
-        val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(PolycentricCache.SERVER));
+        val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(ApiMethods.SERVER));
         val dp_25 = 25.dp(StateApp.instance.context.resources)
 
         val profileEvents = ApiMethods.getQueryLatest(
-            PolycentricCache.SERVER,
+            ApiMethods.SERVER,
             ev.system.toProto(),
             listOf(
                 ContentType.AVATAR.value,
@@ -433,7 +405,7 @@ class StatePolycentric {
                 id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
                 name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
                 url = systemLinkUrl,
-                thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
                 subscribers = null
             ),
             msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
@@ -445,12 +417,12 @@ class StatePolycentric {
         )
     }
 
-    suspend fun getCommentPager(contextUrl: String, reference: Protocol.Reference, extraByteReferences: List<ByteArray>? = null): IPager<IPlatformComment> {
+    suspend fun getCommentPager(contextUrl: String, reference: Reference, extraByteReferences: List<ByteArray>? = null): IPager<IPlatformComment> {
         if (!enabled) {
             return EmptyPager()
         }
 
-        val response = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, null,
+        val response = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, null,
             Protocol.QueryReferencesRequestEvents.newBuilder()
                 .setFromType(ContentType.POST.value)
                 .addAllCountLwwElementReferences(arrayListOf(
@@ -486,7 +458,7 @@ class StatePolycentric {
             }
 
             override suspend fun nextPageAsync() {
-                val nextPageResponse = ApiMethods.getQueryReferences(PolycentricCache.SERVER, reference, _cursor,
+                val nextPageResponse = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, _cursor,
                     Protocol.QueryReferencesRequestEvents.newBuilder()
                         .setFromType(ContentType.POST.value)
                         .addAllCountLwwElementReferences(arrayListOf(
@@ -534,7 +506,7 @@ class StatePolycentric {
                 return@mapNotNull LazyComment(scope.async(_commentPoolDispatcher){
                     Logger.i(TAG, "Fetching comment data for [" + ev.system.key.toBase64() + "]");
                     val profileEvents = ApiMethods.getQueryLatest(
-                        PolycentricCache.SERVER,
+                        ApiMethods.SERVER,
                         ev.system.toProto(),
                         listOf(
                             ContentType.AVATAR.value,
@@ -558,7 +530,7 @@ class StatePolycentric {
 
                     val unixMilliseconds = ev.unixMilliseconds
                     //TODO: Don't use single hardcoded sderver here
-                    val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(PolycentricCache.SERVER));
+                    val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(ApiMethods.SERVER));
                     val dp_25 = 25.dp(StateApp.instance.context.resources)
                     return@async PolycentricPlatformComment(
                         contextUrl = contextUrl,
@@ -566,7 +538,7 @@ class StatePolycentric {
                             id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
                             name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
                             url = systemLinkUrl,
-                            thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(PolycentricCache.SERVER)) },
+                            thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
                             subscribers = null
                         ),
                         msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,

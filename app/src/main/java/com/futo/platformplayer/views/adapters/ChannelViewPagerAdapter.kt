@@ -17,7 +17,7 @@ import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
 import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.futo.polycentric.core.PolycentricProfile
 import com.google.android.material.tabs.TabLayout
 
 

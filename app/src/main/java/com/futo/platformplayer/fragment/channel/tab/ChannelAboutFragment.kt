@@ -13,7 +13,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlLinks
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.selectBestImage
@@ -21,6 +20,7 @@ import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.platform.PlatformLinkView
+import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.toName
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
@@ -134,9 +134,7 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
             }
         }
         if(!map.containsKey("Harbor"))
-            this.context?.let {
-                map.set("Harbor", polycentricProfile.getHarborUrl(it));
-            }
+            map.set("Harbor", polycentricProfile.getHarborUrl());
 
         if (map.isNotEmpty())
             setLinks(map, if (polycentricProfile.systemState.username.isNotBlank()) polycentricProfile.systemState.username else _lastChannel?.name ?: "")

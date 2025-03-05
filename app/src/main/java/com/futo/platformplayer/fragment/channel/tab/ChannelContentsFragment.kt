@@ -29,7 +29,6 @@ import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.fragment.mainactivity.main.FeedView
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
@@ -39,6 +38,7 @@ import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
+import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.max

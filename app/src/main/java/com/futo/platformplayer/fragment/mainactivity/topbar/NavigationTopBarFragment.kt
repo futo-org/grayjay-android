@@ -14,9 +14,9 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.views.casting.CastButton
+import com.futo.polycentric.core.PolycentricProfile
 
 class NavigationTopBarFragment : TopFragment() {
     private var _buttonBack: ImageButton? = null;

@@ -18,8 +18,6 @@ import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fixHtmlLinks
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
-import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -29,6 +27,7 @@ import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
+import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.Opinion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,24 +80,18 @@ class CommentViewHolder : ViewHolder {
                 throw Exception("Not implemented for non polycentric comments")
             }
 
-            if (args.hasLiked) {
-                args.processHandle.opinion(c.reference, Opinion.like);
+            val newOpinion: Opinion = if (args.hasLiked) {
+                Opinion.like
             } else if (args.hasDisliked) {
-                args.processHandle.opinion(c.reference, Opinion.dislike);
+                Opinion.dislike
             } else {
-                args.processHandle.opinion(c.reference, Opinion.neutral);
+                Opinion.neutral
             }
 
             _layoutComment.alpha = if (args.dislikes > 2 && args.dislikes.toFloat() / (args.likes + args.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                try {
-                    Logger.i(TAG, "Started backfill");
-                    args.processHandle.fullyBackfillServersAnnounceExceptions();
-                    Logger.i(TAG, "Finished backfill");
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill servers.", e)
-                }
+                ApiMethods.setOpinion(args.processHandle, c.reference, newOpinion)
             }
 
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)

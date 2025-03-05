@@ -16,7 +16,6 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.others.CreatorThumbnail

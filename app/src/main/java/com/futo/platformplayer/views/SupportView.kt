@@ -14,10 +14,10 @@ import androidx.core.view.isVisible
 import androidx.core.view.size
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.buttons.BigButton
+import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.imageview.ShapeableImageView
 
