@@ -47,7 +47,6 @@ open class PreviewVideoView : LinearLayout {
     protected val _imageVideo: ImageView
     protected val _imageChannel: ImageView?
     protected val _creatorThumbnail: CreatorThumbnail?
-    protected val _imageNeopassChannel: ImageView?;
     protected val _platformIndicator: PlatformIndicator;
     protected val _textVideoName: TextView
     protected val _textChannelName: TextView
@@ -57,7 +56,6 @@ open class PreviewVideoView : LinearLayout {
     protected var _playerVideoThumbnail: FutoThumbnailPlayer? = null;
     protected val _containerLive: LinearLayout;
     protected val _playerContainer: FrameLayout;
-    protected var _neopassAnimator: ObjectAnimator? = null;
     protected val _layoutDownloaded: FrameLayout;
 
     protected val _button_add_to_queue : View;
@@ -65,15 +63,6 @@ open class PreviewVideoView : LinearLayout {
     protected val _button_add_to : View;
 
     protected val _exoPlayer: PlayerManager?;
-
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { it -> onProfileLoaded(it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
-
     private val _timeBar: ProgressBar?;
 
     val onVideoClicked = Event2<IPlatformVideo, Long>();
@@ -108,7 +97,6 @@ open class PreviewVideoView : LinearLayout {
         _button_add_to_queue = findViewById(R.id.button_add_to_queue);
         _button_add_to_watch_later = findViewById(R.id.button_add_to_watch_later);
         _button_add_to = findViewById(R.id.button_add_to);
-        _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
         _layoutDownloaded = findViewById(R.id.layout_downloaded);
         _timeBar = findViewById(R.id.time_bar)
 
@@ -160,15 +148,12 @@ open class PreviewVideoView : LinearLayout {
 
 
     open fun bind(content: IPlatformContent) {
-        _taskLoadProfile.cancel();
-
         isClickable = true;
 
         val isPlanned = (content.datetime?.getNowDiffSeconds() ?: 0) < 0;
 
         stopPreview();
 
-        _imageNeopassChannel?.visibility = View.GONE;
         _creatorThumbnail?.setThumbnail(content.author.thumbnail, false);
 
         val thumbnail = content.author.thumbnail
@@ -185,16 +170,6 @@ open class PreviewVideoView : LinearLayout {
         }
 
         _textChannelName.text = content.author.name
-
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(content.author.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(content.author.id);
-            }
-        } else {
-            _taskLoadProfile.run(content.author.id);
-        }
 
         _imageChannel?.clipToOutline = true;
 
@@ -333,52 +308,6 @@ open class PreviewVideoView : LinearLayout {
     //Events
     fun setMuteChangedListener(callback : (FutoThumbnailPlayer, Boolean) -> Unit) {
         _playerVideoThumbnail?.setMuteChangedListener(callback);
-    }
-
-    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        _neopassAnimator?.cancel();
-        _neopassAnimator = null;
-
-        val profile = cachedPolycentricProfile?.profile;
-        if (_creatorThumbnail != null) {
-            val dp_32 = 32.dp(context.resources);
-            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_32 * dp_32)
-                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-            if (avatar != null) {
-                _creatorThumbnail.setThumbnail(avatar, animate);
-            } else {
-                _creatorThumbnail.setThumbnail(content?.author?.thumbnail, animate);
-                _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-            }
-        } else if (_imageChannel != null) {
-            val dp_28 = 28.dp(context.resources);
-            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_28 * dp_28)
-                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-            if (avatar != null) {
-                _imageChannel.let {
-                    Glide.with(_imageChannel)
-                        .load(avatar)
-                        .placeholder(R.drawable.placeholder_channel_thumbnail)
-                        .into(_imageChannel);
-                }
-
-                _imageNeopassChannel?.visibility = View.VISIBLE
-                if (animate) {
-                    _neopassAnimator = ObjectAnimator.ofFloat(_imageNeopassChannel, "alpha", 0.0f, 1.0f).setDuration(500)
-                    _neopassAnimator?.start()
-                } else {
-                    _imageNeopassChannel?.alpha = 1.0f;
-                }
-            } else {
-                _imageNeopassChannel?.visibility = View.GONE
-            }
-        }
-
-        if (profile != null) {
-            _textChannelName.text = profile.systemState.username
-        }
     }
 
     companion object {

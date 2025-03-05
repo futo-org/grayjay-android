@@ -27,14 +27,6 @@ class CreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyVi
 
     val onClick = Event1<IPlatformChannel>();
 
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { onProfileLoaded(it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
-    
     init {
         _creatorThumbnail = _view.findViewById(R.id.creator_thumbnail);
         _name = _view.findViewById(R.id.text_channel_name);
@@ -45,40 +37,10 @@ class CreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyVi
     }
 
     override fun bind(value: IPlatformChannel) {
-        _taskLoadProfile.cancel();
-
         _channel = value;
 
         _creatorThumbnail.setThumbnail(value.thumbnail, false);
         _name.text = value.name;
-
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(value.id);
-            }
-        } else {
-            _taskLoadProfile.run(value.id);
-        }
-    }
-
-    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        val dp_55 = 55.dp(itemView.context.resources)
-        val profile = cachedPolycentricProfile?.profile;
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_55 * dp_55)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(_channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        if (profile != null) {
-            _name.text = profile.systemState.username;
-        }
     }
 
     companion object {
@@ -94,14 +56,6 @@ class SelectableCreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAda
 
     val onClick = Event1<Selectable>();
 
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { onProfileLoaded(it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
-
     init {
         _creatorThumbnail = _view.findViewById(R.id.creator_thumbnail);
         _name = _view.findViewById(R.id.text_channel_name);
@@ -112,8 +66,6 @@ class SelectableCreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAda
     }
 
     override fun bind(value: Selectable) {
-        _taskLoadProfile.cancel();
-
         _channel = value;
 
         if(value.active)
@@ -123,34 +75,6 @@ class SelectableCreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAda
 
         _creatorThumbnail.setThumbnail(value.channel.thumbnail, false);
         _name.text = value.channel.name;
-
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.channel.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(value.channel.id);
-            }
-        } else {
-            _taskLoadProfile.run(value.channel.id);
-        }
-    }
-
-    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        val dp_55 = 55.dp(itemView.context.resources)
-        val profile = cachedPolycentricProfile?.profile;
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_55 * dp_55)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(_channel?.channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        if (profile != null) {
-            _name.text = profile.systemState.username;
-        }
     }
 
     companion object {

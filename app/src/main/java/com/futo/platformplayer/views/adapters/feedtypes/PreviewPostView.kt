@@ -44,7 +44,6 @@ class PreviewPostView : LinearLayout {
 
     private val _imageAuthorThumbnail: ImageView;
     private val _textAuthorName: TextView;
-    private val _imageNeopassChannel: ImageView;
     private val _textMetadata: TextView;
     private val _textTitle: TextView;
     private val _textDescription: TextView;
@@ -64,15 +63,6 @@ class PreviewPostView : LinearLayout {
     private val _layoutComments: LinearLayout?;
     private val _textComments: TextView?;
 
-    private var _neopassAnimator: ObjectAnimator? = null;
-
-    private val _taskLoadValidClaims = TaskHandler<PlatformID, PolycentricCache.CachedOwnedClaims>(StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getValidClaimsAsync(it).await() })
-        .success { it -> updateClaimsLayout(it, animate = true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load claims.", it);
-        };
-
     val content: IPlatformContent? get() = _content;
 
     val onContentClicked = Event1<IPlatformContent>();
@@ -83,7 +73,6 @@ class PreviewPostView : LinearLayout {
 
         _imageAuthorThumbnail = findViewById(R.id.image_author_thumbnail);
         _textAuthorName = findViewById(R.id.text_author_name);
-        _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
         _textMetadata = findViewById(R.id.text_metadata);
         _textTitle = findViewById(R.id.text_title);
         _textDescription = findViewById(R.id.text_description);
@@ -130,20 +119,7 @@ class PreviewPostView : LinearLayout {
     }
 
     fun bind(content: IPlatformContent) {
-        _taskLoadValidClaims.cancel();
         _content = content;
-
-        if (content.author.id.claimType > 0) {
-            val cachedClaims = PolycentricCache.instance.getCachedValidClaims(content.author.id);
-            if (cachedClaims != null) {
-                updateClaimsLayout(cachedClaims, animate = false);
-            } else {
-                updateClaimsLayout(null, animate = false);
-                _taskLoadValidClaims.run(content.author.id);
-            }
-        } else {
-            updateClaimsLayout(null, animate = false);
-        }
 
         _textAuthorName.text = content.author.name;
         _textMetadata.text = content.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "";
@@ -290,25 +266,6 @@ class PreviewPostView : LinearLayout {
                 layoutImages.visibility = View.GONE;
             }
         };
-    }
-
-    private fun updateClaimsLayout(claims: PolycentricCache.CachedOwnedClaims?, animate: Boolean) {
-        _neopassAnimator?.cancel();
-        _neopassAnimator = null;
-
-        val harborAvailable = claims != null && !claims.ownedClaims.isNullOrEmpty();
-        if (harborAvailable) {
-            _imageNeopassChannel.visibility = View.VISIBLE
-            if (animate) {
-                _neopassAnimator = ObjectAnimator.ofFloat(_imageNeopassChannel, "alpha", 0.0f, 1.0f).setDuration(500)
-                _neopassAnimator?.start()
-            }
-        } else {
-            _imageNeopassChannel.visibility = View.GONE
-        }
-
-        //TODO: Necessary if we decide to use creator thumbnail with neopass indicator instead
-        //_creatorThumbnail?.setHarborAvailable(harborAvailable, animate)
     }
 
     companion object {

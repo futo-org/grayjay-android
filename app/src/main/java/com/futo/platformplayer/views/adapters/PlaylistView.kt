@@ -29,21 +29,12 @@ open class PlaylistView : LinearLayout {
     protected val _imageThumbnail: ImageView
     protected val _imageChannel: ImageView?
     protected val _creatorThumbnail: CreatorThumbnail?
-    protected val _imageNeopassChannel: ImageView?;
     protected val _platformIndicator: PlatformIndicator;
     protected val _textPlaylistName: TextView
     protected val _textVideoCount: TextView
     protected val _textVideoCountLabel: TextView;
     protected val _textPlaylistItems: TextView
     protected val _textChannelName: TextView
-    protected var _neopassAnimator: ObjectAnimator? = null;
-
-    private val _taskLoadValidClaims = TaskHandler<PlatformID, PolycentricCache.CachedOwnedClaims>(StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getValidClaimsAsync(it).await() })
-        .success { it -> updateClaimsLayout(it, animate = true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load claims.", it);
-        };
 
     val onPlaylistClicked = Event1<IPlatformPlaylist>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
@@ -66,7 +57,6 @@ open class PlaylistView : LinearLayout {
         _textVideoCountLabel = findViewById(R.id.text_video_count_label);
         _textChannelName = findViewById(R.id.text_channel_name);
         _textPlaylistItems = findViewById(R.id.text_playlist_items);
-        _imageNeopassChannel = findViewById(R.id.image_neopass_channel);
 
         setOnClickListener { onOpenClicked()  };
         _imageChannel?.setOnClickListener { currentPlaylist?.let { onChannelClicked.emit(it.author) }  };
@@ -88,20 +78,6 @@ open class PlaylistView : LinearLayout {
 
 
     open fun bind(content: IPlatformContent) {
-        _taskLoadValidClaims.cancel();
-
-        if (content.author.id.claimType > 0) {
-            val cachedClaims = PolycentricCache.instance.getCachedValidClaims(content.author.id);
-            if (cachedClaims != null) {
-                updateClaimsLayout(cachedClaims, animate = false);
-            } else {
-                updateClaimsLayout(null, animate = false);
-                _taskLoadValidClaims.run(content.author.id);
-            }
-        } else {
-            updateClaimsLayout(null, animate = false);
-        }
-
         isClickable = true;
 
         _imageChannel?.let {
@@ -153,25 +129,6 @@ open class PlaylistView : LinearLayout {
             currentPlaylist = null;
             _imageThumbnail.setImageResource(0);
         }
-    }
-
-    private fun updateClaimsLayout(claims: PolycentricCache.CachedOwnedClaims?, animate: Boolean) {
-        _neopassAnimator?.cancel();
-        _neopassAnimator = null;
-
-        val firstClaim = claims?.ownedClaims?.firstOrNull();
-        val harborAvailable = firstClaim != null
-        if (harborAvailable) {
-            _imageNeopassChannel?.visibility = View.VISIBLE
-            if (animate) {
-                _neopassAnimator = ObjectAnimator.ofFloat(_imageNeopassChannel, "alpha", 0.0f, 1.0f).setDuration(500)
-                _neopassAnimator?.start()
-            }
-        } else {
-            _imageNeopassChannel?.visibility = View.GONE
-        }
-
-        _creatorThumbnail?.setHarborAvailable(harborAvailable, animate, firstClaim?.system?.toProto())
     }
 
     companion object {

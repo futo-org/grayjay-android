@@ -34,14 +34,6 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
 
     val onClick = Event1<PlatformAuthorLink>();
 
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { it -> onProfileLoaded(it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
-
     init {
         _textName = _view.findViewById(R.id.text_channel_name);
         _creatorThumbnail = _view.findViewById(R.id.creator_thumbnail);
@@ -61,20 +53,8 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
     }
 
     override fun bind(value: PlatformAuthorLink) {
-        _taskLoadProfile.cancel();
-
         _creatorThumbnail.setThumbnail(value.thumbnail, false);
         _textName.text = value.name;
-
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(value.id);
-            }
-        } else {
-            _taskLoadProfile.run(value.id);
-        }
 
         if(value.subscribers == null || (value.subscribers ?: 0) <= 0L)
             _textMetadata.visibility = View.GONE;
@@ -85,25 +65,6 @@ class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Bo
         _buttonSubscribe.setSubscribeChannel(value.url);
         _platformIndicator.setPlatformFromClientID(value.id.pluginId);
         _authorLink = value;
-    }
-
-    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        val dp_61 = 61.dp(itemView.context.resources);
-
-        val profile = cachedPolycentricProfile?.profile;
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_61 * dp_61)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(_authorLink?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        if (profile != null) {
-            _textName.text = profile.systemState.username;
-        }
     }
 
     companion object {
