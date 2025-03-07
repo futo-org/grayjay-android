@@ -1,13 +1,11 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.StrictMode
@@ -57,6 +55,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsF
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PostDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.RemotePlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ShortsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
@@ -74,7 +73,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.UrlVideoWithTime
-import com.futo.platformplayer.receivers.MediaButtonReceiver
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
@@ -161,6 +159,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainRemotePlaylist: RemotePlaylistFragment;
     lateinit var _fragWatchlist: WatchLaterFragment;
     lateinit var _fragHistory: HistoryFragment;
+    lateinit var _fragShorts: ShortsFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
     lateinit var _fragDownloads: DownloadsFragment;
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
@@ -315,6 +314,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragPostDetail = PostDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
+        _fragShorts = ShortsFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
         _fragDownloads = DownloadsFragment();
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
@@ -1088,6 +1088,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             if (segment.isMainView) {
                 var transaction = supportFragmentManager.beginTransaction();
+                transaction.setReorderingAllowed(true)
                 if (segment.topBar != null) {
                     if (segment.topBar != fragCurrent.topBar) {
                         transaction = transaction
@@ -1188,6 +1189,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             PostDetailFragment::class -> _fragPostDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
+            ShortsFragment::class -> _fragShorts as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;
             DownloadsFragment::class -> _fragDownloads as T;
             ImportSubscriptionsFragment::class -> _fragImportSubscriptions as T;

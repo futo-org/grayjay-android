@@ -25,6 +25,7 @@
     <string name="failed_to_retrieve_data_are_you_connected">Failed to retrieve data, are you connected?</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
+    <string name="shorts">Shorts</string>
     <string name="sources">Sources</string>
     <string name="buy">Buy</string>
     <string name="faq">FAQ</string>

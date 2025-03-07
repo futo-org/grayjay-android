@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.AttributeSet
 import android.widget.RelativeLayout
 import androidx.annotation.OptIn
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.media3.common.C
@@ -68,7 +69,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.math.abs
 
-abstract class FutoVideoPlayerBase : RelativeLayout {
+abstract class FutoVideoPlayerBase : ConstraintLayout {
     private val TAG = "FutoVideoPlayerBase"
 
     private val TEMP_DIRECTORY = StateApp.instance.getTempDirectory();
