@@ -32,6 +32,8 @@ import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
+import com.futo.platformplayer.stores.DownloadsOrderingStorage
+import com.futo.platformplayer.stores.FragmentedStorage
 
 class DownloadsFragment : MainFragment() {
     private val TAG = "DownloadsFragment";
@@ -103,7 +105,7 @@ class DownloadsFragment : MainFragment() {
         private val _listDownloaded: AnyInsertedAdapterView<VideoLocal, VideoDownloadViewHolder>;
 
         private var lastDownloads: List<VideoLocal>? = null;
-        private var ordering: String? = "nameAsc";
+        private var ordering = FragmentedStorage.get<DownloadsOrderingStorage>();
 
         constructor(frag: DownloadsFragment, inflater: LayoutInflater): super(frag.requireContext()) {
             inflater.inflate(R.layout.fragment_downloads, this);
@@ -132,18 +134,29 @@ class DownloadsFragment : MainFragment() {
             spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.downloads_sortby_array)).also {
                 it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             };
-            spinnerSortBy.setSelection(0);
+            var spinnerSelectionNum = when(ordering.ordering) {
+                "downloadDateAsc" -> 2
+                "downloadDateDesc" -> 3
+                "nameAsc" -> 0
+                "nameDesc" -> 1
+                "releasedAsc" -> 4
+                "releasedDesc" -> 5
+                else -> 5
+            }
+            spinnerSortBy.setSelection(spinnerSelectionNum);
             spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                    spinnerSelectionNum = pos
                     when(pos) {
-                        0 -> ordering = "nameAsc"
-                        1 -> ordering = "nameDesc"
-                        2 -> ordering = "downloadDateAsc"
-                        3 -> ordering = "downloadDateDesc"
-                        4 -> ordering = "releasedAsc"
-                        5 -> ordering = "releasedDesc"
-                        else -> ordering = null
+                        0 -> ordering.update("nameAsc")
+                        1 -> ordering.update("nameDesc")
+                        2 -> ordering.update("downloadDateAsc")
+                        3 -> ordering.update("downloadDateDesc")
+                        4 -> ordering.update("releasedAsc")
+                        5 -> ordering.update("releasedDesc")
+                        else -> ordering.update("downloadDateDesc")
                     }
+                    ordering.save()
                     updateContentFilters()
                 }
                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
@@ -230,8 +243,8 @@ class DownloadsFragment : MainFragment() {
             var vidsToReturn = vids;
             if(!_listDownloadSearch.text.isNullOrEmpty())
                 vidsToReturn = vids.filter { it.name.contains(_listDownloadSearch.text, true) };
-            if(!ordering.isNullOrEmpty()) {
-                vidsToReturn = when(ordering){
+            if(ordering.ordering.isNotEmpty()) {
+                vidsToReturn = when(ordering.ordering){
                     "downloadDateAsc" -> vidsToReturn.sortedBy { it.downloadDate ?: OffsetDateTime.MAX };
                     "downloadDateDesc" -> vidsToReturn.sortedByDescending { it.downloadDate ?: OffsetDateTime.MIN };
                     "nameAsc" -> vidsToReturn.sortedBy { it.name.lowercase() }
