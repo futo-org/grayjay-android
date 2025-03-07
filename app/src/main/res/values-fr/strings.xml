@@ -688,6 +688,14 @@
         <item>Continuer la lecture</item>
         <item>Superposition du lecteur</item>
     </string-array>
+    <string-array name="seek_offset_duration">
+        <item>3 secondes</item>
+        <item>5 secondes</item>
+        <item>10 secondes</item>
+        <item>20 secondes</item>
+        <item>30 secondes</item>
+        <item>60 secondes</item>
+    </string-array>
     <string-array name="resume_after_preview">
         <item>Reprendre depuis le début</item>
         <item>Reprendre après 10s</item>
