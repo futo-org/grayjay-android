@@ -6,9 +6,7 @@ import android.webkit.WebView
 import android.widget.LinearLayout
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.views.SupportView
 
 class WebviewOverlay : LinearLayout {
     val onClose = Event0();

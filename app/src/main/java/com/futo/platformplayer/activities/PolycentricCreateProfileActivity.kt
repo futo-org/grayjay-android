@@ -11,16 +11,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.LoaderView
+import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.Store
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,7 +87,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                                 Logger.e(TAG, "Failed to save process secret to secret storage.", e)
                             }
 
-                            processHandle.addServer(PolycentricCache.SERVER);
+                            processHandle.addServer(ApiMethods.SERVER);
                             processHandle.setUsername(username);
                             StatePolycentric.instance.setProcessHandle(processHandle);
                         } catch (e: Throwable) {

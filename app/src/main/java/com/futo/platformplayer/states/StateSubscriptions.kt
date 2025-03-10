@@ -15,7 +15,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringDateMapStorage
@@ -333,12 +332,6 @@ class StateSubscriptions {
         synchronized(_subscriptions) {
             if (_subscriptions.hasItem { urls.contains(it.channel.url) }) {
                 return true;
-            }
-
-            //TODO: This causes issues, because what if the profile is not cached yet when the susbcribe button is loaded for example?
-            val cachedProfile = PolycentricCache.instance.getCachedProfile(urls.first(), true)?.profile;
-            if (cachedProfile != null) {
-                return cachedProfile.ownedClaims.any { c -> _subscriptions.hasItem { s -> c.claim.resolveChannelUrl() == s.channel.url } };
             }
 
             return false;

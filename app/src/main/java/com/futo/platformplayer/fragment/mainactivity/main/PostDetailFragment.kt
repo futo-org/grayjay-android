@@ -33,10 +33,8 @@ import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlWhitespace
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
@@ -47,7 +45,6 @@ import com.futo.platformplayer.views.adapters.ChannelTab
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.platformplayer.views.others.Toggle
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.platform.PlatformIndicator
@@ -57,6 +54,8 @@ import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
 import com.futo.polycentric.core.Opinion
+import com.futo.polycentric.core.PolycentricProfile
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
@@ -112,7 +111,7 @@ class PostDetailFragment : MainFragment {
         private var _isLoading = false;
         private var _post: IPlatformPostDetails? = null;
         private var _postOverview: IPlatformPost? = null;
-        private var _polycentricProfile: PolycentricCache.CachedPolycentricProfile? = null;
+        private var _polycentricProfile: PolycentricProfile? = null;
         private var _version = 0;
         private var _isRepliesVisible: Boolean = false;
         private var _repliesAnimator: ViewPropertyAnimator? = null;
@@ -169,7 +168,7 @@ class PostDetailFragment : MainFragment {
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost, null, _fragment);
             } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
-        private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(StateApp.instance.scopeGetter, { PolycentricCache.instance.getProfileAsync(it) })
+        private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) })
             .success { it -> setPolycentricProfile(it, animate = true) }
             .exception<Throwable> {
                 Logger.w(TAG, "Failed to load claims.", it);
@@ -274,7 +273,7 @@ class PostDetailFragment : MainFragment {
             };
 
             _buttonStore.setOnClickListener {
-                _polycentricProfile?.profile?.systemState?.store?.let {
+                _polycentricProfile?.systemState?.store?.let {
                     try {
                         val uri = Uri.parse(it);
                         val intent = Intent(Intent.ACTION_VIEW);
@@ -334,7 +333,7 @@ class PostDetailFragment : MainFragment {
                 }
 
                 try {
-                    val queryReferencesResponse = ApiMethods.getQueryReferences(PolycentricCache.SERVER, ref, null,null,
+                    val queryReferencesResponse = ApiMethods.getQueryReferences(ApiMethods.SERVER, ref, null,null,
                         arrayListOf(
                             Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(
                                 ContentType.OPINION.value).setValue(
@@ -604,16 +603,8 @@ class PostDetailFragment : MainFragment {
 
         private fun fetchPolycentricProfile() {
             val author = _post?.author ?: _postOverview?.author ?: return;
-            val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(author.url, true);
-            if (cachedPolycentricProfile != null) {
-                setPolycentricProfile(cachedPolycentricProfile, animate = false);
-                if (cachedPolycentricProfile.expired) {
-                    _taskLoadPolycentricProfile.run(author.id);
-                }
-            } else {
                 setPolycentricProfile(null, animate = false);
                 _taskLoadPolycentricProfile.run(author.id);
-            }
         }
 
         private fun setChannelMeta(value: IPlatformPost?) {
@@ -639,17 +630,18 @@ class PostDetailFragment : MainFragment {
             _repliesOverlay.cleanup();
         }
 
-        private fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-            _polycentricProfile = cachedPolycentricProfile;
+        private fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
+            _polycentricProfile = polycentricProfile;
 
-            if (cachedPolycentricProfile?.profile == null) {
+            val pp = _polycentricProfile;
+            if (pp == null) {
                 _layoutMonetization.visibility = View.GONE;
                 _creatorThumbnail.setHarborAvailable(false, animate, null);
                 return;
             }
 
             _layoutMonetization.visibility = View.VISIBLE;
-            _creatorThumbnail.setHarborAvailable(true, animate, cachedPolycentricProfile.profile.system.toProto());
+            _creatorThumbnail.setHarborAvailable(true, animate, pp.system.toProto());
         }
 
         private fun fetchPost() {

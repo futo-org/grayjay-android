@@ -12,7 +12,6 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.AnyAdapter
@@ -27,14 +26,6 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
     private var _subscription: Subscription? = null;
     private var _channel: SerializedChannel? = null;
 
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { onProfileLoaded(it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
-
     val onClick = Event1<Subscription>();
     
     init {
@@ -47,42 +38,12 @@ class SubscriptionBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.
     }
 
     override fun bind(value: Subscription) {
-        _taskLoadProfile.cancel();
-
         _channel = value.channel;
 
         _creatorThumbnail.setThumbnail(value.channel.thumbnail, false);
         _name.text = value.channel.name;
 
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(value.channel.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(value.channel.id);
-            }
-        } else {
-            _taskLoadProfile.run(value.channel.id);
-        }
-
         _subscription = value;
-    }
-
-    private fun onProfileLoaded(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        val dp_55 = 55.dp(itemView.context.resources)
-        val profile = cachedPolycentricProfile?.profile;
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_55 * dp_55)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(_channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        if (profile != null) {
-            _name.text = profile.systemState.username;
-        }
     }
 
     companion object {

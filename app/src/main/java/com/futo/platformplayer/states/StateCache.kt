@@ -6,7 +6,6 @@ import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.db.ManagedDBStore
@@ -50,14 +49,7 @@ class StateCache {
         val subs = StateSubscriptions.instance.getSubscriptions();
         Logger.i(TAG, "Subscriptions CachePager polycentric urls");
         val allUrls = subs
-            .map {
-            val otherUrls = PolycentricCache.instance.getCachedProfile(it.channel.url)?.profile?.ownedClaims?.mapNotNull { c -> c.claim.resolveChannelUrl() } ?: listOf();
-            if(!otherUrls.contains(it.channel.url))
-                return@map listOf(listOf(it.channel.url), otherUrls).flatten();
-            else
-                return@map otherUrls;
-        }
-            .flatten()
+            .map { it.channel.url }
             .distinct()
             .filter { StatePlatform.instance.hasEnabledChannelClient(it) };
 

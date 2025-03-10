@@ -36,9 +36,10 @@
 
         <TextView
             android:id="@+id/text_author_name"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:fontFamily="@font/inter_extra_light"
@@ -50,23 +51,9 @@
             app:layout_constraintHorizontal_bias="0"
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintLeft_toRightOf="@id/image_author_thumbnail"
-            app:layout_constraintRight_toLeftOf="@id/image_neopass_channel"
+            app:layout_constraintRight_toLeftOf="@id/platform_indicator"
             app:layout_constraintTop_toTopOf="@id/image_author_thumbnail"
             tools:text="Two Minute Papers" />
-
-        <ImageView
-            android:id="@+id/image_neopass_channel"
-            android:layout_width="10dp"
-            android:layout_height="10dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@string/neopass_channel"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/text_author_name"
-            app:layout_constraintLeft_toRightOf="@id/text_author_name"
-            app:layout_constraintRight_toLeftOf="@id/platform_indicator"
-            app:layout_constraintTop_toTopOf="@id/text_author_name"
-            app:srcCompat="@drawable/neopass" />
 
         <TextView
             android:id="@+id/text_metadata"

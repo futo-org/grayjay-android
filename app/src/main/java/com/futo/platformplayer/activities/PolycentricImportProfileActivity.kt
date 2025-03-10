@@ -12,12 +12,12 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.overlays.LoaderOverlay
+import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.KeyPair
 import com.futo.polycentric.core.Process
 import com.futo.polycentric.core.ProcessSecret
@@ -145,7 +145,7 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
                 }
 
                 StatePolycentric.instance.setProcessHandle(processHandle);
-                processHandle.fullyBackfillClient(PolycentricCache.SERVER);
+                processHandle.fullyBackfillClient(ApiMethods.SERVER);
                 withContext(Dispatchers.Main) {
                     startActivity(Intent(this@PolycentricImportProfileActivity, PolycentricProfileActivity::class.java));
                     finish();

@@ -1,5 +1,7 @@
 package com.futo.platformplayer.images;
 
+import static com.futo.platformplayer.Extensions_PolycentricKt.getDataLinkFromUrl;
+
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -12,10 +14,14 @@ import com.bumptech.glide.load.model.ModelLoader;
 import com.bumptech.glide.load.model.ModelLoaderFactory;
 import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 import com.bumptech.glide.signature.ObjectKey;
-import com.futo.platformplayer.polycentric.PolycentricCache;
+import com.futo.polycentric.core.ApiMethods;
 
 import kotlin.Unit;
+import kotlinx.coroutines.CoroutineScopeKt;
 import kotlinx.coroutines.Deferred;
+import kotlinx.coroutines.Dispatchers;
+import userpackage.Protocol;
+
 import java.lang.Exception;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CancellationException;
@@ -60,7 +66,14 @@ public class PolycentricModelLoader implements ModelLoader<String, ByteBuffer> {
         @Override
         public void loadData(@NonNull Priority priority, @NonNull DataFetcher.DataCallback<? super ByteBuffer> callback) {
             Log.i("PolycentricModelLoader", this._model);
-            _deferred = PolycentricCache.getInstance().getDataAsync(_model);
+
+            Protocol.URLInfoDataLink dataLink = getDataLinkFromUrl(_model);
+            if (dataLink == null) {
+                callback.onLoadFailed(new Exception("Data link cannot be null"));
+                return;
+            }
+
+            _deferred = ApiMethods.Companion.getDataFromServerAndReassemble(CoroutineScopeKt.CoroutineScope(Dispatchers.getIO()), dataLink);
             _deferred.invokeOnCompletion(throwable -> {
                 if (throwable != null) {
                     Log.e("PolycentricModelLoader", "getDataAsync failed throwable: " + throwable.toString());

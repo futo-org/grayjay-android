@@ -5,8 +5,8 @@ import android.util.AttributeSet
 import android.widget.LinearLayout
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
 import com.futo.platformplayer.views.SupportView
+import com.futo.polycentric.core.PolycentricProfile
 
 class SupportOverlay : LinearLayout {
     val onClose = Event0();

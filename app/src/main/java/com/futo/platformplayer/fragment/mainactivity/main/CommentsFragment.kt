@@ -23,7 +23,6 @@ import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
@@ -32,6 +31,7 @@ import com.futo.platformplayer.views.adapters.CommentWithReferenceViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import com.futo.polycentric.core.PublicKey
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException
