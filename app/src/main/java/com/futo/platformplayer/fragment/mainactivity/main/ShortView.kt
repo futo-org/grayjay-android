@@ -4,13 +4,11 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Animatable
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.SoundEffectConstants
-import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.compose.material.icons.Icons
@@ -34,6 +32,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.Glide
@@ -93,12 +92,11 @@ class ShortView : ConstraintLayout {
 
     private var loadVideoJob: Job? = null
 
-    private val bottomSheet: ModalBottomSheet = ModalBottomSheet()
+    private val bottomSheet: CommentsModalBottomSheet = CommentsModalBottomSheet()
 
     // Required constructor for XML inflation
     constructor(context: Context) : super(context) {
         inflate(context, R.layout.view_short, this)
-
         player = findViewById(R.id.short_player)
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
@@ -109,7 +107,6 @@ class ShortView : ConstraintLayout {
     // Required constructor for XML inflation with attributes
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         inflate(context, R.layout.view_short, this)
-
         player = findViewById(R.id.short_player)
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
@@ -120,7 +117,6 @@ class ShortView : ConstraintLayout {
     // Required constructor for XML inflation with attributes and style
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_short, this)
-
         player = findViewById(R.id.short_player)
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
@@ -129,16 +125,18 @@ class ShortView : ConstraintLayout {
     }
 
     constructor(inflater: LayoutInflater, fragment: MainFragment) : super(inflater.context) {
-        this.mainFragment = fragment
-
         inflater.inflate(R.layout.view_short, this, true)
         player = findViewById(R.id.short_player)
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
 
+        setupComposeView()
+
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
         )
+
+        this.mainFragment = fragment
     }
 
     private fun setupComposeView () {
@@ -230,9 +228,9 @@ class ShortView : ConstraintLayout {
     private fun setLoading(isLoading: Boolean) {
         if (isLoading) {
             (overlayLoadingSpinner.drawable as Animatable?)?.start()
-            overlayLoading.visibility = View.VISIBLE
+            overlayLoading.visibility = VISIBLE
         } else {
-            overlayLoading.visibility = View.GONE
+            overlayLoading.visibility = GONE
             (overlayLoadingSpinner.drawable as Animatable?)?.stop()
         }
     }
@@ -250,7 +248,7 @@ class ShortView : ConstraintLayout {
                 withContext(StateApp.instance.scope.coroutineContext) {
                     StatePlatform.instance.getContentDetails(url).await()
                 }
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 return@launch
             } catch (e: NoPlatformClientException) {
                 Logger.w(TAG, "exception<NoPlatformClientException>", e)
@@ -339,7 +337,7 @@ class ShortView : ConstraintLayout {
             return
         }
 
-        bottomSheet.show(mainFragment!!.childFragmentManager, ModalBottomSheet.TAG)
+        bottomSheet.show(mainFragment!!.childFragmentManager, CommentsModalBottomSheet.TAG)
 
         try {
             val videoSource = _lastVideoSource
@@ -362,7 +360,7 @@ class ShortView : ConstraintLayout {
             if (videoSource == null && !thumbnail.isNullOrBlank()) Glide.with(context).asBitmap()
                 .load(thumbnail).into(object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                        player.setArtwork(BitmapDrawable(resources, resource))
+                        player.setArtwork(resource.toDrawable(resources))
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
@@ -390,7 +388,7 @@ class ShortView : ConstraintLayout {
         const val TAG = "VideoDetailView"
     }
 
-    class ModalBottomSheet : BottomSheetDialogFragment() {
+    class CommentsModalBottomSheet : BottomSheetDialogFragment() {
         override fun onCreateDialog(
             savedInstanceState: Bundle?,
         ): Dialog {
