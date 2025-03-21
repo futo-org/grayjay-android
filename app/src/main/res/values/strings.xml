@@ -447,6 +447,8 @@
     <string name="preferred_preview_quality">Preferred Preview Quality</string>
     <string name="preferred_preview_quality_description">Default quality while previewing a video in a feed</string>
     <string name="primary_language">Primary Language</string>
+    <string name="prefer_original_audio">Prefer Original Audio</string>
+    <string name="prefer_original_audio_description">Use original audio instead of preferred language when it is known</string>
     <string name="default_comment_section">Default Comment Section</string>
     <string name="hide_recommendations">Hide Recommendations</string>
     <string name="hide_recommendations_description">Fully hide the recommendations tab.</string>

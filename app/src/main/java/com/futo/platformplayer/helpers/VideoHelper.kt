@@ -9,6 +9,7 @@ import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.source.MediaSource
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -85,12 +86,17 @@ class VideoHelper {
 
             return selectBestAudioSource((desc as VideoUnMuxedSourceDescriptor).audioSources.toList(), prefContainers, prefLanguage, targetBitrate);
         }
-        fun selectBestAudioSource(altSources : Iterable<IAudioSource>, prefContainers : Array<String>, preferredLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
+        fun selectBestAudioSource(sources : Iterable<IAudioSource>, prefContainers : Array<String>, preferredLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
+            val hasPriority = sources.any { it.priority };
+            var altSources = if(hasPriority) sources.filter { it.priority } else sources;
+            val hasOriginal = altSources.any { it.original };
+            if(hasOriginal && Settings.instance.playback.preferOriginalAudio)
+                altSources = altSources.filter { it.original };
             val languageToFilter = if(preferredLanguage != null && altSources.any { it.language == preferredLanguage }) {
                 preferredLanguage
             } else {
                 if(altSources.any { it.language == Language.ENGLISH })
-                    Language.ENGLISH
+                    Language.ENGLISH;
                 else
                     Language.UNKNOWN;
             }

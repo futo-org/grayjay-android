@@ -13,7 +13,8 @@ class AudioUrlSource(
     override val codec: String = "",
     override val language: String = Language.UNKNOWN,
     override val duration: Long? = null,
-    override var priority: Boolean = false
+    override var priority: Boolean = false,
+    override var original: Boolean = false
 ) : IAudioUrlSource, IStreamMetaDataSource{
     override var streamMetaData: StreamMetaData? = null;
 
@@ -36,7 +37,9 @@ class AudioUrlSource(
                 source.container,
                 source.codec,
                 source.language,
-                source.duration
+                source.duration,
+                source.priority,
+                source.original
             );
             ret.streamMetaData = streamData;
 
