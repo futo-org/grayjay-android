@@ -232,6 +232,8 @@ class SyncSession : IAuthorizable {
                     sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
                     sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
 
+                    sendData(GJSyncOpcodes.syncWatchLater, Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false)));
+
                     val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
                     if(recentHistory.size > 0)
                         sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);

@@ -8,4 +8,5 @@ interface IAudioSource {
     val language : String;
     val duration : Long?;
     val priority: Boolean;
+    val original: Boolean;
 }

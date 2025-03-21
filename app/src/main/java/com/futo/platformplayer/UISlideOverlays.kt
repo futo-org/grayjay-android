@@ -402,7 +402,7 @@ class UISlideOverlays {
                                 UIDialogs.toast(container.context, "Variant video HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else if (source is IHLSManifestAudioSource) {
-                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, sourceUrl), null)
+                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, sourceUrl), null)
                                 UIDialogs.toast(container.context, "Variant audio HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else {

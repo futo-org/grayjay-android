@@ -356,7 +356,7 @@ class Settings : FragmentedStorageFileJson() {
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
-        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -1)
+        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -2)
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
@@ -380,6 +380,8 @@ class Settings : FragmentedStorageFileJson() {
                 else -> null
             }
         }
+        @FormField(R.string.prefer_original_audio, FieldForm.TOGGLE, R.string.prefer_original_audio_description, -1)
+        var preferOriginalAudio: Boolean = true;
 
         //= context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
