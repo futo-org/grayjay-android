@@ -11,8 +11,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.getDataLinkFromUrl
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.views.IdenticonView
 import userpackage.Protocol
 
@@ -68,7 +68,7 @@ class CreatorThumbnail : ConstraintLayout {
 
         if (url.startsWith("polycentric://")) {
             try {
-                val dataLink = PolycentricCache.getDataLinkFromUrl(url)
+                val dataLink = url.getDataLinkFromUrl()
                 setHarborAvailable(true, animate, dataLink?.system);
             } catch (e: Throwable) {
                 setHarborAvailable(false, animate, null);

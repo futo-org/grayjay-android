@@ -177,11 +177,14 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1) {
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1): Boolean {
+        var wasNew = false;
         synchronized(_watchlistStore) {
+            if(!_watchlistStore.hasItem { it.url == video.url })
+                wasNew = true;
             _watchlistStore.saveAsync(video);
             if(orderPosition == -1)
-                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray());
             else {
                 val existing = _watchlistOrderStore.getAllValues().toMutableList();
                 existing.add(orderPosition, video.url);
@@ -198,6 +201,7 @@ class StatePlaylists {
         }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
+        return wasNew;
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
@@ -226,17 +230,20 @@ class StatePlaylists {
         }
     }
 
+    public fun getWatchLaterSyncPacket(orderOnly: Boolean = false): SyncWatchLaterPackage{
+        return SyncWatchLaterPackage(
+            if (orderOnly) listOf() else getWatchLater(),
+            if (orderOnly) mapOf() else _watchLaterAdds.all(),
+            if (orderOnly) mapOf() else _watchLaterRemovals.all(),
+            getWatchLaterLastReorderTime().toEpochSecond(),
+            _watchlistOrderStore.values.toList()
+        )
+    }
     private fun broadcastWatchLater(orderOnly: Boolean = false) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
                 StateSync.instance.broadcastJsonData(
-                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                        if (orderOnly) listOf() else getWatchLater(),
-                        if (orderOnly) mapOf() else _watchLaterAdds.all(),
-                        if (orderOnly) mapOf() else _watchLaterRemovals.all(),
-                        getWatchLaterLastReorderTime().toEpochSecond(),
-                        _watchlistOrderStore.values.toList()
-                    )
+                    GJSyncOpcodes.syncWatchLater, getWatchLaterSyncPacket(orderOnly)
                 );
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to broadcast watch later", e)

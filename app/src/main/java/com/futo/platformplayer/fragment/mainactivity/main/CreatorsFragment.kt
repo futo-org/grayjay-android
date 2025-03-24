@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +27,7 @@ class CreatorsFragment : MainFragment() {
     private var _overlayContainer: FrameLayout? = null;
     private var _containerSearch: FrameLayout? = null;
     private var _editSearch: EditText? = null;
+    private var _textMeta: TextView? = null;
     private var _buttonClearSearch: ImageButton? = null
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -34,6 +36,7 @@ class CreatorsFragment : MainFragment() {
         val editSearch: EditText = view.findViewById(R.id.edit_search);
         val buttonClearSearch: ImageButton = view.findViewById(R.id.button_clear_search)
         _editSearch = editSearch
+        _textMeta = view.findViewById(R.id.text_meta);
         _buttonClearSearch = buttonClearSearch
         buttonClearSearch.setOnClickListener {
             editSearch.text.clear()
@@ -41,7 +44,11 @@ class CreatorsFragment : MainFragment() {
             _buttonClearSearch?.visibility = View.INVISIBLE;
         }
 
-        val adapter = SubscriptionAdapter(inflater, getString(R.string.confirm_delete_subscription));
+        val adapter = SubscriptionAdapter(inflater, getString(R.string.confirm_delete_subscription)) { subs ->
+            _textMeta?.let {
+                it.text = "${subs.size} creator${if(subs.size > 1) "s" else ""}";
+            }
+        };
         adapter.onClick.subscribe { platformUser -> navigate<ChannelFragment>(platformUser) };
         adapter.onSettings.subscribe { sub -> _overlayContainer?.let { UISlideOverlays.showSubscriptionOptionsOverlay(sub, it) } }
 

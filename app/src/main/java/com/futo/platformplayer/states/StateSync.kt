@@ -44,6 +44,7 @@ import kotlin.system.measureTimeMillis
 
 class StateSync {
     private val _authorizedDevices = FragmentedStorage.get<StringArrayStorage>("authorized_devices")
+    private val _nameStorage = FragmentedStorage.get<StringStringMapStorage>("sync_remembered_name_storage")
     private val _syncKeyPair = FragmentedStorage.get<StringStorage>("sync_key_pair")
     private val _lastAddressStorage = FragmentedStorage.get<StringStringMapStorage>("sync_last_address_storage")
     private val _syncSessionData = FragmentedStorage.get<StringTMapStorage<SyncSessionData>>("syncSessionData")
@@ -305,12 +306,22 @@ class StateSync {
                 synchronized(_sessions) {
                     session = _sessions[s.remotePublicKey]
                     if (session == null) {
+                        val remoteDeviceName = synchronized(_nameStorage) {
+                            _nameStorage.get(remotePublicKey)
+                        }
+
                         session = SyncSession(remotePublicKey, onAuthorized = { it, isNewlyAuthorized, isNewSession ->
                             if (!isNewSession) {
                                 return@SyncSession
                             }
 
-                            Logger.i(TAG, "${s.remotePublicKey} authorized")
+                            it.remoteDeviceName?.let { remoteDeviceName ->
+                                synchronized(_nameStorage) {
+                                    _nameStorage.setAndSave(remotePublicKey, remoteDeviceName)
+                                }
+                            }
+
+                            Logger.i(TAG, "${s.remotePublicKey} authorized (name: ${it.displayName})")
                             synchronized(_lastAddressStorage) {
                                 _lastAddressStorage.setAndSave(remotePublicKey, s.remoteAddress)
                             }
@@ -341,7 +352,7 @@ class StateSync {
 
                             deviceRemoved.emit(it.remotePublicKey)
 
-                        })
+                        }, remoteDeviceName)
                         _sessions[remotePublicKey] = session!!
                     }
                     session!!.addSocketSession(s)
@@ -466,6 +477,12 @@ class StateSync {
     fun getAll(): List<String> {
         synchronized(_authorizedDevices) {
             return _authorizedDevices.values.toList()
+        }
+    }
+
+    fun getCachedName(publicKey: String): String? {
+        return synchronized(_nameStorage) {
+            _nameStorage.get(publicKey)
         }
     }
 

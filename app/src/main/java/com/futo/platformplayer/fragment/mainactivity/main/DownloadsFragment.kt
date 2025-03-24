@@ -22,6 +22,7 @@ import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.toHumanBytesSize
+import com.futo.platformplayer.toHumanDuration
 import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
 import com.futo.platformplayer.views.adapters.viewholders.VideoDownloadViewHolder
@@ -215,7 +216,7 @@ class DownloadsFragment : MainFragment() {
                 _listDownloadedHeader.visibility = GONE;
             } else {
                 _listDownloadedHeader.visibility = VISIBLE;
-                _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()})";
+                _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()}${if(downloaded.size > 0) ", ${downloaded.sumOf { it.duration }.toHumanDuration(false)}" else ""})";
             }
 
             lastDownloads = downloaded;

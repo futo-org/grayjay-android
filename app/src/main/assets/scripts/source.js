@@ -263,6 +263,10 @@ class PlatformVideoDetails extends PlatformVideo {
         this.rating = obj.rating ?? null; //IRating
         this.subtitles = obj.subtitles ?? [];
         this.isShort = !!obj.isShort ?? false;
+
+        if (obj.getContentRecommendations) {
+            this.getContentRecommendations = obj.getContentRecommendations
+        }
     }
 }
 

@@ -94,12 +94,10 @@ import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.fixHtmlWhitespace
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.AnnouncementType
@@ -158,6 +156,8 @@ import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
 import com.futo.polycentric.core.Opinion
+import com.futo.polycentric.core.PolycentricProfile
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
@@ -294,7 +294,7 @@ class VideoDetailView : ConstraintLayout {
         private set;
     private var _historicalPosition: Long = 0;
     private var _commentsCount = 0;
-    private var _polycentricProfile: PolycentricCache.CachedPolycentricProfile? = null;
+    private var _polycentricProfile: PolycentricProfile? = null;
     private var _slideUpOverlay: SlideUpMenuOverlay? = null;
     private var _autoplayVideo: IPlatformVideo? = null
 
@@ -409,12 +409,12 @@ class VideoDetailView : ConstraintLayout {
         };
 
         _monetization.onSupportTap.subscribe {
-            _container_content_support.setPolycentricProfile(_polycentricProfile?.profile);
+            _container_content_support.setPolycentricProfile(_polycentricProfile);
             switchContentView(_container_content_support);
         };
 
         _monetization.onStoreTap.subscribe {
-            _polycentricProfile?.profile?.systemState?.store?.let {
+            _polycentricProfile?.systemState?.store?.let {
                 try {
                     val uri = Uri.parse(it);
                     val intent = Intent(Intent.ACTION_VIEW);
@@ -578,6 +578,14 @@ class VideoDetailView : ConstraintLayout {
         _minimize_controls_close.setOnClickListener { onClose.emit(); };
         _minimize_title.setOnClickListener { onMaximize.emit(false) };
         _minimize_meta.setOnClickListener { onMaximize.emit(false) };
+
+        _player.onStateChange.subscribe {
+            if (_player.activelyPlaying) {
+                Logger.i(TAG, "Play changed, resetting error counter _didTriggerDatasourceErrorCount = 0 (_player.activelyPlaying: ${_player.activelyPlaying})")
+                _didTriggerDatasourceErrorCount = 0;
+                _didTriggerDatasourceError = false;
+            }
+        }
 
         _player.onPlayChanged.subscribe {
             if (StateCasting.instance.activeDevice == null) {
@@ -882,7 +890,7 @@ class VideoDetailView : ConstraintLayout {
                 _slideUpOverlay?.hide();
             }
             else null,
-            if(!isLimitedVersion)
+            if(!isLimitedVersion && !(video?.isLive ?: false))
                 RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
                     video?.let {
                         _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
@@ -922,7 +930,7 @@ class VideoDetailView : ConstraintLayout {
                     } else if(devices.size == 1){
                         val device = devices.first();
                         Logger.i(TAG, "Send to device? (public key: ${device.remotePublicKey}): " + videoToSend.url)
-                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non ${device.remotePublicKey}" , {
+                        UIDialogs.showConfirmationDialog(context, "Would you like to open\n[${videoToSend.name}]\non '${device.displayName}'" , {
                             Logger.i(TAG, "Send to device confirmed (public key: ${device.remotePublicKey}): " + videoToSend.url)
 
                             fragment.lifecycleScope.launch(Dispatchers.IO) {
@@ -963,6 +971,7 @@ class VideoDetailView : ConstraintLayout {
                         throw IllegalStateException("Expected media content, found ${video.contentType}");
 
                     withContext(Dispatchers.Main) {
+                        _videoResumePositionMilliseconds = _player.position
                         setVideoDetails(video);
                     }
                 }
@@ -1227,16 +1236,8 @@ class VideoDetailView : ConstraintLayout {
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
         _channelName.text = video.author.name;
 
-        val cachedPolycentricProfile = PolycentricCache.instance.getCachedProfile(video.author.url, true);
-        if (cachedPolycentricProfile != null) {
-            setPolycentricProfile(cachedPolycentricProfile, animate = false);
-            if (cachedPolycentricProfile.expired) {
-                _taskLoadPolycentricProfile.run(video.author.id);
-            }
-        } else {
-            setPolycentricProfile(null, animate = false);
-            _taskLoadPolycentricProfile.run(video.author.id);
-        }
+        setPolycentricProfile(null, animate = false);
+        _taskLoadPolycentricProfile.run(video.author.id);
 
         _player.clear();
 
@@ -1265,8 +1266,6 @@ class VideoDetailView : ConstraintLayout {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun setVideoDetails(videoDetail: IPlatformVideoDetails, newVideo: Boolean = false) {
         Logger.i(TAG, "setVideoDetails (${videoDetail.name})")
-        _didTriggerDatasourceErrroCount = 0;
-        _didTriggerDatasourceError = false;
         _autoplayVideo = null
         Logger.i(TAG, "Autoplay video cleared (setVideoDetails)")
 
@@ -1277,6 +1276,10 @@ class VideoDetailView : ConstraintLayout {
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
+
+            Logger.i(TAG, "_didTriggerDatasourceErrorCount reset to 0 because new video")
+            _didTriggerDatasourceErrorCount = 0;
+            _didTriggerDatasourceError = false;
         }
 
         if (videoDetail.datetime != null && videoDetail.datetime!! > OffsetDateTime.now())
@@ -1394,11 +1397,8 @@ class VideoDetailView : ConstraintLayout {
                 setTabIndex(2, true)
             } else {
                 when (Settings.instance.comments.defaultCommentSection) {
-                    0 -> if (Settings.instance.other.polycentricEnabled) setTabIndex(
-                        0,
-                        true
-                    ) else setTabIndex(1, true);
-                    1 -> setTabIndex(1, true);
+                    0 -> if (Settings.instance.other.polycentricEnabled) setTabIndex(0, true) else setTabIndex(1, true)
+                    1 -> setTabIndex(1, true)
                     2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
                 }
             }
@@ -1436,16 +1436,8 @@ class VideoDetailView : ConstraintLayout {
         _buttonSubscribe.setSubscribeChannel(video.author.url);
         setDescription(video.description.fixHtmlLinks());
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
-
-
-        val cachedPolycentricProfile =
-            PolycentricCache.instance.getCachedProfile(video.author.url, true);
-        if (cachedPolycentricProfile != null) {
-            setPolycentricProfile(cachedPolycentricProfile, animate = false);
-        } else {
-            setPolycentricProfile(null, animate = false);
-            _taskLoadPolycentricProfile.run(video.author.id);
-        }
+        setPolycentricProfile(null, animate = false);
+        _taskLoadPolycentricProfile.run(video.author.id);
 
         _platform.setPlatformFromClientID(video.id.pluginId);
         val subTitleSegments: ArrayList<String> = ArrayList();
@@ -1474,7 +1466,7 @@ class VideoDetailView : ConstraintLayout {
         fragment.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val queryReferencesResponse = ApiMethods.getQueryReferences(
-                    PolycentricCache.SERVER, ref, null, null,
+                    ApiMethods.SERVER, ref, null, null,
                     arrayListOf(
                         Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
                             .setFromType(ContentType.OPINION.value).setValue(
@@ -1490,10 +1482,8 @@ class VideoDetailView : ConstraintLayout {
 
                 val likes = queryReferencesResponse.countsList[0];
                 val dislikes = queryReferencesResponse.countsList[1];
-                val hasLiked =
-                    StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
-                val hasDisliked =
-                    StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
+                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
+                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
                 withContext(Dispatchers.Main) {
                     _rating.visibility = View.VISIBLE;
@@ -1831,7 +1821,7 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private var _didTriggerDatasourceErrroCount = 0;
+    private var _didTriggerDatasourceErrorCount = 0;
     private var _didTriggerDatasourceError = false;
     private fun onDataSourceError(exception: Throwable) {
         Logger.e(TAG, "onDataSourceError", exception);
@@ -1841,32 +1831,53 @@ class VideoDetailView : ConstraintLayout {
                 return;
             val config = currentVideo.sourceConfig;
 
-            if(_didTriggerDatasourceErrroCount <= 3) {
+            if(_didTriggerDatasourceErrorCount <= 3) {
                 _didTriggerDatasourceError = true;
-                _didTriggerDatasourceErrroCount++;
+                _didTriggerDatasourceErrorCount++;
 
-                UIDialogs.toast("Block detected, attempting bypass");
+                UIDialogs.toast("Detected video error, attempting automatic reload (${_didTriggerDatasourceErrorCount})");
+                Logger.i(TAG, "Block detected, attempting bypass (_didTriggerDatasourceErrorCount = ${_didTriggerDatasourceErrorCount})");
+
                 //return;
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
-                    val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
-                    val previousVideoSource = _lastVideoSource;
-                    val previousAudioSource = _lastAudioSource;
+                    try {
+                        val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
+                        val previousVideoSource = _lastVideoSource;
+                        val previousAudioSource = _lastAudioSource;
 
-                    if(newDetails is IPlatformVideoDetails) {
-                        val newVideoSource = if(previousVideoSource != null)
-                            VideoHelper.selectBestVideoSource(newDetails.video, previousVideoSource.height * previousVideoSource.width, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS);
-                        else null;
-                        val newAudioSource = if(previousAudioSource != null)
-                            VideoHelper.selectBestAudioSource(newDetails.video, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS, previousAudioSource.language, previousAudioSource.bitrate.toLong());
-                        else null;
-                        withContext(Dispatchers.Main) {
-                            video = newDetails;
-                            _player.setSource(newVideoSource, newAudioSource, true, true);
+                        if (newDetails is IPlatformVideoDetails) {
+                            val newVideoSource = if (previousVideoSource != null)
+                                VideoHelper.selectBestVideoSource(
+                                    newDetails.video,
+                                    previousVideoSource.height * previousVideoSource.width,
+                                    FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS
+                                );
+                            else null;
+                            val newAudioSource = if (previousAudioSource != null)
+                                VideoHelper.selectBestAudioSource(
+                                    newDetails.video,
+                                    FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
+                                    previousAudioSource.language,
+                                    previousAudioSource.bitrate.toLong()
+                                );
+                            else null;
+                            withContext(Dispatchers.Main) {
+                                video = newDetails;
+                                _player.setSource(newVideoSource, newAudioSource, true, true);
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to get video details, attempting retrying without reloading.", e)
+                        fragment.lifecycleScope.launch(Dispatchers.Main) {
+                            video?.let {
+                                _videoResumePositionMilliseconds = _player.position
+                                setVideoDetails(it, false)
+                            }
                         }
                     }
                 }
             }
-            else if(_didTriggerDatasourceErrroCount > 3) {
+            else if(_didTriggerDatasourceErrorCount > 3) {
                 UIDialogs.showDialog(context, R.drawable.ic_error_pred,
                     context.getString(R.string.media_error),
                     context.getString(R.string.the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental),
@@ -2595,8 +2606,13 @@ class VideoDetailView : ConstraintLayout {
 
                     onAddToWatchLaterClicked.subscribe(this) {
                         if(it is IPlatformVideo) {
-                            StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true);
-                            UIDialogs.toast("Added to watch later\n[${it.name}]");
+                            if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
+                                UIDialogs.toast("Added to watch later\n[${it.name}]");
+                        }
+                    }
+                    onAddToQueueClicked.subscribe(this) {
+                        if(it is IPlatformVideo) {
+                            StatePlayer.instance.addToQueue(it);
                         }
                     }
                 })
@@ -2768,13 +2784,12 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        _polycentricProfile = cachedPolycentricProfile;
+    private fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
+        _polycentricProfile = profile
 
         val dp_35 = 35.dp(context.resources)
-        val profile = cachedPolycentricProfile?.profile;
         val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
+            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) }
 
         if (avatar != null) {
             _creatorThumbnail.setThumbnail(avatar, animate);
@@ -2783,12 +2798,12 @@ class VideoDetailView : ConstraintLayout {
             _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
         }
 
-        val username = cachedPolycentricProfile?.profile?.systemState?.username
+        val username = profile?.systemState?.username
         if (username != null) {
             _channelName.text = username
         }
 
-        _monetization.setPolycentricProfile(cachedPolycentricProfile);
+        _monetization.setPolycentricProfile(profile);
     }
 
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {
@@ -2976,7 +2991,7 @@ class VideoDetailView : ConstraintLayout {
             Logger.w(TAG, "Failed to load recommendations.", it);
         };
 
-    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(StateApp.instance.scopeGetter, { PolycentricCache.instance.getProfileAsync(it) })
+    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) })
         .success { it -> setPolycentricProfile(it, animate = true) }
         .exception<Throwable> {
             Logger.w(TAG, "Failed to load claims.", it);

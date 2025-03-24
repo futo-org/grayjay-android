@@ -15,6 +15,7 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
     override val duration: Long? = null;
 
     override var priority: Boolean = false;
+    override val original: Boolean = false;
 
     val filePath : String;
     val fileSize: Long;
@@ -33,13 +34,13 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
     }
 
     companion object {
-        fun fromSource(source: IAudioSource, path: String, fileSize: Long): LocalAudioSource {
+        fun fromSource(source: IAudioSource, path: String, fileSize: Long, overrideContainer: String? = null): LocalAudioSource {
             return LocalAudioSource(
                 source.name,
                 path,
                 fileSize,
                 source.bitrate,
-                source.container,
+                overrideContainer ?: source.container,
                 source.codec,
                 source.language
             );

@@ -356,7 +356,7 @@ class Settings : FragmentedStorageFileJson() {
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
-        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -1)
+        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -2)
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
@@ -380,6 +380,8 @@ class Settings : FragmentedStorageFileJson() {
                 else -> null
             }
         }
+        @FormField(R.string.prefer_original_audio, FieldForm.TOGGLE, R.string.prefer_original_audio_description, -1)
+        var preferOriginalAudio: Boolean = true;
 
         //= context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
@@ -643,6 +645,9 @@ class Settings : FragmentedStorageFileJson() {
     var plugins = Plugins();
     @Serializable
     class Plugins {
+
+        @FormField(R.string.check_disabled_plugin_updates, FieldForm.TOGGLE, R.string.check_disabled_plugin_updates_description, -1)
+        var checkDisabledPluginsForUpdates: Boolean = false;
 
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;

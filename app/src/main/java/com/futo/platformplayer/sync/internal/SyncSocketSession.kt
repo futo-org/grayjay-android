@@ -46,6 +46,8 @@ class SyncSocketSession {
     val localPublicKey: String get() = _localPublicKey
     private val _onData: (session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit
     var authorizable: IAuthorizable? = null
+    var remoteVersion: Int = -1
+        private set
 
     val remoteAddress: String
 
@@ -162,11 +164,12 @@ class SyncSocketSession {
     }
 
     private fun performVersionCheck() {
-        val CURRENT_VERSION = 2
+        val CURRENT_VERSION = 3
+        val MINIMUM_VERSION = 2
         _outputStream.writeInt(CURRENT_VERSION)
-        val version = _inputStream.readInt()
-        Logger.i(TAG, "performVersionCheck (version = $version)")
-        if (version != CURRENT_VERSION)
+        remoteVersion = _inputStream.readInt()
+        Logger.i(TAG, "performVersionCheck (version = $remoteVersion)")
+        if (remoteVersion < MINIMUM_VERSION)
             throw Exception("Invalid version")
     }
 

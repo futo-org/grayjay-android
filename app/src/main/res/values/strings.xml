@@ -286,6 +286,8 @@
     <string name="also_removes_any_data_related_plugin_like_login_or_settings">Also removes any data related plugin like login or settings</string>
     <string name="announcement">Announcement</string>
     <string name="notifications">Notifications</string>
+    <string name="check_disabled_plugin_updates">Check disabled plugins for updates</string>
+    <string name="check_disabled_plugin_updates_description">Check disabled plugins for updates</string>
     <string name="planned_content_notifications">Planned Content Notifications</string>
     <string name="planned_content_notifications_description">Schedules discovered planned content as notifications, resulting in more accurate notifications for this content.</string>
     <string name="attempt_to_utilize_byte_ranges">Attempt to utilize byte ranges</string>
@@ -416,7 +418,7 @@
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
     <string name="sync_grayjay">Sync Grayjay</string>
-    <string name="sync_grayjay_description">Sync your settings across multiple devices</string>
+    <string name="sync_grayjay_description">Sync your data across multiple devices</string>
     <string name="manage_polycentric_identity">Manage Polycentric identity</string>
     <string name="manage_your_polycentric_identity">Manage your Polycentric identity</string>
     <string name="manual_check">Manual check</string>
@@ -445,6 +447,8 @@
     <string name="preferred_preview_quality">Preferred Preview Quality</string>
     <string name="preferred_preview_quality_description">Default quality while previewing a video in a feed</string>
     <string name="primary_language">Primary Language</string>
+    <string name="prefer_original_audio">Prefer Original Audio</string>
+    <string name="prefer_original_audio_description">Use original audio instead of preferred language when it is known</string>
     <string name="default_comment_section">Default Comment Section</string>
     <string name="hide_recommendations">Hide Recommendations</string>
     <string name="hide_recommendations_description">Fully hide the recommendations tab.</string>

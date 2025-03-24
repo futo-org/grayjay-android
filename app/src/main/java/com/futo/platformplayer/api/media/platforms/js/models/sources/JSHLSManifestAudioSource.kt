@@ -21,6 +21,7 @@ class JSHLSManifestAudioSource : IHLSManifestAudioSource, JSSource {
     override val language: String;
 
     override var priority: Boolean = false;
+    override var original: Boolean = false;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_HLS, plugin, obj) {
         val contextName = "HLSAudioSource";
@@ -32,6 +33,7 @@ class JSHLSManifestAudioSource : IHLSManifestAudioSource, JSSource {
         language = _obj.getOrThrow(config, "language", contextName);
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
+        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
     }
 
 

@@ -16,11 +16,11 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.viewholders.StoreItemViewHolder
 import com.futo.platformplayer.views.platform.PlatformIndicator
+import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -125,8 +125,7 @@ class MonetizationView : LinearLayout {
         }
     }
 
-    fun setPolycentricProfile(cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?) {
-        val profile = cachedPolycentricProfile?.profile;
+    fun setPolycentricProfile(profile: PolycentricProfile?) {
         if (profile != null) {
             if (profile.systemState.store.isNotEmpty()) {
                 _buttonStore.visibility = View.VISIBLE;
