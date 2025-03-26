@@ -412,6 +412,8 @@
     <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="subscription_group_menu">Groups</string>
     <string name="show_subscription_group">Show Subscription Groups</string>
+    <string name="use_subscription_exchange">Use Subscription Exchange (Experimental)</string>
+    <string name="use_subscription_exchange_description">Uses a centralized crowd-sourced server to significantly reduce the required requests for subscriptions, in exchange you submit your subscriptions to the server.</string>
     <string name="show_subscription_group_description">If subscription groups should be shown above your subscriptions to filter</string>
     <string name="preview_feed_items">Preview Feed Items</string>
     <string name="preview_feed_items_description">When the preview feedstyle is used, if items should auto-preview when scrolling over them</string>
