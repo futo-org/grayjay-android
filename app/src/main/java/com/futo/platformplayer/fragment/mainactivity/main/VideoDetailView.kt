@@ -404,6 +404,10 @@ class VideoDetailView : ConstraintLayout {
         _monetization = findViewById(R.id.monetization);
         _player.attachPlayer();
 
+        _player.onChapterClicked.subscribe {
+            showChaptersUI();
+        };
+
 
         _buttonSubscribe.onSubscribed.subscribe {
             _slideUpOverlay = UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
@@ -863,6 +867,22 @@ class VideoDetailView : ConstraintLayout {
         _cast.stopAllGestures();
     }
 
+    fun showChaptersUI(){
+        video?.let {
+            try {
+                _chapters?.let {
+                    if(it.size == 0)
+                        return@let;
+                    _container_content_chapters.setChapters(_chapters);
+                    switchContentView(_container_content_chapters);
+                }
+            }
+            catch(ex: Throwable) {
+
+            }
+        }
+    }
+
     fun updateMoreButtons() {
         val isLimitedVersion = video?.url != null && StatePlatform.instance.getContentClientOrNull(video!!.url)?.let {
             if (it is JSClient)
@@ -879,15 +899,7 @@ class VideoDetailView : ConstraintLayout {
             _chapters?.let {
               if(it != null && it.size > 0)
                   RoundButton(context, R.drawable.ic_list, "Chapters", TAG_CHAPTERS) {
-                      video?.let {
-                          try {
-                              _container_content_chapters.setChapters(_chapters);
-                              switchContentView(_container_content_chapters);
-                          }
-                          catch(ex: Throwable) {
-
-                          }
-                      }
+                      showChaptersUI();
                   }
               else null
             },
