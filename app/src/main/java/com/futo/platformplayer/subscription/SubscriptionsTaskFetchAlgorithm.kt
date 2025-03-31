@@ -15,7 +15,6 @@ import com.futo.platformplayer.api.media.structures.PlatformContentPager
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
-import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
@@ -77,10 +76,10 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
 
 
-        val liveTasks = tasks.filter { !it.fromPeek && !it.fromCache };
-        val contract = subsExchangeClient?.requestContract(*liveTasks.map { ChannelRequest(it.url) }.toTypedArray());
+        val contractableTasks = tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
+        val contract = if(contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map { ChannelRequest(it.url) }.toTypedArray()) else null;
         var providedTasks: MutableList<SubscriptionTask>? = null;
-        if(contract != null && contract.provided.size > 0){
+        if(contract != null && contract.provided.isNotEmpty()){
             providedTasks = mutableListOf()
             for(task in tasks.toList()){
                 if(!task.fromCache && !task.fromPeek && contract.provided.contains(task.url)) {
@@ -130,7 +129,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
             try {
                 val resolve = subsExchangeClient?.resolveContract(
                     contract,
-                    *taskResults.filter { it.pager != null }.map {
+                    *taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) }.map {
                         ChannelResolve(
                             it.task.url,
                             it.pager!!.getResults()

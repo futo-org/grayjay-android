@@ -1907,7 +1907,7 @@ class VideoDetailView : ConstraintLayout {
                             else null;
                             withContext(Dispatchers.Main) {
                                 video = newDetails;
-                                _player.setSource(newVideoSource, newAudioSource, true, true);
+                                _player.setSource(newVideoSource, newAudioSource, true, true, true);
                             }
                         }
                     } catch (e: Throwable) {
@@ -2645,7 +2645,10 @@ class VideoDetailView : ConstraintLayout {
                     }
 
                     onChannelClicked.subscribe {
-                        fragment.navigate<ChannelFragment>(it)
+                        if(it.url.isNotBlank())
+                            fragment.navigate<ChannelFragment>(it)
+                        else
+                            UIDialogs.appToast("No author url present");
                     }
 
                     onAddToWatchLaterClicked.subscribe(this) {
