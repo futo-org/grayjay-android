@@ -5,6 +5,9 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.DedupContentPager
@@ -78,8 +81,10 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
         val contractableTasks = tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
         val contract = if(contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map { ChannelRequest(it.url) }.toTypedArray()) else null;
+        if(contract?.provided?.isNotEmpty() == true)
+            Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
         var providedTasks: MutableList<SubscriptionTask>? = null;
-        if(contract != null && contract.provided.isNotEmpty()){
+        if(contract != null && contract.required.isNotEmpty()){
             providedTasks = mutableListOf()
             for(task in tasks.toList()){
                 if(!task.fromCache && !task.fromPeek && contract.provided.contains(task.url)) {
@@ -127,16 +132,18 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         //Resolve Subscription Exchange
         if(contract != null) {
             try {
+                val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract.required.contains(it.task.url) }.map {
+                    ChannelResolve(
+                        it.task.url,
+                        it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
+                    )
+                }.toTypedArray()
                 val resolve = subsExchangeClient?.resolveContract(
                     contract,
-                    *taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) }.map {
-                        ChannelResolve(
-                            it.task.url,
-                            it.pager!!.getResults()
-                        )
-                    }.toTypedArray()
+                    *resolves
                 );
                 if (resolve != null) {
+                    UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size})")
                     for(result in resolve){
                         val task = providedTasks?.find { it.url == result.channelUrl };
                         if(task != null) {
@@ -153,6 +160,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
             }
             catch(ex: Throwable) {
                 //TODO: fetch remainder after all?
+                Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
             }
         }
 

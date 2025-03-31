@@ -375,7 +375,16 @@ class StateSubscriptions {
     }
 
     fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null, subGroup: SubscriptionGroup? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
-        val exchangeClient = if(Settings.instance.subscriptions.useSubscriptionExchange) getSubsExchangeClient() else null;
+        var exchangeClient: SubsExchangeClient? = null;
+        if(Settings.instance.subscriptions.useSubscriptionExchange) {
+            try {
+                exchangeClient = getSubsExchangeClient();
+            }
+            catch(ex: Throwable){
+                Logger.e(TAG, "Failed to get subs exchange client: ${ex.message}", ex);
+            }
+        }
+
         val algo = SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, cacheScope, allowFailure, withCacheFallback, _subscriptionsPool, exchangeClient);
         if(onNewCacheHit != null)
             algo.onNewCacheHit.subscribe(onNewCacheHit)

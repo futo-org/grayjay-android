@@ -14,6 +14,7 @@ import java.time.OffsetDateTime
 
 @kotlinx.serialization.Serializable
 open class SerializedPlatformVideo(
+    override val contentType: ContentType = ContentType.MEDIA,
     override val id: PlatformID,
     override val name: String,
     override val thumbnails: Thumbnails,
@@ -27,7 +28,6 @@ open class SerializedPlatformVideo(
     override val viewCount: Long,
     override val isShort: Boolean = false
 ) : IPlatformVideo, SerializedPlatformContent {
-    override val contentType: ContentType = ContentType.MEDIA;
 
     override val isLive: Boolean = false;
 
@@ -44,6 +44,7 @@ open class SerializedPlatformVideo(
     companion object {
         fun fromVideo(video: IPlatformVideo) : SerializedPlatformVideo {
             return SerializedPlatformVideo(
+                ContentType.MEDIA,
                 video.id,
                 video.name,
                 video.thumbnails,
