@@ -417,6 +417,47 @@ class StatePlatform {
         pager.initialize();
         return pager;
     }
+    fun getShorts(): IPager<IPlatformVideo> {
+        Logger.i(TAG, "Platform - getShorts");
+        var clientIdsOngoing = mutableListOf<String>();
+        val clients = getSortedEnabledClient().filter { if (it is JSClient) it.enableInShorts else true };
+
+        StateApp.instance.scopeOrNull?.let {
+            it.launch(Dispatchers.Default) {
+                try {
+                    // plugins that take longer than 5 seconds to load are considered "slow"
+                    delay(5000);
+                    val slowClients = synchronized(clientIdsOngoing) {
+                        return@synchronized clients.filter { clientIdsOngoing.contains(it.id) };
+                    };
+                    for(client in slowClients)
+                        UIDialogs.toast("${client.name} is still loading..\nConsider disabling it for Home", false);
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show toast for slow source.", e)
+                }
+            }
+        }
+
+        val pages = clients.parallelStream()
+            .map {
+                Logger.i(TAG, "getShorts - ${it.name}")
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.add(it.id);
+                }
+                val shortsResult = it.fromPool(_pagerClientPool).getShorts();
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.remove(it.id);
+                }
+                return@map shortsResult;
+            }
+            .asSequence()
+            .toList()
+            .associateWith { 1f };
+
+        val pager = MultiDistributionContentPager(pages);
+        pager.initialize();
+        return pager;
+    }
     suspend fun getHomeRefresh(scope: CoroutineScope): IPager<IPlatformContent> {
         Logger.i(TAG, "Platform - getHome (Refresh)");
         val clients = getSortedEnabledClient().filter { if (it is JSClient) it.enableInHome else true };

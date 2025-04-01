@@ -1,15 +1,30 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.annotation.SuppressLint
+import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.annotation.OptIn
-import androidx.core.view.get
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.states.StatePlatform
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 @UnstableApi
 class ShortsFragment : MainFragment() {
@@ -17,13 +32,24 @@ class ShortsFragment : MainFragment() {
     override val isTab: Boolean = true
     override val hasBottomBar: Boolean get() = true
 
-    private var previousShownView: ShortView? = null
+    private var loadPagerJob: Job? = null
+    private var nextPageJob: Job? = null
 
-    private lateinit var viewPager: ViewPager2
+    private var shortsPager: IPager<IPlatformVideo>? = null
+    private val videos: MutableList<IPlatformVideo> = mutableListOf()
+
+    private var viewPager: ViewPager2? = null
+    private lateinit var overlayLoading: FrameLayout
+    private lateinit var overlayLoadingSpinner: ImageView
+    private lateinit var overlayQualityContainer: FrameLayout
     private lateinit var customViewAdapter: CustomViewAdapter
     private val urls = listOf(
-        "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra", "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra"
+        "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://www.youtube.com/watch?v=MXHSS-7XcBc", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra", "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra"
     )
+
+    init {
+        loadPager()
+    }
 
     override fun onCreateMainView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -35,31 +61,146 @@ class ShortsFragment : MainFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewPager = view.findViewById(R.id.viewPager)
+        overlayLoading = view.findViewById(R.id.short_view_loading_overlay)
+        overlayLoadingSpinner = view.findViewById(R.id.short_view_loader)
+        overlayQualityContainer = view.findViewById(R.id.videodetail_quality_overview)
 
-        customViewAdapter = CustomViewAdapter(urls, layoutInflater, this)
-        viewPager.adapter = customViewAdapter
+        setLoading(true)
 
-        // TODO something is laggy sometimes when swiping between videos
-        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            @OptIn(UnstableApi::class)
-            override fun onPageSelected(position: Int) {
-                previousShownView?.stop()
+        if (loadPagerJob?.isActive == false && videos.isEmpty()) {
+            loadPager()
+        }
 
-                val focusedView =
-                    ((viewPager[0] as RecyclerView).findViewHolderForAdapterPosition(position) as CustomViewHolder).shortView
-                focusedView.play()
+        loadPagerJob!!.invokeOnCompletion {
+            customViewAdapter = CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
+                if (!shortsPager!!.hasMorePages()) {
+                    return@CustomViewAdapter
+                }
+                nextPage()
+            }
+            customViewAdapter.onResetTriggered.subscribe {
+                setLoading(true)
+                loadPager()
+                loadPagerJob!!.invokeOnCompletion {
+                    setLoading(false)
+                }
+            }
+            val viewPager = viewPager!!
+            viewPager.adapter = customViewAdapter
+
+            // TODO something is laggy sometimes when swiping between videos
+            viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                @OptIn(UnstableApi::class)
+                override fun onPageSelected(position: Int) {
+                    val adapter = (viewPager.adapter as CustomViewAdapter)
+                    adapter.previousShownView?.stop()
+                    adapter.previousShownView = null
+
+//                    viewPager.post {
+                        val recycler = (viewPager.getChildAt(0) as RecyclerView)
+                        val viewHolder =
+                            recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
+
+                        if (viewHolder == null) {
+                            adapter.needToPlay = position
+                        } else {
+                            val focusedView = viewHolder.shortView
+                            focusedView.play()
+                            adapter.previousShownView = focusedView
+                        }
+//                    }
+                }
 
 
-                previousShownView = focusedView
+            })
+            setLoading(false)
+        }
+    }
+
+    private fun nextPage() {
+        nextPageJob?.cancel()
+
+        nextPageJob = CoroutineScope(Dispatchers.Main).launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    shortsPager!!.nextPage()
+                }
+            } catch (_: CancellationException) {
+                return@launch
             }
 
-        })
+            // if it's been canceled then don't update the results
+            if (!isActive) {
+                return@launch
+            }
 
+            val newVideos = shortsPager!!.getResults()
+            CoroutineScope(Dispatchers.Main).launch {
+                val prevCount = customViewAdapter.itemCount
+                videos.addAll(newVideos)
+                customViewAdapter.notifyItemRangeInserted(prevCount, newVideos.size)
+            }
+        }
+    }
+
+    // we just completely reset the data structure so we want to tell the adapter that
+    @SuppressLint("NotifyDataSetChanged")
+    private fun loadPager() {
+        loadPagerJob?.cancel()
+
+        // if the view pager exists go back to the beginning
+        videos.clear()
+        viewPager?.adapter?.notifyDataSetChanged()
+        viewPager?.currentItem = 0
+
+        loadPagerJob = CoroutineScope(Dispatchers.Main).launch {
+//            delay(5000)
+            val pager = try {
+                withContext(Dispatchers.IO) {
+                    StatePlatform.instance.getShorts()
+//                    StatePlatform.instance.getHome()
+                //                    as IPager<IPlatformVideo>
+                }
+            } catch (_: CancellationException) {
+                return@launch
+            }
+
+            // if it's been canceled then don't set the video pager
+            if (!isActive) {
+                return@launch
+            }
+
+            videos.clear()
+            videos.addAll(pager.getResults())
+            shortsPager = pager
+
+            // if the viewPager exists then trigger data changed
+            viewPager?.adapter?.notifyDataSetChanged()
+        }
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        if (isLoading) {
+            (overlayLoadingSpinner.drawable as Animatable?)?.start()
+            overlayLoading.visibility = View.VISIBLE
+        } else {
+            overlayLoading.visibility = View.GONE
+            (overlayLoadingSpinner.drawable as Animatable?)?.stop()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        previousShownView?.stop()
+        customViewAdapter.previousShownView?.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        customViewAdapter.previousShownView?.stop()
     }
 
     companion object {
@@ -69,26 +210,51 @@ class ShortsFragment : MainFragment() {
     }
 
     class CustomViewAdapter(
-        private val urls: List<String>, private val inflater: LayoutInflater, private val fragment: MainFragment
+        private val videos: MutableList<IPlatformVideo>,
+        private val inflater: LayoutInflater,
+        private val fragment: MainFragment,
+        private val overlayQualityContainer: FrameLayout,
+        private val onNearEnd: () -> Unit,
     ) : RecyclerView.Adapter<CustomViewHolder>() {
+        val onResetTriggered = Event0()
+        var previousShownView: ShortView? = null
+        var needToPlay: Int? = null
+
         @OptIn(UnstableApi::class)
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
-            val shortView = ShortView(inflater, fragment)
+            val shortView = ShortView(inflater, fragment, overlayQualityContainer)
+            shortView.onResetTriggered.subscribe {
+                onResetTriggered.emit()
+            }
             return CustomViewHolder(shortView)
         }
 
         @OptIn(UnstableApi::class)
         override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
-            holder.shortView.setVideo(urls[position])
+            holder.shortView.changeVideo(videos[position])
+
+            if (position == itemCount - 1) {
+                onNearEnd()
+            }
         }
 
-        @OptIn(UnstableApi::class)
         override fun onViewRecycled(holder: CustomViewHolder) {
             super.onViewRecycled(holder)
-            holder.shortView.detach()
+            holder.shortView.cancel()
+
         }
 
-        override fun getItemCount(): Int = urls.size
+        override fun onViewAttachedToWindow(holder: CustomViewHolder) {
+            super.onViewAttachedToWindow(holder)
+
+            if (holder.absoluteAdapterPosition == needToPlay) {
+                holder.shortView.play()
+                needToPlay = null
+                previousShownView = holder.shortView
+            }
+        }
+
+        override fun getItemCount(): Int = videos.size
     }
 
     @OptIn(UnstableApi::class)

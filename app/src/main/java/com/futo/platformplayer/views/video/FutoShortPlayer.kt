@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.animation.LinearInterpolator
 import androidx.annotation.OptIn
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.DefaultTimeBar
@@ -21,6 +22,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlayer
 
 @UnstableApi
@@ -33,6 +35,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
     }
 
     private var playerAttached = false
+//        private set;
 
     private val videoView: PlayerView
     private val progressBar: DefaultTimeBar
@@ -64,12 +67,15 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
                 }
 
                 if (player.isPlaying) {
-                    if (!progressAnimator.isStarted) {
+                    if (progressAnimator.isPaused){
+                        progressAnimator.resume()
+                    }
+                    else if (!progressAnimator.isStarted) {
                         progressAnimator.start()
                     }
                 } else {
                     if (progressAnimator.isRunning) {
-                        progressAnimator.cancel()
+                        progressAnimator.pause()
                     }
                 }
             }
@@ -81,10 +87,12 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
         videoView = findViewById(R.id.video_player)
         progressBar = findViewById(R.id.video_player_progress_bar)
 
+        player.player.repeatMode = Player.REPEAT_MODE_ONE
+
         progressBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
                 if (progressAnimator.isRunning) {
-                    progressAnimator.cancel()
+                    progressAnimator.pause()
                 }
             }
 
@@ -93,7 +101,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
                 if (canceled) {
                     progressAnimator.currentPlayTime = player.player.currentPosition
-                    progressAnimator.start()
+                    progressAnimator.resume()
                     return
                 }
 
@@ -110,9 +118,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
             interpolator = LinearInterpolator()
 
             addUpdateListener { animation ->
-                val progress = animation.animatedValue as Float
-                val duration = animation.duration
-                progressBar.setPosition((progress * duration).toLong())
+                progressBar.setPosition(animation.currentPlayTime)
             }
         }
     }
@@ -169,11 +175,28 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
     @OptIn(UnstableApi::class)
     fun setArtwork(drawable: Drawable?) {
         if (drawable != null) {
-            videoView.defaultArtwork = drawable
             videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_FILL
+            videoView.defaultArtwork = drawable
         } else {
-            videoView.defaultArtwork = null
             videoView.artworkDisplayMode = PlayerView.ARTWORK_DISPLAY_MODE_OFF
+            videoView.defaultArtwork = null
         }
+    }
+
+    fun getPlaybackRate(): Float {
+        return exoPlayer?.player?.playbackParameters?.speed ?: 1.0f
+    }
+
+    fun setPlaybackRate(playbackRate: Float) {
+        val exoPlayer = exoPlayer?.player
+        Logger.i(TAG, "setPlaybackRate playbackRate=$playbackRate exoPlayer=${exoPlayer}")
+
+        val param = PlaybackParameters(playbackRate)
+        exoPlayer?.playbackParameters = param
+    }
+
+    // TODO remove stub
+    fun hideControls(stub: Boolean) {
+
     }
 }

@@ -743,6 +743,7 @@ let plugin = {
 //To override by plugin
 const source = {
     getHome() { return new ContentPager([], false, {}); },
+    getShorts() { return new VideoPager([], false, {}); },
 
     enable(config){  },
     disable() {},

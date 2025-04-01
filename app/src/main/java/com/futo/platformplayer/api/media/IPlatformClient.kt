@@ -12,6 +12,7 @@ import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.models.ImageVariable
 
@@ -34,6 +35,11 @@ interface IPlatformClient {
      * Gets the home recommendations
      */
     fun getHome(): IPager<IPlatformContent>
+
+    /**
+     * Gets the shorts feed
+     */
+    fun getShorts(): IPager<IPlatformVideo>
 
     //Search
     /**

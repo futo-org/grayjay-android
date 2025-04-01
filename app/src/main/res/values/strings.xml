@@ -560,6 +560,7 @@
     <string name="enable_where_this_plugins_content_are_visible">Enable where this plugin\'s content are visible</string>
     <string name="show_content_in_home_tab">Show content in home tab</string>
     <string name="show_content_in_search_results">Show content in search results</string>
+    <string name="show_content_in_shorts_tab">Show content in shorts tab</string>
     <string name="no_valid_url_provided">No valid URL provided..</string>
     <string name="invalid_config_format">Invalid Config Format</string>
     <string name="failed_to_fetch_configuration">Failed to fetch configuration</string>

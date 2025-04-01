@@ -47,6 +47,7 @@ class SourcePluginConfig(
     var subscriptionRateLimit: Int? = null,
     var enableInSearch: Boolean = true,
     var enableInHome: Boolean = true,
+    var enableInShorts: Boolean = true,
     var supportedClaimTypes: List<Int> = listOf(),
     var primaryClaimFieldType: Int? = null,
     var developerSubmitUrl: String? = null,
