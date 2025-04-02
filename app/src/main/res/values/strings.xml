@@ -973,6 +973,16 @@
         <item>Release Date (Oldest)</item>
         <item>Release Date (Newest)</item>
     </string-array>
+    <string-array name="playlists_sortby_array">
+        <item>Name (Ascending)</item>
+        <item>Name (Descending)</item>
+        <item>Modified Date (Oldest)</item>
+        <item>Modified Date (Newest)</item>
+        <item>Creation Date (Oldest)</item>
+        <item>Creation Date (Newest)</item>
+        <item>Play Date (Oldest)</item>
+        <item>Play Date (Newest)</item>
+    </string-array>
     <string-array name="feed_style">
         <item>Preview</item>
         <item>List</item>

@@ -30,6 +30,7 @@ import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.subsexchange.ChannelRequest
 import com.futo.platformplayer.subsexchange.ChannelResolve
+import com.futo.platformplayer.subsexchange.ExchangeContract
 import kotlinx.coroutines.CoroutineScope
 import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
@@ -77,21 +78,30 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
         val exs: ArrayList<Throwable> = arrayListOf();
 
-
-
-        val contractableTasks = tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
-        val contract = if(contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map { ChannelRequest(it.url) }.toTypedArray()) else null;
-        if(contract?.provided?.isNotEmpty() == true)
-            Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
+        var contract: ExchangeContract? = null;
         var providedTasks: MutableList<SubscriptionTask>? = null;
-        if(contract != null && contract.required.isNotEmpty()){
-            providedTasks = mutableListOf()
-            for(task in tasks.toList()){
-                if(!task.fromCache && !task.fromPeek && contract.provided.contains(task.url)) {
-                    providedTasks.add(task);
-                    tasks.remove(task);
+
+        try {
+            val contractableTasks =
+                tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
+            contract =
+                if (contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map {
+                    ChannelRequest(it.url)
+                }.toTypedArray()) else null;
+            if (contract?.provided?.isNotEmpty() == true)
+                Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
+            if (contract != null && contract.required.isNotEmpty()) {
+                providedTasks = mutableListOf()
+                for (task in tasks.toList()) {
+                    if (!task.fromCache && !task.fromPeek && contract.provided.contains(task.url)) {
+                        providedTasks.add(task);
+                        tasks.remove(task);
+                    }
                 }
             }
+        }
+        catch(ex: Throwable){
+            Logger.e("SubscriptionsTaskFetchAlgorithm", "Failed to retrieve SubsExchange contract due to: " + ex.message, ex);
         }
 
         val failedPlugins = mutableListOf<String>();

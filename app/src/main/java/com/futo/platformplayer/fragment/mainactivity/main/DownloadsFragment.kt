@@ -229,7 +229,7 @@ class DownloadsFragment : MainFragment() {
         fun filterDownloads(vids: List<VideoLocal>): List<VideoLocal>{
             var vidsToReturn = vids;
             if(!_listDownloadSearch.text.isNullOrEmpty())
-                vidsToReturn = vids.filter { it.name.contains(_listDownloadSearch.text, true) };
+                vidsToReturn = vids.filter { it.name.contains(_listDownloadSearch.text, true) || it.author.name.contains(_listDownloadSearch.text, true) };
             if(!ordering.isNullOrEmpty()) {
                 vidsToReturn = when(ordering){
                     "downloadDateAsc" -> vidsToReturn.sortedBy { it.downloadDate ?: OffsetDateTime.MAX };
