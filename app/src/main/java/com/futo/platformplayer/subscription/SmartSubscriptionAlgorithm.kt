@@ -1,5 +1,6 @@
 package com.futo.platformplayer.subscription
 
+import SubsExchangeClient
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -15,8 +16,9 @@ class SmartSubscriptionAlgorithm(
     scope: CoroutineScope,
     allowFailure: Boolean = false,
     withCacheFallback: Boolean = true,
-    threadPool: ForkJoinPool? = null
-): SubscriptionsTaskFetchAlgorithm(scope, allowFailure, withCacheFallback, threadPool) {
+    threadPool: ForkJoinPool? = null,
+    subsExchangeClient: SubsExchangeClient? = null
+): SubscriptionsTaskFetchAlgorithm(scope, allowFailure, withCacheFallback, threadPool, subsExchangeClient) {
     override fun getSubscriptionTasks(subs: Map<Subscription, List<String>>): List<SubscriptionTask> {
         val allTasks: List<SubscriptionTask> = subs.flatMap { entry ->
             val sub = entry.key;

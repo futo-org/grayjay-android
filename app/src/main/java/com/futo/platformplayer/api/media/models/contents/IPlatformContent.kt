@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media.models.contents
 
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
+import kotlinx.serialization.Serializable
 import java.time.OffsetDateTime
 
 interface IPlatformContent {

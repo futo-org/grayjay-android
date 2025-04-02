@@ -132,6 +132,7 @@ import com.futo.platformplayer.views.behavior.TouchInterceptFrameLayout
 import com.futo.platformplayer.views.casting.CastView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
+import com.futo.platformplayer.views.overlays.ChaptersOverlay
 import com.futo.platformplayer.views.overlays.DescriptionOverlay
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
@@ -147,6 +148,7 @@ import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
 import com.futo.platformplayer.views.platform.PlatformIndicator
+import com.futo.platformplayer.views.segments.ChaptersList
 import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.video.FutoVideoPlayer
@@ -194,6 +196,8 @@ class VideoDetailView : ConstraintLayout {
 
     private var _liveChat: LiveChatManager? = null;
     private var _videoResumePositionMilliseconds : Long = 0L;
+
+    private var _chapters: List<IChapter>? = null;
 
     private val _player: FutoVideoPlayer;
     private val _cast: CastView;
@@ -263,6 +267,7 @@ class VideoDetailView : ConstraintLayout {
     private val _container_content_liveChat: LiveChatOverlay;
     private val _container_content_browser: WebviewOverlay;
     private val _container_content_support: SupportOverlay;
+    private val _container_content_chapters: ChaptersOverlay;
 
     private var _container_content_current: View;
 
@@ -374,6 +379,7 @@ class VideoDetailView : ConstraintLayout {
         _container_content_liveChat = findViewById(R.id.videodetail_container_livechat);
         _container_content_support = findViewById(R.id.videodetail_container_support);
         _container_content_browser = findViewById(R.id.videodetail_container_webview)
+        _container_content_chapters = findViewById(R.id.videodetail_container_chapters);
 
         _addCommentView = findViewById(R.id.add_comment_view);
         _commentsList = findViewById(R.id.comments_list);
@@ -397,6 +403,10 @@ class VideoDetailView : ConstraintLayout {
 
         _monetization = findViewById(R.id.monetization);
         _player.attachPlayer();
+
+        _player.onChapterClicked.subscribe {
+            showChaptersUI();
+        };
 
 
         _buttonSubscribe.onSubscribed.subscribe {
@@ -686,6 +696,11 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_support.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_browser.onClose.subscribe { switchContentView(_container_content_main); };
+        _container_content_chapters.onClose.subscribe { switchContentView(_container_content_main); };
+
+        _container_content_chapters.onClick.subscribe {
+            handleSeek(it.timeStart.toLong() * 1000);
+        }
 
         _description_viewMore.setOnClickListener {
             switchContentView(_container_content_description);
@@ -852,6 +867,22 @@ class VideoDetailView : ConstraintLayout {
         _cast.stopAllGestures();
     }
 
+    fun showChaptersUI(){
+        video?.let {
+            try {
+                _chapters?.let {
+                    if(it.size == 0)
+                        return@let;
+                    _container_content_chapters.setChapters(_chapters);
+                    switchContentView(_container_content_chapters);
+                }
+            }
+            catch(ex: Throwable) {
+
+            }
+        }
+    }
+
     fun updateMoreButtons() {
         val isLimitedVersion = video?.url != null && StatePlatform.instance.getContentClientOrNull(video!!.url)?.let {
             if (it is JSClient)
@@ -865,6 +896,13 @@ class VideoDetailView : ConstraintLayout {
                 };
             }
         },
+            _chapters?.let {
+              if(it != null && it.size > 0)
+                  RoundButton(context, R.drawable.ic_list, "Chapters", TAG_CHAPTERS) {
+                      showChaptersUI();
+                  }
+              else null
+            },
             if(video?.isLive ?: false)
                 RoundButton(context, R.drawable.ic_chat, context.getString(R.string.live_chat), TAG_LIVECHAT) {
                     video?.let {
@@ -1340,10 +1378,12 @@ class VideoDetailView : ConstraintLayout {
                     val chapters = null ?: StatePlatform.instance.getContentChapters(video.url);
                     _player.setChapters(chapters);
                     _cast.setChapters(chapters);
+                    _chapters = _player.getChapters();
                 } catch (ex: Throwable) {
                     Logger.e(TAG, "Failed to get chapters", ex);
                     _player.setChapters(null);
                     _cast.setChapters(null);
+                    _chapters = null;
 
                     /*withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);
@@ -1381,6 +1421,10 @@ class VideoDetailView : ConstraintLayout {
                             ex
                         );
                     }
+                }
+
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    updateMoreButtons();
                 }
             };
         }
@@ -1863,7 +1907,7 @@ class VideoDetailView : ConstraintLayout {
                             else null;
                             withContext(Dispatchers.Main) {
                                 video = newDetails;
-                                _player.setSource(newVideoSource, newAudioSource, true, true);
+                                _player.setSource(newVideoSource, newAudioSource, true, true, true);
                             }
                         }
                     } catch (e: Throwable) {
@@ -2601,7 +2645,10 @@ class VideoDetailView : ConstraintLayout {
                     }
 
                     onChannelClicked.subscribe {
-                        fragment.navigate<ChannelFragment>(it)
+                        if(it.url.isNotBlank())
+                            fragment.navigate<ChannelFragment>(it)
+                        else
+                            UIDialogs.appToast("No author url present");
                     }
 
                     onAddToWatchLaterClicked.subscribe(this) {
@@ -3077,6 +3124,7 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_SHARE = "share";
         const val TAG_OVERLAY = "overlay";
         const val TAG_LIVECHAT = "livechat";
+        const val TAG_CHAPTERS = "chapters";
         const val TAG_OPEN = "open";
         const val TAG_SEND_TO_DEVICE = "send_to_device";
         const val TAG_MORE = "MORE";

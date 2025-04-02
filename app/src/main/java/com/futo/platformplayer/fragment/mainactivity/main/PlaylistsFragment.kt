@@ -6,12 +6,17 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,11 +26,13 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.adapters.*
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
 
 
 class PlaylistsFragment : MainFragment() {
@@ -65,6 +72,7 @@ class PlaylistsFragment : MainFragment() {
         private val _fragment: PlaylistsFragment;
 
         var watchLater: ArrayList<IPlatformVideo> = arrayListOf();
+        var allPlaylists: ArrayList<Playlist> = arrayListOf();
         var playlists: ArrayList<Playlist> = arrayListOf();
         private var _appBar: AppBarLayout;
         private var _adapterWatchLater: VideoListHorizontalAdapter;
@@ -72,12 +80,20 @@ class PlaylistsFragment : MainFragment() {
         private var _layoutWatchlist: ConstraintLayout;
         private var _slideUpOverlay: SlideUpMenuOverlay? = null;
 
+        private var _listPlaylistsSearch: EditText;
+
+        private var _ordering: String? = null;
+
+
         constructor(fragment: PlaylistsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
             inflater.inflate(R.layout.fragment_playlists, this);
 
+            _listPlaylistsSearch = findViewById(R.id.playlists_search);
+
             watchLater = ArrayList();
             playlists = ArrayList();
+            allPlaylists = ArrayList();
 
             val recyclerWatchLater = findViewById<RecyclerView>(R.id.recycler_watch_later);
 
@@ -105,6 +121,7 @@ class PlaylistsFragment : MainFragment() {
             buttonCreatePlaylist.setOnClickListener {
                 _slideUpOverlay = UISlideOverlays.showCreatePlaylistOverlay(findViewById<FrameLayout>(R.id.overlay_create_playlist)) {
                     val playlist = Playlist(it, arrayListOf());
+                    allPlaylists.add(0, playlist);
                     playlists.add(0, playlist);
                     StatePlaylists.instance.createOrUpdatePlaylist(playlist);
 
@@ -120,6 +137,34 @@ class PlaylistsFragment : MainFragment() {
             _appBar = findViewById(R.id.app_bar);
             _layoutWatchlist = findViewById(R.id.layout_watchlist);
 
+
+            _listPlaylistsSearch.addTextChangedListener {
+                updatePlaylistsFiltering();
+            }
+            val spinnerSortBy: Spinner = findViewById(R.id.spinner_sortby);
+            spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.playlists_sortby_array)).also {
+                it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
+            };
+            spinnerSortBy.setSelection(0);
+            spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                    when(pos) {
+                        0 -> _ordering = "nameAsc"
+                        1 -> _ordering = "nameDesc"
+                        2 -> _ordering = "dateEditAsc"
+                        3 -> _ordering = "dateEditDesc"
+                        4 -> _ordering = "dateCreateAsc"
+                        5 -> _ordering = "dateCreateDesc"
+                        6 -> _ordering = "datePlayAsc"
+                        7 -> _ordering = "datePlayDesc"
+                        else -> _ordering = null
+                    }
+                    updatePlaylistsFiltering()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            };
+
+
             findViewById<TextView>(R.id.text_view_all).setOnClickListener { _fragment.navigate<WatchLaterFragment>(context.getString(R.string.watch_later)); };
             StatePlaylists.instance.onWatchLaterChanged.subscribe(this) {
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
@@ -134,10 +179,12 @@ class PlaylistsFragment : MainFragment() {
 
         @SuppressLint("NotifyDataSetChanged")
         fun onShown() {
+            allPlaylists.clear();
             playlists.clear()
-            playlists.addAll(
+            allPlaylists.addAll(
                 StatePlaylists.instance.getPlaylists().sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) }
             );
+            playlists.addAll(filterPlaylists(allPlaylists));
             _adapterPlaylist.notifyDataSetChanged();
 
             updateWatchLater();
@@ -157,6 +204,32 @@ class PlaylistsFragment : MainFragment() {
             return false;
         }
 
+        private fun updatePlaylistsFiltering() {
+            val toFilter = allPlaylists ?: return;
+            playlists.clear();
+            playlists.addAll(filterPlaylists(toFilter));
+            _adapterPlaylist.notifyDataSetChanged();
+        }
+        private fun filterPlaylists(pls: List<Playlist>): List<Playlist> {
+            var playlistsToReturn = pls;
+            if(!_listPlaylistsSearch.text.isNullOrEmpty())
+                playlistsToReturn = playlistsToReturn.filter { it.name.contains(_listPlaylistsSearch.text, true) };
+            if(!_ordering.isNullOrEmpty()){
+                playlistsToReturn = when(_ordering){
+                    "nameAsc" -> playlistsToReturn.sortedBy { it.name.lowercase() }
+                    "nameDesc" -> playlistsToReturn.sortedByDescending { it.name.lowercase() };
+                    "dateEditAsc" -> playlistsToReturn.sortedBy { it.dateUpdate ?: OffsetDateTime.MAX };
+                    "dateEditDesc" -> playlistsToReturn.sortedByDescending { it.dateUpdate ?: OffsetDateTime.MIN }
+                    "dateCreateAsc" -> playlistsToReturn.sortedBy { it.dateCreation ?: OffsetDateTime.MAX };
+                    "dateCreateDesc" -> playlistsToReturn.sortedByDescending { it.dateCreation ?: OffsetDateTime.MIN }
+                    "datePlayAsc" -> playlistsToReturn.sortedBy { it.datePlayed ?: OffsetDateTime.MAX };
+                    "datePlayDesc" -> playlistsToReturn.sortedByDescending { it.datePlayed ?: OffsetDateTime.MIN }
+                    else -> playlistsToReturn
+                }
+            }
+            return playlistsToReturn;
+        }
+
         private fun updateWatchLater() {
             val watchList = StatePlaylists.instance.getWatchLater();
             if (watchList.isNotEmpty()) {
@@ -164,7 +237,7 @@ class PlaylistsFragment : MainFragment() {
 
                 _appBar.let { appBar ->
                     val layoutParams: CoordinatorLayout.LayoutParams = appBar.layoutParams as CoordinatorLayout.LayoutParams;
-                    layoutParams.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 230.0f, resources.displayMetrics).toInt();
+                    layoutParams.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 315.0f, resources.displayMetrics).toInt();
                     appBar.layoutParams = layoutParams;
                 }
             } else {
@@ -172,7 +245,7 @@ class PlaylistsFragment : MainFragment() {
 
                 _appBar.let { appBar ->
                     val layoutParams: CoordinatorLayout.LayoutParams = appBar.layoutParams as CoordinatorLayout.LayoutParams;
-                    layoutParams.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25.0f, resources.displayMetrics).toInt();
+                    layoutParams.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 110.0f, resources.displayMetrics).toInt();
                     appBar.layoutParams = layoutParams;
                 };
             }

@@ -294,6 +294,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.show_subscription_group, FieldForm.TOGGLE, R.string.show_subscription_group_description, 5)
         var showSubscriptionGroups: Boolean = true;
 
+        @FormField(R.string.use_subscription_exchange, FieldForm.TOGGLE, R.string.use_subscription_exchange_description, 6)
+        var useSubscriptionExchange: Boolean = false;
+
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
 

@@ -40,3 +40,15 @@ class OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {
         return OffsetDateTime.of(LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC), ZoneOffset.UTC);
     }
 }
+class OffsetDateTimeStringSerializer : KSerializer<OffsetDateTime> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("OffsetDateTime", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: OffsetDateTime) {
+        encoder.encodeString(value.toString());
+    }
+    override fun deserialize(decoder: Decoder): OffsetDateTime {
+        val str = decoder.decodeString();
+
+        return OffsetDateTime.parse(str);
+    }
+}
