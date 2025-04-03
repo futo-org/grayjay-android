@@ -52,6 +52,7 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
     fun resolveContract(contract: ExchangeContract, vararg resolves: ChannelResolve): Array<ChannelResult> {
         val contractResolve = convertResolves(*resolves)
         val result = post("/api/Channel/Resolve?contractId=${contract.id}", Serializer.json.encodeToString(contractResolve), "application/json")
+        Logger.v("SubsExchangeClient", "Resolve:" + result);
         return Serializer.json.decodeFromString(result)
     }
     suspend fun resolveContractAsync(contract: ExchangeContract, vararg resolves: ChannelResolve): Array<ChannelResult> {

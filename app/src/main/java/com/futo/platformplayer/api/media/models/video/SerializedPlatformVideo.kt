@@ -10,6 +10,7 @@ import com.futo.polycentric.core.combineHashCodes
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNames
 import java.time.OffsetDateTime
 
 @kotlinx.serialization.Serializable
@@ -20,6 +21,7 @@ open class SerializedPlatformVideo(
     override val thumbnails: Thumbnails,
     override val author: PlatformAuthorLink,
     @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    @JsonNames("datetime", "dateTime")
     override val datetime: OffsetDateTime? = null,
     override val url: String,
     override val shareUrl: String = "",

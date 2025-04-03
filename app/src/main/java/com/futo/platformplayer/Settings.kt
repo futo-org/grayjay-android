@@ -205,7 +205,7 @@ class Settings : FragmentedStorageFileJson() {
     var home = HomeSettings();
     @Serializable
     class HomeSettings {
-        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 3)
         @DropdownFieldOptionsId(R.array.feed_style)
         var homeFeedStyle: Int = 1;
 
@@ -215,6 +215,9 @@ class Settings : FragmentedStorageFileJson() {
             else
                 return FeedStyle.THUMBNAIL;
         }
+
+        @FormField(R.string.show_home_filters, FieldForm.TOGGLE, R.string.show_home_filters_description, 4)
+        var showHomeFilters: Boolean = true;
 
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;

@@ -417,6 +417,8 @@
     <string name="show_subscription_group_description">If subscription groups should be shown above your subscriptions to filter</string>
     <string name="preview_feed_items">Preview Feed Items</string>
     <string name="preview_feed_items_description">When the preview feedstyle is used, if items should auto-preview when scrolling over them</string>
+    <string name="show_home_filters">Show Home Filters</string>
+    <string name="show_home_filters_description">If the home filters should be shown above home</string>
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
     <string name="sync_grayjay">Sync Grayjay</string>

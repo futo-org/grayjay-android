@@ -69,7 +69,7 @@ class StateSubscriptions {
 
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
-    private val _subsExchangeServer = "https://exchange.grayjay.app/";
+    private val _subsExchangeServer = "http://10.10.15.159"//"https://exchange.grayjay.app/";
     private val _subscriptionKey = FragmentedStorage.get<StringStorage>("sub_exchange_key");
 
     init {

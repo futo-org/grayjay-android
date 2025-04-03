@@ -153,6 +153,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     *resolves
                 );
                 if (resolve != null) {
+                    val invalids = resolve.filter { it.content.any { it.datetime == null } };
                     UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size})")
                     for(result in resolve){
                         val task = providedTasks?.find { it.url == result.channelUrl };
