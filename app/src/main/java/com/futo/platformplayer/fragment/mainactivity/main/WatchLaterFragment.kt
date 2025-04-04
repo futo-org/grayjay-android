@@ -103,6 +103,9 @@ class WatchLaterFragment : MainFragment() {
                 StatePlaylists.instance.removeFromWatchLater(video, true);
             }
         }
+        override fun onVideoOptions(video: IPlatformVideo) {
+            UISlideOverlays.showVideoOptionsOverlay(video, overlayContainer);
+        }
 
         override fun onVideoClicked(video: IPlatformVideo) {
             val watchLater = StatePlaylists.instance.getWatchLater();

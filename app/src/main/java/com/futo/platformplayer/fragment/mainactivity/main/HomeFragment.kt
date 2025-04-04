@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.allViews
-import androidx.core.view.contains
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.futo.platformplayer.*
@@ -29,6 +28,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.views.FeedStyle
@@ -37,7 +37,6 @@ import com.futo.platformplayer.views.ToggleBar
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
 import kotlinx.coroutines.runBlocking
 import java.time.OffsetDateTime
@@ -49,6 +48,12 @@ class HomeFragment : MainFragment() {
 
     private var _view: HomeView? = null;
     private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedLastPager: IReusablePager<IPlatformContent>? = null
+
+    private var _toggleRecent = false;
+    private var _toggleWatched = false;
+    private var _togglePluginsDisabled = mutableListOf<String>();
+
 
     fun reloadFeed() {
         _view?.reloadFeed()
@@ -74,7 +79,7 @@ class HomeFragment : MainFragment() {
     }
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val view = HomeView(this, inflater, _cachedRecyclerData);
+        val view = HomeView(this, inflater, _cachedRecyclerData, _cachedLastPager);
         _view = view;
         return view;
     }
@@ -92,6 +97,7 @@ class HomeFragment : MainFragment() {
         val view = _view;
         if (view != null) {
             _cachedRecyclerData = view.recyclerData;
+            _cachedLastPager = view.lastPager;
             view.cleanup();
             _view = null;
         }
@@ -111,9 +117,10 @@ class HomeFragment : MainFragment() {
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
-        private var _lastPager: IReusablePager<IPlatformContent>? = null;
+        var lastPager: IReusablePager<IPlatformContent>? = null;
 
-        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null, cachedLastPager: IReusablePager<IPlatformContent>? = null) : super(fragment, inflater, cachedRecyclerData) {
+            lastPager = cachedLastPager
             _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({ fragment.lifecycleScope }, {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
@@ -122,7 +129,8 @@ class HomeFragment : MainFragment() {
                     ReusableRefreshPager(it);
                 else
                     ReusablePager(it);
-                _lastPager = wrappedPager;
+                lastPager = wrappedPager;
+                resetAutomaticNextPageCounter();
                 loadedResult(wrappedPager.getWindow());
             }
             .exception<ScriptCaptchaRequiredException> {  }
@@ -227,9 +235,6 @@ class HomeFragment : MainFragment() {
         }
 
         private val _filterLock = Object();
-        private var _toggleRecent = false;
-        private var _toggleWatched = false;
-        private var _togglePluginsDisabled = mutableListOf<String>();
         private var _togglesConfig = FragmentedStorage.get<StringArrayStorage>("home_toggles");
         fun initializeToolbarContent() {
             if(_toolbarContentView.allViews.any { it is ToggleBar })
@@ -245,18 +250,19 @@ class HomeFragment : MainFragment() {
                     layoutParams =
                         LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
                 }
-                _togglePluginsDisabled.clear();
+                fragment._togglePluginsDisabled.clear();
                 synchronized(_filterLock) {
                     val buttonsPlugins = (if (_togglesConfig.contains("plugins"))
                         (StatePlatform.instance.getEnabledClients()
+                            .filter { it is JSClient && it.enableInHome }
                             .map { plugin ->
-                                ToggleBar.Toggle(plugin.name, plugin.icon, true, {
+                                ToggleBar.Toggle(if(Settings.instance.home.showHomeFiltersPluginNames) plugin.name else "", plugin.icon, !fragment._togglePluginsDisabled.contains(plugin.id), {
                                     if (it) {
-                                        if (_togglePluginsDisabled.contains(plugin.id))
-                                            _togglePluginsDisabled.remove(plugin.id);
+                                        if (fragment._togglePluginsDisabled.contains(plugin.id))
+                                            fragment._togglePluginsDisabled.remove(plugin.id);
                                     } else {
-                                        if (!_togglePluginsDisabled.contains(plugin.id))
-                                            _togglePluginsDisabled.add(plugin.id);
+                                        if (!fragment._togglePluginsDisabled.contains(plugin.id))
+                                            fragment._togglePluginsDisabled.add(plugin.id);
                                     }
                                     reloadForFilters();
                                 }).withTag("plugins")
@@ -264,13 +270,13 @@ class HomeFragment : MainFragment() {
                     else listOf())
                     val buttons = (listOf<ToggleBar.Toggle?>(
                         (if (_togglesConfig.contains("today"))
-                            ToggleBar.Toggle("Today", _toggleRecent) {
-                                _toggleRecent = it; reloadForFilters()
+                            ToggleBar.Toggle("Today", fragment._toggleRecent) {
+                                fragment._toggleRecent = it; reloadForFilters()
                             }
                                 .withTag("today") else null),
                         (if (_togglesConfig.contains("watched"))
-                            ToggleBar.Toggle("Unwatched", _toggleWatched) {
-                                _toggleWatched = it; reloadForFilters()
+                            ToggleBar.Toggle("Unwatched", fragment._toggleWatched) {
+                                fragment._toggleWatched = it; reloadForFilters()
                             }
                                 .withTag("watched") else null),
                     ).filterNotNull() + buttonsPlugins)
@@ -302,7 +308,7 @@ class HomeFragment : MainFragment() {
             }
         }
         fun reloadForFilters() {
-            _lastPager?.let { loadedResult(it.getWindow()) };
+            lastPager?.let { loadedResult(it.getWindow()) };
         }
 
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
@@ -312,11 +318,11 @@ class HomeFragment : MainFragment() {
                 if(StateMeta.instance.isCreatorHidden(it.author.url))
                     return@filter false;
 
-                if(_toggleRecent && (it.datetime?.getNowDiffHours() ?: 0) > 25)
+                if(fragment._toggleRecent && (it.datetime?.getNowDiffHours() ?: 0) > 25)
                     return@filter false;
-                if(_toggleWatched && StateHistory.instance.isHistoryWatched(it.url, 0))
+                if(fragment._toggleWatched && StateHistory.instance.isHistoryWatched(it.url, 0))
                     return@filter false;
-                if(_togglePluginsDisabled.any() && it.id.pluginId != null && _togglePluginsDisabled.contains(it.id.pluginId)) {
+                if(fragment._togglePluginsDisabled.any() && it.id.pluginId != null && fragment._togglePluginsDisabled.contains(it.id.pluginId)) {
                     return@filter false;
                 }
 

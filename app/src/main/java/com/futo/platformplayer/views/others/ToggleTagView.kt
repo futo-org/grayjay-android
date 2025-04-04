@@ -58,6 +58,7 @@ class ToggleTagView : LinearLayout {
         setToggle(isActive);
         _image.setImageResource(imageResource);
         _image.visibility = View.VISIBLE;
+        _textTag.visibility = if(!text.isNullOrEmpty()) View.VISIBLE else View.GONE;
         this.isButton = isButton;
     }
     fun setInfo(image: ImageVariable, text: String, isActive: Boolean, isButton: Boolean = false) {
@@ -66,12 +67,14 @@ class ToggleTagView : LinearLayout {
         setToggle(isActive);
         image.setImageView(_image, R.drawable.ic_error_pred);
         _image.visibility = View.VISIBLE;
+        _textTag.visibility = if(!text.isNullOrEmpty()) View.VISIBLE else View.GONE;
         this.isButton = isButton;
     }
     fun setInfo(text: String, isActive: Boolean, isButton: Boolean = false) {
         _image.visibility = View.GONE;
         _text = text;
         _textTag.text = text;
+        _textTag.visibility = if(!text.isNullOrEmpty()) View.VISIBLE else View.GONE;
         setToggle(isActive);
         this.isButton = isButton;
     }

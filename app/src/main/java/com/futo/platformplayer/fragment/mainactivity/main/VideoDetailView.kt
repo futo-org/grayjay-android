@@ -693,6 +693,9 @@ class VideoDetailView : ConstraintLayout {
         _container_content_description.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_liveChat.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_queue.onClose.subscribe { switchContentView(_container_content_main); };
+        _container_content_queue.onOptions.subscribe {
+            UISlideOverlays.showVideoOptionsOverlay(it, _overlayContainer);
+        }
         _container_content_replies.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_support.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_browser.onClose.subscribe { switchContentView(_container_content_main); };

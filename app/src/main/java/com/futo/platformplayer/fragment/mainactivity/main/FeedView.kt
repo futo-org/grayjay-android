@@ -240,6 +240,9 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             _automaticNextPageCounter = 0;
         }
     }
+    fun resetAutomaticNextPageCounter(){
+        _automaticNextPageCounter = 0;
+    }
 
     protected fun setTextCentered(text: String?) {
         _textCentered.text = text;

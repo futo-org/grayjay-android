@@ -8,7 +8,9 @@ import android.widget.LinearLayout
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.views.lists.VideoListEditorView
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
@@ -23,6 +25,7 @@ class QueueEditorOverlay : LinearLayout {
     private val _overlayContainer: FrameLayout;
 
 
+    val onOptions = Event1<IPlatformVideo>();
     val onClose = Event0();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
@@ -35,6 +38,9 @@ class QueueEditorOverlay : LinearLayout {
 
         _topbar.onClose.subscribe(this, onClose::emit);
         _editor.onVideoOrderChanged.subscribe { StatePlayer.instance.setQueueWithExisting(it) }
+        _editor.onVideoOptions.subscribe { v ->
+            onOptions?.emit(v);
+        }
         _editor.onVideoRemoved.subscribe { v ->
             StatePlayer.instance.removeFromQueue(v);
             _topbar.setInfo(context.getString(R.string.queue), "${StatePlayer.instance.queueSize} " + context.getString(R.string.videos));

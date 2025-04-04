@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="32dp"
-    android:paddingStart="15dp"
-    android:paddingEnd="15dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
     android:background="@drawable/background_pill"
     android:layout_marginEnd="6dp"
     android:layout_marginTop="17dp"
@@ -19,12 +19,15 @@
             android:visibility="gone"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginTop="4dp" />
+            android:layout_gravity="center"
+            android:layout_marginLeft="2.5dp"
+            android:layout_marginRight="2.5dp" />
         <TextView
             android:id="@+id/text_tag"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="2.5dp"
+            android:layout_marginRight="2.5dp"
             android:textColor="@color/white"
             android:layout_gravity="center"
             android:gravity="center"

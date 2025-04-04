@@ -26,6 +26,8 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.adapters.*
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
@@ -82,7 +84,7 @@ class PlaylistsFragment : MainFragment() {
 
         private var _listPlaylistsSearch: EditText;
 
-        private var _ordering: String? = null;
+        private var _ordering = FragmentedStorage.get<StringStorage>("playlists_ordering")
 
 
         constructor(fragment: PlaylistsFragment, inflater: LayoutInflater) : super(inflater.context) {
@@ -145,24 +147,25 @@ class PlaylistsFragment : MainFragment() {
             spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.playlists_sortby_array)).also {
                 it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             };
-            spinnerSortBy.setSelection(0);
+            val options = listOf("nameAsc", "nameDesc", "dateEditAsc", "dateEditDesc", "dateCreateAsc", "dateCreateDesc", "datePlayAsc", "datePlayDesc");
             spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
                     when(pos) {
-                        0 -> _ordering = "nameAsc"
-                        1 -> _ordering = "nameDesc"
-                        2 -> _ordering = "dateEditAsc"
-                        3 -> _ordering = "dateEditDesc"
-                        4 -> _ordering = "dateCreateAsc"
-                        5 -> _ordering = "dateCreateDesc"
-                        6 -> _ordering = "datePlayAsc"
-                        7 -> _ordering = "datePlayDesc"
-                        else -> _ordering = null
+                        0 -> _ordering.setAndSave("nameAsc")
+                        1 -> _ordering.setAndSave("nameDesc")
+                        2 -> _ordering.setAndSave("dateEditAsc")
+                        3 -> _ordering.setAndSave("dateEditDesc")
+                        4 -> _ordering.setAndSave("dateCreateAsc")
+                        5 -> _ordering.setAndSave("dateCreateDesc")
+                        6 -> _ordering.setAndSave("datePlayAsc")
+                        7 -> _ordering.setAndSave("datePlayDesc")
+                        else -> _ordering.setAndSave("")
                     }
                     updatePlaylistsFiltering()
                 }
                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             };
+            spinnerSortBy.setSelection(Math.max(0, options.indexOf(_ordering.value)));
 
 
             findViewById<TextView>(R.id.text_view_all).setOnClickListener { _fragment.navigate<WatchLaterFragment>(context.getString(R.string.watch_later)); };
@@ -214,8 +217,8 @@ class PlaylistsFragment : MainFragment() {
             var playlistsToReturn = pls;
             if(!_listPlaylistsSearch.text.isNullOrEmpty())
                 playlistsToReturn = playlistsToReturn.filter { it.name.contains(_listPlaylistsSearch.text, true) };
-            if(!_ordering.isNullOrEmpty()){
-                playlistsToReturn = when(_ordering){
+            if(!_ordering.value.isNullOrEmpty()){
+                playlistsToReturn = when(_ordering.value){
                     "nameAsc" -> playlistsToReturn.sortedBy { it.name.lowercase() }
                     "nameDesc" -> playlistsToReturn.sortedByDescending { it.name.lowercase() };
                     "dateEditAsc" -> playlistsToReturn.sortedBy { it.dateUpdate ?: OffsetDateTime.MAX };

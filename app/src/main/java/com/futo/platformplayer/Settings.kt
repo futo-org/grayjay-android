@@ -218,6 +218,8 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.show_home_filters, FieldForm.TOGGLE, R.string.show_home_filters_description, 4)
         var showHomeFilters: Boolean = true;
+        @FormField(R.string.show_home_filters_plugin_names, FieldForm.TOGGLE, R.string.show_home_filters_plugin_names_description, 5)
+        var showHomeFiltersPluginNames: Boolean = false;
 
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;

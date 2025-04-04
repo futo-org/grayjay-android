@@ -82,23 +82,30 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         var providedTasks: MutableList<SubscriptionTask>? = null;
 
         try {
-            val contractableTasks =
-                tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
-            contract =
-                if (contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map {
-                    ChannelRequest(it.url)
-                }.toTypedArray()) else null;
-            if (contract?.provided?.isNotEmpty() == true)
-                Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
-            if (contract != null && contract.required.isNotEmpty()) {
-                providedTasks = mutableListOf()
-                for (task in tasks.toList()) {
-                    if (!task.fromCache && !task.fromPeek && contract.provided.contains(task.url)) {
-                        providedTasks.add(task);
-                        tasks.remove(task);
+            val contractingTime = measureTimeMillis {
+                val contractableTasks =
+                    tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
+                contract =
+                    if (contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map {
+                        ChannelRequest(it.url)
+                    }.toTypedArray()) else null;
+                if (contract?.provided?.isNotEmpty() == true)
+                    Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
+                if (contract != null && contract!!.required.isNotEmpty()) {
+                    providedTasks = mutableListOf()
+                    for (task in tasks.toList()) {
+                        if (!task.fromCache && !task.fromPeek && contract!!.provided.contains(task.url)) {
+                            providedTasks!!.add(task);
+                            tasks.remove(task);
+                        }
                     }
                 }
             }
+            if(contract != null)
+                Logger.i(TAG, "Subscription Exchange contract received in ${contractingTime}ms");
+            else if(contractingTime > 100)
+                Logger.i(TAG, "Subscription Exchange contract failed to received in${contractingTime}ms");
+
         }
         catch(ex: Throwable){
             Logger.e("SubscriptionsTaskFetchAlgorithm", "Failed to retrieve SubsExchange contract due to: " + ex.message, ex);
@@ -109,6 +116,8 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val forkTasks = executeSubscriptionTasks(tasks, failedPlugins, cachedChannels);
 
         val taskResults = arrayListOf<SubscriptionTaskResult>();
+        var resolveCount = 0;
+        var resolveTime = 0L;
         val timeTotal = measureTimeMillis {
             for(task in forkTasks) {
                 try {
@@ -137,51 +146,68 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     }
                 };
             }
-        }
 
-        //Resolve Subscription Exchange
-        if(contract != null) {
-            try {
-                val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract.required.contains(it.task.url) }.map {
-                    ChannelResolve(
-                        it.task.url,
-                        it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
-                    )
-                }.toTypedArray()
-                val resolve = subsExchangeClient?.resolveContract(
-                    contract,
-                    *resolves
-                );
-                if (resolve != null) {
-                    val invalids = resolve.filter { it.content.any { it.datetime == null } };
-                    UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size})")
-                    for(result in resolve){
-                        val task = providedTasks?.find { it.url == result.channelUrl };
-                        if(task != null) {
-                            taskResults.add(SubscriptionTaskResult(task, PlatformContentPager(result.content, result.content.size), null));
-                            providedTasks?.remove(task);
+            //Resolve Subscription Exchange
+            if(contract != null) {
+                try {
+                    resolveTime = measureTimeMillis {
+                        val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract!!.required.contains(it.task.url) }.map {
+                            ChannelResolve(
+                                it.task.url,
+                                it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
+                            )
+                        }.toTypedArray()
+                        val resolve = subsExchangeClient?.resolveContract(
+                            contract!!,
+                            *resolves
+                        );
+                        if (resolve != null) {
+                            resolveCount = resolves.size;
+                            UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size}")
+                            for(result in resolve){
+                                val task = providedTasks?.find { it.url == result.channelUrl };
+                                if(task != null) {
+                                    taskResults.add(SubscriptionTaskResult(task, PlatformContentPager(result.content, result.content.size), null));
+                                    providedTasks?.remove(task);
+                                }
+                            }
+                        }
+                        if (providedTasks != null) {
+                            for(task in providedTasks!!) {
+                                taskResults.add(SubscriptionTaskResult(task, null, IllegalStateException("No data received from exchange")));
+                            }
                         }
                     }
+                    Logger.i(TAG, "Subscription Exchange contract resolved in ${resolveTime}ms");
+
                 }
-                if (providedTasks != null) {
-                    for(task in providedTasks) {
-                        taskResults.add(SubscriptionTaskResult(task, null, IllegalStateException("No data received from exchange")));
-                    }
+                catch(ex: Throwable) {
+                    //TODO: fetch remainder after all?
+                    Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
                 }
-            }
-            catch(ex: Throwable) {
-                //TODO: fetch remainder after all?
-                Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
             }
         }
 
-        Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms")
+        Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms");
+        if(resolveCount > 0) {
+            val selfFetchTime = timeTotal - resolveTime;
+            val selfFetchCount = tasks.count { !it.fromPeek && !it.fromCache };
+            if(selfFetchCount > 0) {
+                val selfResolvePercentage = resolveCount.toDouble() / selfFetchCount;
+                val estimateSelfFetchTime = selfFetchTime + selfFetchTime * selfResolvePercentage;
+                val selfFetchDelta = timeTotal - estimateSelfFetchTime;
+                if(selfFetchDelta > 0)
+                    UIDialogs.appToast("Subscription Exchange lost ${selfFetchDelta}ms (out of ${timeTotal}ms)", true);
+                else
+                    UIDialogs.appToast("Subscription Exchange saved ${(selfFetchDelta * -1).toInt()}ms (out of ${timeTotal}ms)", true);
+            }
+        }
 
         //Cache pagers grouped by channel
         val groupedPagers = taskResults.groupBy { it.task.sub.channel.url }
             .map { entry ->
                 val sub = if(!entry.value.isEmpty()) entry.value[0].task.sub else null;
-                val liveTasks = entry.value.filter { !it.task.fromCache };
+                val liveTasks = entry.value.filter { !it.task.fromCache && it.pager != null };
                 val cachedTasks = entry.value.filter { it.task.fromCache };
                 val livePager = if(liveTasks.isNotEmpty()) StateCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }) {
                     onNewCacheHit.emit(sub!!, it);

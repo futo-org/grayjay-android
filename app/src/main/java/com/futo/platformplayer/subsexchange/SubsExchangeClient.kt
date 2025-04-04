@@ -28,7 +28,7 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.RSAPublicKeySpec
 
 
-class SubsExchangeClient(private val server: String, private val privateKey: String) {
+class SubsExchangeClient(private val server: String, private val privateKey: String, private val contractTimeout: Int = 1000) {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -40,7 +40,7 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
 
     // Endpoint: Contract
     fun requestContract(vararg channels: ChannelRequest): ExchangeContract {
-        val data = post("/api/Channel/Contract", Json.encodeToString(channels), "application/json")
+        val data = post("/api/Channel/Contract", Json.encodeToString(channels), "application/json", contractTimeout)
         return Json.decodeFromString(data)
     }
     suspend fun requestContractAsync(vararg channels: ChannelRequest): ExchangeContract {
@@ -74,9 +74,11 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
     }
 
     // IO methods
-    private fun post(query: String, body: String, contentType: String): String {
+    private fun post(query: String, body: String, contentType: String, timeout: Int = 0): String {
         val url = URL("${server.trim('/')}$query")
         with(url.openConnection() as HttpURLConnection) {
+            if(timeout > 0)
+                this.connectTimeout = timeout
             requestMethod = "POST"
             setRequestProperty("Content-Type", contentType)
             doOutput = true

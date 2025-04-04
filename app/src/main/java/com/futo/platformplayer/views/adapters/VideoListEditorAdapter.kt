@@ -14,6 +14,7 @@ class VideoListEditorAdapter : RecyclerView.Adapter<VideoListEditorViewHolder> {
 
     val onClick = Event1<IPlatformVideo>();
     val onRemove = Event1<IPlatformVideo>();
+    val onOptions = Event1<IPlatformVideo>();
     var canEdit = false
         private set;
 
@@ -28,6 +29,7 @@ class VideoListEditorAdapter : RecyclerView.Adapter<VideoListEditorViewHolder> {
         val holder = VideoListEditorViewHolder(view, _touchHelper);
 
         holder.onRemove.subscribe { v -> onRemove.emit(v); };
+        holder.onOptions.subscribe { v -> onOptions.emit(v); };
         holder.onClick.subscribe { v -> onClick.emit(v); };
 
         return holder;

@@ -104,6 +104,7 @@ abstract class VideoListEditorView : LinearLayout {
 
         videoListEditorView.onVideoOrderChanged.subscribe(::onVideoOrderChanged);
         videoListEditorView.onVideoRemoved.subscribe(::onVideoRemoved);
+        videoListEditorView.onVideoOptions.subscribe(::onVideoOptions);
         videoListEditorView.onVideoClicked.subscribe(::onVideoClicked);
 
         _videoListEditorView = videoListEditorView;
@@ -122,6 +123,7 @@ abstract class VideoListEditorView : LinearLayout {
     open fun onShuffleClick() { }
     open fun onEditClick() { }
     open fun onVideoRemoved(video: IPlatformVideo) {}
+    open fun onVideoOptions(video: IPlatformVideo) {}
     open fun onVideoOrderChanged(videos : List<IPlatformVideo>) {}
     open fun onVideoClicked(video: IPlatformVideo) {
 

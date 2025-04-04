@@ -135,7 +135,7 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         app:layout_constraintBottom_toTopOf="@id/text_author"
         android:layout_marginStart="10dp" />
 
@@ -152,7 +152,7 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_video_name"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         app:layout_constraintBottom_toTopOf="@id/text_video_metadata"
         android:layout_marginStart="10dp"  />
 
@@ -169,19 +169,35 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_author"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         android:layout_marginStart="10dp" />
 
-    <ImageButton
-        android:id="@+id/image_trash"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:contentDescription="@string/cd_button_delete"
-        app:srcCompat="@drawable/ic_trash_18dp"
-        android:scaleType="fitCenter"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@id/layout_video_thumbnail"
-        app:layout_constraintBottom_toBottomOf="@id/layout_video_thumbnail" />
+        app:layout_constraintBottom_toBottomOf="@id/layout_video_thumbnail" >
+        <ImageButton
+            android:id="@+id/image_trash"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_delete"
+            app:srcCompat="@drawable/ic_trash_18dp"
+            android:scaleType="fitCenter"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"/>
+        <ImageButton
+            android:id="@+id/image_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_settings"
+            app:srcCompat="@drawable/ic_settings"
+            android:scaleType="fitCenter"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"  />
+
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

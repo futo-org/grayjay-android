@@ -419,6 +419,8 @@
     <string name="preview_feed_items_description">When the preview feedstyle is used, if items should auto-preview when scrolling over them</string>
     <string name="show_home_filters">Show Home Filters</string>
     <string name="show_home_filters_description">If the home filters should be shown above home</string>
+    <string name="show_home_filters_plugin_names">Home filter Plugin Names</string>
+    <string name="show_home_filters_plugin_names_description">If home filters should show full plugin names or just icons</string>
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
     <string name="sync_grayjay">Sync Grayjay</string>
