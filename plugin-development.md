@@ -138,7 +138,7 @@ See [Pagers.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/doc
 
 When you deploy your plugin, you'll need to add code signing for security.
 
-See [Script Signing.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Script%Signing.md)
+See [Script Signing.md](https://gitlab.futo.org/videostreaming/grayjay/-/blob/master/docs/Script%20Signing.md)
 
 ## Plugin Deployment
 
