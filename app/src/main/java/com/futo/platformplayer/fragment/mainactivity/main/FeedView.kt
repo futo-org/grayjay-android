@@ -197,10 +197,12 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
             val firstVisibleItemView = if(firstVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(firstVisibleItemPosition) else null;
             val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition();
             val lastVisibleItemView = if(lastVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(lastVisibleItemPosition) else null;
+            val rows = if(recyclerData.layoutManager is GridLayoutManager) Math.max(1, recyclerData.results.size / recyclerData.layoutManager.spanCount) else 1;
+            val rowsHeight = (firstVisibleItemView?.height ?: 0) * rows;
             if(lastVisibleItemView != null && lastVisibleItemPosition == (recyclerData.results.size - 1)) {
                 false;
             }
-            else if (firstVisibleItemView != null && height != null && firstVisibleItemView.height * recyclerData.results.size < height) {
+            else if (firstVisibleItemView != null && height != null && rowsHeight < height) {
                 false;
             } else {
                 true;
