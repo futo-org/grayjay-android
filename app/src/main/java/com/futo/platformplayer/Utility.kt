@@ -27,14 +27,18 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 private val _allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
 fun getRandomString(sizeOfRandomString: Int): String {
@@ -278,4 +282,35 @@ fun ByteBuffer.toUtf8String(): String {
     val remainingBytes = ByteArray(remaining())
     get(remainingBytes)
     return String(remainingBytes, Charsets.UTF_8)
+}
+
+
+fun ByteArray.toGzip(): ByteArray {
+    if (this == null || this.isEmpty()) return ByteArray(0)
+
+    val gzipTimeStart = OffsetDateTime.now();
+
+    val outputStream = ByteArrayOutputStream()
+    GZIPOutputStream(outputStream).use { gzip ->
+        gzip.write(this)
+    }
+    val result = outputStream.toByteArray();
+    Logger.i("Utility", "Gzip compression time: ${gzipTimeStart.getNowDiffMiliseconds()}ms");
+    return result;
+}
+
+fun ByteArray.fromGzip(): ByteArray {
+    if (this == null || this.isEmpty()) return ByteArray(0)
+
+    val inputStream = ByteArrayInputStream(this)
+    val outputStream = ByteArrayOutputStream()
+
+    GZIPInputStream(inputStream).use { gzip ->
+        val buffer = ByteArray(1024)
+        var bytesRead: Int
+        while (gzip.read(buffer).also { bytesRead = it } != -1) {
+            outputStream.write(buffer, 0, bytesRead)
+        }
+    }
+    return outputStream.toByteArray()
 }

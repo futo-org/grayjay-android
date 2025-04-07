@@ -12,8 +12,10 @@ import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.images.GlideHelper
 import com.futo.platformplayer.models.ImageVariable
+import com.futo.platformplayer.views.ToggleBar
 
 class ToggleTagView : LinearLayout {
     private val _root: FrameLayout;
@@ -26,7 +28,7 @@ class ToggleTagView : LinearLayout {
     var isButton: Boolean = false
         private set;
 
-    var onClick = Event1<Boolean>();
+    var onClick = Event2<ToggleTagView, Boolean>();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.view_toggle_tag, this, true);
@@ -36,7 +38,7 @@ class ToggleTagView : LinearLayout {
         _root.setOnClickListener {
             if(!isButton)
                 setToggle(!isActive);
-            onClick.emit(isActive);
+            onClick.emit(this, isActive);
         }
     }
 
@@ -50,6 +52,24 @@ class ToggleTagView : LinearLayout {
             _root.setBackgroundResource(R.drawable.background_pill_untoggled);
             _textTag.alpha = 0.5f;
         }
+    }
+
+    fun setInfo(toggle: ToggleBar.Toggle){
+        _text = toggle.name;
+        _textTag.text = toggle.name;
+        setToggle(toggle.isActive);
+        if(toggle.iconVariable != null) {
+            toggle.iconVariable.setImageView(_image, R.drawable.ic_error_pred);
+            _image.visibility = View.GONE;
+        }
+        else if(toggle.icon > 0) {
+            _image.setImageResource(toggle.icon);
+            _image.visibility = View.GONE;
+        }
+        else
+            _image.visibility = View.VISIBLE;
+        _textTag.visibility = if(!toggle.name.isNullOrEmpty()) View.VISIBLE else View.GONE;
+        this.isButton = isButton;
     }
 
     fun setInfo(imageResource: Int, text: String, isActive: Boolean, isButton: Boolean = false) {

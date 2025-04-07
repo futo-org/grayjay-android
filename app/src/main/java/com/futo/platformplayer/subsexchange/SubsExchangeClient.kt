@@ -1,10 +1,14 @@
 import com.futo.platformplayer.api.media.Serializer
+import com.futo.platformplayer.getNowDiffMiliseconds
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.subscription.SubscriptionFetchAlgorithm.Companion.TAG
 import com.futo.platformplayer.subsexchange.ChannelRequest
 import com.futo.platformplayer.subsexchange.ChannelResolve
 import com.futo.platformplayer.subsexchange.ChannelResult
 import com.futo.platformplayer.subsexchange.ExchangeContract
 import com.futo.platformplayer.subsexchange.ExchangeContractResolve
+import com.futo.platformplayer.toGzip
+import com.futo.platformplayer.toHumanBytesSize
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +30,7 @@ import java.nio.charset.StandardCharsets
 import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.RSAPublicKeySpec
+import java.time.OffsetDateTime
 
 
 class SubsExchangeClient(private val server: String, private val privateKey: String, private val contractTimeout: Int = 1000) {
@@ -40,24 +45,27 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
 
     // Endpoint: Contract
     fun requestContract(vararg channels: ChannelRequest): ExchangeContract {
-        val data = post("/api/Channel/Contract", Json.encodeToString(channels), "application/json", contractTimeout)
+        val data = post("/api/Channel/Contract", Json.encodeToString(channels).toByteArray(Charsets.UTF_8), "application/json", contractTimeout)
         return Json.decodeFromString(data)
     }
     suspend fun requestContractAsync(vararg channels: ChannelRequest): ExchangeContract {
-        val data = postAsync("/api/Channel/Contract", Json.encodeToString(channels), "application/json")
+        val data = postAsync("/api/Channel/Contract", Json.encodeToString(channels).toByteArray(Charsets.UTF_8), "application/json")
         return Json.decodeFromString(data)
     }
 
     // Endpoint: Resolve
     fun resolveContract(contract: ExchangeContract, vararg resolves: ChannelResolve): Array<ChannelResult> {
         val contractResolve = convertResolves(*resolves)
-        val result = post("/api/Channel/Resolve?contractId=${contract.id}", Serializer.json.encodeToString(contractResolve), "application/json")
-        Logger.v("SubsExchangeClient", "Resolve:" + result);
+        val contractResolveJson = Serializer.json.encodeToString(contractResolve);
+        val contractResolveTimeStart = OffsetDateTime.now();
+        val result = post("/api/Channel/Resolve?contractId=${contract.id}", contractResolveJson.toByteArray(Charsets.UTF_8), "application/json", 0, true)
+        val contractResolveTime = contractResolveTimeStart.getNowDiffMiliseconds();
+        Logger.v("SubsExchangeClient", "Subscription Exchange Resolve Request [${contractResolveTime}ms]:" + result);
         return Serializer.json.decodeFromString(result)
     }
     suspend fun resolveContractAsync(contract: ExchangeContract, vararg resolves: ChannelResolve): Array<ChannelResult> {
         val contractResolve = convertResolves(*resolves)
-        val result = postAsync("/api/Channel/Resolve?contractId=${contract.id}", Serializer.json.encodeToString(contractResolve), "application/json")
+        val result = postAsync("/api/Channel/Resolve?contractId=${contract.id}", Serializer.json.encodeToString(contractResolve).toByteArray(Charsets.UTF_8), "application/json", true)
         return Serializer.json.decodeFromString(result)
     }
 
@@ -74,7 +82,7 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
     }
 
     // IO methods
-    private fun post(query: String, body: String, contentType: String, timeout: Int = 0): String {
+    private fun post(query: String, body: ByteArray, contentType: String, timeout: Int = 0, gzip: Boolean = false): String {
         val url = URL("${server.trim('/')}$query")
         with(url.openConnection() as HttpURLConnection) {
             if(timeout > 0)
@@ -82,7 +90,16 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
             requestMethod = "POST"
             setRequestProperty("Content-Type", contentType)
             doOutput = true
-            OutputStreamWriter(outputStream, StandardCharsets.UTF_8).use { it.write(body); it.flush() }
+
+
+            if(gzip) {
+                val gzipData = body.toGzip();
+                setRequestProperty("Content-Encoding", "gzip");
+                outputStream.write(gzipData);
+                Logger.i("SubsExchangeClient", "SubsExchange using gzip (${body.size.toHumanBytesSize()} => ${gzipData.size.toHumanBytesSize()}");
+            }
+            else
+                outputStream.write(body);
 
             val status = responseCode;
             Logger.i("SubsExchangeClient", "POST [${url}]: ${status}");
@@ -105,9 +122,9 @@ class SubsExchangeClient(private val server: String, private val privateKey: Str
             }
         }
     }
-    private suspend fun postAsync(query: String, body: String, contentType: String): String {
+    private suspend fun postAsync(query: String, body: ByteArray, contentType: String, gzip: Boolean = false): String {
         return withContext(Dispatchers.IO) {
-            post(query, body, contentType)
+            post(query, body, contentType, 0, gzip)
         }
     }
 

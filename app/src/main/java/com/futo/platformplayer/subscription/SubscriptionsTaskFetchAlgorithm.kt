@@ -15,12 +15,14 @@ import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.api.media.structures.PlatformContentPager
+import com.futo.platformplayer.debug.Stopwatch
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
+import com.futo.platformplayer.getNowDiffMiliseconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
@@ -32,6 +34,8 @@ import com.futo.platformplayer.subsexchange.ChannelRequest
 import com.futo.platformplayer.subsexchange.ChannelResolve
 import com.futo.platformplayer.subsexchange.ExchangeContract
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
@@ -149,42 +153,56 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
             //Resolve Subscription Exchange
             if(contract != null) {
-                try {
-                    resolveTime = measureTimeMillis {
-                        val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract!!.required.contains(it.task.url) }.map {
-                            ChannelResolve(
-                                it.task.url,
-                                it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
-                            )
-                        }.toTypedArray()
-                        val resolve = subsExchangeClient?.resolveContract(
-                            contract!!,
-                            *resolves
-                        );
-                        if (resolve != null) {
-                            resolveCount = resolves.size;
-                            UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size}")
-                            for(result in resolve){
-                                val task = providedTasks?.find { it.url == result.channelUrl };
-                                if(task != null) {
-                                    taskResults.add(SubscriptionTaskResult(task, PlatformContentPager(result.content, result.content.size), null));
-                                    providedTasks?.remove(task);
+                fun resolve() {
+                    try {
+                        resolveTime = measureTimeMillis {
+                            val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract!!.required.contains(it.task.url) }.map {
+                                ChannelResolve(
+                                    it.task.url,
+                                    it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
+                                )
+                            }.toTypedArray()
+
+                            val resolveRequestStart = OffsetDateTime.now();
+
+                            val resolve = subsExchangeClient?.resolveContract(
+                                contract!!,
+                                *resolves
+                            );
+
+                            Logger.i(TAG, "Subscription Exchange contract resolved request in ${resolveRequestStart.getNowDiffMiliseconds()}ms");
+
+                            if (resolve != null) {
+                                resolveCount = resolves.size;
+                                UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size}")
+                                for(result in resolve){
+                                    val task = providedTasks?.find { it.url == result.channelUrl };
+                                    if(task != null) {
+                                        taskResults.add(SubscriptionTaskResult(task, PlatformContentPager(result.content, result.content.size), null));
+                                        providedTasks?.remove(task);
+                                    }
+                                }
+                            }
+                            if (providedTasks != null) {
+                                for(task in providedTasks!!) {
+                                    taskResults.add(SubscriptionTaskResult(task, null, IllegalStateException("No data received from exchange")));
                                 }
                             }
                         }
-                        if (providedTasks != null) {
-                            for(task in providedTasks!!) {
-                                taskResults.add(SubscriptionTaskResult(task, null, IllegalStateException("No data received from exchange")));
-                            }
-                        }
-                    }
-                    Logger.i(TAG, "Subscription Exchange contract resolved in ${resolveTime}ms");
+                        Logger.i(TAG, "Subscription Exchange contract resolved in ${resolveTime}ms");
 
+                    }
+                    catch(ex: Throwable) {
+                        //TODO: fetch remainder after all?
+                        Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
+                    }
                 }
-                catch(ex: Throwable) {
-                    //TODO: fetch remainder after all?
-                    Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
-                }
+                if(providedTasks?.size ?: 0 == 0)
+                    scope.launch(Dispatchers.IO) {
+                        resolve();
+                    }
+                else
+                    resolve();
             }
         }
 

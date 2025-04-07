@@ -158,7 +158,7 @@ class SubscriptionBar : LinearLayout {
         for(button in buttons) {
             _tagsContainer.addView(ToggleTagView(context).apply {
                 this.setInfo(button.name, button.isActive);
-                this.onClick.subscribe { button.action(it); };
+                this.onClick.subscribe({ view, value -> button.action(view, value); });
             });
         }
     }
@@ -166,16 +166,16 @@ class SubscriptionBar : LinearLayout {
     class Toggle {
         val name: String;
         val icon: Int;
-        val action: (Boolean)->Unit;
+        val action: (ToggleTagView, Boolean)->Unit;
         val isActive: Boolean;
 
-        constructor(name: String, icon: Int, isActive: Boolean = false, action: (Boolean)->Unit) {
+        constructor(name: String, icon: Int, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
             this.name = name;
             this.icon = icon;
             this.action = action;
             this.isActive = isActive;
         }
-        constructor(name: String, isActive: Boolean = false, action: (Boolean)->Unit) {
+        constructor(name: String, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
             this.name = name;
             this.icon = 0;
             this.action = action;

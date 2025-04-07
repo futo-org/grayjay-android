@@ -250,39 +250,53 @@ class HomeFragment : MainFragment() {
                     layoutParams =
                         LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
                 }
-                fragment._togglePluginsDisabled.clear();
+
                 synchronized(_filterLock) {
-                    val buttonsPlugins = (if (_togglesConfig.contains("plugins"))
+                    var buttonsPlugins: List<ToggleBar.Toggle> = listOf()
+                    buttonsPlugins = (if (_togglesConfig.contains("plugins"))
                         (StatePlatform.instance.getEnabledClients()
                             .filter { it is JSClient && it.enableInHome }
                             .map { plugin ->
-                                ToggleBar.Toggle(if(Settings.instance.home.showHomeFiltersPluginNames) plugin.name else "", plugin.icon, !fragment._togglePluginsDisabled.contains(plugin.id), {
-                                    if (it) {
+                                ToggleBar.Toggle(if(Settings.instance.home.showHomeFiltersPluginNames) plugin.name else "", plugin.icon, !fragment._togglePluginsDisabled.contains(plugin.id), { view, active ->
+                                    var dontSwap = false;
+                                    if (active) {
                                         if (fragment._togglePluginsDisabled.contains(plugin.id))
                                             fragment._togglePluginsDisabled.remove(plugin.id);
                                     } else {
-                                        if (!fragment._togglePluginsDisabled.contains(plugin.id))
-                                            fragment._togglePluginsDisabled.add(plugin.id);
+                                        if (!fragment._togglePluginsDisabled.contains(plugin.id)) {
+                                            val enabledClients = StatePlatform.instance.getEnabledClients();
+                                            val availableAfterDisable = enabledClients.count { !fragment._togglePluginsDisabled.contains(it.id) && it.id != plugin.id };
+                                            if(availableAfterDisable > 0)
+                                                fragment._togglePluginsDisabled.add(plugin.id);
+                                            else {
+                                                UIDialogs.appToast("Home needs atleast 1 plugin active");
+                                                dontSwap = true;
+                                            }
+                                        }
                                     }
-                                    reloadForFilters();
+                                    if(!dontSwap)
+                                        reloadForFilters();
+                                    else {
+                                        view.setToggle(!active);
+                                    }
                                 }).withTag("plugins")
                             })
                     else listOf())
                     val buttons = (listOf<ToggleBar.Toggle?>(
                         (if (_togglesConfig.contains("today"))
-                            ToggleBar.Toggle("Today", fragment._toggleRecent) {
-                                fragment._toggleRecent = it; reloadForFilters()
+                            ToggleBar.Toggle("Today", fragment._toggleRecent) { view, active ->
+                                fragment._toggleRecent = active; reloadForFilters()
                             }
                                 .withTag("today") else null),
                         (if (_togglesConfig.contains("watched"))
-                            ToggleBar.Toggle("Unwatched", fragment._toggleWatched) {
-                                fragment._toggleWatched = it; reloadForFilters()
+                            ToggleBar.Toggle("Unwatched", fragment._toggleWatched) { view, active ->
+                                fragment._toggleWatched = active; reloadForFilters()
                             }
                                 .withTag("watched") else null),
                     ).filterNotNull() + buttonsPlugins)
                         .sortedBy { _togglesConfig.indexOf(it.tag ?: "") } ?: listOf()
 
-                    val buttonSettings = ToggleBar.Toggle("", R.drawable.ic_settings, true, {
+                    val buttonSettings = ToggleBar.Toggle("", R.drawable.ic_settings, true, { view, active ->
                         showOrderOverlay(_overlayContainer,
                             "Visible home filters",
                             listOf(

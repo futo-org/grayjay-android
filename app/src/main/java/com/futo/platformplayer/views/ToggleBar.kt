@@ -53,7 +53,7 @@ class ToggleBar : LinearLayout {
                     this.setInfo(button.iconVariable, button.name, button.isActive, button.isButton);
                 else
                     this.setInfo(button.name, button.isActive, button.isButton);
-                this.onClick.subscribe { button.action(it); };
+                this.onClick.subscribe({ view, enabled -> button.action(view, enabled); });
             });
         }
     }
@@ -62,27 +62,27 @@ class ToggleBar : LinearLayout {
         val name: String;
         val icon: Int;
         val iconVariable: ImageVariable?;
-        val action: (Boolean)->Unit;
+        val action: (ToggleTagView, Boolean)->Unit;
         val isActive: Boolean;
         var isButton: Boolean = false
             private set;
         var tag: String? = null;
 
-        constructor(name: String, icon: ImageVariable?, isActive: Boolean = false, action: (Boolean)->Unit) {
+        constructor(name: String, icon: ImageVariable?, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
             this.name = name;
             this.icon = 0;
             this.iconVariable = icon;
             this.action = action;
             this.isActive = isActive;
         }
-        constructor(name: String, icon: Int, isActive: Boolean = false, action: (Boolean)->Unit) {
+        constructor(name: String, icon: Int, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
             this.name = name;
             this.icon = icon;
             this.iconVariable = null;
             this.action = action;
             this.isActive = isActive;
         }
-        constructor(name: String, isActive: Boolean = false, action: (Boolean)->Unit) {
+        constructor(name: String, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
             this.name = name;
             this.icon = 0;
             this.iconVariable = null;
