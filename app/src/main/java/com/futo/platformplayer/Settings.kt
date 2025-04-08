@@ -583,9 +583,14 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var keepScreenOn: Boolean = true;
 
-        @FormField(R.string.always_proxy_requests, FieldForm.TOGGLE, R.string.always_proxy_requests_description, 1)
+        @FormField(R.string.always_proxy_requests, FieldForm.TOGGLE, R.string.always_proxy_requests_description, 3)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var alwaysProxyRequests: Boolean = false;
+
+
+        @FormField(R.string.allow_ipv6, FieldForm.TOGGLE, R.string.allow_ipv6_description, 4)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var allowIpv6: Boolean = false;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)

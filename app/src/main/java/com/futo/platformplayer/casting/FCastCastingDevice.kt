@@ -3,6 +3,7 @@ package com.futo.platformplayer.casting
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.models.FCastDecryptedMessage
 import com.futo.platformplayer.casting.models.FCastEncryptedMessage
@@ -32,6 +33,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.math.BigInteger
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket

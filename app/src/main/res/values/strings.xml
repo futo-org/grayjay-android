@@ -72,6 +72,8 @@
     <string name="keep_screen_on_while_casting">Keep screen on while casting</string>
     <string name="always_proxy_requests">Always proxy requests</string>
     <string name="always_proxy_requests_description">Always proxy requests when casting data through the device.</string>
+    <string name="allow_ipv6">Allow IPV6</string>
+    <string name="allow_ipv6_description">If casting over IPV6 is allowed, can cause issues on some networks</string>
     <string name="discover">Discover</string>
     <string name="find_new_video_sources_to_add">Find new video sources to add</string>
     <string name="these_sources_have_been_disabled">These sources have been disabled</string>
