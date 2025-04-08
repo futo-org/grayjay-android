@@ -2869,7 +2869,7 @@ class VideoDetailView : ConstraintLayout {
         }
         else if(isOverlayed) {
             _playerProgress.layoutParams = _playerProgress.layoutParams.apply {
-                (this as MarginLayoutParams).bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, -2f, resources.displayMetrics).toInt();
+                (this as MarginLayoutParams).bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, -6f, resources.displayMetrics).toInt();
             };
             _playerProgress.elevation = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics);
         }

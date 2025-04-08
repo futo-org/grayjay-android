@@ -69,7 +69,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.math.abs
 
-abstract class FutoVideoPlayerBase : ConstraintLayout {
+abstract class FutoVideoPlayerBase : RelativeLayout {
     private val TAG = "FutoVideoPlayerBase"
 
 //    private val TEMP_DIRECTORY = StateApp.instance.getTempDirectory();

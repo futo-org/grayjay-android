@@ -7,13 +7,9 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.animation.LinearInterpolator
 import androidx.annotation.OptIn
-import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.upstream.DefaultAllocator
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
