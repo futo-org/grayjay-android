@@ -73,11 +73,11 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
         };
         _rememberedAdapter.onConnect.subscribe { _ ->
             dismiss()
-            UIDialogs.showCastingDialog(context)
+            //UIDialogs.showCastingDialog(context)
         }
         _adapter.onConnect.subscribe { _ ->
             dismiss()
-            UIDialogs.showCastingDialog(context)
+            //UIDialogs.showCastingDialog(context)
         }
         _recyclerRememberedDevices.adapter = _rememberedAdapter;
         _recyclerRememberedDevices.layoutManager = LinearLayoutManager(context);

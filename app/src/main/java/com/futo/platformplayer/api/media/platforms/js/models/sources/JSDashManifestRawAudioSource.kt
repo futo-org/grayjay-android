@@ -23,6 +23,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override val bitrate: Int;
     override val duration: Long;
     override val priority: Boolean;
+    override var original: Boolean = false;
 
     override val language: String;
 
@@ -45,6 +46,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         duration = _obj.getOrDefault(config, "duration", contextName, 0) ?: 0;
         priority = _obj.getOrDefault(config, "priority", contextName, false) ?: false;
         language = _obj.getOrDefault(config, "language", contextName, Language.UNKNOWN) ?: Language.UNKNOWN;
+        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
         hasGenerate = _obj.has("generate");
     }
 

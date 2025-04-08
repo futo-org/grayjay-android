@@ -10,11 +10,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.futo.platformplayer.*
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.buttons.BigButton
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import com.google.zxing.integration.android.IntentIntegrator
 
 class AddSourceOptionsActivity : AppCompatActivity() {
     lateinit var _buttonBack: ImageButton;
 
+    lateinit var _overlayContainer: FrameLayout;
     lateinit var _buttonQR: BigButton;
     lateinit var _buttonBrowse: BigButton;
     lateinit var _buttonURL: BigButton;
@@ -54,6 +56,7 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_source_options);
         setNavigationBarColorAndIcons();
 
+        _overlayContainer = findViewById(R.id.overlay_container);
         _buttonBack = findViewById(R.id.button_back);
 
         _buttonQR = findViewById(R.id.option_qr);
@@ -81,7 +84,25 @@ class AddSourceOptionsActivity : AppCompatActivity() {
         }
 
         _buttonURL.onClick.subscribe {
-            UIDialogs.toast(this, getString(R.string.not_implemented_yet));
+            val nameInput = SlideUpMenuTextInput(this, "ex. https://yourplugin.com/config.json");
+            UISlideOverlays.showOverlay(_overlayContainer, "Enter your url", "Install", {
+
+                val content = nameInput.text;
+
+                val url = if (content.startsWith("https://")) {
+                    content
+                } else if (content.startsWith("grayjay://plugin/")) {
+                    content.substring("grayjay://plugin/".length)
+                } else {
+                    UIDialogs.toast(this, getString(R.string.not_a_plugin_url))
+                    return@showOverlay;
+                }
+
+                val intent = Intent(this, AddSourceActivity::class.java).apply {
+                    data = Uri.parse(url);
+                };
+                startActivity(intent);
+            }, nameInput)
         }
     }
 }

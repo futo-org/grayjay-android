@@ -15,6 +15,7 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
     override val duration: Long? = null;
 
     override var priority: Boolean = false;
+    override val original: Boolean = false;
 
     val filePath : String;
     val fileSize: Long;

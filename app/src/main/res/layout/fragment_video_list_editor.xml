@@ -30,7 +30,7 @@
                     android:orientation="vertical">
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
-                        android:layout_height="220dp">
+                        android:layout_height="wrap_content">
 
                         <ImageView
                             android:id="@+id/image_playlist_thumbnail"
@@ -53,6 +53,22 @@
                             android:scaleType="fitXY" />
 
 
+                        <ImageButton
+                            android:id="@+id/button_edit"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:contentDescription="@string/cd_button_edit"
+                            android:background="@drawable/background_button_round"
+                            android:gravity="center"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginRight="10dp"
+                            app:layout_constraintRight_toLeftOf="@id/button_export"
+                            app:layout_constraintTop_toTopOf="@id/button_share"
+                            android:orientation="horizontal"
+                            android:scaleType="fitCenter"
+                            app:srcCompat="@drawable/ic_edit"
+                            android:padding="10dp"
+                            app:tint="@color/white" />
 
                         <ImageButton
                             android:id="@+id/button_export"
@@ -89,7 +105,7 @@
                     </androidx.constraintlayout.widget.ConstraintLayout>
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
-                        android:layout_height="120dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="-90dp"
                         android:layout_marginStart="20dp"
                         app:layout_constraintBottom_toBottomOf="parent">
@@ -115,6 +131,8 @@
                             android:layout_marginBottom="15dp"
                             app:layout_constraintLeft_toLeftOf="@id/container_buttons"
                             app:layout_constraintBottom_toTopOf="@id/container_buttons" />
+
+
 
                         <LinearLayout
                             android:id="@+id/container_buttons"
@@ -176,20 +194,18 @@
                             </LinearLayout>
 
                             <ImageButton
-                                android:id="@+id/button_edit"
+                                android:id="@+id/button_search"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:contentDescription="@string/cd_button_edit"
+                                android:contentDescription="@string/cd_search_icon"
                                 android:background="@drawable/background_button_round"
                                 android:gravity="center"
-                                android:layout_marginStart="5dp"
-                                app:layout_constraintLeft_toRightOf="@id/button_shuffle"
-                                app:layout_constraintBottom_toBottomOf="@id/button_play_all"
+                                android:layout_marginStart="10dp"
                                 android:orientation="horizontal"
-                                android:scaleType="fitCenter"
-                                app:srcCompat="@drawable/ic_edit"
-                                android:padding="10dp"
-                                app:tint="@color/white" />
+                                app:srcCompat="@drawable/ic_search"
+                                app:tint="@color/white"
+                                android:padding="5dp"
+                                android:scaleType="fitCenter" />
 
                             <ImageButton
                                 android:id="@+id/button_download"
@@ -207,6 +223,16 @@
                         </LinearLayout>
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
+                    <com.futo.platformplayer.views.SearchView
+                        android:id="@+id/search_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-10dp"
+                        android:visibility="gone"
+                        app:layout_constraintTop_toBottomOf="@+id/container_buttons"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintRight_toRightOf="parent"
+                        />
                 </LinearLayout>
             </androidx.appcompat.widget.Toolbar>
         </com.google.android.material.appbar.AppBarLayout>

@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IPager
@@ -160,8 +161,14 @@ class ContentSearchResultsFragment : MainFragment() {
                                 navigate<RemotePlaylistFragment>(it);
                             else if(StatePlatform.instance.hasEnabledChannelClient(it))
                                 navigate<ChannelFragment>(it);
-                            else
-                                navigate<VideoDetailFragment>(it);
+                            else {
+                                val url = it;
+                                activity?.let {
+                                    close()
+                                    if(it is MainActivity)
+                                        it.navigate(it.getFragment<VideoDetailFragment>(), url);
+                                }
+                            }
                         }
                         else
                             setQuery(it, true);

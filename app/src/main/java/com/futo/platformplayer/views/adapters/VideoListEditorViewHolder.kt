@@ -32,6 +32,7 @@ class VideoListEditorViewHolder : ViewHolder {
     private val _containerDuration: LinearLayout;
     private val _containerLive: LinearLayout;
     private val _imageRemove: ImageButton;
+    private val _imageOptions: ImageButton;
     private val _imageDragDrop: ImageButton;
     private val _platformIndicator: PlatformIndicator;
     private val _layoutDownloaded: FrameLayout;
@@ -41,6 +42,7 @@ class VideoListEditorViewHolder : ViewHolder {
 
     val onClick = Event1<IPlatformVideo>();
     val onRemove = Event1<IPlatformVideo>();
+    val onOptions = Event1<IPlatformVideo>();
 
     @SuppressLint("ClickableViewAccessibility")
     constructor(view: View, touchHelper: ItemTouchHelper? = null) : super(view) {
@@ -54,6 +56,7 @@ class VideoListEditorViewHolder : ViewHolder {
         _containerDuration = view.findViewById(R.id.thumbnail_duration_container);
         _containerLive = view.findViewById(R.id.thumbnail_live_container);
         _imageRemove = view.findViewById(R.id.image_trash);
+        _imageOptions = view.findViewById(R.id.image_settings);
         _imageDragDrop = view.findViewById<ImageButton>(R.id.image_drag_drop);
         _platformIndicator = view.findViewById(R.id.thumbnail_platform);
         _layoutDownloaded = view.findViewById(R.id.layout_downloaded);
@@ -74,6 +77,10 @@ class VideoListEditorViewHolder : ViewHolder {
             val v = video ?: return@setOnClickListener;
             onRemove.emit(v);
         };
+        _imageOptions?.setOnClickListener {
+            val v = video ?: return@setOnClickListener;
+            onOptions.emit(v);
+        }
     }
 
     fun bind(v: IPlatformVideo, canEdit: Boolean) {

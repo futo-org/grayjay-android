@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
@@ -122,8 +123,14 @@ class SuggestionsFragment : MainFragment {
                                 navigate<RemotePlaylistFragment>(it);
                             else if(StatePlatform.instance.hasEnabledChannelClient(it))
                                 navigate<ChannelFragment>(it);
-                            else
-                                navigate<VideoDetailFragment>(it);
+                            else {
+                                val url = it;
+                                activity?.let {
+                                    close()
+                                    if(it is MainActivity)
+                                        it.navigate(it.getFragment<VideoDetailFragment>(), url);
+                                }
+                            }
                         }
                         else
                             navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, SearchType.VIDEO, _channelUrl));

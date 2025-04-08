@@ -3,12 +3,15 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
+import android.util.DisplayMetrics
+import android.view.Display
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -20,6 +23,7 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.others.TagsView
@@ -28,7 +32,9 @@ import com.futo.platformplayer.views.adapters.InsertedViewHolder
 import com.futo.platformplayer.views.announcements.AnnouncementView
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.OffsetDateTime
 import kotlin.math.max
 
@@ -68,6 +74,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
     private val _scrollListener: RecyclerView.OnScrollListener;
     private var _automaticNextPageCounter = 0;
+    private val _automaticBackoff = arrayOf(0, 500, 1000, 1000, 2000, 5000, 5000, 5000);
 
     constructor(fragment: TFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>? = null) : super(inflater.context) {
         this.fragment = fragment;
@@ -129,6 +136,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
 
         _nextPageHandler = TaskHandler<TPager, List<TResult>>({fragment.lifecycleScope}, {
+
             if (it is IAsyncPager<*>)
                 it.nextPageAsync();
             else
@@ -182,28 +190,60 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
     private fun ensureEnoughContentVisible(filteredResults: List<TConverted>) {
         val canScroll = if (recyclerData.results.isEmpty()) false else {
+            val height = resources.displayMetrics.heightPixels;
+
             val layoutManager = recyclerData.layoutManager
             val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-
-            if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
-                val firstVisibleView = layoutManager.findViewByPosition(firstVisibleItemPosition)
-                val itemHeight = firstVisibleView?.height ?: 0
-                val occupiedSpace = recyclerData.results.size / recyclerData.layoutManager.spanCount * itemHeight
-                val recyclerViewHeight = _recyclerResults.height
-                Logger.i(TAG, "ensureEnoughContentVisible loadNextPage occupiedSpace=$occupiedSpace recyclerViewHeight=$recyclerViewHeight")
-                occupiedSpace >= recyclerViewHeight
+            val firstVisibleItemView = if(firstVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(firstVisibleItemPosition) else null;
+            val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition();
+            val lastVisibleItemView = if(lastVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(lastVisibleItemPosition) else null;
+            val rows = if(recyclerData.layoutManager is GridLayoutManager) Math.max(1, recyclerData.results.size / recyclerData.layoutManager.spanCount) else 1;
+            val rowsHeight = (firstVisibleItemView?.height ?: 0) * rows;
+            if(lastVisibleItemView != null && lastVisibleItemPosition == (recyclerData.results.size - 1)) {
+                false;
+            }
+            else if (firstVisibleItemView != null && height != null && rowsHeight < height) {
+                false;
             } else {
-                false
+                true;
             }
         }
+
         Logger.i(TAG, "ensureEnoughContentVisible loadNextPage canScroll=$canScroll _automaticNextPageCounter=$_automaticNextPageCounter")
         if (!canScroll || filteredResults.isEmpty()) {
             _automaticNextPageCounter++
-            if(_automaticNextPageCounter <= 4)
-                loadNextPage()
+            if(_automaticNextPageCounter < _automaticBackoff.size) {
+                if(_automaticNextPageCounter > 0) {
+                    val automaticNextPageCounterSaved = _automaticNextPageCounter;
+                    fragment.lifecycleScope.launch(Dispatchers.Default) {
+                        val backoff = _automaticBackoff[Math.min(_automaticBackoff.size - 1, _automaticNextPageCounter)];
+
+                        withContext(Dispatchers.Main) {
+                            setLoading(true);
+                        }
+                        delay(backoff.toLong());
+                        if(automaticNextPageCounterSaved == _automaticNextPageCounter) {
+                            withContext(Dispatchers.Main) {
+                                loadNextPage();
+                            }
+                        }
+                        else {
+                            withContext(Dispatchers.Main) {
+                                setLoading(false);
+                            }
+                        }
+                    }
+                }
+                else
+                    loadNextPage();
+            }
         } else {
+            Logger.i(TAG, "ensureEnoughContentVisible automaticNextPageCounter reset");
             _automaticNextPageCounter = 0;
         }
+    }
+    fun resetAutomaticNextPageCounter(){
+        _automaticNextPageCounter = 0;
     }
 
     protected fun setTextCentered(text: String?) {

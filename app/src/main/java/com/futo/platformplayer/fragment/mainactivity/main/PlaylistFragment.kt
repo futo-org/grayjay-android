@@ -326,6 +326,10 @@ class PlaylistFragment : MainFragment() {
             playlist.videos = ArrayList(playlist.videos.filter { it != video });
             StatePlaylists.instance.createOrUpdatePlaylist(playlist);
         }
+
+        override fun onVideoOptions(video: IPlatformVideo) {
+            UISlideOverlays.showVideoOptionsOverlay(video, overlayContainer);
+        }
         override fun onVideoClicked(video: IPlatformVideo) {
             val playlist = _playlist;
             if (playlist != null) {

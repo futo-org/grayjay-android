@@ -1,5 +1,6 @@
 package com.futo.platformplayer.casting
 
+import android.app.AlertDialog
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
@@ -9,6 +10,7 @@ import android.util.Log
 import android.util.Xml
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
+import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -239,6 +241,9 @@ class StateCasting {
         Logger.i(TAG, "CastingService stopped.")
     }
 
+    private val _castingDialogLock = Any();
+    private var _currentDialog: AlertDialog? = null;
+
     @Synchronized
     fun connectDevice(device: CastingDevice) {
         if (activeDevice == device)
@@ -272,10 +277,39 @@ class StateCasting {
             invokeInMainScopeIfRequired {
                 StateApp.withContext(false) { context ->
                     context.let {
+                        Logger.i(TAG, "Casting state changed to ${castConnectionState}");
                         when (castConnectionState) {
-                            CastConnectionState.CONNECTED -> UIDialogs.toast(it, "Connected to device")
-                            CastConnectionState.CONNECTING -> UIDialogs.toast(it, "Connecting to device...")
-                            CastConnectionState.DISCONNECTED -> UIDialogs.toast(it, "Disconnected from device")
+                            CastConnectionState.CONNECTED -> {
+                                Logger.i(TAG, "Casting connected to [${device.name}]");
+                                UIDialogs.appToast("Connected to device")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog != null) {
+                                        _currentDialog?.hide();
+                                        _currentDialog = null;
+                                    }
+                                }
+                            }
+                            CastConnectionState.CONNECTING -> {
+                                Logger.i(TAG, "Casting connecting to [${device.name}]");
+                                UIDialogs.toast(it, "Connecting to device...")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog == null) {
+                                        _currentDialog = UIDialogs.showDialog(context, R.drawable.ic_loader_animated, true, "Connecting to [${device.name}]", "Make sure you are on the same network", null, -2,
+                                            UIDialogs.Action("Disconnect", {
+                                                device.stop();
+                                            }));
+                                    }
+                                }
+                            }
+                            CastConnectionState.DISCONNECTED -> {
+                                UIDialogs.toast(it, "Disconnected from device")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog != null) {
+                                        _currentDialog?.hide();
+                                        _currentDialog = null;
+                                    }
+                                }
+                            }
                         }
                     }
                 };

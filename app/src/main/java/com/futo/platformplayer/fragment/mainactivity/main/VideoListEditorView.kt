@@ -9,6 +9,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
@@ -22,6 +23,7 @@ import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.toHumanDuration
 import com.futo.platformplayer.toHumanTime
+import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.lists.VideoListEditorView
 
 abstract class VideoListEditorView : LinearLayout {
@@ -37,8 +39,14 @@ abstract class VideoListEditorView : LinearLayout {
     protected var _buttonExport: ImageButton;
     private var _buttonShare: ImageButton;
     private var _buttonEdit: ImageButton;
+    private var _buttonSearch: ImageButton;
+
+    private var _search: SearchView;
 
     private var _onShare: (()->Unit)? = null;
+
+    private var _loadedVideos: List<IPlatformVideo>? = null;
+    private var _loadedVideosCanEdit: Boolean = false;
 
     constructor(inflater: LayoutInflater) : super(inflater.context) {
         inflater.inflate(R.layout.fragment_video_list_editor, this);
@@ -57,6 +65,26 @@ abstract class VideoListEditorView : LinearLayout {
         _buttonDownload.visibility = View.GONE;
         _buttonExport = findViewById(R.id.button_export);
         _buttonExport.visibility = View.GONE;
+        _buttonSearch = findViewById(R.id.button_search);
+
+        _search = findViewById(R.id.search_bar);
+        _search.visibility = View.GONE;
+        _search.onSearchChanged.subscribe {
+            updateVideoFilters();
+        }
+
+        _buttonSearch.setOnClickListener {
+            if(_search.isVisible) {
+                _search.visibility = View.GONE;
+                _search.textSearch.text = "";
+                updateVideoFilters();
+                _buttonSearch.setImageResource(R.drawable.ic_search);
+            }
+            else {
+                _search.visibility = View.VISIBLE;
+                _buttonSearch.setImageResource(R.drawable.ic_search_off);
+            }
+        }
 
         _buttonShare = findViewById(R.id.button_share);
         val onShare = _onShare;
@@ -76,6 +104,7 @@ abstract class VideoListEditorView : LinearLayout {
 
         videoListEditorView.onVideoOrderChanged.subscribe(::onVideoOrderChanged);
         videoListEditorView.onVideoRemoved.subscribe(::onVideoRemoved);
+        videoListEditorView.onVideoOptions.subscribe(::onVideoOptions);
         videoListEditorView.onVideoClicked.subscribe(::onVideoClicked);
 
         _videoListEditorView = videoListEditorView;
@@ -94,6 +123,7 @@ abstract class VideoListEditorView : LinearLayout {
     open fun onShuffleClick() { }
     open fun onEditClick() { }
     open fun onVideoRemoved(video: IPlatformVideo) {}
+    open fun onVideoOptions(video: IPlatformVideo) {}
     open fun onVideoOrderChanged(videos : List<IPlatformVideo>) {}
     open fun onVideoClicked(video: IPlatformVideo) {
 
@@ -171,8 +201,21 @@ abstract class VideoListEditorView : LinearLayout {
                 .load(R.drawable.placeholder_video_thumbnail)
                 .into(_imagePlaylistThumbnail)
         }
-
+        _loadedVideos = videos;
+        _loadedVideosCanEdit = canEdit;
         _videoListEditorView.setVideos(videos, canEdit);
+    }
+    fun filterVideos(videos: List<IPlatformVideo>): List<IPlatformVideo> {
+        var toReturn = videos;
+        val searchStr = _search.textSearch.text
+        if(!searchStr.isNullOrBlank())
+            toReturn = toReturn.filter { it.name.contains(searchStr, true) || it.author.name.contains(searchStr, true) };
+        return toReturn;
+    }
+
+    fun updateVideoFilters() {
+        val videos = _loadedVideos ?: return;
+        _videoListEditorView.setVideos(filterVideos(videos), _loadedVideosCanEdit);
     }
 
     protected fun setButtonDownloadVisible(isVisible: Boolean) {
