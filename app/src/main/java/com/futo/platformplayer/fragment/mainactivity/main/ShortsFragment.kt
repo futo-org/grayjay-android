@@ -42,7 +42,7 @@ class ShortsFragment : MainFragment() {
     private lateinit var overlayLoading: FrameLayout
     private lateinit var overlayLoadingSpinner: ImageView
     private lateinit var overlayQualityContainer: FrameLayout
-    private lateinit var customViewAdapter: CustomViewAdapter
+    private var customViewAdapter: CustomViewAdapter? = null
 
     init {
         loadPager()
@@ -68,25 +68,27 @@ class ShortsFragment : MainFragment() {
             loadPager()
         }
 
-        loadPagerJob!!.invokeOnCompletion {
-            Logger.i(TAG, "Creating adapter")
-            customViewAdapter =
-                CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
-                    if (!shortsPager!!.hasMorePages()) {
-                        return@CustomViewAdapter
-                    }
-                    nextPage()
+        Logger.i(TAG, "Creating adapter")
+        val customViewAdapter =
+            CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
+                if (!shortsPager!!.hasMorePages()) {
+                    return@CustomViewAdapter
                 }
-            customViewAdapter.onResetTriggered.subscribe {
-                setLoading(true)
-                loadPager()
-                loadPagerJob!!.invokeOnCompletion {
-                    setLoading(false)
-                }
+                nextPage()
             }
-            val viewPager = viewPager!!
-            viewPager.adapter = customViewAdapter
+        customViewAdapter.onResetTriggered.subscribe {
+            setLoading(true)
+            loadPager()
+            loadPagerJob!!.invokeOnCompletion {
+                setLoading(false)
+            }
+        }
+        val viewPager = viewPager!!
+        viewPager.adapter = customViewAdapter
 
+        this.customViewAdapter = customViewAdapter
+
+        loadPagerJob!!.invokeOnCompletion {
             viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 @OptIn(UnstableApi::class)
                 override fun onPageSelected(position: Int) {
@@ -133,9 +135,9 @@ class ShortsFragment : MainFragment() {
 
             val newVideos = shortsPager!!.getResults()
             CoroutineScope(Dispatchers.Main).launch {
-                val prevCount = customViewAdapter.itemCount
+                val prevCount = customViewAdapter!!.itemCount
                 videos.addAll(newVideos)
-                customViewAdapter.notifyItemRangeInserted(prevCount, newVideos.size)
+                customViewAdapter!!.notifyItemRangeInserted(prevCount, newVideos.size)
             }
         }
     }
@@ -185,7 +187,7 @@ class ShortsFragment : MainFragment() {
 
     override fun onPause() {
         super.onPause()
-        customViewAdapter.previousShownView?.pause()
+        customViewAdapter?.previousShownView?.pause()
     }
 
     override fun onResume() {
@@ -194,7 +196,7 @@ class ShortsFragment : MainFragment() {
 
     override fun onStop() {
         super.onStop()
-        customViewAdapter.previousShownView?.stop()
+        customViewAdapter?.previousShownView?.stop()
     }
 
     companion object {
