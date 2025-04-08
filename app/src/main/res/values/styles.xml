@@ -49,7 +49,7 @@
     </style>
     <style name="Custom.BottomSheet.Modal.Style" parent="Widget.MaterialComponents.BottomSheet.Modal">
         <item name="shapeAppearanceOverlay">@style/Custom.BottomSheet.ShapeAppearance</item>
-<!--    force black background while grayjay only has a dark theme-->
+<!--    force black background while grayjay only has a dark theme TODO remove when adding support for light mode-->
         <item name="backgroundTint">@color/black</item>
     </style>
     <style name="Custom.BottomSheetDialog.Theme" parent="@style/ThemeOverlay.Material3.BottomSheetDialog">

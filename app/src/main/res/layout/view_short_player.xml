@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.media3.ui.PlayerView
-        android:id="@+id/video_player"
+        android:id="@+id/short_player_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@color/black"
         app:default_artwork="@drawable/placeholder_video_thumbnail"
-        app:layout_constraintBottom_toTopOf="@id/video_player_progress_bar"
+        app:layout_constraintBottom_toTopOf="@id/short_player_progress_bar"
         app:layout_constraintTop_toTopOf="parent"
         app:resize_mode="fit"
         app:show_buffering="when_playing"
@@ -16,7 +16,7 @@
         app:use_controller="false" />
 
     <androidx.media3.ui.DefaultTimeBar
-        android:id="@+id/video_player_progress_bar"
+        android:id="@+id/short_player_progress_bar"
         android:layout_width="match_parent"
         android:layout_height="6dp"
         app:bar_height="6dp"

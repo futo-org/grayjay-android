@@ -172,6 +172,7 @@
     <string name="copy">Copy</string>
     <string name="copy_your_identity_to_clipboard">Copy your identity to clipboard</string>
     <string name="polycentric">Polycentric</string>
+    <string name="platform">Platform</string>
     <string name="profile_name">Profile Name</string>
     <string name="this_will_be_visible_to_other_users">This will be visible to other users</string>
     <string name="create_profile">Create Profile</string>

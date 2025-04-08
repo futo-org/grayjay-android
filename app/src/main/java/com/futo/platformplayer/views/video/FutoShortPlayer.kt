@@ -2,28 +2,25 @@ package com.futo.platformplayer.views.video
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.animation.LinearInterpolator
 import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.upstream.DefaultAllocator
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
-import com.futo.platformplayer.Settings
-import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
-import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.video.PlayerManager
 
 @UnstableApi
 class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
@@ -35,23 +32,9 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
     }
 
     private var playerAttached = false
-//        private set;
-
     private val videoView: PlayerView
     private val progressBar: DefaultTimeBar
-
-    private val loadArtwork = object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-            setArtwork(BitmapDrawable(resources, resource))
-        }
-
-        override fun onLoadCleared(placeholder: Drawable?) {
-            setArtwork(null)
-        }
-    }
-
-    private val player = StatePlayer.instance.getShortPlayerOrCreate(context)
-
+    private lateinit var player: PlayerManager
     private var progressAnimator: ValueAnimator = createProgressBarAnimator()
 
     private var playerEventListener = object : Player.Listener {
@@ -67,10 +50,9 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
                 }
 
                 if (player.isPlaying) {
-                    if (progressAnimator.isPaused){
+                    if (progressAnimator.isPaused) {
                         progressAnimator.resume()
-                    }
-                    else if (!progressAnimator.isStarted) {
+                    } else if (!progressAnimator.isStarted) {
                         progressAnimator.start()
                     }
                 } else {
@@ -84,10 +66,13 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_short_player, this, true)
-        videoView = findViewById(R.id.video_player)
-        progressBar = findViewById(R.id.video_player_progress_bar)
+        videoView = findViewById(R.id.short_player_view)
+        progressBar = findViewById(R.id.short_player_progress_bar)
 
-        player.player.repeatMode = Player.REPEAT_MODE_ONE
+        if (!isInEditMode) {
+            player = StatePlayer.instance.getShortPlayerOrCreate(context)
+            player.player.repeatMode = Player.REPEAT_MODE_ONE
+        }
 
         progressBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
@@ -148,30 +133,6 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
         player.detach()
     }
 
-    fun setPreview(video: IPlatformVideoDetails) {
-        if (video.live != null) {
-            setSource(video.live, null, play = true, keepSubtitles = false)
-        } else {
-            val videoSource =
-                VideoHelper.selectBestVideoSource(video.video, Settings.instance.playback.getPreferredPreviewQualityPixelCount(), PREFERED_VIDEO_CONTAINERS)
-            val audioSource =
-                VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, Settings.instance.playback.getPrimaryLanguage(context))
-            if (videoSource == null && audioSource != null) {
-                val thumbnail = video.thumbnails.getHQThumbnail()
-                if (!thumbnail.isNullOrBlank()) {
-                    Glide.with(videoView).asBitmap().load(thumbnail).into(loadArtwork)
-                } else {
-                    Glide.with(videoView).clear(loadArtwork)
-                    setArtwork(null)
-                }
-            } else {
-                Glide.with(videoView).clear(loadArtwork)
-            }
-
-            setSource(videoSource, audioSource, play = true, keepSubtitles = false)
-        }
-    }
-
     @OptIn(UnstableApi::class)
     fun setArtwork(drawable: Drawable?) {
         if (drawable != null) {
@@ -193,10 +154,5 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
 
         val param = PlaybackParameters(playbackRate)
         exoPlayer?.playbackParameters = param
-    }
-
-    // TODO remove stub
-    fun hideControls(stub: Boolean) {
-
     }
 }

@@ -16,11 +16,11 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlatform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,9 +43,6 @@ class ShortsFragment : MainFragment() {
     private lateinit var overlayLoadingSpinner: ImageView
     private lateinit var overlayQualityContainer: FrameLayout
     private lateinit var customViewAdapter: CustomViewAdapter
-    private val urls = listOf(
-        "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://www.youtube.com/watch?v=MXHSS-7XcBc", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra", "https://youtube.com/shorts/fHU6dfPHT-o?si=TVCYnt_mvAxWYACZ", "https://youtube.com/shorts/j9LQ0c4MyGk?si=FVlr90UD42y1ZIO0", "https://youtube.com/shorts/Q8LndW9YZvQ?si=mDrSsm-3Uq7IEXAT", "https://youtube.com/shorts/OIS5qHDOOzs?si=RGYeaAH9M-TRuZSr", "https://youtube.com/shorts/1Cp6EbLWVnI?si=N4QqytC48CTnfJra"
-    )
 
     init {
         loadPager()
@@ -60,10 +57,10 @@ class ShortsFragment : MainFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewPager = view.findViewById(R.id.viewPager)
+        viewPager = view.findViewById(R.id.view_pager)
         overlayLoading = view.findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = view.findViewById(R.id.short_view_loader)
-        overlayQualityContainer = view.findViewById(R.id.videodetail_quality_overview)
+        overlayQualityContainer = view.findViewById(R.id.shorts_quality_overview)
 
         setLoading(true)
 
@@ -72,12 +69,14 @@ class ShortsFragment : MainFragment() {
         }
 
         loadPagerJob!!.invokeOnCompletion {
-            customViewAdapter = CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
-                if (!shortsPager!!.hasMorePages()) {
-                    return@CustomViewAdapter
+            Logger.i(TAG, "Creating adapter")
+            customViewAdapter =
+                CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
+                    if (!shortsPager!!.hasMorePages()) {
+                        return@CustomViewAdapter
+                    }
+                    nextPage()
                 }
-                nextPage()
-            }
             customViewAdapter.onResetTriggered.subscribe {
                 setLoading(true)
                 loadPager()
@@ -88,7 +87,6 @@ class ShortsFragment : MainFragment() {
             val viewPager = viewPager!!
             viewPager.adapter = customViewAdapter
 
-            // TODO something is laggy sometimes when swiping between videos
             viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 @OptIn(UnstableApi::class)
                 override fun onPageSelected(position: Int) {
@@ -96,7 +94,8 @@ class ShortsFragment : MainFragment() {
                     adapter.previousShownView?.stop()
                     adapter.previousShownView = null
 
-//                    viewPager.post {
+                    // the post prevents lag when swiping
+                    viewPager.post {
                         val recycler = (viewPager.getChildAt(0) as RecyclerView)
                         val viewHolder =
                             recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
@@ -108,10 +107,8 @@ class ShortsFragment : MainFragment() {
                             focusedView.play()
                             adapter.previousShownView = focusedView
                         }
-//                    }
+                    }
                 }
-
-
             })
             setLoading(false)
         }
@@ -154,12 +151,9 @@ class ShortsFragment : MainFragment() {
         viewPager?.currentItem = 0
 
         loadPagerJob = CoroutineScope(Dispatchers.Main).launch {
-//            delay(5000)
             val pager = try {
                 withContext(Dispatchers.IO) {
                     StatePlatform.instance.getShorts()
-//                    StatePlatform.instance.getHome()
-                //                    as IPager<IPlatformVideo>
                 }
             } catch (_: CancellationException) {
                 return@launch

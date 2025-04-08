@@ -12,11 +12,9 @@ import android.os.Bundle
 import android.text.Spanned
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.SoundEffectConstants
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -29,16 +27,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -51,7 +46,6 @@ import androidx.compose.material.icons.filled.ThumbDownOffAlt
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.ThumbUpOffAlt
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.ripple.RippleAlpha
@@ -74,7 +68,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.ComposeView
@@ -101,6 +94,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
@@ -120,11 +114,10 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
-import com.futo.platformplayer.casting.CastConnectionState
-import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
+import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
@@ -173,7 +166,6 @@ import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.theme.overlay.MaterialThemeOverlay
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -184,7 +176,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
-import kotlin.contracts.Effect
 import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -206,8 +197,6 @@ class ShortView : ConstraintLayout {
     private var videoDetails: IPlatformVideoDetails? = null
 
     private var playWhenReady = false
-
-//    private var playerAttached = false
 
     private var _lastVideoSource: IVideoSource? = null
     private var _lastAudioSource: IAudioSource? = null
@@ -285,54 +274,55 @@ class ShortView : ConstraintLayout {
         setupComposeView()
     }
 
+    // TODO merge this with the updateQualitySourcesOverlay for the normal video player
     @androidx.annotation.OptIn(UnstableApi::class)
     private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
-        Logger.i(TAG, "updateQualitySourcesOverlay");
+        Logger.i(TAG, "updateQualitySourcesOverlay")
 
-        val video: IPlatformVideoDetails?;
-        val localVideoSources: List<LocalVideoSource>?;
-        val localAudioSource: List<LocalAudioSource>?;
-        val localSubtitleSources: List<LocalSubtitleSource>?;
+        val video: IPlatformVideoDetails?
+        val localVideoSources: List<LocalVideoSource>?
+        val localAudioSource: List<LocalAudioSource>?
+        val localSubtitleSources: List<LocalSubtitleSource>?
 
-        val videoSources: List<IVideoSource>?;
-        val audioSources: List<IAudioSource>?;
+        val videoSources: List<IVideoSource>?
+        val audioSources: List<IAudioSource>?
 
         if (videoDetails is VideoLocal) {
-            video = videoLocal?.videoSerialized;
-            localVideoSources = videoDetails.videoSource.toList();
-            localAudioSource = videoDetails.audioSource.toList();
-            localSubtitleSources = videoDetails.subtitlesSources.toList();
+            video = videoLocal?.videoSerialized
+            localVideoSources = videoDetails.videoSource.toList()
+            localAudioSource = videoDetails.audioSource.toList()
+            localSubtitleSources = videoDetails.subtitlesSources.toList()
             videoSources = null
-            audioSources = null;
+            audioSources = null
         } else {
-            video = videoDetails;
-            videoSources = video?.video?.videoSources?.toList();
+            video = videoDetails
+            videoSources = video?.video?.videoSources?.toList()
             audioSources =
                 if (video?.video?.isUnMuxed == true) (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
                 else null
             if (videoLocal != null) {
-                localVideoSources = videoLocal.videoSource.toList();
-                localAudioSource = videoLocal.audioSource.toList();
-                localSubtitleSources = videoLocal.subtitlesSources.toList();
+                localVideoSources = videoLocal.videoSource.toList()
+                localAudioSource = videoLocal.audioSource.toList()
+                localSubtitleSources = videoLocal.subtitlesSources.toList()
             } else {
-                localVideoSources = null;
-                localAudioSource = null;
-                localSubtitleSources = null;
+                localVideoSources = null
+                localAudioSource = null
+                localSubtitleSources = null
             }
         }
 
-        val doDedup = Settings.instance.playback.simplifySources;
+        val doDedup = Settings.instance.playback.simplifySources
 
         val bestVideoSources = if (doDedup) (videoSources?.map { it.height * it.width }?.distinct()
             ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
             ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))?.distinct()
             ?.filterNotNull()?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer =
-            audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
+            audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container }
         val bestAudioSources =
             if (doDedup) audioSources?.filter { it.container == bestAudioContainer }
                 ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
-                ?.distinct()?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
+                ?.distinct()?.toList() ?: listOf() else audioSources?.toList() ?: listOf()
 
         val canSetSpeed = true
         val currentPlaybackRate = player.getPlaybackRate()
@@ -340,117 +330,94 @@ class ShortView : ConstraintLayout {
             SlideUpMenuOverlay(this.context, overlayQualityContainer, context.getString(
                 R.string.quality
             ), null, true, if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null, if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate!!.toString());
+                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate.toString())
                 onClick.subscribe { v ->
 
-                    player.setPlaybackRate(v.toFloat());
-                    setSelected(v);
+                    player.setPlaybackRate(v.toFloat())
+                    setSelected(v)
 
-                };
-            } else null,
-
-                if (localVideoSources?.isNotEmpty() == true) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.offline_video), "video", *localVideoSources.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", tag = it, call = { handleSelectVideoTrack(it) });
-                    }.toList().toTypedArray()
-                )
-                else null, if (localAudioSource?.isNotEmpty() == true) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.offline_audio), "audio", *localAudioSource.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), tag = it, call = { handleSelectAudioTrack(it) });
-                    }.toList().toTypedArray()
-                )
-                else null, if (localSubtitleSources?.isNotEmpty() == true) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.offline_subtitles), "subtitles", *localSubtitleSources.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
-                    }.toList().toTypedArray()
-                )
-                else null, if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.stream_video), "video", (listOf(
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { player.selectVideoTrack(-1) })
-                    ) + (liveStreamVideoFormats.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label
-                            ?: it.containerMimeType
-                            ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { player.selectVideoTrack(it.height) });
-                    }))
-                )
-                else null, if (liveStreamAudioFormats?.isEmpty() == false) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.stream_audio), "audio", *liveStreamAudioFormats.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) });
-                    }.toList().toTypedArray()
-                )
-                else null,
-
-                if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
-                        val estSize = VideoHelper.estimateSourceSize(it);
-                        val prefix =
-                            if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it!!.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) });
-                    }.toList().toTypedArray()
-                )
-                else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
-                        val estSize = VideoHelper.estimateSourceSize(it);
-                        val prefix =
-                            if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) });
-                    }.toList().toTypedArray()
-                )
-                else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
-                        SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
-                    }.toList().toTypedArray()
-                )
-                else null
-            );
+                }
+            } else null, if (localVideoSources?.isNotEmpty() == true) SlideUpMenuGroup(
+                this.context, context.getString(R.string.offline_video), "video", *localVideoSources.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", tag = it, call = { handleSelectVideoTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null, if (localAudioSource?.isNotEmpty() == true) SlideUpMenuGroup(
+                this.context, context.getString(R.string.offline_audio), "audio", *localAudioSource.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), tag = it, call = { handleSelectAudioTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null, if (localSubtitleSources?.isNotEmpty() == true) SlideUpMenuGroup(
+                this.context, context.getString(R.string.offline_subtitles), "subtitles", *localSubtitleSources.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null, if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
+                this.context, context.getString(R.string.stream_video), "video", (listOf(
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { player.selectVideoTrack(-1) })
+                ) + (liveStreamVideoFormats.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label
+                        ?: it.containerMimeType
+                        ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { player.selectVideoTrack(it.height) })
+                }))
+            )
+            else null, if (liveStreamAudioFormats?.isEmpty() == false) SlideUpMenuGroup(
+                this.context, context.getString(R.string.stream_audio), "audio", *liveStreamAudioFormats.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) })
+                }.toList().toTypedArray()
+            )
+            else null, if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
+                this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
+                    val estSize = VideoHelper.estimateSourceSize(it)
+                    val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
+                this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
+                    val estSize = VideoHelper.estimateSourceSize(it)
+                    val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
+                    SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
+                this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
+                    SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
+                }.toList().toTypedArray()
+            )
+            else null
+            )
     }
 
     private fun handleSelectVideoTrack(videoSource: IVideoSource) {
         Logger.i(TAG, "handleSelectAudioTrack(videoSource=$videoSource)")
-        val video = videoDetails ?: return;
+        if (_lastVideoSource == videoSource) return
 
-        if (_lastVideoSource == videoSource) return;
-
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED) StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-        else if (!player.swapSources(videoSource, _lastAudioSource, true, true, true)) player.hideControls(false); //TODO: Disable player?
-
-        _lastVideoSource = videoSource;
+        _lastVideoSource = videoSource
     }
 
     private fun handleSelectAudioTrack(audioSource: IAudioSource) {
         Logger.i(TAG, "handleSelectAudioTrack(audioSource=$audioSource)")
-        val video = videoDetails ?: return;
+        if (_lastAudioSource == audioSource) return
 
-        if (_lastAudioSource == audioSource) return;
-
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED) StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-        else (!player.swapSources(_lastVideoSource, audioSource, true, true, true))
-        player.hideControls(false); //TODO: Disable player?
-
-        _lastAudioSource = audioSource;
+        _lastAudioSource = audioSource
     }
 
     private fun handleSelectSubtitleTrack(subtitleSource: ISubtitleSource) {
         Logger.i(TAG, "handleSelectSubtitleTrack(subtitleSource=$subtitleSource)")
-        val video = videoDetails ?: return;
-
         var toSet: ISubtitleSource? = subtitleSource
-        if (_lastSubtitleSource == subtitleSource) toSet = null;
+        if (_lastSubtitleSource == subtitleSource) toSet = null
 
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED) StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-        else player.swapSubtitles(mainFragment!!.lifecycleScope, toSet);
+        player.swapSubtitles(mainFragment.lifecycleScope, toSet)
 
-        _lastSubtitleSource = toSet;
+        _lastSubtitleSource = toSet
     }
 
     private fun showVideoSettings() {
         Logger.i(TAG, "showVideoSettings")
-        overlayQualitySelector?.selectOption("video", _lastVideoSource);
-        overlayQualitySelector?.selectOption("audio", _lastAudioSource);
-        overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource);
+        overlayQualitySelector?.selectOption("video", _lastVideoSource)
+        overlayQualitySelector?.selectOption("audio", _lastAudioSource)
+        overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource)
 
         if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
 
@@ -484,19 +451,18 @@ class ShortView : ConstraintLayout {
             }
         }
 
-        val currentPlaybackRate = player.getPlaybackRate() ?: 1.0
+        val currentPlaybackRate = player.getPlaybackRate()
         overlayQualitySelector?.groupItems?.firstOrNull { it is SlideUpMenuButtonList && it.id == "playback_rate" }
             ?.let {
                 (it as SlideUpMenuButtonList).setSelected(currentPlaybackRate.toString())
-            };
+            }
 
-        overlayQualitySelector?.show();
-//        _slideUpOverlay = overlayQualitySelector;
+        overlayQualitySelector?.show()
     }
 
     @OptIn(ExperimentalGlideComposeApi::class)
     private fun setupComposeView() {
-        val composeView: ComposeView = findViewById(R.id.compose_view_test_button)
+        val composeView: ComposeView = findViewById(R.id.shorts_overlay_content_compose_view)
         composeView.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -554,8 +520,7 @@ class ShortView : ConstraintLayout {
 
                     val tint = Color.White
                     val buttonTextStyle = TextStyle(
-                        fontSize = 12.sp,
-                        shadow = Shadow(
+                        fontSize = 12.sp, shadow = Shadow(
                             color = Color.Black, blurRadius = 3f
                         )
                     )
@@ -571,27 +536,21 @@ class ShortView : ConstraintLayout {
                         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                             val (title, buttons) = createRefs()
 
-//                            val horizontalChain = createHorizontalChain(title, buttons, chainStyle = ChainStyle.SpreadInside)
                             Box(modifier = Modifier.constrainAs(title) {
-//                                    top.linkTo(parent.top)
                                 bottom.linkTo(parent.bottom, margin = 16.dp)
                                 start.linkTo(parent.start, margin = 8.dp)
                                 end.linkTo(buttons.start)
                                 width = Dimension.fillToConstraints
-                            }
-//                                .fillMaxWidth()
-                            ) {
+                            }) {
                                 Column(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    modifier = Modifier.align(Alignment.BottomStart), verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                         modifier = Modifier.clickable(onClick = {
                                             view.playSoundEffect(SoundEffectConstants.CLICK)
-                                            mainFragment!!.navigate<ChannelFragment>(currentVideo?.author)
+                                            mainFragment.navigate<ChannelFragment>(currentVideo?.author)
                                         }),
 
                                         ) {
@@ -601,27 +560,23 @@ class ShortView : ConstraintLayout {
                                                 .clip(CircleShape)
                                         )
                                         Text(
-                                            currentVideo?.author?.name ?: "",
-                                            color = tint,
-                                            fontSize = 14.sp
+                                            currentVideo?.author?.name
+                                                ?: "", color = tint, fontSize = 14.sp
                                         )
                                     }
 
                                     Text(
                                         currentVideo?.name
-                                            ?: "", color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                        fontSize = 14.sp
+                                            ?: "", color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp
                                     )
                                 }
                             }
 
                             Box(modifier = Modifier.constrainAs(buttons) {
-//                                        top.linkTo(parent.top)
                                 bottom.linkTo(parent.bottom, margin = 16.dp)
                                 start.linkTo(title.end, margin = 12.dp)
                                 end.linkTo(parent.end, margin = 4.dp)
                                 marginBottom
-
                             }) {
                                 CompositionLocalProvider(LocalRippleConfiguration provides rippleConfiguration) {
                                     Column(
@@ -667,10 +622,7 @@ class ShortView : ConstraintLayout {
                                                 }
                                                 Text(
                                                     likes.toString(), color = tint,
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-//                                                        .offset(y = buttonOffset)
-                                                ,
+                                                    modifier = Modifier.align(Alignment.BottomCenter),
                                                     style = buttonTextStyle,
                                                 )
                                             }
@@ -713,30 +665,30 @@ class ShortView : ConstraintLayout {
                                                 }
                                                 Text(
                                                     dislikes.toString(), color = tint,
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter),
+                                                    modifier = Modifier.align(Alignment.BottomCenter),
                                                     style = buttonTextStyle,
                                                 )
                                             }
                                         }
                                         Box {
                                             IconButton(
-                                                modifier = Modifier.padding(bottom = buttonOffset).align(Alignment.TopCenter),
+                                                modifier = Modifier
+                                                    .padding(bottom = buttonOffset)
+                                                    .align(Alignment.TopCenter),
                                                 onClick = {
                                                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                    bottomSheet.show(mainFragment!!.childFragmentManager, CommentsModalBottomSheet.TAG)
+                                                    if (!bottomSheet.isAdded) {
+                                                        bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
+                                                    }
                                                 },
                                             ) {
                                                 Icon(
                                                     Icons.AutoMirrored.Outlined.Comment, contentDescription = "View Comments", tint = tint,
 
-                                                )
+                                                    )
                                             }
                                             Text(
-                                                "Comments", color = tint,
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter),
-                                                style = buttonTextStyle
+                                                "Comments", color = tint, modifier = Modifier.align(Alignment.BottomCenter), style = buttonTextStyle
                                             )
                                         }
                                         Box {
@@ -744,12 +696,13 @@ class ShortView : ConstraintLayout {
                                                 modifier = Modifier.padding(bottom = buttonOffset),
                                                 onClick = {
                                                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                    val url = currentVideo?.shareUrl ?: currentVideo?.url
-                                                    mainFragment!!.startActivity(Intent.createChooser(Intent().apply {
-                                                        action = Intent.ACTION_SEND;
+                                                    val url =
+                                                        currentVideo?.shareUrl ?: currentVideo?.url
+                                                    mainFragment.startActivity(Intent.createChooser(Intent().apply {
+                                                        action = Intent.ACTION_SEND
                                                         putExtra(Intent.EXTRA_TEXT, url)
                                                         type = "text/plain"
-                                                    }, null));
+                                                    }, null))
                                                 },
                                             ) {
                                                 Icon(
@@ -758,8 +711,7 @@ class ShortView : ConstraintLayout {
                                             }
                                             Text(
                                                 "Share", color = tint,
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter),
+                                                modifier = Modifier.align(Alignment.BottomCenter),
                                                 style = buttonTextStyle,
                                             )
                                         }
@@ -778,8 +730,7 @@ class ShortView : ConstraintLayout {
                                             }
                                             Text(
                                                 "Refresh", color = tint,
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter),
+                                                modifier = Modifier.align(Alignment.BottomCenter),
                                                 style = buttonTextStyle,
                                             )
                                         }
@@ -797,8 +748,7 @@ class ShortView : ConstraintLayout {
                                             }
                                             Text(
                                                 "Quality", color = tint,
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter),
+                                                modifier = Modifier.align(Alignment.BottomCenter),
                                                 style = buttonTextStyle,
                                             )
                                         }
@@ -822,9 +772,6 @@ class ShortView : ConstraintLayout {
                                     modifier = Modifier
                                         .size(94.dp)
                                         .background(color = Color.Black.copy(alpha = 0.7f), shape = CircleShape), contentAlignment = Alignment.Center
-//                                            .padding(32.dp), // Pad the entire box
-
-
                                 ) {
                                     Icon(
                                         imageVector = if (isPlaying) Icons.Rounded.PlayArrow
@@ -836,7 +783,7 @@ class ShortView : ConstraintLayout {
                             // Auto-hide the icon after a short delay
                             LaunchedEffect(showPlayPauseIcon) {
                                 if (showPlayPauseIcon) {
-                                    delay(1500) // Icon visible for 1.5 seconds
+                                    delay(1500)
                                     showPlayPauseIcon = false
                                 }
                             }
@@ -849,6 +796,7 @@ class ShortView : ConstraintLayout {
         }
     }
 
+    @Suppress("unused")
     fun setMainFragment(fragment: MainFragment, overlayQualityContainer: FrameLayout) {
         this.mainFragment = fragment
         this.bottomSheet.mainFragment = fragment
@@ -864,6 +812,7 @@ class ShortView : ConstraintLayout {
         loadVideo(video.url)
     }
 
+    @Suppress("unused")
     fun changeVideo(videoDetails: IPlatformVideoDetails) {
         if (video?.url == videoDetails.url) {
             return
@@ -874,31 +823,16 @@ class ShortView : ConstraintLayout {
     }
 
     fun play() {
-//        if (playerAttached){
-//            throw Exception()
-//        }
-//        playerAttached = true
         loadLikes(this.video!!)
         player.attach()
-//        if (_lastVideoSource != null || _lastAudioSource != null) {
-//            if (!player.activelyPlaying) {
-//            player.play()
-//            }
-//        } else {
         playVideo()
-//        }
     }
 
-    //
     fun pause() {
         player.pause()
     }
 
     fun stop() {
-//        if (!playerAttached) {
-//            return
-//        }
-//        playerAttached = false
         playWhenReady = false
 
         player.clear()
@@ -928,7 +862,7 @@ class ShortView : ConstraintLayout {
             val extraBytesRef =
                 video.id.value?.let { if (it.isNotEmpty()) it.toByteArray() else null }
 
-            mainFragment!!.lifecycleScope.launch(Dispatchers.IO) {
+            mainFragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val queryReferencesResponse = ApiMethods.getQueryReferences(
                         ApiMethods.SERVER, ref, null, null, arrayListOf(
@@ -941,31 +875,29 @@ class ShortView : ConstraintLayout {
                                     ByteString.copyFrom(Opinion.dislike.data)
                                 ).build()
                         ), extraByteReferences = listOfNotNull(extraBytesRef)
-                    );
+                    )
 
-                    val likes = queryReferencesResponse.countsList[0];
-                    val dislikes = queryReferencesResponse.countsList[1];
-                    val hasLiked =
-                        StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
-                    val hasDisliked =
-                        StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
+                    val likes = queryReferencesResponse.countsList[0]
+                    val dislikes = queryReferencesResponse.countsList[1]
+                    val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())
+                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())
 
                     withContext(Dispatchers.Main) {
                         onLikesLoaded.emit(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked)
                         onLikeDislikeUpdated.subscribe(this) { args ->
                             if (args.hasLiked) {
-                                args.processHandle.opinion(ref, Opinion.like);
+                                args.processHandle.opinion(ref, Opinion.like)
                             } else if (args.hasDisliked) {
-                                args.processHandle.opinion(ref, Opinion.dislike);
+                                args.processHandle.opinion(ref, Opinion.dislike)
                             } else {
-                                args.processHandle.opinion(ref, Opinion.neutral);
+                                args.processHandle.opinion(ref, Opinion.neutral)
                             }
 
-                            mainFragment!!.lifecycleScope.launch(Dispatchers.IO) {
+                            mainFragment.lifecycleScope.launch(Dispatchers.IO) {
                                 try {
-                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
-                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Finished backfill");
+                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Started backfill")
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions()
+                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Finished backfill")
                                 } catch (e: Throwable) {
                                     Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to backfill servers", e)
                                 }
@@ -974,10 +906,10 @@ class ShortView : ConstraintLayout {
                             StatePolycentric.instance.updateLikeMap(
                                 ref, args.hasLiked, args.hasDisliked
                             )
-                        };
+                        }
                     }
                 } catch (e: Throwable) {
-                    Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to get polycentric likes/dislikes.", e);
+                    Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to get polycentric likes/dislikes.", e)
                 }
             }
         }
@@ -1120,7 +1052,7 @@ class ShortView : ConstraintLayout {
                 })
             else player.setArtwork(null)
             player.setSource(videoSource, audioSource, play = true, keepSubtitles = false, resume = resumePositionMs > 0)
-            if (subtitleSource != null) player.swapSubtitles(mainFragment!!.lifecycleScope, subtitleSource)
+            if (subtitleSource != null) player.swapSubtitles(mainFragment.lifecycleScope, subtitleSource)
             player.seekTo(resumePositionMs)
 
             _lastVideoSource = videoSource
@@ -1149,19 +1081,18 @@ class ShortView : ConstraintLayout {
         private lateinit var containerContentSupport: SupportOverlay
 
         private lateinit var title: TextView
-        private lateinit var subTitle: TextView;
+        private lateinit var subTitle: TextView
         private lateinit var channelName: TextView
         private lateinit var channelMeta: TextView
         private lateinit var creatorThumbnail: CreatorThumbnail
-        private lateinit var channelButton: LinearLayout;
+        private lateinit var channelButton: LinearLayout
         private lateinit var monetization: MonetizationView
-        private lateinit var platform: PlatformIndicator;
-        private lateinit var textLikes: TextView;
-        private lateinit var textDislikes: TextView;
-        private lateinit var layoutRating: LinearLayout;
-        private lateinit var imageDislikeIcon: ImageView;
-        private lateinit var imageLikeIcon: ImageView;
-//        private lateinit var buttonSubscribe: SubscribeButton
+        private lateinit var platform: PlatformIndicator
+        private lateinit var textLikes: TextView
+        private lateinit var textDislikes: TextView
+        private lateinit var layoutRating: LinearLayout
+        private lateinit var imageDislikeIcon: ImageView
+        private lateinit var imageLikeIcon: ImageView
 
         private lateinit var description: TextView
         private lateinit var descriptionContainer: LinearLayout
@@ -1183,49 +1114,22 @@ class ShortView : ConstraintLayout {
 
         private lateinit var behavior: BottomSheetBehavior<FrameLayout>
 
-//        override fun getTheme(): Int {
-//            return R.style.CustomBottomSheetDialog
-//        }
-
-//        override fun getTheme(): Int = R.style.CustomBottomSheetTheme
-
-//        override fun onCreateView(
-//            inflater: LayoutInflater,
-//            container: ViewGroup?,
-//            savedInstanceState: Bundle?
-//        ): View? {
-//
-////            container.
-//
-//            val bottomSheetDialog = inflater.inflate(R.layout.modal_comments, container, false)
+        private val _taskLoadPolycentricProfile =
+            TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) }).success { it -> setPolycentricProfile(it, animate = true) }
+                .exception<Throwable> {
+                    Logger.w(TAG, "Failed to load claims.", it)
+                }
 
         override fun onCreateDialog(
             savedInstanceState: Bundle?,
         ): Dialog {
-            val bottomSheetDialog = BottomSheetDialog(
-//                mainFragment!!.context!!,
-//                MaterialThemeOverlay.wrap(requireContext())
-//                ContextThemeWrapper(requireContext(), ),
-//                ContextThemeWrapper( requireContext(), R.style.ThemeOverlay_App_Material3_BottomSheetDialog)
-                requireContext(),R.style.Custom_BottomSheetDialog_Theme
-//                MaterialThemeOverlay.wrap(requireContext())
-//                ContextThemeWrapper(requireContext(), R.style.BottomSheetDialog_Rounded)
-//                R.style.ThemeOverlay_App_Material3_BottomSheetDialog
-//                BottomSheet
-//                R.style.CustomBottomSheetTheme
-//                R.style.ThemeOverlay_Cata
-//                R.style.ThemeOverlay_Catalog_BottomSheetDialog_Scrollable
-                //com.google.android.material.R.style.Animation_Design_BottomSheetDialog
-            )
+            val bottomSheetDialog =
+                BottomSheetDialog(requireContext(), R.style.Custom_BottomSheetDialog_Theme)
             bottomSheetDialog.setContentView(R.layout.modal_comments)
-
-//            bottomSheetDialog.behavior.
 
             behavior = bottomSheetDialog.behavior
 
-//            val composeView = bottomSheetDialog.findViewById<ComposeView>(R.id.compose_view)
-
-            containerContent = bottomSheetDialog.findViewById(R.id.contentContainer)!!
+            containerContent = bottomSheetDialog.findViewById(R.id.content_container)!!
             containerContentMain = bottomSheetDialog.findViewById(R.id.videodetail_container_main)!!
             containerContentReplies =
                 bottomSheetDialog.findViewById(R.id.videodetail_container_replies)!!
@@ -1248,8 +1152,6 @@ class ShortView : ConstraintLayout {
             imageLikeIcon = bottomSheetDialog.findViewById(R.id.image_like_icon)!!
             imageDislikeIcon = bottomSheetDialog.findViewById(R.id.image_dislike_icon)!!
 
-//            buttonSubscribe = bottomSheetDialog.findViewById(R.id.button_subscribe)!!
-
             description = bottomSheetDialog.findViewById(R.id.videodetail_description)!!
             descriptionContainer =
                 bottomSheetDialog.findViewById(R.id.videodetail_description_container)!!
@@ -1263,45 +1165,42 @@ class ShortView : ConstraintLayout {
 
             commentsList.onAuthorClick.subscribe { c ->
                 if (c !is PolycentricPlatformComment) {
-                    return@subscribe;
+                    return@subscribe
                 }
+                val id = c.author.id.value
 
-                Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
-                if (c.author.id.value?.startsWith("polycentric://") ?: false) {
-                    val navUrl =
-                        "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
-                    //val navUrl = "https://polycentric.io/user/" + c.author.id.value?.substring("polycentric://".length);
+                Logger.i(TAG, "onAuthorClick: $id")
+                if (id != null && id.startsWith("polycentric://") == true) {
+                    val navUrl = "https://harbor.social/" + id.substring("polycentric://".length)
                     mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
-                    //_container_content_browser.goto(navUrl);
-                    //switchContentView(_container_content_browser);
                 }
             }
             commentsList.onRepliesClick.subscribe { c ->
-                val replyCount = c.replyCount ?: 0;
-                var metadata = "";
+                val replyCount = c.replyCount ?: 0
+                var metadata = ""
                 if (replyCount > 0) {
-                    metadata += "$replyCount " + requireContext().getString(R.string.replies);
+                    metadata += "$replyCount " + requireContext().getString(R.string.replies)
                 }
 
                 if (c is PolycentricPlatformComment) {
-                    var parentComment: PolycentricPlatformComment = c;
+                    var parentComment: PolycentricPlatformComment = c
                     containerContentReplies.load(tabIndex!! != 0, metadata, c.contextUrl, c.reference, c, { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) }, {
                         val newComment = parentComment.cloneWithUpdatedReplyCount(
                             (parentComment.replyCount ?: 0) + 1
-                        );
-                        commentsList.replaceComment(parentComment, newComment);
-                        parentComment = newComment;
-                    });
+                        )
+                        commentsList.replaceComment(parentComment, newComment)
+                        parentComment = newComment
+                    })
                 } else {
-                    containerContentReplies.load(tabIndex!! != 0, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                    containerContentReplies.load(tabIndex!! != 0, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) })
                 }
-                animateOpenOverlayView(containerContentReplies);
+                animateOpenOverlayView(containerContentReplies)
             }
 
             if (StatePolycentric.instance.enabled) {
                 buttonPolycentric.setOnClickListener {
-                    setTabIndex(0);
-                    StateMeta.instance.setLastCommentSection(0);
+                    setTabIndex(0)
+                    StateMeta.instance.setLastCommentSection(0)
                 }
             } else {
                 buttonPolycentric.visibility = GONE
@@ -1309,7 +1208,7 @@ class ShortView : ConstraintLayout {
 
             buttonPlatform.setOnClickListener {
                 setTabIndex(1)
-                StateMeta.instance.setLastCommentSection(1);
+                StateMeta.instance.setLastCommentSection(1)
             }
 
             val ref = Models.referenceFromBuffer(video.url.toByteArray())
@@ -1324,10 +1223,6 @@ class ShortView : ConstraintLayout {
                     2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
                 }
             }
-
-//            val layoutTop: LinearLayout = bottomSheetDialog.findViewById(R.id.layout_top)!!
-//            containerContentMain.removeView(layoutTop)
-//            commentsList.setPrependedView(layoutTop)
 
             containerContentDescription.onClose.subscribe { animateCloseOverlayView() }
             containerContentReplies.onClose.subscribe { animateCloseOverlayView() }
@@ -1344,89 +1239,89 @@ class ShortView : ConstraintLayout {
                 TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
 
             //UI
-            title.text = video.name;
-            channelName.text = video.author.name;
+            title.text = video.name
+            channelName.text = video.author.name
             if (video.author.subscribers != null) {
                 channelMeta.text = if ((video.author.subscribers
                         ?: 0) > 0
-                ) video.author.subscribers!!.toHumanNumber() + " " + requireContext().getString(R.string.subscribers) else "";
+                ) video.author.subscribers!!.toHumanNumber() + " " + requireContext().getString(R.string.subscribers) else ""
                 (channelName.layoutParams as MarginLayoutParams).setMargins(
                     0, (dp5 * -1).toInt(), 0, 0
-                );
+                )
             } else {
-                channelMeta.text = "";
-                (channelName.layoutParams as MarginLayoutParams).setMargins(0, (dp2).toInt(), 0, 0);
+                channelMeta.text = ""
+                (channelName.layoutParams as MarginLayoutParams).setMargins(0, (dp2).toInt(), 0, 0)
             }
-
 
             video.author.let {
-                if (it is PlatformAuthorMembershipLink && !it.membershipUrl.isNullOrEmpty()) monetization.setPlatformMembership(video.id.pluginId, it.membershipUrl);
-                else monetization.setPlatformMembership(null, null);
+                if (it is PlatformAuthorMembershipLink && !it.membershipUrl.isNullOrEmpty()) monetization.setPlatformMembership(video.id.pluginId, it.membershipUrl)
+                else monetization.setPlatformMembership(null, null)
             }
 
-            val subTitleSegments: ArrayList<String> = ArrayList();
-            if (video.viewCount > 0) subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if (video.isLive) requireContext().getString(R.string.watching_now) else requireContext().getString(R.string.views)}");
+            val subTitleSegments: ArrayList<String> = ArrayList()
+            if (video.viewCount > 0) subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if (video.isLive) requireContext().getString(R.string.watching_now) else requireContext().getString(R.string.views)}")
             if (video.datetime != null) {
-                val diff = video.datetime?.getNowDiffSeconds() ?: 0;
+                val diff = video.datetime?.getNowDiffSeconds() ?: 0
                 val ago = video.datetime?.toHumanNowDiffString(true)
-                if (diff >= 0) subTitleSegments.add("${ago} ago");
-                else subTitleSegments.add("available in ${ago}");
+                if (diff >= 0) subTitleSegments.add("$ago ago")
+                else subTitleSegments.add("available in $ago")
             }
 
-            platform.setPlatformFromClientID(video.id.pluginId);
-            subTitle.text = subTitleSegments.joinToString(" • ");
-            creatorThumbnail.setThumbnail(video.author.thumbnail, false);
+            platform.setPlatformFromClientID(video.id.pluginId)
+            subTitle.text = subTitleSegments.joinToString(" • ")
+            creatorThumbnail.setThumbnail(video.author.thumbnail, false)
 
-            setPolycentricProfile(null, animate = false);
+            setPolycentricProfile(null, animate = false)
+            _taskLoadPolycentricProfile.run(video.author.id)
 
             when (video.rating) {
                 is RatingLikeDislikes -> {
-                    val r = video.rating as RatingLikeDislikes;
-                    layoutRating.visibility = View.VISIBLE;
+                    val r = video.rating as RatingLikeDislikes
+                    layoutRating.visibility = VISIBLE
 
-                    textLikes.visibility = View.VISIBLE;
-                    imageLikeIcon.visibility = View.VISIBLE;
-                    textLikes.text = r.likes.toHumanNumber();
+                    textLikes.visibility = VISIBLE
+                    imageLikeIcon.visibility = VISIBLE
+                    textLikes.text = r.likes.toHumanNumber()
 
-                    imageDislikeIcon.visibility = View.VISIBLE;
-                    textDislikes.visibility = View.VISIBLE;
-                    textDislikes.text = r.dislikes.toHumanNumber();
+                    imageDislikeIcon.visibility = VISIBLE
+                    textDislikes.visibility = VISIBLE
+                    textDislikes.text = r.dislikes.toHumanNumber()
                 }
 
                 is RatingLikes -> {
-                    val r = video.rating as RatingLikes;
-                    layoutRating.visibility = View.VISIBLE;
+                    val r = video.rating as RatingLikes
+                    layoutRating.visibility = VISIBLE
 
-                    textLikes.visibility = View.VISIBLE;
-                    imageLikeIcon.visibility = View.VISIBLE;
-                    textLikes.text = r.likes.toHumanNumber();
+                    textLikes.visibility = VISIBLE
+                    imageLikeIcon.visibility = VISIBLE
+                    textLikes.text = r.likes.toHumanNumber()
 
-                    imageDislikeIcon.visibility = View.GONE;
-                    textDislikes.visibility = View.GONE;
+                    imageDislikeIcon.visibility = GONE
+                    textDislikes.visibility = GONE
                 }
 
                 else -> {
-                    layoutRating.visibility = View.GONE;
+                    layoutRating.visibility = GONE
                 }
             }
 
             monetization.onSupportTap.subscribe {
-                containerContentSupport.setPolycentricProfile(polycentricProfile);
+                containerContentSupport.setPolycentricProfile(polycentricProfile)
                 animateOpenOverlayView(containerContentSupport)
-            };
+            }
 
             monetization.onStoreTap.subscribe {
                 polycentricProfile?.systemState?.store?.let {
                     try {
-                        val uri = Uri.parse(it);
-                        val intent = Intent(Intent.ACTION_VIEW);
-                        intent.data = uri;
-                        requireContext().startActivity(intent);
+                        val uri = Uri.parse(it)
+                        val intent = Intent(Intent.ACTION_VIEW)
+                        intent.data = uri
+                        requireContext().startActivity(intent)
                     } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to open URI: '${it}'.", e);
+                        Logger.e(TAG, "Failed to open URI: '${it}'.", e)
                     }
                 }
-            };
+            }
             monetization.onUrlTap.subscribe {
                 mainFragment!!.navigate<BrowserFragment>(it)
             }
@@ -1436,25 +1331,9 @@ class ShortView : ConstraintLayout {
             }
 
             channelButton.setOnClickListener {
-                mainFragment!!.navigate<ChannelFragment>(video.author);
-            };
+                mainFragment!!.navigate<ChannelFragment>(video.author)
+            }
 
-//            composeView?.apply {
-//                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-//                setContent {
-//                    // In Compose world
-//                    MaterialTheme {
-//                        val view = LocalView.current
-//                        IconButton(onClick = {
-//                            view.playSoundEffect(SoundEffectConstants.CLICK)
-//                        }) {
-//                            Icon(
-//                                Icons.Outlined.ThumbUp, contentDescription = "Close Bottom Sheet"
-//                            )
-//                        }
-//                    }
-//                }
-//            }
             return bottomSheetDialog
         }
 
@@ -1466,15 +1345,15 @@ class ShortView : ConstraintLayout {
         private fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
             polycentricProfile = profile
 
-            val dp_35 = 35.dp(requireContext().resources)
-            val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
+            val dp35 = 35.dp(requireContext().resources)
+            val avatar = profile?.systemState?.avatar?.selectBestImage(dp35 * dp35)
                 ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) }
 
             if (avatar != null) {
-                creatorThumbnail.setThumbnail(avatar, animate);
+                creatorThumbnail.setThumbnail(avatar, animate)
             } else {
-                creatorThumbnail.setThumbnail(video?.author?.thumbnail, animate);
-                creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
+                creatorThumbnail.setThumbnail(video.author.thumbnail, animate)
+                creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto())
             }
 
             val username = profile?.systemState?.username
@@ -1482,7 +1361,7 @@ class ShortView : ConstraintLayout {
                 channelName.text = username
             }
 
-            monetization.setPolycentricProfile(profile);
+            monetization.setPolycentricProfile(profile)
         }
 
         private fun setTabIndex(index: Int?, forceReload: Boolean = false) {
@@ -1493,35 +1372,19 @@ class ShortView : ConstraintLayout {
             }
 
             tabIndex = index
-//            _buttonRecommended.setTextColor(resources.getColor(if (index == 2) R.color.white else R.color.gray_ac))
-            buttonPlatform.setTextColor(resources.getColor(if (index == 1) R.color.white else R.color.gray_ac))
-            buttonPolycentric.setTextColor(resources.getColor(if (index == 0) R.color.white else R.color.gray_ac))
-//            layoutRecommended.removeAllViews()
+            buttonPlatform.setTextColor(resources.getColor(if (index == 1) R.color.white else R.color.gray_ac, null))
+            buttonPolycentric.setTextColor(resources.getColor(if (index == 0) R.color.white else R.color.gray_ac, null))
 
             if (index == null) {
-                addCommentView.visibility = View.GONE
+                addCommentView.visibility = GONE
                 commentsList.clear()
-//                _layoutRecommended.visibility = View.GONE
             } else if (index == 0) {
-                addCommentView.visibility = View.VISIBLE
-//                _layoutRecommended.visibility = View.GONE
+                addCommentView.visibility = VISIBLE
                 fetchPolycentricComments()
             } else if (index == 1) {
-                addCommentView.visibility = View.GONE
-//                _layoutRecommended.visibility = View.GONE
+                addCommentView.visibility = GONE
                 fetchComments()
             }
-//            else if (index == 2) {
-//                _addCommentView.visibility = View.GONE
-//                _layoutRecommended.visibility = View.VISIBLE
-//                _commentsList.clear()
-//
-//                _layoutRecommended.addView(LoaderView(context).apply {
-//                    layoutParams = LinearLayout.LayoutParams(60.dp(resources), 60.dp(resources))
-//                    start()
-//                })
-//                _taskLoadRecommendations.run(null)
-//            }
         }
 
         private fun fetchComments() {
@@ -1533,9 +1396,9 @@ class ShortView : ConstraintLayout {
 
         private fun fetchPolycentricComments() {
             Logger.i(TAG, "fetchPolycentricComments")
-            val video = video;
-            val idValue = video?.id?.value
-            if (video?.url?.isEmpty() != false) {
+            val video = video
+            val idValue = video.id.value
+            if (video.url.isEmpty() != false) {
                 Logger.w(TAG, "Failed to fetch polycentric comments because url was null")
                 commentsList.clear()
                 return
@@ -1543,7 +1406,7 @@ class ShortView : ConstraintLayout {
 
             val ref = Models.referenceFromBuffer(video.url.toByteArray())
             val extraBytesRef = idValue?.let { if (it.isNotEmpty()) it.toByteArray() else null }
-            commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); };
+            commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); }
         }
 
         private fun updateDescriptionUI(text: Spanned) {

@@ -16,18 +16,20 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/compose_view_test_button"
+        android:id="@+id/shorts_overlay_content_compose_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="1dp"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+<!--    make the overlay clickable to intercept touches-->
     <FrameLayout
         android:id="@+id/short_view_loading_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#77000000"
         android:elevation="4dp"
+        android:clickable="true"
         android:visibility="gone">
 
         <ImageView

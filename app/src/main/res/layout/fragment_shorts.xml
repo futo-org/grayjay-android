@@ -5,7 +5,7 @@
     android:layout_height="match_parent">
 
     <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
+        android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical" />
@@ -29,7 +29,7 @@
     </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/videodetail_quality_overview"
+        android:id="@+id/shorts_quality_overview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:elevation="100dp"
