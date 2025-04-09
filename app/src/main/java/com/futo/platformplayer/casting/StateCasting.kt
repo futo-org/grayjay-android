@@ -296,7 +296,7 @@ class StateCasting {
                                     if(_currentDialog == null) {
                                         _currentDialog = UIDialogs.showDialog(context, R.drawable.ic_loader_animated, true,
                                                 "Connecting to [${device.name}]",
-                                                "Make sure you are on the same network\n\nVPNs and guest networks can prevent connections", null, -2,
+                                                "Make sure you are on the same network\n\nVPNs and guest networks can cause issues", null, -2,
                                             UIDialogs.Action("Disconnect", {
                                                 device.stop();
                                             }));
