@@ -1,9 +1,11 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.content.Context
 import android.graphics.drawable.Animatable
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -48,6 +50,11 @@ abstract class VideoListEditorView : LinearLayout {
     private var _loadedVideos: List<IPlatformVideo>? = null;
     private var _loadedVideosCanEdit: Boolean = false;
 
+    fun hideSearchKeyboard() {
+        (context?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)?.hideSoftInputFromWindow(_search.textSearch.windowToken, 0)
+        _search.textSearch.clearFocus();
+    }
+
     constructor(inflater: LayoutInflater) : super(inflater.context) {
         inflater.inflate(R.layout.fragment_video_list_editor, this);
 
@@ -79,6 +86,7 @@ abstract class VideoListEditorView : LinearLayout {
                 _search.textSearch.text = "";
                 updateVideoFilters();
                 _buttonSearch.setImageResource(R.drawable.ic_search);
+                hideSearchKeyboard();
             }
             else {
                 _search.visibility = View.VISIBLE;
@@ -89,23 +97,23 @@ abstract class VideoListEditorView : LinearLayout {
         _buttonShare = findViewById(R.id.button_share);
         val onShare = _onShare;
         if(onShare != null) {
-            _buttonShare.setOnClickListener { onShare.invoke() };
+            _buttonShare.setOnClickListener {  hideSearchKeyboard(); onShare.invoke() };
             _buttonShare.visibility = View.VISIBLE;
         }
         else
             _buttonShare.visibility = View.GONE;
 
-        buttonPlayAll.setOnClickListener { onPlayAllClick(); };
-        buttonShuffle.setOnClickListener { onShuffleClick(); };
+        buttonPlayAll.setOnClickListener { hideSearchKeyboard();onPlayAllClick(); hideSearchKeyboard(); };
+        buttonShuffle.setOnClickListener { hideSearchKeyboard();onShuffleClick(); hideSearchKeyboard(); };
 
-        _buttonEdit.setOnClickListener { onEditClick(); };
+        _buttonEdit.setOnClickListener {  hideSearchKeyboard(); onEditClick(); };
         setButtonExportVisible(false);
         setButtonDownloadVisible(canEdit());
 
         videoListEditorView.onVideoOrderChanged.subscribe(::onVideoOrderChanged);
         videoListEditorView.onVideoRemoved.subscribe(::onVideoRemoved);
         videoListEditorView.onVideoOptions.subscribe(::onVideoOptions);
-        videoListEditorView.onVideoClicked.subscribe(::onVideoClicked);
+        videoListEditorView.onVideoClicked.subscribe { hideSearchKeyboard(); onVideoClicked(it)};
 
         _videoListEditorView = videoListEditorView;
     }
@@ -113,6 +121,7 @@ abstract class VideoListEditorView : LinearLayout {
     fun setOnShare(onShare: (()-> Unit)? = null) {
         _onShare = onShare;
         _buttonShare.setOnClickListener {
+            hideSearchKeyboard();
             onShare?.invoke();
         };
         _buttonShare.visibility = View.VISIBLE;
@@ -145,7 +154,7 @@ abstract class VideoListEditorView : LinearLayout {
             setButtonExportVisible(false);
             _buttonDownload.setImageResource(R.drawable.ic_loader_animated);
             _buttonDownload.drawable.assume<Animatable, Unit> { it.start() };
-            _buttonDownload.setOnClickListener {
+            _buttonDownload.setOnClickListener { hideSearchKeyboard();
                 UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
                     StateDownloads.instance.deleteCachedPlaylist(playlistId);
                 });
@@ -154,7 +163,7 @@ abstract class VideoListEditorView : LinearLayout {
         else if(isDownloaded) {
             setButtonExportVisible(true)
             _buttonDownload.setImageResource(R.drawable.ic_download_off);
-            _buttonDownload.setOnClickListener {
+            _buttonDownload.setOnClickListener { hideSearchKeyboard();
                 UIDialogs.showConfirmationDialog(context, context.getString(R.string.are_you_sure_you_want_to_delete_the_downloaded_videos), {
                     StateDownloads.instance.deleteCachedPlaylist(playlistId);
                 });
@@ -163,7 +172,7 @@ abstract class VideoListEditorView : LinearLayout {
         else {
             setButtonExportVisible(false);
             _buttonDownload.setImageResource(R.drawable.ic_download);
-            _buttonDownload.setOnClickListener {
+            _buttonDownload.setOnClickListener { hideSearchKeyboard();
                 onDownload();
                 //UISlideOverlays.showDownloadPlaylistOverlay(playlist, overlayContainer);
             }
