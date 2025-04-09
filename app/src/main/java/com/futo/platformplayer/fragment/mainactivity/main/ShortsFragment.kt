@@ -190,12 +190,8 @@ class ShortsFragment : MainFragment() {
         customViewAdapter?.previousShownView?.pause()
     }
 
-    override fun onResume() {
-        super.onResume()
-    }
-
-    override fun onStop() {
-        super.onStop()
+    override fun onDestroy() {
+        super.onDestroy()
         customViewAdapter?.previousShownView?.stop()
     }
 

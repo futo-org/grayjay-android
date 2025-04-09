@@ -39,6 +39,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
                     Player.EVENT_POSITION_DISCONTINUITY, Player.EVENT_IS_PLAYING_CHANGED, Player.EVENT_PLAYBACK_STATE_CHANGED
                 )
             ) {
+                progressAnimator.cancel()
                 if (player.duration >= 0) {
                     progressAnimator.duration = player.duration
                     setProgressBarDuration(player.duration)
@@ -46,15 +47,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
                 }
 
                 if (player.isPlaying) {
-                    if (progressAnimator.isPaused) {
-                        progressAnimator.resume()
-                    } else if (!progressAnimator.isStarted) {
-                        progressAnimator.start()
-                    }
-                } else {
-                    if (progressAnimator.isRunning) {
-                        progressAnimator.pause()
-                    }
+                    progressAnimator.start()
                 }
             }
         }
@@ -72,9 +65,7 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
 
         progressBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
-                if (progressAnimator.isRunning) {
-                    progressAnimator.pause()
-                }
+                progressAnimator.cancel()
             }
 
             override fun onScrubMove(timeBar: TimeBar, position: Long) {}
@@ -82,7 +73,8 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
                 if (canceled) {
                     progressAnimator.currentPlayTime = player.player.currentPosition
-                    progressAnimator.resume()
+                    progressAnimator.duration = player.player.duration
+                    progressAnimator.start()
                     return
                 }
 
