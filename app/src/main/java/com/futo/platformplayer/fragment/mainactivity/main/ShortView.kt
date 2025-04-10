@@ -7,7 +7,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Bundle
 import android.text.Spanned
 import android.util.AttributeSet
@@ -177,6 +176,7 @@ import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import kotlin.coroutines.cancellation.CancellationException
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @UnstableApi
@@ -1172,7 +1172,7 @@ class ShortView : ConstraintLayout {
                 Logger.i(TAG, "onAuthorClick: $id")
                 if (id != null && id.startsWith("polycentric://") == true) {
                     val navUrl = "https://harbor.social/" + id.substring("polycentric://".length)
-                    mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
+                    mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, navUrl.toUri()))
                 }
             }
             commentsList.onRepliesClick.subscribe { c ->
@@ -1313,7 +1313,7 @@ class ShortView : ConstraintLayout {
             monetization.onStoreTap.subscribe {
                 polycentricProfile?.systemState?.store?.let {
                     try {
-                        val uri = Uri.parse(it)
+                        val uri = it.toUri()
                         val intent = Intent(Intent.ACTION_VIEW)
                         intent.data = uri
                         requireContext().startActivity(intent)
