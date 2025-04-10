@@ -13,6 +13,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
@@ -90,25 +91,44 @@ class ShortsFragment : MainFragment() {
 
         loadPagerJob!!.invokeOnCompletion {
             viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-                @OptIn(UnstableApi::class)
+                fun play(adapter: CustomViewAdapter, position: Int) {
+                    val recycler = (viewPager.getChildAt(0) as RecyclerView)
+                    val viewHolder =
+                        recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
+
+                    if (viewHolder == null) {
+                        adapter.needToPlay = position
+                    } else {
+                        val focusedView = viewHolder.shortView
+                        focusedView.play()
+                        adapter.previousShownView = focusedView
+                    }
+                }
+
                 override fun onPageSelected(position: Int) {
                     val adapter = (viewPager.adapter as CustomViewAdapter)
-                    adapter.previousShownView?.stop()
-                    adapter.previousShownView = null
+                    if (adapter.previousShownView == null) {
+                        // play if this page selection didn't trigger by a swipe from another page
+                        play(adapter, position)
+                    } else {
+                        adapter.previousShownView?.stop()
+                        adapter.previousShownView = null
+                        adapter.newPosition = position
+                    }
+                }
 
-                    // the post prevents lag when swiping
-                    viewPager.post {
-                        val recycler = (viewPager.getChildAt(0) as RecyclerView)
-                        val viewHolder =
-                            recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
-
-                        if (viewHolder == null) {
-                            adapter.needToPlay = position
-                        } else {
-                            val focusedView = viewHolder.shortView
-                            focusedView.play()
-                            adapter.previousShownView = focusedView
+                // wait for the state to idle to prevent UI lag
+                override fun onPageScrollStateChanged(state: Int) {
+                    super.onPageScrollStateChanged(state)
+                    if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                        val adapter = (viewPager.adapter as CustomViewAdapter)
+                        val position = adapter.newPosition
+                        if (position == null) {
+                            return
                         }
+                        adapter.newPosition = null
+
+                        play(adapter, position)
                     }
                 }
             })
@@ -158,6 +178,15 @@ class ShortsFragment : MainFragment() {
                     StatePlatform.instance.getShorts()
                 }
             } catch (_: CancellationException) {
+                return@launch
+            } catch (err: Throwable) {
+                val message = "Unable to load shorts $err"
+                Logger.i(TAG, message)
+                UIDialogs.showDialog(
+                    requireContext(), R.drawable.ic_sources, message, null, null, 0, UIDialogs.Action(
+                        "Close", { }, UIDialogs.ActionStyle.PRIMARY
+                    )
+                )
                 return@launch
             }
 
@@ -210,6 +239,7 @@ class ShortsFragment : MainFragment() {
     ) : RecyclerView.Adapter<CustomViewHolder>() {
         val onResetTriggered = Event0()
         var previousShownView: ShortView? = null
+        var newPosition: Int? = null
         var needToPlay: Int? = null
 
         @OptIn(UnstableApi::class)
