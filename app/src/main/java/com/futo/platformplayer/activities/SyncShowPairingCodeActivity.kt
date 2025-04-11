@@ -67,7 +67,7 @@ class SyncShowPairingCodeActivity : AppCompatActivity() {
         }
 
         val ips = getIPs()
-        val selfDeviceInfo = SyncDeviceInfo(StateSync.instance.publicKey!!, ips.toTypedArray(), StateSync.PORT)
+        val selfDeviceInfo = SyncDeviceInfo(StateSync.instance.publicKey!!, ips.toTypedArray(), StateSync.PORT, StateSync.instance.pairingCode)
         val json = Json.encodeToString(selfDeviceInfo)
         val base64 = Base64.encodeToString(json.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
         val url = "grayjay://sync/${base64}"

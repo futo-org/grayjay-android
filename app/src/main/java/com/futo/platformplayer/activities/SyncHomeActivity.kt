@@ -100,7 +100,8 @@ class SyncHomeActivity : AppCompatActivity() {
 
     private fun updateDeviceView(syncDeviceView: SyncDeviceView, publicKey: String, session: SyncSession?): SyncDeviceView {
         val connected = session?.connected ?: false
-        syncDeviceView.setLinkType(if (connected) LinkType.Local else LinkType.None)
+
+        syncDeviceView.setLinkType(session?.linkType ?: LinkType.None)
             .setName(session?.displayName ?: StateSync.instance.getCachedName(publicKey) ?: publicKey)
             //TODO: also display public key?
             .setStatus(if (connected) "Connected" else "Disconnected")
