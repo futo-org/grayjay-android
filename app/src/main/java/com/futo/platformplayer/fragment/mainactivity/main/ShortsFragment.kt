@@ -182,11 +182,13 @@ class ShortsFragment : MainFragment() {
             } catch (err: Throwable) {
                 val message = "Unable to load shorts $err"
                 Logger.i(TAG, message)
-                UIDialogs.showDialog(
-                    requireContext(), R.drawable.ic_sources, message, null, null, 0, UIDialogs.Action(
-                        "Close", { }, UIDialogs.ActionStyle.PRIMARY
+                if (context != null) {
+                    UIDialogs.showDialog(
+                        requireContext(), R.drawable.ic_sources, message, null, null, 0, UIDialogs.Action(
+                            "Close", { }, UIDialogs.ActionStyle.PRIMARY
+                        )
                     )
-                )
+                }
                 return@launch
             }
 
