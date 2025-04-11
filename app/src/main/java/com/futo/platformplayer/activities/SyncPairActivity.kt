@@ -109,9 +109,9 @@ class SyncPairActivity : AppCompatActivity() {
 
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    StateSync.instance.connect(deviceInfo) { session, complete, message ->
+                    StateSync.instance.connect(deviceInfo) { complete, message ->
                         lifecycleScope.launch(Dispatchers.Main) {
-                            if (complete) {
+                            if (complete != null && complete) {
                                 _layoutPairingSuccess.visibility = View.VISIBLE
                                 _layoutPairing.visibility = View.GONE
                             } else {
