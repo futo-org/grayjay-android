@@ -35,26 +35,18 @@ class SyncSession : IAuthorizable {
 
     val linkType: LinkType get()
     {
-        var hasRelayed = false
-        var hasDirect = false
+        var linkType = LinkType.None
         synchronized(_channels)
         {
             for (channel in _channels)
             {
-                if (channel is ChannelRelayed)
-                    hasRelayed = true
-                if (channel is ChannelSocket)
-                    hasDirect = true
-                if (hasRelayed && hasDirect)
+                if (channel.linkType == LinkType.Direct)
                     return LinkType.Direct
+                if (channel.linkType == LinkType.Relayed)
+                    linkType = LinkType.Relayed
             }
         }
-
-        if (hasRelayed)
-            return LinkType.Relayed
-        if (hasDirect)
-            return LinkType.Direct
-        return LinkType.None
+        return linkType
     }
 
     var connected: Boolean = false
@@ -212,8 +204,7 @@ class SyncSession : IAuthorizable {
     }
 
     fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null) {
-        //TODO: Prioritize local connections
-        val channels = synchronized(_channels) { _channels.toList() }
+        val channels = synchronized(_channels) { _channels.sortedBy { it.linkType.ordinal }.toList() }
         if (channels.isEmpty()) {
             //TODO: Should this throw?
             Logger.v(TAG, "Packet was not sent (opcode = $opcode, subOpcode = $subOpcode) due to no connected sockets")

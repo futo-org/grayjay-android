@@ -17,6 +17,7 @@ interface IChannel : AutoCloseable {
     fun setDataHandler(onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)?)
     fun send(opcode: UByte, subOpcode: UByte = 0u, data: ByteBuffer? = null)
     fun setCloseHandler(onClose: ((IChannel) -> Unit)?)
+    val linkType: LinkType
 }
 
 class ChannelSocket(private val session: SyncSocketSession) : IChannel {
@@ -24,6 +25,7 @@ class ChannelSocket(private val session: SyncSocketSession) : IChannel {
     override val remoteVersion: Int? get() = session.remoteVersion
     private var onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)? = null
     private var onClose: ((IChannel) -> Unit)? = null
+    override val linkType: LinkType get() = LinkType.Direct
 
     override var authorizable: IAuthorizable?
         get() = session.authorizable
@@ -83,6 +85,7 @@ class ChannelRelayed(
     override var remoteVersion: Int? = null
         private set
     override var syncSession: SyncSession? = null
+    override val linkType: LinkType get() = LinkType.Relayed
 
     private var onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)? = null
     private var onClose: ((IChannel) -> Unit)? = null
