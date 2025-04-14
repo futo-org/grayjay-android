@@ -936,6 +936,15 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.connect_last, FieldForm.TOGGLE, R.string.connect_last_description, 3)
         var connectLast: Boolean = true;
+
+        @FormField(R.string.discover_through_relay, FieldForm.TOGGLE, R.string.discover_through_relay_description, 3)
+        var discoverThroughRelay: Boolean = true;
+
+        @FormField(R.string.pair_through_relay, FieldForm.TOGGLE, R.string.pair_through_relay_description, 3)
+        var pairThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_through_relay, FieldForm.TOGGLE, R.string.connect_through_relay_description, 3)
+        var connectThroughRelay: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)

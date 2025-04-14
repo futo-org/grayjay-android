@@ -38,7 +38,7 @@ class SyncSocketSession {
     private val _onHandshakeComplete: ((session: SyncSocketSession) -> Unit)?
     private val _onNewChannel: ((session: SyncSocketSession, channel: ChannelRelayed) -> Unit)?
     private val _onChannelEstablished: ((session: SyncSocketSession, channel: ChannelRelayed, isResponder: Boolean) -> Unit)?
-    private val _isHandshakeAllowed: ((session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)?
+    private val _isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)?
     private var _cipherStatePair: CipherStatePair? = null
     private var _remotePublicKey: String? = null
     val remotePublicKey: String? get() = _remotePublicKey
@@ -74,7 +74,7 @@ class SyncSocketSession {
         val allowLocalDirect: Boolean,
         val allowRemoteDirect: Boolean,
         val allowRemoteHolePunched: Boolean,
-        val allowRemoteProxied: Boolean
+        val allowRemoteRelayed: Boolean
     )
 
     constructor(
@@ -87,7 +87,7 @@ class SyncSocketSession {
         onData: ((session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit)? = null,
         onNewChannel: ((session: SyncSocketSession, channel: ChannelRelayed) -> Unit)? = null,
         onChannelEstablished: ((session: SyncSocketSession, channel: ChannelRelayed, isResponder: Boolean) -> Unit)? = null,
-        isHandshakeAllowed: ((session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)? = null
+        isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)? = null
     ) {
         _inputStream = inputStream
         _outputStream = outputStream
@@ -278,7 +278,7 @@ class SyncSocketSession {
         responder.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
         _remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
 
-        return (_remotePublicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(this, _remotePublicKey!!, pairingCode) ?: true)).also {
+        return (_remotePublicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Direct, this, _remotePublicKey!!, pairingCode) ?: true)).also {
             if (!it) stop()
         }
     }
@@ -420,7 +420,7 @@ class SyncSocketSession {
                     val length = pairingProtocol.readMessage(pairingMessage, 0, pairingMessageLength, plaintext, 0)
                     String(plaintext, 0, length, Charsets.UTF_8)
                 } else null
-                val isAllowed = publicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(this, publicKey, pairingCode) ?: true)
+                val isAllowed = publicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Relayed, this, publicKey, pairingCode) ?: true)
                 if (!isAllowed) {
                     val rp = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
                     rp.putInt(2) // Status code for not allowed
@@ -649,8 +649,8 @@ class SyncSocketSession {
         val allowLocalDirect = info.get() != 0.toByte()
         val allowRemoteDirect = info.get() != 0.toByte()
         val allowRemoteHolePunched = info.get() != 0.toByte()
-        val allowRemoteProxied = info.get() != 0.toByte()
-        return ConnectionInfo(port, name, remoteIp, ipv4Addresses, ipv6Addresses, allowLocalDirect, allowRemoteDirect, allowRemoteHolePunched, allowRemoteProxied)
+        val allowRemoteRelayed = info.get() != 0.toByte()
+        return ConnectionInfo(port, name, remoteIp, ipv4Addresses, ipv6Addresses, allowLocalDirect, allowRemoteDirect, allowRemoteHolePunched, allowRemoteRelayed)
     }
 
     private fun handleNotify(subOpcode: UByte, data: ByteBuffer, sourceChannel: ChannelRelayed?) {
@@ -920,7 +920,7 @@ class SyncSocketSession {
         allowLocalDirect: Boolean,
         allowRemoteDirect: Boolean,
         allowRemoteHolePunched: Boolean,
-        allowRemoteProxied: Boolean
+        allowRemoteRelayed: Boolean
     ) {
         if (authorizedKeys.size > 255) throw IllegalArgumentException("Number of authorized keys exceeds 255")
 
@@ -960,7 +960,7 @@ class SyncSocketSession {
         data.put(if (allowLocalDirect) 1 else 0)
         data.put(if (allowRemoteDirect) 1 else 0)
         data.put(if (allowRemoteHolePunched) 1 else 0)
-        data.put(if (allowRemoteProxied) 1 else 0)
+        data.put(if (allowRemoteRelayed) 1 else 0)
 
         val handshakeSize = 48 // Noise handshake size for N pattern
 
