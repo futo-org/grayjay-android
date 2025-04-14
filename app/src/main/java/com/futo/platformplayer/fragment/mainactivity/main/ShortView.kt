@@ -1129,6 +1129,7 @@ class ShortView : ConstraintLayout {
 
             behavior = bottomSheetDialog.behavior
 
+            // TODO figure out how to not need all of these non null assertions
             containerContent = bottomSheetDialog.findViewById(R.id.content_container)!!
             containerContentMain = bottomSheetDialog.findViewById(R.id.videodetail_container_main)!!
             containerContentReplies =
