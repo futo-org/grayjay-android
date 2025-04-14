@@ -35,25 +35,25 @@ class SyncSession : IAuthorizable {
 
     val linkType: LinkType get()
     {
-        var hasProxied = false
+        var hasRelayed = false
         var hasDirect = false
         synchronized(_channels)
         {
             for (channel in _channels)
             {
                 if (channel is ChannelRelayed)
-                    hasProxied = true
+                    hasRelayed = true
                 if (channel is ChannelSocket)
                     hasDirect = true
-                if (hasProxied && hasDirect)
-                    return LinkType.Local
+                if (hasRelayed && hasDirect)
+                    return LinkType.Direct
             }
         }
 
-        if (hasProxied)
-            return LinkType.Proxied
+        if (hasRelayed)
+            return LinkType.Relayed
         if (hasDirect)
-            return LinkType.Local
+            return LinkType.Direct
         return LinkType.None
     }
 

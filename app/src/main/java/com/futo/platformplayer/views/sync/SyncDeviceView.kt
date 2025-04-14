@@ -43,13 +43,13 @@ class SyncDeviceView : ConstraintLayout {
 
         _layoutLinkType.visibility = View.VISIBLE
         _imageLinkType.setImageResource(when (linkType) {
-            LinkType.Proxied -> R.drawable.ic_internet
-            LinkType.Local -> R.drawable.ic_lan
+            LinkType.Relayed -> R.drawable.ic_internet
+            LinkType.Direct -> R.drawable.ic_lan
             else -> 0
         })
         _textLinkType.text = when(linkType) {
-            LinkType.Proxied -> "Proxied"
-            LinkType.Local -> "Local"
+            LinkType.Relayed -> "Relayed"
+            LinkType.Direct -> "Direct"
             else -> null
         }
 
