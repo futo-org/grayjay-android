@@ -190,8 +190,6 @@ class StateSync {
 
                     for (connectPair in addressesToConnect) {
                         try {
-                            val syncDeviceInfo = SyncDeviceInfo(connectPair.first, arrayOf(connectPair.second), PORT, null)
-
                             val now = System.currentTimeMillis()
                             val lastConnectTime = synchronized(_lastConnectTimesIp) {
                                 _lastConnectTimesIp[connectPair.first] ?: 0
@@ -204,7 +202,7 @@ class StateSync {
                                 }
 
                                 Logger.i(TAG, "Attempting to connect to authorized device by last known IP '${connectPair.first}' with pkey=${connectPair.first}")
-                                connect(syncDeviceInfo)
+                                connect(arrayOf(connectPair.second), PORT, connectPair.first, null)
                             }
                         } catch (e: Throwable) {
                             Logger.i(TAG, "Failed to connect to " + connectPair.first, e)
