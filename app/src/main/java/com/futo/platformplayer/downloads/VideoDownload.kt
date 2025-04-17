@@ -58,6 +58,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Transient
 import java.io.File
 import java.io.FileOutputStream
@@ -72,6 +73,7 @@ import java.util.concurrent.ThreadLocalRandom
 import kotlin.coroutines.resumeWithException
 import kotlin.time.times
 
+@InternalSerializationApi
 @kotlinx.serialization.Serializable
 class VideoDownload {
     var state: State = State.QUEUED;
@@ -633,7 +635,9 @@ class VideoDownload {
             val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
             fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
 
-            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+            // 8 second analyze duration is needed for some Rumble HLS downloads
+            val cmd = "-analyzeduration 8M -f concat -safe 0 -i \"${fileList.absolutePath}\"" +
+                    " -c copy \"${targetFile.absolutePath}\""
 
             val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?
