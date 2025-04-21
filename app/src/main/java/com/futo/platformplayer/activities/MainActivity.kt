@@ -1,6 +1,7 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
+import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -262,6 +264,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val uiMode = getSystemService(UiModeManager::class.java)
+            uiMode.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES)
+        }
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
         if (Settings.instance.playback.allowVideoToGoUnderCutout)
