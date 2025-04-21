@@ -92,7 +92,7 @@ class FCastCastingDevice : CastingDevice {
     private var _version: Long = 1;
     private var _thread: Thread? = null
     private var _pingThread: Thread? = null
-    private var _lastPongTime = -1L
+    @Volatile private var _lastPongTime = System.currentTimeMillis()
     private var _outputStreamLock = Object()
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
@@ -326,9 +326,9 @@ class FCastCastingDevice : CastingDevice {
                         continue;
                     }
 
-                    localAddress = _socket?.localAddress;
-                    connectionState = CastConnectionState.CONNECTED;
-                    _lastPongTime = -1L
+                    localAddress = _socket?.localAddress
+                    _lastPongTime = System.currentTimeMillis()
+                    connectionState = CastConnectionState.CONNECTED
 
                     val buffer = ByteArray(4096);
 
@@ -404,36 +404,32 @@ class FCastCastingDevice : CastingDevice {
 
             _pingThread = Thread {
                 Logger.i(TAG, "Started ping loop.")
-
                 while (_scopeIO?.isActive == true) {
-                    try {
-                        send(Opcode.Ping)
-                    } catch (e: Throwable) {
-                        Log.w(TAG, "Failed to send ping.")
-
+                    if (connectionState == CastConnectionState.CONNECTED) {
                         try {
-                            _socket?.close()
-                            _inputStream?.close()
-                            _outputStream?.close()
+                            send(Opcode.Ping)
+                            if (System.currentTimeMillis() - _lastPongTime > 15000) {
+                                Logger.w(TAG, "Closing socket due to last pong time being larger than 15 seconds.")
+                                try {
+                                    _socket?.close()
+                                } catch (e: Throwable) {
+                                    Log.w(TAG, "Failed to close socket.", e)
+                                }
+                            }
                         } catch (e: Throwable) {
-                            Log.w(TAG, "Failed to close socket.", e)
+                            Log.w(TAG, "Failed to send ping.")
+                            try {
+                                _socket?.close()
+                                _inputStream?.close()
+                                _outputStream?.close()
+                            } catch (e: Throwable) {
+                                Log.w(TAG, "Failed to close socket.", e)
+                            }
                         }
                     }
-
-                    /*if (_lastPongTime != -1L && System.currentTimeMillis() - _lastPongTime > 6000) {
-                        Logger.w(TAG, "Closing socket due to last pong time being larger than 6 seconds.")
-
-                        try {
-                            _socket?.close()
-                        } catch (e: Throwable) {
-                            Log.w(TAG, "Failed to close socket.", e)
-                        }
-                    }*/
-
-                    Thread.sleep(2000)
+                    Thread.sleep(5000)
                 }
-
-                Logger.i(TAG, "Stopped ping loop.");
+                Logger.i(TAG, "Stopped ping loop.")
             }.apply { start() }
         } else {
             Log.i(TAG, "Thread was still alive, not restarted")
