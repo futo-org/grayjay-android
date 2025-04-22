@@ -1,5 +1,6 @@
 package com.futo.platformplayer.api.media
 
+import com.futo.platformplayer.api.media.models.IPlatformChannelContent
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -65,6 +66,11 @@ interface IPlatformClient {
      * Searches for channels and returns a channel pager
      */
     fun searchChannels(query: String): IPager<PlatformAuthorLink>;
+
+    /**
+     * Searches for channels and returns a content pager
+     */
+    fun searchChannelsAsContent(query: String): IPager<IPlatformContent>;
 
 
     //Video Pages

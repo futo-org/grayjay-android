@@ -632,6 +632,27 @@ class StatePlatform {
         return pager;
     }
 
+    fun searchChannelsAsContent(query: String): IPager<IPlatformContent> {
+        Logger.i(TAG, "Platform - searchChannels");
+        val pagers = mutableMapOf<IPager<IPlatformContent>, Float>();
+        getSortedEnabledClient().parallelStream().forEach {
+            try {
+                if (it.capabilities.hasChannelSearch)
+                    pagers.put(it.searchChannelsAsContent(query), 1f);
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed search channels", ex)
+                UIDialogs.toast("Failed search channels on [${it.name}]\n(${ex.message})");
+            }
+        };
+        if(pagers.isEmpty())
+            return EmptyPager<IPlatformContent>();
+
+        val pager = MultiDistributionContentPager(pagers);
+        pager.initialize();
+        return pager;
+    }
+
 
     //Video
     fun hasEnabledVideoClient(url: String) : Boolean = getEnabledClients().any { it.isContentDetailsUrl(url) };

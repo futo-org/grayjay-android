@@ -201,11 +201,12 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
     protected open fun onContentUrlClicked(url: String, contentType: ContentType) {
         when(contentType) {
             ContentType.MEDIA -> {
-                StatePlayer.instance.clearQueue();
-                fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
-            };
-            ContentType.PLAYLIST -> fragment.navigate<RemotePlaylistFragment>(url);
-            ContentType.URL -> fragment.navigate<BrowserFragment>(url);
+                StatePlayer.instance.clearQueue()
+                fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail()
+            }
+            ContentType.PLAYLIST -> fragment.navigate<RemotePlaylistFragment>(url)
+            ContentType.URL -> fragment.navigate<BrowserFragment>(url)
+            ContentType.CHANNEL -> fragment.navigate<ChannelFragment>(url)
             else -> {};
         }
     }

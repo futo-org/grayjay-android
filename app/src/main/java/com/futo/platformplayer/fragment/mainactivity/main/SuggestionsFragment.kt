@@ -49,14 +49,7 @@ class SuggestionsFragment : MainFragment {
         _adapterSuggestions.onClicked.subscribe { suggestion ->
             val storage = FragmentedStorage.get<SearchHistoryStorage>();
             storage.add(suggestion);
-
-            if (_searchType == SearchType.CREATOR) {
-                navigate<CreatorSearchResultsFragment>(suggestion);
-            } else if (_searchType == SearchType.PLAYLIST) {
-                navigate<PlaylistSearchResultsFragment>(suggestion);
-            } else {
-                navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, SearchType.VIDEO, _channelUrl));
-            }
+            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, _searchType, _channelUrl));
         }
         _adapterSuggestions.onRemove.subscribe { suggestion ->
             val index = _suggestions.indexOf(suggestion);
