@@ -718,7 +718,7 @@ class StatePlatform {
         }
     }
 
-    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0): IPager<IPlatformContent> {
+    fun getChannelContent(baseClient: IPlatformClient, channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, type: String? = null): IPager<IPlatformContent> {
         val clientCapabilities = baseClient.getChannelCapabilities();
         val client = if(usePooledClients > 1)
             _channelClientPool.getClientPooled(baseClient, usePooledClients);
@@ -727,66 +727,75 @@ class StatePlatform {
         var lastStream: OffsetDateTime? = null;
 
         val pagerResult: IPager<IPlatformContent>;
-        if(!clientCapabilities.hasType(ResultCapabilities.TYPE_MIXED) &&
-                (   clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS) ||
-                    clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS) ||
-                    clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE) ||
-                    clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS)
-                )) {
-            val toQuery = mutableListOf<String>();
-            if(clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
-                toQuery.add(ResultCapabilities.TYPE_VIDEOS);
-            if(clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS))
-                toQuery.add(ResultCapabilities.TYPE_STREAMS);
-            if(clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE))
-                toQuery.add(ResultCapabilities.TYPE_LIVE);
-            if(clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS))
-                toQuery.add(ResultCapabilities.TYPE_POSTS);
+        if (type == null) {
+            if(!clientCapabilities.hasType(ResultCapabilities.TYPE_MIXED) &&
+                    (   clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS) ||
+                        clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS) ||
+                        clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE) ||
+                        clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS)
+                    )) {
+                val toQuery = mutableListOf<String>();
+                if(clientCapabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
+                    toQuery.add(ResultCapabilities.TYPE_VIDEOS);
+                if(clientCapabilities.hasType(ResultCapabilities.TYPE_STREAMS))
+                    toQuery.add(ResultCapabilities.TYPE_STREAMS);
+                if(clientCapabilities.hasType(ResultCapabilities.TYPE_LIVE))
+                    toQuery.add(ResultCapabilities.TYPE_LIVE);
+                if(clientCapabilities.hasType(ResultCapabilities.TYPE_POSTS))
+                    toQuery.add(ResultCapabilities.TYPE_POSTS);
 
-            if(isSubscriptionOptimized) {
-                val sub = StateSubscriptions.instance.getSubscription(channelUrl);
-                if(sub != null) {
-                    if(!sub.shouldFetchStreams()) {
-                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 7 days, skipping live streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
-                        toQuery.remove(ResultCapabilities.TYPE_LIVE);
-                    }
-                    if(!sub.shouldFetchLiveStreams()) {
-                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 15 days, skipping streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
-                        toQuery.remove(ResultCapabilities.TYPE_STREAMS);
-                    }
-                    if(!sub.shouldFetchPosts()) {
-                        Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 5 days, skipping posts [${sub.lastPost.getNowDiffDays()} days ago]");
-                        toQuery.remove(ResultCapabilities.TYPE_POSTS);
-                    }
-                }
-            }
-
-            //Merged pager
-            val pagers = toQuery
-                .parallelStream()
-                .map {
-                    val results = client.getChannelContents(channelUrl, it, ResultCapabilities.ORDER_CHONOLOGICAL) ;
-
-                    when(it) {
-                        ResultCapabilities.TYPE_STREAMS -> {
-                            val streamResults = results.getResults();
-                            if(streamResults.size == 0)
-                                lastStream = OffsetDateTime.MIN;
-                            else
-                                lastStream = results.getResults().firstOrNull()?.datetime;
+                if(isSubscriptionOptimized) {
+                    val sub = StateSubscriptions.instance.getSubscription(channelUrl);
+                    if(sub != null) {
+                        if(!sub.shouldFetchStreams()) {
+                            Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 7 days, skipping live streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
+                            toQuery.remove(ResultCapabilities.TYPE_LIVE);
+                        }
+                        if(!sub.shouldFetchLiveStreams()) {
+                            Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 15 days, skipping streams [${sub.lastLiveStream.getNowDiffDays()} days ago]");
+                            toQuery.remove(ResultCapabilities.TYPE_STREAMS);
+                        }
+                        if(!sub.shouldFetchPosts()) {
+                            Logger.i(TAG, "Subscription [${sub.channel.name}:${channelUrl}] Last livestream > 5 days, skipping posts [${sub.lastPost.getNowDiffDays()} days ago]");
+                            toQuery.remove(ResultCapabilities.TYPE_POSTS);
                         }
                     }
-                    return@map results;
                 }
-                .asSequence()
-                .toList();
 
-            val pager = MultiChronoContentPager(pagers.toTypedArray());
-            pager.initialize();
-            pagerResult = pager;
+                //Merged pager
+                val pagers = toQuery
+                    .parallelStream()
+                    .map {
+                        val results = client.getChannelContents(channelUrl, it, ResultCapabilities.ORDER_CHONOLOGICAL) ;
+
+                        when(it) {
+                            ResultCapabilities.TYPE_STREAMS -> {
+                                val streamResults = results.getResults();
+                                if(streamResults.size == 0)
+                                    lastStream = OffsetDateTime.MIN;
+                                else
+                                    lastStream = results.getResults().firstOrNull()?.datetime;
+                            }
+                        }
+                        return@map results;
+                    }
+                    .asSequence()
+                    .toList();
+
+                val pager = MultiChronoContentPager(pagers.toTypedArray());
+                pager.initialize();
+                pagerResult = pager;
+            }
+            else {
+                pagerResult = client.getChannelContents(channelUrl, ResultCapabilities.TYPE_MIXED, ResultCapabilities.ORDER_CHONOLOGICAL);
+            }
+        } else {
+            pagerResult = if (type == ResultCapabilities.TYPE_SHORTS) {
+                client.getChannelContents(channelUrl, ResultCapabilities.TYPE_SHORTS, ResultCapabilities.ORDER_CHONOLOGICAL);
+            } else {
+                EmptyPager()
+            }
         }
-        else
-            pagerResult = client.getChannelContents(channelUrl, ResultCapabilities.TYPE_MIXED, ResultCapabilities.ORDER_CHONOLOGICAL);
 
         //Subscription optimization
         val sub = StateSubscriptions.instance.getSubscription(channelUrl);
@@ -838,10 +847,10 @@ class StatePlatform {
 
         return pagerResult;
     }
-    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null): IPager<IPlatformContent> {
+    fun getChannelContent(channelUrl: String, isSubscriptionOptimized: Boolean = false, usePooledClients: Int = 0, ignorePlugins: List<String>? = null, type: String? = null): IPager<IPlatformContent> {
         Logger.i(TAG, "Platform - getChannelVideos");
         val baseClient = getChannelClient(channelUrl, ignorePlugins);
-        return getChannelContent(baseClient, channelUrl, isSubscriptionOptimized, usePooledClients);
+        return getChannelContent(baseClient, channelUrl, isSubscriptionOptimized, usePooledClients, type);
     }
     fun getChannelContent(channelUrl: String, type: String?, ordering: String = ResultCapabilities.ORDER_CHONOLOGICAL): IPager<IPlatformContent> {
         val client = getChannelClient(channelUrl);

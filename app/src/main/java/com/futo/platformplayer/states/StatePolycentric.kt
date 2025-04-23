@@ -236,7 +236,7 @@ class StatePolycentric {
         return Pair(didUpdate, listOf(url));
     }
 
-    fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1): IPager<IPlatformContent>? {
+    fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1, type: String? = null): IPager<IPlatformContent>? {
         ensureEnabled()
 
         //TODO: Currently abusing subscription concurrency for parallelism
@@ -248,7 +248,11 @@ class StatePolycentric {
 
                 return@mapNotNull Pair(client, scope.async(Dispatchers.IO) {
                     try {
-                        return@async StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency);
+                        if (type == null) {
+                            return@async StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency);
+                        } else {
+                            return@async StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency, type = type);
+                        }
                     } catch (ex: Throwable) {
                         Logger.e(TAG, "getChannelContent", ex);
                         return@async null;
