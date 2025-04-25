@@ -519,12 +519,16 @@ class StateApp {
                 Logger.i(TAG, "MainApp Started: Fetch [Subscriptions]");
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
-                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true };
-                if (isRateLimitReached) {
+                val isBelowRateLimit = !subRequestCounts.any { clientCount ->
+                    clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true
+                };
+                if (isBelowRateLimit) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
                     delay(5000);
-                    if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
-                        StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+                    scopeOrNull?.let {
+                        if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                            StateSubscriptions.instance.updateSubscriptionFeed(it, false);
+                    }
                 }
                 else
                     Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
