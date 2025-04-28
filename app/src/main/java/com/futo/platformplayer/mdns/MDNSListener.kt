@@ -7,6 +7,7 @@ import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+
 class MDNSListener {
     companion object {
         private val TAG = "MDNSListener"
@@ -60,6 +61,7 @@ class MDNSListener {
                 reuseAddress = true
                 bind(InetSocketAddress(InetAddress.getByName("0.0.0.0"), MulticastPort))
             }
+
             _receiver4 = receiver4
 
             val receiver6 = MulticastSocket(null).apply {
@@ -171,7 +173,9 @@ class MDNSListener {
                         is Inet4Address -> {
                             _receiver4?.let { receiver4 ->
                                 //receiver4.setOption(StandardSocketOptions.IP_MULTICAST_IF, NetworkInterface.getByInetAddress(address))
-                                receiver4.joinGroup(InetSocketAddress(MulticastAddressIPv4, MulticastPort), NetworkInterface.getByInetAddress(address))
+                                val ni = NetworkInterface.getByInetAddress(address)
+                                receiver4.networkInterface = ni
+                                receiver4.joinGroup(InetSocketAddress(MulticastAddressIPv4, MulticastPort), ni)
                             }
 
                             val sender = MulticastSocket(null).apply {
@@ -185,7 +189,9 @@ class MDNSListener {
                         is Inet6Address -> {
                             _receiver6?.let { receiver6 ->
                                 //receiver6.setOption(StandardSocketOptions.IP_MULTICAST_IF, NetworkInterface.getByInetAddress(address))
-                                receiver6.joinGroup(InetSocketAddress(MulticastAddressIPv6, MulticastPort), NetworkInterface.getByInetAddress(address))
+                                val ni = NetworkInterface.getByInetAddress(address)
+                                receiver6.networkInterface = ni
+                                receiver6.joinGroup(InetSocketAddress(MulticastAddressIPv6, MulticastPort), ni)
                             }
 
                             val sender = MulticastSocket(null).apply {
