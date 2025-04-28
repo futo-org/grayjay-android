@@ -3,19 +3,21 @@ package com.futo.platformplayer
 import com.futo.platformplayer.noise.protocol.Noise
 import com.futo.platformplayer.sync.internal.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.selects.select
 import org.junit.Assert.*
 import org.junit.Test
 import java.net.Socket
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class SyncServerTests {
 
     //private val relayHost = "relay.grayjay.app"
     //private val relayKey = "xGbHRzDOvE6plRbQaFgSen82eijF+gxS0yeUaeEErkw="
     private val relayKey = "XlUaSpIlRaCg0TGzZ7JYmPupgUHDqTZXUUBco2K7ejw="
-    private val relayHost = "192.168.1.175"
+    private val relayHost = "192.168.1.138"
     private val relayPort = 9000
 
     /** Creates a client connected to the live relay server. */
@@ -23,7 +25,8 @@ class SyncServerTests {
         onHandshakeComplete: ((SyncSocketSession) -> Unit)? = null,
         onData: ((SyncSocketSession, UByte, UByte, ByteBuffer) -> Unit)? = null,
         onNewChannel: ((SyncSocketSession, ChannelRelayed) -> Unit)? = null,
-        isHandshakeAllowed: ((SyncSocketSession, String, String?) -> Boolean)? = null
+        isHandshakeAllowed: ((LinkType, SyncSocketSession, String, String?, UInt) -> Boolean)? = null,
+        onException: ((Throwable) -> Unit)? = null
     ): SyncSocketSession = withContext(Dispatchers.IO) {
         val p = Noise.createDH("25519")
         p.generateKeyPair()
@@ -43,10 +46,14 @@ class SyncServerTests {
             },
             onData = onData ?: { _, _, _, _ -> },
             onNewChannel = onNewChannel ?: { _, _ -> },
-            isHandshakeAllowed = isHandshakeAllowed ?: { _, _, _ -> true }
+            isHandshakeAllowed = isHandshakeAllowed ?: { _, _, _, _, _ -> true }
         )
         socketSession.authorizable = AlwaysAuthorized()
-        socketSession.startAsInitiator(relayKey)
+        try {
+            socketSession.startAsInitiator(relayKey)
+        } catch (e: Throwable) {
+            onException?.invoke(e)
+        }
         withTimeout(5000.milliseconds) { tcs.await() }
         return@withContext socketSession
     }
@@ -256,6 +263,71 @@ class SyncServerTests {
         assertTrue(success)
         assertNotNull(record)
         assertArrayEquals(largeData, record!!.first)
+        clientA.stop()
+        clientB.stop()
+    }
+
+    @Test
+    fun relayedTransport_WithValidAppId_Success() = runBlocking {
+        // Arrange: Set up clients
+        val allowedAppId = 1234u
+        val tcsB = CompletableDeferred<ChannelRelayed>()
+
+        // Client B requires appId 1234
+        val clientB = createClient(
+            onNewChannel = { _, c -> tcsB.complete(c) },
+            isHandshakeAllowed = { linkType, _, _, _, appId -> linkType == LinkType.Relayed && appId == allowedAppId }
+        )
+
+        val clientA = createClient()
+
+        // Act: Start relayed channel with valid appId
+        val channelTask = async { clientA.startRelayedChannel(clientB.localPublicKey, appId = allowedAppId) }
+        val channelB = withTimeout(5.seconds) { tcsB.await() }
+        withTimeout(5.seconds) { channelTask.await() }
+
+        // Assert: Channel is established
+        assertNotNull("Channel should be created on target with valid appId", channelB)
+
+        // Clean up
+        clientA.stop()
+        clientB.stop()
+    }
+
+    @Test
+    fun relayedTransport_WithInvalidAppId_Fails() = runBlocking {
+        // Arrange: Set up clients
+        val allowedAppId = 1234u
+        val invalidAppId = 5678u
+        val tcsB = CompletableDeferred<ChannelRelayed>()
+
+        // Client B requires appId 1234
+        val clientB = createClient(
+            onNewChannel = { _, c -> tcsB.complete(c) },
+            isHandshakeAllowed = { linkType, _, _, _, appId -> linkType == LinkType.Relayed && appId == allowedAppId },
+            onException = { }
+        )
+
+        val clientA = createClient()
+
+        // Act & Assert: Attempt with invalid appId should fail
+        try {
+            withTimeout(5.seconds) {
+                clientA.startRelayedChannel(clientB.localPublicKey, appId = invalidAppId)
+            }
+            fail("Starting relayed channel with invalid appId should fail")
+        } catch (e: Throwable) {
+            // Expected: The channel creation should time out or fail
+        }
+
+        // Ensure no channel was created on client B
+        val completedTask = select {
+            tcsB.onAwait { "channel" }
+            async { delay(1.seconds); "timeout" }.onAwait { "timeout" }
+        }
+        assertEquals("No channel should be created with invalid appId", "timeout", completedTask)
+
+        // Clean up
         clientA.stop()
         clientB.stop()
     }

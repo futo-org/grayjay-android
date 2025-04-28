@@ -69,7 +69,14 @@ fun warnIfMainThread(context: String) {
 }
 
 fun ensureNotMainThread() {
-    if (Looper.myLooper() == Looper.getMainLooper()) {
+    val isMainLooper = try {
+        Looper.myLooper() == Looper.getMainLooper()
+    } catch (e: Throwable) {
+        //Ignore, for unit tests where its not mocked
+        false
+    }
+
+    if (isMainLooper) {
         Logger.e("Utility", "Throwing exception because a function that should not be called on main thread, is called on main thread")
         throw IllegalStateException("Cannot run on main thread")
     }

@@ -226,7 +226,7 @@ class StateSync {
                             keyPair!!,
                             LittleEndianDataInputStream(socket.getInputStream()),
                             LittleEndianDataOutputStream(socket.getOutputStream()),
-                            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
+                            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode, appId -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode, appId) },
                             onNewChannel = { _, c ->
                                 val remotePublicKey = c.remotePublicKey
                                 if (remotePublicKey == null) {
@@ -297,7 +297,7 @@ class StateSync {
                                                 if (connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
                                                     try {
                                                         Log.v(TAG, "Attempting relayed connection with '$targetKey'.")
-                                                        runBlocking { relaySession.startRelayedChannel(targetKey, null) }
+                                                        runBlocking { relaySession.startRelayedChannel(targetKey, APP_ID, null) }
                                                     } catch (e: Throwable) {
                                                         Log.e(TAG, "Failed to start relayed channel with $targetKey.", e)
                                                     }
@@ -318,7 +318,7 @@ class StateSync {
                             override val isAuthorized: Boolean get() = true
                         }
 
-                        _relaySession!!.startAsInitiator(RELAY_PUBLIC_KEY, null)
+                        _relaySession!!.startAsInitiator(RELAY_PUBLIC_KEY, APP_ID, null)
 
                         Log.i(TAG, "Started relay session.")
                     } catch (e: Throwable) {
@@ -731,8 +731,8 @@ class StateSync {
         )
     }
 
-    private fun isHandshakeAllowed(linkType: LinkType, syncSocketSession: SyncSocketSession, publicKey: String, pairingCode: String?): Boolean {
-        Log.v(TAG, "Check if handshake allowed from '$publicKey'.")
+    private fun isHandshakeAllowed(linkType: LinkType, syncSocketSession: SyncSocketSession, publicKey: String, pairingCode: String?, appId: UInt): Boolean {
+        Log.v(TAG, "Check if handshake allowed from '$publicKey' (app id: $appId).")
         if (publicKey == RELAY_PUBLIC_KEY)
             return true
 
@@ -744,7 +744,7 @@ class StateSync {
             }
         }
 
-        Log.v(TAG, "Check if handshake allowed with pairing code '$pairingCode' with active pairing code '$_pairingCode'.")
+        Log.v(TAG, "Check if handshake allowed with pairing code '$pairingCode' with active pairing code '$_pairingCode' (app id: $appId).")
         if (_pairingCode == null || pairingCode.isNullOrEmpty())
             return false
 
@@ -766,7 +766,7 @@ class StateSync {
                 if (channelSocket != null)
                     session?.removeChannel(channelSocket!!)
             },
-            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
+            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode, appId -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode, appId) },
             onHandshakeComplete = { s ->
                 val remotePublicKey = s.remotePublicKey
                 if (remotePublicKey == null) {
@@ -930,7 +930,7 @@ class StateSync {
                             _remotePendingStatusUpdate[deviceInfo.publicKey] = onStatusUpdate
                         }
                     }
-                    relaySession.startRelayedChannel(deviceInfo.publicKey, deviceInfo.pairingCode)
+                    relaySession.startRelayedChannel(deviceInfo.publicKey, APP_ID, deviceInfo.pairingCode)
                 }
             } else {
                 throw e
@@ -950,7 +950,7 @@ class StateSync {
             }
         }
 
-        session.startAsInitiator(publicKey, pairingCode)
+        session.startAsInitiator(publicKey, APP_ID, pairingCode)
         return session
     }
 
@@ -1008,6 +1008,7 @@ class StateSync {
         val version = 1
         val RELAY_SERVER = "relay.grayjay.app"
         val RELAY_PUBLIC_KEY = "xGbHRzDOvE6plRbQaFgSen82eijF+gxS0yeUaeEErkw="
+        val APP_ID = 0x534A5247u //GRayJaySync (GRJS)
 
         private const val TAG = "StateSync"
         const val PORT = 12315

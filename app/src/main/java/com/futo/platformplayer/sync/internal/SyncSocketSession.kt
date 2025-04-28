@@ -38,12 +38,13 @@ class SyncSocketSession {
     private val _onHandshakeComplete: ((session: SyncSocketSession) -> Unit)?
     private val _onNewChannel: ((session: SyncSocketSession, channel: ChannelRelayed) -> Unit)?
     private val _onChannelEstablished: ((session: SyncSocketSession, channel: ChannelRelayed, isResponder: Boolean) -> Unit)?
-    private val _isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)?
+    private val _isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?, appId: UInt) -> Boolean)?
     private var _cipherStatePair: CipherStatePair? = null
     private var _remotePublicKey: String? = null
     val remotePublicKey: String? get() = _remotePublicKey
     private var _started: Boolean = false
     private val _localKeyPair: DHState
+    private var _thread: Thread? = null
     private var _localPublicKey: String
     val localPublicKey: String get() = _localPublicKey
     private val _onData: ((session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit)?
@@ -87,7 +88,7 @@ class SyncSocketSession {
         onData: ((session: SyncSocketSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) -> Unit)? = null,
         onNewChannel: ((session: SyncSocketSession, channel: ChannelRelayed) -> Unit)? = null,
         onChannelEstablished: ((session: SyncSocketSession, channel: ChannelRelayed, isResponder: Boolean) -> Unit)? = null,
-        isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?) -> Boolean)? = null
+        isHandshakeAllowed: ((linkType: LinkType, session: SyncSocketSession, remotePublicKey: String, pairingCode: String?, appId: UInt) -> Boolean)? = null
     ) {
         _inputStream = inputStream
         _outputStream = outputStream
@@ -105,31 +106,35 @@ class SyncSocketSession {
         _localPublicKey = Base64.getEncoder().encodeToString(localPublicKey)
     }
 
-    fun startAsInitiator(remotePublicKey: String, pairingCode: String? = null) {
+    fun startAsInitiator(remotePublicKey: String, appId: UInt = 0u, pairingCode: String? = null) {
         _started = true
-        try {
-            handshakeAsInitiator(remotePublicKey, pairingCode)
-            _onHandshakeComplete?.invoke(this)
-            receiveLoop()
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to run as initiator", e)
-        } finally {
-            stop()
-        }
+        _thread = Thread {
+            try {
+                handshakeAsInitiator(remotePublicKey, appId, pairingCode)
+                _onHandshakeComplete?.invoke(this)
+                receiveLoop()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to run as initiator", e)
+            } finally {
+                stop()
+            }
+        }.apply { start() }
     }
 
     fun startAsResponder() {
         _started = true
-        try {
-            if (handshakeAsResponder()) {
-                _onHandshakeComplete?.invoke(this)
-                receiveLoop()
+        _thread = Thread {
+            try {
+                if (handshakeAsResponder()) {
+                    _onHandshakeComplete?.invoke(this)
+                    receiveLoop()
+                }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to run as responder", e)
+            } finally {
+                stop()
             }
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to run as responder", e)
-        } finally {
-            stop()
-        }
+        }.apply { start() }
     }
 
     private fun receiveLoop() {
@@ -187,12 +192,13 @@ class SyncSocketSession {
         _onClose?.invoke(this)
         _inputStream.close()
         _outputStream.close()
+        _thread = null
         _cipherStatePair?.sender?.destroy()
         _cipherStatePair?.receiver?.destroy()
         Logger.i(TAG, "Session closed")
     }
 
-    private fun handshakeAsInitiator(remotePublicKey: String, pairingCode: String?) {
+    private fun handshakeAsInitiator(remotePublicKey: String, appId: UInt, pairingCode: String?) {
         performVersionCheck()
 
         val initiator = HandshakeState(StateSync.protocolName, HandshakeState.INITIATOR)
@@ -218,7 +224,8 @@ class SyncSocketSession {
         val mainBuffer = ByteArray(512)
         val mainLength = initiator.writeMessage(mainBuffer, 0, null, 0, 0)
 
-        val messageData = ByteBuffer.allocate(4 + pairingMessageLength + mainLength).order(ByteOrder.LITTLE_ENDIAN)
+        val messageData = ByteBuffer.allocate(4 + 4 + pairingMessageLength + mainLength).order(ByteOrder.LITTLE_ENDIAN)
+        messageData.putInt(appId.toInt())
         messageData.putInt(pairingMessageLength)
         if (pairingMessageLength > 0) messageData.put(pairingMessage)
         messageData.put(mainBuffer, 0, mainLength)
@@ -250,9 +257,10 @@ class SyncSocketSession {
         _inputStream.readFully(message)
         val messageBuffer = ByteBuffer.wrap(message).order(ByteOrder.LITTLE_ENDIAN)
 
+        val appId = messageBuffer.int.toUInt()
         val pairingMessageLength = messageBuffer.int
         val pairingMessage = if (pairingMessageLength > 0) ByteArray(pairingMessageLength).also { messageBuffer.get(it) } else byteArrayOf()
-        val mainLength = messageSize - 4 - pairingMessageLength
+        val mainLength = messageSize - 4 - 4 - pairingMessageLength
         val mainMessage = ByteArray(mainLength).also { messageBuffer.get(it) }
 
         var pairingCode: String? = null
@@ -267,6 +275,15 @@ class SyncSocketSession {
 
         val plaintext = ByteArray(512)
         responder.readMessage(mainMessage, 0, mainLength, plaintext, 0)
+        val remoteKeyBytes = ByteArray(responder.remotePublicKey.publicKeyLength)
+        responder.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
+        val remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
+
+        val isAllowedToConnect = remotePublicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Direct, this, remotePublicKey, pairingCode, appId) ?: true)
+        if (!isAllowedToConnect) {
+            stop()
+            return false
+        }
 
         val responseBuffer = ByteArray(512)
         val responseLength = responder.writeMessage(responseBuffer, 0, null, 0, 0)
@@ -274,13 +291,8 @@ class SyncSocketSession {
         _outputStream.write(responseBuffer, 0, responseLength)
 
         _cipherStatePair = responder.split()
-        val remoteKeyBytes = ByteArray(responder.remotePublicKey.publicKeyLength)
-        responder.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
-        _remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
-
-        return (_remotePublicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Direct, this, _remotePublicKey!!, pairingCode) ?: true)).also {
-            if (!it) stop()
-        }
+        _remotePublicKey = remotePublicKey
+        return true
     }
 
     private fun performVersionCheck() {
@@ -400,13 +412,14 @@ class SyncSocketSession {
                 val remoteVersion = data.int
                 val connectionId = data.long
                 val requestId = data.int
+                val appId = data.int.toUInt()
                 val publicKeyBytes = ByteArray(32).also { data.get(it) }
                 val pairingMessageLength = data.int
-                if (pairingMessageLength > 128) throw IllegalArgumentException("Pairing message length ($pairingMessageLength) exceeds maximum (128)")
+                if (pairingMessageLength > 128) throw IllegalArgumentException("Pairing message length ($pairingMessageLength) exceeds maximum (128) (app id: $appId)")
                 val pairingMessage = if (pairingMessageLength > 0) ByteArray(pairingMessageLength).also { data.get(it) } else ByteArray(0)
                 val channelMessageLength = data.int
                 if (data.remaining() != channelMessageLength) {
-                    Logger.e(TAG, "Invalid packet size. Expected ${52 + pairingMessageLength + 4 + channelMessageLength}, got ${data.capacity()}")
+                    Logger.e(TAG, "Invalid packet size. Expected ${52 + pairingMessageLength + 4 + channelMessageLength}, got ${data.capacity()} (app id: $appId)")
                     return
                 }
                 val channelHandshakeMessage = ByteArray(channelMessageLength).also { data.get(it) }
@@ -420,7 +433,7 @@ class SyncSocketSession {
                     val length = pairingProtocol.readMessage(pairingMessage, 0, pairingMessageLength, plaintext, 0)
                     String(plaintext, 0, length, Charsets.UTF_8)
                 } else null
-                val isAllowed = publicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Relayed, this, publicKey, pairingCode) ?: true)
+                val isAllowed = publicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Relayed, this, publicKey, pairingCode, appId) ?: true)
                 if (!isAllowed) {
                     val rp = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
                     rp.putInt(2) // Status code for not allowed
@@ -876,14 +889,14 @@ class SyncSocketSession {
         return deferred.await()
     }
 
-    suspend fun startRelayedChannel(publicKey: String, pairingCode: String? = null): ChannelRelayed? {
+    suspend fun startRelayedChannel(publicKey: String, appId: UInt = 0u, pairingCode: String? = null): ChannelRelayed? {
         val requestId = generateRequestId()
         val deferred = CompletableDeferred<ChannelRelayed>()
         val channel = ChannelRelayed(this, _localKeyPair, publicKey, true)
         _onNewChannel?.invoke(this, channel)
         _pendingChannels[requestId] = channel to deferred
         try {
-            channel.sendRequestTransport(requestId, publicKey, pairingCode)
+            channel.sendRequestTransport(requestId, publicKey, appId, pairingCode)
         } catch (e: Exception) {
             _pendingChannels.remove(requestId)?.let { it.first.close(); it.second.completeExceptionally(e) }
             throw e

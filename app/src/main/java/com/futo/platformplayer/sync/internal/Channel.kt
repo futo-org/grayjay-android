@@ -246,7 +246,7 @@ class ChannelRelayed(
         }
     }
 
-    fun sendRequestTransport(requestId: Int, publicKey: String, pairingCode: String? = null) {
+    fun sendRequestTransport(requestId: Int, publicKey: String, appId: UInt, pairingCode: String? = null) {
         throwIfDisposed()
 
         synchronized(sendLock) {
@@ -270,10 +270,11 @@ class ChannelRelayed(
                 0 to ByteArray(0)
             }
 
-            val packetSize = 4 + 32 + 4 + pairingMessageLength + 4 + channelBytesWritten
+            val packetSize = 4 + 4 + 32 + 4 + pairingMessageLength + 4 + channelBytesWritten
             val packet = ByteArray(packetSize)
             ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).apply {
                 putInt(requestId)
+                putInt(appId.toInt())
                 put(publicKeyBytes)
                 putInt(pairingMessageLength)
                 if (pairingMessageLength > 0) put(pairingMessage)
