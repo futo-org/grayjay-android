@@ -135,6 +135,7 @@
     <string name="not_ready">Not ready</string>
     <string name="connect">Connect</string>
     <string name="stop">Stop</string>
+    <string name="stop_casting">Stop casting</string>
     <string name="start">Start</string>
     <string name="storage_space">Storage Space</string>
     <string name="downloads">Downloads</string>
