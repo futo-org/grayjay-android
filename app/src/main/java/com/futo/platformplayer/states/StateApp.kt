@@ -411,7 +411,7 @@ class StateApp {
         }
 
         if (Settings.instance.synchronization.enabled) {
-            StateSync.instance.start()
+            StateSync.instance.start(context)
         }
 
         Logger.onLogSubmitted.subscribe {

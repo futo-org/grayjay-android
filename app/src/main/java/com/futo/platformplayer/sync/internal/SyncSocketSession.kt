@@ -121,6 +121,19 @@ class SyncSocketSession {
         }.apply { start() }
     }
 
+    fun runAsInitiator(remotePublicKey: String, appId: UInt = 0u, pairingCode: String? = null) {
+        _started = true
+        try {
+            handshakeAsInitiator(remotePublicKey, appId, pairingCode)
+            _onHandshakeComplete?.invoke(this)
+            receiveLoop()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to run as initiator", e)
+        } finally {
+            stop()
+        }
+    }
+
     fun startAsResponder() {
         _started = true
         _thread = Thread {

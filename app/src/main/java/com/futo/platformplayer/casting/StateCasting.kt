@@ -4,10 +4,12 @@ import android.app.AlertDialog
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
+import android.os.Build
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
-import android.util.Xml
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
@@ -40,8 +42,6 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.mdns.DnsService
-import com.futo.platformplayer.mdns.ServiceDiscoverer
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
@@ -55,7 +55,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.io.ByteArrayInputStream
 import java.net.InetAddress
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -84,48 +83,15 @@ class StateCasting {
     private var _audioExecutor: JSRequestExecutor? = null
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
-    val _serviceDiscoverer = ServiceDiscoverer(arrayOf(
-        "_googlecast._tcp.local",
-        "_airplay._tcp.local",
-        "_fastcast._tcp.local",
-        "_fcast._tcp.local"
-    )) { handleServiceUpdated(it) }
-
+    private var _nsdManager: NsdManager? = null
     val isCasting: Boolean get() = activeDevice != null;
 
-    private fun handleServiceUpdated(services: List<DnsService>) {
-        for (s in services) {
-            //TODO: Addresses IPv4 only?
-            val addresses = s.addresses.toTypedArray()
-            val port = s.port.toInt()
-            var name = s.texts.firstOrNull { it.startsWith("md=") }?.substring("md=".length)
-            if (s.name.endsWith("._googlecast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._googlecast._tcp.local".length)
-                }
-
-                addOrUpdateChromeCastDevice(name, addresses, port)
-            } else if (s.name.endsWith("._airplay._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._airplay._tcp.local".length)
-                }
-
-                addOrUpdateAirPlayDevice(name, addresses, port)
-            } else if (s.name.endsWith("._fastcast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._fastcast._tcp.local".length)
-                }
-
-                addOrUpdateFastCastDevice(name, addresses, port)
-            } else if (s.name.endsWith("._fcast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._fcast._tcp.local".length)
-                }
-
-                addOrUpdateFastCastDevice(name, addresses, port)
-            }
-        }
-    }
+    private val _discoveryListeners = mapOf(
+        "_googlecast._tcp" to createDiscoveryListener(::addOrUpdateChromeCastDevice),
+        "_airplay._tcp" to createDiscoveryListener(::addOrUpdateAirPlayDevice),
+        "_fastcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice),
+        "_fcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice)
+    )
 
     fun handleUrl(context: Context, url: String) {
         val uri = Uri.parse(url)
@@ -197,23 +163,25 @@ class StateCasting {
         enableDeveloper(true);
 
         Logger.i(TAG, "CastingService started.");
+
+        _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     }
 
     @Synchronized
     fun startDiscovering() {
-        try {
-            _serviceDiscoverer.start()
-        } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to start ServiceDiscoverer", e)
+        _nsdManager?.apply {
+            _discoveryListeners.forEach {
+                discoverServices(it.key, NsdManager.PROTOCOL_DNS_SD, it.value)
+            }
         }
     }
 
     @Synchronized
     fun stopDiscovering() {
-        try {
-            _serviceDiscoverer.stop()
-        } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to stop ServiceDiscoverer", e)
+        _nsdManager?.apply {
+            _discoveryListeners.forEach {
+                stopServiceDiscovery(it.value)
+            }
         }
     }
 
@@ -239,6 +207,77 @@ class StateCasting {
         _castServer.removeAllHandlers();
 
         Logger.i(TAG, "CastingService stopped.")
+
+        _nsdManager = null
+    }
+
+    private fun createDiscoveryListener(addOrUpdate: (String, Array<InetAddress>, Int) -> Unit): NsdManager.DiscoveryListener {
+        return object : NsdManager.DiscoveryListener {
+            override fun onDiscoveryStarted(regType: String) {
+                Log.d(TAG, "Service discovery started for $regType")
+            }
+
+            override fun onDiscoveryStopped(serviceType: String) {
+                Log.i(TAG, "Discovery stopped: $serviceType")
+            }
+
+            override fun onServiceLost(service: NsdServiceInfo) {
+                Log.e(TAG, "service lost: $service")
+                // TODO: Handle service lost, e.g., remove device
+            }
+
+            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
+                _nsdManager?.stopServiceDiscovery(this)
+            }
+
+            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
+                _nsdManager?.stopServiceDiscovery(this)
+            }
+
+            override fun onServiceFound(service: NsdServiceInfo) {
+                Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
+                val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    service.hostAddresses.toTypedArray()
+                } else {
+                    arrayOf(service.host)
+                }
+                addOrUpdate(service.serviceName, addresses, service.port)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
+                        override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
+                            Log.v(TAG, "onServiceUpdated: $serviceInfo")
+                            addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port)
+                        }
+
+                        override fun onServiceLost() {
+                            Log.v(TAG, "onServiceLost: $service")
+                            // TODO: Handle service lost
+                        }
+
+                        override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
+                            Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
+                        }
+
+                        override fun onServiceInfoCallbackUnregistered() {
+                            Log.v(TAG, "onServiceInfoCallbackUnregistered")
+                        }
+                    })
+                } else {
+                    _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
+                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                            Log.v(TAG, "Resolve failed: $errorCode")
+                        }
+
+                        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                            Log.v(TAG, "Resolve Succeeded: $serviceInfo")
+                            addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port)
+                        }
+                    })
+                }
+            }
+        }
     }
 
     private val _castingDialogLock = Any();
