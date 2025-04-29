@@ -69,7 +69,6 @@ class StateCasting {
     private var _started = false;
 
     var devices: HashMap<String, CastingDevice> = hashMapOf();
-    var rememberedDevices: ArrayList<CastingDevice> = arrayListOf();
     val onDeviceAdded = Event1<CastingDevice>();
     val onDeviceChanged = Event1<CastingDevice>();
     val onDeviceRemoved = Event1<CastingDevice>();
@@ -155,9 +154,6 @@ class StateCasting {
         _resumeCastingDevice = null;
 
         Logger.i(TAG, "CastingService starting...");
-
-        rememberedDevices.clear();
-        rememberedDevices.addAll(_storage.deviceInfos.map { deviceFromCastingDeviceInfo(it) });
 
         _castServer.start();
         enableDeveloper(true);
@@ -370,9 +366,6 @@ class StateCasting {
             invokeInMainScopeIfRequired { onActiveDeviceTimeChanged.emit(it) };
         };
 
-        addRememberedDevice(device);
-        Logger.i(TAG, "Device added to active discovery. Active discovery now contains ${_storage.getDevicesCount()} devices.")
-
         try {
             device.start();
         } catch (e: Throwable) {
@@ -394,21 +387,22 @@ class StateCasting {
         return addRememberedDevice(device);
     }
 
+    fun getRememberedCastingDevices(): List<CastingDevice> {
+        return _storage.getDevices().map { deviceFromCastingDeviceInfo(it) }
+    }
+
+    fun getRememberedCastingDeviceNames(): List<String> {
+        return _storage.getDeviceNames()
+    }
+
     fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
         val deviceInfo = device.getDeviceInfo()
-        val foundInfo = _storage.addDevice(deviceInfo)
-        if (foundInfo == deviceInfo) {
-            rememberedDevices.add(device);
-            return foundInfo;
-        }
-
-        return foundInfo;
+        return _storage.addDevice(deviceInfo)
     }
 
     fun removeRememberedDevice(device: CastingDevice) {
-        val name = device.name ?: return;
-        _storage.removeDevice(name);
-        rememberedDevices.remove(device);
+        val name = device.name ?: return
+        _storage.removeDevice(name)
     }
 
     private fun invokeInMainScopeIfRequired(action: () -> Unit){
