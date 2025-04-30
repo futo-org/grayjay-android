@@ -14,10 +14,14 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.services.DownloadService
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
@@ -53,6 +57,15 @@ class DownloadsFragment : MainFragment() {
     override fun onResume() {
         super.onResume()
         _view?.reloadUI();
+
+        if(StateDownloads.instance.getDownloading().any { it.state == VideoDownload.State.QUEUED } &&
+            !StateDownloads.instance.getDownloading().any { it.state == VideoDownload.State.DOWNLOADING } &&
+            Settings.instance.downloads.shouldDownload()) {
+            Logger.w(TAG, "Detected queued download, while not downloading, attempt recreating service");
+            StateApp.withContext {
+                DownloadService.getOrCreateService(it);
+            }
+        }
 
         StateDownloads.instance.onDownloadsChanged.subscribe(this) {
             lifecycleScope.launch(Dispatchers.Main) {
