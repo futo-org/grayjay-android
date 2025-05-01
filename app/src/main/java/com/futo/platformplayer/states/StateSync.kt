@@ -460,10 +460,10 @@ class StateSync {
                         Log.i(TAG, "Started relay session.")
                     } catch (e: Throwable) {
                         Log.e(TAG, "Relay session failed.", e)
-                        Thread.sleep(5000)
                     } finally {
                         _relaySession?.stop()
                         _relaySession = null
+                        Thread.sleep(5000)
                     }
                 }
             }.apply { start() }
@@ -737,6 +737,9 @@ class StateSync {
                 val json = String(dataBody, Charsets.UTF_8);
                 val history = Serializer.json.decodeFromString<List<HistoryVideo>>(json);
                 Logger.i(TAG, "SyncHistory received ${history.size} videos from ${remotePublicKey}");
+                if (history.size == 1) {
+                    Logger.i(TAG, "SyncHistory received update video '${history[0].video.name}' (url: ${history[0].video.url}) at timestamp ${history[0].position}");
+                }
 
                 var lastHistory = OffsetDateTime.MIN;
                 for(video in history){

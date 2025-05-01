@@ -218,7 +218,9 @@ class SyncSession : IAuthorizable {
                 sent = true
                 break
             } catch (e: Throwable) {
-                Logger.w(TAG, "Packet failed to send (opcode = $opcode, subOpcode = $subOpcode)", e)
+                Logger.w(TAG, "Packet failed to send (opcode = $opcode, subOpcode = $subOpcode), closing channel", e)
+                channel.close()
+                removeChannel(channel)
             }
         }
 
