@@ -194,7 +194,10 @@ class StateSync {
                         addOrUpdate(service.serviceName, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             service.hostAddresses.toTypedArray()
                         } else {
-                            arrayOf(service.host)
+                            if(service.host != null)
+                                arrayOf(service.host);
+                            else
+                                arrayOf();
                         }, service.port, service.attributes)
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {

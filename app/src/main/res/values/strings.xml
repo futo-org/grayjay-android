@@ -339,7 +339,7 @@
     <string name="configure_if_background_download_should_be_used">Configure if background download should be used</string>
     <string name="configure_the_auto_updater">Configure the auto updater</string>
     <string name="configure_when_updates_should_be_downloaded">Configure when updates should be downloaded</string>
-    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded</string>
+    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded, if they should only be downloaded on unmetered networks (wifi/ethernet)</string>
     <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Creates a zip file with your data which can be imported by opening it with Grayjay</string>
     <string name="default_audio_quality">Default Audio Quality</string>
     <string name="default_playback_speed">Default Playback Speed</string>
