@@ -176,7 +176,11 @@ class StateCasting {
     fun stopDiscovering() {
         _nsdManager?.apply {
             _discoveryListeners.forEach {
-                stopServiceDiscovery(it.value)
+                try {
+                    stopServiceDiscovery(it.value)
+                } catch (e: Throwable) {
+                    //Ignored
+                }
             }
         }
     }

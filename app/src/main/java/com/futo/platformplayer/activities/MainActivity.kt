@@ -1,6 +1,7 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -613,8 +614,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             UIDialogs.toast(this, "No external file permissions\nExporting and auto backups will not work");
     }*/
 
+    private var _qrCodeLoadingDialog: AlertDialog? = null
+
     fun showUrlQrCodeScanner() {
         try {
+            _qrCodeLoadingDialog = UIDialogs.showDialog(this, R.drawable.ic_loader_animated, true,
+                "Launching QR scanner",
+                "Make sure your camera is enabled", null, -2,
+                UIDialogs.Action("Close", {
+                    _qrCodeLoadingDialog?.dismiss()
+                    _qrCodeLoadingDialog = null
+                }));
+
             val integrator = IntentIntegrator(this)
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
             integrator.setPrompt(getString(R.string.scan_a_qr_code))
@@ -640,6 +651,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.onPause();
         Logger.v(TAG, "onPause")
         _isVisible = false;
+
+        _qrCodeLoadingDialog?.dismiss()
+        _qrCodeLoadingDialog = null
     }
 
     override fun onStop() {
