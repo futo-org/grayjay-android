@@ -2,9 +2,11 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.allViews
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -23,6 +25,8 @@ import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.ToggleBar
+import com.futo.platformplayer.views.others.RadioGroupView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,6 +118,25 @@ class ContentSearchResultsFragment : MainFragment() {
             }
 
             setPreviewsEnabled(Settings.instance.search.previewFeedItems);
+
+            initializeToolbar();
+        }
+
+        fun initializeToolbar(){
+            if(_toolbarContentView.allViews.any { it is RadioGroupView })
+                _toolbarContentView.removeView(_toolbarContentView.allViews.find { it is RadioGroupView });
+
+            val radioGroup = RadioGroupView(context);
+            radioGroup.onSelectedChange.subscribe {
+
+                if (it.size != 1)
+                    setSearchType(SearchType.VIDEO);
+                else
+                setSearchType((it[0] ?: SearchType.VIDEO) as SearchType);
+            }
+            radioGroup?.setOptions(listOf(Pair("Media", SearchType.VIDEO), Pair("Creators", SearchType.CREATOR), Pair("Playlists", SearchType.PLAYLIST)), listOf(_searchType), false, true)
+
+            _toolbarContentView.addView(radioGroup);
         }
 
         override fun cleanup() {

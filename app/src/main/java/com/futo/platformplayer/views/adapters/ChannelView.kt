@@ -45,6 +45,10 @@ open class ChannelView : LinearLayout {
         _buttonSubscribe = findViewById(R.id.button_subscribe);
         _platformIndicator = findViewById(R.id.platform_indicator);
 
+        //_textName.setOnClickListener { currentChannel?.let { onClick.emit(it) }; }
+        //_creatorThumbnail.setOnClickListener { currentChannel?.let { onClick.emit(it) }; }
+        //_textMetadata.setOnClickListener { currentChannel?.let { onClick.emit(it) }; }
+
         if (_tiny) {
             _buttonSubscribe.visibility = View.GONE;
             _textMetadata.visibility = View.GONE;
@@ -66,8 +70,11 @@ open class ChannelView : LinearLayout {
     open fun bind(content: IPlatformContent) {
         isClickable = true;
 
-        if(content !is IPlatformChannelContent)
-            return
+        if(content !is IPlatformChannelContent) {
+            currentChannel = null;
+            return;
+        }
+        currentChannel = content;
 
         _creatorThumbnail.setThumbnail(content.thumbnail, false);
         _textName.text = content.name;
