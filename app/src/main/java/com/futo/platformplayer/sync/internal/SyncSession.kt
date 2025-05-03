@@ -129,9 +129,9 @@ class SyncSession : IAuthorizable {
 
     fun close() {
         synchronized(_channels) {
-            _channels.forEach { it.close() }
-            _channels.clear()
-        }
+            _channels.toTypedArray()
+        }.forEach { it.close() }
+
         _onClose(this)
     }
 

@@ -279,7 +279,7 @@ fun <T> findNewIndex(originalArr: List<T>, newArr: List<T>, item: T): Int{
         }
     }
     if(newIndex < 0)
-        return originalArr.size;
+        return newArr.size;
     else
         return newIndex;
 }
