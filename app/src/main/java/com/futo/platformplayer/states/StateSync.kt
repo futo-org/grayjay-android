@@ -361,8 +361,7 @@ class StateSync {
                         _relaySession = SyncSocketSession(
                             (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
                             keyPair!!,
-                            LittleEndianDataInputStream(socket.getInputStream()),
-                            LittleEndianDataOutputStream(socket.getOutputStream()),
+                            socket,
                             isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode, appId -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode, appId) },
                             onNewChannel = { _, c ->
                                 val remotePublicKey = c.remotePublicKey
@@ -407,12 +406,14 @@ class StateSync {
 
                                             relaySession.publishConnectionInformation(unconnectedAuthorizedDevices, PORT, Settings.instance.synchronization.discoverThroughRelay, false, false, Settings.instance.synchronization.discoverThroughRelay && Settings.instance.synchronization.connectThroughRelay)
 
+                                            Logger.v(TAG, "Requesting ${unconnectedAuthorizedDevices.size} devices connection information")
                                             val connectionInfos = runBlocking { relaySession.requestBulkConnectionInfo(unconnectedAuthorizedDevices) }
+                                            Logger.v(TAG, "Received ${connectionInfos.size} devices connection information")
 
                                             for ((targetKey, connectionInfo) in connectionInfos) {
                                                 val potentialLocalAddresses = connectionInfo.ipv4Addresses.union(connectionInfo.ipv6Addresses)
                                                     .filter { it != connectionInfo.remoteIp }
-                                                if (connectionInfo.allowLocalDirect) {
+                                                if (connectionInfo.allowLocalDirect && Settings.instance.synchronization.connectLocalDirectThroughRelay) {
                                                     Thread {
                                                         try {
                                                             Log.v(TAG, "Attempting to connect directly, locally to '$targetKey'.")
@@ -433,10 +434,10 @@ class StateSync {
 
                                                 if (connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
                                                     try {
-                                                        Log.v(TAG, "Attempting relayed connection with '$targetKey'.")
+                                                        Logger.v(TAG, "Attempting relayed connection with '$targetKey'.")
                                                         runBlocking { relaySession.startRelayedChannel(targetKey, APP_ID, null) }
                                                     } catch (e: Throwable) {
-                                                        Log.e(TAG, "Failed to start relayed channel with $targetKey.", e)
+                                                        Logger.e(TAG, "Failed to start relayed channel with $targetKey.", e)
                                                     }
                                                 }
                                             }
@@ -444,7 +445,7 @@ class StateSync {
                                             Thread.sleep(15000)
                                         }
                                     } catch (e: Throwable) {
-                                        Log.e(TAG, "Unhandled exception in relay session.", e)
+                                        Logger.e(TAG, "Unhandled exception in relay session.", e)
                                         relaySession.stop()
                                     }
                                 }.start()
@@ -585,16 +586,33 @@ class StateSync {
 
                 Logger.i(TAG, "Received SyncSessionData from $remotePublicKey");
 
+                val subscriptionPackageString = StateSubscriptions.instance.getSyncSubscriptionsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptions b (size: ${subscriptionPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptions, subscriptionPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptions (size: ${subscriptionPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
-                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
-                session.sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
+                val subscriptionGroupPackageString = StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups b (size: ${subscriptionGroupPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, subscriptionGroupPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups (size: ${subscriptionGroupPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncWatchLater, Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false)));
+                val syncPlaylistPackageString = StatePlaylists.instance.getSyncPlaylistsPackageString()
+                Logger.i(TAG, "syncStateExchange syncPlaylists b (size: ${syncPlaylistPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncPlaylists, syncPlaylistPackageString)
+                Logger.i(TAG, "syncStateExchange syncPlaylists (size: ${syncPlaylistPackageString.length})")
+
+                val watchLaterPackageString = Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false))
+                Logger.i(TAG, "syncStateExchange syncWatchLater b (size: ${watchLaterPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncWatchLater, watchLaterPackageString);
+                Logger.i(TAG, "syncStateExchange syncWatchLater (size: ${watchLaterPackageString.length})")
 
                 val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory b (size: ${recentHistory.size})")
                 if(recentHistory.isNotEmpty())
                     session.sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory (size: ${recentHistory.size})")
             }
 
             GJSyncOpcodes.syncExport -> {
@@ -825,7 +843,17 @@ class StateSync {
                 }
             },
             dataHandler = { it, opcode, subOpcode, data ->
-                handleData(it, opcode, subOpcode, data)
+                val dataCopy = ByteArray(data.remaining())
+                data.get(dataCopy)
+
+                StateApp.instance.scopeOrNull?.launch {
+                    try {
+                        handleData(it, opcode, subOpcode, ByteBuffer.wrap(dataCopy))
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Exception occurred while handling data, closing session", e)
+                        it.close()
+                    }
+                }
             },
             remoteDeviceName
         )
@@ -860,8 +888,7 @@ class StateSync {
         return SyncSocketSession(
             (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
             keyPair!!,
-            LittleEndianDataInputStream(socket.getInputStream()),
-            LittleEndianDataOutputStream(socket.getOutputStream()),
+            socket,
             onClose = { s ->
                 if (channelSocket != null)
                     session?.removeChannel(channelSocket!!)

@@ -192,6 +192,8 @@ class ChannelRelayed(
         val HEADER_SIZE = 6
         val MAX_DATA_PER_PACKET = SyncSocketSession.MAXIMUM_PACKET_SIZE - HEADER_SIZE - CONNECTION_ID_SIZE - ENCRYPTION_OVERHEAD - 16
 
+        Logger.v(TAG, "Send (opcode: ${opcode}, subOpcode: ${subOpcode}, data.size: ${data?.remaining()})")
+
         if (actualCount > MAX_DATA_PER_PACKET && data != null) {
             val streamId = session.generateStreamId()
             val totalSize = actualCount
@@ -332,5 +334,9 @@ class ChannelRelayed(
             val transport = handshakeState!!.split()
             completeHandshake(remoteVersion, transport)
         }
+    }
+
+    companion object {
+        private val TAG = "Channel"
     }
 }
