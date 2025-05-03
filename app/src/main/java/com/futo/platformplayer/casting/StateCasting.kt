@@ -181,7 +181,7 @@ class StateCasting {
                 try {
                     stopServiceDiscovery(it.value)
                 } catch (e: Throwable) {
-                    //Ignored
+                    Logger.w(TAG, "Failed to stop service discovery", e)
                 }
             }
         }
