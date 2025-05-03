@@ -10,6 +10,7 @@ import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateSync
 import kotlinx.coroutines.CompletableDeferred
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Inet4Address
@@ -22,6 +23,7 @@ import java.nio.ByteOrder
 import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.GZIPOutputStream
 import kotlin.math.min
 import kotlin.system.measureTimeMillis
 import kotlin.time.measureTime
@@ -361,27 +363,37 @@ class SyncSocketSession {
     fun generateStreamId(): Int = synchronized(_streamIdGeneratorLock) { _streamIdGenerator++ }
     private fun generateRequestId(): Int = synchronized(_requestIdGeneratorLock) { _requestIdGenerator++ }
 
-    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer, contentEncoding: ContentEncoding? = null) {
         ensureNotMainThread()
 
         Logger.v(TAG, "send (opcode: ${opcode}, subOpcode: ${subOpcode}, data.remaining(): ${data.remaining()})")
 
-        if (data.remaining() + HEADER_SIZE > MAXIMUM_PACKET_SIZE) {
+        var processedData = data
+        if (contentEncoding == ContentEncoding.Gzip) {
+            val compressedStream = ByteArrayOutputStream()
+            GZIPOutputStream(compressedStream).use { gzipStream ->
+                gzipStream.write(data.array(), data.position(), data.remaining())
+                gzipStream.finish()
+            }
+            processedData = ByteBuffer.wrap(compressedStream.toByteArray())
+        }
+
+        if (processedData.remaining() + HEADER_SIZE > MAXIMUM_PACKET_SIZE) {
             val segmentSize = MAXIMUM_PACKET_SIZE - HEADER_SIZE
             val segmentData = ByteArray(segmentSize)
             var sendOffset = 0
             val id = generateStreamId()
 
-            while (sendOffset < data.remaining()) {
-                val bytesRemaining = data.remaining() - sendOffset
+            while (sendOffset < processedData.remaining()) {
+                val bytesRemaining = processedData.remaining() - sendOffset
                 var bytesToSend: Int
                 var segmentPacketSize: Int
                 val streamOp: StreamOpcode
 
                 if (sendOffset == 0) {
                     streamOp = StreamOpcode.START
-                    bytesToSend = segmentSize - 4 - 4 - 1 - 1
-                    segmentPacketSize = bytesToSend + 4 + 4 + 1 + 1
+                    bytesToSend = segmentSize - 4 - HEADER_SIZE
+                    segmentPacketSize = bytesToSend + 4 + HEADER_SIZE
                 } else {
                     bytesToSend = minOf(segmentSize - 4 - 4, bytesRemaining)
                     streamOp = if (bytesToSend >= bytesRemaining) StreamOpcode.END else StreamOpcode.DATA
@@ -390,12 +402,13 @@ class SyncSocketSession {
 
                 ByteBuffer.wrap(segmentData).order(ByteOrder.LITTLE_ENDIAN).apply {
                     putInt(id)
-                    putInt(if (streamOp == StreamOpcode.START) data.remaining() else sendOffset)
+                    putInt(if (streamOp == StreamOpcode.START) processedData.remaining() else sendOffset)
                     if (streamOp == StreamOpcode.START) {
                         put(opcode.toByte())
                         put(subOpcode.toByte())
+                        put(contentEncoding?.value?.toByte() ?: ContentEncoding.Raw.value.toByte())
                     }
-                    put(data.array(), data.position() + sendOffset, bytesToSend)
+                    put(processedData.array(), processedData.position() + sendOffset, bytesToSend)
                 }
 
                 send(Opcode.STREAM.value, streamOp.value, ByteBuffer.wrap(segmentData, 0, segmentPacketSize))
@@ -404,18 +417,19 @@ class SyncSocketSession {
         } else {
             synchronized(_sendLockObject) {
                 ByteBuffer.wrap(_sendBuffer).order(ByteOrder.LITTLE_ENDIAN).apply {
-                    putInt(data.remaining() + 2)
+                    putInt(processedData.remaining() + HEADER_SIZE - 4)
                     put(opcode.toByte())
                     put(subOpcode.toByte())
-                    put(data.array(), data.position(), data.remaining())
+                    put(contentEncoding?.value?.toByte() ?: ContentEncoding.Raw.value.toByte())
+                    put(processedData.array(), processedData.position(), processedData.remaining())
                 }
 
-                val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 4, data.remaining() + HEADER_SIZE)
+                val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 4, processedData.remaining() + HEADER_SIZE)
                 val sendDuration = measureTimeMillis {
                     ByteBuffer.wrap(_sendBufferEncrypted, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(len)
                     _outputStream.write(_sendBufferEncrypted, 0, 4 + len)
                 }
-                Logger.v(TAG, "_outputStream.write (opcode: ${opcode}, subOpcode: ${subOpcode}, data.remaining(): ${data.remaining()}, sendDuration: ${sendDuration})")
+                Logger.v(TAG, "_outputStream.write (opcode: ${opcode}, subOpcode: ${subOpcode}, processedData.remaining(): ${processedData.remaining()}, sendDuration: ${sendDuration})")
             }
         }
     }
@@ -428,6 +442,7 @@ class SyncSocketSession {
             ByteBuffer.wrap(_sendBuffer, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(2)
             _sendBuffer.asUByteArray()[4] = opcode
             _sendBuffer.asUByteArray()[5] = subOpcode
+            _sendBuffer.asUByteArray()[6] = ContentEncoding.Raw.value
 
             //Logger.i(TAG, "Encrypting message (opcode = ${opcode}, subOpcode = ${subOpcode}, size = ${HEADER_SIZE})")
 
@@ -446,7 +461,7 @@ class SyncSocketSession {
     private fun handleData(data: ByteBuffer, sourceChannel: ChannelRelayed?) {
         val length = data.remaining()
         if (length < HEADER_SIZE)
-            throw Exception("Packet must be at least 6 bytes (header size)")
+            throw Exception("Packet must be at least ${HEADER_SIZE} bytes (header size)")
 
         val size = data.int
         if (size != length - 4)
@@ -454,9 +469,10 @@ class SyncSocketSession {
 
         val opcode = data.get().toUByte()
         val subOpcode = data.get().toUByte()
+        val contentEncoding = data.get().toUByte()
 
         Logger.v(TAG, "handleData (opcode: ${opcode}, subOpcode: ${subOpcode}, data.size: ${data.remaining()}, sourceChannel.connectionId: ${sourceChannel?.connectionId})")
-        handlePacket(opcode, subOpcode, data, sourceChannel)
+        handlePacket(opcode, subOpcode, data, contentEncoding, sourceChannel)
     }
 
     private fun handleRequest(subOpcode: UByte, data: ByteBuffer, sourceChannel: ChannelRelayed?) {
@@ -804,8 +820,18 @@ class SyncSocketSession {
         }
     }
 
-    private fun handlePacket(opcode: UByte, subOpcode: UByte, data: ByteBuffer, sourceChannel: ChannelRelayed?) {
+    private fun handlePacket(opcode: UByte, subOpcode: UByte, d: ByteBuffer, contentEncoding: UByte, sourceChannel: ChannelRelayed?) {
         Logger.i(TAG, "Handle packet (opcode = ${opcode}, subOpcode = ${subOpcode})")
+
+        var data = d
+        if (contentEncoding == ContentEncoding.Gzip.value) {
+            val compressedStream = ByteArrayOutputStream()
+            GZIPOutputStream(compressedStream).use { gzipStream ->
+                gzipStream.write(data.array(), data.position(), data.remaining())
+                gzipStream.finish()
+            }
+            data = ByteBuffer.wrap(compressedStream.toByteArray())
+        }
 
         when (opcode) {
             Opcode.PING.value -> {
@@ -844,8 +870,9 @@ class SyncSocketSession {
                         val expectedSize = data.int
                         val op = data.get().toUByte()
                         val subOp = data.get().toUByte()
+                        val ce = data.get().toUByte()
 
-                        val syncStream = SyncStream(expectedSize, op, subOp)
+                        val syncStream = SyncStream(expectedSize, op, subOp, ce)
                         if (data.remaining() > 0) {
                             syncStream.add(data.array(), data.position(), data.remaining())
                         }
@@ -890,7 +917,7 @@ class SyncSocketSession {
                             throw Exception("After sync stream end, the stream must be complete")
                         }
 
-                        handlePacket(syncStream.opcode, syncStream.subOpcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) }, sourceChannel)
+                        handlePacket(syncStream.opcode, syncStream.subOpcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) }, contentEncoding, sourceChannel)
                     }
                 }
                 Opcode.DATA.value -> {
@@ -1070,7 +1097,7 @@ class SyncSocketSession {
         send(Opcode.NOTIFY.value, NotifyOpcode.CONNECTION_INFO.value, publishBytes)
     }
 
-    suspend fun publishRecords(consumerPublicKeys: List<String>, key: String, data: ByteArray): Boolean {
+    suspend fun publishRecords(consumerPublicKeys: List<String>, key: String, data: ByteArray, contentEncoding: ContentEncoding? = null): Boolean {
         val keyBytes = key.toByteArray(Charsets.UTF_8)
         if (key.isEmpty() || keyBytes.size > 32) throw IllegalArgumentException("Key must be 1-32 bytes")
         if (consumerPublicKeys.isEmpty()) throw IllegalArgumentException("At least one consumer required")
@@ -1125,7 +1152,7 @@ class SyncSocketSession {
                 }
             }
             packet.rewind()
-            send(Opcode.REQUEST.value, RequestOpcode.BULK_PUBLISH_RECORD.value, packet)
+            send(Opcode.REQUEST.value, RequestOpcode.BULK_PUBLISH_RECORD.value, packet, contentEncoding = contentEncoding)
         } catch (e: Exception) {
             _pendingPublishRequests.remove(requestId)?.completeExceptionally(e)
             throw e
@@ -1245,6 +1272,6 @@ class SyncSocketSession {
         private const val TAG = "SyncSocketSession"
         const val MAXIMUM_PACKET_SIZE = 65535 - 16
         const val MAXIMUM_PACKET_SIZE_ENCRYPTED = MAXIMUM_PACKET_SIZE + 16
-        const val HEADER_SIZE = 6
+        const val HEADER_SIZE = 7
     }
 }

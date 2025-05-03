@@ -196,14 +196,14 @@ class SyncSession : IAuthorizable {
     }
 
     fun sendData(subOpcode: UByte, data: String) {
-        send(Opcode.DATA.value, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)))
+        send(Opcode.DATA.value, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
     fun send(opcode: UByte, subOpcode: UByte, data: String) {
-        send(opcode, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)))
+        send(opcode, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
-    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null) {
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null, contentEncoding: ContentEncoding? = null) {
         val channels = synchronized(_channels) { _channels.sortedBy { it.linkType.ordinal }.toList() }
         if (channels.isEmpty()) {
             //TODO: Should this throw?
@@ -214,7 +214,7 @@ class SyncSession : IAuthorizable {
         var sent = false
         for (channel in channels) {
             try {
-                channel.send(opcode, subOpcode, data)
+                channel.send(opcode, subOpcode, data, contentEncoding)
                 sent = true
                 break
             } catch (e: Throwable) {
