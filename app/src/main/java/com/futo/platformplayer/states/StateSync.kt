@@ -846,7 +846,7 @@ class StateSync {
                 val dataCopy = ByteArray(data.remaining())
                 data.get(dataCopy)
 
-                StateApp.instance.scopeOrNull?.launch {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
                         handleData(it, opcode, subOpcode, ByteBuffer.wrap(dataCopy))
                     } catch (e: Throwable) {
