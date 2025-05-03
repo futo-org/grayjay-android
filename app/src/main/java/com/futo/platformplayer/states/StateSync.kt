@@ -556,7 +556,7 @@ class StateSync {
                     added.map { it.channel.name }.joinToString("\n"));
 
 
-        if(pack.subscriptions.isNotEmpty()) {
+        if(pack.subscriptionRemovals.isNotEmpty()) {
             for (subRemoved in pack.subscriptionRemovals) {
                 val removed = StateSubscriptions.instance.applySubscriptionRemovals(pack.subscriptionRemovals);
                 if(removed.size > 3) {
@@ -653,12 +653,14 @@ class StateSync {
                 val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
                 handleSyncSubscriptionPackage(session, subPackage);
 
-                val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
+                if(subPackage.subscriptions.size > 0) {
+                    val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
 
-                val sesData = getSyncSessionData(remotePublicKey);
-                if(newestSub > sesData.lastSubscription) {
-                    sesData.lastSubscription = newestSub;
-                    saveSyncSessionData(sesData);
+                    val sesData = getSyncSessionData(remotePublicKey);
+                    if (newestSub > sesData.lastSubscription) {
+                        sesData.lastSubscription = newestSub;
+                        saveSyncSessionData(sesData);
+                    }
                 }
             }
 
