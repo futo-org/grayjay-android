@@ -185,17 +185,24 @@ class ChannelRelayed(
         }
     }
 
-    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, contentEncoding: ContentEncoding?) {
+    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, ce: ContentEncoding?) {
         throwIfDisposed()
 
+        var contentEncoding: ContentEncoding? = ce
         var processedData = data
         if (data != null && contentEncoding == ContentEncoding.Gzip) {
-            val compressedStream = ByteArrayOutputStream()
-            GZIPOutputStream(compressedStream).use { gzipStream ->
-                gzipStream.write(data.array(), data.position(), data.remaining())
-                gzipStream.finish()
+            val isGzipSupported = opcode == Opcode.DATA.value
+            if (isGzipSupported) {
+                val compressedStream = ByteArrayOutputStream()
+                GZIPOutputStream(compressedStream).use { gzipStream ->
+                    gzipStream.write(data.array(), data.position(), data.remaining())
+                    gzipStream.finish()
+                }
+                processedData = ByteBuffer.wrap(compressedStream.toByteArray())
+            } else {
+                Logger.w(TAG, "Gzip requested but not supported on this (opcode = ${opcode}, subOpcode = ${subOpcode}), falling back.")
+                contentEncoding = ContentEncoding.Raw
             }
-            processedData = ByteBuffer.wrap(compressedStream.toByteArray())
         }
 
         val ENCRYPTION_OVERHEAD = 16
