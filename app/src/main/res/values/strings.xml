@@ -384,6 +384,8 @@
     <string name="connect_through_relay_description">Allow devices to be connected to through the relay</string>
     <string name="connect_local_direct_through_relay">Connect direct through relay</string>
     <string name="connect_local_direct_through_relay_description">Allow devices to be directly locally connected to through information discovered from the relay</string>
+    <string name="local_connections">Local connections</string>
+    <string name="local_connections_description">Allow device to be directly locally connected</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
     <string name="volume_slider_descr">Enable slide gesture to change volume</string>

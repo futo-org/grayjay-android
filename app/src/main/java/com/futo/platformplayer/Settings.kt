@@ -948,6 +948,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.connect_local_direct_through_relay, FieldForm.TOGGLE, R.string.connect_local_direct_through_relay_description, 3)
         var connectLocalDirectThroughRelay: Boolean = true;
+
+        @FormField(R.string.local_connections, FieldForm.TOGGLE, R.string.local_connections_description, 3)
+        var localConnections: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)

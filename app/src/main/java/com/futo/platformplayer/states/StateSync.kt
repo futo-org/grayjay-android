@@ -296,29 +296,31 @@ class StateSync {
 
         Logger.i(TAG, "Sync key pair initialized (public key = ${publicKey})")
 
-        _serverStarted = true
-        _thread = Thread {
-            try {
-                val serverSocket = ServerSocket(PORT)
-                _serverSocket = serverSocket
+        if (Settings.instance.synchronization.localConnections) {
+            _serverStarted = true
+            _thread = Thread {
+                try {
+                    val serverSocket = ServerSocket(PORT)
+                    _serverSocket = serverSocket
 
-                Log.i(TAG, "Running on port ${PORT} (TCP)")
+                    Log.i(TAG, "Running on port ${PORT} (TCP)")
 
-                while (_started) {
-                    val socket = serverSocket.accept()
-                    val session = createSocketSession(socket, true)
-                    session.startAsResponder()
+                    while (_started) {
+                        val socket = serverSocket.accept()
+                        val session = createSocketSession(socket, true)
+                        session.startAsResponder()
+                    }
+                } catch (e: Throwable) {
+                    _serverStarted = false
+                    Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        onServerBindFail.invoke()
+                    }
+                } finally {
+                    _serverStarted = false
                 }
-            } catch (e: Throwable) {
-                _serverStarted = false
-                Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
-                    onServerBindFail.invoke()
-                }
-            } finally {
-                _serverStarted = false
-            }
-        }.apply { start() }
+            }.apply { start() }
+        }
 
         if (Settings.instance.synchronization.connectLast) {
             _connectThread = Thread {
@@ -490,7 +492,7 @@ class StateSync {
     }
 
     fun showFailedToBindDialogIfNecessary(context: Context) {
-        if (!_serverStarted) {
+        if (!_serverStarted && Settings.instance.synchronization.localConnections) {
             try {
                 UIDialogs.showDialogOk(context, R.drawable.ic_warning, "Local discovery unavailable, port was in use")
             } catch (e: Throwable) {
