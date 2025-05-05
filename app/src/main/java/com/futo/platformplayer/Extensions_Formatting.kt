@@ -399,9 +399,11 @@ fun String.matchesDomain(queryDomain: String): Boolean {
 
 fun String.getSubdomainWildcardQuery(): String {
     val domainParts = this.split(".");
-    val sldParts = "." + domainParts[domainParts.size - 2].lowercase() + "." + domainParts[domainParts.size - 1].lowercase();
-    if(slds.contains(sldParts))
-        return "." + domainParts.drop(domainParts.size - 3).joinToString(".");
+    var wildcardDomain = if(domainParts.size > 2)
+        "." + domainParts.drop(1).joinToString(".")
     else
-        return "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+        "." + domainParts.joinToString(".");
+    if(slds.contains(wildcardDomain.lowercase()))
+        "." + domainParts.joinToString(".");
+    return wildcardDomain;
 }
