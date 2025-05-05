@@ -29,6 +29,7 @@ import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.activities.SettingsActivity.Companion.settingsActivityClosed
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -411,7 +412,27 @@ class StateApp {
         }
 
         if (Settings.instance.synchronization.enabled) {
-            StateSync.instance.start(context)
+            StateSync.instance.start(context, {
+                try {
+                    UIDialogs.toast("Failed to start sync, port in use")
+                } catch (e: Throwable) {
+                    //Ignored
+                }
+            })
+        }
+
+        settingsActivityClosed.subscribe {
+            if (Settings.instance.synchronization.enabled) {
+                StateSync.instance.start(context, {
+                    try {
+                        UIDialogs.toast("Failed to start sync, port in use")
+                    } catch (e: Throwable) {
+                        //Ignored
+                    }
+                })
+            } else {
+                StateSync.instance.stop()
+            }
         }
 
         Logger.onLogSubmitted.subscribe {
@@ -707,6 +728,7 @@ class StateApp {
 
         StatePlayer.instance.closeMediaSession();
         StateCasting.instance.stop();
+        StateSync.instance.stop();
         StatePlayer.dispose();
         Companion.dispose();
         _fileLogConsumer?.close();

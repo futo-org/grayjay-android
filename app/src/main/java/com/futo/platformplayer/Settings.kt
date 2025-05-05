@@ -926,7 +926,7 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Synchronization {
         @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enabled_description, 1)
-        var enabled: Boolean = true;
+        var enabled: Boolean = false;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
         var broadcast: Boolean = false;

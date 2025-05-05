@@ -7,6 +7,7 @@ import android.os.Build
 import android.util.Log
 import com.futo.platformplayer.LittleEndianDataInputStream
 import com.futo.platformplayer.LittleEndianDataOutputStream
+import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
@@ -77,10 +78,11 @@ class StateSync {
     private var _serverSocket: ServerSocket? = null
     private var _thread: Thread? = null
     private var _connectThread: Thread? = null
-    private var _started = false
+    @Volatile private var _started = false
     private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
     private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
     private val _lastConnectTimesIp: MutableMap<String, Long> = mutableMapOf()
+    private var _serverStarted = false
     //TODO: Should sync mdns and casting mdns be merged?
     //TODO: Decrease interval that devices are updated
     //TODO: Send less data
@@ -91,6 +93,117 @@ class StateSync {
     private var _threadRelay: Thread? = null
     private val _remotePendingStatusUpdate = mutableMapOf<String, (complete: Boolean?, message: String) -> Unit>()
     private var _nsdManager: NsdManager? = null
+    private var _discoveryListener: NsdManager.DiscoveryListener = object : NsdManager.DiscoveryListener {
+        override fun onDiscoveryStarted(regType: String) {
+            Log.d(TAG, "Service discovery started for $regType")
+        }
+
+        override fun onDiscoveryStopped(serviceType: String) {
+            Log.i(TAG, "Discovery stopped: $serviceType")
+        }
+
+        override fun onServiceLost(service: NsdServiceInfo) {
+            Log.e(TAG, "service lost: $service")
+            // TODO: Handle service lost, e.g., remove device
+        }
+
+        override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+            Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
+            try {
+                _nsdManager?.stopServiceDiscovery(this)
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to stop service discovery", e)
+            }
+        }
+
+        override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
+            Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
+            try {
+                _nsdManager?.stopServiceDiscovery(this)
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to stop service discovery", e)
+            }
+        }
+
+        fun addOrUpdate(name: String, adrs: Array<InetAddress>, port: Int, attributes: Map<String, ByteArray>) {
+            if (!Settings.instance.synchronization.connectDiscovered) {
+                return
+            }
+
+            val urlSafePkey = attributes.get("pk")?.decodeToString() ?: return
+            val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
+            val syncDeviceInfo = SyncDeviceInfo(pkey, adrs.map { it.hostAddress }.toTypedArray(), port, null)
+            val authorized = isAuthorized(pkey)
+
+            if (authorized && !isConnected(pkey)) {
+                val now = System.currentTimeMillis()
+                val lastConnectTime = synchronized(_lastConnectTimesMdns) {
+                    _lastConnectTimesMdns[pkey] ?: 0
+                }
+
+                //Connect once every 30 seconds, max
+                if (now - lastConnectTime > 30000) {
+                    synchronized(_lastConnectTimesMdns) {
+                        _lastConnectTimesMdns[pkey] = now
+                    }
+
+                    Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
+
+                    try {
+                        connect(syncDeviceInfo)
+                    } catch (e: Throwable) {
+                        Logger.i(TAG, "Failed to connect to $pkey", e)
+                    }
+                }
+            }
+        }
+
+        override fun onServiceFound(service: NsdServiceInfo) {
+            Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
+            addOrUpdate(service.serviceName, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                service.hostAddresses.toTypedArray()
+            } else {
+                if(service.host != null)
+                    arrayOf(service.host);
+                else
+                    arrayOf();
+            }, service.port, service.attributes)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
+                    override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
+                        Log.v(TAG, "onServiceUpdated: $serviceInfo")
+                        addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port, serviceInfo.attributes)
+                    }
+
+                    override fun onServiceLost() {
+                        Log.v(TAG, "onServiceLost: $service")
+                        // TODO: Handle service lost
+                    }
+
+                    override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
+                        Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
+                    }
+
+                    override fun onServiceInfoCallbackUnregistered() {
+                        Log.v(TAG, "onServiceInfoCallbackUnregistered")
+                    }
+                })
+            } else {
+                _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
+                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                        Log.v(TAG, "Resolve failed: $errorCode")
+                    }
+
+                    override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                        Log.v(TAG, "Resolve Succeeded: $serviceInfo")
+                        addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port, serviceInfo.attributes)
+                    }
+                })
+            }
+        }
+    }
+
     private val _registrationListener = object : NsdManager.RegistrationListener {
         override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
             Log.v(TAG, "onServiceRegistered: ${serviceInfo.serviceName}")
@@ -122,7 +235,7 @@ class StateSync {
         }
     }
 
-    fun start(context: Context) {
+    fun start(context: Context, onServerBindFail: () -> Unit) {
         if (_started) {
             Logger.i(TAG, "Already started.")
             return
@@ -132,116 +245,7 @@ class StateSync {
 
         if (Settings.instance.synchronization.connectDiscovered) {
             _nsdManager?.apply {
-                discoverServices("_gsync._tcp", NsdManager.PROTOCOL_DNS_SD, object : NsdManager.DiscoveryListener {
-                    override fun onDiscoveryStarted(regType: String) {
-                        Log.d(TAG, "Service discovery started for $regType")
-                    }
-
-                    override fun onDiscoveryStopped(serviceType: String) {
-                        Log.i(TAG, "Discovery stopped: $serviceType")
-                    }
-
-                    override fun onServiceLost(service: NsdServiceInfo) {
-                        Log.e(TAG, "service lost: $service")
-                        // TODO: Handle service lost, e.g., remove device
-                    }
-
-                    override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                        Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
-                        try {
-                            _nsdManager?.stopServiceDiscovery(this)
-                        } catch (e: Throwable) {
-                            Logger.w(TAG, "Failed to stop service discovery", e)
-                        }
-                    }
-
-                    override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                        Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
-                        try {
-                            _nsdManager?.stopServiceDiscovery(this)
-                        } catch (e: Throwable) {
-                            Logger.w(TAG, "Failed to stop service discovery", e)
-                        }
-                    }
-
-                    fun addOrUpdate(name: String, adrs: Array<InetAddress>, port: Int, attributes: Map<String, ByteArray>) {
-                        if (!Settings.instance.synchronization.connectDiscovered) {
-                            return
-                        }
-
-                        val urlSafePkey = attributes.get("pk")?.decodeToString() ?: return
-                        val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
-                        val syncDeviceInfo = SyncDeviceInfo(pkey, adrs.map { it.hostAddress }.toTypedArray(), port, null)
-                        val authorized = isAuthorized(pkey)
-
-                        if (authorized && !isConnected(pkey)) {
-                            val now = System.currentTimeMillis()
-                            val lastConnectTime = synchronized(_lastConnectTimesMdns) {
-                                _lastConnectTimesMdns[pkey] ?: 0
-                            }
-
-                            //Connect once every 30 seconds, max
-                            if (now - lastConnectTime > 30000) {
-                                synchronized(_lastConnectTimesMdns) {
-                                    _lastConnectTimesMdns[pkey] = now
-                                }
-
-                                Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
-
-                                try {
-                                    connect(syncDeviceInfo)
-                                } catch (e: Throwable) {
-                                    Logger.i(TAG, "Failed to connect to $pkey", e)
-                                }
-                            }
-                        }
-                    }
-
-                    override fun onServiceFound(service: NsdServiceInfo) {
-                        Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
-                        addOrUpdate(service.serviceName, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            service.hostAddresses.toTypedArray()
-                        } else {
-                            if(service.host != null)
-                                arrayOf(service.host);
-                            else
-                                arrayOf();
-                        }, service.port, service.attributes)
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
-                                override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
-                                    Log.v(TAG, "onServiceUpdated: $serviceInfo")
-                                    addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port, serviceInfo.attributes)
-                                }
-
-                                override fun onServiceLost() {
-                                    Log.v(TAG, "onServiceLost: $service")
-                                    // TODO: Handle service lost
-                                }
-
-                                override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
-                                    Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
-                                }
-
-                                override fun onServiceInfoCallbackUnregistered() {
-                                    Log.v(TAG, "onServiceInfoCallbackUnregistered")
-                                }
-                            })
-                        } else {
-                            _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
-                                override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                                    Log.v(TAG, "Resolve failed: $errorCode")
-                                }
-
-                                override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-                                    Log.v(TAG, "Resolve Succeeded: $serviceInfo")
-                                    addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port, serviceInfo.attributes)
-                                }
-                            })
-                        }
-                    }
-                })
+                discoverServices("_gsync._tcp", NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
             }
         }
 
@@ -292,6 +296,7 @@ class StateSync {
 
         Logger.i(TAG, "Sync key pair initialized (public key = ${publicKey})")
 
+        _serverStarted = true
         _thread = Thread {
             try {
                 val serverSocket = ServerSocket(PORT)
@@ -305,8 +310,13 @@ class StateSync {
                     session.startAsResponder()
                 }
             } catch (e: Throwable) {
+                _serverStarted = false
                 Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
-                UIDialogs.toast("Failed to start sync, port in use")
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    onServerBindFail.invoke()
+                }
+            } finally {
+                _serverStarted = false
             }
         }.apply { start() }
 
@@ -476,6 +486,31 @@ class StateSync {
                     }
                 }
             }.apply { start() }
+        }
+    }
+
+    fun showFailedToBindDialogIfNecessary(context: Context) {
+        if (!_serverStarted) {
+            try {
+                UIDialogs.showDialogOk(context, R.drawable.ic_warning, "Local discovery unavailable, port was in use")
+            } catch (e: Throwable) {
+                //Ignored
+            }
+        }
+    }
+
+    fun confirmStarted(context: Context, onStarted: () -> Unit, onNotStarted: () -> Unit, onServerBindFail: () -> Unit) {
+        if (!_started) {
+            UIDialogs.showConfirmationDialog(context, "Sync has not been enabled yet, would you like to enable sync?", {
+                Settings.instance.synchronization.enabled = true
+                StateSync.instance.start(context, onServerBindFail)
+                Settings.instance.save()
+                onStarted.invoke()
+            }, {
+                onNotStarted.invoke()
+            })
+        } else {
+            onStarted.invoke()
         }
     }
 
@@ -1034,19 +1069,31 @@ class StateSync {
 
     fun stop() {
         _started = false
-        _nsdManager?.unregisterService(_registrationListener)
 
+        try {
+            _nsdManager?.stopServiceDiscovery(_discoveryListener)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to stop discovery listener", e)
+        }
+
+        try {
+            _nsdManager?.unregisterService(_registrationListener)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to unregister service", e)
+        }
+
+        _relaySession?.stop()
         _serverSocket?.close()
         _serverSocket = null
 
-        _thread?.interrupt()
-        _thread = null
-        _connectThread?.interrupt()
-        _connectThread = null
-        _threadRelay?.interrupt()
-        _threadRelay = null
+        synchronized(_sessions) {
+            _sessions.values.forEach { it.close() }
+            _sessions.clear()
+        }
 
-        _relaySession?.stop()
+        _thread = null
+        _connectThread = null
+        _threadRelay = null
         _relaySession = null
     }
 

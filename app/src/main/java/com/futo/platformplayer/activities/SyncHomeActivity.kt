@@ -89,6 +89,14 @@ class SyncHomeActivity : AppCompatActivity() {
                 updateEmptyVisibility()
             }
         }
+
+        StateSync.instance.confirmStarted(this, {
+            StateSync.instance.showFailedToBindDialogIfNecessary(this@SyncHomeActivity)
+        }, {
+            finish()
+        }, {
+            StateSync.instance.showFailedToBindDialogIfNecessary(this@SyncHomeActivity)
+        })
     }
 
     override fun onDestroy() {
