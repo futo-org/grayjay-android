@@ -477,8 +477,6 @@ class StateSync {
                 }
             }.apply { start() }
         }
-
-
     }
 
     private fun getDeviceName(): String {
