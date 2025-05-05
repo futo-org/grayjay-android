@@ -447,14 +447,14 @@ class SyncSocketSession {
         ensureNotMainThread()
 
         synchronized(_sendLockObject) {
-            ByteBuffer.wrap(_sendBuffer, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(2)
+            ByteBuffer.wrap(_sendBuffer, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(HEADER_SIZE - 4)
             _sendBuffer.asUByteArray()[4] = opcode
             _sendBuffer.asUByteArray()[5] = subOpcode
             _sendBuffer.asUByteArray()[6] = ContentEncoding.Raw.value
 
             //Logger.i(TAG, "Encrypting message (opcode = ${opcode}, subOpcode = ${subOpcode}, size = ${HEADER_SIZE})")
 
-            val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 0, HEADER_SIZE)
+            val len = _cipherStatePair!!.sender.encryptWithAd(null, _sendBuffer, 0, _sendBufferEncrypted, 4, HEADER_SIZE)
             //Logger.i(TAG, "Sending encrypted message (size = ${len})")
 
             ByteBuffer.wrap(_sendBufferEncrypted, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(len)

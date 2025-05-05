@@ -33,10 +33,18 @@ fun Boolean?.toYesNo(): String {
 fun InetAddress?.toUrlAddress(): String {
     return when (this) {
         is Inet6Address -> {
-            "[${hostAddress}]"
+            val hostAddr = this.hostAddress ?: throw Exception("Invalid address: hostAddress is null")
+            val index = hostAddr.indexOf('%')
+            if (index != -1) {
+                val addrPart = hostAddr.substring(0, index)
+                val scopeId = hostAddr.substring(index + 1)
+                "[${addrPart}%25${scopeId}]" // %25 is URL-encoded '%'
+            } else {
+                "[$hostAddr]"
+            }
         }
         is Inet4Address -> {
-            hostAddress
+            this.hostAddress ?: throw Exception("Invalid address: hostAddress is null")
         }
         else -> {
             throw Exception("Invalid address type")

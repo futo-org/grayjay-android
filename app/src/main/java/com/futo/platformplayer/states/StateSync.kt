@@ -148,12 +148,20 @@ class StateSync {
 
                     override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
                         Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
-                        _nsdManager?.stopServiceDiscovery(this)
+                        try {
+                            _nsdManager?.stopServiceDiscovery(this)
+                        } catch (e: Throwable) {
+                            Logger.w(TAG, "Failed to stop service discovery", e)
+                        }
                     }
 
                     override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
                         Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
-                        _nsdManager?.stopServiceDiscovery(this)
+                        try {
+                            _nsdManager?.stopServiceDiscovery(this)
+                        } catch (e: Throwable) {
+                            Logger.w(TAG, "Failed to stop service discovery", e)
+                        }
                     }
 
                     fun addOrUpdate(name: String, adrs: Array<InetAddress>, port: Int, attributes: Map<String, ByteArray>) {
@@ -469,8 +477,6 @@ class StateSync {
                 }
             }.apply { start() }
         }
-
-
     }
 
     private fun getDeviceName(): String {
