@@ -3,6 +3,7 @@ package com.futo.platformplayer.sync.internal
 import android.os.Build
 import com.futo.platformplayer.LittleEndianDataInputStream
 import com.futo.platformplayer.LittleEndianDataOutputStream
+import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
@@ -11,6 +12,7 @@ import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.internal.ChannelRelayed.Companion
 import kotlinx.coroutines.CompletableDeferred
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -24,6 +26,7 @@ import java.nio.ByteOrder
 import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.math.min
 import kotlin.system.measureTimeMillis
@@ -837,12 +840,13 @@ class SyncSocketSession {
             if (!isGzipSupported)
                 throw Exception("Failed to handle packet, gzip is not supported for this opcode (opcode = ${opcode}, subOpcode = ${subOpcode}, data.length = ${data.remaining()}).")
 
-            val compressedStream = ByteArrayOutputStream()
-            GZIPOutputStream(compressedStream).use { gzipStream ->
-                gzipStream.write(data.array(), data.position(), data.remaining())
-                gzipStream.finish()
+            val compressedStream = ByteArrayInputStream(data.array(), data.position(), data.remaining());
+            var outputStream = ByteArrayOutputStream();
+            GZIPInputStream(compressedStream).use { gzipStream ->
+                gzipStream.copyToOutputStream(outputStream);
+                gzipStream.close();
             }
-            data = ByteBuffer.wrap(compressedStream.toByteArray())
+            data = ByteBuffer.wrap(outputStream.toByteArray())
         }
 
         when (opcode) {
