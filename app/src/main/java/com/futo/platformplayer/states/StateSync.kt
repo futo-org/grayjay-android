@@ -66,6 +66,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.Base64
 import java.util.Locale
+import kotlin.math.min
 import kotlin.system.measureTimeMillis
 
 class StateSync {
@@ -372,6 +373,9 @@ class StateSync {
 
         if (Settings.instance.synchronization.discoverThroughRelay) {
             _threadRelay = Thread {
+                var backoffs: Array<Long> = arrayOf(1000, 5000, 10000, 20000)
+                var backoffIndex = 0;
+
                 while (_started) {
                     try {
                         Log.i(TAG, "Starting relay session...")
@@ -417,6 +421,8 @@ class StateSync {
                             },
                             onClose = { socketClosed = true },
                             onHandshakeComplete = { relaySession ->
+                                backoffIndex = 0
+
                                 Thread {
                                     try {
                                         while (_started && !socketClosed) {
@@ -484,7 +490,7 @@ class StateSync {
                     } finally {
                         _relaySession?.stop()
                         _relaySession = null
-                        Thread.sleep(5000)
+                        Thread.sleep(backoffs[min(backoffs.size - 1, backoffIndex++)])
                     }
                 }
             }.apply { start() }

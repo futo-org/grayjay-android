@@ -18,6 +18,7 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import androidx.core.view.isVisible
+import com.futo.platformplayer.UIDialogs
 
 class DeviceViewHolder : ViewHolder {
     private val _layoutDevice: FrameLayout;
@@ -55,9 +56,17 @@ class DeviceViewHolder : ViewHolder {
 
         val connect = {
             device?.let { dev ->
-                StateCasting.instance.activeDevice?.stopCasting();
-                StateCasting.instance.connectDevice(dev);
-                onConnect.emit(dev);
+                if (dev.isReady) {
+                    StateCasting.instance.activeDevice?.stopCasting()
+                    StateCasting.instance.connectDevice(dev)
+                    onConnect.emit(dev)
+                } else {
+                    try {
+                        view.context?.let { UIDialogs.toast(it, "Device not ready, may be offline") }
+                    } catch (e: Throwable) {
+                        //Ignored
+                    }
+                }
             }
         }
 
@@ -84,7 +93,7 @@ class DeviceViewHolder : ViewHolder {
         }
 
         _textName.text = d.name;
-        _imageOnline.visibility = if (isOnlineDevice) View.VISIBLE else View.GONE
+        _imageOnline.visibility = if (isOnlineDevice && d.isReady) View.VISIBLE else View.GONE
 
         if (!d.isReady) {
             _imageLoader.visibility = View.GONE;
