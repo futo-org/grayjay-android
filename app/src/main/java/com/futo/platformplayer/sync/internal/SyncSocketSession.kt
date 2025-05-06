@@ -11,6 +11,8 @@ import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.internal.ChannelRelayed.Companion
+import com.futo.polycentric.core.base64ToByteArray
+import com.futo.polycentric.core.toBase64
 import kotlinx.coroutines.CompletableDeferred
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -169,7 +171,7 @@ class SyncSocketSession {
         var totalBytesReceived: Int = 0
         while (totalBytesReceived < size) {
             val bytesReceived = _inputStream.read(buffer, offset + totalBytesReceived, size - totalBytesReceived)
-            if (bytesReceived == 0)
+            if (bytesReceived <= 0)
                 throw Exception("Socket disconnected")
             totalBytesReceived += bytesReceived
         }
@@ -291,7 +293,7 @@ class SyncSocketSession {
         _cipherStatePair = initiator.split()
         val remoteKeyBytes = ByteArray(initiator.remotePublicKey.publicKeyLength)
         initiator.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
-        _remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
+        _remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes).base64ToByteArray().toBase64()
     }
 
     private fun handshakeAsResponder(): Boolean {
@@ -345,7 +347,7 @@ class SyncSocketSession {
         _outputStream.write(responseBuffer, 0, 4 + responseLength)
 
         _cipherStatePair = responder.split()
-        _remotePublicKey = remotePublicKey
+        _remotePublicKey = remotePublicKey.base64ToByteArray().toBase64()
         return true
     }
 
@@ -440,7 +442,7 @@ class SyncSocketSession {
                     ByteBuffer.wrap(_sendBufferEncrypted, 0, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(len)
                     _outputStream.write(_sendBufferEncrypted, 0, 4 + len)
                 }
-                //Logger.v(TAG, "_outputStream.write (opcode: ${opcode}, subOpcode: ${subOpcode}, processedData.remaining(): ${processedData.remaining()}, sendDuration: ${sendDuration})")
+                Logger.v(TAG, "_outputStream.write (opcode: ${opcode}, subOpcode: ${subOpcode}, processedData.remaining(): ${processedData.remaining()}, sendDuration: ${sendDuration})")
             }
         }
     }
@@ -840,11 +842,14 @@ class SyncSocketSession {
             if (!isGzipSupported)
                 throw Exception("Failed to handle packet, gzip is not supported for this opcode (opcode = ${opcode}, subOpcode = ${subOpcode}, data.length = ${data.remaining()}).")
 
-            val compressedStream = ByteArrayInputStream(data.array(), data.position(), data.remaining());
-            var outputStream = ByteArrayOutputStream();
+            val compressedStream = ByteArrayInputStream(data.array(), data.position(), data.remaining())
+            val outputStream = ByteArrayOutputStream()
             GZIPInputStream(compressedStream).use { gzipStream ->
-                gzipStream.copyToOutputStream(outputStream);
-                gzipStream.close();
+                val buffer = ByteArray(8192) // 8KB buffer
+                var bytesRead: Int
+                while (gzipStream.read(buffer).also { bytesRead = it } != -1) {
+                    outputStream.write(buffer, 0, bytesRead)
+                }
             }
             data = ByteBuffer.wrap(outputStream.toByteArray())
         }
@@ -933,7 +938,7 @@ class SyncSocketSession {
                             throw Exception("After sync stream end, the stream must be complete")
                         }
 
-                        handlePacket(syncStream.opcode, syncStream.subOpcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) }, contentEncoding, sourceChannel)
+                        handlePacket(syncStream.opcode, syncStream.subOpcode, syncStream.getBytes().let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN) }, syncStream.contentEncoding, sourceChannel)
                     }
                 }
                 Opcode.DATA.value -> {

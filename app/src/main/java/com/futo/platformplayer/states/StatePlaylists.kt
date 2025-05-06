@@ -19,6 +19,7 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -85,7 +86,7 @@ class StatePlaylists {
         if(value.isEmpty())
             return OffsetDateTime.MIN;
         val tryParse = value.toLongOrNull() ?: 0;
-        return OffsetDateTime.ofInstant(Instant.ofEpochSecond(tryParse), ZoneOffset.UTC);
+        return tryParse.sToOffsetDateTimeUTC();
     }
     private fun setWatchLaterReorderTime() {
         val now = OffsetDateTime.now(ZoneOffset.UTC);

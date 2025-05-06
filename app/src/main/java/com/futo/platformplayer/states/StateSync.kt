@@ -25,6 +25,7 @@ import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.Noise
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
@@ -731,7 +732,7 @@ class StateSync {
                 }
                 for(removal in pack.groupRemovals) {
                     val creation = StateSubscriptionGroups.instance.getSubscriptionGroup(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.creationTime < removalTime)
                         StateSubscriptionGroups.instance.deleteSubscriptionGroup(removal.key, false);
                 }
@@ -759,7 +760,7 @@ class StateSync {
                 }
                 for(removal in pack.playlistRemovals) {
                     val creation = StatePlaylists.instance.getPlaylist(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.dateCreation < removalTime)
                         StatePlaylists.instance.removePlaylist(creation, false);
 
@@ -777,7 +778,7 @@ class StateSync {
                 val allExisting = StatePlaylists.instance.getWatchLater();
                 for(video in pack.videos) {
                     val existing = allExisting.firstOrNull { it.url == video.url };
-                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.videoAdds[video.url] ?: 0), ZoneOffset.UTC) else OffsetDateTime.MIN;
+                    val time = if(pack.videoAdds.containsKey(video.url)) (pack.videoAdds[video.url] ?: 0).sToOffsetDateTimeUTC() else OffsetDateTime.MIN;
 
                     if(existing == null) {
                         StatePlaylists.instance.addToWatchLater(video, false);
@@ -788,12 +789,12 @@ class StateSync {
                 for(removal in pack.videoRemovals) {
                     val watchLater = allExisting.firstOrNull { it.url == removal.key } ?: continue;
                     val creation = StatePlaylists.instance.getWatchLaterRemovalTime(watchLater.url) ?: OffsetDateTime.MIN;
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC()
                     if(creation < removalTime)
                         StatePlaylists.instance.removeFromWatchLater(watchLater, false, removalTime);
                 }
 
-                val packReorderTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.reorderTime), ZoneOffset.UTC);
+                val packReorderTime = pack.reorderTime.sToOffsetDateTimeUTC()
                 val localReorderTime = StatePlaylists.instance.getWatchLaterLastReorderTime();
                 if(localReorderTime < packReorderTime && pack.ordering != null) {
                     StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()), true);
@@ -830,22 +831,15 @@ class StateSync {
         }
     }
 
-    private fun onAuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(true, "Authorized")
-        }
-    }
-
-    private fun onUnuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Unauthorized")
-        }
-    }
-
-    private fun createNewSyncSession(remotePublicKey: String, remoteDeviceName: String?): SyncSession {
+    private fun createNewSyncSession(rpk: String, remoteDeviceName: String?): SyncSession {
+        val remotePublicKey = rpk.base64ToByteArray().toBase64()
         return SyncSession(
             remotePublicKey,
             onAuthorized = { it, isNewlyAuthorized, isNewSession ->
+                synchronized(_remotePendingStatusUpdate) {
+                    _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(true, "Authorized")
+                }
+
                 if (!isNewSession) {
                     return@SyncSession
                 }
@@ -857,7 +851,6 @@ class StateSync {
                 }
 
                 Logger.i(TAG, "$remotePublicKey authorized (name: ${it.displayName})")
-                onAuthorized(remotePublicKey)
                 _authorizedDevices.addDistinct(remotePublicKey)
                 _authorizedDevices.save()
                 deviceUpdatedOrAdded.emit(it.remotePublicKey, it)
@@ -865,10 +858,12 @@ class StateSync {
                 checkForSync(it);
             },
             onUnauthorized = {
-                unauthorize(remotePublicKey)
+                synchronized(_remotePendingStatusUpdate) {
+                    _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Unauthorized")
+                }
 
+                unauthorize(remotePublicKey)
                 Logger.i(TAG, "$remotePublicKey unauthorized (name: ${it.displayName})")
-                onUnuthorized(remotePublicKey)
 
                 synchronized(_sessions) {
                     it.close()
@@ -1117,7 +1112,7 @@ class StateSync {
                 runBlocking {
                     if (onStatusUpdate != null) {
                         synchronized(_remotePendingStatusUpdate) {
-                            _remotePendingStatusUpdate[deviceInfo.publicKey] = onStatusUpdate
+                            _remotePendingStatusUpdate[deviceInfo.publicKey.base64ToByteArray().toBase64()] = onStatusUpdate
                         }
                     }
                     relaySession.startRelayedChannel(deviceInfo.publicKey, APP_ID, deviceInfo.pairingCode)
@@ -1136,7 +1131,7 @@ class StateSync {
         val session = createSocketSession(socket, false)
         if (onStatusUpdate != null) {
             synchronized(_remotePendingStatusUpdate) {
-                _remotePendingStatusUpdate[publicKey] = onStatusUpdate
+                _remotePendingStatusUpdate[publicKey.base64ToByteArray().toBase64()] = onStatusUpdate
             }
         }
 

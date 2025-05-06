@@ -7,6 +7,9 @@ import java.net.InetAddress
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLEncoder
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 //Syntax sugaring
 inline fun <reified T> Any.assume(): T?{
@@ -50,4 +53,20 @@ fun InetAddress?.toUrlAddress(): String {
             throw Exception("Invalid address type")
         }
     }
+}
+
+fun Long?.sToOffsetDateTimeUTC(): OffsetDateTime {
+    if (this == null || this < 0)
+        return OffsetDateTime.MIN
+    if(this > 4070912400)
+        return OffsetDateTime.MAX;
+    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(this), ZoneOffset.UTC)
+}
+
+fun Long?.msToOffsetDateTimeUTC(): OffsetDateTime {
+    if (this == null || this < 0)
+        return OffsetDateTime.MIN
+    if(this > 4070912400)
+        return OffsetDateTime.MAX;
+    return OffsetDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneOffset.UTC)
 }
