@@ -29,7 +29,7 @@ data class ImageVariable(
             Glide.with(imageView)
                 .load(bitmap)
                 .into(imageView)
-        } else if(resId != null) {
+        } else if(resId != null && resId > 0) {
             Glide.with(imageView)
                 .load(resId)
                 .into(imageView)
