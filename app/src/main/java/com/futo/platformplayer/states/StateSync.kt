@@ -772,8 +772,8 @@ class StateSync {
                 for(video in pack.videos) {
                     val existing = allExisting.firstOrNull { it.url == video.url };
                     val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.videoAdds[video.url] ?: 0), ZoneOffset.UTC) else OffsetDateTime.MIN;
-
-                    if(existing == null) {
+                    val removalTime = StatePlaylists.instance.getWatchLaterRemovalTime(video.url) ?: OffsetDateTime.MIN;
+                    if(existing == null && time > removalTime) {
                         StatePlaylists.instance.addToWatchLater(video, false);
                         if(time > OffsetDateTime.MIN)
                             StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
