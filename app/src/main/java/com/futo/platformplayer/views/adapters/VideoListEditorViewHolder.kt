@@ -17,9 +17,11 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.states.StateDownloads
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
+import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.platform.PlatformIndicator
 
 class VideoListEditorViewHolder : ViewHolder {
@@ -36,6 +38,7 @@ class VideoListEditorViewHolder : ViewHolder {
     private val _imageDragDrop: ImageButton;
     private val _platformIndicator: PlatformIndicator;
     private val _layoutDownloaded: FrameLayout;
+    private val _timeBar: ProgressBar
 
     var video: IPlatformVideo? = null
         private set;
@@ -59,6 +62,7 @@ class VideoListEditorViewHolder : ViewHolder {
         _imageOptions = view.findViewById(R.id.image_settings);
         _imageDragDrop = view.findViewById<ImageButton>(R.id.image_drag_drop);
         _platformIndicator = view.findViewById(R.id.thumbnail_platform);
+        _timeBar = view.findViewById(R.id.time_bar);
         _layoutDownloaded = view.findViewById(R.id.layout_downloaded);
 
         _imageDragDrop.setOnTouchListener { _, event ->
@@ -92,6 +96,9 @@ class VideoListEditorViewHolder : ViewHolder {
         _textName.text = v.name;
         _textAuthor.text = v.author.name;
         _textVideoDuration.text = v.duration.toHumanTime(false);
+
+        val historyPosition = StateHistory.instance.getHistoryPosition(v.url)
+        _timeBar.progress = historyPosition.toFloat() / v.duration.toFloat();
 
         if(v.isLive) {
             _containerDuration.visibility = View.GONE;
