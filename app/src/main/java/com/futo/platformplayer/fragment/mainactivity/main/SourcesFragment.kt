@@ -18,6 +18,7 @@ import com.futo.platformplayer.activities.AddSourceOptionsActivity
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -44,6 +45,7 @@ class SourcesFragment : MainFragment() {
         if(topBar is AddTopBarFragment) {
             (topBar as AddTopBarFragment).onAdd.clear();
             (topBar as AddTopBarFragment).onAdd.subscribe {
+                StateApp.instance.preventPictureInPicture.emit();
                 startActivity(Intent(requireContext(), AddSourceOptionsActivity::class.java));
             };
         }
@@ -93,6 +95,7 @@ class SourcesFragment : MainFragment() {
                 findViewById<LinearLayout>(R.id.plugin_disclaimer).isVisible = false;
             }
             findViewById<BigButton>(R.id.button_add_sources).onClick.subscribe {
+                StateApp.instance.preventPictureInPicture.emit();
                 fragment.startActivity(Intent(context, AddSourceOptionsActivity::class.java));
             };
 
