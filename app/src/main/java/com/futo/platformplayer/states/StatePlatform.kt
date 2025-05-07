@@ -97,6 +97,7 @@ class StatePlatform {
 
 
     private val _icons : HashMap<String, ImageVariable> = HashMap();
+    private val _iconsByName : HashMap<String, ImageVariable> = HashMap();
 
     val hasClients: Boolean get() = _availableClients.size > 0;
 
@@ -192,6 +193,7 @@ class StatePlatform {
                 _availableClients.clear();
 
                 _icons.clear();
+                _iconsByName.clear()
                 _icons[StateDeveloper.DEV_ID] = ImageVariable(null, R.drawable.ic_security_red);
 
                 StatePlugins.instance.updateEmbeddedPlugins(context);
@@ -199,6 +201,8 @@ class StatePlatform {
 
                 for (plugin in StatePlugins.instance.getPlugins()) {
                     _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
+                            ImageVariable(plugin.config.absoluteIconUrl, null);
+                    _iconsByName[plugin.config.name.lowercase()] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
                             ImageVariable(plugin.config.absoluteIconUrl, null);
 
                     val client = JSClient(context, plugin);
@@ -296,6 +300,15 @@ class StatePlatform {
             return null;
         if(_icons.containsKey(type))
             return _icons[type];
+        return null;
+    }
+
+    fun getPlatformIconByName(name: String?) : ImageVariable? {
+        if(name == null)
+            return null;
+        val nameLower = name.lowercase()
+        if(_iconsByName.containsKey(nameLower))
+            return _iconsByName[nameLower];
         return null;
     }
 
