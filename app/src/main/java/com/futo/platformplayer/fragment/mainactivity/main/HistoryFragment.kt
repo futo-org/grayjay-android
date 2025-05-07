@@ -280,7 +280,7 @@ class HistoryFragment : MainFragment() {
             val enabledPluginIds = StatePlatform.instance.getEnabledClients().map { it.id }.toHashSet()
             val disabledPluginIds = _togglePluginsDisabled.toHashSet()
             return a.filter {
-                val pluginId = it.video.id.pluginId ?: StatePlatform.instance.getContentClientOrNull(it.video.url)?.id ?: return@filter true
+                val pluginId = it.video.id.pluginId ?: StatePlatform.instance.getContentClientOrNull(it.video.url)?.id ?: return@filter false
                 if (!enabledPluginIds.contains(pluginId))
                     return@filter false
                 return@filter !disabledPluginIds.contains(pluginId)
