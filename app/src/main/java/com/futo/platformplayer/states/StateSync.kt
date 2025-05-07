@@ -749,7 +749,7 @@ class StateSync {
 
                     if(existing == null)
                         StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
-                    else if(existing.dateUpdate.toLocalDateTime() < playlist.dateUpdate.toLocalDateTime()) {
+                    else if(existing.dateUpdate < playlist.dateUpdate) {
                         existing.dateUpdate = playlist.dateUpdate;
                         existing.name = playlist.name;
                         existing.videos = playlist.videos;
