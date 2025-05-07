@@ -107,14 +107,12 @@
                     android:textColor="@color/white"
                     android:paddingStart="5dp"
                     android:paddingTop="15dp"
-                    android:paddingBottom="8dp"
-                    android:visibility="gone" />
+                    android:paddingBottom="8dp" />
 
                 <com.futo.platformplayer.views.ToggleBar
                     android:id="@+id/toggle_bar"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>

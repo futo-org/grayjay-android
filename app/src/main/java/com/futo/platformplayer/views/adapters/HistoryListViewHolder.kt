@@ -14,6 +14,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.HistoryVideo
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.others.ProgressBar
@@ -75,7 +76,9 @@ class HistoryListViewHolder : ViewHolder {
         _textName.text = v.video.name;
         _textAuthor.text = v.video.author.name;
         _textVideoDuration.text = v.video.duration.toHumanTime(false);
-        _thumbnailPlatform.setPlatformFromClientName(v.video.id.platform)
+
+        val pluginId = v.video.id.pluginId ?: StatePlatform.instance.getContentClientOrNull(v.video.url)?.id
+        _thumbnailPlatform.setPlatformFromClientID(pluginId)
 
         if(v.video.isLive) {
             _containerDuration.visibility = View.GONE;
