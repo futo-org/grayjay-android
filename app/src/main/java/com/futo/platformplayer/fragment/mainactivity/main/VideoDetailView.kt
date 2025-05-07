@@ -571,7 +571,7 @@ class VideoDetailView : ConstraintLayout {
             _player.setIsReplay(true);
 
             val searchVideo = StatePlayer.instance.getCurrentQueueItem();
-            if (searchVideo is SerializedPlatformVideo?) {
+            if (searchVideo is SerializedPlatformVideo? && Settings.instance.playback.deleteFromWatchLaterAuto) {
                 searchVideo?.let { StatePlaylists.instance.removeFromWatchLater(it) };
             }
 
