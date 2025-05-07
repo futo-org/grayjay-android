@@ -628,12 +628,12 @@ class GestureControlView : LinearLayout {
     private fun fastForwardTick() {
         _fastForwardCounter++;
 
-        val seekOffset: Long = 10000;
+        val seekOffset: Long = Settings.instance.playback.getSeekOffset();
         if (_rewinding) {
-            _textRewind.text = "${_fastForwardCounter * 10} " + context.getString(R.string.seconds);
+            _textRewind.text = "${_fastForwardCounter * seekOffset / 1_000} " + context.getString(R.string.seconds);
             onSeek.emit(-seekOffset);
         } else {
-            _textFastForward.text = "${_fastForwardCounter * 10} " + context.getString(R.string.seconds);
+            _textFastForward.text = "${_fastForwardCounter * seekOffset / 1_000} " + context.getString(R.string.seconds);
             onSeek.emit(seekOffset);
         }
     }
