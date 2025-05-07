@@ -997,6 +997,8 @@ class StateSync {
                                     try {
                                         syncSession.authorize()
                                         Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
+
+                                        activity.finish()
                                     } catch (e: Throwable) {
                                         Logger.e(TAG, "Failed to send authorize", e)
                                     }
