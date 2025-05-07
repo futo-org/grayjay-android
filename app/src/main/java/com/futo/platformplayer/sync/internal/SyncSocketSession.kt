@@ -998,7 +998,7 @@ class SyncSocketSession {
     suspend fun startRelayedChannel(publicKey: String, appId: UInt = 0u, pairingCode: String? = null): ChannelRelayed? {
         val requestId = generateRequestId()
         val deferred = CompletableDeferred<ChannelRelayed>()
-        val channel = ChannelRelayed(this, _localKeyPair, publicKey, true)
+        val channel = ChannelRelayed(this, _localKeyPair, publicKey.base64ToByteArray().toBase64(), true)
         _onNewChannel?.invoke(this, channel)
         _pendingChannels[requestId] = channel to deferred
         try {

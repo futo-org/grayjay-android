@@ -1115,7 +1115,7 @@ class StateSync {
                             _remotePendingStatusUpdate[deviceInfo.publicKey.base64ToByteArray().toBase64()] = onStatusUpdate
                         }
                     }
-                    relaySession.startRelayedChannel(deviceInfo.publicKey, APP_ID, deviceInfo.pairingCode)
+                    relaySession.startRelayedChannel(deviceInfo.publicKey.base64ToByteArray().toBase64(), APP_ID, deviceInfo.pairingCode)
                 }
             } else {
                 throw e
