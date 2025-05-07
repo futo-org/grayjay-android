@@ -125,12 +125,7 @@ class FragmentedStorage {
         }
         inline fun <reified T> load(fileName: String): T where T : FragmentedStorageFile {
             if (_filesDir == null) {
-                if(StateApp.instance.contextOrNull == null)
-                    StateApp.instance.initializeFiles();
-
-                if (_filesDir == null) {
-                    throw Exception("Files dir should be initialized before loading a file.")
-                }
+                throw Exception("Files dir should be initialized before loading a file.")
             }
 
             val storageFile = File(_filesDir, "${fileName}.json");

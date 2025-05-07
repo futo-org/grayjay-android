@@ -530,10 +530,17 @@ class StateApp {
 
         //Migration
         Logger.i(TAG, "MainApp Started: Check [Migrations]");
-        migrateStores(context, listOf(
-            StateSubscriptions.instance.toMigrateCheck(),
-            StatePlaylists.instance.toMigrateCheck()
-        ).flatten(), 0);
+
+        scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                migrateStores(context, listOf(
+                    StateSubscriptions.instance.toMigrateCheck(),
+                    StatePlaylists.instance.toMigrateCheck()
+                ).flatten(), 0)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to migrate stores")
+            }
+        }
 
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
             scope.launch(Dispatchers.IO) {
@@ -700,15 +707,27 @@ class StateApp {
     }
 
 
-    private fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
+    private suspend fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
         if(managedStores.size <= index)
             return;
         val store = managedStores[index];
-        if(store.hasMissingReconstructions())
-            UIDialogs.showMigrateDialog(context, store) {
-                migrateStores(context, managedStores, index + 1);
-            };
-        else
+        if(store.hasMissingReconstructions()) {
+            withContext(Dispatchers.Main) {
+                try {
+                    UIDialogs.showMigrateDialog(context, store) {
+                        scopeOrNull?.launch(Dispatchers.IO) {
+                            try {
+                                migrateStores(context, managedStores, index + 1);
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to migrate store", e)
+                            }
+                        }
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to migrate stores", e)
+                }
+            }
+        } else
             migrateStores(context, managedStores, index + 1);
     }
 

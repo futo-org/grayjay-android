@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
@@ -29,6 +30,16 @@ class SyncHomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (StateApp.instance.contextOrNull == null) {
+            Logger.w(TAG, "No main activity, restarting main.")
+            val intent = Intent(this, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(intent)
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_sync_home)
         setNavigationBarColorAndIcons()
 

@@ -316,7 +316,7 @@ class SyncSocketSession {
         val appId = messageBuffer.int.toUInt()
         val pairingMessageLength = messageBuffer.int
         val pairingMessage = if (pairingMessageLength > 0) ByteArray(pairingMessageLength).also { messageBuffer.get(it) } else byteArrayOf()
-        val mainLength = messageSize - 4 - 4 - pairingMessageLength
+        val mainLength = messageBuffer.remaining()
         val mainMessage = ByteArray(mainLength).also { messageBuffer.get(it) }
 
         var pairingCode: String? = null
@@ -333,7 +333,7 @@ class SyncSocketSession {
         responder.readMessage(mainMessage, 0, mainLength, plaintext, 0)
         val remoteKeyBytes = ByteArray(responder.remotePublicKey.publicKeyLength)
         responder.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
-        val remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
+        val remotePublicKey = remoteKeyBytes.toBase64()
 
         val isAllowedToConnect = remotePublicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Direct, this, remotePublicKey, pairingCode, appId) ?: true)
         if (!isAllowedToConnect) {

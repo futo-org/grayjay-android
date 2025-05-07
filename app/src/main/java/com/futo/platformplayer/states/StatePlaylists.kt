@@ -401,12 +401,15 @@ class StatePlaylists {
     companion object {
         val TAG = "StatePlaylists";
         private var _instance : StatePlaylists? = null;
+        private var _lockObject = Object()
         val instance : StatePlaylists
-            get(){
-            if(_instance == null)
-                _instance = StatePlaylists();
-            return _instance!!;
-        };
+            get() {
+                synchronized(_lockObject) {
+                    if (_instance == null)
+                        _instance = StatePlaylists();
+                    return _instance!!;
+                }
+            }
 
         fun finish() {
             _instance?.let {

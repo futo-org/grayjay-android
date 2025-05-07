@@ -57,6 +57,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -438,7 +439,7 @@ class StateSync {
                                             Logger.v(TAG, "Received ${connectionInfos.size} devices connection information")
 
                                             for ((targetKey, connectionInfo) in connectionInfos) {
-                                                val potentialLocalAddresses = connectionInfo.ipv4Addresses.union(connectionInfo.ipv6Addresses)
+                                                val potentialLocalAddresses = connectionInfo.ipv4Addresses
                                                     .filter { it != connectionInfo.remoteIp }
                                                 if (connectionInfo.allowLocalDirect && Settings.instance.synchronization.connectLocalDirectThroughRelay) {
                                                     Thread {
