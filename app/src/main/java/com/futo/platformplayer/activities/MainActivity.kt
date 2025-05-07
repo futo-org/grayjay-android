@@ -186,6 +186,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private var _isVisible = true;
     private var _wasStopped = false;
+    private var _privateModeEnabled = false
+    private var _pictureInPictureEnabled = false
+    private var _isFullscreen = false
+    private var _isMinimized = false
 
     private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -363,14 +367,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _buttonIncognito.alpha = 0f;
         StateApp.instance.privateModeChanged.subscribe {
             //Messing with visibility causes some issues with layout ordering?
-            if (it) {
-                _buttonIncognito.elevation = 99f;
-                _buttonIncognito.alpha = 1f;
-            } else {
-                _buttonIncognito.elevation = -99f;
-                _buttonIncognito.alpha = 0f;
-            }
+            _privateModeEnabled = it
+            updatePrivateModeVisibility()
         }
+
         _buttonIncognito.setOnClickListener {
             if (!StateApp.instance.privateMode)
                 return@setOnClickListener;
@@ -387,19 +387,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         };
         _fragVideoDetail.onFullscreenChanged.subscribe {
             Logger.i(TAG, "onFullscreenChanged ${it}");
+            _isFullscreen = it
+            updatePrivateModeVisibility()
+        }
 
-            if (it) {
-                _buttonIncognito.elevation = -99f;
-                _buttonIncognito.alpha = 0f;
-            } else {
-                if (StateApp.instance.privateMode) {
-                    _buttonIncognito.elevation = 99f;
-                    _buttonIncognito.alpha = 1f;
-                } else {
-                    _buttonIncognito.elevation = -99f;
-                    _buttonIncognito.alpha = 0f;
-                }
-            }
+        _fragVideoDetail.onMinimize.subscribe {
+            _isMinimized = true
+            updatePrivateModeVisibility()
+        }
+
+        _fragVideoDetail.onMaximized.subscribe {
+            _isMinimized = false
+            updatePrivateModeVisibility()
         }
 
         StatePlayer.instance.also {
@@ -638,6 +637,19 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         } catch (e: Throwable) {
             Logger.i(TAG, "Failed to handle show QR scanner.", e)
             UIDialogs.toast(this, "Failed to show QR scanner: ${e.message}")
+        }
+    }
+
+    fun updatePrivateModeVisibility() {
+        if (_privateModeEnabled && !_pictureInPictureEnabled && !_isFullscreen && !_isMinimized) {
+            _buttonIncognito.elevation = 99f;
+            _buttonIncognito.alpha = 1f;
+            _buttonIncognito.layoutParams = _buttonIncognito.layoutParams.apply {
+
+            }
+        } else {
+            _buttonIncognito.elevation = -99f;
+            _buttonIncognito.alpha = 0f;
         }
     }
 
@@ -1064,6 +1076,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.v(TAG, "onPictureInPictureModeChanged isInPictureInPictureMode=$isInPictureInPictureMode isStop=$isStop")
         _fragVideoDetail.onPictureInPictureModeChanged(isInPictureInPictureMode, isStop, newConfig);
         Logger.v(TAG, "onPictureInPictureModeChanged Ready");
+
+        _pictureInPictureEnabled = isInPictureInPictureMode
+        updatePrivateModeVisibility()
     }
 
     override fun onDestroy() {
