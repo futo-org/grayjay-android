@@ -54,7 +54,6 @@ class SyncHomeActivity : AppCompatActivity() {
                 val view = _viewMap[publicKey]
                 if (!session.isAuthorized) {
                     if (view != null) {
-                        _layoutDevices.removeView(view)
                         _viewMap.remove(publicKey)
                     }
                     return@launch
@@ -108,11 +107,12 @@ class SyncHomeActivity : AppCompatActivity() {
 
     private fun updateDeviceView(syncDeviceView: SyncDeviceView, publicKey: String, session: SyncSession?): SyncDeviceView {
         val connected = session?.connected ?: false
+        val authorized = session?.isAuthorized ?: false
 
         syncDeviceView.setLinkType(session?.linkType ?: LinkType.None)
             .setName(session?.displayName ?: StateSync.instance.getCachedName(publicKey) ?: publicKey)
             //TODO: also display public key?
-            .setStatus(if (connected) "Connected" else "Disconnected")
+            .setStatus(if (connected && authorized) "Connected" else "Disconnected or unauthorized")
         return syncDeviceView
     }
 

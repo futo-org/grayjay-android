@@ -1,6 +1,7 @@
 package com.futo.platformplayer.stores
 
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.v2.JsonStoreSerializer
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.StoreSerializer
@@ -124,7 +125,12 @@ class FragmentedStorage {
         }
         inline fun <reified T> load(fileName: String): T where T : FragmentedStorageFile {
             if (_filesDir == null) {
-                throw Exception("Files dir should be initialized before loading a file.")
+                if(StateApp.instance.contextOrNull == null)
+                    StateApp.instance.initializeFiles();
+
+                if (_filesDir == null) {
+                    throw Exception("Files dir should be initialized before loading a file.")
+                }
             }
 
             val storageFile = File(_filesDir, "${fileName}.json");
