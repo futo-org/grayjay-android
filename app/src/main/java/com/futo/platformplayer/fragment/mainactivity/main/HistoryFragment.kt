@@ -74,7 +74,7 @@ class HistoryFragment : MainFragment() {
         private var _pager: IPager<HistoryVideo>? = null;
         private val _results = arrayListOf<HistoryVideo>();
         private var _loading = false;
-        private val _toggleBar: ToggleBar
+        //private val _toggleBar: ToggleBar
         private var _togglePluginsDisabled = hashSetOf<String>()
 
         private var _automaticNextPageCounter = 0;
@@ -87,7 +87,7 @@ class HistoryFragment : MainFragment() {
             _clearSearch = findViewById(R.id.button_clear_search);
             _editSearch = findViewById(R.id.edit_search);
             _tagsView = findViewById(R.id.tags_text);
-            _toggleBar = findViewById(R.id.toggle_bar)
+            //_toggleBar = findViewById(R.id.toggle_bar)
             _tagsView.setPairs(listOf(
                 Pair(context.getString(R.string.last_hour), 60L),
                 Pair(context.getString(R.string.last_24_hours), 24L * 60L),
@@ -97,7 +97,7 @@ class HistoryFragment : MainFragment() {
                 Pair(context.getString(R.string.all_time), -1L)
             ));
 
-            val toggles = StatePlatform.instance.getEnabledClients()
+            /*val toggles = StatePlatform.instance.getEnabledClients()
                 .filter { it is JSClient }
                 .map { plugin ->
                     val pluginName = plugin.name.lowercase()
@@ -111,7 +111,7 @@ class HistoryFragment : MainFragment() {
                         filtersChanged()
                     }).withTag("plugins")
                 }.toTypedArray()
-            _toggleBar.setToggles(*toggles)
+            _toggleBar.setToggles(*toggles)*/
 
             _adapter = InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 { _results.size },
@@ -277,6 +277,9 @@ class HistoryFragment : MainFragment() {
         }
 
         private fun filterResults(a: List<HistoryVideo>): List<HistoryVideo> {
+            return a
+
+            /*
             //TODO: Not an ideal way to do this, plugin id would be better but it is null for HistoryVideo ?
             val enabledPluginNames = StatePlatform.instance.getEnabledClients().map { it.name.lowercase() }.toHashSet()
             val disabledPluginNames = _togglePluginsDisabled.toHashSet()
@@ -285,7 +288,7 @@ class HistoryFragment : MainFragment() {
                 if (!enabledPluginNames.contains(pluginName))
                     return@filter false
                 return@filter !disabledPluginNames.contains(pluginName)
-            };
+            };*/
         }
 
         private fun loadPagerInternal(pager: IPager<HistoryVideo>) {
