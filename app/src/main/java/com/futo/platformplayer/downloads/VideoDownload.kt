@@ -1218,7 +1218,7 @@ class VideoDownload {
 
         fun audioContainerToExtension(container: String): String {
             if (container.contains("audio/mp4"))
-                return "mp4a";
+                return "mp4";
             else if (container.contains("audio/mpeg"))
                 return "mpga";
             else if (container.contains("audio/mp3"))
