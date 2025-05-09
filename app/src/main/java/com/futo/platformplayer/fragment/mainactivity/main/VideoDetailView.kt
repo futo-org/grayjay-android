@@ -2430,6 +2430,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "handleFullScreen(fullscreen=$fullscreen)")
 
         if(fullscreen) {
+            _container_content.visibility = GONE
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
 
             val lp = _container_content.layoutParams as LayoutParams;
@@ -2443,6 +2444,7 @@ class VideoDetailView : ConstraintLayout {
             setProgressBarOverlayed(null);
         }
         else {
+            _container_content.visibility = VISIBLE
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
 
             val lp = _container_content.layoutParams as LayoutParams;
