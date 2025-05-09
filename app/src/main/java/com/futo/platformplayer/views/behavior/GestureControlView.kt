@@ -735,24 +735,43 @@ class GestureControlView : LinearLayout {
         _animatorBrightness?.start();
     }
 
+    fun saveBrightness() {
+        try {
+            _originalBrightnessMode = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE)
+
+            val brightness = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS)
+            _brightnessFactor = brightness / 255.0f;
+            Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
+
+            _originalBrightnessFactor = _brightnessFactor
+        } catch (e: Throwable) {
+            Settings.instance.gestureControls.useSystemBrightness = false
+            Settings.instance.save()
+            UIDialogs.toast(context, "useSystemBrightness disabled due to an error")
+        }
+    }
+    fun restoreBrightness() {
+        if (Settings.instance.gestureControls.restoreSystemBrightness) {
+            onBrightnessAdjusted.emit(_originalBrightnessFactor)
+
+            if (android.provider.Settings.System.canWrite(context)) {
+                Log.i(TAG, "Restoring system brightness mode _originalBrightnessMode: $_originalBrightnessMode")
+
+                android.provider.Settings.System.putInt(
+                    context.contentResolver,
+                    android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    _originalBrightnessMode
+                )
+            }
+        }
+    }
+
     fun setFullscreen(isFullScreen: Boolean) {
         resetZoomPan()
 
         if (isFullScreen) {
             if (Settings.instance.gestureControls.useSystemBrightness) {
-                try {
-                    _originalBrightnessMode = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE)
-
-                    val brightness = android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS)
-                    _brightnessFactor = brightness / 255.0f;
-                    Log.i(TAG, "Starting brightness brightness: $brightness, _brightnessFactor: $_brightnessFactor, _originalBrightnessMode: $_originalBrightnessMode")
-
-                    _originalBrightnessFactor = _brightnessFactor
-                } catch (e: Throwable) {
-                    Settings.instance.gestureControls.useSystemBrightness = false
-                    Settings.instance.save()
-                    UIDialogs.toast(context, "useSystemBrightness disabled due to an error")
-                }
+                saveBrightness()
             }
 
             if (Settings.instance.gestureControls.useSystemVolume) {
@@ -766,19 +785,7 @@ class GestureControlView : LinearLayout {
             onSoundAdjusted.emit(_soundFactor);
         } else {
             if (Settings.instance.gestureControls.useSystemBrightness) {
-                if (Settings.instance.gestureControls.restoreSystemBrightness) {
-                    onBrightnessAdjusted.emit(_originalBrightnessFactor)
-
-                    if (android.provider.Settings.System.canWrite(context)) {
-                        Log.i(TAG, "Restoring system brightness mode _originalBrightnessMode: $_originalBrightnessMode")
-
-                        android.provider.Settings.System.putInt(
-                            context.contentResolver,
-                            android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE,
-                            _originalBrightnessMode
-                        )
-                    }
-                }
+                restoreBrightness()
             } else {
                 onBrightnessAdjusted.emit(1.0f);
             }

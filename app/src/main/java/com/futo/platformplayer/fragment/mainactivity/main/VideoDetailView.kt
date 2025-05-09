@@ -2504,6 +2504,13 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    fun saveBrightness() {
+        _player.gestureControl.saveBrightness()
+    }
+    fun restoreBrightness() {
+        _player.gestureControl.restoreBrightness()
+    }
+
     fun setFullscreen(fullscreen : Boolean) {
         Logger.i(TAG, "setFullscreen(fullscreen=$fullscreen)")
         _player.setFullScreen(fullscreen)
