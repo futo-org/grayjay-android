@@ -594,7 +594,7 @@ class VideoDownload {
 
             val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
             val decryptionInfo: DecryptionInfo? = if (variantPlaylist.decryptionInfo != null) {
-                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl, mutableMapOf("Cookie" to "sails.sid=s%3AeSKom53v4W3_0CliWJFFMj9k3hcAuyhx.Nf9lF1sUSQ0GUvCKBOM64bsV%2BZMOkiKke43eHO6gTZI;"))
+                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl)
                 check(keyResponse.isOk) { "HLS request failed for decryption key: ${keyResponse.code}" }
                 DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv?.hexStringToByteArray())
             } else {
