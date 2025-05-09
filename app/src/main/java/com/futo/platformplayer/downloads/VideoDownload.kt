@@ -1218,7 +1218,7 @@ class VideoDownload {
 
         fun audioContainerToExtension(container: String): String {
             if (container.contains("audio/mp4"))
-                return "mp4";
+                return "mp4a";
             else if (container.contains("audio/mpeg"))
                 return "mpga";
             else if (container.contains("audio/mp3"))
@@ -1226,7 +1226,7 @@ class VideoDownload {
             else if (container.contains("audio/webm"))
                 return "webm";
             else if (container == "application/vnd.apple.mpegurl")
-                return "mp4";
+                return "mp4a";
             else
                 return "audio";// throw IllegalStateException("Unknown container: " + container)
         }
