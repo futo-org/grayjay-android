@@ -2,14 +2,14 @@ package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.ComponentName
+import android.app.UiModeManager
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -75,7 +75,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.UrlVideoWithTime
-import com.futo.platformplayer.receivers.MediaButtonReceiver
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
@@ -267,6 +266,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val uiMode = getSystemService(UiModeManager::class.java)
+            uiMode.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES)
+        }
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
         if (Settings.instance.playback.allowVideoToGoUnderCutout)
