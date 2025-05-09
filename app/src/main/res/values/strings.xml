@@ -135,6 +135,7 @@
     <string name="not_ready">Not ready</string>
     <string name="connect">Connect</string>
     <string name="stop">Stop</string>
+    <string name="stop_casting">Stop casting</string>
     <string name="start">Start</string>
     <string name="storage_space">Storage Space</string>
     <string name="downloads">Downloads</string>
@@ -194,7 +195,9 @@
     <string name="ip">IP</string>
     <string name="port">Port</string>
     <string name="discovered_devices">Discovered Devices</string>
+    <string name="available_devices">Available devices</string>
     <string name="remembered_devices">Remembered Devices</string>
+    <string name="unable_to_see_the_Device_youre_looking_for_try_add_the_device_manually">Unable to see the device you\'re looking for? Try to add the device manually.</string>
     <string name="there_are_no_remembered_devices">There are no remembered devices</string>
     <string name="connected_to">Connected to</string>
     <string name="volume">Volume</string>
@@ -204,6 +207,7 @@
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="comment">Comment</string>
+    <string name="add_manually">Add manually</string>
     <string name="not_empty_close">Comment is not empty, close anyway?</string>
     <string name="str_import">Import</string>
     <string name="my_playlist_name">My Playlist Name</string>
@@ -335,7 +339,7 @@
     <string name="configure_if_background_download_should_be_used">Configure if background download should be used</string>
     <string name="configure_the_auto_updater">Configure the auto updater</string>
     <string name="configure_when_updates_should_be_downloaded">Configure when updates should be downloaded</string>
-    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded</string>
+    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded, if they should only be downloaded on unmetered networks (wifi/ethernet)</string>
     <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Creates a zip file with your data which can be imported by opening it with Grayjay</string>
     <string name="default_audio_quality">Default Audio Quality</string>
     <string name="default_playback_speed">Default Playback Speed</string>
@@ -378,6 +382,10 @@
     <string name="pair_through_relay_description">Allow devices to be paired through the relay</string>
     <string name="connect_through_relay">Connection through relay</string>
     <string name="connect_through_relay_description">Allow devices to be connected to through the relay</string>
+    <string name="connect_local_direct_through_relay">Connect direct through relay</string>
+    <string name="connect_local_direct_through_relay_description">Allow devices to be directly locally connected to through information discovered from the relay</string>
+    <string name="local_connections">Local connections</string>
+    <string name="local_connections_description">Allow device to be directly locally connected</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
     <string name="volume_slider_descr">Enable slide gesture to change volume</string>

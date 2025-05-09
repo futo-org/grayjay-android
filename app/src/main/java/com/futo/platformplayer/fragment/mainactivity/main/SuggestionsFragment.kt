@@ -18,6 +18,8 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.SearchHistoryStorage
 import com.futo.platformplayer.views.adapters.SearchSuggestionAdapter
+import com.futo.platformplayer.views.others.RadioGroupView
+import com.futo.platformplayer.views.others.TagsView
 
 data class SuggestionsFragmentData(val query: String, val searchType: SearchType, val channelUrl: String? = null);
 
@@ -28,6 +30,7 @@ class SuggestionsFragment : MainFragment {
 
     private var  _recyclerSuggestions: RecyclerView? = null;
     private var _llmSuggestions: LinearLayoutManager? = null;
+    private var _radioGroupView: RadioGroupView? = null;
     private val _suggestions: ArrayList<String> = ArrayList();
     private var _query: String? = null;
     private var _searchType: SearchType = SearchType.VIDEO;
@@ -49,14 +52,7 @@ class SuggestionsFragment : MainFragment {
         _adapterSuggestions.onClicked.subscribe { suggestion ->
             val storage = FragmentedStorage.get<SearchHistoryStorage>();
             storage.add(suggestion);
-
-            if (_searchType == SearchType.CREATOR) {
-                navigate<CreatorSearchResultsFragment>(suggestion);
-            } else if (_searchType == SearchType.PLAYLIST) {
-                navigate<PlaylistSearchResultsFragment>(suggestion);
-            } else {
-                navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, SearchType.VIDEO, _channelUrl));
-            }
+            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, _searchType, _channelUrl));
         }
         _adapterSuggestions.onRemove.subscribe { suggestion ->
             val index = _suggestions.indexOf(suggestion);
@@ -79,6 +75,15 @@ class SuggestionsFragment : MainFragment {
         recyclerSuggestions.layoutManager = _llmSuggestions;
         recyclerSuggestions.adapter = _adapterSuggestions;
         _recyclerSuggestions = recyclerSuggestions;
+
+        _radioGroupView = view.findViewById<RadioGroupView>(R.id.radio_group).apply {
+            onSelectedChange.subscribe {
+                if (it.size != 1)
+                    _searchType = SearchType.VIDEO
+                else
+                    _searchType = (it[0] ?: SearchType.VIDEO) as SearchType
+            }
+        }
 
         loadSuggestions();
         return view;
@@ -110,31 +115,27 @@ class SuggestionsFragment : MainFragment {
             _channelUrl = null;
         }
 
+        _radioGroupView?.setOptions(listOf(Pair("Media", SearchType.VIDEO), Pair("Creators", SearchType.CREATOR), Pair("Playlists", SearchType.PLAYLIST)), listOf(_searchType), false, true)
+
         topBar?.apply {
             if (this is SearchTopBarFragment) {
                 onSearch.subscribe(this) {
-                    if (_searchType == SearchType.CREATOR) {
-                        navigate<CreatorSearchResultsFragment>(it);
-                    } else if (_searchType == SearchType.PLAYLIST) {
-                        navigate<PlaylistSearchResultsFragment>(it);
-                    } else {
-                        if(it.isHttpUrl()) {
-                            if(StatePlatform.instance.hasEnabledPlaylistClient(it))
-                                navigate<RemotePlaylistFragment>(it);
-                            else if(StatePlatform.instance.hasEnabledChannelClient(it))
-                                navigate<ChannelFragment>(it);
-                            else {
-                                val url = it;
-                                activity?.let {
-                                    close()
-                                    if(it is MainActivity)
-                                        it.navigate(it.getFragment<VideoDetailFragment>(), url);
-                                }
+                    if(it.isHttpUrl()) {
+                        if(StatePlatform.instance.hasEnabledPlaylistClient(it))
+                            navigate<RemotePlaylistFragment>(it);
+                        else if(StatePlatform.instance.hasEnabledChannelClient(it))
+                            navigate<ChannelFragment>(it);
+                        else {
+                            val url = it;
+                            activity?.let {
+                                close()
+                                if(it is MainActivity)
+                                    it.navigate(it.getFragment<VideoDetailFragment>(), url);
                             }
                         }
-                        else
-                            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, SearchType.VIDEO, _channelUrl));
                     }
+                    else
+                        navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, _searchType, _channelUrl));
                 };
 
                 onTextChange.subscribe(this) {
@@ -196,6 +197,7 @@ class SuggestionsFragment : MainFragment {
         super.onDestroyMainView();
         _getSuggestions.onError.clear();
         _recyclerSuggestions = null;
+        _radioGroupView = null
     }
 
     override fun onDestroy() {

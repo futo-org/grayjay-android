@@ -136,7 +136,6 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
 
         _nextPageHandler = TaskHandler<TPager, List<TResult>>({fragment.lifecycleScope}, {
-
             if (it is IAsyncPager<*>)
                 it.nextPageAsync();
             else

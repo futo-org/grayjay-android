@@ -117,6 +117,15 @@
             app:radiusBottomRight="4dp"
             app:radiusTopLeft="0dp"
             app:radiusTopRight="0dp" />
+
+        <com.futo.platformplayer.views.platform.PlatformIndicator
+            android:id="@+id/thumbnail_platform"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="@string/cd_platform_indicator"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="4dp" />
     </FrameLayout>
 
     <TextView

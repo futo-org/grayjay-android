@@ -5,9 +5,13 @@ import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateSync
+import com.futo.polycentric.core.base64ToByteArray
+import com.futo.polycentric.core.toBase64
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Base64
+import java.util.zip.GZIPOutputStream
 
 interface IChannel : AutoCloseable {
     val remotePublicKey: String?
@@ -15,7 +19,7 @@ interface IChannel : AutoCloseable {
     var authorizable: IAuthorizable?
     var syncSession: SyncSession?
     fun setDataHandler(onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)?)
-    fun send(opcode: UByte, subOpcode: UByte = 0u, data: ByteBuffer? = null)
+    fun send(opcode: UByte, subOpcode: UByte = 0u, data: ByteBuffer? = null, contentEncoding: ContentEncoding? = null)
     fun setCloseHandler(onClose: ((IChannel) -> Unit)?)
     val linkType: LinkType
 }
@@ -49,9 +53,9 @@ class ChannelSocket(private val session: SyncSocketSession) : IChannel {
         onData?.invoke(session, this, opcode, subOpcode, data)
     }
 
-    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?) {
+    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, contentEncoding: ContentEncoding?) {
         if (data != null) {
-            session.send(opcode, subOpcode, data)
+            session.send(opcode, subOpcode, data, contentEncoding)
         } else {
             session.send(opcode, subOpcode)
         }
@@ -80,7 +84,7 @@ class ChannelRelayed(
     override var authorizable: IAuthorizable? = null
     val isAuthorized: Boolean get() = authorizable?.isAuthorized ?: false
     var connectionId: Long = 0L
-    override var remotePublicKey: String? = publicKey
+    override var remotePublicKey: String? = publicKey.base64ToByteArray().toBase64()
         private set
     override var remoteVersion: Int? = null
         private set
@@ -183,51 +187,70 @@ class ChannelRelayed(
         }
     }
 
-    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?) {
+    override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, ce: ContentEncoding?) {
         throwIfDisposed()
 
-        val actualCount = data?.remaining() ?: 0
+        var contentEncoding: ContentEncoding? = ce
+        var processedData = data
+        if (data != null && contentEncoding == ContentEncoding.Gzip) {
+            val isGzipSupported = opcode == Opcode.DATA.value
+            if (isGzipSupported) {
+                val compressedStream = ByteArrayOutputStream()
+                GZIPOutputStream(compressedStream).use { gzipStream ->
+                    gzipStream.write(data.array(), data.position(), data.remaining())
+                    gzipStream.finish()
+                }
+                processedData = ByteBuffer.wrap(compressedStream.toByteArray())
+            } else {
+                Logger.w(TAG, "Gzip requested but not supported on this (opcode = ${opcode}, subOpcode = ${subOpcode}), falling back.")
+                contentEncoding = ContentEncoding.Raw
+            }
+        }
+
         val ENCRYPTION_OVERHEAD = 16
         val CONNECTION_ID_SIZE = 8
-        val HEADER_SIZE = 6
+        val HEADER_SIZE = 7
         val MAX_DATA_PER_PACKET = SyncSocketSession.MAXIMUM_PACKET_SIZE - HEADER_SIZE - CONNECTION_ID_SIZE - ENCRYPTION_OVERHEAD - 16
 
-        if (actualCount > MAX_DATA_PER_PACKET && data != null) {
+        Logger.v(TAG, "Send (opcode: ${opcode}, subOpcode: ${subOpcode}, processedData.size: ${processedData?.remaining()})")
+
+        if (processedData != null && processedData.remaining() > MAX_DATA_PER_PACKET) {
             val streamId = session.generateStreamId()
-            val totalSize = actualCount
             var sendOffset = 0
 
-            while (sendOffset < totalSize) {
-                val bytesRemaining = totalSize - sendOffset
-                val bytesToSend = minOf(MAX_DATA_PER_PACKET - 8 - 2, bytesRemaining)
+            while (sendOffset < processedData.remaining()) {
+                val bytesRemaining = processedData.remaining() - sendOffset
+                val bytesToSend = minOf(MAX_DATA_PER_PACKET - 8 - HEADER_SIZE + 4, bytesRemaining)
 
                 val streamData: ByteArray
                 val streamOpcode: StreamOpcode
                 if (sendOffset == 0) {
                     streamOpcode = StreamOpcode.START
-                    streamData = ByteArray(4 + 4 + 1 + 1 + bytesToSend)
+                    streamData = ByteArray(4 + HEADER_SIZE + bytesToSend)
                     ByteBuffer.wrap(streamData).order(ByteOrder.LITTLE_ENDIAN).apply {
                         putInt(streamId)
-                        putInt(totalSize)
+                        putInt(processedData.remaining())
                         put(opcode.toByte())
                         put(subOpcode.toByte())
-                        put(data.array(), data.position() + sendOffset, bytesToSend)
+                        put(contentEncoding?.value?.toByte() ?: 0.toByte())
+                        put(processedData.array(), processedData.position() + sendOffset, bytesToSend)
                     }
                 } else {
                     streamData = ByteArray(4 + 4 + bytesToSend)
                     ByteBuffer.wrap(streamData).order(ByteOrder.LITTLE_ENDIAN).apply {
                         putInt(streamId)
                         putInt(sendOffset)
-                        put(data.array(), data.position() + sendOffset, bytesToSend)
+                        put(processedData.array(), processedData.position() + sendOffset, bytesToSend)
                     }
                     streamOpcode = if (bytesToSend < bytesRemaining) StreamOpcode.DATA else StreamOpcode.END
                 }
 
                 val fullPacket = ByteArray(HEADER_SIZE + streamData.size)
                 ByteBuffer.wrap(fullPacket).order(ByteOrder.LITTLE_ENDIAN).apply {
-                    putInt(streamData.size + 2)
+                    putInt(streamData.size + HEADER_SIZE - 4)
                     put(Opcode.STREAM.value.toByte())
                     put(streamOpcode.value.toByte())
+                    put(ContentEncoding.Raw.value.toByte())
                     put(streamData)
                 }
 
@@ -235,18 +258,19 @@ class ChannelRelayed(
                 sendOffset += bytesToSend
             }
         } else {
-            val packet = ByteArray(HEADER_SIZE + actualCount)
+            val packet = ByteArray(HEADER_SIZE + (processedData?.remaining() ?: 0))
             ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).apply {
-                putInt(actualCount + 2)
+                putInt((processedData?.remaining() ?: 0) + HEADER_SIZE - 4)
                 put(opcode.toByte())
                 put(subOpcode.toByte())
-                if (actualCount > 0 && data != null) put(data.array(), data.position(), actualCount)
+                put(contentEncoding?.value?.toByte() ?: ContentEncoding.Raw.value.toByte())
+                if (processedData != null && processedData.remaining() > 0) put(processedData.array(), processedData.position(), processedData.remaining())
             }
             sendPacket(packet)
         }
     }
 
-    fun sendRequestTransport(requestId: Int, publicKey: String, pairingCode: String? = null) {
+    fun sendRequestTransport(requestId: Int, publicKey: String, appId: UInt, pairingCode: String? = null) {
         throwIfDisposed()
 
         synchronized(sendLock) {
@@ -270,10 +294,11 @@ class ChannelRelayed(
                 0 to ByteArray(0)
             }
 
-            val packetSize = 4 + 32 + 4 + pairingMessageLength + 4 + channelBytesWritten
+            val packetSize = 4 + 4 + 32 + 4 + pairingMessageLength + 4 + channelBytesWritten
             val packet = ByteArray(packetSize)
             ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).apply {
                 putInt(requestId)
+                putInt(appId.toInt())
                 put(publicKeyBytes)
                 putInt(pairingMessageLength)
                 if (pairingMessageLength > 0) put(pairingMessage)
@@ -331,5 +356,9 @@ class ChannelRelayed(
             val transport = handshakeState!!.split()
             completeHandshake(remoteVersion, transport)
         }
+    }
+
+    companion object {
+        private val TAG = "Channel"
     }
 }

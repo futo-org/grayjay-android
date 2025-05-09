@@ -2,15 +2,18 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.allViews
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
@@ -18,9 +21,12 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.isHttpUrl
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.ToggleBar
+import com.futo.platformplayer.views.others.RadioGroupView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -84,6 +90,7 @@ class ContentSearchResultsFragment : MainFragment() {
         private var _filterValues: HashMap<String, List<String>> = hashMapOf();
         private var _enabledClientIds: List<String>? = null;
         private var _channelUrl: String? = null;
+        private var _searchType: SearchType? = null;
 
         private val _taskSearch: TaskHandler<String, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.search.progressBar
@@ -95,7 +102,13 @@ class ContentSearchResultsFragment : MainFragment() {
                 if (channelUrl != null) {
                     StatePlatform.instance.searchChannel(channelUrl, query, null, _sortBy, _filterValues, _enabledClientIds)
                 } else {
-                    StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
+                    when (_searchType)
+                    {
+                        SearchType.VIDEO -> StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
+                        SearchType.CREATOR -> StatePlatform.instance.searchChannelsAsContent(query)
+                        SearchType.PLAYLIST -> StatePlatform.instance.searchPlaylist(query)
+                        else -> throw Exception("Search type must be specified")
+                    }
                 }
             })
             .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
@@ -105,6 +118,25 @@ class ContentSearchResultsFragment : MainFragment() {
             }
 
             setPreviewsEnabled(Settings.instance.search.previewFeedItems);
+
+            initializeToolbar();
+        }
+
+        fun initializeToolbar(){
+            if(_toolbarContentView.allViews.any { it is RadioGroupView })
+                _toolbarContentView.removeView(_toolbarContentView.allViews.find { it is RadioGroupView });
+
+            val radioGroup = RadioGroupView(context);
+            radioGroup.onSelectedChange.subscribe {
+
+                if (it.size != 1)
+                    setSearchType(SearchType.VIDEO);
+                else
+                setSearchType((it[0] ?: SearchType.VIDEO) as SearchType);
+            }
+            radioGroup?.setOptions(listOf(Pair("Media", SearchType.VIDEO), Pair("Creators", SearchType.CREATOR), Pair("Playlists", SearchType.PLAYLIST)), listOf(_searchType), false, true)
+
+            _toolbarContentView.addView(radioGroup);
         }
 
         override fun cleanup() {
@@ -116,6 +148,7 @@ class ContentSearchResultsFragment : MainFragment() {
             if(parameter is SuggestionsFragmentData) {
                 setQuery(parameter.query, false);
                 setChannelUrl(parameter.channelUrl, false);
+                setSearchType(parameter.searchType, false)
 
                 fragment.topBar?.apply {
                     if (this is SearchTopBarFragment) {
@@ -251,6 +284,15 @@ class ContentSearchResultsFragment : MainFragment() {
 
         private fun setChannelUrl(channelUrl: String?, updateResults: Boolean = true) {
             _channelUrl = channelUrl;
+
+            if (updateResults) {
+                clearResults();
+                loadResults();
+            }
+        }
+
+        private fun setSearchType(searchType: SearchType, updateResults: Boolean = true) {
+            _searchType = searchType
 
             if (updateResults) {
                 clearResults();

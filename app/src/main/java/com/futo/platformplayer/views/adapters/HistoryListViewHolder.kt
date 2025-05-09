@@ -14,9 +14,11 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.HistoryVideo
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.others.ProgressBar
+import com.futo.platformplayer.views.platform.PlatformIndicator
 
 class HistoryListViewHolder : ViewHolder {
     private val _root: ConstraintLayout;
@@ -30,6 +32,7 @@ class HistoryListViewHolder : ViewHolder {
     private val _imageRemove: ImageButton;
     private val _textHeader: TextView;
     private val _timeBar: ProgressBar;
+    private val _thumbnailPlatform: PlatformIndicator
 
     var video: HistoryVideo? = null
         private set;
@@ -47,6 +50,7 @@ class HistoryListViewHolder : ViewHolder {
         _textVideoDuration = itemView.findViewById(R.id.thumbnail_duration);
         _containerDuration = itemView.findViewById(R.id.thumbnail_duration_container);
         _containerLive = itemView.findViewById(R.id.thumbnail_live_container);
+        _thumbnailPlatform = itemView.findViewById(R.id.thumbnail_platform)
         _imageRemove = itemView.findViewById(R.id.image_trash);
         _textHeader = itemView.findViewById(R.id.text_header);
         _timeBar = itemView.findViewById(R.id.time_bar);
@@ -72,6 +76,9 @@ class HistoryListViewHolder : ViewHolder {
         _textName.text = v.video.name;
         _textAuthor.text = v.video.author.name;
         _textVideoDuration.text = v.video.duration.toHumanTime(false);
+
+        val pluginId = v.video.id.pluginId ?: StatePlatform.instance.getContentClientOrNull(v.video.url)?.id
+        _thumbnailPlatform.setPlatformFromClientID(pluginId)
 
         if(v.video.isLive) {
             _containerDuration.visibility = View.GONE;

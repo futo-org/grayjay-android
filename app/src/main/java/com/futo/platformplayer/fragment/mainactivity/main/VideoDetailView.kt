@@ -46,6 +46,8 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
@@ -571,7 +573,7 @@ class VideoDetailView : ConstraintLayout {
             _player.setIsReplay(true);
 
             val searchVideo = StatePlayer.instance.getCurrentQueueItem();
-            if (searchVideo is SerializedPlatformVideo?) {
+            if (searchVideo is SerializedPlatformVideo? && Settings.instance.playback.deleteFromWatchLaterAuto) {
                 searchVideo?.let { StatePlaylists.instance.removeFromWatchLater(it) };
             }
 
@@ -687,6 +689,20 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onCloseReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onCloseReceived")
             onClose.emit()
+        };
+        MediaControlReceiver.onBackgroundReceived.subscribe(this) {
+            Logger.i(TAG, "MediaControlReceiver.onBackgroundReceived")
+            _player.switchToAudioMode();
+            allowBackground = true;
+            StateApp.instance.contextOrNull?.let {
+                try {
+                    if (it is MainActivity) {
+                        it.moveTaskToBack(true)
+                    }
+                } catch (e: Throwable) {
+                    Logger.i(TAG, "Failed to move task to back", e)
+                }
+            }
         };
         MediaControlReceiver.onSeekToReceived.subscribe(this) { handleSeek(it); };
 
@@ -1141,6 +1157,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onNextReceived.remove(this);
         MediaControlReceiver.onPreviousReceived.remove(this);
         MediaControlReceiver.onCloseReceived.remove(this);
+        MediaControlReceiver.onBackgroundReceived.remove(this);
         MediaControlReceiver.onSeekToReceived.remove(this);
 
         val job = _jobHideResume;
@@ -2413,6 +2430,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "handleFullScreen(fullscreen=$fullscreen)")
 
         if(fullscreen) {
+            _container_content.visibility = GONE
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
 
             val lp = _container_content.layoutParams as LayoutParams;
@@ -2426,6 +2444,7 @@ class VideoDetailView : ConstraintLayout {
             setProgressBarOverlayed(null);
         }
         else {
+            _container_content.visibility = VISIBLE
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
 
             val lp = _container_content.layoutParams as LayoutParams;
@@ -2725,10 +2744,11 @@ class VideoDetailView : ConstraintLayout {
         else
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
+        val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
             .setSourceRectHint(r)
-            .setActions(listOf(playpauseAction))
+            .setActions(listOf(toBackgroundAction, playpauseAction))
             .build();
     }
 

@@ -1,26 +1,31 @@
 package com.futo.platformplayer.states
 
+import android.content.Context
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import android.util.Log
 import com.futo.platformplayer.LittleEndianDataInputStream
 import com.futo.platformplayer.LittleEndianDataOutputStream
+import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SyncShowPairingCodeActivity
 import com.futo.platformplayer.api.media.Serializer
+import com.futo.platformplayer.casting.StateCasting
+import com.futo.platformplayer.casting.StateCasting.Companion
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.encryption.GEncryptionProvider
 import com.futo.platformplayer.generateReadablePassword
 import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.mdns.DnsService
-import com.futo.platformplayer.mdns.ServiceDiscoverer
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.Noise
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
@@ -52,6 +57,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -62,6 +68,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.Base64
 import java.util.Locale
+import kotlin.math.min
 import kotlin.system.measureTimeMillis
 
 class StateSync {
@@ -74,19 +81,149 @@ class StateSync {
     private var _serverSocket: ServerSocket? = null
     private var _thread: Thread? = null
     private var _connectThread: Thread? = null
-    private var _started = false
+    @Volatile private var _started = false
     private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
     private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
     private val _lastConnectTimesIp: MutableMap<String, Long> = mutableMapOf()
+    private var _serverStarted = false
     //TODO: Should sync mdns and casting mdns be merged?
     //TODO: Decrease interval that devices are updated
     //TODO: Send less data
-    private val _serviceDiscoverer = ServiceDiscoverer(arrayOf("_gsync._tcp.local")) { handleServiceUpdated(it) }
+
     private val _pairingCode: String? = generateReadablePassword(8)
     val pairingCode: String? get() = _pairingCode
     private var _relaySession: SyncSocketSession? = null
     private var _threadRelay: Thread? = null
     private val _remotePendingStatusUpdate = mutableMapOf<String, (complete: Boolean?, message: String) -> Unit>()
+    private var _nsdManager: NsdManager? = null
+    private var _discoveryListener: NsdManager.DiscoveryListener = object : NsdManager.DiscoveryListener {
+        override fun onDiscoveryStarted(regType: String) {
+            Log.d(TAG, "Service discovery started for $regType")
+        }
+
+        override fun onDiscoveryStopped(serviceType: String) {
+            Log.i(TAG, "Discovery stopped: $serviceType")
+        }
+
+        override fun onServiceLost(service: NsdServiceInfo) {
+            Log.e(TAG, "service lost: $service")
+            // TODO: Handle service lost, e.g., remove device
+        }
+
+        override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+            Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
+            try {
+                _nsdManager?.stopServiceDiscovery(this)
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to stop service discovery", e)
+            }
+        }
+
+        override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
+            Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
+            try {
+                _nsdManager?.stopServiceDiscovery(this)
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to stop service discovery", e)
+            }
+        }
+
+        fun addOrUpdate(name: String, adrs: Array<InetAddress>, port: Int, attributes: Map<String, ByteArray>) {
+            if (!Settings.instance.synchronization.connectDiscovered) {
+                return
+            }
+
+            val urlSafePkey = attributes.get("pk")?.decodeToString() ?: return
+            val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
+            val syncDeviceInfo = SyncDeviceInfo(pkey, adrs.map { it.hostAddress }.toTypedArray(), port, null)
+            val authorized = isAuthorized(pkey)
+
+            if (authorized && !isConnected(pkey)) {
+                val now = System.currentTimeMillis()
+                val lastConnectTime = synchronized(_lastConnectTimesMdns) {
+                    _lastConnectTimesMdns[pkey] ?: 0
+                }
+
+                //Connect once every 30 seconds, max
+                if (now - lastConnectTime > 30000) {
+                    synchronized(_lastConnectTimesMdns) {
+                        _lastConnectTimesMdns[pkey] = now
+                    }
+
+                    Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
+
+                    try {
+                        connect(syncDeviceInfo)
+                    } catch (e: Throwable) {
+                        Logger.i(TAG, "Failed to connect to $pkey", e)
+                    }
+                }
+            }
+        }
+
+        override fun onServiceFound(service: NsdServiceInfo) {
+            Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
+            addOrUpdate(service.serviceName, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                service.hostAddresses.toTypedArray()
+            } else {
+                if(service.host != null)
+                    arrayOf(service.host);
+                else
+                    arrayOf();
+            }, service.port, service.attributes)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
+                    override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
+                        Log.v(TAG, "onServiceUpdated: $serviceInfo")
+                        addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port, serviceInfo.attributes)
+                    }
+
+                    override fun onServiceLost() {
+                        Log.v(TAG, "onServiceLost: $service")
+                        // TODO: Handle service lost
+                    }
+
+                    override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
+                        Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
+                    }
+
+                    override fun onServiceInfoCallbackUnregistered() {
+                        Log.v(TAG, "onServiceInfoCallbackUnregistered")
+                    }
+                })
+            } else {
+                _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
+                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                        Log.v(TAG, "Resolve failed: $errorCode")
+                    }
+
+                    override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                        Log.v(TAG, "Resolve Succeeded: $serviceInfo")
+                        addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port, serviceInfo.attributes)
+                    }
+                })
+            }
+        }
+    }
+
+    private val _registrationListener = object : NsdManager.RegistrationListener {
+        override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
+            Log.v(TAG, "onServiceRegistered: ${serviceInfo.serviceName}")
+        }
+
+        override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            Log.v(TAG, "onRegistrationFailed: ${serviceInfo.serviceName} (error code: $errorCode)")
+        }
+
+        override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
+            Log.v(TAG, "onServiceUnregistered: ${serviceInfo.serviceName}")
+        }
+
+        override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            Log.v(TAG, "onUnregistrationFailed: ${serviceInfo.serviceName} (error code: $errorCode)")
+        }
+    }
 
     var keyPair: DHState? = null
     var publicKey: String? = null
@@ -101,15 +238,18 @@ class StateSync {
         }
     }
 
-    fun start() {
+    fun start(context: Context, onServerBindFail: () -> Unit) {
         if (_started) {
             Logger.i(TAG, "Already started.")
             return
         }
         _started = true
+        _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
 
-        if (Settings.instance.synchronization.broadcast || Settings.instance.synchronization.connectDiscovered) {
-            _serviceDiscoverer.start()
+        if (Settings.instance.synchronization.connectDiscovered) {
+            _nsdManager?.apply {
+                discoverServices("_gsync._tcp", NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
+            }
         }
 
         try {
@@ -142,28 +282,48 @@ class StateSync {
         }
 
         if (Settings.instance.synchronization.broadcast) {
-            publicKey?.let { _serviceDiscoverer.broadcastService(getDeviceName(), "_gsync._tcp.local", PORT.toUShort(), texts = arrayListOf("pk=${it.replace('+', '-').replace('/', '_').replace("=", "")}")) }
+            val pk = publicKey
+            val nsdManager = _nsdManager
+
+            if (pk != null && nsdManager != null) {
+                val serviceInfo = NsdServiceInfo().apply {
+                    serviceName = getDeviceName()
+                    serviceType = "_gsync._tcp"
+                    port = PORT
+                    setAttribute("pk", pk.replace('+', '-').replace('/', '_').replace("=", ""))
+                }
+
+                nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, _registrationListener)
+            }
         }
 
         Logger.i(TAG, "Sync key pair initialized (public key = ${publicKey})")
 
-        _thread = Thread {
-            try {
-                val serverSocket = ServerSocket(PORT)
-                _serverSocket = serverSocket
+        if (Settings.instance.synchronization.localConnections) {
+            _serverStarted = true
+            _thread = Thread {
+                try {
+                    val serverSocket = ServerSocket(PORT)
+                    _serverSocket = serverSocket
 
-                Log.i(TAG, "Running on port ${PORT} (TCP)")
+                    Log.i(TAG, "Running on port ${PORT} (TCP)")
 
-                while (_started) {
-                    val socket = serverSocket.accept()
-                    val session = createSocketSession(socket, true)
-                    session.startAsResponder()
+                    while (_started) {
+                        val socket = serverSocket.accept()
+                        val session = createSocketSession(socket, true)
+                        session.startAsResponder()
+                    }
+                } catch (e: Throwable) {
+                    _serverStarted = false
+                    Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        onServerBindFail.invoke()
+                    }
+                } finally {
+                    _serverStarted = false
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
-                UIDialogs.toast("Failed to start sync, port in use")
-            }
-        }.apply { start() }
+            }.apply { start() }
+        }
 
         if (Settings.instance.synchronization.connectLast) {
             _connectThread = Thread {
@@ -215,6 +375,9 @@ class StateSync {
 
         if (Settings.instance.synchronization.discoverThroughRelay) {
             _threadRelay = Thread {
+                var backoffs: Array<Long> = arrayOf(1000, 5000, 10000, 20000)
+                var backoffIndex = 0;
+
                 while (_started) {
                     try {
                         Log.i(TAG, "Starting relay session...")
@@ -224,9 +387,8 @@ class StateSync {
                         _relaySession = SyncSocketSession(
                             (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
                             keyPair!!,
-                            LittleEndianDataInputStream(socket.getInputStream()),
-                            LittleEndianDataOutputStream(socket.getOutputStream()),
-                            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
+                            socket,
+                            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode, appId -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode, appId) },
                             onNewChannel = { _, c ->
                                 val remotePublicKey = c.remotePublicKey
                                 if (remotePublicKey == null) {
@@ -261,6 +423,8 @@ class StateSync {
                             },
                             onClose = { socketClosed = true },
                             onHandshakeComplete = { relaySession ->
+                                backoffIndex = 0
+
                                 Thread {
                                     try {
                                         while (_started && !socketClosed) {
@@ -270,12 +434,14 @@ class StateSync {
 
                                             relaySession.publishConnectionInformation(unconnectedAuthorizedDevices, PORT, Settings.instance.synchronization.discoverThroughRelay, false, false, Settings.instance.synchronization.discoverThroughRelay && Settings.instance.synchronization.connectThroughRelay)
 
+                                            Logger.v(TAG, "Requesting ${unconnectedAuthorizedDevices.size} devices connection information")
                                             val connectionInfos = runBlocking { relaySession.requestBulkConnectionInfo(unconnectedAuthorizedDevices) }
+                                            Logger.v(TAG, "Received ${connectionInfos.size} devices connection information")
 
                                             for ((targetKey, connectionInfo) in connectionInfos) {
-                                                val potentialLocalAddresses = connectionInfo.ipv4Addresses.union(connectionInfo.ipv6Addresses)
+                                                val potentialLocalAddresses = connectionInfo.ipv4Addresses
                                                     .filter { it != connectionInfo.remoteIp }
-                                                if (connectionInfo.allowLocalDirect) {
+                                                if (connectionInfo.allowLocalDirect && Settings.instance.synchronization.connectLocalDirectThroughRelay) {
                                                     Thread {
                                                         try {
                                                             Log.v(TAG, "Attempting to connect directly, locally to '$targetKey'.")
@@ -296,10 +462,10 @@ class StateSync {
 
                                                 if (connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
                                                     try {
-                                                        Log.v(TAG, "Attempting relayed connection with '$targetKey'.")
-                                                        runBlocking { relaySession.startRelayedChannel(targetKey, null) }
+                                                        Logger.v(TAG, "Attempting relayed connection with '$targetKey'.")
+                                                        runBlocking { relaySession.startRelayedChannel(targetKey, APP_ID, null) }
                                                     } catch (e: Throwable) {
-                                                        Log.e(TAG, "Failed to start relayed channel with $targetKey.", e)
+                                                        Logger.e(TAG, "Failed to start relayed channel with $targetKey.", e)
                                                     }
                                                 }
                                             }
@@ -307,7 +473,7 @@ class StateSync {
                                             Thread.sleep(15000)
                                         }
                                     } catch (e: Throwable) {
-                                        Log.e(TAG, "Unhandled exception in relay session.", e)
+                                        Logger.e(TAG, "Unhandled exception in relay session.", e)
                                         relaySession.stop()
                                     }
                                 }.start()
@@ -318,18 +484,43 @@ class StateSync {
                             override val isAuthorized: Boolean get() = true
                         }
 
-                        _relaySession!!.startAsInitiator(RELAY_PUBLIC_KEY, null)
+                        _relaySession!!.runAsInitiator(RELAY_PUBLIC_KEY, APP_ID, null)
 
                         Log.i(TAG, "Started relay session.")
                     } catch (e: Throwable) {
                         Log.e(TAG, "Relay session failed.", e)
-                        Thread.sleep(5000)
                     } finally {
                         _relaySession?.stop()
                         _relaySession = null
+                        Thread.sleep(backoffs[min(backoffs.size - 1, backoffIndex++)])
                     }
                 }
             }.apply { start() }
+        }
+    }
+
+    fun showFailedToBindDialogIfNecessary(context: Context) {
+        if (!_serverStarted && Settings.instance.synchronization.localConnections) {
+            try {
+                UIDialogs.showDialogOk(context, R.drawable.ic_warning, "Local discovery unavailable, port was in use")
+            } catch (e: Throwable) {
+                //Ignored
+            }
+        }
+    }
+
+    fun confirmStarted(context: Context, onStarted: () -> Unit, onNotStarted: () -> Unit, onServerBindFail: () -> Unit) {
+        if (!_started) {
+            UIDialogs.showConfirmationDialog(context, "Sync has not been enabled yet, would you like to enable sync?", {
+                Settings.instance.synchronization.enabled = true
+                StateSync.instance.start(context, onServerBindFail)
+                Settings.instance.save()
+                onStarted.invoke()
+            }, {
+                onNotStarted.invoke()
+            })
+        } else {
+            onStarted.invoke()
         }
     }
 
@@ -382,48 +573,6 @@ class StateSync {
         _syncSessionData.setAndSave(data.publicKey, data);
     }
 
-    private fun handleServiceUpdated(services: List<DnsService>) {
-        if (!Settings.instance.synchronization.connectDiscovered) {
-            return
-        }
-
-        for (s in services) {
-            //TODO: Addresses IPv4 only?
-            val addresses = s.addresses.mapNotNull { it.hostAddress }.toTypedArray()
-            val port = s.port.toInt()
-            if (s.name.endsWith("._gsync._tcp.local")) {
-                val name = s.name.substring(0, s.name.length - "._gsync._tcp.local".length)
-                val urlSafePkey = s.texts.firstOrNull { it.startsWith("pk=") }?.substring("pk=".length) ?: continue
-                val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
-
-                val syncDeviceInfo = SyncDeviceInfo(pkey, addresses, port, null)
-                val authorized = isAuthorized(pkey)
-
-                if (authorized && !isConnected(pkey)) {
-                    val now = System.currentTimeMillis()
-                    val lastConnectTime = synchronized(_lastConnectTimesMdns) {
-                        _lastConnectTimesMdns[pkey] ?: 0
-                    }
-
-                    //Connect once every 30 seconds, max
-                    if (now - lastConnectTime > 30000) {
-                        synchronized(_lastConnectTimesMdns) {
-                            _lastConnectTimesMdns[pkey] = now
-                        }
-
-                        Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
-
-                        try {
-                            connect(syncDeviceInfo)
-                        } catch (e: Throwable) {
-                            Logger.i(TAG, "Failed to connect to $pkey", e)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private fun unauthorize(remotePublicKey: String) {
         Logger.i(TAG, "${remotePublicKey} unauthorized received")
         _authorizedDevices.remove(remotePublicKey)
@@ -450,7 +599,7 @@ class StateSync {
                     added.map { it.channel.name }.joinToString("\n"));
 
 
-        if(pack.subscriptions.isNotEmpty()) {
+        if(pack.subscriptionRemovals.isNotEmpty()) {
             for (subRemoved in pack.subscriptionRemovals) {
                 val removed = StateSubscriptions.instance.applySubscriptionRemovals(pack.subscriptionRemovals);
                 if(removed.size > 3) {
@@ -488,16 +637,33 @@ class StateSync {
 
                 Logger.i(TAG, "Received SyncSessionData from $remotePublicKey");
 
+                val subscriptionPackageString = StateSubscriptions.instance.getSyncSubscriptionsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptions b (size: ${subscriptionPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptions, subscriptionPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptions (size: ${subscriptionPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
-                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
-                session.sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
+                val subscriptionGroupPackageString = StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups b (size: ${subscriptionGroupPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, subscriptionGroupPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups (size: ${subscriptionGroupPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncWatchLater, Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false)));
+                val syncPlaylistPackageString = StatePlaylists.instance.getSyncPlaylistsPackageString()
+                Logger.i(TAG, "syncStateExchange syncPlaylists b (size: ${syncPlaylistPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncPlaylists, syncPlaylistPackageString)
+                Logger.i(TAG, "syncStateExchange syncPlaylists (size: ${syncPlaylistPackageString.length})")
+
+                val watchLaterPackageString = Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false))
+                Logger.i(TAG, "syncStateExchange syncWatchLater b (size: ${watchLaterPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncWatchLater, watchLaterPackageString);
+                Logger.i(TAG, "syncStateExchange syncWatchLater (size: ${watchLaterPackageString.length})")
 
                 val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory b (size: ${recentHistory.size})")
                 if(recentHistory.isNotEmpty())
                     session.sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory (size: ${recentHistory.size})")
             }
 
             GJSyncOpcodes.syncExport -> {
@@ -530,12 +696,14 @@ class StateSync {
                 val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
                 handleSyncSubscriptionPackage(session, subPackage);
 
-                val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
+                if(subPackage.subscriptions.size > 0) {
+                    val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
 
-                val sesData = getSyncSessionData(remotePublicKey);
-                if(newestSub > sesData.lastSubscription) {
-                    sesData.lastSubscription = newestSub;
-                    saveSyncSessionData(sesData);
+                    val sesData = getSyncSessionData(remotePublicKey);
+                    if (newestSub > sesData.lastSubscription) {
+                        sesData.lastSubscription = newestSub;
+                        saveSyncSessionData(sesData);
+                    }
                 }
             }
 
@@ -565,7 +733,7 @@ class StateSync {
                 }
                 for(removal in pack.groupRemovals) {
                     val creation = StateSubscriptionGroups.instance.getSubscriptionGroup(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.creationTime < removalTime)
                         StateSubscriptionGroups.instance.deleteSubscriptionGroup(removal.key, false);
                 }
@@ -582,7 +750,7 @@ class StateSync {
 
                     if(existing == null)
                         StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
-                    else if(existing.dateUpdate.toLocalDateTime() < playlist.dateUpdate.toLocalDateTime()) {
+                    else if(existing.dateUpdate < playlist.dateUpdate) {
                         existing.dateUpdate = playlist.dateUpdate;
                         existing.name = playlist.name;
                         existing.videos = playlist.videos;
@@ -593,7 +761,7 @@ class StateSync {
                 }
                 for(removal in pack.playlistRemovals) {
                     val creation = StatePlaylists.instance.getPlaylist(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.dateCreation < removalTime)
                         StatePlaylists.instance.removePlaylist(creation, false);
 
@@ -611,9 +779,9 @@ class StateSync {
                 val allExisting = StatePlaylists.instance.getWatchLater();
                 for(video in pack.videos) {
                     val existing = allExisting.firstOrNull { it.url == video.url };
-                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.videoAdds[video.url] ?: 0), ZoneOffset.UTC) else OffsetDateTime.MIN;
-
-                    if(existing == null) {
+                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) (pack.videoAdds[video.url] ?: 0).sToOffsetDateTimeUTC() else OffsetDateTime.MIN;
+                    val removalTime = StatePlaylists.instance.getWatchLaterRemovalTime(video.url) ?: OffsetDateTime.MIN;
+                    if(existing == null && time > removalTime) {
                         StatePlaylists.instance.addToWatchLater(video, false);
                         if(time > OffsetDateTime.MIN)
                             StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
@@ -622,12 +790,12 @@ class StateSync {
                 for(removal in pack.videoRemovals) {
                     val watchLater = allExisting.firstOrNull { it.url == removal.key } ?: continue;
                     val creation = StatePlaylists.instance.getWatchLaterRemovalTime(watchLater.url) ?: OffsetDateTime.MIN;
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC()
                     if(creation < removalTime)
                         StatePlaylists.instance.removeFromWatchLater(watchLater, false, removalTime);
                 }
 
-                val packReorderTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.reorderTime), ZoneOffset.UTC);
+                val packReorderTime = pack.reorderTime.sToOffsetDateTimeUTC()
                 val localReorderTime = StatePlaylists.instance.getWatchLaterLastReorderTime();
                 if(localReorderTime < packReorderTime && pack.ordering != null) {
                     StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()), true);
@@ -640,6 +808,9 @@ class StateSync {
                 val json = String(dataBody, Charsets.UTF_8);
                 val history = Serializer.json.decodeFromString<List<HistoryVideo>>(json);
                 Logger.i(TAG, "SyncHistory received ${history.size} videos from ${remotePublicKey}");
+                if (history.size == 1) {
+                    Logger.i(TAG, "SyncHistory received update video '${history[0].video.name}' (url: ${history[0].video.url}) at timestamp ${history[0].position}");
+                }
 
                 var lastHistory = OffsetDateTime.MIN;
                 for(video in history){
@@ -661,22 +832,15 @@ class StateSync {
         }
     }
 
-    private fun onAuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(true, "Authorized")
-        }
-    }
-
-    private fun onUnuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Unauthorized")
-        }
-    }
-
-    private fun createNewSyncSession(remotePublicKey: String, remoteDeviceName: String?): SyncSession {
+    private fun createNewSyncSession(rpk: String, remoteDeviceName: String?): SyncSession {
+        val remotePublicKey = rpk.base64ToByteArray().toBase64()
         return SyncSession(
             remotePublicKey,
             onAuthorized = { it, isNewlyAuthorized, isNewSession ->
+                synchronized(_remotePendingStatusUpdate) {
+                    _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(true, "Authorized")
+                }
+
                 if (!isNewSession) {
                     return@SyncSession
                 }
@@ -688,7 +852,6 @@ class StateSync {
                 }
 
                 Logger.i(TAG, "$remotePublicKey authorized (name: ${it.displayName})")
-                onAuthorized(remotePublicKey)
                 _authorizedDevices.addDistinct(remotePublicKey)
                 _authorizedDevices.save()
                 deviceUpdatedOrAdded.emit(it.remotePublicKey, it)
@@ -696,10 +859,12 @@ class StateSync {
                 checkForSync(it);
             },
             onUnauthorized = {
-                unauthorize(remotePublicKey)
+                synchronized(_remotePendingStatusUpdate) {
+                    _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Unauthorized")
+                }
 
+                unauthorize(remotePublicKey)
                 Logger.i(TAG, "$remotePublicKey unauthorized (name: ${it.displayName})")
-                onUnuthorized(remotePublicKey)
 
                 synchronized(_sessions) {
                     it.close()
@@ -725,14 +890,24 @@ class StateSync {
                 }
             },
             dataHandler = { it, opcode, subOpcode, data ->
-                handleData(it, opcode, subOpcode, data)
+                val dataCopy = ByteArray(data.remaining())
+                data.get(dataCopy)
+
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    try {
+                        handleData(it, opcode, subOpcode, ByteBuffer.wrap(dataCopy))
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Exception occurred while handling data, closing session", e)
+                        it.close()
+                    }
+                }
             },
             remoteDeviceName
         )
     }
 
-    private fun isHandshakeAllowed(linkType: LinkType, syncSocketSession: SyncSocketSession, publicKey: String, pairingCode: String?): Boolean {
-        Log.v(TAG, "Check if handshake allowed from '$publicKey'.")
+    private fun isHandshakeAllowed(linkType: LinkType, syncSocketSession: SyncSocketSession, publicKey: String, pairingCode: String?, appId: UInt): Boolean {
+        Log.v(TAG, "Check if handshake allowed from '$publicKey' (app id: $appId).")
         if (publicKey == RELAY_PUBLIC_KEY)
             return true
 
@@ -744,7 +919,7 @@ class StateSync {
             }
         }
 
-        Log.v(TAG, "Check if handshake allowed with pairing code '$pairingCode' with active pairing code '$_pairingCode'.")
+        Log.v(TAG, "Check if handshake allowed with pairing code '$pairingCode' with active pairing code '$_pairingCode' (app id: $appId).")
         if (_pairingCode == null || pairingCode.isNullOrEmpty())
             return false
 
@@ -760,13 +935,12 @@ class StateSync {
         return SyncSocketSession(
             (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
             keyPair!!,
-            LittleEndianDataInputStream(socket.getInputStream()),
-            LittleEndianDataOutputStream(socket.getOutputStream()),
+            socket,
             onClose = { s ->
                 if (channelSocket != null)
                     session?.removeChannel(channelSocket!!)
             },
-            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
+            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode, appId -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode, appId) },
             onHandshakeComplete = { s ->
                 val remotePublicKey = s.remotePublicKey
                 if (remotePublicKey == null) {
@@ -824,6 +998,8 @@ class StateSync {
                                     try {
                                         syncSession.authorize()
                                         Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
+
+                                        activity.finish()
                                     } catch (e: Throwable) {
                                         Logger.e(TAG, "Failed to send authorize", e)
                                     }
@@ -899,19 +1075,31 @@ class StateSync {
 
     fun stop() {
         _started = false
-        _serviceDiscoverer.stop()
 
+        try {
+            _nsdManager?.stopServiceDiscovery(_discoveryListener)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to stop discovery listener", e)
+        }
+
+        try {
+            _nsdManager?.unregisterService(_registrationListener)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to unregister service", e)
+        }
+
+        _relaySession?.stop()
         _serverSocket?.close()
         _serverSocket = null
 
-        _thread?.interrupt()
-        _thread = null
-        _connectThread?.interrupt()
-        _connectThread = null
-        _threadRelay?.interrupt()
-        _threadRelay = null
+        synchronized(_sessions) {
+            _sessions.values.forEach { it.close() }
+            _sessions.clear()
+        }
 
-        _relaySession?.stop()
+        _thread = null
+        _connectThread = null
+        _threadRelay = null
         _relaySession = null
     }
 
@@ -927,10 +1115,10 @@ class StateSync {
                 runBlocking {
                     if (onStatusUpdate != null) {
                         synchronized(_remotePendingStatusUpdate) {
-                            _remotePendingStatusUpdate[deviceInfo.publicKey] = onStatusUpdate
+                            _remotePendingStatusUpdate[deviceInfo.publicKey.base64ToByteArray().toBase64()] = onStatusUpdate
                         }
                     }
-                    relaySession.startRelayedChannel(deviceInfo.publicKey, deviceInfo.pairingCode)
+                    relaySession.startRelayedChannel(deviceInfo.publicKey.base64ToByteArray().toBase64(), APP_ID, deviceInfo.pairingCode)
                 }
             } else {
                 throw e
@@ -946,11 +1134,11 @@ class StateSync {
         val session = createSocketSession(socket, false)
         if (onStatusUpdate != null) {
             synchronized(_remotePendingStatusUpdate) {
-                _remotePendingStatusUpdate[publicKey] = onStatusUpdate
+                _remotePendingStatusUpdate[publicKey.base64ToByteArray().toBase64()] = onStatusUpdate
             }
         }
 
-        session.startAsInitiator(publicKey, pairingCode)
+        session.startAsInitiator(publicKey, APP_ID, pairingCode)
         return session
     }
 
@@ -1008,6 +1196,7 @@ class StateSync {
         val version = 1
         val RELAY_SERVER = "relay.grayjay.app"
         val RELAY_PUBLIC_KEY = "xGbHRzDOvE6plRbQaFgSen82eijF+gxS0yeUaeEErkw="
+        val APP_ID = 0x534A5247u //GRayJaySync (GRJS)
 
         private const val TAG = "StateSync"
         const val PORT = 12315

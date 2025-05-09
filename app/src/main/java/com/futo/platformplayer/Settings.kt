@@ -590,7 +590,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.allow_ipv6, FieldForm.TOGGLE, R.string.allow_ipv6_description, 4)
         @Serializable(with = FlexibleBooleanSerializer::class)
-        var allowIpv6: Boolean = false;
+        var allowIpv6: Boolean = true;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
@@ -926,7 +926,7 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Synchronization {
         @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enabled_description, 1)
-        var enabled: Boolean = true;
+        var enabled: Boolean = false;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
         var broadcast: Boolean = false;
@@ -945,6 +945,12 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.connect_through_relay, FieldForm.TOGGLE, R.string.connect_through_relay_description, 3)
         var connectThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_local_direct_through_relay, FieldForm.TOGGLE, R.string.connect_local_direct_through_relay_description, 3)
+        var connectLocalDirectThroughRelay: Boolean = true;
+
+        @FormField(R.string.local_connections, FieldForm.TOGGLE, R.string.local_connections_description, 3)
+        var localConnections: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)

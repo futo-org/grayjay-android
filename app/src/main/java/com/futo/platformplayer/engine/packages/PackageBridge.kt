@@ -72,6 +72,10 @@ class PackageBridge : V8Package {
     fun buildSpecVersion(): Int {
         return JSClientConstants.PLUGIN_SPEC_VERSION;
     }
+    @V8Property
+    fun buildPlatform(): String {
+        return "android";
+    }
 
     @V8Function
     fun dispose(value: V8Value) {

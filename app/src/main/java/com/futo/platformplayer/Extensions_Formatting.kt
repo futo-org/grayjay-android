@@ -14,7 +14,6 @@ import java.text.DecimalFormat
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
-import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 
@@ -376,14 +375,19 @@ private val slds = hashSetOf(".com.ac", ".net.ac", ".gov.ac", ".org.ac", ".mil.a
 fun String.matchesDomain(queryDomain: String): Boolean {
 
     if(queryDomain.startsWith(".")) {
-
-        val parts = queryDomain.lowercase().split(".");
-        if(parts.size < 3)
+        val parts = this.lowercase().split(".");
+        val queryParts = queryDomain.lowercase().trimStart("."[0]).split(".");
+        if(queryParts.size < 2)
             throw IllegalStateException("Illegal use of wildcards on First-Level-Domain (" + queryDomain + ")");
-        if(parts.size >= 3){
-            val isSLD = slds.contains("." + parts[parts.size - 2] + "." + parts[parts.size - 1]);
-            if(isSLD && parts.size <= 3)
+        else {
+            val possibleDomain = "." + queryParts.joinToString(".");
+            if(slds.contains(possibleDomain))
                 throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain (" + queryDomain + ")");
+            /*
+            val isSLD = slds.contains("." + queryParts[queryParts.size - 2] + "." + queryParts[queryParts.size - 1]);
+            if(isSLD && queryParts.size <= 3)
+                throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain (" + queryDomain + ")");
+            */
         }
 
         //TODO: Should be safe, but double verify if can't be exploited
@@ -395,9 +399,11 @@ fun String.matchesDomain(queryDomain: String): Boolean {
 
 fun String.getSubdomainWildcardQuery(): String {
     val domainParts = this.split(".");
-    val sldParts = "." + domainParts[domainParts.size - 2].lowercase() + "." + domainParts[domainParts.size - 1].lowercase();
-    if(slds.contains(sldParts))
-        return "." + domainParts.drop(domainParts.size - 3).joinToString(".");
+    var wildcardDomain = if(domainParts.size > 2)
+        "." + domainParts.drop(1).joinToString(".")
     else
-        return "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+        "." + domainParts.joinToString(".");
+    if(slds.contains(wildcardDomain.lowercase()))
+        "." + domainParts.joinToString(".");
+    return wildcardDomain;
 }

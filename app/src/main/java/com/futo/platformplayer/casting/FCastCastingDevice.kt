@@ -25,6 +25,7 @@ import com.futo.platformplayer.toInetAddress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -289,6 +290,7 @@ class FCastCastingDevice : CastingDevice {
                         break;
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get setup initial connection to FastCast device.", e)
+                        Thread.sleep(1000);
                     }
                 }
 

@@ -5,7 +5,6 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.engine.V8Plugin
 
 class JSChannelPager : JSPager<PlatformAuthorLink>, IPager<PlatformAuthorLink> {
 
