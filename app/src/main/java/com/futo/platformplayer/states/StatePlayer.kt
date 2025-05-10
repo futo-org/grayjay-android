@@ -598,7 +598,7 @@ class StatePlayer {
             }
 
             if(_queuePosition < _queue.size) {
-                return _queue[_queuePosition];
+                return getCurrentQueueItem();
             }
         }
         return null;
