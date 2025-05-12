@@ -499,6 +499,22 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
         var deleteFromWatchLaterAuto: Boolean = true;
+
+        @FormField(R.string.seek_offset, FieldForm.DROPDOWN, R.string.seek_offset_description, 23)
+        @DropdownFieldOptionsId(R.array.seek_offset_duration)
+        var seekOffset: Int = 2;
+
+        fun getSeekOffset(): Long {
+          return when(seekOffset) {
+            0 -> 3_000L;
+            1 -> 5_000L;
+            2 -> 10_000L;
+            3 -> 20_000L;
+            4 -> 30_000L;
+            5 -> 60_000L;
+            else -> 10_000L;
+          }
+        }
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
