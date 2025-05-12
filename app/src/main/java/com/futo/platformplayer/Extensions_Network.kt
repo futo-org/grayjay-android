@@ -217,6 +217,8 @@ private fun ByteArray.toInetAddress(): InetAddress {
 }
 
 fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? {
+    ensureNotMainThread()
+
     val timeout = 2000
 
 

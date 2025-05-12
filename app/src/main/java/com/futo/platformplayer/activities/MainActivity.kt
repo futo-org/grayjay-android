@@ -22,6 +22,7 @@ import android.widget.ImageView
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityCompat
@@ -66,6 +67,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragm
 import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.State
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
@@ -359,6 +361,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             _fragMainSubscriptionsFeed.setPreviewsEnabled(true);
             _fragContainerVideoDetail.visibility = View.INVISIBLE;
             updateSegmentPaddings();
+            updatePrivateModeVisibility()
         };
 
 
@@ -640,8 +643,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    @OptIn(UnstableApi::class)
     fun updatePrivateModeVisibility() {
-        if (_privateModeEnabled && !_pictureInPictureEnabled && !_isFullscreen && !_isMinimized) {
+        if (_privateModeEnabled && (_fragVideoDetail.state == State.CLOSED || !_pictureInPictureEnabled && !_isFullscreen && !_isMinimized)) {
             _buttonIncognito.elevation = 99f;
             _buttonIncognito.alpha = 1f;
             _buttonIncognito.layoutParams = _buttonIncognito.layoutParams.apply {

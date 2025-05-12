@@ -1,5 +1,6 @@
 package com.futo.platformplayer.sync.internal
 
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.DHState
@@ -54,6 +55,7 @@ class ChannelSocket(private val session: SyncSocketSession) : IChannel {
     }
 
     override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, contentEncoding: ContentEncoding?) {
+        ensureNotMainThread()
         if (data != null) {
             session.send(opcode, subOpcode, data, contentEncoding)
         } else {
@@ -152,6 +154,7 @@ class ChannelRelayed(
 
     private fun sendPacket(packet: ByteArray) {
         throwIfDisposed()
+        ensureNotMainThread()
 
         synchronized(sendLock) {
             val encryptedPayload = ByteArray(packet.size + 16)
@@ -169,6 +172,7 @@ class ChannelRelayed(
 
     fun sendError(errorCode: SyncErrorCode) {
         throwIfDisposed()
+        ensureNotMainThread()
 
         synchronized(sendLock) {
             val packet = ByteArray(4)
@@ -189,6 +193,7 @@ class ChannelRelayed(
 
     override fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer?, ce: ContentEncoding?) {
         throwIfDisposed()
+        ensureNotMainThread()
 
         var contentEncoding: ContentEncoding? = ce
         var processedData = data
@@ -272,6 +277,7 @@ class ChannelRelayed(
 
     fun sendRequestTransport(requestId: Int, publicKey: String, appId: UInt, pairingCode: String? = null) {
         throwIfDisposed()
+        ensureNotMainThread()
 
         synchronized(sendLock) {
             val channelMessage = ByteArray(1024)
@@ -312,6 +318,7 @@ class ChannelRelayed(
 
     fun sendResponseTransport(remoteVersion: Int, requestId: Int, handshakeMessage: ByteArray) {
         throwIfDisposed()
+        ensureNotMainThread()
 
         synchronized(sendLock) {
             val message = ByteArray(1024)

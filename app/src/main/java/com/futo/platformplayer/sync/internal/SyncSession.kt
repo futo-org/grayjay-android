@@ -1,6 +1,7 @@
 package com.futo.platformplayer.sync.internal
 
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateSubscriptions
@@ -192,18 +193,22 @@ class SyncSession : IAuthorizable {
     }
 
     inline fun <reified T> sendJsonData(subOpcode: UByte, data: T) {
+        ensureNotMainThread()
         send(Opcode.DATA.value, subOpcode, Json.encodeToString(data))
     }
 
     fun sendData(subOpcode: UByte, data: String) {
+        ensureNotMainThread()
         send(Opcode.DATA.value, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
     fun send(opcode: UByte, subOpcode: UByte, data: String) {
+        ensureNotMainThread()
         send(opcode, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
     fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null, contentEncoding: ContentEncoding? = null) {
+        ensureNotMainThread()
         val channels = synchronized(_channels) { _channels.sortedBy { it.linkType.ordinal }.toList() }
         if (channels.isEmpty()) {
             //TODO: Should this throw?
