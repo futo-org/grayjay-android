@@ -56,7 +56,7 @@
 
         <activity
             android:name=".activities.MainActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
             android:theme="@style/Theme.FutoVideo.NoActionBar"
             android:launchMode="singleInstance"
