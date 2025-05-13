@@ -96,9 +96,37 @@ class ChannelRelayed(
     private var onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)? = null
     private var onClose: ((IChannel) -> Unit)? = null
     private var disposed = false
+    private var _lastPongTime: Long = 0
+    private val _pingInterval: Long = 5000 // 5 seconds in milliseconds
+    private val _disconnectTimeout: Long = 30000 // 30 seconds in milliseconds
 
     init {
         handshakeState?.start()
+    }
+
+    private fun startPingLoop() {
+        if (remoteVersion!! < 5) {
+            return
+        }
+
+        _lastPongTime = System.currentTimeMillis()
+
+        Thread {
+            try {
+                while (!disposed) {
+                    Thread.sleep(_pingInterval)
+                    if (System.currentTimeMillis() - _lastPongTime > _disconnectTimeout) {
+                        Logger.e("ChannelRelayed", "Channel timed out waiting for PONG; closing.")
+                        close()
+                        break
+                    }
+                    send(Opcode.PING.value, 0u)
+                }
+            } catch (e: Exception) {
+                Logger.e("ChannelRelayed", "Ping loop failed", e)
+                close()
+            }
+        }.start()
     }
 
     override fun setDataHandler(onData: ((SyncSocketSession, IChannel, UByte, UByte, ByteBuffer) -> Unit)?) {
@@ -136,6 +164,10 @@ class ChannelRelayed(
     }
 
     fun invokeDataHandler(opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+        if (opcode == Opcode.PONG.value) {
+            _lastPongTime = System.currentTimeMillis()
+            return
+        }
         onData?.invoke(session, this, opcode, subOpcode, data)
     }
 
@@ -150,6 +182,7 @@ class ChannelRelayed(
         handshakeState = null
         this.transport = transport
         Logger.i("ChannelRelayed", "Completed handshake for connectionId $connectionId")
+        startPingLoop()
     }
 
     private fun sendPacket(packet: ByteArray) {
