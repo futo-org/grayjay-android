@@ -1,9 +1,6 @@
 package com.futo.platformplayer.sync.internal
 
 import android.os.Build
-import com.futo.platformplayer.LittleEndianDataInputStream
-import com.futo.platformplayer.LittleEndianDataOutputStream
-import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
@@ -11,7 +8,6 @@ import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.sync.internal.ChannelRelayed.Companion
 import com.futo.polycentric.core.base64ToByteArray
 import com.futo.polycentric.core.toBase64
 import kotlinx.coroutines.CompletableDeferred
@@ -34,9 +30,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import kotlin.math.min
 import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 
 class SyncSocketSession {
     private val _socket: Socket
@@ -257,7 +251,7 @@ class SyncSocketSession {
     private fun handshakeAsInitiator(remotePublicKey: String, appId: UInt, pairingCode: String?) {
         performVersionCheck()
 
-        val initiator = HandshakeState(StateSync.protocolName, HandshakeState.INITIATOR)
+        val initiator = HandshakeState(SyncService.protocolName, HandshakeState.INITIATOR)
         initiator.localKeyPair.copyFrom(_localKeyPair)
         initiator.remotePublicKey.setPublicKey(Base64.getDecoder().decode(remotePublicKey), 0)
         initiator.start()
@@ -311,7 +305,7 @@ class SyncSocketSession {
     private fun handshakeAsResponder(): Boolean {
         performVersionCheck()
 
-        val responder = HandshakeState(StateSync.protocolName, HandshakeState.RESPONDER)
+        val responder = HandshakeState(SyncService.protocolName, HandshakeState.RESPONDER)
         responder.localKeyPair.copyFrom(_localKeyPair)
         responder.start()
 

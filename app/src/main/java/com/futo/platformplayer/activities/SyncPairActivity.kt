@@ -110,7 +110,7 @@ class SyncPairActivity : AppCompatActivity() {
 
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    StateSync.instance.connect(deviceInfo) { complete, message ->
+                    StateSync.instance.syncService?.connect(deviceInfo) { complete, message ->
                         lifecycleScope.launch(Dispatchers.Main) {
                             if (complete != null) {
                                 if (complete) {

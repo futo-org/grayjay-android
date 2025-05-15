@@ -58,7 +58,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Transient
 import java.io.File
 import java.io.FileOutputStream
@@ -73,7 +72,6 @@ import java.util.concurrent.ThreadLocalRandom
 import kotlin.coroutines.resumeWithException
 import kotlin.time.times
 
-@InternalSerializationApi
 @kotlinx.serialization.Serializable
 class VideoDownload {
     var state: State = State.QUEUED;

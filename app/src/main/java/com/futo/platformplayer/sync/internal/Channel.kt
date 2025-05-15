@@ -73,12 +73,12 @@ class ChannelRelayed(
     private val sendLock = Object()
     private val decryptLock = Object()
     private var handshakeState: HandshakeState? = if (initiator) {
-        HandshakeState(StateSync.protocolName, HandshakeState.INITIATOR).apply {
+        HandshakeState(SyncService.protocolName, HandshakeState.INITIATOR).apply {
             localKeyPair.copyFrom(this@ChannelRelayed.localKeyPair)
             remotePublicKey.setPublicKey(Base64.getDecoder().decode(publicKey), 0)
         }
     } else {
-        HandshakeState(StateSync.protocolName, HandshakeState.RESPONDER).apply {
+        HandshakeState(SyncService.protocolName, HandshakeState.RESPONDER).apply {
             localKeyPair.copyFrom(this@ChannelRelayed.localKeyPair)
         }
     }

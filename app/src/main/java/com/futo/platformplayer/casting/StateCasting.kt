@@ -45,8 +45,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.states.StateSync
-import com.futo.platformplayer.states.StateSync.Companion
 import com.futo.platformplayer.stores.CastingDeviceInfoStorage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.toUrlAddress
