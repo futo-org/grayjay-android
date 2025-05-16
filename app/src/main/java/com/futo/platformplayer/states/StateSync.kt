@@ -67,6 +67,7 @@ class StateSync {
                 mdnsBroadcast = Settings.instance.synchronization.broadcast,
                 mdnsConnectDiscovered = Settings.instance.synchronization.connectDiscovered,
                 bindListener = Settings.instance.synchronization.localConnections,
+                connectLastKnown = Settings.instance.synchronization.connectLast,
                 relayHandshakeAllowed = Settings.instance.synchronization.connectThroughRelay,
                 relayPairAllowed = Settings.instance.synchronization.pairThroughRelay,
                 relayEnabled = Settings.instance.synchronization.discoverThroughRelay,
@@ -74,21 +75,21 @@ class StateSync {
                 relayConnectRelayed = Settings.instance.synchronization.connectThroughRelay
             )
         ).apply {
-            syncService?.onAuthorized = { sess, isNewlyAuthorized, isNewSession ->
+            onAuthorized = { sess, isNewlyAuthorized, isNewSession ->
                 if (isNewSession) {
                     deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess)
-                    StateApp.instance.scope.launch { checkForSync(sess) }
+                    StateApp.instance.scope.launch(Dispatchers.IO) { checkForSync(sess) }
                 }
             }
 
-            syncService?.onUnauthorized = { sess ->
+            onUnauthorized = { sess ->
                 StateApp.instance.scope.launch(Dispatchers.Main) {
                     UIDialogs.showConfirmationDialog(
                         context,
                         "Device Unauthorized: ${sess.displayName}",
                         action = {
                             Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
-                            syncService?.removeAuthorizedDevice(sess.remotePublicKey)
+                            removeAuthorizedDevice(sess.remotePublicKey)
                             deviceRemoved.emit(sess.remotePublicKey)
                         },
                         cancelAction = {}
@@ -96,9 +97,9 @@ class StateSync {
                 }
             }
 
-            syncService?.onConnectedChanged = { sess, _ -> deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess) }
-            syncService?.onClose = { sess -> deviceRemoved.emit(sess.remotePublicKey) }
-            syncService?.onData = { it, opcode, subOpcode, data ->
+            onConnectedChanged = { sess, _ -> deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess) }
+            onClose = { sess -> deviceRemoved.emit(sess.remotePublicKey) }
+            onData = { it, opcode, subOpcode, data ->
                 val dataCopy = ByteArray(data.remaining())
                 data.get(dataCopy)
 
@@ -111,7 +112,7 @@ class StateSync {
                     }
                 }
             }
-            syncService?.authorizePrompt = { remotePublicKey, callback ->
+            authorizePrompt = { remotePublicKey, callback ->
                 val scope = StateApp.instance.scopeOrNull
                 val activity = SyncShowPairingCodeActivity.activity
 

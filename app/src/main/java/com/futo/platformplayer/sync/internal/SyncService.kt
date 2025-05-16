@@ -66,6 +66,7 @@ class SyncService(
     private var _serverSocket: ServerSocket? = null
     private var _thread: Thread? = null
     private var _connectThread: Thread? = null
+    private var _mdnsThread: Thread? = null
     @Volatile private var _started = false
     private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
     private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
@@ -82,6 +83,7 @@ class SyncService(
     private val _remotePendingStatusUpdate = mutableMapOf<String, (complete: Boolean?, message: String) -> Unit>()
     private var _nsdManager: NsdManager? = null
     private var _scope: CoroutineScope? = null
+    private val _mdnsCache = mutableMapOf<String, SyncDeviceInfo>()
     private var _discoveryListener: NsdManager.DiscoveryListener = object : NsdManager.DiscoveryListener {
         override fun onDiscoveryStarted(regType: String) {
             Log.d(TAG, "Service discovery started for $regType")
@@ -93,7 +95,11 @@ class SyncService(
 
         override fun onServiceLost(service: NsdServiceInfo) {
             Log.e(TAG, "service lost: $service")
-            // TODO: Handle service lost, e.g., remove device
+            val urlSafePkey = service.attributes["pk"]?.decodeToString() ?: return
+            val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
+            synchronized(_mdnsCache) {
+                _mdnsCache.remove(pkey)
+            }
         }
 
         override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
@@ -120,30 +126,11 @@ class SyncService(
             }
 
             val urlSafePkey = attributes.get("pk")?.decodeToString() ?: return
-            val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
+            val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
             val syncDeviceInfo = SyncDeviceInfo(pkey, adrs.map { it.hostAddress }.toTypedArray(), port, null)
-            val authorized = isAuthorized(pkey)
 
-            if (authorized && !isConnected(pkey)) {
-                val now = System.currentTimeMillis()
-                val lastConnectTime = synchronized(_lastConnectTimesMdns) {
-                    _lastConnectTimesMdns[pkey] ?: 0
-                }
-
-                //Connect once every 30 seconds, max
-                if (now - lastConnectTime > 30000) {
-                    synchronized(_lastConnectTimesMdns) {
-                        _lastConnectTimesMdns[pkey] = now
-                    }
-
-                    Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
-
-                    try {
-                        connect(syncDeviceInfo)
-                    } catch (e: Throwable) {
-                        Logger.i(TAG, "Failed to connect to $pkey", e)
-                    }
-                }
+            synchronized(_mdnsCache) {
+                _mdnsCache[pkey] = syncDeviceInfo
             }
         }
 
@@ -167,7 +154,11 @@ class SyncService(
 
                     override fun onServiceLost() {
                         Log.v(TAG, "onServiceLost: $service")
-                        // TODO: Handle service lost
+                        val urlSafePkey = service.attributes["pk"]?.decodeToString() ?: return
+                        val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
+                        synchronized(_mdnsCache) {
+                            _mdnsCache.remove(pkey)
+                        }
                     }
 
                     override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
@@ -260,9 +251,7 @@ class SyncService(
 
         _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
         if (settings.mdnsConnectDiscovered) {
-            _nsdManager?.apply {
-                discoverServices(serviceName, NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
-            }
+            startMdnsRetryLoop()
         }
 
         if (settings.mdnsBroadcast) {
@@ -318,6 +307,42 @@ class SyncService(
             }
         }.apply { start() }
     }
+
+    private fun startMdnsRetryLoop() {
+        _nsdManager?.apply {
+            discoverServices(serviceName, NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
+        }
+
+        _mdnsThread = Thread {
+            while (_started) {
+                try {
+                    val now = System.currentTimeMillis()
+                    synchronized(_mdnsCache) {
+                        for ((pkey, info) in _mdnsCache) {
+                            if (!database.isAuthorized(pkey) || isConnected(pkey)) continue
+
+                            val last = synchronized(_lastConnectTimesMdns) {
+                                _lastConnectTimesMdns[pkey] ?: 0L
+                            }
+                            if (now - last > 30_000L) {
+                                _lastConnectTimesMdns[pkey] = now
+                                try {
+                                    Logger.i(TAG, "MDNS-retry: connecting to $pkey")
+                                    connect(info)
+                                } catch (ex: Throwable) {
+                                    Logger.w(TAG, "MDNS retry failed for $pkey", ex)
+                                }
+                            }
+                        }
+                    }
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Error in MDNS retry loop", ex)
+                }
+                Thread.sleep(5000)
+            }
+        }.apply { start() }
+    }
+
 
     private fun startConnectLastLoop() {
         _connectThread = Thread {
