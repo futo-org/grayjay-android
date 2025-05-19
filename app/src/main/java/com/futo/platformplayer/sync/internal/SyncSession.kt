@@ -223,7 +223,7 @@ class SyncSession : IAuthorizable {
             Logger.v(TAG, "Packet was not sent … no connected sockets")
             return
         }
-        
+
         var sent = false
         for (channel in channels) {
             try {

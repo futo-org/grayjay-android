@@ -3138,10 +3138,6 @@ class VideoDetailView : ConstraintLayout {
 
     fun applyFragment(frag: VideoDetailFragment) {
         fragment = frag;
-        fragment.onMinimize.subscribe {
-            _liveChat?.stop();
-            _container_content_liveChat.close();
-        }
     }
 
 
