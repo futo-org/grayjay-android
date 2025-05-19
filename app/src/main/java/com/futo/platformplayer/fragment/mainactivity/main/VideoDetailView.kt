@@ -1525,60 +1525,68 @@ class VideoDetailView : ConstraintLayout {
 
         _rating.visibility = View.GONE;
 
-        fragment.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val queryReferencesResponse = ApiMethods.getQueryReferences(
-                    ApiMethods.SERVER, ref, null, null,
-                    arrayListOf(
-                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                            .setFromType(ContentType.OPINION.value).setValue(
-                            ByteString.copyFrom(Opinion.like.data)
-                        ).build(),
-                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                            .setFromType(ContentType.OPINION.value).setValue(
-                            ByteString.copyFrom(Opinion.dislike.data)
-                        ).build()
-                    ),
-                    extraByteReferences = listOfNotNull(extraBytesRef)
-                );
+        if (StatePolycentric.instance.enabled) {
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val queryReferencesResponse = ApiMethods.getQueryReferences(
+                        ApiMethods.SERVER, ref, null, null,
+                        arrayListOf(
+                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                                .setFromType(ContentType.OPINION.value).setValue(
+                                    ByteString.copyFrom(Opinion.like.data)
+                                ).build(),
+                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                                .setFromType(ContentType.OPINION.value).setValue(
+                                    ByteString.copyFrom(Opinion.dislike.data)
+                                ).build()
+                        ),
+                        extraByteReferences = listOfNotNull(extraBytesRef)
+                    );
 
-                val likes = queryReferencesResponse.countsList[0];
-                val dislikes = queryReferencesResponse.countsList[1];
-                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
-                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
+                    val likes = queryReferencesResponse.countsList[0];
+                    val dislikes = queryReferencesResponse.countsList[1];
+                    val hasLiked =
+                        StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
+                    val hasDisliked =
+                        StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
-                withContext(Dispatchers.Main) {
-                    _rating.visibility = View.VISIBLE;
-                    _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                    _rating.onLikeDislikeUpdated.subscribe(this) { args ->
-                        if (args.hasLiked) {
-                            args.processHandle.opinion(ref, Opinion.like);
-                        } else if (args.hasDisliked) {
-                            args.processHandle.opinion(ref, Opinion.dislike);
-                        } else {
-                            args.processHandle.opinion(ref, Opinion.neutral);
-                        }
-
-                        fragment.lifecycleScope.launch(Dispatchers.IO) {
-                            try {
-                                Logger.i(TAG, "Started backfill");
-                                args.processHandle.fullyBackfillServersAnnounceExceptions();
-                                Logger.i(TAG, "Finished backfill");
-                            } catch (e: Throwable) {
-                                Logger.e(TAG, "Failed to backfill servers", e)
+                    withContext(Dispatchers.Main) {
+                        _rating.visibility = View.VISIBLE;
+                        _rating.setRating(
+                            RatingLikeDislikes(likes, dislikes),
+                            hasLiked,
+                            hasDisliked
+                        );
+                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                            if (args.hasLiked) {
+                                args.processHandle.opinion(ref, Opinion.like);
+                            } else if (args.hasDisliked) {
+                                args.processHandle.opinion(ref, Opinion.dislike);
+                            } else {
+                                args.processHandle.opinion(ref, Opinion.neutral);
                             }
-                        }
 
-                        StatePolycentric.instance.updateLikeMap(
-                            ref,
-                            args.hasLiked,
-                            args.hasDisliked
-                        )
-                    };
+                            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                try {
+                                    Logger.i(TAG, "Started backfill");
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
+                                    Logger.i(TAG, "Finished backfill");
+                                } catch (e: Throwable) {
+                                    Logger.e(TAG, "Failed to backfill servers", e)
+                                }
+                            }
+
+                            StatePolycentric.instance.updateLikeMap(
+                                ref,
+                                args.hasLiked,
+                                args.hasDisliked
+                            )
+                        };
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
+                    _rating.visibility = View.GONE;
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
-                _rating.visibility = View.GONE;
             }
         }
 
@@ -3066,7 +3074,12 @@ class VideoDetailView : ConstraintLayout {
             Logger.w(TAG, "Failed to load recommendations.", it);
         };
 
-    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) })
+    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, {
+        if (!StatePolycentric.instance.enabled)
+            return@TaskHandler null
+
+        ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!)
+    })
         .success { it -> setPolycentricProfile(it, animate = true) }
         .exception<Throwable> {
             Logger.w(TAG, "Failed to load claims.", it);
