@@ -9,10 +9,11 @@ import android.view.View
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.getDataLinkFromUrl
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.views.IdenticonView
 import userpackage.Protocol
 
@@ -68,7 +69,7 @@ class CreatorThumbnail : ConstraintLayout {
 
         if (url.startsWith("polycentric://")) {
             try {
-                val dataLink = PolycentricCache.getDataLinkFromUrl(url)
+                val dataLink = url.getDataLinkFromUrl()
                 setHarborAvailable(true, animate, dataLink?.system);
             } catch (e: Throwable) {
                 setHarborAvailable(false, animate, null);
@@ -81,12 +82,14 @@ class CreatorThumbnail : ConstraintLayout {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .diskCacheStrategy(DiskCacheStrategy.DATA)
                 .crossfade()
                 .into(_imageChannelThumbnail);
         } else {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .diskCacheStrategy(DiskCacheStrategy.DATA)
                 .into(_imageChannelThumbnail);
         }
     }

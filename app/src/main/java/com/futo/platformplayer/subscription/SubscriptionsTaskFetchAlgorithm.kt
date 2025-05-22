@@ -1,22 +1,28 @@
 package com.futo.platformplayer.subscription
 
+import SubsExchangeClient
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformContent
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
+import com.futo.platformplayer.api.media.structures.PlatformContentPager
+import com.futo.platformplayer.debug.Stopwatch
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCriticalException
-import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.findNonRuntimeException
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment
+import com.futo.platformplayer.getNowDiffMiliseconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
@@ -24,7 +30,12 @@ import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.subsexchange.ChannelRequest
+import com.futo.platformplayer.subsexchange.ChannelResolve
+import com.futo.platformplayer.subsexchange.ExchangeContract
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
@@ -35,7 +46,8 @@ abstract class SubscriptionsTaskFetchAlgorithm(
     scope: CoroutineScope,
     allowFailure: Boolean = false,
     withCacheFallback: Boolean = true,
-    _threadPool: ForkJoinPool? = null
+    _threadPool: ForkJoinPool? = null,
+    private val subsExchangeClient: SubsExchangeClient? = null
 ) : SubscriptionFetchAlgorithm(scope, allowFailure, withCacheFallback, _threadPool) {
 
 
@@ -45,7 +57,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
     }
 
     override fun getSubscriptions(subs: Map<Subscription, List<String>>): Result {
-        val tasks = getSubscriptionTasks(subs);
+        var tasks = getSubscriptionTasks(subs).toMutableList()
 
         val tasksGrouped = tasks.groupBy { it.client }
 
@@ -70,11 +82,46 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
         val exs: ArrayList<Throwable> = arrayListOf();
 
+        var contract: ExchangeContract? = null;
+        var providedTasks: MutableList<SubscriptionTask>? = null;
+
+        try {
+            val contractingTime = measureTimeMillis {
+                val contractableTasks =
+                    tasks.filter { !it.fromPeek && !it.fromCache && (it.type == ResultCapabilities.TYPE_VIDEOS || it.type == ResultCapabilities.TYPE_MIXED) };
+                contract =
+                    if (contractableTasks.size > 10) subsExchangeClient?.requestContract(*contractableTasks.map {
+                        ChannelRequest(it.url)
+                    }.toTypedArray()) else null;
+                if (contract?.provided?.isNotEmpty() == true)
+                    Logger.i(TAG, "Received subscription exchange contract (Requires ${contract?.required?.size}, Provides ${contract?.provided?.size}), ID: ${contract?.id}");
+                if (contract != null && contract!!.required.isNotEmpty()) {
+                    providedTasks = mutableListOf()
+                    for (task in tasks.toList()) {
+                        if (!task.fromCache && !task.fromPeek && contract!!.provided.contains(task.url)) {
+                            providedTasks!!.add(task);
+                            tasks.remove(task);
+                        }
+                    }
+                }
+            }
+            if(contract != null)
+                Logger.i(TAG, "Subscription Exchange contract received in ${contractingTime}ms");
+            else if(contractingTime > 100)
+                Logger.i(TAG, "Subscription Exchange contract failed to received in${contractingTime}ms");
+
+        }
+        catch(ex: Throwable){
+            Logger.e("SubscriptionsTaskFetchAlgorithm", "Failed to retrieve SubsExchange contract due to: " + ex.message, ex);
+        }
+
         val failedPlugins = mutableListOf<String>();
         val cachedChannels = mutableListOf<String>()
         val forkTasks = executeSubscriptionTasks(tasks, failedPlugins, cachedChannels);
 
         val taskResults = arrayListOf<SubscriptionTaskResult>();
+        var resolveCount = 0;
+        var resolveTime = 0L;
         val timeTotal = measureTimeMillis {
             for(task in forkTasks) {
                 try {
@@ -103,14 +150,82 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     }
                 };
             }
+
+            //Resolve Subscription Exchange
+            if(contract != null) {
+                fun resolve() {
+                    try {
+                        resolveTime = measureTimeMillis {
+                            val resolves = taskResults.filter { it.pager != null && (it.task.type == ResultCapabilities.TYPE_MIXED || it.task.type == ResultCapabilities.TYPE_VIDEOS) && contract!!.required.contains(it.task.url) }.map {
+                                ChannelResolve(
+                                    it.task.url,
+                                    it.pager!!.getResults().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) }
+                                )
+                            }.toTypedArray()
+
+                            val resolveRequestStart = OffsetDateTime.now();
+
+                            val resolve = subsExchangeClient?.resolveContract(
+                                contract!!,
+                                *resolves
+                            );
+
+                            Logger.i(TAG, "Subscription Exchange contract resolved request in ${resolveRequestStart.getNowDiffMiliseconds()}ms");
+
+                            if (resolve != null) {
+                                resolveCount = resolves.size;
+                                UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size}")
+                                for(result in resolve){
+                                    val task = providedTasks?.find { it.url == result.channelUrl };
+                                    if(task != null) {
+                                        taskResults.add(SubscriptionTaskResult(task, PlatformContentPager(result.content, result.content.size), null));
+                                        providedTasks?.remove(task);
+                                    }
+                                }
+                            }
+                            if (providedTasks != null) {
+                                for(task in providedTasks!!) {
+                                    taskResults.add(SubscriptionTaskResult(task, null, IllegalStateException("No data received from exchange")));
+                                }
+                            }
+                        }
+                        Logger.i(TAG, "Subscription Exchange contract resolved in ${resolveTime}ms");
+
+                    }
+                    catch(ex: Throwable) {
+                        //TODO: fetch remainder after all?
+                        Logger.e(TAG, "Failed to resolve Subscription Exchange contract due to: " + ex.message, ex);
+                    }
+                }
+                if(providedTasks?.size ?: 0 == 0)
+                    scope.launch(Dispatchers.IO) {
+                        resolve();
+                    }
+                else
+                    resolve();
+            }
         }
-        Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms")
+
+        Logger.i("StateSubscriptions", "Subscriptions results in ${timeTotal}ms");
+        if(resolveCount > 0) {
+            val selfFetchTime = timeTotal - resolveTime;
+            val selfFetchCount = tasks.count { !it.fromPeek && !it.fromCache };
+            if(selfFetchCount > 0) {
+                val selfResolvePercentage = resolveCount.toDouble() / selfFetchCount;
+                val estimateSelfFetchTime = selfFetchTime + selfFetchTime * selfResolvePercentage;
+                val selfFetchDelta = timeTotal - estimateSelfFetchTime;
+                if(selfFetchDelta > 0)
+                    UIDialogs.appToast("Subscription Exchange lost ${selfFetchDelta}ms (out of ${timeTotal}ms)", true);
+                else
+                    UIDialogs.appToast("Subscription Exchange saved ${(selfFetchDelta * -1).toInt()}ms (out of ${timeTotal}ms)", true);
+            }
+        }
 
         //Cache pagers grouped by channel
         val groupedPagers = taskResults.groupBy { it.task.sub.channel.url }
             .map { entry ->
                 val sub = if(!entry.value.isEmpty()) entry.value[0].task.sub else null;
-                val liveTasks = entry.value.filter { !it.task.fromCache };
+                val liveTasks = entry.value.filter { !it.task.fromCache && it.pager != null };
                 val cachedTasks = entry.value.filter { it.task.fromCache };
                 val livePager = if(liveTasks.isNotEmpty()) StateCache.cachePagerResults(scope, MultiChronoContentPager(liveTasks.map { it.pager!! }, true).apply { this.initialize() }) {
                     onNewCacheHit.emit(sub!!, it);
@@ -173,6 +288,8 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                         Logger.e(StateSubscriptions.TAG, "Subscription peek [${task.sub.channel.name}] failed", ex);
                     }
                 }
+
+                //Intercepts task.fromCache & task.fromPeek
                 synchronized(cachedChannels) {
                     if(task.fromCache || task.fromPeek) {
                         finished++;

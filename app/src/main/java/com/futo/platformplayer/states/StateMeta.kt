@@ -14,7 +14,7 @@ class StateMeta {
         return when(lastCommentSection.value){
             "Polycentric" -> 0;
             "Platform" -> 1;
-            else -> 1
+            else -> 0
         }
     }
     fun setLastCommentSection(value: Int) {

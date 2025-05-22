@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.core.app.ShareCompat
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
+import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -77,6 +78,14 @@ class PlaylistFragment : MainFragment() {
 
             val nameInput = SlideUpMenuTextInput(context, context.getString(R.string.name));
             val editPlaylistOverlay = SlideUpMenuOverlay(context, overlayContainer, context.getString(R.string.edit_playlist), context.getString(R.string.ok), false, nameInput);
+
+            _buttonExport.setOnClickListener {
+                _playlist?.let {
+                    val context = StateApp.instance.contextOrNull ?: return@let;
+                    if(context is IWithResultLauncher)
+                        StateDownloads.instance.exportPlaylist(context, it.id);
+                }
+            };
 
             _buttonDownload.visibility = View.VISIBLE;
             editPlaylistOverlay.onOK.subscribe {
@@ -176,6 +185,7 @@ class PlaylistFragment : MainFragment() {
                     setVideos(parameter.videos, true)
                     setMetadata(parameter.videos.size, parameter.videos.sumOf { it.duration })
                     setButtonDownloadVisible(true)
+                    setButtonExportVisible(false)
                     setButtonEditVisible(true)
 
                     if (!StatePlaylists.instance.playlistStore.hasItem { it.id == parameter.id }) {
@@ -315,6 +325,10 @@ class PlaylistFragment : MainFragment() {
             val playlist = _playlist ?: return;
             playlist.videos = ArrayList(playlist.videos.filter { it != video });
             StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+        }
+
+        override fun onVideoOptions(video: IPlatformVideo) {
+            UISlideOverlays.showVideoOptionsOverlay(video, overlayContainer);
         }
         override fun onVideoClicked(video: IPlatformVideo) {
             val playlist = _playlist;

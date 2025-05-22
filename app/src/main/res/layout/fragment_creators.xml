@@ -16,7 +16,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="110dp"
             android:minHeight="0dp"
             app:layout_scrollFlags="scroll"
             app:contentInsetStart="0dp"
@@ -77,7 +77,16 @@
                         android:layout_height="wrap_content"
                         android:paddingStart="20dp"
                         android:paddingEnd="20dp" />
+
                 </LinearLayout>
+                <TextView
+                    android:id="@+id/text_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="9dp"
+                    android:textAlignment="center"
+                    android:textColor="#333333"
+                    android:text="0 creators" />
             </LinearLayout>
 
         </androidx.appcompat.widget.Toolbar>

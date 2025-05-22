@@ -22,7 +22,6 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
@@ -30,6 +29,7 @@ import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.ClaimType
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.button.MaterialButton

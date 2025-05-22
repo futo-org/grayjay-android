@@ -256,6 +256,8 @@ class SubscriptionGroupFragment : MainFragment() {
                             val sub = StateSubscriptions.instance.getSubscription(sub) ?: StateSubscriptions.instance.getSubscriptionOther(sub);
                             if(sub != null && sub.channel.thumbnail != null) {
                                 g.image = ImageVariable.fromUrl(sub.channel.thumbnail!!);
+                                if(g.image != null)
+                                    g.image!!.subscriptionUrl = sub.channel.url;
                                 g.image?.setImageView(_imageGroup);
                                 g.image?.setImageView(_imageGroupBackground);
                                 break;

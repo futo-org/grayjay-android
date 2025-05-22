@@ -33,6 +33,9 @@ class ManagedStore<T>{
 
     val className: String? get() = _class.classifier?.assume<KClass<*>>()?.simpleName;
 
+    private var _onModificationCreate: ((T) -> Unit)? = null;
+    private var _onModificationDelete: ((T) -> Unit)? = null;
+
     val name: String;
 
     constructor(name: String, dir: File, clazz: KType, serializer: StoreSerializer<T>, niceName: String? = null) {
@@ -59,6 +62,12 @@ class ManagedStore<T>{
     }
     fun withoutBackup(): ManagedStore<T>{
         _withBackup = false;
+        return this;
+    }
+
+    fun withOnModified(created: (T)->Unit, deleted: (T)->Unit): ManagedStore<T> {
+        _onModificationCreate = created;
+        _onModificationDelete = deleted;
         return this;
     }
 
@@ -265,6 +274,7 @@ class ManagedStore<T>{
                 file = saveNew(obj);
                 if(_reconstructStore != null && (_reconstructStore!!.backupOnCreate || withReconstruction))
                     saveReconstruction(file, obj);
+                _onModificationCreate?.invoke(obj)
             }
         }
     }
@@ -300,6 +310,7 @@ class ManagedStore<T>{
                 _files.remove(item);
                 Logger.v(TAG, "Deleting file ${logName(file.id)}");
                 file.delete();
+                _onModificationDelete?.invoke(item)
             }
         }
     }

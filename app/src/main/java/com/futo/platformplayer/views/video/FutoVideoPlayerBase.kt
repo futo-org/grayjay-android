@@ -96,6 +96,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val exoPlayerStateName: String;
 
     var playing: Boolean = false;
+    val activelyPlaying: Boolean get() = (exoPlayer?.player?.playbackState == Player.STATE_READY) && (exoPlayer?.player?.playWhenReady ?: false)
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
 
@@ -829,7 +830,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss");
 
         when (error.errorCode) {
-            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
                 Logger.w(TAG, "ERROR_CODE_IO_BAD_HTTP_STATUS ${error.cause?.javaClass?.simpleName}");
                 if(error.cause is HttpDataSource.InvalidResponseCodeException) {
                     val cause = error.cause as HttpDataSource.InvalidResponseCodeException

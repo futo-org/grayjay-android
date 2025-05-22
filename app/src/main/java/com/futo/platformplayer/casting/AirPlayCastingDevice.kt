@@ -149,6 +149,7 @@ class AirPlayCastingDevice : CastingDevice {
                         break;
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get setup initial connection to AirPlay device.", e)
+                        delay(1000);
                     }
                 }
 

@@ -65,7 +65,7 @@ class HLS {
 
             val suffix = listOf(rendition.language, rendition.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
             return when (rendition.type) {
-                "AUDIO" -> HLSVariantAudioUrlSource(rendition.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", rendition.language ?: "", null, false, rendition.uri)
+                "AUDIO" -> HLSVariantAudioUrlSource(rendition.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", rendition.language ?: "", null, false, false, rendition.uri)
                 else -> null
             }
         }
@@ -159,7 +159,7 @@ class HLS {
                     return if (source is IHLSManifestSource) {
                         listOf()
                     } else if (source is IHLSManifestAudioSource) {
-                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, url))
+                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, url))
                     } else {
                         throw NotImplementedError()
                     }

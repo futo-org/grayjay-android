@@ -113,7 +113,7 @@ class LoginWebViewClient : WebViewClient {
             //val domainParts = domain!!.split(".");
             //val cookieDomain = "." + domainParts.drop(domainParts.size - 2).joinToString(".");
             val cookieDomain = domain!!.getSubdomainWildcardQuery();
-            if(_pluginConfig == null || _pluginConfig.allowUrls.any { it == "everywhere" || it.lowercase().matchesDomain(cookieDomain) })
+            if(_pluginConfig == null || _pluginConfig.allowUrls.any { it == "everywhere" || domain.matchesDomain(it) })
                 _authConfig.cookiesToFind?.let { cookiesToFind ->
                     val cookies = cookieString.split(";");
                     for(cookieStr in cookies) {

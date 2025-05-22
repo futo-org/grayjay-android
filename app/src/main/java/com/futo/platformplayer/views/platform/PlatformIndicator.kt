@@ -22,4 +22,15 @@ class PlatformIndicator : androidx.appcompat.widget.AppCompatImageView {
                 setImageResource(0);
         }
     }
+    fun setPlatformFromClientName(name: String?) {
+        if(name == null)
+            setImageResource(0);
+        else {
+            val result = StatePlatform.instance.getPlatformIconByName(name);
+            if (result != null)
+                result.setImageView(this);
+            else
+                setImageResource(0);
+        }
+    }
 }

@@ -9,6 +9,7 @@ import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.source.MediaSource
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -85,12 +86,17 @@ class VideoHelper {
 
             return selectBestAudioSource((desc as VideoUnMuxedSourceDescriptor).audioSources.toList(), prefContainers, prefLanguage, targetBitrate);
         }
-        fun selectBestAudioSource(altSources : Iterable<IAudioSource>, prefContainers : Array<String>, preferredLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
+        fun selectBestAudioSource(sources : Iterable<IAudioSource>, prefContainers : Array<String>, preferredLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
+            val hasPriority = sources.any { it.priority };
+            var altSources = if(hasPriority) sources.filter { it.priority } else sources;
+            val hasOriginal = altSources.any { it.original };
+            if(hasOriginal && Settings.instance.playback.preferOriginalAudio)
+                altSources = altSources.filter { it.original };
             val languageToFilter = if(preferredLanguage != null && altSources.any { it.language == preferredLanguage }) {
                 preferredLanguage
             } else {
                 if(altSources.any { it.language == Language.ENGLISH })
-                    Language.ENGLISH
+                    Language.ENGLISH;
                 else
                     Language.UNKNOWN;
             }
@@ -207,6 +213,39 @@ class VideoHelper {
                 return (source.duration!! / 8) * source.bitrate;
             }
             else return 0;
+        }
+
+        fun mediaExtensionToMimetype(extension: String): String? {
+            return videoExtensionToMimetype(extension) ?: audioExtensionToMimetype(extension);
+        }
+        fun videoExtensionToMimetype(extension: String): String? {
+            val extensionTrimmed = extension.trim('.').lowercase();
+            return when (extensionTrimmed) {
+                "mp4" -> return "video/mp4";
+                "webm" -> return "video/webm";
+                "m3u8" -> return "video/x-mpegURL";
+                "3gp" -> return "video/3gpp";
+                "mov" -> return "video/quicktime";
+                "mkv" -> return "video/x-matroska";
+                "mp4a" -> return "audio/vnd.apple.mpegurl";
+                "mpga" -> return "audio/mpga";
+                "mp3" -> return "audio/mp3";
+                "webm" -> return "audio/webm";
+                "3gp" -> return "audio/3gpp";
+                else -> null;
+            }
+        }
+        fun audioExtensionToMimetype(extension: String): String? {
+            val extensionTrimmed = extension.trim('.').lowercase();
+            return when (extensionTrimmed) {
+                "mkv" -> return "audio/x-matroska";
+                "mp4a" -> return "audio/vnd.apple.mpegurl";
+                "mpga" -> return "audio/mpga";
+                "mp3" -> return "audio/mp3";
+                "webm" -> return "audio/webm";
+                "3gp" -> return "audio/3gpp";
+                else -> null;
+            }
         }
     }
 }

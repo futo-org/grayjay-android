@@ -19,10 +19,10 @@ import kotlinx.serialization.json.jsonPrimitive
 class PlatformContentSerializer : JsonContentPolymorphicSerializer<SerializedPlatformContent>(SerializedPlatformContent::class) {
 
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<SerializedPlatformContent> {
-        val obj = element.jsonObject["contentType"];
+        val obj = element.jsonObject["contentType"] ?: element.jsonObject["ContentType"];
 
         //TODO: Remove this temporary fallback..at some point
-        if(obj == null && element.jsonObject["isLive"]?.jsonPrimitive?.booleanOrNull != null)
+        if(obj == null && (element.jsonObject["isLive"]?.jsonPrimitive?.booleanOrNull ?: element.jsonObject["IsLive"]?.jsonPrimitive?.booleanOrNull) != null)
             return SerializedPlatformVideo.serializer();
 
         if(obj?.jsonPrimitive?.isString != false) {
