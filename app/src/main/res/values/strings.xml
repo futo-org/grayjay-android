@@ -427,7 +427,6 @@
     <string name="seek_offset">Seek duration</string>
     <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
-    <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="subscription_group_menu">Groups</string>
     <string name="show_subscription_group">Show Subscription Groups</string>
     <string name="use_subscription_exchange">Use Subscription Exchange (Experimental)</string>

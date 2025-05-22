@@ -467,11 +467,6 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 9)
         var useLiveChatWindow: Boolean = true;
 
-
-
-        @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
-        var backgroundSwitchToAudio: Boolean = true;
-
         @FormField(R.string.restart_after_audio_focus_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_audio_focus_after_a_loss, 11)
         @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
         var restartPlaybackAfterLoss: Int = 1;
