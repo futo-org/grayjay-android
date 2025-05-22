@@ -595,6 +595,8 @@ class PlatformComment {
         this.date = obj.date ?? 0;
         this.replyCount = obj.replyCount ?? 0;
         this.context = obj.context ?? {};
+        if(obj.getReplies)
+            this.getReplies = obj.getReplies;
     }
 }
 
