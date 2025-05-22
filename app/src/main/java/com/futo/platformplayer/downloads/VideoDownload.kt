@@ -633,7 +633,9 @@ class VideoDownload {
             val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
             fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
 
-            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+            // 8 second analyze duration is needed for some Rumble HLS downloads
+            val cmd = "-analyzeduration 8M -f concat -safe 0 -i \"${fileList.absolutePath}\"" +
+                    " -c copy \"${targetFile.absolutePath}\""
 
             val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?

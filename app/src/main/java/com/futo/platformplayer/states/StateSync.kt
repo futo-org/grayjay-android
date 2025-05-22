@@ -1,9 +1,7 @@
 package com.futo.platformplayer.states
 
-import android.os.Build
-import android.util.Log
-import com.futo.platformplayer.LittleEndianDataInputStream
-import com.futo.platformplayer.LittleEndianDataOutputStream
+import android.content.Context
+import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
@@ -12,364 +10,188 @@ import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.encryption.GEncryptionProvider
-import com.futo.platformplayer.generateReadablePassword
-import com.futo.platformplayer.getConnectedSocket
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.mdns.DnsService
-import com.futo.platformplayer.mdns.ServiceDiscoverer
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.noise.protocol.DHState
-import com.futo.platformplayer.noise.protocol.Noise
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
+import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringTMapStorage
 import com.futo.platformplayer.sync.SyncSessionData
-import com.futo.platformplayer.sync.internal.ChannelSocket
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
-import com.futo.platformplayer.sync.internal.IAuthorizable
-import com.futo.platformplayer.sync.internal.IChannel
-import com.futo.platformplayer.sync.internal.LinkType
+import com.futo.platformplayer.sync.internal.ISyncDatabaseProvider
 import com.futo.platformplayer.sync.internal.Opcode
-import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.futo.platformplayer.sync.internal.SyncKeyPair
+import com.futo.platformplayer.sync.internal.SyncService
+import com.futo.platformplayer.sync.internal.SyncServiceSettings
 import com.futo.platformplayer.sync.internal.SyncSession
-import com.futo.platformplayer.sync.internal.SyncSocketSession
 import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
 import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import com.futo.platformplayer.sync.models.SyncWatchLaterPackage
-import com.futo.polycentric.core.base64ToByteArray
-import com.futo.polycentric.core.toBase64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.net.Socket
 import java.nio.ByteBuffer
-import java.time.Instant
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.util.Base64
-import java.util.Locale
 import kotlin.system.measureTimeMillis
 
 class StateSync {
-    private val _authorizedDevices = FragmentedStorage.get<StringArrayStorage>("authorized_devices")
-    private val _nameStorage = FragmentedStorage.get<StringStringMapStorage>("sync_remembered_name_storage")
-    private val _syncKeyPair = FragmentedStorage.get<StringStorage>("sync_key_pair")
-    private val _lastAddressStorage = FragmentedStorage.get<StringStringMapStorage>("sync_last_address_storage")
     private val _syncSessionData = FragmentedStorage.get<StringTMapStorage<SyncSessionData>>("syncSessionData")
 
-    private var _serverSocket: ServerSocket? = null
-    private var _thread: Thread? = null
-    private var _connectThread: Thread? = null
-    private var _started = false
-    private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
-    private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
-    private val _lastConnectTimesIp: MutableMap<String, Long> = mutableMapOf()
-    //TODO: Should sync mdns and casting mdns be merged?
-    //TODO: Decrease interval that devices are updated
-    //TODO: Send less data
-    private val _serviceDiscoverer = ServiceDiscoverer(arrayOf("_gsync._tcp.local")) { handleServiceUpdated(it) }
-    private val _pairingCode: String? = generateReadablePassword(8)
-    val pairingCode: String? get() = _pairingCode
-    private var _relaySession: SyncSocketSession? = null
-    private var _threadRelay: Thread? = null
-    private val _remotePendingStatusUpdate = mutableMapOf<String, (complete: Boolean?, message: String) -> Unit>()
-
-    var keyPair: DHState? = null
-    var publicKey: String? = null
+    var syncService: SyncService? = null
+        private set
     val deviceRemoved: Event1<String> = Event1()
     val deviceUpdatedOrAdded: Event2<String, SyncSession> = Event2()
 
-    //TODO: Should authorize acknowledge be implemented?
-
-    fun hasAuthorizedDevice(): Boolean {
-        synchronized(_sessions) {
-            return _sessions.any{ it.value.connected && it.value.isAuthorized };
-        }
-    }
-
-    fun start() {
-        if (_started) {
+    fun start(context: Context, onServerBindFail: () -> Unit) {
+        if (syncService != null) {
             Logger.i(TAG, "Already started.")
             return
         }
-        _started = true
 
-        if (Settings.instance.synchronization.broadcast || Settings.instance.synchronization.connectDiscovered) {
-            _serviceDiscoverer.start()
-        }
-
-        try {
-            val syncKeyPair = Json.decodeFromString<SyncKeyPair>(GEncryptionProvider.instance.decrypt(_syncKeyPair.value))
-            val p = Noise.createDH(dh)
-            p.setPublicKey(syncKeyPair.publicKey.base64ToByteArray(), 0)
-            p.setPrivateKey(syncKeyPair.privateKey.base64ToByteArray(), 0)
-            keyPair = p
-        } catch (e: Throwable) {
-            //Sync key pair non-existing, invalid or lost
-            val p = Noise.createDH(dh)
-            p.generateKeyPair()
-
-            val publicKey = ByteArray(p.publicKeyLength)
-            p.getPublicKey(publicKey, 0)
-            val privateKey = ByteArray(p.privateKeyLength)
-            p.getPrivateKey(privateKey, 0)
-
-            val syncKeyPair = SyncKeyPair(1, publicKey.toBase64(), privateKey.toBase64())
-            _syncKeyPair.setAndSave(GEncryptionProvider.instance.encrypt(Json.encodeToString(syncKeyPair)))
-
-            Logger.e(TAG, "Failed to load existing key pair", e)
-            keyPair = p
-        }
-
-        publicKey = keyPair?.let {
-            val pkey = ByteArray(it.publicKeyLength)
-            it.getPublicKey(pkey, 0)
-            return@let pkey.toBase64()
-        }
-
-        if (Settings.instance.synchronization.broadcast) {
-            publicKey?.let { _serviceDiscoverer.broadcastService(getDeviceName(), "_gsync._tcp.local", PORT.toUShort(), texts = arrayListOf("pk=${it.replace('+', '-').replace('/', '_').replace("=", "")}")) }
-        }
-
-        Logger.i(TAG, "Sync key pair initialized (public key = ${publicKey})")
-
-        _thread = Thread {
-            try {
-                val serverSocket = ServerSocket(PORT)
-                _serverSocket = serverSocket
-
-                Log.i(TAG, "Running on port ${PORT} (TCP)")
-
-                while (_started) {
-                    val socket = serverSocket.accept()
-                    val session = createSocketSession(socket, true)
-                    session.startAsResponder()
+        syncService = SyncService(
+            SERVICE_NAME,
+            RELAY_SERVER,
+            RELAY_PUBLIC_KEY,
+            APP_ID,
+            StoreBasedSyncDatabaseProvider(),
+            SyncServiceSettings(
+                mdnsBroadcast = Settings.instance.synchronization.broadcast,
+                mdnsConnectDiscovered = Settings.instance.synchronization.connectDiscovered,
+                bindListener = Settings.instance.synchronization.localConnections,
+                connectLastKnown = Settings.instance.synchronization.connectLast,
+                relayHandshakeAllowed = Settings.instance.synchronization.connectThroughRelay,
+                relayPairAllowed = Settings.instance.synchronization.pairThroughRelay,
+                relayEnabled = Settings.instance.synchronization.discoverThroughRelay,
+                relayConnectDirect = Settings.instance.synchronization.connectLocalDirectThroughRelay,
+                relayConnectRelayed = Settings.instance.synchronization.connectThroughRelay
+            )
+        ).apply {
+            onAuthorized = { sess, isNewlyAuthorized, isNewSession ->
+                if (isNewSession) {
+                    deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess)
+                    StateApp.instance.scope.launch(Dispatchers.IO) { checkForSync(sess) }
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to bind server socket to port ${PORT}", e)
-                UIDialogs.toast("Failed to start sync, port in use")
             }
-        }.apply { start() }
 
-        if (Settings.instance.synchronization.connectLast) {
-            _connectThread = Thread {
-                Log.i(TAG, "Running auto reconnector")
-
-                while (_started) {
-                    val authorizedDevices = synchronized(_authorizedDevices) {
-                        return@synchronized _authorizedDevices.values
-                    }
-
-                    val lastKnownMap = synchronized(_lastAddressStorage) {
-                        return@synchronized _lastAddressStorage.map.toMap()
-                    }
-
-                    val addressesToConnect = authorizedDevices.mapNotNull {
-                        val connected = isConnected(it)
-                        if (connected) {
-                            return@mapNotNull null
-                        }
-
-                        val lastKnownAddress = lastKnownMap[it] ?: return@mapNotNull null
-                        return@mapNotNull Pair(it, lastKnownAddress)
-                    }
-
-                    for (connectPair in addressesToConnect) {
-                        try {
-                            val now = System.currentTimeMillis()
-                            val lastConnectTime = synchronized(_lastConnectTimesIp) {
-                                _lastConnectTimesIp[connectPair.first] ?: 0
-                            }
-
-                            //Connect once every 30 seconds, max
-                            if (now - lastConnectTime > 30000) {
-                                synchronized(_lastConnectTimesIp) {
-                                    _lastConnectTimesIp[connectPair.first] = now
-                                }
-
-                                Logger.i(TAG, "Attempting to connect to authorized device by last known IP '${connectPair.first}' with pkey=${connectPair.first}")
-                                connect(arrayOf(connectPair.second), PORT, connectPair.first, null)
-                            }
-                        } catch (e: Throwable) {
-                            Logger.i(TAG, "Failed to connect to " + connectPair.first, e)
-                        }
-                    }
-                    Thread.sleep(5000)
+            onUnauthorized = { sess ->
+                StateApp.instance.scope.launch(Dispatchers.Main) {
+                    UIDialogs.showConfirmationDialog(
+                        context,
+                        "Device Unauthorized: ${sess.displayName}",
+                        action = {
+                            Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
+                            removeAuthorizedDevice(sess.remotePublicKey)
+                            deviceRemoved.emit(sess.remotePublicKey)
+                        },
+                        cancelAction = {}
+                    )
                 }
-            }.apply { start() }
-        }
+            }
 
-        if (Settings.instance.synchronization.discoverThroughRelay) {
-            _threadRelay = Thread {
-                while (_started) {
+            onConnectedChanged = { sess, _ -> deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess) }
+            onClose = { sess -> deviceRemoved.emit(sess.remotePublicKey) }
+            onData = { it, opcode, subOpcode, data ->
+                val dataCopy = ByteArray(data.remaining())
+                data.get(dataCopy)
+
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
-                        Log.i(TAG, "Starting relay session...")
+                        handleData(it, opcode, subOpcode, ByteBuffer.wrap(dataCopy))
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Exception occurred while handling data, closing session", e)
+                        it.close()
+                    }
+                }
+            }
+            authorizePrompt = { remotePublicKey, callback ->
+                val scope = StateApp.instance.scopeOrNull
+                val activity = SyncShowPairingCodeActivity.activity
 
-                        var socketClosed = false;
-                        val socket = Socket(RELAY_SERVER, 9000)
-                        _relaySession = SyncSocketSession(
-                            (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
-                            keyPair!!,
-                            LittleEndianDataInputStream(socket.getInputStream()),
-                            LittleEndianDataOutputStream(socket.getOutputStream()),
-                            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
-                            onNewChannel = { _, c ->
-                                val remotePublicKey = c.remotePublicKey
-                                if (remotePublicKey == null) {
-                                    Log.e(TAG, "Remote public key should never be null in onNewChannel.")
-                                    return@SyncSocketSession
-                                }
-
-                                Log.i(TAG, "New channel established from relay (pk: '$remotePublicKey').")
-
-                                var session: SyncSession?
-                                synchronized(_sessions) {
-                                    session = _sessions[remotePublicKey]
-                                    if (session == null) {
-                                        val remoteDeviceName = synchronized(_nameStorage) {
-                                            _nameStorage.get(remotePublicKey)
-                                        }
-                                        session = createNewSyncSession(remotePublicKey, remoteDeviceName)
-                                        _sessions[remotePublicKey] = session!!
-                                    }
-                                    session!!.addChannel(c)
-                                }
-
-                                c.setDataHandler { _, channel, opcode, subOpcode, data ->
-                                    session?.handlePacket(opcode, subOpcode, data)
-                                }
-                                c.setCloseHandler { channel ->
-                                    session?.removeChannel(channel)
-                                }
-                            },
-                            onChannelEstablished = { _, channel, isResponder ->
-                                handleAuthorization(channel, isResponder)
-                            },
-                            onClose = { socketClosed = true },
-                            onHandshakeComplete = { relaySession ->
-                                Thread {
+                if (scope != null && activity != null) {
+                    scope.launch(Dispatchers.Main) {
+                        UIDialogs.showConfirmationDialog(activity, "Allow connection from $remotePublicKey?",
+                            action = {
+                                scope.launch(Dispatchers.IO) {
                                     try {
-                                        while (_started && !socketClosed) {
-                                            val unconnectedAuthorizedDevices = synchronized(_authorizedDevices) {
-                                                _authorizedDevices.values.filter { !isConnected(it) }.toTypedArray()
-                                            }
+                                        callback(true)
+                                        Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
 
-                                            relaySession.publishConnectionInformation(unconnectedAuthorizedDevices, PORT, Settings.instance.synchronization.discoverThroughRelay, false, false, Settings.instance.synchronization.discoverThroughRelay && Settings.instance.synchronization.connectThroughRelay)
-
-                                            val connectionInfos = runBlocking { relaySession.requestBulkConnectionInfo(unconnectedAuthorizedDevices) }
-
-                                            for ((targetKey, connectionInfo) in connectionInfos) {
-                                                val potentialLocalAddresses = connectionInfo.ipv4Addresses.union(connectionInfo.ipv6Addresses)
-                                                    .filter { it != connectionInfo.remoteIp }
-                                                if (connectionInfo.allowLocalDirect) {
-                                                    Thread {
-                                                        try {
-                                                            Log.v(TAG, "Attempting to connect directly, locally to '$targetKey'.")
-                                                            connect(potentialLocalAddresses.map { it }.toTypedArray(), PORT, targetKey, null)
-                                                        } catch (e: Throwable) {
-                                                            Log.e(TAG, "Failed to start direct connection using connection info with $targetKey.", e)
-                                                        }
-                                                    }.start()
-                                                }
-
-                                                if (connectionInfo.allowRemoteDirect) {
-                                                    // TODO: Implement direct remote connection if needed
-                                                }
-
-                                                if (connectionInfo.allowRemoteHolePunched) {
-                                                    // TODO: Implement hole punching if needed
-                                                }
-
-                                                if (connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
-                                                    try {
-                                                        Log.v(TAG, "Attempting relayed connection with '$targetKey'.")
-                                                        runBlocking { relaySession.startRelayedChannel(targetKey, null) }
-                                                    } catch (e: Throwable) {
-                                                        Log.e(TAG, "Failed to start relayed channel with $targetKey.", e)
-                                                    }
-                                                }
-                                            }
-
-                                            Thread.sleep(15000)
-                                        }
+                                        activity.finish()
                                     } catch (e: Throwable) {
-                                        Log.e(TAG, "Unhandled exception in relay session.", e)
-                                        relaySession.stop()
+                                        Logger.e(TAG, "Failed to send authorize", e)
                                     }
-                                }.start()
+                                }
+                            },
+                            cancelAction = {
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        callback(false)
+                                        Logger.i(TAG, "$remotePublicKey unauthorized received")
+                                    } catch (e: Throwable) {
+                                        Logger.w(TAG, "Failed to send unauthorize", e)
+                                    }
+                                }
                             }
                         )
-
-                        _relaySession!!.authorizable = object : IAuthorizable {
-                            override val isAuthorized: Boolean get() = true
-                        }
-
-                        _relaySession!!.startAsInitiator(RELAY_PUBLIC_KEY, null)
-
-                        Log.i(TAG, "Started relay session.")
-                    } catch (e: Throwable) {
-                        Log.e(TAG, "Relay session failed.", e)
-                        Thread.sleep(5000)
-                    } finally {
-                        _relaySession?.stop()
-                        _relaySession = null
                     }
+                } else {
+                    callback(false)
+                    Logger.i(TAG, "Connection unauthorized for $remotePublicKey because not authorized and not on pairing activity to ask")
                 }
-            }.apply { start() }
+            }
+        }
+
+        syncService?.start(context, onServerBindFail)
+    }
+
+    fun showFailedToBindDialogIfNecessary(context: Context) {
+        if (syncService?.serverSocketFailedToStart == true && Settings.instance.synchronization.localConnections) {
+            try {
+                UIDialogs.showDialogOk(context, R.drawable.ic_warning, "Local discovery unavailable, port was in use")
+            } catch (e: Throwable) {
+                //Ignored
+            }
         }
     }
 
-    private fun getDeviceName(): String {
-        val manufacturer = Build.MANUFACTURER.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-        val model = Build.MODEL
-
-        return if (model.startsWith(manufacturer, ignoreCase = true)) {
-            model.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    fun confirmStarted(context: Context, onStarted: () -> Unit, onNotStarted: () -> Unit, onServerBindFail: () -> Unit) {
+        if (syncService == null) {
+            UIDialogs.showConfirmationDialog(context, "Sync has not been enabled yet, would you like to enable sync?", {
+                Settings.instance.synchronization.enabled = true
+                start(context, onServerBindFail)
+                Settings.instance.save()
+                onStarted.invoke()
+            }, {
+                onNotStarted.invoke()
+            })
         } else {
-            "$manufacturer $model".replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            onStarted.invoke()
         }
     }
 
-    fun isConnected(publicKey: String): Boolean {
-        return synchronized(_sessions) {
-            _sessions[publicKey]?.connected ?: false
-        }
+    fun hasAuthorizedDevice(): Boolean {
+        return (syncService?.getAuthorizedDeviceCount() ?: 0) > 0
     }
 
     fun isAuthorized(publicKey: String): Boolean {
-        return synchronized(_authorizedDevices) {
-            _authorizedDevices.values.contains(publicKey)
-        }
+        return syncService?.isAuthorized(publicKey) ?: false
     }
 
     fun getSession(publicKey: String): SyncSession? {
-        return synchronized(_sessions) {
-            _sessions[publicKey]
-        }
+        return syncService?.getSession(publicKey)
     }
-    fun getSessions(): List<SyncSession> {
-        synchronized(_sessions) {
-            return _sessions.values.toList()
-        }
-    }
+
     fun getAuthorizedSessions(): List<SyncSession> {
-        synchronized(_sessions) {
-            return _sessions.values.filter { it.isAuthorized }.toList()
-        }
+        return syncService?.getSessions()?.filter { it.isAuthorized }?.toList() ?: listOf()
     }
 
     fun getSyncSessionData(key: String): SyncSessionData {
@@ -381,56 +203,6 @@ class StateSync {
     fun saveSyncSessionData(data: SyncSessionData){
         _syncSessionData.setAndSave(data.publicKey, data);
     }
-
-    private fun handleServiceUpdated(services: List<DnsService>) {
-        if (!Settings.instance.synchronization.connectDiscovered) {
-            return
-        }
-
-        for (s in services) {
-            //TODO: Addresses IPv4 only?
-            val addresses = s.addresses.mapNotNull { it.hostAddress }.toTypedArray()
-            val port = s.port.toInt()
-            if (s.name.endsWith("._gsync._tcp.local")) {
-                val name = s.name.substring(0, s.name.length - "._gsync._tcp.local".length)
-                val urlSafePkey = s.texts.firstOrNull { it.startsWith("pk=") }?.substring("pk=".length) ?: continue
-                val pkey = Base64.getEncoder().encodeToString(Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')))
-
-                val syncDeviceInfo = SyncDeviceInfo(pkey, addresses, port, null)
-                val authorized = isAuthorized(pkey)
-
-                if (authorized && !isConnected(pkey)) {
-                    val now = System.currentTimeMillis()
-                    val lastConnectTime = synchronized(_lastConnectTimesMdns) {
-                        _lastConnectTimesMdns[pkey] ?: 0
-                    }
-
-                    //Connect once every 30 seconds, max
-                    if (now - lastConnectTime > 30000) {
-                        synchronized(_lastConnectTimesMdns) {
-                            _lastConnectTimesMdns[pkey] = now
-                        }
-
-                        Logger.i(TAG, "Found device authorized device '${name}' with pkey=$pkey, attempting to connect")
-
-                        try {
-                            connect(syncDeviceInfo)
-                        } catch (e: Throwable) {
-                            Logger.i(TAG, "Failed to connect to $pkey", e)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun unauthorize(remotePublicKey: String) {
-        Logger.i(TAG, "${remotePublicKey} unauthorized received")
-        _authorizedDevices.remove(remotePublicKey)
-        _authorizedDevices.save()
-        deviceRemoved.emit(remotePublicKey)
-    }
-
 
     private fun handleSyncSubscriptionPackage(origin: SyncSession, pack: SyncSubscriptionsPackage) {
         val added = mutableListOf<Subscription>()
@@ -450,7 +222,7 @@ class StateSync {
                     added.map { it.channel.name }.joinToString("\n"));
 
 
-        if(pack.subscriptions.isNotEmpty()) {
+        if(pack.subscriptionRemovals.isNotEmpty()) {
             for (subRemoved in pack.subscriptionRemovals) {
                 val removed = StateSubscriptions.instance.applySubscriptionRemovals(pack.subscriptionRemovals);
                 if(removed.size > 3) {
@@ -488,16 +260,33 @@ class StateSync {
 
                 Logger.i(TAG, "Received SyncSessionData from $remotePublicKey");
 
+                val subscriptionPackageString = StateSubscriptions.instance.getSyncSubscriptionsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptions b (size: ${subscriptionPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptions, subscriptionPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptions (size: ${subscriptionPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncSubscriptions, StateSubscriptions.instance.getSyncSubscriptionsPackageString());
-                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString());
-                session.sendData(GJSyncOpcodes.syncPlaylists, StatePlaylists.instance.getSyncPlaylistsPackageString())
+                val subscriptionGroupPackageString = StateSubscriptionGroups.instance.getSyncSubscriptionGroupsPackageString()
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups b (size: ${subscriptionGroupPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncSubscriptionGroups, subscriptionGroupPackageString);
+                Logger.i(TAG, "syncStateExchange syncSubscriptionGroups (size: ${subscriptionGroupPackageString.length})")
 
-                session.sendData(GJSyncOpcodes.syncWatchLater, Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false)));
+                val syncPlaylistPackageString = StatePlaylists.instance.getSyncPlaylistsPackageString()
+                Logger.i(TAG, "syncStateExchange syncPlaylists b (size: ${syncPlaylistPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncPlaylists, syncPlaylistPackageString)
+                Logger.i(TAG, "syncStateExchange syncPlaylists (size: ${syncPlaylistPackageString.length})")
+
+                val watchLaterPackageString = Json.encodeToString(StatePlaylists.instance.getWatchLaterSyncPacket(false))
+                Logger.i(TAG, "syncStateExchange syncWatchLater b (size: ${watchLaterPackageString.length})")
+                session.sendData(GJSyncOpcodes.syncWatchLater, watchLaterPackageString);
+                Logger.i(TAG, "syncStateExchange syncWatchLater (size: ${watchLaterPackageString.length})")
 
                 val recentHistory = StateHistory.instance.getRecentHistory(syncSessionData.lastHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory b (size: ${recentHistory.size})")
                 if(recentHistory.isNotEmpty())
                     session.sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
+
+                Logger.i(TAG, "syncStateExchange syncHistory (size: ${recentHistory.size})")
             }
 
             GJSyncOpcodes.syncExport -> {
@@ -530,12 +319,14 @@ class StateSync {
                 val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
                 handleSyncSubscriptionPackage(session, subPackage);
 
-                val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
+                if(subPackage.subscriptions.size > 0) {
+                    val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
 
-                val sesData = getSyncSessionData(remotePublicKey);
-                if(newestSub > sesData.lastSubscription) {
-                    sesData.lastSubscription = newestSub;
-                    saveSyncSessionData(sesData);
+                    val sesData = getSyncSessionData(remotePublicKey);
+                    if (newestSub > sesData.lastSubscription) {
+                        sesData.lastSubscription = newestSub;
+                        saveSyncSessionData(sesData);
+                    }
                 }
             }
 
@@ -565,7 +356,7 @@ class StateSync {
                 }
                 for(removal in pack.groupRemovals) {
                     val creation = StateSubscriptionGroups.instance.getSubscriptionGroup(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.creationTime < removalTime)
                         StateSubscriptionGroups.instance.deleteSubscriptionGroup(removal.key, false);
                 }
@@ -582,7 +373,7 @@ class StateSync {
 
                     if(existing == null)
                         StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
-                    else if(existing.dateUpdate.toLocalDateTime() < playlist.dateUpdate.toLocalDateTime()) {
+                    else if(existing.dateUpdate < playlist.dateUpdate) {
                         existing.dateUpdate = playlist.dateUpdate;
                         existing.name = playlist.name;
                         existing.videos = playlist.videos;
@@ -593,7 +384,7 @@ class StateSync {
                 }
                 for(removal in pack.playlistRemovals) {
                     val creation = StatePlaylists.instance.getPlaylist(removal.key);
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value, 0), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC();
                     if(creation != null && creation.dateCreation < removalTime)
                         StatePlaylists.instance.removePlaylist(creation, false);
 
@@ -611,9 +402,9 @@ class StateSync {
                 val allExisting = StatePlaylists.instance.getWatchLater();
                 for(video in pack.videos) {
                     val existing = allExisting.firstOrNull { it.url == video.url };
-                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.videoAdds[video.url] ?: 0), ZoneOffset.UTC) else OffsetDateTime.MIN;
-
-                    if(existing == null) {
+                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) (pack.videoAdds[video.url] ?: 0).sToOffsetDateTimeUTC() else OffsetDateTime.MIN;
+                    val removalTime = StatePlaylists.instance.getWatchLaterRemovalTime(video.url) ?: OffsetDateTime.MIN;
+                    if(existing == null && time > removalTime) {
                         StatePlaylists.instance.addToWatchLater(video, false);
                         if(time > OffsetDateTime.MIN)
                             StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
@@ -622,12 +413,12 @@ class StateSync {
                 for(removal in pack.videoRemovals) {
                     val watchLater = allExisting.firstOrNull { it.url == removal.key } ?: continue;
                     val creation = StatePlaylists.instance.getWatchLaterRemovalTime(watchLater.url) ?: OffsetDateTime.MIN;
-                    val removalTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(removal.value), ZoneOffset.UTC);
+                    val removalTime = removal.value.sToOffsetDateTimeUTC()
                     if(creation < removalTime)
                         StatePlaylists.instance.removeFromWatchLater(watchLater, false, removalTime);
                 }
 
-                val packReorderTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(pack.reorderTime), ZoneOffset.UTC);
+                val packReorderTime = pack.reorderTime.sToOffsetDateTimeUTC()
                 val localReorderTime = StatePlaylists.instance.getWatchLaterLastReorderTime();
                 if(localReorderTime < packReorderTime && pack.ordering != null) {
                     StatePlaylists.instance.updateWatchLaterOrdering(smartMerge(pack.ordering!!, StatePlaylists.instance.getWatchLaterOrdering()), true);
@@ -640,6 +431,9 @@ class StateSync {
                 val json = String(dataBody, Charsets.UTF_8);
                 val history = Serializer.json.decodeFromString<List<HistoryVideo>>(json);
                 Logger.i(TAG, "SyncHistory received ${history.size} videos from ${remotePublicKey}");
+                if (history.size == 1) {
+                    Logger.i(TAG, "SyncHistory received update video '${history[0].video.name}' (url: ${history[0].video.url}) at timestamp ${history[0].position}");
+                }
 
                 var lastHistory = OffsetDateTime.MIN;
                 for(video in history){
@@ -658,213 +452,6 @@ class StateSync {
                     }
                 }
             }
-        }
-    }
-
-    private fun onAuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(true, "Authorized")
-        }
-    }
-
-    private fun onUnuthorized(remotePublicKey: String) {
-        synchronized(_remotePendingStatusUpdate) {
-            _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Unauthorized")
-        }
-    }
-
-    private fun createNewSyncSession(remotePublicKey: String, remoteDeviceName: String?): SyncSession {
-        return SyncSession(
-            remotePublicKey,
-            onAuthorized = { it, isNewlyAuthorized, isNewSession ->
-                if (!isNewSession) {
-                    return@SyncSession
-                }
-
-                it.remoteDeviceName?.let { remoteDeviceName ->
-                    synchronized(_nameStorage) {
-                        _nameStorage.setAndSave(remotePublicKey, remoteDeviceName)
-                    }
-                }
-
-                Logger.i(TAG, "$remotePublicKey authorized (name: ${it.displayName})")
-                onAuthorized(remotePublicKey)
-                _authorizedDevices.addDistinct(remotePublicKey)
-                _authorizedDevices.save()
-                deviceUpdatedOrAdded.emit(it.remotePublicKey, it)
-
-                checkForSync(it);
-            },
-            onUnauthorized = {
-                unauthorize(remotePublicKey)
-
-                Logger.i(TAG, "$remotePublicKey unauthorized (name: ${it.displayName})")
-                onUnuthorized(remotePublicKey)
-
-                synchronized(_sessions) {
-                    it.close()
-                    _sessions.remove(remotePublicKey)
-                }
-            },
-            onConnectedChanged = { it, connected ->
-                Logger.i(TAG, "$remotePublicKey connected: $connected")
-                deviceUpdatedOrAdded.emit(it.remotePublicKey, it)
-            },
-            onClose = {
-                Logger.i(TAG, "$remotePublicKey closed")
-
-                synchronized(_sessions)
-                {
-                    _sessions.remove(it.remotePublicKey)
-                }
-
-                deviceRemoved.emit(it.remotePublicKey)
-
-                synchronized(_remotePendingStatusUpdate) {
-                    _remotePendingStatusUpdate.remove(remotePublicKey)?.invoke(false, "Connection closed")
-                }
-            },
-            dataHandler = { it, opcode, subOpcode, data ->
-                handleData(it, opcode, subOpcode, data)
-            },
-            remoteDeviceName
-        )
-    }
-
-    private fun isHandshakeAllowed(linkType: LinkType, syncSocketSession: SyncSocketSession, publicKey: String, pairingCode: String?): Boolean {
-        Log.v(TAG, "Check if handshake allowed from '$publicKey'.")
-        if (publicKey == RELAY_PUBLIC_KEY)
-            return true
-
-        synchronized(_authorizedDevices) {
-            if (_authorizedDevices.values.contains(publicKey)) {
-                if (linkType == LinkType.Relayed && !Settings.instance.synchronization.connectThroughRelay)
-                    return false
-                return true
-            }
-        }
-
-        Log.v(TAG, "Check if handshake allowed with pairing code '$pairingCode' with active pairing code '$_pairingCode'.")
-        if (_pairingCode == null || pairingCode.isNullOrEmpty())
-            return false
-
-        if (linkType == LinkType.Relayed && !Settings.instance.synchronization.pairThroughRelay)
-            return false
-
-        return _pairingCode == pairingCode
-    }
-
-    private fun createSocketSession(socket: Socket, isResponder: Boolean): SyncSocketSession {
-        var session: SyncSession? = null
-        var channelSocket: ChannelSocket? = null
-        return SyncSocketSession(
-            (socket.remoteSocketAddress as InetSocketAddress).address.hostAddress!!,
-            keyPair!!,
-            LittleEndianDataInputStream(socket.getInputStream()),
-            LittleEndianDataOutputStream(socket.getOutputStream()),
-            onClose = { s ->
-                if (channelSocket != null)
-                    session?.removeChannel(channelSocket!!)
-            },
-            isHandshakeAllowed = { linkType, syncSocketSession, publicKey, pairingCode -> isHandshakeAllowed(linkType, syncSocketSession, publicKey, pairingCode) },
-            onHandshakeComplete = { s ->
-                val remotePublicKey = s.remotePublicKey
-                if (remotePublicKey == null) {
-                    s.stop()
-                    return@SyncSocketSession
-                }
-
-                Logger.i(TAG, "Handshake complete with (LocalPublicKey = ${s.localPublicKey}, RemotePublicKey = ${s.remotePublicKey})")
-
-                channelSocket = ChannelSocket(s)
-
-                synchronized(_sessions) {
-                    session = _sessions[s.remotePublicKey]
-                    if (session == null) {
-                        val remoteDeviceName = synchronized(_nameStorage) {
-                            _nameStorage.get(remotePublicKey)
-                        }
-
-                        synchronized(_lastAddressStorage) {
-                            _lastAddressStorage.setAndSave(remotePublicKey, s.remoteAddress)
-                        }
-
-                        session = createNewSyncSession(remotePublicKey, remoteDeviceName)
-                        _sessions[remotePublicKey] = session!!
-                    }
-                    session!!.addChannel(channelSocket!!)
-                }
-
-                handleAuthorization(channelSocket!!, isResponder)
-            },
-            onData = { s, opcode, subOpcode, data ->
-                session?.handlePacket(opcode, subOpcode, data)
-            }
-        )
-    }
-
-    private fun handleAuthorization(channel: IChannel, isResponder: Boolean) {
-        val syncSession = channel.syncSession!!
-        val remotePublicKey = channel.remotePublicKey!!
-
-        if (isResponder) {
-            val isAuthorized = synchronized(_authorizedDevices) {
-                _authorizedDevices.values.contains(remotePublicKey)
-            }
-
-            if (!isAuthorized) {
-                val scope = StateApp.instance.scopeOrNull
-                val activity = SyncShowPairingCodeActivity.activity
-
-                if (scope != null && activity != null) {
-                    scope.launch(Dispatchers.Main) {
-                        UIDialogs.showConfirmationDialog(activity, "Allow connection from ${remotePublicKey}?",
-                            action = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        syncSession.authorize()
-                                        Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
-                                    } catch (e: Throwable) {
-                                        Logger.e(TAG, "Failed to send authorize", e)
-                                    }
-                                }
-                            },
-                            cancelAction = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        unauthorize(remotePublicKey)
-                                    } catch (e: Throwable) {
-                                        Logger.w(TAG, "Failed to send unauthorize", e)
-                                    }
-
-                                    syncSession.close()
-                                    synchronized(_sessions) {
-                                        _sessions.remove(remotePublicKey)
-                                    }
-                                }
-                            }
-                        )
-                    }
-                } else {
-                    val publicKey = syncSession.remotePublicKey
-                    syncSession.unauthorize()
-                    syncSession.close()
-
-                    synchronized(_sessions) {
-                        _sessions.remove(publicKey)
-                    }
-
-                    Logger.i(TAG, "Connection unauthorized for $remotePublicKey because not authorized and not on pairing activity to ask")
-                }
-            } else {
-                //Responder does not need to check because already approved
-                syncSession.authorize()
-                Logger.i(TAG, "Connection authorized for $remotePublicKey because already authorized")
-            }
-        } else {
-            //Initiator does not need to check because the manual action of scanning the QR counts as approval
-            syncSession.authorize()
-            Logger.i(TAG, "Connection authorized for $remotePublicKey because initiator")
         }
     }
 
@@ -898,72 +485,17 @@ class StateSync {
     }
 
     fun stop() {
-        _started = false
-        _serviceDiscoverer.stop()
-
-        _serverSocket?.close()
-        _serverSocket = null
-
-        _thread?.interrupt()
-        _thread = null
-        _connectThread?.interrupt()
-        _connectThread = null
-        _threadRelay?.interrupt()
-        _threadRelay = null
-
-        _relaySession?.stop()
-        _relaySession = null
+        syncService?.stop()
+        syncService = null
     }
 
-    fun connect(deviceInfo: SyncDeviceInfo, onStatusUpdate: ((complete: Boolean?, message: String) -> Unit)? = null) {
-        try {
-            connect(deviceInfo.addresses, deviceInfo.port, deviceInfo.publicKey, deviceInfo.pairingCode, onStatusUpdate)
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to connect directly", e)
-            val relaySession = _relaySession
-            if (relaySession != null && Settings.instance.synchronization.pairThroughRelay) {
-                onStatusUpdate?.invoke(null, "Connecting via relay...")
-
-                runBlocking {
-                    if (onStatusUpdate != null) {
-                        synchronized(_remotePendingStatusUpdate) {
-                            _remotePendingStatusUpdate[deviceInfo.publicKey] = onStatusUpdate
-                        }
-                    }
-                    relaySession.startRelayedChannel(deviceInfo.publicKey, deviceInfo.pairingCode)
-                }
-            } else {
-                throw e
-            }
-        }
-    }
-
-    fun connect(addresses: Array<String>, port: Int, publicKey: String, pairingCode: String?, onStatusUpdate: ((complete: Boolean?, message: String) -> Unit)? = null): SyncSocketSession {
-        onStatusUpdate?.invoke(null, "Connecting directly...")
-        val socket = getConnectedSocket(addresses.map { InetAddress.getByName(it) }, port) ?: throw Exception("Failed to connect")
-        onStatusUpdate?.invoke(null, "Handshaking...")
-
-        val session = createSocketSession(socket, false)
-        if (onStatusUpdate != null) {
-            synchronized(_remotePendingStatusUpdate) {
-                _remotePendingStatusUpdate[publicKey] = onStatusUpdate
-            }
-        }
-
-        session.startAsInitiator(publicKey, pairingCode)
-        return session
-    }
 
     fun getAll(): List<String> {
-        synchronized(_authorizedDevices) {
-            return _authorizedDevices.values.toList()
-        }
+        return syncService?.getAllAuthorizedDevices()?.toList() ?: listOf()
     }
 
     fun getCachedName(publicKey: String): String? {
-        return synchronized(_nameStorage) {
-            _nameStorage.get(publicKey)
-        }
+        return syncService?.getCachedName(publicKey)
     }
 
     suspend fun delete(publicKey: String) {
@@ -980,14 +512,8 @@ class StateSync {
                     session.close()
                 }
 
-                synchronized(_sessions) {
-                    _sessions.remove(publicKey)
-                }
-
-                synchronized(_authorizedDevices) {
-                    _authorizedDevices.remove(publicKey)
-                }
-                _authorizedDevices.save()
+                syncService?.removeSession(publicKey)
+                syncService?.removeAuthorizedDevice(publicKey)
 
                 withContext(Dispatchers.Main) {
                     deviceRemoved.emit(publicKey)
@@ -996,18 +522,47 @@ class StateSync {
                 Logger.w(TAG, "Failed to delete", e)
             }
         }
+    }
 
+    class StoreBasedSyncDatabaseProvider : ISyncDatabaseProvider {
+        private val _authorizedDevices = FragmentedStorage.get<StringArrayStorage>("authorized_devices")
+        private val _nameStorage = FragmentedStorage.get<StringStringMapStorage>("sync_remembered_name_storage")
+        private val _syncKeyPair = FragmentedStorage.get<StringStorage>("sync_key_pair")
+        private val _lastAddressStorage = FragmentedStorage.get<StringStringMapStorage>("sync_last_address_storage")
+
+        override fun isAuthorized(publicKey: String): Boolean = synchronized(_authorizedDevices) { _authorizedDevices.values.contains(publicKey) }
+        override fun addAuthorizedDevice(publicKey: String) = synchronized(_authorizedDevices) {
+            _authorizedDevices.addDistinct(publicKey)
+            _authorizedDevices.save()
+        }
+        override fun removeAuthorizedDevice(publicKey: String) = synchronized(_authorizedDevices) {
+            _authorizedDevices.remove(publicKey)
+            _authorizedDevices.save()
+        }
+        override fun getAllAuthorizedDevices(): Array<String> = synchronized(_authorizedDevices) { _authorizedDevices.values.toTypedArray() }
+        override fun getAuthorizedDeviceCount(): Int = synchronized(_authorizedDevices) { _authorizedDevices.values.size }
+        override fun getSyncKeyPair(): SyncKeyPair? = try {
+            Json.decodeFromString<SyncKeyPair>(GEncryptionProvider.instance.decrypt(_syncKeyPair.value))
+        } catch (e: Throwable) { null }
+        override fun setSyncKeyPair(value: SyncKeyPair) { _syncKeyPair.setAndSave(GEncryptionProvider.instance.encrypt(Json.encodeToString(value))) }
+        override fun getLastAddress(publicKey: String): String? = synchronized(_lastAddressStorage) { _lastAddressStorage.map[publicKey] }
+        override fun setLastAddress(publicKey: String, address: String) = synchronized(_lastAddressStorage) {
+            _lastAddressStorage.map[publicKey] = address
+            _lastAddressStorage.save()
+        }
+        override fun getDeviceName(publicKey: String): String? = synchronized(_nameStorage) { _nameStorage.map[publicKey] }
+        override fun setDeviceName(publicKey: String, name: String) = synchronized(_nameStorage) {
+            _nameStorage.map[publicKey] = name
+            _nameStorage.save()
+        }
     }
 
     companion object {
-        val dh = "25519"
-        val pattern = "IK"
-        val cipher = "ChaChaPoly"
-        val hash = "BLAKE2b"
-        var protocolName = "Noise_${pattern}_${dh}_${cipher}_${hash}"
         val version = 1
         val RELAY_SERVER = "relay.grayjay.app"
+        val SERVICE_NAME = "_gsync._tcp"
         val RELAY_PUBLIC_KEY = "xGbHRzDOvE6plRbQaFgSen82eijF+gxS0yeUaeEErkw="
+        val APP_ID = 0x534A5247u //GRayJaySync (GRJS)
 
         private const val TAG = "StateSync"
         const val PORT = 12315

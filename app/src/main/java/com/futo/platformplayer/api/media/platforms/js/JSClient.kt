@@ -195,8 +195,11 @@ open class JSClient : IPlatformClient {
         _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
 
-    open fun getCopy(withoutCredentials: Boolean = false): JSClient {
-        return JSClient(_context, descriptor, saveState(), _script, withoutCredentials);
+    open fun getCopy(withoutCredentials: Boolean = false, noSaveState: Boolean = false): JSClient {
+        val client = JSClient(_context, descriptor, if (noSaveState) null else saveState(), _script, withoutCredentials);
+        if (noSaveState)
+            client.initialize()
+        return client
     }
 
     fun getUnderlyingPlugin(): V8Plugin {
@@ -211,6 +214,8 @@ open class JSClient : IPlatformClient {
     }
 
     override fun initialize() {
+        if (_initialized) return
+
         Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");

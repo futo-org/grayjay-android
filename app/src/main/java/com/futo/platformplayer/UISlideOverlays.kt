@@ -684,6 +684,10 @@ class UISlideOverlays {
                             }
                         }
                     }
+                    if(!Settings.instance.downloads.shouldDownload()) {
+                        UIDialogs.appToast("Download will start when you're back on wifi.\n" +
+                                "(You can change this in settings)", true);
+                    }
                 }
             };
             return menu.apply { show() };

@@ -41,6 +41,19 @@
             app:srcCompat="@drawable/placeholder_video_thumbnail"
             android:background="@drawable/video_thumbnail_outline" />
 
+        <com.futo.platformplayer.views.others.ProgressBar
+            android:id="@+id/time_bar"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            app:progress="60%"
+            app:inactiveColor="#55EEEEEE"
+            android:layout_marginBottom="0dp"
+            app:radiusBottomLeft="4dp"
+            app:radiusBottomRight="4dp"
+            app:radiusTopLeft="0dp"
+            app:radiusTopRight="0dp" />
+
         <LinearLayout
             android:id="@+id/thumbnail_live_container"
             android:layout_width="wrap_content"
@@ -49,7 +62,7 @@
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="6dp"
             android:paddingTop="0dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -77,7 +90,7 @@
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="6dp"
             android:paddingTop="0dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -103,7 +116,7 @@
             android:layout_height="20dp"
             android:layout_gravity="bottom|start"
             android:layout_marginStart="4dp"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="6dp" />
 
         <FrameLayout android:id="@+id/layout_downloaded"
             android:layout_width="16dp"

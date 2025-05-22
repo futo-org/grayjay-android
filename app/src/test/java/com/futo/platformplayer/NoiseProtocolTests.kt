@@ -9,6 +9,7 @@ import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.noise.protocol.Noise
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.internal.IAuthorizable
+import com.futo.platformplayer.sync.internal.Opcode
 import com.futo.platformplayer.sync.internal.SyncSocketSession
 import com.futo.platformplayer.sync.internal.SyncStream
 import junit.framework.TestCase.assertEquals
@@ -586,16 +587,16 @@ class NoiseProtocolTest {
         handshakeLatch.await(10, TimeUnit.SECONDS)
 
         // Simulate initiator sending a PING and responder replying with PONG
-        initiatorSession.send(SyncSocketSession.Opcode.PING.value)
-        responderSession.send(SyncSocketSession.Opcode.PONG.value)
+        initiatorSession.send(Opcode.PING.value)
+        responderSession.send(Opcode.PONG.value)
 
         // Test data transfer
-        responderSession.send(SyncSocketSession.Opcode.DATA.value, 0u, randomBytesExactlyOnePacket)
-        initiatorSession.send(SyncSocketSession.Opcode.DATA.value, 1u, randomBytes)
+        responderSession.send(Opcode.DATA.value, 0u, randomBytesExactlyOnePacket)
+        initiatorSession.send(Opcode.DATA.value, 1u, randomBytes)
 
         // Send large data to test stream handling
         val start = System.currentTimeMillis()
-        responderSession.send(SyncSocketSession.Opcode.DATA.value, 0u, randomBytesBig)
+        responderSession.send(Opcode.DATA.value, 0u, randomBytesBig)
         println("Sent 10MB in ${System.currentTimeMillis() - start}ms")
 
         // Wait for a brief period to simulate delay and allow communication

@@ -322,6 +322,7 @@ class ChromecastCastingDevice : CastingDevice {
                         break;
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to get setup initial connection to ChromeCast device.", e)
+                        Thread.sleep(1000);
                     }
                 }
 

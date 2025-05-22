@@ -46,6 +46,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
@@ -148,7 +149,6 @@ import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.pills.RoundButton
 import com.futo.platformplayer.views.pills.RoundButtonGroup
 import com.futo.platformplayer.views.platform.PlatformIndicator
-import com.futo.platformplayer.views.segments.ChaptersList
 import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.video.FutoVideoPlayer
@@ -571,7 +571,7 @@ class VideoDetailView : ConstraintLayout {
             _player.setIsReplay(true);
 
             val searchVideo = StatePlayer.instance.getCurrentQueueItem();
-            if (searchVideo is SerializedPlatformVideo?) {
+            if (searchVideo is SerializedPlatformVideo? && Settings.instance.playback.deleteFromWatchLaterAuto) {
                 searchVideo?.let { StatePlaylists.instance.removeFromWatchLater(it) };
             }
 
@@ -687,6 +687,20 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onCloseReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onCloseReceived")
             onClose.emit()
+        };
+        MediaControlReceiver.onBackgroundReceived.subscribe(this) {
+            Logger.i(TAG, "MediaControlReceiver.onBackgroundReceived")
+            _player.switchToAudioMode();
+            allowBackground = true;
+            StateApp.instance.contextOrNull?.let {
+                try {
+                    if (it is MainActivity) {
+                        it.moveTaskToBack(true)
+                    }
+                } catch (e: Throwable) {
+                    Logger.i(TAG, "Failed to move task to back", e)
+                }
+            }
         };
         MediaControlReceiver.onSeekToReceived.subscribe(this) { handleSeek(it); };
 
@@ -1141,6 +1155,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onNextReceived.remove(this);
         MediaControlReceiver.onPreviousReceived.remove(this);
         MediaControlReceiver.onCloseReceived.remove(this);
+        MediaControlReceiver.onBackgroundReceived.remove(this);
         MediaControlReceiver.onSeekToReceived.remove(this);
 
         val job = _jobHideResume;
@@ -1510,60 +1525,68 @@ class VideoDetailView : ConstraintLayout {
 
         _rating.visibility = View.GONE;
 
-        fragment.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val queryReferencesResponse = ApiMethods.getQueryReferences(
-                    ApiMethods.SERVER, ref, null, null,
-                    arrayListOf(
-                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                            .setFromType(ContentType.OPINION.value).setValue(
-                            ByteString.copyFrom(Opinion.like.data)
-                        ).build(),
-                        Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                            .setFromType(ContentType.OPINION.value).setValue(
-                            ByteString.copyFrom(Opinion.dislike.data)
-                        ).build()
-                    ),
-                    extraByteReferences = listOfNotNull(extraBytesRef)
-                );
+        if (StatePolycentric.instance.enabled) {
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val queryReferencesResponse = ApiMethods.getQueryReferences(
+                        ApiMethods.SERVER, ref, null, null,
+                        arrayListOf(
+                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                                .setFromType(ContentType.OPINION.value).setValue(
+                                    ByteString.copyFrom(Opinion.like.data)
+                                ).build(),
+                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
+                                .setFromType(ContentType.OPINION.value).setValue(
+                                    ByteString.copyFrom(Opinion.dislike.data)
+                                ).build()
+                        ),
+                        extraByteReferences = listOfNotNull(extraBytesRef)
+                    );
 
-                val likes = queryReferencesResponse.countsList[0];
-                val dislikes = queryReferencesResponse.countsList[1];
-                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
-                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
+                    val likes = queryReferencesResponse.countsList[0];
+                    val dislikes = queryReferencesResponse.countsList[1];
+                    val hasLiked =
+                        StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
+                    val hasDisliked =
+                        StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
-                withContext(Dispatchers.Main) {
-                    _rating.visibility = View.VISIBLE;
-                    _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                    _rating.onLikeDislikeUpdated.subscribe(this) { args ->
-                        if (args.hasLiked) {
-                            args.processHandle.opinion(ref, Opinion.like);
-                        } else if (args.hasDisliked) {
-                            args.processHandle.opinion(ref, Opinion.dislike);
-                        } else {
-                            args.processHandle.opinion(ref, Opinion.neutral);
-                        }
-
-                        fragment.lifecycleScope.launch(Dispatchers.IO) {
-                            try {
-                                Logger.i(TAG, "Started backfill");
-                                args.processHandle.fullyBackfillServersAnnounceExceptions();
-                                Logger.i(TAG, "Finished backfill");
-                            } catch (e: Throwable) {
-                                Logger.e(TAG, "Failed to backfill servers", e)
+                    withContext(Dispatchers.Main) {
+                        _rating.visibility = View.VISIBLE;
+                        _rating.setRating(
+                            RatingLikeDislikes(likes, dislikes),
+                            hasLiked,
+                            hasDisliked
+                        );
+                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                            if (args.hasLiked) {
+                                args.processHandle.opinion(ref, Opinion.like);
+                            } else if (args.hasDisliked) {
+                                args.processHandle.opinion(ref, Opinion.dislike);
+                            } else {
+                                args.processHandle.opinion(ref, Opinion.neutral);
                             }
-                        }
 
-                        StatePolycentric.instance.updateLikeMap(
-                            ref,
-                            args.hasLiked,
-                            args.hasDisliked
-                        )
-                    };
+                            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                try {
+                                    Logger.i(TAG, "Started backfill");
+                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
+                                    Logger.i(TAG, "Finished backfill");
+                                } catch (e: Throwable) {
+                                    Logger.e(TAG, "Failed to backfill servers", e)
+                                }
+                            }
+
+                            StatePolycentric.instance.updateLikeMap(
+                                ref,
+                                args.hasLiked,
+                                args.hasDisliked
+                            )
+                        };
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
+                    _rating.visibility = View.GONE;
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
-                _rating.visibility = View.GONE;
             }
         }
 
@@ -2413,6 +2436,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "handleFullScreen(fullscreen=$fullscreen)")
 
         if(fullscreen) {
+            _container_content.visibility = GONE
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
 
             val lp = _container_content.layoutParams as LayoutParams;
@@ -2426,6 +2450,7 @@ class VideoDetailView : ConstraintLayout {
             setProgressBarOverlayed(null);
         }
         else {
+            _container_content.visibility = VISIBLE
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
 
             val lp = _container_content.layoutParams as LayoutParams;
@@ -2483,6 +2508,13 @@ class VideoDetailView : ConstraintLayout {
         } else{
             videoSourceWidth >= videoSourceHeight
         }
+    }
+
+    fun saveBrightness() {
+        _player.gestureControl.saveBrightness()
+    }
+    fun restoreBrightness() {
+        _player.gestureControl.restoreBrightness()
     }
 
     fun setFullscreen(fullscreen : Boolean) {
@@ -2725,10 +2757,11 @@ class VideoDetailView : ConstraintLayout {
         else
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
+        val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
             .setSourceRectHint(r)
-            .setActions(listOf(playpauseAction))
+            .setActions(listOf(toBackgroundAction, playpauseAction))
             .build();
     }
 
@@ -3041,7 +3074,12 @@ class VideoDetailView : ConstraintLayout {
             Logger.w(TAG, "Failed to load recommendations.", it);
         };
 
-    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) })
+    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, {
+        if (!StatePolycentric.instance.enabled)
+            return@TaskHandler null
+
+        ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!)
+    })
         .success { it -> setPolycentricProfile(it, animate = true) }
         .exception<Throwable> {
             Logger.w(TAG, "Failed to load claims.", it);
@@ -3113,10 +3151,6 @@ class VideoDetailView : ConstraintLayout {
 
     fun applyFragment(frag: VideoDetailFragment) {
         fragment = frag;
-        fragment.onMinimize.subscribe {
-            _liveChat?.stop();
-            _container_content_liveChat.close();
-        }
     }
 
 

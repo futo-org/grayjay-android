@@ -1,6 +1,7 @@
 package com.futo.platformplayer.sync.internal
 
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.ensureNotMainThread
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateSubscriptions
@@ -16,6 +17,8 @@ interface IAuthorizable {
 
 class SyncSession : IAuthorizable {
     private val _channels: MutableList<IChannel> = mutableListOf()
+    @Volatile
+    private var _snapshot: Array<IChannel> = emptyArray()
     private var _authorized: Boolean = false
     private var _remoteAuthorized: Boolean = false
     private val _onAuthorized: (session: SyncSession, isNewlyAuthorized: Boolean, isNewSession: Boolean) -> Unit
@@ -82,6 +85,8 @@ class SyncSession : IAuthorizable {
 
         synchronized(_channels) {
             _channels.add(channel)
+            _channels.sortBy { it.linkType.ordinal }
+            _snapshot = _channels.toTypedArray()
             connected = _channels.isNotEmpty()
         }
 
@@ -123,15 +128,20 @@ class SyncSession : IAuthorizable {
     fun removeChannel(channel: IChannel) {
         synchronized(_channels) {
             _channels.remove(channel)
+            _snapshot = _channels.toTypedArray()
             connected = _channels.isNotEmpty()
         }
     }
 
     fun close() {
-        synchronized(_channels) {
-            _channels.forEach { it.close() }
+        val toClose = synchronized(_channels) {
+            val arr = _channels.toTypedArray()
             _channels.clear()
+            _snapshot = emptyArray()
+            connected = false
+            arr
         }
+        toClose.forEach { it.close() }
         _onClose(this)
     }
 
@@ -192,33 +202,38 @@ class SyncSession : IAuthorizable {
     }
 
     inline fun <reified T> sendJsonData(subOpcode: UByte, data: T) {
+        ensureNotMainThread()
         send(Opcode.DATA.value, subOpcode, Json.encodeToString(data))
     }
 
     fun sendData(subOpcode: UByte, data: String) {
-        send(Opcode.DATA.value, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)))
+        ensureNotMainThread()
+        send(Opcode.DATA.value, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
     fun send(opcode: UByte, subOpcode: UByte, data: String) {
-        send(opcode, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)))
+        ensureNotMainThread()
+        send(opcode, subOpcode, ByteBuffer.wrap(data.toByteArray(Charsets.UTF_8)), ContentEncoding.Gzip)
     }
 
-    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null) {
-        val channels = synchronized(_channels) { _channels.sortedBy { it.linkType.ordinal }.toList() }
+    fun send(opcode: UByte, subOpcode: UByte, data: ByteBuffer? = null, contentEncoding: ContentEncoding? = null) {
+        ensureNotMainThread()
+        val channels = _snapshot
         if (channels.isEmpty()) {
-            //TODO: Should this throw?
-            Logger.v(TAG, "Packet was not sent (opcode = $opcode, subOpcode = $subOpcode) due to no connected sockets")
+            Logger.v(TAG, "Packet was not sent … no connected sockets")
             return
         }
 
         var sent = false
         for (channel in channels) {
             try {
-                channel.send(opcode, subOpcode, data)
+                channel.send(opcode, subOpcode, data, contentEncoding)
                 sent = true
                 break
             } catch (e: Throwable) {
-                Logger.w(TAG, "Packet failed to send (opcode = $opcode, subOpcode = $subOpcode)", e)
+                Logger.w(TAG, "Packet failed to send (opcode = $opcode, subOpcode = $subOpcode), closing channel", e)
+                channel.close()
+                removeChannel(channel)
             }
         }
 

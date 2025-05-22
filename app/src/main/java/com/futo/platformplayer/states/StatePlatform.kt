@@ -94,9 +94,11 @@ class StatePlatform {
     private val _trackerClientPool = PlatformMultiClientPool("Trackers", 1); //Used exclusively for playback trackers
     private val _liveEventClientPool = PlatformMultiClientPool("LiveEvents", 1); //Used exclusively for live events
     private val _privateClientPool = PlatformMultiClientPool("Private", 2, true); //Used primarily for calls if in incognito mode
+    private val _instantClientPool = PlatformMultiClientPool("Instant", 1, false, true); //Used for all instant calls
 
 
     private val _icons : HashMap<String, ImageVariable> = HashMap();
+    private val _iconsByName : HashMap<String, ImageVariable> = HashMap();
 
     val hasClients: Boolean get() = _availableClients.size > 0;
 
@@ -113,14 +115,14 @@ class StatePlatform {
 
             Logger.i(StatePlatform::class.java.name, "Fetching video details [${url}]");
             if(!StateApp.instance.privateMode) {
-                _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
+                _enabledClients.find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) }?.let {
                     _mainClientPool.getClientPooled(it).getContentDetails(url)
                 }
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
             }
             else {
                 Logger.i(TAG, "Fetching details with private client");
-                _enabledClients.find { it.isContentDetailsUrl(url) }?.let {
+                _enabledClients.find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) }?.let {
                     _privateClientPool.getClientPooled(it).getContentDetails(url)
                 }
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
@@ -192,6 +194,7 @@ class StatePlatform {
                 _availableClients.clear();
 
                 _icons.clear();
+                _iconsByName.clear()
                 _icons[StateDeveloper.DEV_ID] = ImageVariable(null, R.drawable.ic_security_red);
 
                 StatePlugins.instance.updateEmbeddedPlugins(context);
@@ -199,6 +202,8 @@ class StatePlatform {
 
                 for (plugin in StatePlugins.instance.getPlugins()) {
                     _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
+                            ImageVariable(plugin.config.absoluteIconUrl, null);
+                    _iconsByName[plugin.config.name.lowercase()] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
                             ImageVariable(plugin.config.absoluteIconUrl, null);
 
                     val client = JSClient(context, plugin);
@@ -296,6 +301,15 @@ class StatePlatform {
             return null;
         if(_icons.containsKey(type))
             return _icons[type];
+        return null;
+    }
+
+    fun getPlatformIconByName(name: String?) : ImageVariable? {
+        if(name == null)
+            return null;
+        val nameLower = name.lowercase()
+        if(_iconsByName.containsKey(nameLower))
+            return _iconsByName[nameLower];
         return null;
     }
 
@@ -655,10 +669,10 @@ class StatePlatform {
 
 
     //Video
-    fun hasEnabledVideoClient(url: String) : Boolean = getEnabledClients().any { it.isContentDetailsUrl(url) };
+    fun hasEnabledVideoClient(url: String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) };
     fun getContentClient(url: String) : IPlatformClient = getContentClientOrNull(url)
         ?: throw NoPlatformClientException("No client enabled that supports this content url (${url})");
-    fun getContentClientOrNull(url: String) : IPlatformClient? = getEnabledClients().find { it.isContentDetailsUrl(url) };
+    fun getContentClientOrNull(url: String) : IPlatformClient? = getEnabledClients().find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) };
     fun getContentDetails(url: String, forceRefetch: Boolean = false): Deferred<IPlatformContentDetails> {
         Logger.i(TAG, "Platform - getContentDetails (${url})");
         if(forceRefetch)
@@ -699,14 +713,14 @@ class StatePlatform {
         return client.getContentRecommendations(url);
     }
 
-    fun hasEnabledChannelClient(url : String) : Boolean = getEnabledClients().any { it.isChannelUrl(url) };
+    fun hasEnabledChannelClient(url : String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isChannelUrl(url) };
     fun getChannelClient(url : String, exclude: List<String>? = null) : IPlatformClient = getChannelClientOrNull(url, exclude)
         ?: throw NoPlatformClientException("No client enabled that supports this channel url (${url})");
     fun getChannelClientOrNull(url : String, exclude: List<String>? = null) : IPlatformClient? =
         if(exclude == null)
-            getEnabledClients().find { it.isChannelUrl(url) }
+            getEnabledClients().find { _instantClientPool.getClientPooled(it).isChannelUrl(url) }
         else
-            getEnabledClients().find { !exclude.contains(it.id) && it.isChannelUrl(url) };
+            getEnabledClients().find { !exclude.contains(it.id) && _instantClientPool.getClientPooled(it).isChannelUrl(url) };
 
     fun getChannel(url: String, updateSubscriptions: Boolean = true): Deferred<IPlatformChannel>  {
         Logger.i(TAG, "Platform - getChannel");
@@ -902,9 +916,9 @@ class StatePlatform {
         return urls;
     }
 
-    fun hasEnabledPlaylistClient(url: String) : Boolean = getEnabledClients().any { it.isPlaylistUrl(url) };
-    fun getPlaylistClientOrNull(url: String): IPlatformClient? = getEnabledClients().find { it.isPlaylistUrl(url) }
-    fun getPlaylistClient(url: String): IPlatformClient = getEnabledClients().find { it.isPlaylistUrl(url) }
+    fun hasEnabledPlaylistClient(url: String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isPlaylistUrl(url) };
+    fun getPlaylistClientOrNull(url: String): IPlatformClient? = getEnabledClients().find { _instantClientPool.getClientPooled(it).isPlaylistUrl(url) }
+    fun getPlaylistClient(url: String): IPlatformClient = getEnabledClients().find { _instantClientPool.getClientPooled(it).isPlaylistUrl(url) }
         ?: throw NoPlatformClientException("No client enabled that supports this playlist url (${url})");
     fun getPlaylist(url: String): IPlatformPlaylistDetails {
         return getPlaylistClient(url).getPlaylist(url);

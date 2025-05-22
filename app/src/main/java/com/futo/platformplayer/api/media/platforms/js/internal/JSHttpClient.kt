@@ -127,7 +127,7 @@ class JSHttpClient : ManagedHttpClient {
         }
 
         if(doApplyCookies) {
-            if (_currentCookieMap.isNotEmpty()) {
+            if (_currentCookieMap.isNotEmpty() || _otherCookieMap.isNotEmpty()) {
                 val cookiesToApply = hashMapOf<String, String>();
                 synchronized(_currentCookieMap) {
                     for(cookie in _currentCookieMap
@@ -135,6 +135,12 @@ class JSHttpClient : ManagedHttpClient {
                         .flatMap { it.value.toList() })
                         cookiesToApply[cookie.first] = cookie.second;
                 };
+                synchronized(_otherCookieMap) {
+                    for(cookie in _otherCookieMap
+                        .filter { domain.matchesDomain(it.key) }
+                        .flatMap { it.value.toList() })
+                        cookiesToApply[cookie.first] = cookie.second;
+                }
 
                 if(cookiesToApply.size > 0) {
                     val cookieString = cookiesToApply.map { it.key + "=" + it.value }.joinToString("; ");
