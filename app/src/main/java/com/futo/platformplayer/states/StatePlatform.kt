@@ -790,7 +790,7 @@ class StatePlatform {
                 pagerResult = client.getChannelContents(channelUrl, ResultCapabilities.TYPE_MIXED, ResultCapabilities.ORDER_CHONOLOGICAL);
             }
         } else {
-            pagerResult = if (type == ResultCapabilities.TYPE_SHORTS) {
+            pagerResult = if (type == ResultCapabilities.TYPE_SHORTS && clientCapabilities.hasType(ResultCapabilities.TYPE_SHORTS)) {
                 client.getChannelContents(channelUrl, ResultCapabilities.TYPE_SHORTS, ResultCapabilities.ORDER_CHONOLOGICAL);
             } else {
                 EmptyPager()
