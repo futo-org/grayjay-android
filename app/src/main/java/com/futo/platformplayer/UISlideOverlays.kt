@@ -4,8 +4,14 @@ import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.hls.playlist.DefaultHlsPlaylistParserFactory
+import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
+import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
@@ -37,6 +43,9 @@ import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.parsers.HLS
+import com.futo.platformplayer.parsers.HLS.MediaRendition
+import com.futo.platformplayer.parsers.HLS.StreamInfo
+import com.futo.platformplayer.parsers.HLS.VariantPlaylistReference
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateHistory
@@ -63,6 +72,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import androidx.core.net.toUri
 
 class UISlideOverlays {
     companion object {
@@ -269,6 +280,7 @@ class UISlideOverlays {
 
         }
 
+        @OptIn(UnstableApi::class)
         fun showHlsPicker(video: IPlatformVideoDetails, source: Any, sourceUrl: String, container: ViewGroup): SlideUpMenuOverlay {
             val items = arrayListOf<View>(LoaderView(container.context))
             val slideUpMenuOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.download_video), null, true, items)
@@ -292,55 +304,103 @@ class UISlideOverlays {
 
                 val masterPlaylist: HLS.MasterPlaylist
                 try {
-                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl, source is IHLSManifestAudioSource)
+                    val inputStream = ByteArrayInputStream(masterPlaylistContent.toByteArray())
+                    val playlist = DefaultHlsPlaylistParserFactory().createPlaylistParser()
+                        .parse(sourceUrl.toUri(), inputStream)
 
-                    masterPlaylist.getAudioSources().forEach { it ->
+                    if (playlist is HlsMediaPlaylist) {
+                        if (source is IHLSManifestAudioSource) {
+                            val variant = HLS.mediaRenditionToVariant(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null))!!
 
-                        val estSize = VideoHelper.estimateSourceSize(it);
-                        val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                        audioButtons.add(SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_music,
-                            it.name,
-                            listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
-                            (prefix + it.codec).trim(),
-                            tag = it,
-                            call = {
-                                selectedAudioVariant = it
-                                slideUpMenuOverlay.selectOption(audioButtons, it)
-                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                            },
-                            invokeParent = false
-                        ))
-                    }
-
-                    /*masterPlaylist.getSubtitleSources().forEach { it ->
-                        subtitleButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, listOf(it.format).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "), it, {
-                            selectedSubtitleVariant = it
-                            slideUpMenuOverlay.selectOption(subtitleButtons, it)
-                            slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                        }, false))
-                    }*/
-
-                    masterPlaylist.getVideoSources().forEach {
-                        val estSize = VideoHelper.estimateSourceSize(it);
-                        val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                        videoButtons.add(SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_movie,
-                            it.name,
-                            "${it.width}x${it.height}",
-                            (prefix + it.codec).trim(),
-                            tag = it,
-                            call = {
-                                selectedVideoVariant = it
-                                slideUpMenuOverlay.selectOption(videoButtons, it)
-                                if (audioButtons.isEmpty()){
+                            val estSize = VideoHelper.estimateSourceSize(variant);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            audioButtons.add(SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_music,
+                                variant.name,
+                                listOf(variant.language, variant.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
+                                (prefix + variant.codec).trim(),
+                                tag = variant,
+                                call = {
+                                    selectedAudioVariant = variant
+                                    slideUpMenuOverlay.selectOption(audioButtons, variant)
                                     slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                                }
-                            },
-                            invokeParent = false
-                        ))
+                                },
+                                invokeParent = false
+                            ))
+                        } else {
+                            val variant = HLS.variantReferenceToVariant(VariantPlaylistReference(playlist.baseUri, StreamInfo(null, null, null, null, null, null, null, null, null)))
+
+                            val estSize = VideoHelper.estimateSourceSize(variant);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            videoButtons.add(SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                variant.name,
+                                "${variant.width}x${variant.height}",
+                                (prefix + variant.codec).trim(),
+                                tag = variant,
+                                call = {
+                                    selectedVideoVariant = variant
+                                    slideUpMenuOverlay.selectOption(videoButtons, variant)
+                                    if (audioButtons.isEmpty()){
+                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                    }
+                                },
+                                invokeParent = false
+                            ))
+                        }
+                    } else if (playlist is HlsMultivariantPlaylist) {
+                        masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
+
+                        masterPlaylist.getAudioSources().forEach { it ->
+
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            audioButtons.add(SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_music,
+                                it.name,
+                                listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
+                                (prefix + it.codec).trim(),
+                                tag = it,
+                                call = {
+                                    selectedAudioVariant = it
+                                    slideUpMenuOverlay.selectOption(audioButtons, it)
+                                    slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                },
+                                invokeParent = false
+                            ))
+                        }
+
+                        /*masterPlaylist.getSubtitleSources().forEach { it ->
+                            subtitleButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, listOf(it.format).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "), it, {
+                                selectedSubtitleVariant = it
+                                slideUpMenuOverlay.selectOption(subtitleButtons, it)
+                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                            }, false))
+                        }*/
+
+                        masterPlaylist.getVideoSources().forEach {
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                            videoButtons.add(SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "${it.width}x${it.height}",
+                                (prefix + it.codec).trim(),
+                                tag = it,
+                                call = {
+                                    selectedVideoVariant = it
+                                    slideUpMenuOverlay.selectOption(videoButtons, it)
+                                    if (audioButtons.isEmpty()){
+                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                    }
+                                },
+                                invokeParent = false
+                            ))
+                        }
                     }
 
                     val newItems = arrayListOf<View>()
@@ -950,26 +1010,30 @@ class UISlideOverlays {
                         + actions).filterNotNull()
             ));
             items.add(
-                SlideUpMenuGroup(container.context, container.context.getString(R.string.add_to), "addto",
-                    SlideUpMenuItem(container.context,
+                SlideUpMenuGroup(
+                    container.context, container.context.getString(R.string.add_to), "addto",
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_queue_add,
                         container.context.getString(R.string.add_to_queue),
                         "${queue.size} " + container.context.getString(R.string.videos),
                         tag = "queue",
                         call = { StatePlayer.instance.addToQueue(video); }),
-                    SlideUpMenuItem(container.context,
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_watchlist_add,
                         "${container.context.getString(R.string.add_to)} " + StatePlayer.TYPE_WATCHLATER + "",
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
                         call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true); }),
-                    SlideUpMenuItem(container.context,
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_history,
                         container.context.getString(R.string.add_to_history),
                         "Mark as watched",
                         tag = "history",
                         call = { StateHistory.instance.markAsWatched(video); }),
-            ));
+                ));
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
             playlistItems.add(SlideUpMenuItem(
@@ -1033,22 +1097,26 @@ class UISlideOverlays {
             val queue = StatePlayer.instance.getQueue();
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(
-                SlideUpMenuGroup(container.context, container.context.getString(R.string.other), "other",
-                    SlideUpMenuItem(container.context,
+                SlideUpMenuGroup(
+                    container.context, container.context.getString(R.string.other), "other",
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_queue_add,
                         container.context.getString(R.string.queue),
                         "${queue.size} " + container.context.getString(R.string.videos),
                         tag = "queue",
                         call = { StatePlayer.instance.addToQueue(video); }),
-                    SlideUpMenuItem(container.context,
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_watchlist_add,
                         StatePlayer.TYPE_WATCHLATER,
                         "${watchLater.size} " + container.context.getString(R.string.videos),
                         tag = "watch later",
-                        call = { StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true);
+                        call = {
+                            StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true);
                             UIDialogs.appToast("Added to watch later", false);
                         }),
-                    )
+                )
             );
 
             val playlistItems = arrayListOf<SlideUpMenuItem>();
