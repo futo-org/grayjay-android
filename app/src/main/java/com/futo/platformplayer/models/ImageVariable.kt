@@ -8,6 +8,7 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.PresetImages
 import com.futo.platformplayer.R
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Transient
 import java.io.File
@@ -28,13 +29,19 @@ data class ImageVariable(
             Glide.with(imageView)
                 .load(bitmap)
                 .into(imageView)
-        } else if(resId != null) {
+        } else if(resId != null && resId > 0) {
             Glide.with(imageView)
                 .load(resId)
                 .into(imageView)
         } else if(!url.isNullOrEmpty()) {
             Glide.with(imageView)
                 .load(url)
+                .error(if(!subscriptionUrl.isNullOrBlank()) StateSubscriptions.instance.getSubscription(subscriptionUrl!!)?.channel?.thumbnail else null)
+                .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .into(imageView);
+        } else if(!subscriptionUrl.isNullOrEmpty()) {
+            Glide.with(imageView)
+                .load(StateSubscriptions.instance.getSubscription(subscriptionUrl!!)?.channel?.thumbnail)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
                 .into(imageView);
         } else if(!presetName.isNullOrEmpty()) {

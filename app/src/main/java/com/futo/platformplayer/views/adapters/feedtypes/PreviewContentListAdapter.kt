@@ -23,6 +23,7 @@ import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.EmptyPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import okhttp3.internal.platform.Platform
 
 class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewViewHolder> {
     private var _initialPlay = true;
@@ -82,6 +83,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
             ContentType.PLAYLIST -> createPlaylistViewHolder(viewGroup);
             ContentType.NESTED_VIDEO -> createNestedViewHolder(viewGroup);
             ContentType.LOCKED -> createLockedViewHolder(viewGroup);
+            ContentType.CHANNEL -> createChannelViewHolder(viewGroup)
             else -> EmptyPreviewViewHolder(viewGroup)
         }
     }
@@ -114,6 +116,10 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     private fun createPlaylistViewHolder(viewGroup: ViewGroup): PreviewPlaylistViewHolder = PreviewPlaylistViewHolder(viewGroup, _feedStyle).apply {
         this.onPlaylistClicked.subscribe { this@PreviewContentListAdapter.onContentClicked.emit(it, 0L) };
         this.onChannelClicked.subscribe(this@PreviewContentListAdapter.onChannelClicked::emit);
+    };
+    private fun createChannelViewHolder(viewGroup: ViewGroup): PreviewChannelViewHolder = PreviewChannelViewHolder(viewGroup, _feedStyle, false).apply {
+        //TODO: Maybe PlatformAuthorLink as is needs to be phased out?
+        this.onClick.subscribe { this@PreviewContentListAdapter.onChannelClicked.emit(PlatformAuthorLink(it.id, it.name, it.url, it.thumbnail, it.subscribers)) };
     };
 
     override fun bindChild(holder: ContentPreviewViewHolder, pos: Int) {

@@ -1,14 +1,15 @@
 package com.futo.platformplayer.activities
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
+import android.app.AlertDialog
+import android.app.UiModeManager
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -21,8 +22,10 @@ import android.widget.ImageView
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -38,6 +41,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
@@ -65,6 +69,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragm
 import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
+import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.State
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
@@ -74,7 +79,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.UrlVideoWithTime
-import com.futo.platformplayer.receivers.MediaButtonReceiver
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
@@ -185,6 +189,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private var _isVisible = true;
     private var _wasStopped = false;
+    private var _privateModeEnabled = false
+    private var _pictureInPictureEnabled = false
+    private var _isFullscreen = false
 
     private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -262,6 +269,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val uiMode = getSystemService(UiModeManager::class.java)
+            uiMode.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES)
+        }
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
         if (Settings.instance.playback.allowVideoToGoUnderCutout)
@@ -354,22 +365,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             _fragMainSubscriptionsFeed.setPreviewsEnabled(true);
             _fragContainerVideoDetail.visibility = View.INVISIBLE;
             updateSegmentPaddings();
+            updatePrivateModeVisibility()
         };
 
 
         _buttonIncognito = findViewById(R.id.incognito_button);
-        _buttonIncognito.elevation = -99f;
-        _buttonIncognito.alpha = 0f;
+        updatePrivateModeVisibility()
         StateApp.instance.privateModeChanged.subscribe {
             //Messing with visibility causes some issues with layout ordering?
-            if (it) {
-                _buttonIncognito.elevation = 99f;
-                _buttonIncognito.alpha = 1f;
-            } else {
-                _buttonIncognito.elevation = -99f;
-                _buttonIncognito.alpha = 0f;
-            }
+            _privateModeEnabled = it
+            updatePrivateModeVisibility()
         }
+
         _buttonIncognito.setOnClickListener {
             if (!StateApp.instance.privateMode)
                 return@setOnClickListener;
@@ -386,19 +393,16 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         };
         _fragVideoDetail.onFullscreenChanged.subscribe {
             Logger.i(TAG, "onFullscreenChanged ${it}");
+            _isFullscreen = it
+            updatePrivateModeVisibility()
+        }
 
-            if (it) {
-                _buttonIncognito.elevation = -99f;
-                _buttonIncognito.alpha = 0f;
-            } else {
-                if (StateApp.instance.privateMode) {
-                    _buttonIncognito.elevation = 99f;
-                    _buttonIncognito.alpha = 1f;
-                } else {
-                    _buttonIncognito.elevation = -99f;
-                    _buttonIncognito.alpha = 0f;
-                }
-            }
+        _fragVideoDetail.onMinimize.subscribe {
+            updatePrivateModeVisibility()
+        }
+
+        _fragVideoDetail.onMaximized.subscribe {
+            updatePrivateModeVisibility()
         }
 
         StatePlayer.instance.also {
@@ -613,8 +617,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             UIDialogs.toast(this, "No external file permissions\nExporting and auto backups will not work");
     }*/
 
+    private var _qrCodeLoadingDialog: AlertDialog? = null
+
     fun showUrlQrCodeScanner() {
         try {
+            _qrCodeLoadingDialog = UIDialogs.showDialog(this, R.drawable.ic_loader_animated, true,
+                "Launching QR scanner",
+                "Make sure your camera is enabled", null, -2,
+                UIDialogs.Action("Close", {
+                    _qrCodeLoadingDialog?.dismiss()
+                    _qrCodeLoadingDialog = null
+                }));
+
             val integrator = IntentIntegrator(this)
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
             integrator.setPrompt(getString(R.string.scan_a_qr_code))
@@ -630,6 +644,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    @OptIn(UnstableApi::class)
+    private fun updatePrivateModeVisibility() {
+        if (_privateModeEnabled && (_fragVideoDetail.state == State.CLOSED || !_pictureInPictureEnabled && !_isFullscreen)) {
+            _buttonIncognito.elevation = 99f;
+            _buttonIncognito.alpha = 1f;
+            _buttonIncognito.translationY = if (_fragVideoDetail.state == State.MINIMIZED) -60.dp(resources).toFloat() else 0f
+        } else {
+            _buttonIncognito.elevation = -99f;
+            _buttonIncognito.alpha = 0f;
+        }
+    }
+
     override fun onResume() {
         super.onResume();
         Logger.v(TAG, "onResume")
@@ -640,6 +666,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.onPause();
         Logger.v(TAG, "onPause")
         _isVisible = false;
+
+        _qrCodeLoadingDialog?.dismiss()
+        _qrCodeLoadingDialog = null
     }
 
     override fun onStop() {
@@ -1050,6 +1079,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.v(TAG, "onPictureInPictureModeChanged isInPictureInPictureMode=$isInPictureInPictureMode isStop=$isStop")
         _fragVideoDetail.onPictureInPictureModeChanged(isInPictureInPictureMode, isStop, newConfig);
         Logger.v(TAG, "onPictureInPictureModeChanged Ready");
+
+        _pictureInPictureEnabled = isInPictureInPictureMode
+        updatePrivateModeVisibility()
     }
 
     override fun onDestroy() {

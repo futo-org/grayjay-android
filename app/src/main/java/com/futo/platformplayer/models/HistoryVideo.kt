@@ -3,6 +3,7 @@ package com.futo.platformplayer.models
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.Thumbnails
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import java.time.LocalDateTime
@@ -46,6 +47,7 @@ class HistoryVideo {
             val name = str.substring(indexNext + 3);
 
             val video = resolve?.invoke(url) ?: SerializedPlatformVideo(
+                ContentType.MEDIA,
                 id = PlatformID.asUrlID(url),
                 name = name,
                 thumbnails = Thumbnails(),

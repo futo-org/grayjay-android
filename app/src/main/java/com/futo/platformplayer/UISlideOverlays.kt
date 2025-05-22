@@ -686,6 +686,10 @@ class UISlideOverlays {
                             }
                         }
                     }
+                    if(!Settings.instance.downloads.shouldDownload()) {
+                        UIDialogs.appToast("Download will start when you're back on wifi.\n" +
+                                "(You can change this in settings)", true);
+                    }
                 }
             };
             return menu.apply { show() };
@@ -1150,7 +1154,7 @@ class UISlideOverlays {
                     container.context.getString(R.string.decide_which_buttons_should_be_pinned),
                     tag = "",
                     call = {
-                        showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }) {
+                        showOrderOverlay(container, container.context.getString(R.string.select_your_pins_in_order),  (visible + hidden).map { Pair(it.text.text.toString(), it.tagRef!!) }, {
                             val selected = it
                                 .map { x -> visible.find { it.tagRef == x } ?: hidden.find { it.tagRef == x } }
                                 .filter { it != null }
@@ -1158,7 +1162,7 @@ class UISlideOverlays {
                                 .toList();
 
                             onPinnedbuttons?.invoke(selected + (visible + hidden).filter { !selected.contains(it) });
-                        }
+                        });
                     },
                     invokeParent = false
                 ))
@@ -1166,29 +1170,40 @@ class UISlideOverlays {
 
             return SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.more_options), null, true, *views).apply { show() };
         }
-
-        fun showOrderOverlay(container: ViewGroup, title: String, options: List<Pair<String, Any>>, onOrdered: (List<Any>)->Unit) {
+        fun showOrderOverlay(container: ViewGroup, title: String, options: List<Pair<String, Any>>, onOrdered: (List<Any>)->Unit, description: String? = null) {
             val selection: MutableList<Any> = mutableListOf();
 
             var overlay: SlideUpMenuOverlay? = null;
 
             overlay = SlideUpMenuOverlay(container.context, container, title, container.context.getString(R.string.save), true,
-                options.map { SlideUpMenuItem(
+                listOf(
+                    if(!description.isNullOrEmpty()) SlideUpMenuGroup(container.context, "", description, "", listOf()) else null,
+                ).filterNotNull() +
+                (options.map { SlideUpMenuItem(
                     container.context,
                     R.drawable.ic_move_up,
                     it.first,
                     "",
                     tag = it.second,
                     call = {
+                        val overlayItem = overlay?.getSlideUpItemByTag(it.second);
                         if(overlay!!.selectOption(null, it.second, true, true)) {
-                            if(!selection.contains(it.second))
+                            if(!selection.contains(it.second)) {
                                 selection.add(it.second);
-                        } else
+                                if(overlayItem != null) {
+                                    overlayItem.setSubText(selection.indexOf(it.second).toString());
+                                }
+                            }
+                        } else {
                             selection.remove(it.second);
+                            if(overlayItem != null) {
+                                overlayItem.setSubText("");
+                            }
+                        }
                     },
                     invokeParent = false
                 )
-                });
+                }));
             overlay.onOK.subscribe {
                 onOrdered.invoke(selection);
                 overlay.hide();

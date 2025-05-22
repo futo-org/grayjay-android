@@ -1,7 +1,9 @@
 package com.futo.platformplayer.views
 
 import android.content.Context
+import android.text.TextWatcher
 import android.util.AttributeSet
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -18,6 +20,9 @@ class SearchView : FrameLayout {
     val buttonClear: ImageButton;
 
     var onSearchChanged = Event1<String>();
+    var onEnter = Event1<String>();
+
+    val text: String get() = textSearch.text.toString();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.view_search_bar, this);

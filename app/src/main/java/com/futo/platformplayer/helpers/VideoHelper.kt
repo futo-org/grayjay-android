@@ -214,5 +214,38 @@ class VideoHelper {
             }
             else return 0;
         }
+
+        fun mediaExtensionToMimetype(extension: String): String? {
+            return videoExtensionToMimetype(extension) ?: audioExtensionToMimetype(extension);
+        }
+        fun videoExtensionToMimetype(extension: String): String? {
+            val extensionTrimmed = extension.trim('.').lowercase();
+            return when (extensionTrimmed) {
+                "mp4" -> return "video/mp4";
+                "webm" -> return "video/webm";
+                "m3u8" -> return "video/x-mpegURL";
+                "3gp" -> return "video/3gpp";
+                "mov" -> return "video/quicktime";
+                "mkv" -> return "video/x-matroska";
+                "mp4a" -> return "audio/vnd.apple.mpegurl";
+                "mpga" -> return "audio/mpga";
+                "mp3" -> return "audio/mp3";
+                "webm" -> return "audio/webm";
+                "3gp" -> return "audio/3gpp";
+                else -> null;
+            }
+        }
+        fun audioExtensionToMimetype(extension: String): String? {
+            val extensionTrimmed = extension.trim('.').lowercase();
+            return when (extensionTrimmed) {
+                "mkv" -> return "audio/x-matroska";
+                "mp4a" -> return "audio/vnd.apple.mpegurl";
+                "mpga" -> return "audio/mpga";
+                "mp3" -> return "audio/mp3";
+                "webm" -> return "audio/webm";
+                "3gp" -> return "audio/3gpp";
+                else -> null;
+            }
+        }
     }
 }

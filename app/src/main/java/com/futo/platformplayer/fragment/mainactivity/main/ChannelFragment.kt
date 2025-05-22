@@ -47,6 +47,7 @@ import com.futo.platformplayer.selectHighestResolutionImage
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.adapters.ChannelTab
@@ -135,6 +136,8 @@ class ChannelFragment : MainFragment() {
             inflater.inflate(R.layout.fragment_channel, this)
             _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>({ fragment.lifecycleScope },
                     { id ->
+                        if (!StatePolycentric.instance.enabled)
+                            return@TaskHandler null
                         return@TaskHandler ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, id.claimFieldType.toLong(), id.claimType.toLong(), id.value!!)
                     }).success { setPolycentricProfile(it, animate = true) }.exception<Throwable> {
                     Logger.w(TAG, "Failed to load polycentric profile.", it)

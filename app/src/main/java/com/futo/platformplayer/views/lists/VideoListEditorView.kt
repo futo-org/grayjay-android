@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -22,6 +23,7 @@ class VideoListEditorView : FrameLayout {
 
     val onVideoOrderChanged = Event1<List<IPlatformVideo>>()
     val onVideoRemoved = Event1<IPlatformVideo>();
+    val onVideoOptions = Event1<IPlatformVideo>();
     val onVideoClicked = Event1<IPlatformVideo>();
     val isEmpty get() = _videos.isEmpty();
 
@@ -54,6 +56,9 @@ class VideoListEditorView : FrameLayout {
             }
         };
 
+        adapterVideos.onOptions.subscribe { v ->
+            onVideoOptions?.emit(v);
+        }
         adapterVideos.onRemove.subscribe { v ->
             val executeDelete = {
                 synchronized(_videos) {

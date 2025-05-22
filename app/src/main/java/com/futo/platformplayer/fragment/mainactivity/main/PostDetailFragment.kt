@@ -168,7 +168,12 @@ class PostDetailFragment : MainFragment {
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost, null, _fragment);
             } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
-        private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) })
+        private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, {
+            if (!StatePolycentric.instance.enabled)
+                return@TaskHandler null
+
+            ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!)
+        })
             .success { it -> setPolycentricProfile(it, animate = true) }
             .exception<Throwable> {
                 Logger.w(TAG, "Failed to load claims.", it);
@@ -327,6 +332,10 @@ class PostDetailFragment : MainFragment {
             val version = _version;
 
             _rating.onLikeDislikeUpdated.remove(this);
+
+            if (!StatePolycentric.instance.enabled)
+                return
+
             _fragment.lifecycleScope.launch(Dispatchers.IO) {
                 if (version != _version) {
                     return@launch;

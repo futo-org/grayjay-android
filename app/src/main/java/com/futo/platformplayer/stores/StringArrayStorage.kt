@@ -41,4 +41,19 @@ class StringArrayStorage : FragmentedStorageFileJson() {
             return values.toList();
         }
     }
+    fun any(): Boolean {
+        synchronized(values) {
+            return values.any();
+        }
+    }
+    fun contains(v: String): Boolean {
+        synchronized(values) {
+            return values.contains(v);
+        }
+    }
+    fun indexOf(v: String): Int {
+        synchronized(values){
+            return values.indexOf(v);
+        }
+    }
 }

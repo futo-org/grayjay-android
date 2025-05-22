@@ -88,3 +88,15 @@
 [submodule "app/src/unstable/assets/sources/apple-podcasts"]
 	path = app/src/unstable/assets/sources/apple-podcasts
 	url = ../plugins/apple-podcasts.git
+[submodule "app/src/stable/assets/sources/tedtalks"]
+	path = app/src/stable/assets/sources/tedtalks
+	url = ../plugins/tedtalks.git
+[submodule "app/src/unstable/assets/sources/tedtalks"]
+	path = app/src/unstable/assets/sources/tedtalks
+	url = ../plugins/tedtalks.git
+[submodule "app/src/stable/assets/sources/curiositystream"]
+	path = app/src/stable/assets/sources/curiositystream
+	url = ../plugins/curiositystream.git
+[submodule "app/src/unstable/assets/sources/curiositystream"]
+	path = app/src/unstable/assets/sources/curiositystream
+	url = ../plugins/curiositystream.git
