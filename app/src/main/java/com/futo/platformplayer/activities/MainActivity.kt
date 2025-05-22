@@ -25,6 +25,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -40,6 +41,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
@@ -190,7 +192,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     private var _privateModeEnabled = false
     private var _pictureInPictureEnabled = false
     private var _isFullscreen = false
-    private var _isMinimized = false
 
     private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -369,8 +370,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
 
         _buttonIncognito = findViewById(R.id.incognito_button);
-        _buttonIncognito.elevation = -99f;
-        _buttonIncognito.alpha = 0f;
+        updatePrivateModeVisibility()
         StateApp.instance.privateModeChanged.subscribe {
             //Messing with visibility causes some issues with layout ordering?
             _privateModeEnabled = it
@@ -398,12 +398,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
 
         _fragVideoDetail.onMinimize.subscribe {
-            _isMinimized = true
             updatePrivateModeVisibility()
         }
 
         _fragVideoDetail.onMaximized.subscribe {
-            _isMinimized = false
             updatePrivateModeVisibility()
         }
 
@@ -647,13 +645,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }
 
     @OptIn(UnstableApi::class)
-    fun updatePrivateModeVisibility() {
-        if (_privateModeEnabled && (_fragVideoDetail.state == State.CLOSED || !_pictureInPictureEnabled && !_isFullscreen && !_isMinimized)) {
+    private fun updatePrivateModeVisibility() {
+        if (_privateModeEnabled && (_fragVideoDetail.state == State.CLOSED || !_pictureInPictureEnabled && !_isFullscreen)) {
             _buttonIncognito.elevation = 99f;
             _buttonIncognito.alpha = 1f;
-            _buttonIncognito.layoutParams = _buttonIncognito.layoutParams.apply {
-
-            }
+            _buttonIncognito.translationY = if (_fragVideoDetail.state == State.MINIMIZED) -60.dp(resources).toFloat() else 0f
         } else {
             _buttonIncognito.elevation = -99f;
             _buttonIncognito.alpha = 0f;
