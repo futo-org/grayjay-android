@@ -198,6 +198,7 @@ dependencies {
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation fileTree(dir: 'aar', include: ['*.aar'])
+    implementation 'com.arthenica:smart-exception-java:0.2.1'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.0'
     implementation 'com.github.dhaval2404:imagepicker:2.1'
     implementation 'com.google.zxing:core:3.4.1'
