@@ -531,6 +531,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     fun setLoopVisible(visible: Boolean) {
         _control_loop.visibility = if (visible) View.VISIBLE else View.GONE;
         _control_loop_fullscreen.visibility = if (visible) View.VISIBLE else View.GONE;
+        if (StatePlayer.instance.loopVideo && !visible)
+            StatePlayer.instance.loopVideo = false
     }
 
     fun stopAllGestures() {
