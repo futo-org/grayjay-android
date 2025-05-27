@@ -15,7 +15,8 @@
         "e8b1ad5f-0c6d-497d-a5fa-0a785a16d902": "sources/bitchute/BitchuteConfig.json",
         "89ae4889-0420-4d16-ad6c-19c776b28f99": "sources/apple-podcasts/ApplePodcastsConfig.json",
         "8d029a7f-5507-4e36-8bd8-c19a3b77d383": "sources/tedtalks/TedTalksConfig.json",
-        "273b6523-5438-44e2-9f5d-78e0325a8fd9": "sources/curiositystream/CuriosityStreamConfig.json"
+        "273b6523-5438-44e2-9f5d-78e0325a8fd9": "sources/curiositystream/CuriosityStreamConfig.json",
+        "9bb33039-8580-48d4-9849-21319ae845a4": "sources/crunchyroll/CrunchyrollConfig.json"
     },
     "SOURCES_EMBEDDED_DEFAULT": [
         "35ae969a-a7db-11ed-afa1-0242ac120002"

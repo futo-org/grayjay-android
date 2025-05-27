@@ -71,7 +71,8 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
         val lastPolycentricProfile = _lastPolycentricProfile;
         var pager: IPager<IPlatformContent>? = null;
         if (lastPolycentricProfile != null && StatePolycentric.instance.enabled)
-            pager = StatePolycentric.instance.getChannelContent(lifecycleScope, lastPolycentricProfile);
+            pager =
+                StatePolycentric.instance.getChannelContent(lifecycleScope, lastPolycentricProfile, type = subType);
 
         if(pager == null) {
             if(subType != null)
