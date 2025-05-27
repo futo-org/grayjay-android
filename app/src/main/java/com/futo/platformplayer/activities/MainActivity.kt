@@ -71,6 +71,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.State
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
+import com.futo.platformplayer.fragment.mainactivity.main.WebDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
@@ -150,6 +151,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     //Frags Main
     lateinit var _fragMainHome: HomeFragment;
     lateinit var _fragPostDetail: PostDetailFragment;
+    lateinit var _fragWebDetail: WebDetailFragment;
     lateinit var _fragMainVideoSearchResults: ContentSearchResultsFragment;
     lateinit var _fragMainCreatorSearchResults: CreatorSearchResultsFragment;
     lateinit var _fragMainPlaylistSearchResults: PlaylistSearchResultsFragment;
@@ -324,6 +326,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist = PlaylistFragment.newInstance();
         _fragMainRemotePlaylist = RemotePlaylistFragment.newInstance();
         _fragPostDetail = PostDetailFragment.newInstance();
+        _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
