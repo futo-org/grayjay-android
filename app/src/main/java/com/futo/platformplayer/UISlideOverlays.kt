@@ -1121,8 +1121,8 @@ class UISlideOverlays {
             return SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.add_to), null, true, items).apply { show() };
         }
 
-        fun showFiltersOverlay(lifecycleScope: CoroutineScope, container: ViewGroup, enabledClientsIds: List<String>, filterValues: HashMap<String, List<String>>, isChannelSearch: Boolean = false): SlideUpMenuFilters {
-            val overlay = SlideUpMenuFilters(lifecycleScope, container, enabledClientsIds, filterValues, isChannelSearch);
+        fun showFiltersOverlay(lifecycleScope: CoroutineScope, container: ViewGroup, enabledClientsIds: List<String>, filterValues: HashMap<String, List<String>>): SlideUpMenuFilters {
+            val overlay = SlideUpMenuFilters(lifecycleScope, container, enabledClientsIds, filterValues);
             overlay.show();
             return overlay;
         }

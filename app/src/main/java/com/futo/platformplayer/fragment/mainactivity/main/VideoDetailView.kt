@@ -2680,9 +2680,10 @@ class VideoDetailView : ConstraintLayout {
                     }
 
                     onChannelClicked.subscribe {
-                        if(it.url.isNotBlank())
+                        if(it.url.isNotBlank()) {
+                            fragment.minimizeVideoDetail()
                             fragment.navigate<ChannelFragment>(it)
-                        else
+                        } else
                             UIDialogs.appToast("No author url present");
                     }
 
