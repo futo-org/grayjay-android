@@ -100,3 +100,9 @@
 [submodule "app/src/unstable/assets/sources/curiositystream"]
 	path = app/src/unstable/assets/sources/curiositystream
 	url = ../plugins/curiositystream.git
+[submodule "app/src/unstable/assets/sources/crunchyroll"]
+	path = app/src/unstable/assets/sources/crunchyroll
+	url = ../plugins/crunchyroll.git
+[submodule "app/src/stable/assets/sources/crunchyroll"]
+	path = app/src/stable/assets/sources/crunchyroll
+	url = ../plugins/crunchyroll.git
