@@ -425,17 +425,15 @@ class ChannelFragment : MainFragment() {
             _fragment.lifecycleScope.launch(Dispatchers.IO) {
                 val plugin = StatePlatform.instance.getChannelClientOrNull(channel.url)
                 withContext(Dispatchers.Main) {
-                    if (plugin != null && plugin.capabilities.hasSearchChannelContents) {
-                        buttons.add(Pair(R.drawable.ic_search) {
-                            _fragment.navigate<SuggestionsFragment>(
-                                SuggestionsFragmentData(
-                                    "", SearchType.VIDEO, channel.url
-                                )
+                    buttons.add(Pair(R.drawable.ic_search) {
+                        _fragment.navigate<SuggestionsFragment>(
+                            SuggestionsFragmentData(
+                                "", SearchType.VIDEO
                             )
-                        })
+                        )
+                    })
+                    _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons)
 
-                        _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(buttons)
-                    }
                     if(plugin != null && plugin.capabilities.hasGetChannelCapabilities) {
                         if(plugin.getChannelCapabilities()?.types?.contains(ResultCapabilities.TYPE_SHORTS) ?: false &&
                             !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(ChannelTab.SHORTS.ordinal.toLong())) {

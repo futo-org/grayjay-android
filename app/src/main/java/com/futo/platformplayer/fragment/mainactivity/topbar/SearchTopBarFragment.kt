@@ -88,7 +88,6 @@ class SearchTopBarFragment : TopFragment() {
         } else if (parameter is SuggestionsFragmentData) {
             this.setText(parameter.query);
             _searchType = parameter.searchType;
-            _channelUrl = parameter.channelUrl;
         }
 
         if(currentMain is SuggestionsFragment)
@@ -114,7 +113,7 @@ class SearchTopBarFragment : TopFragment() {
     fun clear() {
         _editSearch?.text?.clear();
         if (currentMain !is SuggestionsFragment) {
-            navigate<SuggestionsFragment>(SuggestionsFragmentData("", _searchType, _channelUrl), false);
+            navigate<SuggestionsFragment>(SuggestionsFragmentData("", _searchType), false);
         } else {
             onSearch.emit("");
         }

@@ -21,7 +21,7 @@ import com.futo.platformplayer.views.adapters.SearchSuggestionAdapter
 import com.futo.platformplayer.views.others.RadioGroupView
 import com.futo.platformplayer.views.others.TagsView
 
-data class SuggestionsFragmentData(val query: String, val searchType: SearchType, val channelUrl: String? = null);
+data class SuggestionsFragmentData(val query: String, val searchType: SearchType);
 
 class SuggestionsFragment : MainFragment {
     override val isMainView : Boolean = true;
@@ -34,7 +34,6 @@ class SuggestionsFragment : MainFragment {
     private val _suggestions: ArrayList<String> = ArrayList();
     private var _query: String? = null;
     private var _searchType: SearchType = SearchType.VIDEO;
-    private var _channelUrl: String? = null;
 
     private val _adapterSuggestions = SearchSuggestionAdapter(_suggestions);
 
@@ -52,7 +51,7 @@ class SuggestionsFragment : MainFragment {
         _adapterSuggestions.onClicked.subscribe { suggestion ->
             val storage = FragmentedStorage.get<SearchHistoryStorage>();
             storage.add(suggestion);
-            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, _searchType, _channelUrl));
+            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, _searchType));
         }
         _adapterSuggestions.onRemove.subscribe { suggestion ->
             val index = _suggestions.indexOf(suggestion);
@@ -109,10 +108,8 @@ class SuggestionsFragment : MainFragment {
 
         if (parameter is SuggestionsFragmentData) {
             _searchType = parameter.searchType;
-            _channelUrl = parameter.channelUrl;
         } else if (parameter is SearchType) {
             _searchType = parameter;
-            _channelUrl = null;
         }
 
         _radioGroupView?.setOptions(listOf(Pair("Media", SearchType.VIDEO), Pair("Creators", SearchType.CREATOR), Pair("Playlists", SearchType.PLAYLIST)), listOf(_searchType), false, true)
@@ -135,7 +132,7 @@ class SuggestionsFragment : MainFragment {
                         }
                     }
                     else
-                        navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, _searchType, _channelUrl));
+                        navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, _searchType));
                 };
 
                 onTextChange.subscribe(this) {
