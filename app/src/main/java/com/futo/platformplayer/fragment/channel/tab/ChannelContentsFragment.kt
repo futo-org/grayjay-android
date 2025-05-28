@@ -166,18 +166,26 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
 
         _taskLoadVideos.cancel();
 
-        val pid = channel.id.pluginId
-        _searchView?.visibility = if (pid != null && StatePlatform.instance.getClientOrNull(pid)?.capabilities?.hasSearchChannelContents == true) View.VISIBLE else View.GONE
         _query = null
         _channel = channel;
+        updateSearchViewVisibility()
         _results.clear();
         _adapterResults?.notifyDataSetChanged();
 
         loadInitial();
     }
 
+    private fun updateSearchViewVisibility() {
+        val client = _channel?.id?.pluginId?.let { StatePlatform.instance.getClientOrNull(it) }
+        Logger.i(TAG, "_searchView.visible = ${client?.capabilities?.hasSearchChannelContents == true}")
+        _searchView?.visibility = if (client?.capabilities?.hasSearchChannelContents == true) View.VISIBLE else View.GONE
+    }
+
     fun setQuery(query: String) {
         _query = query
+        _taskLoadVideos.cancel()
+        _results.clear()
+        _adapterResults?.notifyDataSetChanged()
         loadInitial()
     }
 
@@ -191,9 +199,9 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
             onEnter.subscribe {
                 setQuery(it)
             }
-            visibility = View.GONE
         }
         _searchView = searchView
+        updateSearchViewVisibility()
 
         _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar, viewsToPrepend = arrayListOf(searchView)).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
