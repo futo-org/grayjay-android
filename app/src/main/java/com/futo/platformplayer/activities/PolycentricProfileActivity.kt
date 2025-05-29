@@ -21,10 +21,8 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.dp
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
@@ -32,8 +30,10 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.overlays.LoaderOverlay
+import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.polycentric.core.toBase64Url
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
@@ -145,7 +145,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    processHandle.fullyBackfillClient(PolycentricCache.SERVER)
+                    processHandle.fullyBackfillClient(ApiMethods.SERVER)
 
                     withContext(Dispatchers.Main) {
                         updateUI();

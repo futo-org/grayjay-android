@@ -10,6 +10,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.PlatformClientCapabilities
+import com.futo.platformplayer.api.media.models.IPlatformChannelContent
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -31,6 +32,7 @@ import com.futo.platformplayer.api.media.platforms.js.internal.JSParameterDocs
 import com.futo.platformplayer.api.media.platforms.js.models.IJSContent
 import com.futo.platformplayer.api.media.platforms.js.models.IJSContentDetails
 import com.futo.platformplayer.api.media.platforms.js.models.JSChannel
+import com.futo.platformplayer.api.media.platforms.js.models.JSChannelContentPager
 import com.futo.platformplayer.api.media.platforms.js.models.JSChannelPager
 import com.futo.platformplayer.api.media.platforms.js.models.JSChapter
 import com.futo.platformplayer.api.media.platforms.js.models.JSComment
@@ -193,8 +195,11 @@ open class JSClient : IPlatformClient {
         _plugin.changeAllowDevSubmit(descriptor.appSettings.allowDeveloperSubmit);
     }
 
-    open fun getCopy(withoutCredentials: Boolean = false): JSClient {
-        return JSClient(_context, descriptor, saveState(), _script, withoutCredentials);
+    open fun getCopy(withoutCredentials: Boolean = false, noSaveState: Boolean = false): JSClient {
+        val client = JSClient(_context, descriptor, if (noSaveState) null else saveState(), _script, withoutCredentials);
+        if (noSaveState)
+            client.initialize()
+        return client
     }
 
     fun getUnderlyingPlugin(): V8Plugin {
@@ -209,6 +214,8 @@ open class JSClient : IPlatformClient {
     }
 
     override fun initialize() {
+        if (_initialized) return
+
         Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");
@@ -360,6 +367,10 @@ open class JSClient : IPlatformClient {
         ensureEnabled();
         return@isBusyWith JSChannelPager(config, this,
             plugin.executeTyped("source.searchChannels(${Json.encodeToString(query)})"));
+    }
+    override fun searchChannelsAsContent(query: String): IPager<IPlatformContent> = isBusyWith("searchChannels") {
+        ensureEnabled();
+        return@isBusyWith JSChannelContentPager(config, this, plugin.executeTyped("source.searchChannels(${Json.encodeToString(query)})"), );
     }
 
     @JSDocs(6, "source.isChannelUrl(url)", "Validates if an channel url is for this platform")

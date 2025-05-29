@@ -145,6 +145,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     val onVideoClicked = Event0();
     val onTimeBarChanged = Event2<Long, Long>();
 
+    val onChapterClicked = Event1<IChapter>();
+
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.video_view, this, true);
@@ -184,6 +186,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
+
+        _control_chapter.setOnClickListener {
+            _currentChapter?.let {
+                onChapterClicked.emit(it);
+            }
+        }
 
         val castVisibility = if (Settings.instance.casting.enabled) View.VISIBLE else View.GONE
         _control_cast.visibility = castVisibility
@@ -523,6 +531,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     fun setLoopVisible(visible: Boolean) {
         _control_loop.visibility = if (visible) View.VISIBLE else View.GONE;
         _control_loop_fullscreen.visibility = if (visible) View.VISIBLE else View.GONE;
+        if (StatePlayer.instance.loopVideo && !visible)
+            StatePlayer.instance.loopVideo = false
     }
 
     fun stopAllGestures() {

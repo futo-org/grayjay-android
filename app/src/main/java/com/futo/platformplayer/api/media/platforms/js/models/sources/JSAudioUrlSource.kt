@@ -21,6 +21,8 @@ open class JSAudioUrlSource : IAudioUrlSource, JSSource {
 
     override var priority: Boolean = false;
 
+    override var original: Boolean = false;
+
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_AUDIOURL, plugin, obj) {
         val contextName = "AudioUrlSource";
         val config = plugin.config;
@@ -35,6 +37,7 @@ open class JSAudioUrlSource : IAudioUrlSource, JSSource {
         name = _obj.getOrDefault(config, "name", contextName, "${container} ${bitrate}") ?: "${container} ${bitrate}";
 
         priority = if(_obj.has("priority")) obj.getOrThrow(config, "priority", contextName) else false;
+        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
     }
 
     override fun getAudioUrl() : String {

@@ -113,7 +113,7 @@ class LoginActivity : AppCompatActivity() {
 
     companion object {
         private val TAG = "LoginActivity";
-        private val REGEX_LOGIN_BUTTON = Regex("[a-zA-Z\\-\\.#_ ]*");
+        private val REGEX_LOGIN_BUTTON = Regex("[a-zA-Z\\-\\.#:_ ]*");
 
         private var _callback: ((SourceAuth?) -> Unit)? = null;
 

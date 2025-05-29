@@ -113,6 +113,13 @@ class SlideUpMenuOverlay : RelativeLayout {
             _textOK.visibility = View.VISIBLE;
         }
     }
+    fun getSlideUpItemByTag(itemTag: Any?): SlideUpMenuItem? {
+        for(view in groupItems){
+            if(view is SlideUpMenuItem && view.itemTag == itemTag)
+                return view;
+        }
+        return null;
+    }
 
     fun selectOption(groupTag: Any?, itemTag: Any?, multiSelect: Boolean = false, toggle: Boolean = false): Boolean {
         var didSelect = false;

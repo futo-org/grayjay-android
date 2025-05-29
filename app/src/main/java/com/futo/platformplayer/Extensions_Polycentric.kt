@@ -1,13 +1,13 @@
 package com.futo.platformplayer
 
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.base64UrlToByteArray
 import userpackage.Protocol
 import kotlin.math.abs
 import kotlin.math.min
@@ -40,33 +40,25 @@ fun Protocol.ImageBundle?.selectHighestResolutionImage(): Protocol.ImageManifest
     return imageManifestsList.filter { it.byteCount < maximumFileSize }.maxByOrNull { abs(it.width * it.height) }
 }
 
+fun String.getDataLinkFromUrl(): Protocol.URLInfoDataLink? {
+    val urlData = if (this.startsWith("polycentric://")) {
+        this.substring("polycentric://".length)
+    } else this;
+
+    val urlBytes = urlData.base64UrlToByteArray();
+    val urlInfo = Protocol.URLInfo.parseFrom(urlBytes);
+    if (urlInfo.urlType != 4L) {
+        return null
+    }
+
+    val dataLink = Protocol.URLInfoDataLink.parseFrom(urlInfo.body);
+    return dataLink
+}
+
 fun Protocol.Claim.resolveChannelUrl(): String? {
     return StatePlatform.instance.resolveChannelUrlByClaimTemplates(this.claimType.toInt(), this.claimFieldsList.associate { Pair(it.key.toInt(), it.value) })
 }
 
 fun Protocol.Claim.resolveChannelUrls(): List<String> {
     return StatePlatform.instance.resolveChannelUrlsByClaimTemplates(this.claimType.toInt(), this.claimFieldsList.associate { Pair(it.key.toInt(), it.value) })
-}
-
-suspend fun ProcessHandle.fullyBackfillServersAnnounceExceptions() {
-    val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
-    if (!systemState.servers.contains(PolycentricCache.SERVER)) {
-        Logger.w("Backfill", "Polycentric prod server not added, adding it.")
-        addServer(PolycentricCache.SERVER)
-    }
-
-    val exceptions = fullyBackfillServers()
-    for (pair in exceptions) {
-        val server = pair.key
-        val exception = pair.value
-
-        StateAnnouncement.instance.registerAnnouncement(
-            "backfill-failed",
-            "Backfill failed",
-            "Failed to backfill server $server. $exception",
-            AnnouncementType.SESSION_RECURRING
-        );
-
-        Logger.e("Backfill", "Failed to backfill server $server.", exception)
-    }
 }

@@ -20,6 +20,11 @@ class CastingDeviceInfoStorage : FragmentedStorageFileJson() {
     }
 
     @Synchronized
+    fun getDeviceNames() : List<String> {
+        return deviceInfos.map { it.name }.toList();
+    }
+
+    @Synchronized
     fun addDevice(castingDeviceInfo: CastingDeviceInfo): CastingDeviceInfo {
         val foundDeviceInfo = deviceInfos.firstOrNull { d -> d.name == castingDeviceInfo.name }
         if (foundDeviceInfo != null) {

@@ -12,6 +12,7 @@ enum class ContentType(val value: Int) {
     URL(9),
 
     NESTED_VIDEO(11),
+    CHANNEL(60),
 
     LOCKED(70),
 

@@ -27,14 +27,17 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
 import java.io.ByteArrayInputStream
-import java.io.File
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import java.security.SecureRandom
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 private val _allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
 fun getRandomString(sizeOfRandomString: Int): String {
@@ -66,7 +69,14 @@ fun warnIfMainThread(context: String) {
 }
 
 fun ensureNotMainThread() {
-    if (Looper.myLooper() == Looper.getMainLooper()) {
+    val isMainLooper = try {
+        Looper.myLooper() == Looper.getMainLooper()
+    } catch (e: Throwable) {
+        //Ignore, for unit tests where its not mocked
+        false
+    }
+
+    if (isMainLooper) {
         Logger.e("Utility", "Throwing exception because a function that should not be called on main thread, is called on main thread")
         throw IllegalStateException("Cannot run on main thread")
     }
@@ -269,7 +279,7 @@ fun <T> findNewIndex(originalArr: List<T>, newArr: List<T>, item: T): Int{
         }
     }
     if(newIndex < 0)
-        return originalArr.size;
+        return newArr.size;
     else
         return newIndex;
 }
@@ -278,4 +288,47 @@ fun ByteBuffer.toUtf8String(): String {
     val remainingBytes = ByteArray(remaining())
     get(remainingBytes)
     return String(remainingBytes, Charsets.UTF_8)
+}
+
+fun generateReadablePassword(length: Int): String {
+    val validChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+    val secureRandom = SecureRandom()
+    val randomBytes = ByteArray(length)
+    secureRandom.nextBytes(randomBytes)
+    val sb = StringBuilder(length)
+    for (byte in randomBytes) {
+        val index = (byte.toInt() and 0xFF) % validChars.length
+        sb.append(validChars[index])
+    }
+    return sb.toString()
+}
+
+fun ByteArray.toGzip(): ByteArray {
+    if (this == null || this.isEmpty()) return ByteArray(0)
+
+    val gzipTimeStart = OffsetDateTime.now();
+
+    val outputStream = ByteArrayOutputStream()
+    GZIPOutputStream(outputStream).use { gzip ->
+        gzip.write(this)
+    }
+    val result = outputStream.toByteArray();
+    Logger.i("Utility", "Gzip compression time: ${gzipTimeStart.getNowDiffMiliseconds()}ms");
+    return result;
+}
+
+fun ByteArray.fromGzip(): ByteArray {
+    if (this == null || this.isEmpty()) return ByteArray(0)
+
+    val inputStream = ByteArrayInputStream(this)
+    val outputStream = ByteArrayOutputStream()
+
+    GZIPInputStream(inputStream).use { gzip ->
+        val buffer = ByteArray(1024)
+        var bytesRead: Int
+        while (gzip.read(buffer).also { bytesRead = it } != -1) {
+            outputStream.write(buffer, 0, bytesRead)
+        }
+    }
+    return outputStream.toByteArray()
 }

@@ -29,6 +29,7 @@ import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.activities.SettingsActivity.Companion.settingsActivityClosed
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -411,7 +412,27 @@ class StateApp {
         }
 
         if (Settings.instance.synchronization.enabled) {
-            StateSync.instance.start()
+            StateSync.instance.start(context, {
+                try {
+                    UIDialogs.toast("Failed to start sync, port in use")
+                } catch (e: Throwable) {
+                    //Ignored
+                }
+            })
+        }
+
+        settingsActivityClosed.subscribe {
+            if (Settings.instance.synchronization.enabled) {
+                StateSync.instance.start(context, {
+                    try {
+                        UIDialogs.toast("Failed to start sync, port in use")
+                    } catch (e: Throwable) {
+                        //Ignored
+                    }
+                })
+            } else {
+                StateSync.instance.stop()
+            }
         }
 
         Logger.onLogSubmitted.subscribe {
@@ -509,22 +530,33 @@ class StateApp {
 
         //Migration
         Logger.i(TAG, "MainApp Started: Check [Migrations]");
-        migrateStores(context, listOf(
-            StateSubscriptions.instance.toMigrateCheck(),
-            StatePlaylists.instance.toMigrateCheck()
-        ).flatten(), 0);
+
+        scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                migrateStores(context, listOf(
+                    StateSubscriptions.instance.toMigrateCheck(),
+                    StatePlaylists.instance.toMigrateCheck()
+                ).flatten(), 0)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to migrate stores")
+            }
+        }
 
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
             scope.launch(Dispatchers.IO) {
                 Logger.i(TAG, "MainApp Started: Fetch [Subscriptions]");
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
-                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true };
-                if (isRateLimitReached) {
+                val isBelowRateLimit = !subRequestCounts.any { clientCount ->
+                    clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true
+                };
+                if (isBelowRateLimit) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
                     delay(5000);
-                    if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
-                        StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+                    scopeOrNull?.let {
+                        if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                            StateSubscriptions.instance.updateSubscriptionFeed(it, false);
+                    }
                 }
                 else
                     Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
@@ -675,15 +707,27 @@ class StateApp {
     }
 
 
-    private fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
+    private suspend fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
         if(managedStores.size <= index)
             return;
         val store = managedStores[index];
-        if(store.hasMissingReconstructions())
-            UIDialogs.showMigrateDialog(context, store) {
-                migrateStores(context, managedStores, index + 1);
-            };
-        else
+        if(store.hasMissingReconstructions()) {
+            withContext(Dispatchers.Main) {
+                try {
+                    UIDialogs.showMigrateDialog(context, store) {
+                        scopeOrNull?.launch(Dispatchers.IO) {
+                            try {
+                                migrateStores(context, managedStores, index + 1);
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to migrate store", e)
+                            }
+                        }
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to migrate stores", e)
+                }
+            }
+        } else
             migrateStores(context, managedStores, index + 1);
     }
 
@@ -703,6 +747,7 @@ class StateApp {
 
         StatePlayer.instance.closeMediaSession();
         StateCasting.instance.stop();
+        StateSync.instance.stop();
         StatePlayer.dispose();
         Companion.dispose();
         _fileLogConsumer?.close();

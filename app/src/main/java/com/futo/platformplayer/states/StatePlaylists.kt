@@ -19,6 +19,7 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -85,7 +86,7 @@ class StatePlaylists {
         if(value.isEmpty())
             return OffsetDateTime.MIN;
         val tryParse = value.toLongOrNull() ?: 0;
-        return OffsetDateTime.ofInstant(Instant.ofEpochSecond(tryParse), ZoneOffset.UTC);
+        return tryParse.sToOffsetDateTimeUTC();
     }
     private fun setWatchLaterReorderTime() {
         val now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -184,7 +185,7 @@ class StatePlaylists {
                 wasNew = true;
             _watchlistStore.saveAsync(video);
             if(orderPosition == -1)
-                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray());
             else {
                 val existing = _watchlistOrderStore.getAllValues().toMutableList();
                 existing.add(orderPosition, video.url);
@@ -230,17 +231,20 @@ class StatePlaylists {
         }
     }
 
+    public fun getWatchLaterSyncPacket(orderOnly: Boolean = false): SyncWatchLaterPackage{
+        return SyncWatchLaterPackage(
+            if (orderOnly) listOf() else getWatchLater(),
+            if (orderOnly) mapOf() else _watchLaterAdds.all(),
+            if (orderOnly) mapOf() else _watchLaterRemovals.all(),
+            getWatchLaterLastReorderTime().toEpochSecond(),
+            _watchlistOrderStore.values.toList()
+        )
+    }
     private fun broadcastWatchLater(orderOnly: Boolean = false) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
                 StateSync.instance.broadcastJsonData(
-                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                        if (orderOnly) listOf() else getWatchLater(),
-                        if (orderOnly) mapOf() else _watchLaterAdds.all(),
-                        if (orderOnly) mapOf() else _watchLaterRemovals.all(),
-                        getWatchLaterLastReorderTime().toEpochSecond(),
-                        _watchlistOrderStore.values.toList()
-                    )
+                    GJSyncOpcodes.syncWatchLater, getWatchLaterSyncPacket(orderOnly)
                 );
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to broadcast watch later", e)
@@ -397,12 +401,15 @@ class StatePlaylists {
     companion object {
         val TAG = "StatePlaylists";
         private var _instance : StatePlaylists? = null;
+        private var _lockObject = Object()
         val instance : StatePlaylists
-            get(){
-            if(_instance == null)
-                _instance = StatePlaylists();
-            return _instance!!;
-        };
+            get() {
+                synchronized(_lockObject) {
+                    if (_instance == null)
+                        _instance = StatePlaylists();
+                    return _instance!!;
+                }
+            }
 
         fun finish() {
             _instance?.let {
