@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.Thumbnail
 import com.futo.platformplayer.api.media.models.Thumbnails
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
@@ -39,6 +40,7 @@ class RequireMigrationTests {
         val viewCount = 1000L
 
         return SerializedPlatformVideo(
+            ContentType.MEDIA,
             platformId,
             name,
             thumbnails,

@@ -15,6 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
@@ -22,10 +24,14 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlugins
+import com.futo.platformplayer.views.ToggleBar
 import com.futo.platformplayer.views.adapters.HistoryListViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.others.TagsView
+import com.futo.platformplayer.views.others.Toggle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,6 +74,8 @@ class HistoryFragment : MainFragment() {
         private var _pager: IPager<HistoryVideo>? = null;
         private val _results = arrayListOf<HistoryVideo>();
         private var _loading = false;
+        private val _toggleBar: ToggleBar
+        private var _togglePluginsDisabled = hashSetOf<String>()
 
         private var _automaticNextPageCounter = 0;
 
@@ -79,6 +87,7 @@ class HistoryFragment : MainFragment() {
             _clearSearch = findViewById(R.id.button_clear_search);
             _editSearch = findViewById(R.id.edit_search);
             _tagsView = findViewById(R.id.tags_text);
+            _toggleBar = findViewById(R.id.toggle_bar)
             _tagsView.setPairs(listOf(
                 Pair(context.getString(R.string.last_hour), 60L),
                 Pair(context.getString(R.string.last_24_hours), 24L * 60L),
@@ -87,6 +96,22 @@ class HistoryFragment : MainFragment() {
                 Pair(context.getString(R.string.last_year), 365L * 30L * 24L * 60L),
                 Pair(context.getString(R.string.all_time), -1L)
             ));
+
+            val toggles = StatePlatform.instance.getEnabledClients()
+                .filter { it is JSClient }
+                .map { plugin ->
+                    val pluginName = plugin.name.lowercase()
+                    ToggleBar.Toggle(if(Settings.instance.home.showHomeFiltersPluginNames) pluginName else "", plugin.icon, !_togglePluginsDisabled.contains(plugin.id), { view, active ->
+                        if (active) {
+                            _togglePluginsDisabled.remove(plugin.id)
+                        } else {
+                            _togglePluginsDisabled.add(plugin.id)
+                        }
+
+                        filtersChanged()
+                    }).withTag("plugins")
+                }.toTypedArray()
+            _toggleBar.setToggles(*toggles)
 
             _adapter = InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 { _results.size },
@@ -162,20 +187,25 @@ class HistoryFragment : MainFragment() {
                 else
                     it.nextPage();
 
-                return@TaskHandler it.getResults();
+                return@TaskHandler filterResults(it.getResults());
             }).success {
                 setLoading(false);
 
                 val posBefore = _results.size;
-                _results.addAll(it);
-                _adapter.notifyItemRangeInserted(_adapter.childToParentPosition(posBefore), it.size);
-                ensureEnoughContentVisible(it)
+                val res = filterResults(it)
+                _results.addAll(res);
+                _adapter.notifyItemRangeInserted(_adapter.childToParentPosition(posBefore), res.size);
+                ensureEnoughContentVisible(res)
             }.exception<Throwable> {
                 Logger.w(TAG, "Failed to load next page.", it);
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
                     loadNextPage();
                 }, null, fragment);
             };
+        }
+
+        private fun filtersChanged() {
+            updatePager()
         }
 
         private fun updatePager() {
@@ -246,11 +276,22 @@ class HistoryFragment : MainFragment() {
             _adapter.setLoading(loading);
         }
 
+        private fun filterResults(a: List<HistoryVideo>): List<HistoryVideo> {
+            val enabledPluginIds = StatePlatform.instance.getEnabledClients().map { it.id }.toHashSet()
+            val disabledPluginIds = _togglePluginsDisabled.toHashSet()
+            return a.filter {
+                val pluginId = it.video.id.pluginId ?: StatePlatform.instance.getContentClientOrNull(it.video.url)?.id ?: return@filter false
+                if (!enabledPluginIds.contains(pluginId))
+                    return@filter false
+                return@filter !disabledPluginIds.contains(pluginId)
+            };
+        }
+
         private fun loadPagerInternal(pager: IPager<HistoryVideo>) {
             Logger.i(TAG, "Setting new internal pager on feed");
 
             _results.clear();
-            val toAdd = pager.getResults();
+            val toAdd = filterResults(pager.getResults())
             _results.addAll(toAdd);
             _adapter.notifyDataSetChanged();
             ensureEnoughContentVisible(toAdd)

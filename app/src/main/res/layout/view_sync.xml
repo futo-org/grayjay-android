@@ -57,15 +57,15 @@
 
     <ImageView
         android:id="@+id/image_clear"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         app:srcCompat="@drawable/ic_clear_16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginEnd="6dp"
         android:layout_marginStart="6dp"
-        android:padding="2dp" />
+        android:padding="12dp" />
 
     <TextView
         android:id="@+id/text_name"

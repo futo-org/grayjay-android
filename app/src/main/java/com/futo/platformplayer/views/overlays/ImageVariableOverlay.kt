@@ -98,7 +98,11 @@ class ImageVariableOverlay: ConstraintLayout {
                     UIDialogs.toast(context, "No thumbnail found");
                     return@subscribe;
                 }
-                _selected = ImageVariable(it.channel.thumbnail);
+                val channelUrl = it.channel.url;
+                _selected = ImageVariable(it.channel.thumbnail).let {
+                    it.subscriptionUrl = channelUrl;
+                    return@let it;
+                }
                 updateSelected();
             };
         };

@@ -49,8 +49,8 @@ open class JSContent : IPlatformContent, IPluginSourced {
         else
             author = PlatformAuthorLink.UNKNOWN;
 
-        val datetimeInt = _content.getOrThrow<Int>(config, "datetime", contextName).toLong();
-        if(datetimeInt == 0.toLong())
+        val datetimeInt = _content.getOrDefault<Int>(config, "datetime", contextName, null)?.toLong();
+        if(datetimeInt == null || datetimeInt == 0.toLong())
             datetime = null;
         else
             datetime = OffsetDateTime.of(LocalDateTime.ofEpochSecond(datetimeInt, 0, ZoneOffset.UTC), ZoneOffset.UTC);

@@ -1,14 +1,20 @@
 package com.futo.platformplayer.casting
 
+import android.app.AlertDialog
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
+import android.os.Build
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
-import android.util.Xml
+import java.net.NetworkInterface
+import java.net.Inet4Address
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
+import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -37,9 +43,8 @@ import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
+import com.futo.platformplayer.findPreferredAddress
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.mdns.DnsService
-import com.futo.platformplayer.mdns.ServiceDiscoverer
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
@@ -53,10 +58,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.io.ByteArrayInputStream
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.util.Collections
 import java.util.UUID
 
 class StateCasting {
@@ -68,7 +74,6 @@ class StateCasting {
     private var _started = false;
 
     var devices: HashMap<String, CastingDevice> = hashMapOf();
-    var rememberedDevices: ArrayList<CastingDevice> = arrayListOf();
     val onDeviceAdded = Event1<CastingDevice>();
     val onDeviceChanged = Event1<CastingDevice>();
     val onDeviceRemoved = Event1<CastingDevice>();
@@ -82,48 +87,15 @@ class StateCasting {
     private var _audioExecutor: JSRequestExecutor? = null
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
-    val _serviceDiscoverer = ServiceDiscoverer(arrayOf(
-        "_googlecast._tcp.local",
-        "_airplay._tcp.local",
-        "_fastcast._tcp.local",
-        "_fcast._tcp.local"
-    )) { handleServiceUpdated(it) }
-
+    private var _nsdManager: NsdManager? = null
     val isCasting: Boolean get() = activeDevice != null;
 
-    private fun handleServiceUpdated(services: List<DnsService>) {
-        for (s in services) {
-            //TODO: Addresses IPv4 only?
-            val addresses = s.addresses.toTypedArray()
-            val port = s.port.toInt()
-            var name = s.texts.firstOrNull { it.startsWith("md=") }?.substring("md=".length)
-            if (s.name.endsWith("._googlecast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._googlecast._tcp.local".length)
-                }
-
-                addOrUpdateChromeCastDevice(name, addresses, port)
-            } else if (s.name.endsWith("._airplay._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._airplay._tcp.local".length)
-                }
-
-                addOrUpdateAirPlayDevice(name, addresses, port)
-            } else if (s.name.endsWith("._fastcast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._fastcast._tcp.local".length)
-                }
-
-                addOrUpdateFastCastDevice(name, addresses, port)
-            } else if (s.name.endsWith("._fcast._tcp.local")) {
-                if (name == null) {
-                    name = s.name.substring(0, s.name.length - "._fcast._tcp.local".length)
-                }
-
-                addOrUpdateFastCastDevice(name, addresses, port)
-            }
-        }
-    }
+    private val _discoveryListeners = mapOf(
+        "_googlecast._tcp" to createDiscoveryListener(::addOrUpdateChromeCastDevice),
+        "_airplay._tcp" to createDiscoveryListener(::addOrUpdateAirPlayDevice),
+        "_fastcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice),
+        "_fcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice)
+    )
 
     fun handleUrl(context: Context, url: String) {
         val uri = Uri.parse(url)
@@ -188,30 +160,33 @@ class StateCasting {
 
         Logger.i(TAG, "CastingService starting...");
 
-        rememberedDevices.clear();
-        rememberedDevices.addAll(_storage.deviceInfos.map { deviceFromCastingDeviceInfo(it) });
-
         _castServer.start();
         enableDeveloper(true);
 
         Logger.i(TAG, "CastingService started.");
+
+        _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     }
 
     @Synchronized
     fun startDiscovering() {
-        try {
-            _serviceDiscoverer.start()
-        } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to start ServiceDiscoverer", e)
+        _nsdManager?.apply {
+            _discoveryListeners.forEach {
+                discoverServices(it.key, NsdManager.PROTOCOL_DNS_SD, it.value)
+            }
         }
     }
 
     @Synchronized
     fun stopDiscovering() {
-        try {
-            _serviceDiscoverer.stop()
-        } catch (e: Throwable) {
-            Logger.i(TAG, "Failed to stop ServiceDiscoverer", e)
+        _nsdManager?.apply {
+            _discoveryListeners.forEach {
+                try {
+                    stopServiceDiscovery(it.value)
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to stop service discovery", e)
+                }
+            }
         }
     }
 
@@ -237,7 +212,89 @@ class StateCasting {
         _castServer.removeAllHandlers();
 
         Logger.i(TAG, "CastingService stopped.")
+
+        _nsdManager = null
     }
+
+    private fun createDiscoveryListener(addOrUpdate: (String, Array<InetAddress>, Int) -> Unit): NsdManager.DiscoveryListener {
+        return object : NsdManager.DiscoveryListener {
+            override fun onDiscoveryStarted(regType: String) {
+                Log.d(TAG, "Service discovery started for $regType")
+            }
+
+            override fun onDiscoveryStopped(serviceType: String) {
+                Log.i(TAG, "Discovery stopped: $serviceType")
+            }
+
+            override fun onServiceLost(service: NsdServiceInfo) {
+                Log.e(TAG, "service lost: $service")
+                // TODO: Handle service lost, e.g., remove device
+            }
+
+            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
+                try {
+                    _nsdManager?.stopServiceDiscovery(this)
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to stop service discovery", e)
+                }
+            }
+
+            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
+                try {
+                    _nsdManager?.stopServiceDiscovery(this)
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to stop service discovery", e)
+                }
+            }
+
+            override fun onServiceFound(service: NsdServiceInfo) {
+                Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
+                val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    service.hostAddresses.toTypedArray()
+                } else {
+                    arrayOf(service.host)
+                }
+                addOrUpdate(service.serviceName, addresses, service.port)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
+                        override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
+                            Log.v(TAG, "onServiceUpdated: $serviceInfo")
+                            addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port)
+                        }
+
+                        override fun onServiceLost() {
+                            Log.v(TAG, "onServiceLost: $service")
+                            // TODO: Handle service lost
+                        }
+
+                        override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
+                            Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
+                        }
+
+                        override fun onServiceInfoCallbackUnregistered() {
+                            Log.v(TAG, "onServiceInfoCallbackUnregistered")
+                        }
+                    })
+                } else {
+                    _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
+                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                            Log.v(TAG, "Resolve failed: $errorCode")
+                        }
+
+                        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                            Log.v(TAG, "Resolve Succeeded: $serviceInfo")
+                            addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port)
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    private val _castingDialogLock = Any();
+    private var _currentDialog: AlertDialog? = null;
 
     @Synchronized
     fun connectDevice(device: CastingDevice) {
@@ -272,10 +329,41 @@ class StateCasting {
             invokeInMainScopeIfRequired {
                 StateApp.withContext(false) { context ->
                     context.let {
+                        Logger.i(TAG, "Casting state changed to ${castConnectionState}");
                         when (castConnectionState) {
-                            CastConnectionState.CONNECTED -> UIDialogs.toast(it, "Connected to device")
-                            CastConnectionState.CONNECTING -> UIDialogs.toast(it, "Connecting to device...")
-                            CastConnectionState.DISCONNECTED -> UIDialogs.toast(it, "Disconnected from device")
+                            CastConnectionState.CONNECTED -> {
+                                Logger.i(TAG, "Casting connected to [${device.name}]");
+                                UIDialogs.appToast("Connected to device")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog != null) {
+                                        _currentDialog?.hide();
+                                        _currentDialog = null;
+                                    }
+                                }
+                            }
+                            CastConnectionState.CONNECTING -> {
+                                Logger.i(TAG, "Casting connecting to [${device.name}]");
+                                UIDialogs.toast(it, "Connecting to device...")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog == null) {
+                                        _currentDialog = UIDialogs.showDialog(context, R.drawable.ic_loader_animated, true,
+                                                "Connecting to [${device.name}]",
+                                                "Make sure you are on the same network\n\nVPNs and guest networks can cause issues", null, -2,
+                                            UIDialogs.Action("Disconnect", {
+                                                device.stop();
+                                            }));
+                                    }
+                                }
+                            }
+                            CastConnectionState.DISCONNECTED -> {
+                                UIDialogs.toast(it, "Disconnected from device")
+                                synchronized(_castingDialogLock) {
+                                    if(_currentDialog != null) {
+                                        _currentDialog?.hide();
+                                        _currentDialog = null;
+                                    }
+                                }
+                            }
                         }
                     }
                 };
@@ -294,9 +382,6 @@ class StateCasting {
         device.onTimeChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDeviceTimeChanged.emit(it) };
         };
-
-        addRememberedDevice(device);
-        Logger.i(TAG, "Device added to active discovery. Active discovery now contains ${_storage.getDevicesCount()} devices.")
 
         try {
             device.start();
@@ -319,21 +404,22 @@ class StateCasting {
         return addRememberedDevice(device);
     }
 
+    fun getRememberedCastingDevices(): List<CastingDevice> {
+        return _storage.getDevices().map { deviceFromCastingDeviceInfo(it) }
+    }
+
+    fun getRememberedCastingDeviceNames(): List<String> {
+        return _storage.getDeviceNames()
+    }
+
     fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
         val deviceInfo = device.getDeviceInfo()
-        val foundInfo = _storage.addDevice(deviceInfo)
-        if (foundInfo == deviceInfo) {
-            rememberedDevices.add(device);
-            return foundInfo;
-        }
-
-        return foundInfo;
+        return _storage.addDevice(deviceInfo)
     }
 
     fun removeRememberedDevice(device: CastingDevice) {
-        val name = device.name ?: return;
-        _storage.removeDevice(name);
-        rememberedDevices.remove(device);
+        val name = device.name ?: return
+        _storage.removeDevice(name)
     }
 
     private fun invokeInMainScopeIfRequired(action: () -> Unit){
@@ -402,7 +488,7 @@ class StateCasting {
             }
         } else {
             val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
-            val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+            val url = getLocalUrl(ad);
             val id = UUID.randomUUID();
 
             if (videoSource is IVideoUrlSource) {
@@ -497,7 +583,7 @@ class StateCasting {
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
         val videoPath = "/video-${id}"
         val videoUrl = url + videoPath;
@@ -516,7 +602,7 @@ class StateCasting {
     private fun castLocalAudio(video: IPlatformVideoDetails, audioSource: LocalAudioSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
         val audioPath = "/audio-${id}"
         val audioUrl = url + audioPath;
@@ -535,7 +621,7 @@ class StateCasting {
     private fun castLocalHls(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?): List<String> {
         val ad = activeDevice ?: return listOf()
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}"
+        val url = getLocalUrl(ad)
         val id = UUID.randomUUID()
 
         val hlsPath = "/hls-${id}"
@@ -631,7 +717,7 @@ class StateCasting {
     private fun castLocalDash(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -681,7 +767,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val videoPath = "/video-${id}"
@@ -746,7 +832,7 @@ class StateCasting {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
 
         val id = UUID.randomUUID();
         val hlsPath = "/hls-${id}"
@@ -916,7 +1002,7 @@ class StateCasting {
 
     private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val hlsPath = "/hls-${id}"
@@ -1046,7 +1132,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -1132,6 +1218,15 @@ class StateCasting {
         }
     }
 
+    private fun getLocalUrl(ad: CastingDevice): String {
+        var address = ad.localAddress!!
+        if (address is Inet6Address && address.isLinkLocalAddress) {
+            address = findPreferredAddress() ?: address
+            Logger.i(TAG, "Selected casting address: $address")
+        }
+        return "http://${address.toUrlAddress().trim('/')}:${_castServer.port}";
+    }
+
     @OptIn(UnstableApi::class)
     private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
@@ -1139,7 +1234,7 @@ class StateCasting {
         cleanExecutors()
         _castServer.removeAllHandlers("castDashRaw")
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"

@@ -9,6 +9,8 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
@@ -29,6 +31,16 @@ class SyncHomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (StateApp.instance.contextOrNull == null) {
+            Logger.w(TAG, "No main activity, restarting main.")
+            val intent = Intent(this, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(intent)
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_sync_home)
         setNavigationBarColorAndIcons()
 
@@ -54,7 +66,6 @@ class SyncHomeActivity : AppCompatActivity() {
                 val view = _viewMap[publicKey]
                 if (!session.isAuthorized) {
                     if (view != null) {
-                        _layoutDevices.removeView(view)
                         _viewMap.remove(publicKey)
                     }
                     return@launch
@@ -89,6 +100,20 @@ class SyncHomeActivity : AppCompatActivity() {
                 updateEmptyVisibility()
             }
         }
+
+        StateSync.instance.confirmStarted(this, onStarted = {
+            if (StateSync.instance.syncService?.serverSocketFailedToStart == true) {
+                UIDialogs.toast(this, "Server socket failed to start, is the port in use?", true)
+            }
+            if (StateSync.instance.syncService?.relayConnected == false) {
+                UIDialogs.toast(this, "Not connected to relay, remote connections will work.", false)
+            }
+            if (StateSync.instance.syncService?.serverSocketStarted == false) {
+                UIDialogs.toast(this, "Listener not started, local connections will not work.", false)
+            }
+        }, onNotStarted = {
+            finish()
+        })
     }
 
     override fun onDestroy() {
@@ -100,10 +125,12 @@ class SyncHomeActivity : AppCompatActivity() {
 
     private fun updateDeviceView(syncDeviceView: SyncDeviceView, publicKey: String, session: SyncSession?): SyncDeviceView {
         val connected = session?.connected ?: false
-        syncDeviceView.setLinkType(if (connected) LinkType.Local else LinkType.None)
+        val authorized = session?.isAuthorized ?: false
+
+        syncDeviceView.setLinkType(session?.linkType ?: LinkType.None)
             .setName(session?.displayName ?: StateSync.instance.getCachedName(publicKey) ?: publicKey)
             //TODO: also display public key?
-            .setStatus(if (connected) "Connected" else "Disconnected")
+            .setStatus(if (connected && authorized) "Connected" else "Disconnected or unauthorized")
         return syncDeviceView
     }
 

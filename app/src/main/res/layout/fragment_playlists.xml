@@ -13,7 +13,7 @@
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/app_bar"
             android:layout_width="match_parent"
-            android:layout_height="230dp"
+            android:layout_height="315dp"
             android:background="@color/transparent"
             app:elevation="0dp">
 
@@ -87,7 +87,7 @@
                 <androidx.appcompat.widget.Toolbar
                     android:id="@+id/toolbar"
                     android:layout_width="match_parent"
-                    android:layout_height="25dp"
+                    android:layout_height="110dp"
                     android:minHeight="0dp"
                     app:contentInsetStart="0dp"
                     app:contentInsetEnd="0dp"
@@ -96,35 +96,85 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/text_playlists"
-                            android:layout_width="wrap_content"
+                        android:layout_height="110dp"
+                        android:orientation="vertical">
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textSize="16dp"
-                            android:textColor="@color/white"
-                            android:fontFamily="@font/inter_light"
-                            android:text="@string/playlists"
-                            android:paddingStart="15dp"
-                            app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/recycler_watch_later" />
+                            android:gravity="center_vertical">
 
-                        <Space
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1" />
+                            <TextView
+                                android:id="@+id/text_playlists"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="16dp"
+                                android:textColor="@color/white"
+                                android:fontFamily="@font/inter_light"
+                                android:text="@string/playlists"
+                                android:paddingStart="15dp"
+                                app:layout_constraintLeft_toLeftOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/recycler_watch_later" />
 
-                        <ImageButton
-                            android:id="@+id/button_create_playlist"
-                            android:layout_width="35dp"
-                            android:layout_height="20dp"
-                            android:contentDescription="@string/cd_button_create_playlist"
-                            app:srcCompat="@drawable/ic_add_white_16dp"
-                            android:paddingEnd="15dp"
-                            android:paddingStart="15dp"
-                            android:layout_marginEnd="12dp" />
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1" />
+
+                            <ImageButton
+                                android:id="@+id/button_create_playlist"
+                                android:layout_width="35dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@string/cd_button_create_playlist"
+                                app:srcCompat="@drawable/ic_add_white_16dp"
+                                android:paddingEnd="15dp"
+                                android:paddingStart="15dp"
+                                android:layout_marginEnd="12dp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/playlists_filter_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <EditText
+                                android:id="@+id/playlists_search"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:layout_marginLeft="15dp"
+                                android:layout_marginRight="15dp"
+                                android:inputType="text"
+                                android:imeOptions="actionDone"
+                                android:singleLine="true"
+                                android:background="@drawable/background_button_round"
+                                android:hint="Search.." />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="14dp"
+                                    android:textColor="@color/gray_ac"
+                                    android:fontFamily="@font/inter_light"
+                                    android:text="@string/sort_by"
+                                    android:paddingStart="20dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_sortby"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="1"
+                                    android:layout_height="wrap_content"
+                                    android:paddingStart="20dp"
+                                    android:paddingEnd="20dp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
                     </LinearLayout>
 
                 </androidx.appcompat.widget.Toolbar>
@@ -136,7 +186,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            app:layout_constraintTop_toBottomOf="@id/text_view_all"
+            app:layout_constraintTop_toBottomOf="@id/playlists_filter_container"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:paddingTop="10dp"
