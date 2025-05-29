@@ -176,6 +176,11 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
     }
 
     private fun updateSearchViewVisibility() {
+        if (subType != null) {
+            _searchView?.visibility = View.GONE
+            return
+        }
+
         val client = _channel?.id?.pluginId?.let { StatePlatform.instance.getClientOrNull(it) }
         Logger.i(TAG, "_searchView.visible = ${client?.capabilities?.hasSearchChannelContents == true}")
         _searchView?.visibility = if (client?.capabilities?.hasSearchChannelContents == true) View.VISIBLE else View.GONE
