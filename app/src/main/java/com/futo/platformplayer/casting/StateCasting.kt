@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
+import java.net.NetworkInterface
+import java.net.Inet4Address
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
@@ -41,6 +43,7 @@ import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
+import com.futo.platformplayer.findPreferredAddress
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
@@ -55,9 +58,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.util.Collections
 import java.util.UUID
 
 class StateCasting {
@@ -483,7 +488,7 @@ class StateCasting {
             }
         } else {
             val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
-            val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+            val url = getLocalUrl(ad);
             val id = UUID.randomUUID();
 
             if (videoSource is IVideoUrlSource) {
@@ -578,7 +583,7 @@ class StateCasting {
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
         val videoPath = "/video-${id}"
         val videoUrl = url + videoPath;
@@ -597,7 +602,7 @@ class StateCasting {
     private fun castLocalAudio(video: IPlatformVideoDetails, audioSource: LocalAudioSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
         val audioPath = "/audio-${id}"
         val audioUrl = url + audioPath;
@@ -616,7 +621,7 @@ class StateCasting {
     private fun castLocalHls(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?): List<String> {
         val ad = activeDevice ?: return listOf()
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}"
+        val url = getLocalUrl(ad)
         val id = UUID.randomUUID()
 
         val hlsPath = "/hls-${id}"
@@ -712,7 +717,7 @@ class StateCasting {
     private fun castLocalDash(video: IPlatformVideoDetails, videoSource: LocalVideoSource?, audioSource: LocalAudioSource?, subtitleSource: LocalSubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -762,7 +767,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val videoPath = "/video-${id}"
@@ -827,7 +832,7 @@ class StateCasting {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
 
         val id = UUID.randomUUID();
         val hlsPath = "/hls-${id}"
@@ -997,7 +1002,7 @@ class StateCasting {
 
     private suspend fun castHlsIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val hlsPath = "/hls-${id}"
@@ -1127,7 +1132,7 @@ class StateCasting {
         val ad = activeDevice ?: return listOf();
         val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"
@@ -1213,6 +1218,15 @@ class StateCasting {
         }
     }
 
+    private fun getLocalUrl(ad: CastingDevice): String {
+        var address = ad.localAddress!!
+        if (address is Inet6Address && address.isLinkLocalAddress) {
+            address = findPreferredAddress() ?: address
+            Logger.i(TAG, "Selected casting address: $address")
+        }
+        return "http://${address.toUrlAddress().trim('/')}:${_castServer.port}";
+    }
+
     @OptIn(UnstableApi::class)
     private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
@@ -1220,7 +1234,7 @@ class StateCasting {
         cleanExecutors()
         _castServer.removeAllHandlers("castDashRaw")
 
-        val url = "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
 
         val dashPath = "/dash-${id}"

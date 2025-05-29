@@ -31,6 +31,12 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
+import java.net.InterfaceAddress
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.time.OffsetDateTime
@@ -332,3 +338,97 @@ fun ByteArray.fromGzip(): ByteArray {
     }
     return outputStream.toByteArray()
 }
+
+fun findPreferredAddress(): InetAddress? {
+    val candidates = NetworkInterface.getNetworkInterfaces()
+        .toList()
+        .asSequence()
+        .filter(::isUsableInterface)
+        .flatMap { nif ->
+            nif.interfaceAddresses
+                .asSequence()
+                .mapNotNull { ia ->
+                    ia.address.takeIf(::isUsableAddress)?.let { addr ->
+                        nif to ia
+                    }
+                }
+        }
+        .toList()
+
+    return candidates
+        .minWithOrNull(
+            compareBy<Pair<NetworkInterface, InterfaceAddress>>(
+                { addressScore(it.second.address) },
+                { interfaceScore(it.first) },
+                { -it.second.networkPrefixLength.toInt() },
+                { -it.first.mtu }
+            )
+        )?.second?.address
+}
+
+private fun isUsableInterface(nif: NetworkInterface): Boolean {
+    val name = nif.name.lowercase()
+    return try {
+        // must be up, not loopback/virtual/PtP, have a MAC, not Docker/tun/etc.
+        nif.isUp
+            && !nif.isLoopback
+            && !nif.isPointToPoint
+            && !nif.isVirtual
+            && !name.startsWith("docker")
+            && !name.startsWith("veth")
+            && !name.startsWith("br-")
+            && !name.startsWith("virbr")
+            && !name.startsWith("vmnet")
+            && !name.startsWith("tun")
+            && !name.startsWith("tap")
+    } catch (e: SocketException) {
+        false
+    }
+}
+
+private fun isUsableAddress(addr: InetAddress): Boolean {
+    return when {
+        addr.isAnyLocalAddress -> false // 0.0.0.0 / ::
+        addr.isLoopbackAddress -> false
+        addr.isLinkLocalAddress -> false // 169.254.x.x or fe80::/10
+        addr.isMulticastAddress -> false
+        else -> true
+    }
+}
+
+private fun interfaceScore(nif: NetworkInterface): Int {
+    val name = nif.name.lowercase()
+    return when {
+        name.matches(Regex("^(eth|enp|eno|ens|em)\\d+")) -> 0
+        name.startsWith("eth") || name.contains("ethernet") -> 0
+        name.matches(Regex("^(wlan|wlp)\\d+")) -> 1
+        name.contains("wi-fi") || name.contains("wifi") -> 1
+        else -> 2
+    }
+}
+
+private fun addressScore(addr: InetAddress): Int {
+    return when (addr) {
+        is Inet4Address -> {
+            val octets = addr.address.map { it.toInt() and 0xFF }
+            when {
+                octets[0] == 10 -> 0  // 10/8
+                octets[0] == 192 && octets[1] == 168 -> 0  // 192.168/16
+                octets[0] == 172 && octets[1] in 16..31 -> 0  // 172.16–31/12
+                else -> 1  // public IPv4
+            }
+        }
+        is Inet6Address -> {
+            // ULA (fc00::/7) vs global vs others
+            val b0 = addr.address[0].toInt() and 0xFF
+            when {
+                (b0 and 0xFE) == 0xFC -> 2  // ULA
+                (b0 and 0xE0) == 0x20 -> 3  // global
+                else -> 4
+            }
+        }
+        else -> Int.MAX_VALUE
+    }
+}
+
+fun <T> Enumeration<T>.toList(): List<T> = Collections.list(this)
