@@ -1228,7 +1228,7 @@ class VideoDownload {
             else if (container.contains("audio/webm"))
                 return "webm";
             else if (container == "application/vnd.apple.mpegurl")
-                return "mp4";
+                return "m4a";
             else
                 return "audio";// throw IllegalStateException("Unknown container: " + container)
         }
