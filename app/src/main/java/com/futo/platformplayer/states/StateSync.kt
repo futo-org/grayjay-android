@@ -51,7 +51,7 @@ class StateSync {
     val deviceRemoved: Event1<String> = Event1()
     val deviceUpdatedOrAdded: Event2<String, SyncSession> = Event2()
 
-    fun start(context: Context, onServerBindFail: () -> Unit) {
+    fun start(context: Context) {
         if (syncService != null) {
             Logger.i(TAG, "Already started.")
             return
@@ -150,24 +150,14 @@ class StateSync {
             }
         }
 
-        syncService?.start(context, onServerBindFail)
+        syncService?.start(context)
     }
 
-    fun showFailedToBindDialogIfNecessary(context: Context) {
-        if (syncService?.serverSocketFailedToStart == true && Settings.instance.synchronization.localConnections) {
-            try {
-                UIDialogs.showDialogOk(context, R.drawable.ic_warning, "Local discovery unavailable, port was in use")
-            } catch (e: Throwable) {
-                //Ignored
-            }
-        }
-    }
-
-    fun confirmStarted(context: Context, onStarted: () -> Unit, onNotStarted: () -> Unit, onServerBindFail: () -> Unit) {
+    fun confirmStarted(context: Context, onStarted: () -> Unit, onNotStarted: () -> Unit) {
         if (syncService == null) {
             UIDialogs.showConfirmationDialog(context, "Sync has not been enabled yet, would you like to enable sync?", {
                 Settings.instance.synchronization.enabled = true
-                start(context, onServerBindFail)
+                start(context)
                 Settings.instance.save()
                 onStarted.invoke()
             }, {
