@@ -25,7 +25,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -45,6 +44,7 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ArticleDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
@@ -73,6 +73,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.State
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
+import com.futo.platformplayer.fragment.mainactivity.main.WebDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
@@ -152,6 +153,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     //Frags Main
     lateinit var _fragMainHome: HomeFragment;
     lateinit var _fragPostDetail: PostDetailFragment;
+    lateinit var _fragArticleDetail: ArticleDetailFragment;
+    lateinit var _fragWebDetail: WebDetailFragment;
     lateinit var _fragMainVideoSearchResults: ContentSearchResultsFragment;
     lateinit var _fragMainCreatorSearchResults: CreatorSearchResultsFragment;
     lateinit var _fragMainPlaylistSearchResults: PlaylistSearchResultsFragment;
@@ -330,6 +333,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist = PlaylistFragment.newInstance();
         _fragMainRemotePlaylist = RemotePlaylistFragment.newInstance();
         _fragPostDetail = PostDetailFragment.newInstance();
+        _fragArticleDetail = ArticleDetailFragment.newInstance();
+        _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
@@ -456,6 +461,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist.topBar = _fragTopBarNavigation;
         _fragMainRemotePlaylist.topBar = _fragTopBarNavigation;
         _fragPostDetail.topBar = _fragTopBarNavigation;
+        _fragArticleDetail.topBar = _fragTopBarNavigation;
+        _fragWebDetail.topBar = _fragTopBarNavigation;
         _fragWatchlist.topBar = _fragTopBarNavigation;
         _fragHistory.topBar = _fragTopBarNavigation;
         _fragSourceDetail.topBar = _fragTopBarNavigation;
@@ -855,7 +862,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         return withContext(Dispatchers.IO) {
             Logger.i(TAG, "handleUrl(url=$url) on IO");
-            if (StatePlatform.instance.hasEnabledVideoClient(url)) {
+            if (StatePlatform.instance.hasEnabledContentClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 withContext(Dispatchers.Main) {
                     if (position > 0)
@@ -1240,6 +1247,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             PlaylistFragment::class -> _fragMainPlaylist as T;
             RemotePlaylistFragment::class -> _fragMainRemotePlaylist as T;
             PostDetailFragment::class -> _fragPostDetail as T;
+            ArticleDetailFragment::class -> _fragArticleDetail as T;
+            WebDetailFragment::class -> _fragWebDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;

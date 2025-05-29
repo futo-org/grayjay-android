@@ -5,7 +5,8 @@ import com.futo.platformplayer.api.media.exceptions.UnknownPlatformException
 enum class TextType(val value: Int) {
     RAW(0),
     HTML(1),
-    MARKUP(2);
+    MARKUP(2),
+    CODE(3);
 
     companion object {
         fun fromInt(value: Int): TextType

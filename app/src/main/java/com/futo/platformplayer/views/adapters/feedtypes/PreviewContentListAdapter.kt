@@ -79,6 +79,8 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         return when(contentType) {
             ContentType.PLACEHOLDER -> createPlaceholderViewHolder(viewGroup);
             ContentType.MEDIA -> createVideoPreviewViewHolder(viewGroup);
+            ContentType.ARTICLE -> createPostViewHolder(viewGroup);
+            ContentType.WEB -> createPostViewHolder(viewGroup);
             ContentType.POST -> createPostViewHolder(viewGroup);
             ContentType.PLAYLIST -> createPlaylistViewHolder(viewGroup);
             ContentType.NESTED_VIDEO -> createNestedViewHolder(viewGroup);
