@@ -33,6 +33,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStateAtLeast
+import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
@@ -847,7 +849,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             Logger.i(TAG, "handleUrl(url=$url) on IO");
             if (StatePlatform.instance.hasEnabledVideoClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
-                lifecycleScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     if (position > 0)
                         navigate(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
                     else
@@ -858,7 +860,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found channel client");
-                lifecycleScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     navigate(_fragMainChannel, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
@@ -866,7 +868,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found playlist client");
-                lifecycleScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     navigate(_fragMainRemotePlaylist, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
@@ -1094,12 +1096,24 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         return fragCurrent is T;
     }
 
+    fun navigate(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            navigateNow(segment, parameter, withHistory, isBack)
+        } else {
+            lifecycleScope.launch {
+                lifecycle.withStateAtLeast(Lifecycle.State.RESUMED) {
+                    navigateNow(segment, parameter, withHistory, isBack)
+                }
+            }
+        }
+    }
+
     /**
      * Navigate takes a MainFragment, and makes them the current main visible view
      * A parameter can be provided which becomes available in the onShow of said fragment
      */
     @SuppressLint("CommitTransaction")
-    fun navigate(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+    fun navigateNow(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
         Logger.i(TAG, "Navigate to $segment (parameter=$parameter, withHistory=$withHistory, isBack=$isBack)")
 
         if (segment != fragCurrent) {
