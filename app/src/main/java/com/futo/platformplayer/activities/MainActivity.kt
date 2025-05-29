@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
 
             try {
-                runBlocking {
+                lifecycleScope.launch {
                     handleUrlAll(content)
                 }
             } catch (e: Throwable) {
@@ -282,7 +282,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         runBlocking {
-            StatePlatform.instance.updateAvailableClients(this@MainActivity);
+            try {
+                StatePlatform.instance.updateAvailableClients(this@MainActivity);
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Unhandled exception in updateAvailableClients", e)
+            }
         }
 
         //Preload common files to memory
@@ -709,7 +713,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             "VIDEO" -> {
                 val url = intent.getStringExtra("VIDEO");
-                navigate(_fragVideoDetail, url);
+                navigateWhenReady(_fragVideoDetail, url);
             }
 
             "IMPORT_OPTIONS" -> {
@@ -727,11 +731,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     "Sources" -> {
                         runBlocking {
                             StatePlatform.instance.updateAvailableClients(this@MainActivity, true) //Ideally this is not needed..
-                            navigate(_fragMainSources);
+                            navigateWhenReady(_fragMainSources);
                         }
                     };
                     "BROWSE_PLUGINS" -> {
-                        navigate(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
+                        navigateWhenReady(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if (it is MainActivity) {
@@ -749,8 +753,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         try {
             if (targetData != null) {
-                runBlocking {
-                    handleUrlAll(targetData)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        handleUrlAll(targetData)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Unhandled exception in handleUrlAll", e)
+                    }
                 }
             }
         } catch (ex: Throwable) {
@@ -778,10 +786,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     startActivity(intent);
                 } else if (url.startsWith("grayjay://video/")) {
                     val videoUrl = url.substring("grayjay://video/".length);
-                    navigate(_fragVideoDetail, videoUrl);
+                    navigateWhenReady(_fragVideoDetail, videoUrl);
                 } else if (url.startsWith("grayjay://channel/")) {
                     val channelUrl = url.substring("grayjay://channel/".length);
-                    navigate(_fragMainChannel, channelUrl);
+                    navigateWhenReady(_fragMainChannel, channelUrl);
                 }
             }
 
@@ -851,9 +859,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 withContext(Dispatchers.Main) {
                     if (position > 0)
-                        navigate(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
+                        navigateWhenReady(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
                     else
-                        navigate(_fragVideoDetail, url);
+                        navigateWhenReady(_fragVideoDetail, url);
 
                     _fragVideoDetail.maximizeVideoDetail(true);
                 }
@@ -861,7 +869,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found channel client");
                 withContext(Dispatchers.Main) {
-                    navigate(_fragMainChannel, url);
+                    navigateWhenReady(_fragMainChannel, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
                 };
@@ -869,7 +877,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found playlist client");
                 withContext(Dispatchers.Main) {
-                    navigate(_fragMainRemotePlaylist, url);
+                    navigateWhenReady(_fragMainRemotePlaylist, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
                 };
@@ -1096,13 +1104,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         return fragCurrent is T;
     }
 
-    fun navigate(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+    fun navigateWhenReady(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            navigateNow(segment, parameter, withHistory, isBack)
+            navigate(segment, parameter, withHistory, isBack)
         } else {
             lifecycleScope.launch {
                 lifecycle.withStateAtLeast(Lifecycle.State.RESUMED) {
-                    navigateNow(segment, parameter, withHistory, isBack)
+                    navigate(segment, parameter, withHistory, isBack)
                 }
             }
         }
@@ -1113,7 +1121,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
      * A parameter can be provided which becomes available in the onShow of said fragment
      */
     @SuppressLint("CommitTransaction")
-    fun navigateNow(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+    fun navigate(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
         Logger.i(TAG, "Navigate to $segment (parameter=$parameter, withHistory=$withHistory, isBack=$isBack)")
 
         if (segment != fragCurrent) {
