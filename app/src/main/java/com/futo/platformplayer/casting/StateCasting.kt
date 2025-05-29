@@ -43,6 +43,7 @@ import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
+import com.futo.platformplayer.findPreferredAddress
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
@@ -61,6 +62,7 @@ import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.util.Collections
 import java.util.UUID
 
 class StateCasting {
@@ -1216,26 +1218,13 @@ class StateCasting {
         }
     }
 
-    private fun findFirstIPv4(): InetAddress? {
-        val interfaces = NetworkInterface.getNetworkInterfaces()
-        for (intf in interfaces) {
-            if (!intf.isUp || intf.isLoopback) continue
-            for (addr in intf.inetAddresses) {
-                if (addr is Inet4Address && !addr.isLoopbackAddress) {
-                    return addr
-                }
-            }
-        }
-        return null
-    }
-
     private fun getLocalUrl(ad: CastingDevice): String {
         var address = ad.localAddress!!
         if (address is Inet6Address && address.isLinkLocalAddress) {
-            address = findFirstIPv4() ?: address
+            address = findPreferredAddress() ?: address
             Logger.i(TAG, "Selected casting address: $address")
         }
-        return "http://${ad.localAddress.toUrlAddress().trim('/')}:${_castServer.port}";
+        return "http://${address.toUrlAddress().trim('/')}:${_castServer.port}";
     }
 
     @OptIn(UnstableApi::class)
