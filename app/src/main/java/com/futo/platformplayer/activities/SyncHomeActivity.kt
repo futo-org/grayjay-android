@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
@@ -100,12 +101,18 @@ class SyncHomeActivity : AppCompatActivity() {
             }
         }
 
-        StateSync.instance.confirmStarted(this, {
-            StateSync.instance.showFailedToBindDialogIfNecessary(this@SyncHomeActivity)
-        }, {
+        StateSync.instance.confirmStarted(this, onStarted = {
+            if (StateSync.instance.syncService?.serverSocketFailedToStart == true) {
+                UIDialogs.toast(this, "Server socket failed to start, is the port in use?", true)
+            }
+            if (StateSync.instance.syncService?.relayConnected == false) {
+                UIDialogs.toast(this, "Not connected to relay, remote connections will work.", false)
+            }
+            if (StateSync.instance.syncService?.serverSocketStarted == false) {
+                UIDialogs.toast(this, "Listener not started, local connections will not work.", false)
+            }
+        }, onNotStarted = {
             finish()
-        }, {
-            StateSync.instance.showFailedToBindDialogIfNecessary(this@SyncHomeActivity)
         })
     }
 

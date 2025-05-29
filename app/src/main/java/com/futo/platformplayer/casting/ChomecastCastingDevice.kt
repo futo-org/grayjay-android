@@ -536,7 +536,7 @@ class ChromecastCastingDevice : CastingDevice {
                         Logger.i(TAG, "Player not found, launching.");
                         launchPlayer();
                     } else {
-                        Logger.i(TAG, "Player not found, disconnecting.");
+                        Logger.i(TAG, "Player not found, disconnecting."); //TODO: Add recovery from this scenario ?
                         stop();
                     }
                 } else {
