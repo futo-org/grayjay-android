@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.post.IPlatformPostDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSWeb
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
@@ -145,6 +146,11 @@ class PreviewPostView : LinearLayout {
         } else if(content is IPlatformArticle) {
             if(!content.summary.isNullOrEmpty())
                 content.summary ?: ""
+            else
+                ""
+        } else if(content is JSWeb) {
+            if(!content.url.isNullOrEmpty())
+                "WEB:" + content.url
             else
                 ""
         } else "";

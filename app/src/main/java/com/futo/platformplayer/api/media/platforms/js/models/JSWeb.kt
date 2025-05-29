@@ -23,7 +23,7 @@ import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.states.StateDeveloper
 
 open class JSWeb : JSContent, IPluginSourced {
-    final override val contentType: ContentType get() = ContentType.POST;
+    final override val contentType: ContentType get() = ContentType.WEB;
 
     constructor(config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
         val contextName = "PlatformWeb";

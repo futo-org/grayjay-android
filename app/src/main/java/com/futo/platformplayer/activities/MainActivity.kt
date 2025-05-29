@@ -455,6 +455,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist.topBar = _fragTopBarNavigation;
         _fragMainRemotePlaylist.topBar = _fragTopBarNavigation;
         _fragPostDetail.topBar = _fragTopBarNavigation;
+        _fragArticleDetail.topBar = _fragTopBarNavigation;
+        _fragWebDetail.topBar = _fragTopBarNavigation;
         _fragWatchlist.topBar = _fragTopBarNavigation;
         _fragHistory.topBar = _fragTopBarNavigation;
         _fragSourceDetail.topBar = _fragTopBarNavigation;

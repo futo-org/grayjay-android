@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.models.JSWeb
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
@@ -199,6 +200,9 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             fragment.navigate<PostDetailFragment>(content);
         } else if(content is IPlatformArticle) {
             fragment.navigate<ArticleDetailFragment>(content);
+        }
+        else if(content is JSWeb) {
+            fragment.navigate<WebDetailFragment>(content);
         }
         else
             UIDialogs.appToast("Unknown content type [" + content.contentType.name + "]");

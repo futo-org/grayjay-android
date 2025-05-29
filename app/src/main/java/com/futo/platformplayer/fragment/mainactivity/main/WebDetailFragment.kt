@@ -26,6 +26,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.Thumbnails
+import com.futo.platformplayer.api.media.models.article.IPlatformArticleDetails
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.post.IPlatformPostDetails
@@ -99,6 +100,10 @@ class WebDetailFragment : MainFragment {
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
 
+        if (parameter is JSWeb) {
+            _viewDetail?.clear();
+            _viewDetail?.setWeb(parameter);
+        }
         if (parameter is JSWebDetails) {
             _viewDetail?.clear();
             _viewDetail?.setWebDetails(parameter);
@@ -115,6 +120,20 @@ class WebDetailFragment : MainFragment {
         private val _imageLoader: ImageView;
 
         private val _webview: WebView;
+
+        private val _taskLoadPost = if(!isInEditMode) TaskHandler<String, JSWebDetails>(
+            StateApp.instance.scopeGetter,
+            {
+                val result = StatePlatform.instance.getContentDetails(it).await();
+                if(result !is JSWebDetails)
+                    throw IllegalStateException(context.getString(R.string.expected_media_content_found) + " ${result.contentType}");
+                return@TaskHandler result;
+            })
+            .success { setWebDetails(it) }
+            .exception<Throwable> {
+                Logger.w(ChannelFragment.TAG, context.getString(R.string.failed_to_load_post), it);
+                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost, null, _fragment);
+            } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
 
         constructor(context: Context) : super(context) {
@@ -145,6 +164,12 @@ class WebDetailFragment : MainFragment {
             _webview.loadUrl("about:blank");
         }
 
+        fun setWeb(value: JSWeb) {
+            _url = value.url;
+            setLoading(true);
+            clear();
+            fetchPost();
+        }
         fun setWebDetails(value: JSWebDetails) {
             _web = value;
             setLoading(true);
@@ -153,6 +178,17 @@ class WebDetailFragment : MainFragment {
                 _webview.loadData(value.html, "text/html", null);
             else
                 _webview.loadUrl(value.url ?: "about:blank");
+        }
+
+        private fun fetchPost() {
+            Logger.i(WebDetailView.TAG, "fetchWeb")
+            _web = null;
+
+            val url = _url;
+            if (!url.isNullOrBlank()) {
+                setLoading(true);
+                _taskLoadPost.run(url);
+            }
         }
 
         fun onDestroy() {

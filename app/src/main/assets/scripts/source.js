@@ -292,6 +292,22 @@ class PlatformPostDetails extends PlatformPost {
     }
 }
 
+class PlatformWeb extends PlatformContent {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWeb";
+    }
+}
+class PlatformWebDetails extends PlatformWeb {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWebDetails";
+        this.html = obj.html;
+    }
+}
+
 class PlatformArticle extends PlatformContent {
     constructor(obj) {
         super(obj, 3);
