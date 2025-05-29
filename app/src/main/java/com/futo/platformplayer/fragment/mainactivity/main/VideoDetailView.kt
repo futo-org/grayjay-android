@@ -13,6 +13,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
+import android.os.Build
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
@@ -47,6 +48,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SyncShowPairingCodeActivity.Companion.activity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
@@ -240,7 +242,13 @@ class VideoDetailView : ConstraintLayout {
     private val _buttonPins: RoundButtonGroup;
     //private val _buttonMore: RoundButton;
 
-    var preventPictureInPicture: Boolean = false;
+    var preventPictureInPicture: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                onShouldEnterPictureInPictureChanged.emit()
+            }
+        }
 
     private val _addCommentView: AddCommentView;
     private var _tabIndex: Int? = null;
@@ -309,11 +317,24 @@ class VideoDetailView : ConstraintLayout {
     val onClose = Event0();
     val onFullscreenChanged = Event1<Boolean>();
     val onEnterPictureInPicture = Event0();
-    val onPlayChanged = Event1<Boolean>();
     val onVideoChanged = Event2<Int, Int>()
 
-    var allowBackground : Boolean = false
-        private set;
+    var allowBackground: Boolean = false
+        private set(value) {
+            if (field != value) {
+                field = value
+                onShouldEnterPictureInPictureChanged.emit()
+            }
+        }
+
+    val shouldEnterPictureInPicture: Boolean
+        get() = !preventPictureInPicture &&
+                !StateCasting.instance.isCasting &&
+                Settings.instance.playback.isBackgroundPictureInPicture() &&
+                !allowBackground &&
+                isPlaying
+
+    val onShouldEnterPictureInPictureChanged = Event0();
 
     val onTouchCancel = Event0();
     private var _lastPositionSaveTime: Long = -1;
@@ -602,6 +623,11 @@ class VideoDetailView : ConstraintLayout {
                 handlePlayChanged(it);
             }
         };
+
+        onShouldEnterPictureInPictureChanged.subscribe {
+            val params = getPictureInPictureParams()
+            fragment.activity?.setPictureInPictureParams(params)
+        }
 
         if (!isInEditMode) {
             StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
@@ -2332,7 +2358,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         isPlaying = playing;
-        onPlayChanged.emit(playing);
+        onShouldEnterPictureInPictureChanged.emit()
         updateTracker(lastPositionMilliseconds, playing, true);
     }
 
@@ -2492,6 +2518,8 @@ class VideoDetailView : ConstraintLayout {
         if (changed) {
             stopAllGestures();
         }
+
+        onShouldEnterPictureInPictureChanged.emit()
     }
 
     fun isLandscapeVideo(): Boolean? {
@@ -2759,11 +2787,16 @@ class VideoDetailView : ConstraintLayout {
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
         val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
-        return PictureInPictureParams.Builder()
-            .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
-            .setSourceRectHint(r)
+
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight)).setSourceRectHint(r)
             .setActions(listOf(toBackgroundAction, playpauseAction))
-            .build();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            params.setAutoEnterEnabled(shouldEnterPictureInPicture)
+        }
+
+        return params.build()
     }
 
     //Other
