@@ -32,7 +32,8 @@ let Type = {
     Text: {
         RAW: 0,
         HTML: 1,
-        MARKUP: 2
+        MARKUP: 2,
+        CODE: 3
     },
     Chapter: {
         NORMAL: 0,
@@ -291,15 +292,39 @@ class PlatformPostDetails extends PlatformPost {
     }
 }
 
-class PlatformArticleDetails extends PlatformContent {
+class PlatformWeb extends PlatformContent {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWeb";
+    }
+}
+class PlatformWebDetails extends PlatformWeb {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWebDetails";
+        this.html = obj.html;
+    }
+}
+
+class PlatformArticle extends PlatformContent {
+    constructor(obj) {
+        super(obj, 3);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformArticle";
+        this.rating = obj.rating ?? new RatingLikes(-1);
+        this.summary = obj.summary ?? "";
+        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
+    }
+}
+class PlatformArticleDetails extends PlatformArticle {
     constructor(obj) {
         super(obj, 3);
         obj = obj ?? {};
         this.plugin_type = "PlatformArticleDetails";
         this.rating = obj.rating ?? new RatingLikes(-1);
-        this.summary = obj.summary ?? "";
         this.segments = obj.segments ?? [];
-        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
     }
 }
 class ArticleSegment {
@@ -315,9 +340,10 @@ class ArticleTextSegment extends ArticleSegment {
     }
 }
 class ArticleImagesSegment extends ArticleSegment {
-    constructor(images) {
+    constructor(images, caption) {
         super(2);
         this.images = images;
+        this.caption = caption;
     }
 }
 class ArticleNestedSegment extends ArticleSegment {

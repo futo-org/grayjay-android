@@ -529,7 +529,7 @@ class SyncSocketSession {
                 val isAllowed = publicKey != _localPublicKey && (_isHandshakeAllowed?.invoke(LinkType.Relayed, this, publicKey, pairingCode, appId) ?: true)
                 if (!isAllowed) {
                     val rp = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
-                    rp.putInt(2) // Status code for not allowed
+                    rp.putInt(7) // Status code for not allowed
                     rp.putLong(connectionId)
                     rp.putInt(requestId)
                     rp.rewind()

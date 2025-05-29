@@ -25,7 +25,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -33,6 +32,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStateAtLeast
+import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
@@ -43,6 +44,7 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ArticleDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
@@ -71,6 +73,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.TutorialFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.State
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
+import com.futo.platformplayer.fragment.mainactivity.main.WebDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
@@ -150,6 +153,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     //Frags Main
     lateinit var _fragMainHome: HomeFragment;
     lateinit var _fragPostDetail: PostDetailFragment;
+    lateinit var _fragArticleDetail: ArticleDetailFragment;
+    lateinit var _fragWebDetail: WebDetailFragment;
     lateinit var _fragMainVideoSearchResults: ContentSearchResultsFragment;
     lateinit var _fragMainCreatorSearchResults: CreatorSearchResultsFragment;
     lateinit var _fragMainPlaylistSearchResults: PlaylistSearchResultsFragment;
@@ -203,7 +208,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
 
             try {
-                runBlocking {
+                lifecycleScope.launch {
                     handleUrlAll(content)
                 }
             } catch (e: Throwable) {
@@ -280,7 +285,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         runBlocking {
-            StatePlatform.instance.updateAvailableClients(this@MainActivity);
+            try {
+                StatePlatform.instance.updateAvailableClients(this@MainActivity);
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Unhandled exception in updateAvailableClients", e)
+            }
         }
 
         //Preload common files to memory
@@ -324,6 +333,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist = PlaylistFragment.newInstance();
         _fragMainRemotePlaylist = RemotePlaylistFragment.newInstance();
         _fragPostDetail = PostDetailFragment.newInstance();
+        _fragArticleDetail = ArticleDetailFragment.newInstance();
+        _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
@@ -450,6 +461,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist.topBar = _fragTopBarNavigation;
         _fragMainRemotePlaylist.topBar = _fragTopBarNavigation;
         _fragPostDetail.topBar = _fragTopBarNavigation;
+        _fragArticleDetail.topBar = _fragTopBarNavigation;
+        _fragWebDetail.topBar = _fragTopBarNavigation;
         _fragWatchlist.topBar = _fragTopBarNavigation;
         _fragHistory.topBar = _fragTopBarNavigation;
         _fragSourceDetail.topBar = _fragTopBarNavigation;
@@ -707,7 +720,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             "VIDEO" -> {
                 val url = intent.getStringExtra("VIDEO");
-                navigate(_fragVideoDetail, url);
+                navigateWhenReady(_fragVideoDetail, url);
             }
 
             "IMPORT_OPTIONS" -> {
@@ -725,11 +738,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     "Sources" -> {
                         runBlocking {
                             StatePlatform.instance.updateAvailableClients(this@MainActivity, true) //Ideally this is not needed..
-                            navigate(_fragMainSources);
+                            navigateWhenReady(_fragMainSources);
                         }
                     };
                     "BROWSE_PLUGINS" -> {
-                        navigate(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
+                        navigateWhenReady(_fragBrowser, BrowserFragment.NavigateOptions("https://plugins.grayjay.app/phone.html", mapOf(
                             Pair("grayjay") { req ->
                                 StateApp.instance.contextOrNull?.let {
                                     if (it is MainActivity) {
@@ -747,8 +760,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         try {
             if (targetData != null) {
-                runBlocking {
-                    handleUrlAll(targetData)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        handleUrlAll(targetData)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Unhandled exception in handleUrlAll", e)
+                    }
                 }
             }
         } catch (ex: Throwable) {
@@ -776,10 +793,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     startActivity(intent);
                 } else if (url.startsWith("grayjay://video/")) {
                     val videoUrl = url.substring("grayjay://video/".length);
-                    navigate(_fragVideoDetail, videoUrl);
+                    navigateWhenReady(_fragVideoDetail, videoUrl);
                 } else if (url.startsWith("grayjay://channel/")) {
                     val channelUrl = url.substring("grayjay://channel/".length);
-                    navigate(_fragMainChannel, channelUrl);
+                    navigateWhenReady(_fragMainChannel, channelUrl);
                 }
             }
 
@@ -845,29 +862,29 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         return withContext(Dispatchers.IO) {
             Logger.i(TAG, "handleUrl(url=$url) on IO");
-            if (StatePlatform.instance.hasEnabledVideoClient(url)) {
+            if (StatePlatform.instance.hasEnabledContentClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
-                lifecycleScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     if (position > 0)
-                        navigate(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
+                        navigateWhenReady(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
                     else
-                        navigate(_fragVideoDetail, url);
+                        navigateWhenReady(_fragVideoDetail, url);
 
                     _fragVideoDetail.maximizeVideoDetail(true);
                 }
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found channel client");
-                lifecycleScope.launch(Dispatchers.Main) {
-                    navigate(_fragMainChannel, url);
+                withContext(Dispatchers.Main) {
+                    navigateWhenReady(_fragMainChannel, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
                 };
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found playlist client");
-                lifecycleScope.launch(Dispatchers.Main) {
-                    navigate(_fragMainRemotePlaylist, url);
+                withContext(Dispatchers.Main) {
+                    navigateWhenReady(_fragMainRemotePlaylist, url);
                     delay(100);
                     _fragVideoDetail.minimizeVideoDetail();
                 };
@@ -1094,6 +1111,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         return fragCurrent is T;
     }
 
+    fun navigateWhenReady(segment: MainFragment, parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            navigate(segment, parameter, withHistory, isBack)
+        } else {
+            lifecycleScope.launch {
+                lifecycle.withStateAtLeast(Lifecycle.State.RESUMED) {
+                    navigate(segment, parameter, withHistory, isBack)
+                }
+            }
+        }
+    }
+
     /**
      * Navigate takes a MainFragment, and makes them the current main visible view
      * A parameter can be provided which becomes available in the onShow of said fragment
@@ -1218,6 +1247,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             PlaylistFragment::class -> _fragMainPlaylist as T;
             RemotePlaylistFragment::class -> _fragMainRemotePlaylist as T;
             PostDetailFragment::class -> _fragPostDetail as T;
+            ArticleDetailFragment::class -> _fragArticleDetail as T;
+            WebDetailFragment::class -> _fragWebDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;

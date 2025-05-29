@@ -89,7 +89,6 @@ class ContentSearchResultsFragment : MainFragment() {
         private var _sortBy: String? = null;
         private var _filterValues: HashMap<String, List<String>> = hashMapOf();
         private var _enabledClientIds: List<String>? = null;
-        private var _channelUrl: String? = null;
         private var _searchType: SearchType? = null;
 
         private val _taskSearch: TaskHandler<String, IPager<IPlatformContent>>;
@@ -98,17 +97,12 @@ class ContentSearchResultsFragment : MainFragment() {
         constructor(fragment: ContentSearchResultsFragment, inflater: LayoutInflater) : super(fragment, inflater) {
             _taskSearch = TaskHandler<String, IPager<IPlatformContent>>({fragment.lifecycleScope}, { query ->
                 Logger.i(TAG, "Searching for: $query")
-                val channelUrl = _channelUrl;
-                if (channelUrl != null) {
-                    StatePlatform.instance.searchChannel(channelUrl, query, null, _sortBy, _filterValues, _enabledClientIds)
-                } else {
-                    when (_searchType)
-                    {
-                        SearchType.VIDEO -> StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
-                        SearchType.CREATOR -> StatePlatform.instance.searchChannelsAsContent(query)
-                        SearchType.PLAYLIST -> StatePlatform.instance.searchPlaylist(query)
-                        else -> throw Exception("Search type must be specified")
-                    }
+                when (_searchType)
+                {
+                    SearchType.VIDEO -> StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
+                    SearchType.CREATOR -> StatePlatform.instance.searchChannelsAsContent(query)
+                    SearchType.PLAYLIST -> StatePlatform.instance.searchPlaylist(query)
+                    else -> throw Exception("Search type must be specified")
                 }
             })
             .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
@@ -147,7 +141,6 @@ class ContentSearchResultsFragment : MainFragment() {
         fun onShown(parameter: Any?) {
             if(parameter is SuggestionsFragmentData) {
                 setQuery(parameter.query, false);
-                setChannelUrl(parameter.channelUrl, false);
                 setSearchType(parameter.searchType, false)
 
                 fragment.topBar?.apply {
@@ -164,7 +157,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     onFilterClick.subscribe(this) {
                         _overlayContainer.let {
                             val filterValuesCopy = HashMap(_filterValues);
-                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy, _channelUrl != null);
+                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy);
                             filtersOverlay.onOK.subscribe { enabledClientIds, changed ->
                                 if (changed) {
                                     setFilterValues(filtersOverlay.commonCapabilities, filterValuesCopy);
@@ -211,11 +204,7 @@ class ContentSearchResultsFragment : MainFragment() {
 
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val commonCapabilities =
-                        if(_channelUrl == null)
-                            StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
-                        else
-                            StatePlatform.instance.getCommonSearchChannelContentsCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
+                    val commonCapabilities = StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
                     val sorts = commonCapabilities?.sorts ?: listOf();
                     if (sorts.size > 1) {
                         withContext(Dispatchers.Main) {
@@ -275,15 +264,6 @@ class ContentSearchResultsFragment : MainFragment() {
 
         private fun setQuery(query: String, updateResults: Boolean = true) {
             _query = query;
-
-            if (updateResults) {
-                clearResults();
-                loadResults();
-            }
-        }
-
-        private fun setChannelUrl(channelUrl: String?, updateResults: Boolean = true) {
-            _channelUrl = channelUrl;
 
             if (updateResults) {
                 clearResults();

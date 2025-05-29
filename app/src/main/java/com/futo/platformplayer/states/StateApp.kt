@@ -412,24 +412,12 @@ class StateApp {
         }
 
         if (Settings.instance.synchronization.enabled) {
-            StateSync.instance.start(context, {
-                try {
-                    UIDialogs.toast("Failed to start sync, port in use")
-                } catch (e: Throwable) {
-                    //Ignored
-                }
-            })
+            StateSync.instance.start(context)
         }
 
         settingsActivityClosed.subscribe {
             if (Settings.instance.synchronization.enabled) {
-                StateSync.instance.start(context, {
-                    try {
-                        UIDialogs.toast("Failed to start sync, port in use")
-                    } catch (e: Throwable) {
-                        //Ignored
-                    }
-                })
+                StateSync.instance.start(context)
             } else {
                 StateSync.instance.stop()
             }
