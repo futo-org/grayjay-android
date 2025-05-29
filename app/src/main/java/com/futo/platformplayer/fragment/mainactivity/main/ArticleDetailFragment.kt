@@ -32,6 +32,9 @@ import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.platforms.js.models.JSArticleDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSImagesSegment
+import com.futo.platformplayer.api.media.platforms.js.models.JSTextSegment
+import com.futo.platformplayer.api.media.platforms.js.models.SegmentType
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlWhitespace
@@ -73,7 +76,7 @@ class ArticleDetailFragment : MainFragment {
     override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
-    private var _viewDetail: PostDetailView? = null;
+    private var _viewDetail: ArticleDetailView? = null;
 
     constructor() : super() { }
 
@@ -82,7 +85,7 @@ class ArticleDetailFragment : MainFragment {
     }
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val view = PostDetailView(inflater.context).applyFragment(this);
+        val view = ArticleDetailView(inflater.context).applyFragment(this);
         _viewDetail = view;
         return view;
     }
@@ -106,7 +109,7 @@ class ArticleDetailFragment : MainFragment {
         }
     }
 
-    private class PostDetailView : ConstraintLayout {
+    private class ArticleDetailView : ConstraintLayout {
         private lateinit var _fragment: ArticleDetailFragment;
         private var _url: String? = null;
         private var _isLoading = false;
@@ -124,7 +127,6 @@ class ArticleDetailFragment : MainFragment {
         private val _textTitle: TextView;
         private val _textMeta: TextView;
         private val _containerSegments: LinearLayout;
-        private val _textContent: TextView;
         private val _platformIndicator: PlatformIndicator;
         private val _buttonShare: ImageButton;
 
@@ -140,9 +142,6 @@ class ArticleDetailFragment : MainFragment {
 
         private val _layoutLoadingOverlay: FrameLayout;
         private val _imageLoader: ImageView;
-
-        private val _imageActive: ImageView;
-        private val _layoutThumbnails: FlexboxLayout;
 
         private val _repliesOverlay: RepliesOverlay;
 
@@ -207,15 +206,11 @@ class ArticleDetailFragment : MainFragment {
             _layoutLoadingOverlay = findViewById(R.id.layout_loading_overlay);
             _imageLoader = findViewById(R.id.image_loader);
 
-            _imageActive = findViewById(R.id.image_active);
-            _layoutThumbnails = findViewById(R.id.layout_thumbnails);
 
             _repliesOverlay = findViewById(R.id.replies_overlay);
 
             _buttonPolycentric = findViewById(R.id.button_polycentric)
             _buttonPlatform = findViewById(R.id.button_platform)
-
-            _textContent.setPlatformPlayerLinkMovementMethod(context);
 
             _buttonSubscribe.onSubscribed.subscribe {
                 //TODO: add overlay to layout
@@ -410,7 +405,7 @@ class ArticleDetailFragment : MainFragment {
             }
         }
 
-        fun applyFragment(frag: ArticleDetailFragment): PostDetailView {
+        fun applyFragment(frag: ArticleDetailFragment): ArticleDetailView {
             _fragment = frag;
             return this;
         }
@@ -431,12 +426,13 @@ class ArticleDetailFragment : MainFragment {
             setChannelMeta(null);
             _textTitle.text = "";
             _textMeta.text = "";
-            _textContent.text = "";
             setPlatformRating(null);
             _polycentricProfile = null;
             _rating.visibility = View.GONE;
             updatePolycentricRating();
             setRepliesOverlayVisible(isVisible = false, animate = false);
+
+            _containerSegments.removeAllViews();
 
             _addCommentView.setContext(null, null);
             _platformIndicator.clearPlatform();
@@ -456,6 +452,22 @@ class ArticleDetailFragment : MainFragment {
 
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
             setPlatformRating(value.rating);
+
+            for(seg in value.segments) {
+                when(seg.type) {
+                    SegmentType.TEXT -> {
+                        if(seg is JSTextSegment) {
+
+                        }
+                    }
+                    SegmentType.IMAGES -> {
+                        if(seg is JSImagesSegment) {
+
+                        }
+                    }
+                    else ->{}
+                }
+            }
 
             //Fetch only when not already called in setPostOverview
             if (_articleOverview == null) {
@@ -646,6 +658,18 @@ class ArticleDetailFragment : MainFragment {
                 (_imageLoader.drawable as Animatable?)?.stop()
             }
         }
+
+        class ArticleTextBlock : View {
+            constructor(context: Context?) : super(context){
+
+            }
+        }
+        class ArticleImageBlock: View {
+            constructor(context: Context?) : super(context){
+
+            }
+        }
+
 
         companion object {
             const val TAG = "PostDetailFragment"

@@ -291,15 +291,23 @@ class PlatformPostDetails extends PlatformPost {
     }
 }
 
-class PlatformArticleDetails extends PlatformContent {
+class PlatformArticle extends PlatformContent {
+    constructor(obj) {
+        super(obj, 3);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformArticle";
+        this.rating = obj.rating ?? new RatingLikes(-1);
+        this.summary = obj.summary ?? "";
+        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
+    }
+}
+class PlatformArticleDetails extends PlatformArticle {
     constructor(obj) {
         super(obj, 3);
         obj = obj ?? {};
         this.plugin_type = "PlatformArticleDetails";
         this.rating = obj.rating ?? new RatingLikes(-1);
-        this.summary = obj.summary ?? "";
         this.segments = obj.segments ?? [];
-        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
     }
 }
 class ArticleSegment {

@@ -43,6 +43,7 @@ import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ArticleDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.BuyFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
@@ -151,6 +152,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     //Frags Main
     lateinit var _fragMainHome: HomeFragment;
     lateinit var _fragPostDetail: PostDetailFragment;
+    lateinit var _fragArticleDetail: ArticleDetailFragment;
     lateinit var _fragWebDetail: WebDetailFragment;
     lateinit var _fragMainVideoSearchResults: ContentSearchResultsFragment;
     lateinit var _fragMainCreatorSearchResults: CreatorSearchResultsFragment;
@@ -326,6 +328,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragMainPlaylist = PlaylistFragment.newInstance();
         _fragMainRemotePlaylist = RemotePlaylistFragment.newInstance();
         _fragPostDetail = PostDetailFragment.newInstance();
+        _fragArticleDetail = ArticleDetailFragment.newInstance();
         _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
@@ -1221,6 +1224,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             PlaylistFragment::class -> _fragMainPlaylist as T;
             RemotePlaylistFragment::class -> _fragMainRemotePlaylist as T;
             PostDetailFragment::class -> _fragPostDetail as T;
+            ArticleDetailFragment::class -> _fragArticleDetail as T;
+            WebDetailFragment::class -> _fragWebDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;

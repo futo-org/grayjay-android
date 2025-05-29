@@ -24,7 +24,7 @@ import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.states.StateDeveloper
 
 open class JSArticle : JSContent, IPlatformArticle, IPluginSourced {
-    final override val contentType: ContentType get() = ContentType.POST;
+    final override val contentType: ContentType get() = ContentType.ARTICLE;
 
     override val summary: String;
     override val thumbnails: Thumbnails?;
