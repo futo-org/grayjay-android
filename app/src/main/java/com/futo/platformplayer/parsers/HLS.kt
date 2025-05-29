@@ -95,6 +95,17 @@ class HLS {
             val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
             val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
+            val keyInfo =
+                lines.find { it.startsWith("#EXT-X-KEY:") }?.substringAfter(":")?.split(",")
+
+            val key = keyInfo?.find { it.startsWith("URI=") }?.substringAfter("=")?.trim('"')
+            val iv =
+                keyInfo?.find { it.startsWith("IV=") }?.substringAfter("=")?.substringAfter("x")
+
+            val decryptionInfo: DecryptionInfo? = key?.let { k ->
+                DecryptionInfo(k, iv)
+            }
+
             val initSegment =
                 lines.find { it.startsWith("#EXT-X-MAP:") }?.substringAfter(":")?.split(",")?.get(0)
                     ?.substringAfter("=")?.trim('"')
@@ -102,6 +113,7 @@ class HLS {
             if (initSegment != null) {
                 segments.add(MediaSegment(0.0, resolveUrl(sourceUrl, initSegment)))
             }
+
             var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
@@ -126,7 +138,7 @@ class HLS {
                 }
             }
 
-            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments)
+            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments, decryptionInfo)
         }
 
         fun parseAndGetVideoSources(source: Any, content: String, url: String): List<HLSVariantVideoUrlSource> {
@@ -391,6 +403,11 @@ class HLS {
         }
     }
 
+    data class DecryptionInfo(
+        val keyUrl: String,
+        val iv: String?
+    )
+
     data class VariantPlaylist(
         val version: Int?,
         val targetDuration: Int?,
@@ -400,6 +417,7 @@ class HLS {
         val playlistType: String?,
         val streamInfo: StreamInfo?,
         val segments: List<Segment>,
+        val decryptionInfo: DecryptionInfo? = null
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")
