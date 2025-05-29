@@ -25,7 +25,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -851,7 +850,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         return withContext(Dispatchers.IO) {
             Logger.i(TAG, "handleUrl(url=$url) on IO");
-            if (StatePlatform.instance.hasEnabledVideoClient(url)) {
+            if (StatePlatform.instance.hasEnabledContentClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 lifecycleScope.launch(Dispatchers.Main) {
                     if (position > 0)

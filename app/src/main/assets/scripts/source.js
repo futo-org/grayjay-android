@@ -32,7 +32,8 @@ let Type = {
     Text: {
         RAW: 0,
         HTML: 1,
-        MARKUP: 2
+        MARKUP: 2,
+        CODE: 3
     },
     Chapter: {
         NORMAL: 0,
@@ -323,9 +324,10 @@ class ArticleTextSegment extends ArticleSegment {
     }
 }
 class ArticleImagesSegment extends ArticleSegment {
-    constructor(images) {
+    constructor(images, caption) {
         super(2);
         this.images = images;
+        this.caption = caption;
     }
 }
 class ArticleNestedSegment extends ArticleSegment {

@@ -2,8 +2,11 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.graphics.drawable.Animatable
 import android.os.Bundle
+import android.text.Html
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,23 +19,33 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
+import androidx.core.view.isVisible
+import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.article.IPlatformArticleDetails
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.locked.IPlatformLockedContent
+import com.futo.platformplayer.api.media.models.nested.IPlatformNestedContent
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.post.IPlatformPostDetails
+import com.futo.platformplayer.api.media.models.post.TextType
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSArticleDetails
 import com.futo.platformplayer.api.media.platforms.js.models.JSImagesSegment
+import com.futo.platformplayer.api.media.platforms.js.models.JSNestedSegment
 import com.futo.platformplayer.api.media.platforms.js.models.JSTextSegment
 import com.futo.platformplayer.api.media.platforms.js.models.SegmentType
 import com.futo.platformplayer.constructs.TaskHandler
@@ -43,10 +56,16 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewLockedView
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewNestedVideoView
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
+import com.futo.platformplayer.views.adapters.feedtypes.PreviewVideoView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.RepliesOverlay
@@ -126,6 +145,7 @@ class ArticleDetailFragment : MainFragment {
         private val _channelMeta: TextView;
         private val _textTitle: TextView;
         private val _textMeta: TextView;
+        private val _textSummary: TextView;
         private val _containerSegments: LinearLayout;
         private val _platformIndicator: PlatformIndicator;
         private val _buttonShare: ImageButton;
@@ -143,6 +163,7 @@ class ArticleDetailFragment : MainFragment {
         private val _layoutLoadingOverlay: FrameLayout;
         private val _imageLoader: ImageView;
 
+        private var _overlayContainer: FrameLayout
         private val _repliesOverlay: RepliesOverlay;
 
         private val _commentsList: CommentsList;
@@ -187,10 +208,12 @@ class ArticleDetailFragment : MainFragment {
             _channelMeta = findViewById(R.id.text_channel_meta);
             _textTitle = findViewById(R.id.text_title);
             _textMeta = findViewById(R.id.text_meta);
+            _textSummary = findViewById(R.id.text_summary);
             _containerSegments = findViewById(R.id.container_segments);
             _platformIndicator = findViewById(R.id.platform_indicator);
             _buttonShare = findViewById(R.id.button_share);
 
+            _overlayContainer = findViewById(R.id.overlay_container);
 
             _layoutRating = findViewById(R.id.layout_rating);
             _imageLikeIcon = findViewById(R.id.image_like_icon);
@@ -449,6 +472,8 @@ class ArticleDetailFragment : MainFragment {
             _textTitle.text = value.name;
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
 
+            _textSummary.text = value.summary
+            _textSummary.isVisible = !value.summary.isNullOrEmpty()
 
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
             setPlatformRating(value.rating);
@@ -457,12 +482,18 @@ class ArticleDetailFragment : MainFragment {
                 when(seg.type) {
                     SegmentType.TEXT -> {
                         if(seg is JSTextSegment) {
-
+                            _containerSegments.addView(ArticleTextBlock(context, seg.content, seg.textType))
                         }
                     }
                     SegmentType.IMAGES -> {
                         if(seg is JSImagesSegment) {
-
+                            if(seg.images.size > 0)
+                                _containerSegments.addView(ArticleImageBlock(context, seg.images[0], seg.caption))
+                        }
+                    }
+                    SegmentType.NESTED -> {
+                        if(seg is JSNestedSegment) {
+                            _containerSegments.addView(ArticleContentBlock(context, seg.nested, _fragment, _overlayContainer));
                         }
                     }
                     else ->{}
@@ -659,14 +690,86 @@ class ArticleDetailFragment : MainFragment {
             }
         }
 
-        class ArticleTextBlock : View {
-            constructor(context: Context?) : super(context){
+        class ArticleTextBlock : LinearLayout {
+            constructor(context: Context?, content: String, textType: TextType) : super(context){
+                inflate(context, R.layout.view_segment_text, this);
 
+                findViewById<TextView>(R.id.text_content)?.let {
+                    if(textType == TextType.HTML)
+                        it.text = Html.fromHtml(content, Html.FROM_HTML_MODE_COMPACT);
+                    else if(textType == TextType.CODE) {
+                        it.text = content;
+                        it.setPadding(15.dp(resources));
+                        it.setHorizontallyScrolling(true);
+                        it.movementMethod = ScrollingMovementMethod();
+                        it.setTypeface(Typeface.MONOSPACE);
+                        it.setBackgroundResource(R.drawable.background_videodetail_description)
+                    }
+                    else
+                        it.text = content;
+                }
             }
         }
-        class ArticleImageBlock: View {
-            constructor(context: Context?) : super(context){
+        class ArticleImageBlock: LinearLayout {
+            constructor(context: Context?, image: String, caption: String? = null) : super(context){
+                inflate(context, R.layout.view_segment_image, this);
 
+                findViewById<ImageView>(R.id.image_content)?.let {
+                    Glide.with(it)
+                        .load(image)
+                        .crossfade()
+                        .into(it);
+                }
+                findViewById<TextView>(R.id.text_content)?.let {
+                    if(caption?.isNullOrEmpty() == true)
+                        it.isVisible = false;
+                    else
+                        it.text = caption;
+                }
+            }
+        }
+        class ArticleContentBlock: LinearLayout {
+            constructor(context: Context, content: IPlatformContent?, fragment: ArticleDetailFragment? = null, overlayContainer: FrameLayout? = null): super(context) {
+                if(content != null) {
+                    var view: View? = null;
+                    if(content is IPlatformNestedContent) {
+                        view = PreviewNestedVideoView(context, FeedStyle.THUMBNAIL, null);
+                        view.bind(content);
+                        view.onContentUrlClicked.subscribe { a,b -> }
+                    }
+                    else if(content is IPlatformVideo) {
+                        view = PreviewVideoView(context, FeedStyle.THUMBNAIL, null, true);
+                        view.bind(content);
+                        view.onVideoClicked.subscribe { a,b -> fragment?.navigate<VideoDetailFragment>(a) }
+                        view.onChannelClicked.subscribe { a -> fragment?.navigate<ChannelFragment>(a) }
+                        if(overlayContainer != null) {
+                            view.onAddToClicked.subscribe { a -> UISlideOverlays.showVideoOptionsOverlay(a, overlayContainer) };
+                        }
+                        view.onAddToQueueClicked.subscribe { a -> StatePlayer.instance.addToQueue(a) }
+                        view.onAddToWatchLaterClicked.subscribe { a ->
+                            if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content), true))
+                                UIDialogs.toast("Added to watch later\n[${content.name}]")
+                        }
+                    }
+                    else if(content is IPlatformPost) {
+                        view = PreviewPostView(context, FeedStyle.THUMBNAIL);
+                        view.bind(content);
+                        view.onContentClicked.subscribe { a -> fragment?.navigate<PostDetailFragment>(a) }
+                        view.onChannelClicked.subscribe { a -> fragment?.navigate<ChannelFragment>(a) }
+                    }
+                    else if(content is IPlatformArticle) {
+                        view = PreviewPostView(context, FeedStyle.THUMBNAIL);
+                        view.bind(content);
+                        view.onContentClicked.subscribe { a -> fragment?.navigate<ArticleDetailFragment>(a) }
+                        view.onChannelClicked.subscribe { a -> fragment?.navigate<ChannelFragment>(a) }
+                    }
+                    else if(content is IPlatformLockedContent) {
+                        view = PreviewLockedView(context, FeedStyle.THUMBNAIL);
+                        view.bind(content);
+                    }
+                    if(view != null)
+                        addView(view);
+                }
             }
         }
 
