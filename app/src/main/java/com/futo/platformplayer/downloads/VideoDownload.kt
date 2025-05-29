@@ -630,12 +630,8 @@ class VideoDownload {
 
     private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { continuation ->
-            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
-            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
-
-            // 8 second analyze duration is needed for some Rumble HLS downloads
-            val cmd = "-analyzeduration 8M -f concat -safe 0 -i \"${fileList.absolutePath}\"" +
-                    " -c copy \"${targetFile.absolutePath}\""
+            val cmd =
+                "-i \"concat:${segmentFiles.joinToString("|")}\" -c copy \"${targetFile.absolutePath}\""
 
             val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?
@@ -645,7 +641,6 @@ class VideoDownload {
             val session = FFmpegKit.executeAsync(cmd,
                 { session ->
                     if (ReturnCode.isSuccess(session.returnCode)) {
-                        fileList.delete()
                         continuation.resumeWith(Result.success(Unit))
                     } else {
                         val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
@@ -653,7 +648,6 @@ class VideoDownload {
                         } else {
                             "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
                         }
-                        fileList.delete()
                         continuation.resumeWithException(RuntimeException(errorMessage))
                     }
                 },
@@ -1169,7 +1163,7 @@ class VideoDownload {
             else if (container.contains("audio/webm"))
                 return "webm";
             else if (container == "application/vnd.apple.mpegurl")
-                return "mp4a";
+                return "mp4";
             else
                 return "audio";// throw IllegalStateException("Unknown container: " + container)
         }

@@ -61,7 +61,13 @@ class HLS {
             val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
             val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
+            val initSegment =
+                lines.find { it.startsWith("#EXT-X-MAP:") }?.substringAfter(":")?.split(",")?.get(0)
+                    ?.substringAfter("=")?.trim('"')
             val segments = mutableListOf<Segment>()
+            if (initSegment != null) {
+                segments.add(MediaSegment(0.0, resolveUrl(sourceUrl, initSegment)))
+            }
             var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
