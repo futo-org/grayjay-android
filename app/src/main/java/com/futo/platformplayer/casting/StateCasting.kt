@@ -1220,7 +1220,7 @@ class StateCasting {
 
     private fun getLocalUrl(ad: CastingDevice): String {
         var address = ad.localAddress!!
-        if (address is Inet6Address && address.isLinkLocalAddress) {
+        if (address.isLinkLocalAddress) {
             address = findPreferredAddress() ?: address
             Logger.i(TAG, "Selected casting address: $address")
         }
