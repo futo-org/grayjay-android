@@ -290,8 +290,8 @@ class SubscriptionGroupFragment : MainFragment() {
                 image.setImageView(_imageGroup);
             }
             else {
-                _imageGroupBackground.setImageResource(0);
-                _imageGroup.setImageResource(0);
+                _imageGroupBackground.setImageDrawable(null);
+                _imageGroup.setImageDrawable(null);
             }
             updateMeta();
             reloadCreators(group);
