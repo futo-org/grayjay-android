@@ -188,6 +188,14 @@ class V8Plugin {
         whenNotBusy {
             synchronized(_runtimeLock) {
                 isStopped = true;
+
+                //Cleanup http
+                for(pack in _depsPackages) {
+                    if(pack is PackageHttp) {
+                        pack.cleanup();
+                    }
+                }
+
                 _runtime?.let {
                     _runtime = null;
                     if(!it.isClosed && !it.isDead) {

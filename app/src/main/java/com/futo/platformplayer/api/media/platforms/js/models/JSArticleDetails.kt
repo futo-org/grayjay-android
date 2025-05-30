@@ -101,6 +101,7 @@ open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced
             return when(SegmentType.fromInt(obj.getOrThrow(client.config, "type", "JSArticle.Segment"))) {
                 SegmentType.TEXT -> JSTextSegment(client, obj);
                 SegmentType.IMAGES -> JSImagesSegment(client, obj);
+                SegmentType.HEADER -> JSHeaderSegment(client, obj);
                 SegmentType.NESTED -> JSNestedSegment(client, obj);
                 else -> null;
             }
@@ -112,6 +113,7 @@ enum class SegmentType(val value: Int) {
     UNKNOWN(0),
     TEXT(1),
     IMAGES(2),
+    HEADER(3),
 
     NESTED(9);
 
@@ -150,6 +152,17 @@ class JSImagesSegment: IJSArticleSegment {
         val contextName = "JSTextSegment";
         images = obj.getOrThrowNullableList<String>(client.config, "images", contextName) ?: listOf();
         caption = obj.getOrDefault(client.config, "caption", contextName, "") ?: "";
+    }
+}
+class JSHeaderSegment: IJSArticleSegment {
+    override val type = SegmentType.HEADER;
+    val content: String;
+    val level: Int;
+
+    constructor(client: JSClient, obj: V8ValueObject) {
+        val contextName = "JSHeaderSegment";
+        content = obj.getOrDefault(client.config, "content", contextName, "") ?: "";
+        level = obj.getOrDefault(client.config, "level", contextName, 1) ?: 1;
     }
 }
 class JSNestedSegment: IJSArticleSegment {

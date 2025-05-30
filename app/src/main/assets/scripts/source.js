@@ -346,6 +346,13 @@ class ArticleImagesSegment extends ArticleSegment {
         this.caption = caption;
     }
 }
+class ArticleHeaderSegment extends ArticleSegment {
+    constructor(content, level) {
+        super(3);
+        this.level = level;
+        this.content = content;
+    }
+}
 class ArticleNestedSegment extends ArticleSegment {
     constructor(nested) {
         super(9);

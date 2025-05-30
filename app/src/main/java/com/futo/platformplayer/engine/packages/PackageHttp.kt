@@ -41,6 +41,9 @@ class PackageHttp: V8Package {
     private var _batchPoolLock: Any = Any();
     private var _batchPool: ForkJoinPool? = null;
 
+    private val aliveSockets = mutableListOf<SocketResult>();
+    private var _cleanedUp = false;
+
 
     constructor(plugin: V8Plugin, config: IV8PluginConfig): super(plugin) {
         _config = config;
@@ -48,6 +51,27 @@ class PackageHttp: V8Package {
         _clientAuth = plugin.httpClientAuth;
         _packageClient = PackageHttpClient(this, _client);
         _packageClientAuth = PackageHttpClient(this, _clientAuth);
+    }
+
+    fun cleanup(){
+        Logger.w(TAG, "PackageHttp Cleaning up")
+        val sockets = synchronized(aliveSockets) { aliveSockets.toList() }
+        _cleanedUp = true;
+        for(socket in sockets){
+            try {
+                Logger.w(TAG, "PackageHttp Socket Cleaned Up");
+                socket.close(1001, "Cleanup");
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to close socket", ex);
+            }
+        }
+        if(sockets.size > 0) {
+            //Thread.sleep(100); //Give sockets a bit
+        }
+        synchronized(aliveSockets) {
+            aliveSockets.clear();
+        }
     }
 
 
@@ -455,9 +479,16 @@ class PackageHttp: V8Package {
 
         @V8Function
         fun socket(url: String, headers: Map<String, String>? = null): SocketResult {
+            if(_package._cleanedUp)
+                throw IllegalStateException("Plugin shutdown");
             val socketHeaders = headers?.toMutableMap() ?: HashMap();
             applyDefaultHeaders(socketHeaders);
-            return SocketResult(this, _client, url, socketHeaders);
+            val socket = SocketResult(_package, this, _client, url, socketHeaders);
+            Logger.w(TAG, "PackageHttp Socket opened");
+            synchronized(_package.aliveSockets) {
+                _package.aliveSockets.add(socket);
+            }
+            return socket;
         }
 
         private fun applyDefaultHeaders(headerMap: MutableMap<String, String>) {
@@ -563,13 +594,15 @@ class PackageHttp: V8Package {
 
         private var _listeners: V8ValueObject? = null;
 
+        private val _package: PackageHttp;
         private val _packageClient: PackageHttpClient;
         private val _client: ManagedHttpClient;
         private val _url: String;
         private val _headers: Map<String, String>;
 
-        constructor(pack: PackageHttpClient, client: ManagedHttpClient, url: String, headers: Map<String,String>) {
+        constructor(parent: PackageHttp, pack: PackageHttpClient, client: ManagedHttpClient, url: String, headers: Map<String,String>) {
             _packageClient = pack;
+            _package = parent;
             _client = client;
             _url = url;
             _headers = headers;
@@ -595,7 +628,7 @@ class PackageHttp: V8Package {
                     override fun open() {
                         Logger.i(TAG, "Websocket opened: " + _url);
                         _isOpen = true;
-                        if(hasOpen) {
+                        if(hasOpen && _listeners?.isClosed != true) {
                             try {
                                 _listeners?.invokeVoid("open", arrayOf<Any>());
                             }
@@ -605,7 +638,7 @@ class PackageHttp: V8Package {
                         }
                     }
                     override fun message(msg: String) {
-                        if(hasMessage) {
+                        if(hasMessage && _listeners?.isClosed != true) {
                             try {
                                 _listeners?.invokeVoid("message", msg);
                             }
@@ -613,7 +646,7 @@ class PackageHttp: V8Package {
                         }
                     }
                     override fun closing(code: Int, reason: String) {
-                        if(hasClosing)
+                        if(hasClosing && _listeners?.isClosed != true)
                         {
                             try {
                                 _listeners?.invokeVoid("closing", code, reason);
@@ -625,7 +658,7 @@ class PackageHttp: V8Package {
                     }
                     override fun closed(code: Int, reason: String) {
                         _isOpen = false;
-                        if(hasClosed) {
+                        if(hasClosed && _listeners?.isClosed != true) {
                             try {
                                 _listeners?.invokeVoid("closed", code, reason);
                             }
@@ -633,11 +666,15 @@ class PackageHttp: V8Package {
                                 Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closed failed: " + ex.message, ex);
                             }
                         }
+                        Logger.w(TAG, "PackageHttp Socket removed");
+                        synchronized(_package.aliveSockets) {
+                            _package.aliveSockets.remove(this@SocketResult);
+                        }
                     }
                     override fun failure(exception: Throwable) {
                         _isOpen = false;
                         Logger.e(TAG, "Websocket failure: ${exception.message} (${_url})", exception);
-                        if(hasFailure) {
+                        if(hasFailure &&  _listeners?.isClosed != true) {
                             try {
                                 _listeners?.invokeVoid("failure", exception.message);
                             }
