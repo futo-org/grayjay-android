@@ -383,7 +383,7 @@ class StateDownloads {
     }
     private fun validateDownload(videoState: VideoDownload) {
         if(_downloading.hasItem { it.videoEither.url == videoState.videoEither.url })
-            throw IllegalStateException("Video [${videoState.name}] is already queued for dowload");
+            throw IllegalStateException("Video [${videoState.name}] is already queued for download");
 
         val existing = getCachedVideo(videoState.id);
         if(existing != null) {
