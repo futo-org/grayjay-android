@@ -781,6 +781,7 @@ class VideoDetailView : ConstraintLayout {
             _lastAudioSource = null;
             _lastSubtitleSource = null;
             video = null;
+            _container_content_liveChat?.close();
             _player.clear();
             cleanupPlaybackTracker();
             Logger.i(TAG, "Keep screen on unset onClose")
