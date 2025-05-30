@@ -9,28 +9,28 @@ class PlatformIndicator : androidx.appcompat.widget.AppCompatImageView {
     }
 
     fun clearPlatform() {
-        setImageResource(0);
+        setImageDrawable(null);
     }
     fun setPlatformFromClientID(platformType : String?) {
         if(platformType == null)
-            setImageResource(0);
+            setImageDrawable(null);
         else {
             val result = StatePlatform.instance.getPlatformIcon(platformType);
             if (result != null)
                 result.setImageView(this);
             else
-                setImageResource(0);
+                setImageDrawable(null);
         }
     }
     fun setPlatformFromClientName(name: String?) {
         if(name == null)
-            setImageResource(0);
+            setImageDrawable(null);
         else {
             val result = StatePlatform.instance.getPlatformIconByName(name);
             if (result != null)
                 result.setImageView(this);
             else
-                setImageResource(0);
+                setImageDrawable(null);
         }
     }
 }

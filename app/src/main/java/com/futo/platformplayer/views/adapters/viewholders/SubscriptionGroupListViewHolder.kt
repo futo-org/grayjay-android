@@ -88,7 +88,7 @@ class SubscriptionGroupListViewHolder(private val _viewGroup: ViewGroup) : AnyAd
         if(img != null)
             img.setImageView(_image)
         else {
-            _image.setImageResource(0);
+            _image.setImageDrawable(null);
 
             if(value is SubscriptionGroup.Add)
                 _image.setBackgroundColor(Color.DKGRAY);
