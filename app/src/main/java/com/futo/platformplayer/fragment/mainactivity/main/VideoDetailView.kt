@@ -647,6 +647,15 @@ class VideoDetailView : ConstraintLayout {
                     _timeBar.setDuration(video?.duration ?: 0);
                 }
             };
+
+            _cast.onTimeJobTimeChanged_s.subscribe {
+                if (_isCasting) {
+                    setLastPositionMilliseconds((it * 1000.0).toLong(), true);
+                    _timeBar.setPosition(it);
+                    _timeBar.setBufferedPosition(0);
+                    _timeBar.setDuration(video?.duration ?: 0);
+                }
+            }
         }
 
         _playerProgress.player = _player.exoPlayer?.player;

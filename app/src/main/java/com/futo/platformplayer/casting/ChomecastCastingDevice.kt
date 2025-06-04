@@ -344,6 +344,10 @@ class ChromecastCastingDevice : CastingDevice {
 
                 //Connection loop
                 while (_scopeIO?.isActive == true) {
+                    _sessionId = null;
+                    _launchRetries = 0
+                    _mediaSessionId = null;
+
                     Logger.i(TAG, "Connecting to Chromecast.");
                     connectionState = CastConnectionState.CONNECTING;
 
@@ -499,6 +503,10 @@ class ChromecastCastingDevice : CastingDevice {
             }
         } catch (e: Throwable) {
             Logger.w(TAG, "Failed to send channel message (sourceId: $sourceId, destinationId: $destinationId, namespace: $namespace, json: $json)", e);
+            _socket?.close();
+            Logger.i(TAG, "Socket disconnected.");
+
+            connectionState = CastConnectionState.CONNECTING;
         }
     }
 
@@ -600,7 +608,7 @@ class ChromecastCastingDevice : CastingDevice {
                     }
 
                     isPlaying = playerState == "PLAYING";
-                    if (isPlaying) {
+                    if (isPlaying ||  playerState == "PAUSED") {
                         setTime(currentTime);
                     }
 
