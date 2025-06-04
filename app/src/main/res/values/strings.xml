@@ -12,6 +12,8 @@
     <string name="channel">Channel</string>
     <string name="home">Home</string>
     <string name="progress_bar">Progress Bar</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="advanced_settings_description">If advanced settings should be shown, this exposes additional settings to finetune your experience.</string>
     <string name="progress_bar_description">If a historical progress bar should be shown</string>
     <string name="hide_hidden_from_search">Hide hidden from home in search</string>
     <string name="hide_hidden_from_search_description">Hide videos and creators hidden from home also in search results</string>

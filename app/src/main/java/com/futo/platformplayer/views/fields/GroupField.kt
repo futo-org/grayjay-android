@@ -34,6 +34,7 @@ class GroupField : LinearLayout, IField {
     private val _container : LinearLayout;
 
     override var reference: Any? = null;
+    override var isAdvanced: Boolean = false;
 
     override val value: Any? = null;
 
@@ -100,7 +101,7 @@ class GroupField : LinearLayout, IField {
         return this;
     }
 
-    override fun fromField(obj: Any, field: Field, formField: FormField?) : GroupField {
+    override fun fromField(obj: Any, field: Field, formField: FormField?, advanced: Boolean) : GroupField {
         this._field = field;
         this._obj = obj;
 
