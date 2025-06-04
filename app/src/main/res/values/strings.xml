@@ -996,6 +996,8 @@
         <item>Download Date (Newest)</item>
         <item>Release Date (Oldest)</item>
         <item>Release Date (Newest)</item>
+        <item>Size (Smallest)</item>
+        <item>Size (Largest)</item>
     </string-array>
     <string-array name="playlists_sortby_array">
         <item>Name (Ascending)</item>
