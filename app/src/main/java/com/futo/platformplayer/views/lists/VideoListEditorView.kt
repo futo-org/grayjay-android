@@ -26,6 +26,7 @@ class VideoListEditorView : FrameLayout {
     val onVideoOptions = Event1<IPlatformVideo>();
     val onVideoClicked = Event1<IPlatformVideo>();
     val isEmpty get() = _videos.isEmpty();
+    val itemMoveCallback: ItemMoveCallback
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         val recyclerPlaylist = RecyclerView(context, attrs);
@@ -34,14 +35,14 @@ class VideoListEditorView : FrameLayout {
         recyclerPlaylist.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(recyclerPlaylist);
 
-        val callback = ItemMoveCallback();
-        val touchHelper = ItemTouchHelper(callback);
+        itemMoveCallback = ItemMoveCallback();
+        val touchHelper = ItemTouchHelper(itemMoveCallback);
         val adapterVideos = VideoListEditorAdapter(touchHelper);
         recyclerPlaylist.adapter = adapterVideos;
         recyclerPlaylist.layoutManager = LinearLayoutManager(context);
         touchHelper.attachToRecyclerView(recyclerPlaylist);
 
-        callback.onRowMoved.subscribe { fromPosition, toPosition ->
+        itemMoveCallback.onRowMoved.subscribe { fromPosition, toPosition ->
             synchronized(_videos) {
                 if (fromPosition < toPosition) {
                     for (i in fromPosition until toPosition)
@@ -94,6 +95,7 @@ class VideoListEditorView : FrameLayout {
         synchronized(_videos) {
             _videos.clear();
             _videos.addAll(videos ?: listOf());
+            itemMoveCallback.canEdit = canEdit
             _adapterVideos?.setVideos(_videos, canEdit);
         }
     }
