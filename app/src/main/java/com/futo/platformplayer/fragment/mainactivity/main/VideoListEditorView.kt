@@ -224,7 +224,8 @@ abstract class VideoListEditorView : LinearLayout {
 
     fun updateVideoFilters() {
         val videos = _loadedVideos ?: return;
-        _videoListEditorView.setVideos(filterVideos(videos), _loadedVideosCanEdit);
+        val filteredVideos = filterVideos(videos)
+        _videoListEditorView.setVideos(filteredVideos, _loadedVideosCanEdit && filteredVideos.size == videos.size);
     }
 
     protected fun setButtonDownloadVisible(isVisible: Boolean) {
