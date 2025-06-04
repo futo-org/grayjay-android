@@ -67,11 +67,18 @@ class SyncShowPairingCodeActivity : AppCompatActivity() {
         }
 
         val ips = getIPs()
-        val selfDeviceInfo = SyncDeviceInfo(StateSync.instance.publicKey!!, ips.toTypedArray(), StateSync.PORT)
-        val json = Json.encodeToString(selfDeviceInfo)
-        val base64 = Base64.encodeToString(json.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
-        val url = "grayjay://sync/${base64}"
-        setCode(url)
+        val publicKey = StateSync.instance.syncService?.publicKey
+        val pairingCode = StateSync.instance.syncService?.pairingCode
+        if (publicKey == null || pairingCode == null) {
+            setCode("Public key or pairing code was not known, is sync enabled?")
+        } else {
+            val selfDeviceInfo = SyncDeviceInfo(publicKey, ips.toTypedArray(), StateSync.PORT, pairingCode)
+            val json = Json.encodeToString(selfDeviceInfo)
+            val base64 = Base64.encodeToString(json.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            val url = "grayjay://sync/${base64}"
+            setCode(url)
+        }
+
     }
 
     fun setCode(code: String?) {

@@ -90,6 +90,7 @@ open class ManagedHttpClient {
     }
 
     fun tryHead(url: String): Map<String, String>? {
+        ensureNotMainThread()
         try {
             val result = head(url);
             if(result.isOk)
@@ -104,7 +105,7 @@ open class ManagedHttpClient {
     }
 
     fun socket(url: String, headers: MutableMap<String, String> = HashMap(), listener: SocketListener): Socket {
-
+        ensureNotMainThread()
         val requestBuilder: okhttp3.Request.Builder = okhttp3.Request.Builder()
             .url(url);
         if(user_agent.isNotEmpty() && !headers.any { it.key.lowercase() == "user-agent" })
@@ -300,6 +301,7 @@ open class ManagedHttpClient {
         }
 
         fun send(msg: String) {
+            ensureNotMainThread()
             socket.send(msg);
         }
 

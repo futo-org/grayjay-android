@@ -1,6 +1,6 @@
 package com.futo.platformplayer.sync.internal
 
-class SyncStream(expectedSize: Int, val opcode: UByte, val subOpcode: UByte) {
+class SyncStream(expectedSize: Int, val opcode: UByte, val subOpcode: UByte, val contentEncoding: UByte) {
     companion object {
         const val MAXIMUM_SIZE = 10_000_000
     }

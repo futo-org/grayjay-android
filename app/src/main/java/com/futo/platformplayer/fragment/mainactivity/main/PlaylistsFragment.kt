@@ -217,7 +217,7 @@ class PlaylistsFragment : MainFragment() {
             var playlistsToReturn = pls;
             if(!_listPlaylistsSearch.text.isNullOrEmpty())
                 playlistsToReturn = playlistsToReturn.filter { it.name.contains(_listPlaylistsSearch.text, true) };
-            if(!_ordering.value.isNullOrEmpty()){
+            if(!_ordering.value.isNullOrEmpty()) {
                 playlistsToReturn = when(_ordering.value){
                     "nameAsc" -> playlistsToReturn.sortedBy { it.name.lowercase() }
                     "nameDesc" -> playlistsToReturn.sortedByDescending { it.name.lowercase() };

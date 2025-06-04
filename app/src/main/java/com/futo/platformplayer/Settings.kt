@@ -499,6 +499,22 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
         var deleteFromWatchLaterAuto: Boolean = true;
+
+        @FormField(R.string.seek_offset, FieldForm.DROPDOWN, R.string.seek_offset_description, 23)
+        @DropdownFieldOptionsId(R.array.seek_offset_duration)
+        var seekOffset: Int = 2;
+
+        fun getSeekOffset(): Long {
+          return when(seekOffset) {
+            0 -> 3_000L;
+            1 -> 5_000L;
+            2 -> 10_000L;
+            3 -> 20_000L;
+            4 -> 30_000L;
+            5 -> 60_000L;
+            else -> 10_000L;
+          }
+        }
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
@@ -590,7 +606,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.allow_ipv6, FieldForm.TOGGLE, R.string.allow_ipv6_description, 4)
         @Serializable(with = FlexibleBooleanSerializer::class)
-        var allowIpv6: Boolean = false;
+        var allowIpv6: Boolean = true;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
@@ -926,7 +942,7 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Synchronization {
         @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enabled_description, 1)
-        var enabled: Boolean = true;
+        var enabled: Boolean = false;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
         var broadcast: Boolean = false;
@@ -936,6 +952,21 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.connect_last, FieldForm.TOGGLE, R.string.connect_last_description, 3)
         var connectLast: Boolean = true;
+
+        @FormField(R.string.discover_through_relay, FieldForm.TOGGLE, R.string.discover_through_relay_description, 3)
+        var discoverThroughRelay: Boolean = true;
+
+        @FormField(R.string.pair_through_relay, FieldForm.TOGGLE, R.string.pair_through_relay_description, 3)
+        var pairThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_through_relay, FieldForm.TOGGLE, R.string.connect_through_relay_description, 3)
+        var connectThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_local_direct_through_relay, FieldForm.TOGGLE, R.string.connect_local_direct_through_relay_description, 3)
+        var connectLocalDirectThroughRelay: Boolean = true;
+
+        @FormField(R.string.local_connections, FieldForm.TOGGLE, R.string.local_connections_description, 3)
+        var localConnections: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)

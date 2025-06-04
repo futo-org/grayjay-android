@@ -13,6 +13,17 @@ class RadioGroupView : FlexboxLayout {
 
     val selectedOptions = arrayListOf<Any?>();
     val onSelectedChange = Event1<List<Any?>>();
+    constructor(context: Context) : super(context) {
+        flexWrap = FlexWrap.WRAP;
+        _padding_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, _padding_dp, context.resources.displayMetrics).toInt();
+
+        if (isInEditMode) {
+            setOptions(listOf("Example 1" to 1, "Example 2" to 2, "Example 3" to 3, "Example 4" to 4, "Example 5" to 5), listOf("Example 1", "Example 2"),
+                multiSelect = true,
+                atLeastOne = false
+            );
+        }
+    }
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         flexWrap = FlexWrap.WRAP;
         _padding_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, _padding_dp, context.resources.displayMetrics).toInt();

@@ -455,6 +455,10 @@ class VideoDetailFragment() : MainFragment() {
                 activity?.enterPictureInPictureMode(params);
             }
         }
+
+        if (isFullscreen) {
+            viewDetail?.restoreBrightness()
+        }
     }
 
     fun forcePictureInPicture() {
@@ -486,6 +490,10 @@ class VideoDetailFragment() : MainFragment() {
         Logger.v(TAG, "onResume");
         _isActive = true;
         _leavingPiP = false;
+
+        if (isFullscreen) {
+            _viewDetail?.saveBrightness()
+        }
 
         _viewDetail?.let {
             Logger.v(TAG, "onResume preventPictureInPicture=false");

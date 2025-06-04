@@ -144,6 +144,9 @@
                                 android:layout_marginTop="10dp"
                                 android:layout_marginLeft="15dp"
                                 android:layout_marginRight="15dp"
+                                android:inputType="text"
+                                android:imeOptions="actionDone"
+                                android:singleLine="true"
                                 android:background="@drawable/background_button_round"
                                 android:hint="Search.." />
 

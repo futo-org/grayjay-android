@@ -10,10 +10,11 @@ class ItemMoveCallback : ItemTouchHelper.Callback {
     var onRowMoved = Event2<Int, Int>();
     var onRowSelected = Event1<ViewHolder>();
     var onRowClear = Event1<ViewHolder>();
+    var canEdit = true
 
     constructor() : super() { }
 
-    override fun isLongPressDragEnabled(): Boolean { return true; }
+    override fun isLongPressDragEnabled(): Boolean { return canEdit; }
     override fun isItemViewSwipeEnabled(): Boolean { return false; }
 
     override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {

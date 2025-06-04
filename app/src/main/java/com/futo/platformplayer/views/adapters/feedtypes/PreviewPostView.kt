@@ -21,9 +21,11 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.Thumbnails
+import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.post.IPlatformPostDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSWeb
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
@@ -141,6 +143,16 @@ class PreviewPostView : LinearLayout {
                 content.content
             else
                 ""
+        } else if(content is IPlatformArticle) {
+            if(!content.summary.isNullOrEmpty())
+                content.summary ?: ""
+            else
+                ""
+        } else if(content is JSWeb) {
+            if(!content.url.isNullOrEmpty())
+                "WEB:" + content.url
+            else
+                ""
         } else "";
 
         if (content.name.isNullOrEmpty()) {
@@ -154,7 +166,14 @@ class PreviewPostView : LinearLayout {
 
         if (content is IPlatformPost) {
             setImages(content.thumbnails.filterNotNull());
-        } else {
+        }
+        else if(content is IPlatformArticle) {
+            if(content.thumbnails != null)
+                setImages(listOf(content.thumbnails!!));
+            else
+                setImages(null);
+        }
+        else {
             setImages(null);
         }
 

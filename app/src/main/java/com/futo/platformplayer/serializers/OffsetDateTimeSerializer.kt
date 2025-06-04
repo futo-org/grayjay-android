@@ -1,5 +1,6 @@
 package com.futo.platformplayer.serializers
 
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -37,7 +38,7 @@ class OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {
             return OffsetDateTime.MAX;
         else if(epochSecond < -9999999999)
             return OffsetDateTime.MIN;
-        return OffsetDateTime.of(LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC), ZoneOffset.UTC);
+        return epochSecond.sToOffsetDateTimeUTC()
     }
 }
 class OffsetDateTimeStringSerializer : KSerializer<OffsetDateTime> {

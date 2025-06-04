@@ -37,9 +37,10 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
         _onDatasetChanged = onDatasetChanged;
 
         StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> if(Looper.myLooper() != Looper.getMainLooper())
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) { updateDataset() }
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) { updateDataset() }
             else
-                updateDataset(); }
+                updateDataset();
+        }
         updateDataset();
     }
 

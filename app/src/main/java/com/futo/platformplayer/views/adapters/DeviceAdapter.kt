@@ -7,16 +7,16 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.casting.CastingDevice
 import com.futo.platformplayer.constructs.Event1
 
-class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
-    private val _devices: ArrayList<CastingDevice>;
-    private val _isRememberedDevice: Boolean;
+data class DeviceAdapterEntry(val castingDevice: CastingDevice, val isPinnedDevice: Boolean, val isOnlineDevice: Boolean)
 
-    var onRemove = Event1<CastingDevice>();
+class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
+    private val _devices: List<DeviceAdapterEntry>;
+
+    var onPin = Event1<CastingDevice>();
     var onConnect = Event1<CastingDevice>();
 
-    constructor(devices: ArrayList<CastingDevice>, isRememberedDevice: Boolean) : super() {
+    constructor(devices: List<DeviceAdapterEntry>) : super() {
         _devices = devices;
-        _isRememberedDevice = isRememberedDevice;
     }
 
     override fun getItemCount() = _devices.size;
@@ -24,13 +24,13 @@ class DeviceAdapter : RecyclerView.Adapter<DeviceViewHolder> {
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): DeviceViewHolder {
         val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_device, viewGroup, false);
         val holder = DeviceViewHolder(view);
-        holder.setIsRememberedDevice(_isRememberedDevice);
-        holder.onRemove.subscribe { d -> onRemove.emit(d); };
+        holder.onPin.subscribe { d -> onPin.emit(d); };
         holder.onConnect.subscribe { d -> onConnect.emit(d); }
         return holder;
     }
 
     override fun onBindViewHolder(viewHolder: DeviceViewHolder, position: Int) {
-        viewHolder.bind(_devices[position]);
+        val p = _devices[position];
+        viewHolder.bind(p.castingDevice, p.isOnlineDevice, p.isPinnedDevice);
     }
 }

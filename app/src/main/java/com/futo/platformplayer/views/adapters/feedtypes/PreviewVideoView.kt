@@ -233,7 +233,7 @@ open class PreviewVideoView : LinearLayout {
         }
         else {
             currentVideo = null;
-            _imageVideo.setImageResource(0);
+            _imageVideo.setImageDrawable(null);
             _containerDuration.visibility = GONE;
             _containerLive.visibility = GONE;
             _timeBar?.visibility = GONE;

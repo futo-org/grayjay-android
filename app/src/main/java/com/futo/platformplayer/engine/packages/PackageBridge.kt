@@ -12,6 +12,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClientConstants
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -71,6 +72,26 @@ class PackageBridge : V8Package {
     @V8Property
     fun buildSpecVersion(): Int {
         return JSClientConstants.PLUGIN_SPEC_VERSION;
+    }
+    @V8Property
+    fun buildPlatform(): String {
+        return "android";
+    }
+
+    @V8Property
+    fun supportedContent(): Array<Int> {
+        return arrayOf(
+            ContentType.MEDIA.value,
+            ContentType.POST.value,
+            ContentType.PLAYLIST.value,
+            ContentType.WEB.value,
+            ContentType.URL.value,
+            ContentType.NESTED_VIDEO.value,
+            ContentType.CHANNEL.value,
+            ContentType.LOCKED.value,
+            ContentType.PLACEHOLDER.value,
+            ContentType.DEFERRED.value
+        )
     }
 
     @V8Function

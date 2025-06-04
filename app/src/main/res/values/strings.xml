@@ -137,6 +137,7 @@
     <string name="not_ready">Not ready</string>
     <string name="connect">Connect</string>
     <string name="stop">Stop</string>
+    <string name="stop_casting">Stop casting</string>
     <string name="start">Start</string>
     <string name="storage_space">Storage Space</string>
     <string name="downloads">Downloads</string>
@@ -197,7 +198,9 @@
     <string name="ip">IP</string>
     <string name="port">Port</string>
     <string name="discovered_devices">Discovered Devices</string>
+    <string name="available_devices">Available devices</string>
     <string name="remembered_devices">Remembered Devices</string>
+    <string name="unable_to_see_the_Device_youre_looking_for_try_add_the_device_manually">Unable to see the device you\'re looking for? Try to add the device manually.</string>
     <string name="there_are_no_remembered_devices">There are no remembered devices</string>
     <string name="connected_to">Connected to</string>
     <string name="volume">Volume</string>
@@ -207,6 +210,7 @@
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="comment">Comment</string>
+    <string name="add_manually">Add manually</string>
     <string name="not_empty_close">Comment is not empty, close anyway?</string>
     <string name="str_import">Import</string>
     <string name="my_playlist_name">My Playlist Name</string>
@@ -338,7 +342,7 @@
     <string name="configure_if_background_download_should_be_used">Configure if background download should be used</string>
     <string name="configure_the_auto_updater">Configure the auto updater</string>
     <string name="configure_when_updates_should_be_downloaded">Configure when updates should be downloaded</string>
-    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded</string>
+    <string name="configure_when_videos_should_be_downloaded">Configure when videos should be downloaded, if they should only be downloaded on unmetered networks (wifi/ethernet)</string>
     <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Creates a zip file with your data which can be imported by opening it with Grayjay</string>
     <string name="default_audio_quality">Default Audio Quality</string>
     <string name="default_playback_speed">Default Playback Speed</string>
@@ -369,12 +373,22 @@
     <string name="networking">Networking</string>
     <string name="synchronization">Synchronization</string>
     <string name="enabled_description">Enable feature</string>
-    <string name="broadcast">Broadcast</string>
-    <string name="broadcast_description">Allow device to broadcast presence</string>
-    <string name="connect_discovered">Connect discovered</string>
-    <string name="connect_discovered_description">Allow device to search for and initiate connection with known paired devices</string>
-    <string name="connect_last">Try connect last</string>
-    <string name="connect_last_description">Allow device to automatically connect to last known</string>
+    <string name="broadcast">mDNS Broadcast</string>
+    <string name="broadcast_description">Allow device to broadcast presence using mDNS</string>
+    <string name="connect_discovered">mDNS Connect</string>
+    <string name="connect_discovered_description">Allow device to search for and initiate connection with known paired devices using mDNS</string>
+    <string name="connect_last">Connect Last Known</string>
+    <string name="connect_last_description">Allow device to automatically connect to last known endpoints</string>
+    <string name="discover_through_relay">Relay Enable</string>
+    <string name="discover_through_relay_description">Allow device to use a relay for discovery/relaying connection</string>
+    <string name="pair_through_relay">Relay Pairing</string>
+    <string name="pair_through_relay_description">Allow device to be paired through the relay</string>
+    <string name="connect_through_relay">Relay Connect Relayed</string>
+    <string name="connect_through_relay_description">Allow device to be connected to using a relayed connection</string>
+    <string name="connect_local_direct_through_relay">Relay Connect Direct</string>
+    <string name="connect_local_direct_through_relay_description">Allow device to be directly connected to using relay published information</string>
+    <string name="local_connections">Bind Listener</string>
+    <string name="local_connections_description">Allow device to be directly connected to</string>
     <string name="gesture_controls">Gesture controls</string>
     <string name="volume_slider">Volume slider</string>
     <string name="volume_slider_descr">Enable slide gesture to change volume</string>
@@ -413,6 +427,8 @@
     <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
+    <string name="seek_offset">Seek duration</string>
+    <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
     <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="subscription_group_menu">Groups</string>
@@ -1065,6 +1081,14 @@
         <item>Within 10 seconds of loss</item>
         <item>Within 30 seconds of loss</item>
         <item>Always</item>
+    </string-array>
+    <string-array name="seek_offset_duration">
+        <item>3 seconds</item>
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>20 seconds</item>
+        <item>30 seconds</item>
+        <item>60 seconds</item>
     </string-array>
     <string-array name="rotation_zone">
         <item>15</item>

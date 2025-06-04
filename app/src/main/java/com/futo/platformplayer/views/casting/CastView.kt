@@ -21,10 +21,13 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.AirPlayCastingDevice
+import com.futo.platformplayer.casting.ChromecastCastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.formatDuration
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.behavior.GestureControlView
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +64,7 @@ class CastView : ConstraintLayout {
     val onSettingsClick = Event0();
     val onPrevious = Event0();
     val onNext = Event0();
+    val onTimeJobTimeChanged_s = Event1<Long>()
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -185,11 +189,11 @@ class CastView : ConstraintLayout {
     }
 
     fun setIsPlaying(isPlaying: Boolean) {
-        _updateTimeJob?.cancel();
+        stopTimeJob()
 
         if(isPlaying) {
             val d = StateCasting.instance.activeDevice;
-            if (d is AirPlayCastingDevice) {
+            if (d is AirPlayCastingDevice || d is ChromecastCastingDevice) {
                 _updateTimeJob = _scope.launch {
                     while (true) {
                         val device = StateCasting.instance.activeDevice;
@@ -198,7 +202,9 @@ class CastView : ConstraintLayout {
                         }
 
                         delay(1000);
-                        setTime((device.expectedCurrentTime * 1000.0).toLong());
+                        val time_ms = (device.expectedCurrentTime * 1000.0).toLong()
+                        setTime(time_ms);
+                        onTimeJobTimeChanged_s.emit(device.expectedCurrentTime.toLong())
                     }
                 }
             }
