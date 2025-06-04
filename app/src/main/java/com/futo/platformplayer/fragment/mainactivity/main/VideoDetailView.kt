@@ -619,6 +619,7 @@ class VideoDetailView : ConstraintLayout {
                         loadCurrentVideo(lastPositionMilliseconds);
                         updatePillButtonVisibilities();
                         setCastEnabled(false);
+
                     }
                     else -> {}
                 }
