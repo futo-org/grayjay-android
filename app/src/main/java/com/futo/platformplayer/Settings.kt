@@ -226,6 +226,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.show_home_filters_plugin_names, FieldForm.TOGGLE, R.string.show_home_filters_plugin_names_description, 5)
         var showHomeFiltersPluginNames: Boolean = false;
 
+        @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
 
@@ -258,6 +259,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.feed_style)
         var searchFeedStyle: Int = 1;
 
+        @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
         var previewFeedItems: Boolean = true;
 
