@@ -17,15 +17,10 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 @UnstableApi
 class ShortsFragment : MainFragment() {
@@ -33,8 +28,8 @@ class ShortsFragment : MainFragment() {
     override val isTab: Boolean = true
     override val hasBottomBar: Boolean get() = true
 
-    private var loadPagerJob: Job? = null
-    private var nextPageJob: Job? = null
+    private var loadPagerTask: TaskHandler<ShortsFragment, IPager<IPlatformVideo>>? = null
+    private var nextPageTask: TaskHandler<ShortsFragment, List<IPlatformVideo>>? = null
 
     private var shortsPager: IPager<IPlatformVideo>? = null
     private val videos: MutableList<IPlatformVideo> = mutableListOf()
@@ -65,10 +60,6 @@ class ShortsFragment : MainFragment() {
 
         setLoading(true)
 
-        if (loadPagerJob?.isActive == false && videos.isEmpty()) {
-            loadPager()
-        }
-
         Logger.i(TAG, "Creating adapter")
         val customViewAdapter =
             CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
@@ -80,7 +71,8 @@ class ShortsFragment : MainFragment() {
         customViewAdapter.onResetTriggered.subscribe {
             setLoading(true)
             loadPager()
-            loadPagerJob!!.invokeOnCompletion {
+
+            loadPagerTask!!.success {
                 setLoading(false)
             }
         }
@@ -89,97 +81,105 @@ class ShortsFragment : MainFragment() {
 
         this.customViewAdapter = customViewAdapter
 
-        loadPagerJob!!.invokeOnCompletion {
-            viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-                fun play(adapter: CustomViewAdapter, position: Int) {
-                    val recycler = (viewPager.getChildAt(0) as RecyclerView)
-                    val viewHolder =
-                        recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
+        if (loadPagerTask == null && videos.isEmpty()) {
+            loadPager()
 
-                    if (viewHolder == null) {
-                        adapter.needToPlay = position
-                    } else {
-                        val focusedView = viewHolder.shortView
-                        focusedView.play()
-                        adapter.previousShownView = focusedView
-                    }
-                }
-
-                override fun onPageSelected(position: Int) {
-                    val adapter = (viewPager.adapter as CustomViewAdapter)
-                    if (adapter.previousShownView == null) {
-                        // play if this page selection didn't trigger by a swipe from another page
-                        play(adapter, position)
-                    } else {
-                        adapter.previousShownView?.stop()
-                        adapter.previousShownView = null
-                        adapter.newPosition = position
-                    }
-                }
-
-                // wait for the state to idle to prevent UI lag
-                override fun onPageScrollStateChanged(state: Int) {
-                    super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                        val adapter = (viewPager.adapter as CustomViewAdapter)
-                        val position = adapter.newPosition
-                        if (position == null) {
-                            return
-                        }
-                        adapter.newPosition = null
-
-                        play(adapter, position)
-                    }
-                }
-            })
-            setLoading(false)
+            loadPagerTask!!.success {
+                applyData()
+            }
+        } else {
+            applyData()
         }
     }
 
-    private fun nextPage() {
-        nextPageJob?.cancel()
+    private fun applyData() {
+        val viewPager = viewPager!!
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            fun play(adapter: CustomViewAdapter, position: Int) {
+                val recycler = (viewPager.getChildAt(0) as RecyclerView)
+                val viewHolder =
+                    recycler.findViewHolderForAdapterPosition(position) as CustomViewHolder?
 
-        nextPageJob = CoroutineScope(Dispatchers.Main).launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    shortsPager!!.nextPage()
+                if (viewHolder == null) {
+                    adapter.needToPlay = position
+                } else {
+                    val focusedView = viewHolder.shortView
+                    focusedView.play()
+                    adapter.previousShownView = focusedView
                 }
-            } catch (_: CancellationException) {
-                return@launch
             }
 
-            // if it's been canceled then don't update the results
-            if (!isActive) {
-                return@launch
+            override fun onPageSelected(position: Int) {
+                val adapter = (viewPager.adapter as CustomViewAdapter)
+                if (adapter.previousShownView == null) {
+                    // play if this page selection didn't trigger by a swipe from another page
+                    play(adapter, position)
+                } else {
+                    adapter.previousShownView?.stop()
+                    adapter.previousShownView = null
+                    adapter.newPosition = position
+                }
             }
 
-            val newVideos = shortsPager!!.getResults()
-            CoroutineScope(Dispatchers.Main).launch {
+            // wait for the state to idle to prevent UI lag
+            override fun onPageScrollStateChanged(state: Int) {
+                super.onPageScrollStateChanged(state)
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    val adapter = (viewPager.adapter as CustomViewAdapter)
+                    val position = adapter.newPosition
+                    if (position == null) {
+                        return
+                    }
+                    adapter.newPosition = null
+
+                    play(adapter, position)
+                }
+            }
+        })
+        setLoading(false)
+    }
+
+    private fun nextPage() {
+        nextPageTask?.cancel()
+
+        val nextPageTask =
+            TaskHandler<ShortsFragment, List<IPlatformVideo>>(StateApp.instance.scopeGetter, {
+                shortsPager!!.nextPage()
+
+                return@TaskHandler shortsPager!!.getResults()
+            }).success { newVideos ->
                 val prevCount = customViewAdapter!!.itemCount
                 videos.addAll(newVideos)
                 customViewAdapter!!.notifyItemRangeInserted(prevCount, newVideos.size)
+                nextPageTask = null
             }
-        }
+
+        nextPageTask.run(this)
+
+        this.nextPageTask = nextPageTask
     }
 
     // we just completely reset the data structure so we want to tell the adapter that
     @SuppressLint("NotifyDataSetChanged")
     private fun loadPager() {
-        loadPagerJob?.cancel()
+        loadPagerTask?.cancel()
 
-        // if the view pager exists go back to the beginning
-        videos.clear()
-        viewPager?.adapter?.notifyDataSetChanged()
-        viewPager?.currentItem = 0
+        val loadPagerTask =
+            TaskHandler<ShortsFragment, IPager<IPlatformVideo>>(StateApp.instance.scopeGetter, {
+                val pager = StatePlatform.instance.getShorts()
 
-        loadPagerJob = CoroutineScope(Dispatchers.Main).launch {
-            val pager = try {
-                withContext(Dispatchers.IO) {
-                    StatePlatform.instance.getShorts()
-                }
-            } catch (_: CancellationException) {
-                return@launch
-            } catch (err: Throwable) {
+                return@TaskHandler pager
+            }).success { pager ->
+                videos.clear()
+                videos.addAll(pager.getResults())
+                shortsPager = pager
+
+                // if the view pager exists go back to the beginning
+                viewPager?.adapter?.notifyDataSetChanged()
+                viewPager?.currentItem = 0
+
+                loadPagerTask = null
+            }.exception<Throwable> { err ->
                 val message = "Unable to load shorts $err"
                 Logger.i(TAG, message)
                 if (context != null) {
@@ -189,21 +189,12 @@ class ShortsFragment : MainFragment() {
                         )
                     )
                 }
-                return@launch
+                return@exception
             }
 
-            // if it's been canceled then don't set the video pager
-            if (!isActive) {
-                return@launch
-            }
+        this.loadPagerTask = loadPagerTask
 
-            videos.clear()
-            videos.addAll(pager.getResults())
-            shortsPager = pager
-
-            // if the viewPager exists then trigger data changed
-            viewPager?.adapter?.notifyDataSetChanged()
-        }
+        loadPagerTask.run(this)
     }
 
     private fun setLoading(isLoading: Boolean) {
@@ -223,6 +214,10 @@ class ShortsFragment : MainFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
+        loadPagerTask?.cancel()
+        loadPagerTask = null
+        nextPageTask?.cancel()
+        nextPageTask = null
         customViewAdapter?.previousShownView?.stop()
     }
 
@@ -265,7 +260,6 @@ class ShortsFragment : MainFragment() {
         override fun onViewRecycled(holder: CustomViewHolder) {
             super.onViewRecycled(holder)
             holder.shortView.cancel()
-
         }
 
         override fun onViewAttachedToWindow(holder: CustomViewHolder) {

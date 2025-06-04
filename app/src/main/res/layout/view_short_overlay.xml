@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Main content buttons and text -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Title section -->
+        <LinearLayout
+            android:id="@+id/title_section"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="16dp"
+            android:orientation="vertical"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/buttons_section"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <!-- Channel info row -->
+            <LinearLayout
+                android:id="@+id/channel_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minWidth="48dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp">
+
+                <com.futo.platformplayer.views.others.CreatorThumbnail
+                    android:id="@+id/creator_thumbnail"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="@string/cd_creator_thumbnail" />
+
+                <TextView
+                    android:id="@+id/channel_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:shadowColor="@android:color/black"
+                    android:text=""
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Video title -->
+            <TextView
+                android:id="@+id/video_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="@android:color/black"
+                android:text=""
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Buttons section -->
+        <LinearLayout
+            android:id="@+id/buttons_section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="16dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Like button -->
+            <FrameLayout
+                android:id="@+id/like_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/like_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:checkable="true"
+                    android:contentDescription="@string/cd_image_like_icon"
+                    app:backgroundTint="@color/transparent"
+                    app:icon="@drawable/thumb_up_selector"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple"
+                    app:toggleCheckedStateOnClick="true" />
+
+                <TextView
+                    android:id="@+id/like_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:shadowColor="@android:color/black"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Dislike button -->
+            <FrameLayout
+                android:id="@+id/dislike_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/dislike_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:checkable="true"
+                    android:contentDescription="@string/cd_image_dislike_icon"
+                    app:backgroundTint="@color/transparent"
+                    app:icon="@drawable/thumb_down_selector"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple"
+                    app:toggleCheckedStateOnClick="true" />
+
+                <TextView
+                    android:id="@+id/dislike_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:shadowColor="@android:color/black"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Comments button -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/comments_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/comments"
+                    app:icon="@drawable/ic_comment"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:importantForAccessibility="no"
+                    android:shadowColor="@android:color/black"
+                    android:text="@string/comments"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Share button -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/share_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/share"
+                    app:icon="@drawable/ic_share"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:importantForAccessibility="no"
+                    android:shadowColor="@android:color/black"
+                    android:text="@string/share"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Refresh button -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/refresh_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/refresh"
+                    app:icon="@drawable/ic_refresh"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:importantForAccessibility="no"
+                    android:shadowColor="@android:color/black"
+                    android:text="@string/refresh"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Quality/More button -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/quality_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/quality"
+                    app:icon="@drawable/ic_more"
+                    app:iconSize="24dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="@color/ripple" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:importantForAccessibility="no"
+                    android:shadowColor="@android:color/black"
+                    android:text="@string/quality"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </FrameLayout>
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Play/Pause overlay -->
+    <FrameLayout
+        android:id="@+id/play_pause_overlay"
+        android:layout_width="94dp"
+        android:layout_height="94dp"
+        android:layout_gravity="center"
+        android:background="@drawable/rounded_outline"
+        android:backgroundTint="@color/play_pause_background"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/play_pause_icon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/play"
+            android:src="@drawable/ic_play"
+            app:tint="@android:color/white" />
+    </FrameLayout>
+</FrameLayout>

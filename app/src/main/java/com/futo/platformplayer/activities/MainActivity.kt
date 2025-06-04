@@ -325,6 +325,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         _fragBrowser = BrowserFragment.newInstance();
 
+        _fragShorts.onShownEvent.subscribe {
+            _fragVideoDetail.closeVideoDetails()
+        };
+
         //Overlays
         _fragVideoDetail = VideoDetailFragment.newInstance();
         //Overlay Init

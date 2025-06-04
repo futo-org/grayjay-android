@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.animation.doOnEnd
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -375,6 +376,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
         fun newInstance() = MenuBottomBarFragment().apply { }
 
+        @UnstableApi
         //Add configurable buttons here
         var buttonDefinitions = listOf(
             ButtonDefinition(0, R.drawable.ic_home, R.drawable.ic_home_filled, R.string.home, canToggle = true, { it.currentMain is HomeFragment }, {
@@ -386,11 +388,11 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     it.navigate<HomeFragment>()
                 }
             }),
-            ButtonDefinition(1, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.shorts, canToggle = true, { it.currentMain is ShortsFragment }, { it.navigate<ShortsFragment>() }),
-            ButtonDefinition(2, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>() }),
-            ButtonDefinition(3, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>() }),
-            ButtonDefinition(4, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>() }),
-            ButtonDefinition(5, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>() }),
+            ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>() }),
+            ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>() }),
+            ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>() }),
+            ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>() }),
+            ButtonDefinition(5, R.drawable.ic_smart_display, R.drawable.ic_smart_display_filled, R.string.shorts, canToggle = true, { it.currentMain is ShortsFragment }, { it.navigate<ShortsFragment>() }),
             ButtonDefinition(6, R.drawable.ic_history, R.drawable.ic_history, R.string.history, canToggle = false, { it.currentMain is HistoryFragment }, { it.navigate<HistoryFragment>() }),
             ButtonDefinition(7, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigate<DownloadsFragment>() }),
             ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigate<CommentsFragment>() }),

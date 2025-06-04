@@ -39,6 +39,10 @@
     <color name="text_color_tinted">#ACACAC</color>
     <color name="pastel_red">#C25353</color>
 
+    <!--shorts-->
+    <color name="play_pause_background">#33555555</color>
+    <color name="ripple">#33FFFFFF</color>
+
     <!--material 3 colors-->
     <color name="md_theme_primary">#8F4C38</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>

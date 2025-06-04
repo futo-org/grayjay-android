@@ -72,8 +72,6 @@ import kotlin.math.abs
 abstract class FutoVideoPlayerBase : RelativeLayout {
     private val TAG = "FutoVideoPlayerBase"
 
-//    private val TEMP_DIRECTORY = StateApp.instance.getTempDirectory();
-
     private var _mediaSource: MediaSource? = null;
 
     var lastVideoSource: IVideoSource? = null

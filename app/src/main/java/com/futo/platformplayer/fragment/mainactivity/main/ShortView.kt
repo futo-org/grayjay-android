@@ -14,80 +14,20 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.SoundEffectConstants
 import android.view.View
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Comment
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbDownOffAlt
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.icons.filled.ThumbUpOffAlt
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.ripple.RippleAlpha
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.LocalRippleConfiguration
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RippleConfiguration
-import androidx.compose.material3.Text
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.view.marginBottom
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.Glide
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
@@ -165,24 +105,37 @@ import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.button.MaterialButton
 import com.google.protobuf.ByteString
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import userpackage.Protocol
-import java.time.OffsetDateTime
-import kotlin.coroutines.cancellation.CancellationException
-import androidx.core.net.toUri
 
-@OptIn(ExperimentalMaterial3Api::class)
 @UnstableApi
-class ShortView : ConstraintLayout {
+class ShortView : FrameLayout {
     private lateinit var mainFragment: MainFragment
     private val player: FutoShortPlayer
+
+    private val channelInfo: LinearLayout
+    private val creatorThumbnail: CreatorThumbnail
+    private val channelName: TextView
+    private val videoTitle: TextView
+
+    private val likeContainer: FrameLayout
+    private val dislikeContainer: FrameLayout
+    private val likeButton: MaterialButton
+    private val likeCount: TextView
+    private val dislikeButton: MaterialButton
+    private val dislikeCount: TextView
+
+    private val commentsButton: MaterialButton
+    private val shareButton: MaterialButton
+    private val refreshButton: MaterialButton
+    private val qualityButton: MaterialButton
+
+    private val playPauseOverlay: FrameLayout
+    private val playPauseIcon: ImageView
+
     private val overlayLoading: FrameLayout
     private val overlayLoadingSpinner: ImageView
     private lateinit var overlayQualityContainer: FrameLayout
@@ -202,8 +155,9 @@ class ShortView : ConstraintLayout {
     private var _lastAudioSource: IAudioSource? = null
     private var _lastSubtitleSource: ISubtitleSource? = null
 
-    private var loadVideoJob: Job? = null
-    private var loadLikesJob: Job? = null
+    private var loadVideoTask: TaskHandler<String, IPlatformVideoDetails>? = null
+    private var loadLikesTask: TaskHandler<IPlatformVideo, Pair<Protocol.Reference, Protocol.QueryReferencesResponse>>? =
+        null
 
     val onResetTriggered = Event0()
     val onPlayingToggled = Event1<Boolean>()
@@ -213,10 +167,43 @@ class ShortView : ConstraintLayout {
 
     private val bottomSheet: CommentsModalBottomSheet = CommentsModalBottomSheet()
 
+    var likes: Long = 0
+        set(value) {
+            field = value
+            likeCount.text = value.toString()
+        }
+
+    var dislikes: Long = 0
+        set(value) {
+            field = value
+            dislikeCount.text = value.toString()
+        }
+
     // Required constructor for XML inflation
     constructor(context: Context) : super(context) {
         inflate(context, R.layout.view_short, this)
         player = findViewById(R.id.short_player)
+
+        channelInfo = findViewById(R.id.channel_info)
+        creatorThumbnail = findViewById(R.id.creator_thumbnail)
+        channelName = findViewById(R.id.channel_name)
+        videoTitle = findViewById(R.id.video_title)
+
+        likeContainer = findViewById(R.id.like_container)
+        dislikeContainer = findViewById(R.id.dislike_container)
+        likeButton = findViewById(R.id.like_button)
+        likeCount = findViewById(R.id.like_count)
+        dislikeButton = findViewById(R.id.dislike_button)
+        dislikeCount = findViewById(R.id.dislike_count)
+
+        commentsButton = findViewById(R.id.comments_button)
+        shareButton = findViewById(R.id.share_button)
+        refreshButton = findViewById(R.id.refresh_button)
+        qualityButton = findViewById(R.id.quality_button)
+
+        playPauseOverlay = findViewById(R.id.play_pause_overlay)
+        playPauseIcon = findViewById(R.id.play_pause_icon)
+
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
 
@@ -227,6 +214,27 @@ class ShortView : ConstraintLayout {
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         inflate(context, R.layout.view_short, this)
         player = findViewById(R.id.short_player)
+
+        channelInfo = findViewById(R.id.channel_info)
+        creatorThumbnail = findViewById(R.id.creator_thumbnail)
+        channelName = findViewById(R.id.channel_name)
+        videoTitle = findViewById(R.id.video_title)
+
+        likeContainer = findViewById(R.id.like_container)
+        dislikeContainer = findViewById(R.id.dislike_container)
+        likeButton = findViewById(R.id.like_button)
+        likeCount = findViewById(R.id.like_count)
+        dislikeButton = findViewById(R.id.dislike_button)
+        dislikeCount = findViewById(R.id.dislike_count)
+
+        commentsButton = findViewById(R.id.comments_button)
+        shareButton = findViewById(R.id.share_button)
+        refreshButton = findViewById(R.id.refresh_button)
+        qualityButton = findViewById(R.id.quality_button)
+
+        playPauseOverlay = findViewById(R.id.play_pause_overlay)
+        playPauseIcon = findViewById(R.id.play_pause_icon)
+
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
 
@@ -237,6 +245,27 @@ class ShortView : ConstraintLayout {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_short, this)
         player = findViewById(R.id.short_player)
+
+        channelInfo = findViewById(R.id.channel_info)
+        creatorThumbnail = findViewById(R.id.creator_thumbnail)
+        channelName = findViewById(R.id.channel_name)
+        videoTitle = findViewById(R.id.video_title)
+
+        likeContainer = findViewById(R.id.like_container)
+        dislikeContainer = findViewById(R.id.dislike_container)
+        likeButton = findViewById(R.id.like_button)
+        likeCount = findViewById(R.id.like_count)
+        dislikeButton = findViewById(R.id.dislike_button)
+        dislikeCount = findViewById(R.id.dislike_count)
+
+        commentsButton = findViewById(R.id.comments_button)
+        shareButton = findViewById(R.id.share_button)
+        refreshButton = findViewById(R.id.refresh_button)
+        qualityButton = findViewById(R.id.quality_button)
+
+        playPauseOverlay = findViewById(R.id.play_pause_overlay)
+        playPauseIcon = findViewById(R.id.play_pause_icon)
+
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
 
@@ -246,12 +275,33 @@ class ShortView : ConstraintLayout {
     constructor(inflater: LayoutInflater, fragment: MainFragment, overlayQualityContainer: FrameLayout) : super(inflater.context) {
         inflater.inflate(R.layout.view_short, this, true)
         player = findViewById(R.id.short_player)
+
+        channelInfo = findViewById(R.id.channel_info)
+        creatorThumbnail = findViewById(R.id.creator_thumbnail)
+        channelName = findViewById(R.id.channel_name)
+        videoTitle = findViewById(R.id.video_title)
+
+        likeContainer = findViewById(R.id.like_container)
+        dislikeContainer = findViewById(R.id.dislike_container)
+        likeButton = findViewById(R.id.like_button)
+        likeCount = findViewById(R.id.like_count)
+        dislikeButton = findViewById(R.id.dislike_button)
+        dislikeCount = findViewById(R.id.dislike_count)
+
+        commentsButton = findViewById(R.id.comments_button)
+        shareButton = findViewById(R.id.share_button)
+        refreshButton = findViewById(R.id.refresh_button)
+        qualityButton = findViewById(R.id.quality_button)
+
+        playPauseOverlay = findViewById(R.id.play_pause_overlay)
+        playPauseIcon = findViewById(R.id.play_pause_icon)
+
         overlayLoading = findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = findViewById(R.id.short_view_loader)
         this.overlayQualityContainer = overlayQualityContainer
 
-        layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        layoutParams = LayoutParams(
+            LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT
         )
 
         this.mainFragment = fragment
@@ -271,7 +321,136 @@ class ShortView : ConstraintLayout {
             }
         }
 
-        setupComposeView()
+        onPlayingToggled.subscribe { playing ->
+            if (playing) {
+                playPauseIcon.setImageResource(R.drawable.ic_play)
+                playPauseIcon.contentDescription = context.getString(R.string.play)
+            } else {
+                playPauseIcon.setImageResource(R.drawable.ic_pause)
+                playPauseIcon.contentDescription = context.getString(R.string.pause)
+            }
+            showPlayPauseIcon()
+        }
+
+        onVideoUpdated.subscribe {
+            videoTitle.text = it?.name
+            creatorThumbnail.setThumbnail(it?.author?.thumbnail, true)
+            channelName.text = it?.author?.name
+        }
+
+        channelInfo.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            mainFragment.navigate<ChannelFragment>(video?.author)
+        }
+
+        commentsButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            if (!bottomSheet.isAdded) {
+                bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
+            }
+        }
+
+        shareButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            val url = video?.shareUrl ?: video?.url
+            mainFragment.startActivity(Intent.createChooser(Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, url)
+                type = "text/plain"
+            }, null))
+        }
+
+        refreshButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            onResetTriggered.emit()
+        }
+
+        qualityButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            showVideoSettings()
+        }
+
+        onLikesLoaded.subscribe(tag) { rating, liked, disliked ->
+            likes = rating.likes
+            dislikes = rating.dislikes
+            likeButton.isChecked = liked
+            dislikeButton.isChecked = disliked
+
+            dislikeContainer.visibility = VISIBLE
+            likeContainer.visibility = VISIBLE
+
+            likeButton.addOnCheckedChangeListener { button, checked ->
+                playSoundEffect(SoundEffectConstants.CLICK)
+                StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+                    if (checked) {
+                        likes++
+                    } else {
+                        likes--
+                    }
+
+                    if (dislikeButton.isChecked && checked) {
+                        // Chain reaction
+                        dislikeButton.isChecked = false
+                    } else {
+                        // No chain reaction submit changes
+                        onLikeDislikeUpdated.emit(
+                            OnLikeDislikeUpdatedArgs(
+                                it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                            )
+                        )
+                    }
+                }
+            }
+
+            dislikeButton.addOnCheckedChangeListener { button, checked ->
+                playSoundEffect(SoundEffectConstants.CLICK)
+                StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+                    if (checked) {
+                        dislikes++
+                    } else {
+                        dislikes--
+                    }
+
+                    if (likeButton.isChecked && checked) {
+                        // Chain reaction
+                        likeButton.isChecked = false
+                    } else {
+                        // No chain reaction submit changes
+                        onLikeDislikeUpdated.emit(
+                            OnLikeDislikeUpdatedArgs(
+                                it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showPlayPauseIcon() {
+        val overlay = playPauseOverlay
+
+        overlay.alpha = 0f
+        overlay.scaleX = 0f
+        overlay.scaleY = 0f
+        overlay.visibility = VISIBLE
+
+        overlay.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(400)
+            .setInterpolator(OvershootInterpolator(1.2f))
+            .start()
+
+        overlay.postDelayed({
+            hidePlayPauseIcon()
+        }, 1500)
+    }
+
+    private fun hidePlayPauseIcon() {
+        val overlay = playPauseOverlay
+
+        overlay.animate().alpha(0f).scaleX(0.8f).scaleY(0.8f).setDuration(300)
+            .setInterpolator(AccelerateInterpolator()).withEndAction {
+                overlay.visibility = GONE
+            }.start()
     }
 
     // TODO merge this with the updateQualitySourcesOverlay for the normal video player
@@ -327,65 +506,66 @@ class ShortView : ConstraintLayout {
         val canSetSpeed = true
         val currentPlaybackRate = player.getPlaybackRate()
         overlayQualitySelector =
-            SlideUpMenuOverlay(this.context, overlayQualityContainer, context.getString(
-                R.string.quality
-            ), null, true, if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null, if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate.toString())
-                onClick.subscribe { v ->
+            SlideUpMenuOverlay(
+                this.context, overlayQualityContainer, context.getString(
+                    R.string.quality
+                ), null, true, if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null, if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
+                    setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate.toString())
+                    onClick.subscribe { v ->
 
-                    player.setPlaybackRate(v.toFloat())
-                    setSelected(v)
+                        player.setPlaybackRate(v.toFloat())
+                        setSelected(v)
 
-                }
-            } else null, if (localVideoSources?.isNotEmpty() == true) SlideUpMenuGroup(
-                this.context, context.getString(R.string.offline_video), "video", *localVideoSources.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", tag = it, call = { handleSelectVideoTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null, if (localAudioSource?.isNotEmpty() == true) SlideUpMenuGroup(
-                this.context, context.getString(R.string.offline_audio), "audio", *localAudioSource.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), tag = it, call = { handleSelectAudioTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null, if (localSubtitleSources?.isNotEmpty() == true) SlideUpMenuGroup(
-                this.context, context.getString(R.string.offline_subtitles), "subtitles", *localSubtitleSources.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null, if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
-                this.context, context.getString(R.string.stream_video), "video", (listOf(
-                    SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { player.selectVideoTrack(-1) })
-                ) + (liveStreamVideoFormats.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label
-                        ?: it.containerMimeType
-                        ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { player.selectVideoTrack(it.height) })
-                }))
-            )
-            else null, if (liveStreamAudioFormats?.isEmpty() == false) SlideUpMenuGroup(
-                this.context, context.getString(R.string.stream_audio), "audio", *liveStreamAudioFormats.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) })
-                }.toList().toTypedArray()
-            )
-            else null, if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
-                this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
-                    val estSize = VideoHelper.estimateSourceSize(it)
-                    val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                    SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
-                this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
-                    val estSize = VideoHelper.estimateSourceSize(it)
-                    val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                    SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
-                this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
-                    SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
-                }.toList().toTypedArray()
-            )
-            else null
+                    }
+                } else null, if (localVideoSources?.isNotEmpty() == true) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.offline_video), "video", *localVideoSources.map {
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, "${it.width}x${it.height}", tag = it, call = { handleSelectVideoTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (localAudioSource?.isNotEmpty() == true) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.offline_audio), "audio", *localAudioSource.map {
+                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), tag = it, call = { handleSelectAudioTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (localSubtitleSources?.isNotEmpty() == true) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.offline_subtitles), "subtitles", *localSubtitleSources.map {
+                        SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.stream_video), "video", (listOf(
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { player.selectVideoTrack(-1) })
+                    ) + (liveStreamVideoFormats.map {
+                        SlideUpMenuItem(
+                            this.context, R.drawable.ic_movie, it.label ?: it.containerMimeType
+                            ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { player.selectVideoTrack(it.height) })
+                    }))
+                )
+                else null, if (liveStreamAudioFormats?.isEmpty() == false) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.stream_audio), "audio", *liveStreamAudioFormats.map {
+                        SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
+                        val estSize = VideoHelper.estimateSourceSize(it)
+                        val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
+                        val estSize = VideoHelper.estimateSourceSize(it)
+                        val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
+                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
+                    this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
+                        SlideUpMenuItem(this.context, R.drawable.ic_edit, it.name, "", tag = it, call = { handleSelectSubtitleTrack(it) })
+                    }.toList().toTypedArray()
+                )
+                else null
             )
     }
 
@@ -394,6 +574,8 @@ class ShortView : ConstraintLayout {
         if (_lastVideoSource == videoSource) return
 
         _lastVideoSource = videoSource
+
+        playVideo(player.position)
     }
 
     private fun handleSelectAudioTrack(audioSource: IAudioSource) {
@@ -401,6 +583,8 @@ class ShortView : ConstraintLayout {
         if (_lastAudioSource == audioSource) return
 
         _lastAudioSource = audioSource
+
+        playVideo(player.position)
     }
 
     private fun handleSelectSubtitleTrack(subtitleSource: ISubtitleSource) {
@@ -415,12 +599,37 @@ class ShortView : ConstraintLayout {
 
     private fun showVideoSettings() {
         Logger.i(TAG, "showVideoSettings")
+
+        val videoSource = _lastVideoSource
+
+        if (videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
+            val videoTracks =
+                player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
+            val audioTracks =
+                player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+
+            val videoTrackFormats = mutableListOf<Format>()
+            val audioTrackFormats = mutableListOf<Format>()
+
+            if (videoTracks != null) {
+                for (i in 0 until videoTracks.mediaTrackGroup.length) videoTrackFormats.add(videoTracks.mediaTrackGroup.getFormat(i))
+            }
+            if (audioTracks != null) {
+                for (i in 0 until audioTracks.mediaTrackGroup.length) audioTrackFormats.add(audioTracks.mediaTrackGroup.getFormat(i))
+            }
+
+            updateQualitySourcesOverlay(videoDetails, null, videoTrackFormats.distinctBy { it.height }
+                .sortedBy { it.height }, audioTrackFormats.distinctBy { it.bitrate }
+                .sortedBy { it.bitrate })
+        } else {
+            updateQualitySourcesOverlay(videoDetails, null)
+        }
+
         overlayQualitySelector?.selectOption("video", _lastVideoSource)
         overlayQualitySelector?.selectOption("audio", _lastAudioSource)
         overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource)
 
         if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
-
             val videoTracks =
                 player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
 
@@ -460,342 +669,6 @@ class ShortView : ConstraintLayout {
         overlayQualitySelector?.show()
     }
 
-    @OptIn(ExperimentalGlideComposeApi::class)
-    private fun setupComposeView() {
-        val composeView: ComposeView = findViewById(R.id.shorts_overlay_content_compose_view)
-        composeView.apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                // In Compose world
-                MaterialTheme {
-                    var likesLoaded by remember { mutableStateOf(false) }
-                    var likeChecked by remember { mutableStateOf(false) }
-                    var likes by remember { mutableLongStateOf(0) }
-                    var dislikeChecked by remember { mutableStateOf(false) }
-                    var dislikes by remember { mutableLongStateOf(0) }
-                    var isPlaying by remember { mutableStateOf(false) }
-                    var showPlayPauseIcon by remember { mutableStateOf(false) }
-                    var currentVideo by remember { mutableStateOf(video) }
-
-                    DisposableEffect(onVideoUpdated) {
-                        val tag = "video"
-                        onVideoUpdated.subscribe(tag) {
-                            currentVideo = it
-                        }
-
-                        // Cleanup listener when composable is disposed
-                        onDispose {
-                            onVideoUpdated.remove(tag)
-                        }
-                    }
-
-                    DisposableEffect(onLikesLoaded) {
-                        val tag = "likes"
-                        onLikesLoaded.subscribe(tag) { rating, liked, disliked ->
-                            likes = rating.likes
-                            dislikes = rating.dislikes
-                            likeChecked = liked
-                            dislikeChecked = disliked
-                            likesLoaded = true
-                        }
-
-                        // Cleanup listener when composable is disposed
-                        onDispose {
-                            onLikesLoaded.remove(tag)
-                        }
-                    }
-
-                    DisposableEffect(onPlayingToggled) {
-                        val tag = "icon"
-                        onPlayingToggled.subscribe(tag) {
-                            isPlaying = it
-                            showPlayPauseIcon = true
-                        }
-
-                        // Cleanup listener when composable is disposed
-                        onDispose {
-                            onPlayingToggled.remove(tag)
-                        }
-                    }
-
-                    val tint = Color.White
-                    val buttonTextStyle = TextStyle(
-                        fontSize = 12.sp, shadow = Shadow(
-                            color = Color.Black, blurRadius = 3f
-                        )
-                    )
-                    val buttonOffset = 8.dp
-
-                    val alpha = 0.2f
-                    val rippleConfiguration =
-                        RippleConfiguration(color = tint, rippleAlpha = RippleAlpha(alpha, alpha, alpha, alpha))
-
-                    val view = LocalView.current
-
-                    Box {
-                        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                            val (title, buttons) = createRefs()
-
-                            Box(modifier = Modifier.constrainAs(title) {
-                                bottom.linkTo(parent.bottom, margin = 16.dp)
-                                start.linkTo(parent.start, margin = 8.dp)
-                                end.linkTo(buttons.start)
-                                width = Dimension.fillToConstraints
-                            }) {
-                                Column(
-                                    modifier = Modifier.align(Alignment.BottomStart), verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier.clickable(onClick = {
-                                            view.playSoundEffect(SoundEffectConstants.CLICK)
-                                            mainFragment.navigate<ChannelFragment>(currentVideo?.author)
-                                        }),
-
-                                        ) {
-                                        GlideImage(
-                                            model = currentVideo?.author?.thumbnail, contentDescription = "Channel Thumbnail Image", modifier = Modifier
-                                                .size(24.dp)
-                                                .clip(CircleShape)
-                                        )
-                                        Text(
-                                            currentVideo?.author?.name
-                                                ?: "", color = tint, fontSize = 14.sp
-                                        )
-                                    }
-
-                                    Text(
-                                        currentVideo?.name
-                                            ?: "", color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp
-                                    )
-                                }
-                            }
-
-                            Box(modifier = Modifier.constrainAs(buttons) {
-                                bottom.linkTo(parent.bottom, margin = 16.dp)
-                                start.linkTo(title.end, margin = 12.dp)
-                                end.linkTo(parent.end, margin = 4.dp)
-                                marginBottom
-                            }) {
-                                CompositionLocalProvider(LocalRippleConfiguration provides rippleConfiguration) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.align(Alignment.BottomEnd)
-                                    ) {
-                                        if (likesLoaded) {
-                                            Box {
-                                                IconToggleButton(
-                                                    modifier = Modifier.padding(bottom = buttonOffset),
-                                                    checked = likeChecked,
-                                                    onCheckedChange = { checked ->
-                                                        StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
-                                                            view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                            if (dislikeChecked && !likeChecked) {
-                                                                dislikes--
-                                                                dislikeChecked = false
-                                                            }
-
-                                                            if (likeChecked) {
-                                                                likes--
-                                                            } else {
-                                                                likes++
-                                                            }
-
-                                                            likeChecked = checked
-                                                            onLikeDislikeUpdated.emit(
-                                                                OnLikeDislikeUpdatedArgs(
-                                                                    it, likes, likeChecked, dislikes, dislikeChecked
-                                                                )
-                                                            )
-                                                        }
-                                                    },
-                                                ) {
-                                                    if (likeChecked) {
-                                                        Icon(
-                                                            Icons.Default.ThumbUp, contentDescription = "Liked", tint = tint,
-                                                        )
-                                                    } else {
-                                                        Icon(
-                                                            Icons.Default.ThumbUpOffAlt, contentDescription = "Not Liked", tint = tint,
-                                                        )
-                                                    }
-                                                }
-                                                Text(
-                                                    likes.toString(), color = tint,
-                                                    modifier = Modifier.align(Alignment.BottomCenter),
-                                                    style = buttonTextStyle,
-                                                )
-                                            }
-                                            Box {
-                                                IconToggleButton(
-                                                    modifier = Modifier.padding(bottom = buttonOffset),
-                                                    checked = dislikeChecked,
-                                                    onCheckedChange = { checked ->
-                                                        StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
-                                                            view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                            if (likeChecked && !dislikeChecked) {
-                                                                likes--
-                                                                likeChecked = false
-                                                            }
-
-                                                            if (dislikeChecked) {
-                                                                dislikes--
-                                                            } else {
-                                                                dislikes++
-                                                            }
-
-                                                            dislikeChecked = checked
-                                                            onLikeDislikeUpdated.emit(
-                                                                OnLikeDislikeUpdatedArgs(
-                                                                    it, likes, likeChecked, dislikes, dislikeChecked
-                                                                )
-                                                            )
-                                                        }
-                                                    },
-                                                ) {
-                                                    if (dislikeChecked) {
-                                                        Icon(
-                                                            Icons.Default.ThumbDown, contentDescription = "Disliked", tint = tint,
-                                                        )
-                                                    } else {
-                                                        Icon(
-                                                            Icons.Default.ThumbDownOffAlt, contentDescription = "Not Disliked", tint = tint,
-                                                        )
-                                                    }
-                                                }
-                                                Text(
-                                                    dislikes.toString(), color = tint,
-                                                    modifier = Modifier.align(Alignment.BottomCenter),
-                                                    style = buttonTextStyle,
-                                                )
-                                            }
-                                        }
-                                        Box {
-                                            IconButton(
-                                                modifier = Modifier
-                                                    .padding(bottom = buttonOffset)
-                                                    .align(Alignment.TopCenter),
-                                                onClick = {
-                                                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                    if (!bottomSheet.isAdded) {
-                                                        bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    Icons.AutoMirrored.Outlined.Comment, contentDescription = "View Comments", tint = tint,
-
-                                                    )
-                                            }
-                                            Text(
-                                                "Comments", color = tint, modifier = Modifier.align(Alignment.BottomCenter), style = buttonTextStyle
-                                            )
-                                        }
-                                        Box {
-                                            IconButton(
-                                                modifier = Modifier.padding(bottom = buttonOffset),
-                                                onClick = {
-                                                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                    val url =
-                                                        currentVideo?.shareUrl ?: currentVideo?.url
-                                                    mainFragment.startActivity(Intent.createChooser(Intent().apply {
-                                                        action = Intent.ACTION_SEND
-                                                        putExtra(Intent.EXTRA_TEXT, url)
-                                                        type = "text/plain"
-                                                    }, null))
-                                                },
-                                            ) {
-                                                Icon(
-                                                    Icons.Outlined.Share, contentDescription = "Share", tint = tint,
-                                                )
-                                            }
-                                            Text(
-                                                "Share", color = tint,
-                                                modifier = Modifier.align(Alignment.BottomCenter),
-                                                style = buttonTextStyle,
-                                            )
-                                        }
-                                        Box {
-                                            IconButton(
-                                                modifier = Modifier.padding(bottom = buttonOffset),
-                                                onClick = {
-                                                    view.playSoundEffect(SoundEffectConstants.CLICK)
-//                                            player.pause()
-                                                    onResetTriggered.emit()
-                                                },
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.Refresh, contentDescription = "Refresh", tint = tint,
-                                                )
-                                            }
-                                            Text(
-                                                "Refresh", color = tint,
-                                                modifier = Modifier.align(Alignment.BottomCenter),
-                                                style = buttonTextStyle,
-                                            )
-                                        }
-                                        Box {
-                                            IconButton(
-                                                modifier = Modifier.padding(bottom = buttonOffset),
-                                                onClick = {
-                                                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                                                    showVideoSettings()
-                                                },
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.MoreVert, contentDescription = "Playback Options", tint = tint,
-                                                )
-                                            }
-                                            Text(
-                                                "Quality", color = tint,
-                                                modifier = Modifier.align(Alignment.BottomCenter),
-                                                style = buttonTextStyle,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Box(
-                            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                        ) {
-
-                            AnimatedVisibility(
-                                visible = showPlayPauseIcon, enter = fadeIn(animationSpec = spring()) + scaleIn(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium
-                                    )
-                                ), exit = fadeOut() + scaleOut()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(94.dp)
-                                        .background(color = Color.Black.copy(alpha = 0.7f), shape = CircleShape), contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (isPlaying) Icons.Rounded.PlayArrow
-                                        else Icons.Rounded.Pause, contentDescription = if (isPlaying) "Play" else "Pause", tint = tint, modifier = Modifier.size(64.dp)
-                                    )
-                                }
-                            }
-
-                            // Auto-hide the icon after a short delay
-                            LaunchedEffect(showPlayPauseIcon) {
-                                if (showPlayPauseIcon) {
-                                    delay(1500)
-                                    showPlayPauseIcon = false
-                                }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-
     @Suppress("unused")
     fun setMainFragment(fragment: MainFragment, overlayQualityContainer: FrameLayout) {
         this.mainFragment = fragment
@@ -824,7 +697,9 @@ class ShortView : ConstraintLayout {
 
     fun play() {
         loadLikes(this.video!!)
+        player.clear()
         player.attach()
+        player.clear()
         playVideo()
     }
 
@@ -839,10 +714,9 @@ class ShortView : ConstraintLayout {
         player.detach()
     }
 
-
     fun cancel() {
-        loadVideoJob?.cancel()
-        loadLikesJob?.cancel()
+        loadVideoTask?.cancel()
+        loadLikesTask?.cancel()
     }
 
     private fun setLoading(isLoading: Boolean) {
@@ -856,14 +730,19 @@ class ShortView : ConstraintLayout {
     }
 
     private fun loadLikes(video: IPlatformVideo) {
-        loadLikesJob?.cancel()
-        loadLikesJob = CoroutineScope(Dispatchers.Main).launch {
-            val ref = Models.referenceFromBuffer(video.url.toByteArray())
-            val extraBytesRef =
-                video.id.value?.let { if (it.isNotEmpty()) it.toByteArray() else null }
+        likeContainer.visibility = GONE
+        dislikeContainer.visibility = GONE
+        likeButton.clearOnCheckedChangeListeners()
+        dislikeButton.clearOnCheckedChangeListeners()
 
-            mainFragment.lifecycleScope.launch(Dispatchers.IO) {
-                try {
+        loadLikesTask?.cancel()
+        loadLikesTask =
+            TaskHandler<IPlatformVideo, Pair<Protocol.Reference, Protocol.QueryReferencesResponse>>(
+                StateApp.instance.scopeGetter, {
+                    val ref = Models.referenceFromBuffer(video.url.toByteArray())
+                    val extraBytesRef =
+                        video.id.value?.let { if (it.isNotEmpty()) it.toByteArray() else null }
+
                     val queryReferencesResponse = ApiMethods.getQueryReferences(
                         ApiMethods.SERVER, ref, null, null, arrayListOf(
                             Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
@@ -877,130 +756,56 @@ class ShortView : ConstraintLayout {
                         ), extraByteReferences = listOfNotNull(extraBytesRef)
                     )
 
-                    val likes = queryReferencesResponse.countsList[0]
-                    val dislikes = queryReferencesResponse.countsList[1]
-                    val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())
-                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())
+                    Pair(ref, queryReferencesResponse)
+                }).success { (ref, queryReferencesResponse) ->
+                val likes = queryReferencesResponse.countsList[0]
+                val dislikes = queryReferencesResponse.countsList[1]
+                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())
+                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())
+                onLikesLoaded.emit(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked)
+                onLikeDislikeUpdated.subscribe(this) { args ->
+                    if (args.hasLiked) {
+                        args.processHandle.opinion(ref, Opinion.like)
+                    } else if (args.hasDisliked) {
+                        args.processHandle.opinion(ref, Opinion.dislike)
+                    } else {
+                        args.processHandle.opinion(ref, Opinion.neutral)
+                    }
 
-                    withContext(Dispatchers.Main) {
-                        onLikesLoaded.emit(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked)
-                        onLikeDislikeUpdated.subscribe(this) { args ->
-                            if (args.hasLiked) {
-                                args.processHandle.opinion(ref, Opinion.like)
-                            } else if (args.hasDisliked) {
-                                args.processHandle.opinion(ref, Opinion.dislike)
-                            } else {
-                                args.processHandle.opinion(ref, Opinion.neutral)
-                            }
-
-                            mainFragment.lifecycleScope.launch(Dispatchers.IO) {
-                                try {
-                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Started backfill")
-                                    args.processHandle.fullyBackfillServersAnnounceExceptions()
-                                    Logger.i(CommentsModalBottomSheet.Companion.TAG, "Finished backfill")
-                                } catch (e: Throwable) {
-                                    Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to backfill servers", e)
-                                }
-                            }
-
-                            StatePolycentric.instance.updateLikeMap(
-                                ref, args.hasLiked, args.hasDisliked
-                            )
+                    mainFragment.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            Logger.i(CommentsModalBottomSheet.Companion.TAG, "Started backfill")
+                            args.processHandle.fullyBackfillServersAnnounceExceptions()
+                            Logger.i(CommentsModalBottomSheet.Companion.TAG, "Finished backfill")
+                        } catch (e: Throwable) {
+                            Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to backfill servers", e)
                         }
                     }
-                } catch (e: Throwable) {
-                    Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to get polycentric likes/dislikes.", e)
+
+                    StatePolycentric.instance.updateLikeMap(
+                        ref, args.hasLiked, args.hasDisliked
+                    )
                 }
             }
-        }
+
+        loadLikesTask?.run(video)
     }
 
     private fun loadVideo(url: String) {
-        loadVideoJob?.cancel()
+        loadVideoTask?.cancel()
         videoDetails = null
+        _lastVideoSource = null
+        _lastAudioSource = null
+        _lastSubtitleSource = null
 
-        loadVideoJob = CoroutineScope(Dispatchers.Main).launch {
-            setLoading(true)
-            _lastVideoSource = null
-            _lastAudioSource = null
-            _lastSubtitleSource = null
+        setLoading(true)
 
-            val result = try {
-                withContext(StateApp.instance.scope.coroutineContext) {
-                    StatePlatform.instance.getContentDetails(url).await()
-                }
-            } catch (_: CancellationException) {
-                return@launch
-            } catch (e: NoPlatformClientException) {
-                Logger.w(TAG, "exception<NoPlatformClientException>", e)
-
-                UIDialogs.showDialog(
-                    context, R.drawable.ic_sources, "No source enabled to support this video\n(${url})", null, null, 0, UIDialogs.Action(
-                        "Close", { }, UIDialogs.ActionStyle.PRIMARY
-                    )
-                )
-                return@launch
-            } catch (e: ScriptLoginRequiredException) {
-                Logger.w(TAG, "exception<ScriptLoginRequiredException>", e)
-                UIDialogs.showDialog(context, R.drawable.ic_security, "Authentication", e.message, null, 0, UIDialogs.Action("Cancel", {}), UIDialogs.Action("Login", {
-                    val id = e.config.let { if (it is SourcePluginConfig) it.id else null }
-                    val didLogin =
-                        if (id == null) false else StatePlugins.instance.loginPlugin(context, id) {
-                            loadVideo(url)
-                        }
-                    if (!didLogin) UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login")
-                }, UIDialogs.ActionStyle.PRIMARY)
-                )
-                return@launch
-            } catch (e: ContentNotAvailableYetException) {
-                Logger.w(TAG, "exception<ContentNotAvailableYetException>", e)
-                UIDialogs.showSingleButtonDialog(context, R.drawable.ic_schedule, "Video is available in ${e.availableWhen}.", "Close") { }
-                return@launch
-            } catch (e: ScriptImplementationException) {
-                Logger.w(TAG, "exception<ScriptImplementationException>", e)
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), e, { loadVideo(url) }, null, mainFragment)
-                return@launch
-            } catch (e: ScriptAgeException) {
-                Logger.w(TAG, "exception<ScriptAgeException>", e)
-                UIDialogs.showDialog(
-                    context, R.drawable.ic_lock, "Age restricted video", e.message, null, 0, UIDialogs.Action("Close", { }, UIDialogs.ActionStyle.PRIMARY)
-                )
-                return@launch
-            } catch (e: ScriptUnavailableException) {
-                Logger.w(TAG, "exception<ScriptUnavailableException>", e)
-                if (video?.datetime == null || video?.datetime!! < OffsetDateTime.now()
-                        .minusHours(1)
-                ) {
-                    UIDialogs.showDialog(
-                        context, R.drawable.ic_lock, context.getString(R.string.unavailable_video), context.getString(R.string.this_video_is_unavailable), null, 0, UIDialogs.Action(context.getString(R.string.close), { }, UIDialogs.ActionStyle.PRIMARY)
-                    )
-                }
-
-                video?.let { StatePlatform.instance.clearContentDetailCache(it.url) }
-                return@launch
-            } catch (e: ScriptException) {
-                Logger.w(TAG, "exception<ScriptException>", e)
-
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), e, { loadVideo(url) }, null, mainFragment)
-                return@launch
-            } catch (e: Throwable) {
-                Logger.w(ChannelFragment.TAG, "Failed to load video.", e)
-                UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), e, { loadVideo(url) }, null, mainFragment)
-                return@launch
-            }
-
-            if (result !is IPlatformVideoDetails) {
-                Logger.w(
-                    TAG, "Wrong content type", IllegalStateException("Expected media content, found ${result.contentType}")
-                )
-                return@launch
-            }
-
-            // if it's been canceled then don't set the video details
-            if (!isActive) {
-                return@launch
-            }
-
+        loadVideoTask = TaskHandler<String, IPlatformVideoDetails>(
+            StateApp.instance.scopeGetter, {
+                val result = StatePlatform.instance.getContentDetails(it).await()
+                if (result !is IPlatformVideoDetails) throw IllegalStateException("Expected media content, found ${result.contentType}")
+                return@TaskHandler result
+            }).success { result ->
             videoDetails = result
             video = result
 
@@ -1009,7 +814,48 @@ class ShortView : ConstraintLayout {
             setLoading(false)
 
             if (playWhenReady) playVideo()
+        }.exception<NoPlatformClientException> {
+            Logger.w(TAG, "exception<NoPlatformClientException>", it)
+            UIDialogs.showDialog(
+                context, R.drawable.ic_sources, "No source enabled to support this video\n(${url})", null, null, 0, UIDialogs.Action("Close", { }, UIDialogs.ActionStyle.PRIMARY)
+            )
+        }.exception<ScriptLoginRequiredException> { e ->
+            Logger.w(TAG, "exception<ScriptLoginRequiredException>", e)
+            UIDialogs.showDialog(
+                context, R.drawable.ic_security, "Authentication", e.message, null, 0, UIDialogs.Action("Cancel", {}), UIDialogs.Action("Login", {
+                    val id = e.config.let { if (it is SourcePluginConfig) it.id else null }
+                    val didLogin =
+                        if (id == null) false else StatePlugins.instance.loginPlugin(context, id) {
+                            loadVideo(url)
+                        }
+                    if (!didLogin) UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login")
+                }, UIDialogs.ActionStyle.PRIMARY)
+            )
+        }.exception<ContentNotAvailableYetException> {
+            Logger.w(TAG, "exception<ContentNotAvailableYetException>", it)
+            UIDialogs.showSingleButtonDialog(context, R.drawable.ic_schedule, "Video is available in ${it.availableWhen}.", "Close") { }
+        }.exception<ScriptImplementationException> {
+            Logger.w(TAG, "exception<ScriptImplementationException>", it)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, { loadVideo(url) }, null, mainFragment)
+        }.exception<ScriptAgeException> {
+            Logger.w(TAG, "exception<ScriptAgeException>", it)
+            UIDialogs.showDialog(
+                context, R.drawable.ic_lock, "Age restricted video", it.message, null, 0, UIDialogs.Action("Close", { }, UIDialogs.ActionStyle.PRIMARY)
+            )
+        }.exception<ScriptUnavailableException> {
+            Logger.w(TAG, "exception<ScriptUnavailableException>", it)
+            UIDialogs.showDialog(
+                context, R.drawable.ic_lock, context.getString(R.string.unavailable_video), context.getString(R.string.this_video_is_unavailable), null, 0, UIDialogs.Action(context.getString(R.string.close), { }, UIDialogs.ActionStyle.PRIMARY)
+            )
+        }.exception<ScriptException> {
+            Logger.w(TAG, "exception<ScriptException>", it)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, { loadVideo(url) }, null, mainFragment)
+        }.exception<Throwable> {
+            Logger.w(ChannelFragment.TAG, "Failed to load video.", it)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, { loadVideo(url) }, null, mainFragment)
         }
+
+        loadVideoTask?.run(url)
     }
 
     private fun playVideo(resumePositionMs: Long = 0) {
@@ -1019,8 +865,6 @@ class ShortView : ConstraintLayout {
             playWhenReady = true
             return
         }
-
-        updateQualitySourcesOverlay(videoDetails, null)
 
         try {
             val videoSource = _lastVideoSource

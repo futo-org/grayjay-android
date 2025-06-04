@@ -36,6 +36,7 @@
     <string name="preferred_quality">Preferred Quality</string>
     <string name="preferred_quality_description">Default quality for watching a video</string>
     <string name="update">Update</string>
+    <string name="refresh">Refresh</string>
     <string name="close">Close</string>
     <string name="never">Never</string>
     <string name="import_options">Select any of the following available import options.</string>
