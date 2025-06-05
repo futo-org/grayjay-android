@@ -131,8 +131,13 @@ class StateHistory {
     fun getHistoryPager(): IPager<HistoryVideo> {
         return _historyDBStore.getObjectPager();
     }
-    fun getHistorySearchPager(query: String): IPager<HistoryVideo> {
-        return _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10);
+    fun getHistorySearchPager(query: String, withAuthor: Boolean = false): IPager<HistoryVideo> {
+        return if(!withAuthor)
+            _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10)
+        else
+            _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10)
+            //_historyDBStore.queryLike2ObjectPager(DBHistory.Index::name, DBHistory.Index::auth,"%${query}%", 10)
+        //TODO: See if we can include author name?
     }
     fun getHistoryIndexByUrl(url: String): DBHistory.Index? {
         return historyIndex[url];

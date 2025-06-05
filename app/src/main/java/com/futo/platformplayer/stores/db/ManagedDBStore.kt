@@ -274,9 +274,16 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
         val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} LIKE ? ${_orderSQL} LIMIT ? OFFSET ?";
         val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, pageSize, page * pageSize));
         return deserializeIndexes(dbDaoBase.getMultiple(query));
+    }fun queryLike2Page(field: String, field2: String, obj: String, page: Int, pageSize: Int): List<I> {
+        val queryStr = "SELECT * FROM ${descriptor.table_name} WHERE ${field} LIKE ? OR ${field2} LIKE ? ${_orderSQL} LIMIT ? OFFSET ?";
+        val query = SimpleSQLiteQuery(queryStr, arrayOf(obj, obj, pageSize, page * pageSize));
+        return deserializeIndexes(dbDaoBase.getMultiple(query));
     }
     fun queryLikeObjectPage(field: String, obj: String, page: Int, pageSize: Int): List<T> {
         return convertObjects(queryLikePage(field, obj, page, pageSize));
+    }
+    fun queryLike2ObjectPage(field: String, field2: String, obj: String, page: Int, pageSize: Int): List<T> {
+        return convertObjects(queryLike2Page(field, field2, obj, page, pageSize));
     }
 
 
@@ -336,11 +343,26 @@ class ManagedDBStore<I: ManagedDBIndex<T>, T, D: ManagedDBDatabase<T, I, DA>, DA
             queryLikePage(field, obj, it - 1, pageSize);
         });
     }
+    fun queryLike2Pager(field: KProperty<*>, field2: KProperty<*>, obj: String, pageSize: Int): IPager<I> = queryLike2Pager(validateFieldName(field), validateFieldName(field2), obj, pageSize);
+    fun queryLike2Pager(field: String, field2: String, obj: String, pageSize: Int): IPager<I> {
+        return AdhocPager({
+            Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
+            queryLike2Page(field, field2, obj, it - 1, pageSize);
+        });
+    }
     fun queryLikeObjectPager(field: KProperty<*>, obj: String, pageSize: Int): IPager<T> = queryLikeObjectPager(validateFieldName(field), obj, pageSize);
     fun queryLikeObjectPager(field: String, obj: String, pageSize: Int): IPager<T> {
         return AdhocPager({
             Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
             queryLikeObjectPage(field, obj, it - 1, pageSize);
+        });
+    }
+
+    fun queryLike2ObjectPager(field: KProperty<*>, field2: KProperty<*>, obj: String, pageSize: Int): IPager<T> = queryLike2ObjectPager(validateFieldName(field), validateFieldName(field2), obj, pageSize);
+    fun queryLike2ObjectPager(field: String, field2: String, obj: String, pageSize: Int): IPager<T> {
+        return AdhocPager({
+            Logger.i("ManagedDBStore", "Next Page [query: ${obj}](${it}) ${pageSize}");
+            queryLike2ObjectPage(field, field2, obj, it - 1, pageSize);
         });
     }
 

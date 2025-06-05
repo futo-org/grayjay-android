@@ -40,6 +40,8 @@ class DropdownField : TableRow, IField {
 
     override var reference: Any? = null;
 
+    override var isAdvanced: Boolean = false;
+
     override val onChanged = Event3<IField, Any, Any>();
 
     override val value: Any? get() = _selected;
@@ -112,7 +114,7 @@ class DropdownField : TableRow, IField {
         return this;
     }
 
-    override fun fromField(obj: Any, field: Field, formField: FormField?) : DropdownField {
+    override fun fromField(obj: Any, field: Field, formField: FormField?, advanced: Boolean) : DropdownField {
         this._field = field;
         this._obj = obj;
 
@@ -133,6 +135,9 @@ class DropdownField : TableRow, IField {
             _description.visibility = View.GONE;
         }
 
+        val advancedFieldAttr = field.getAnnotation(AdvancedField::class.java)
+        if(advancedFieldAttr != null || advanced)
+            isAdvanced = true;
 
         _options = (field.getAnnotation(DropdownFieldOptions::class.java)?.options ?:
             field.getAnnotation(DropdownFieldOptionsId::class.java)?.optionsId?.let { resources.getStringArray(it) } ?:

@@ -12,6 +12,8 @@
     <string name="channel">Channel</string>
     <string name="home">Home</string>
     <string name="progress_bar">Progress Bar</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="advanced_settings_description">If advanced settings should be shown, this exposes additional settings to finetune your experience.</string>
     <string name="progress_bar_description">If a historical progress bar should be shown</string>
     <string name="hide_hidden_from_search">Hide hidden from home in search</string>
     <string name="hide_hidden_from_search_description">Hide videos and creators hidden from home also in search results</string>
@@ -427,7 +429,6 @@
     <string name="seek_offset">Seek duration</string>
     <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
-    <string name="background_switch_audio_description">Optimize bandwidth usage by switching to audio-only stream in background if available, may cause stutter</string>
     <string name="subscription_group_menu">Groups</string>
     <string name="show_subscription_group">Show Subscription Groups</string>
     <string name="use_subscription_exchange">Use Subscription Exchange (Experimental)</string>
@@ -994,6 +995,8 @@
         <item>Download Date (Newest)</item>
         <item>Release Date (Oldest)</item>
         <item>Release Date (Newest)</item>
+        <item>Size (Smallest)</item>
+        <item>Size (Largest)</item>
     </string-array>
     <string-array name="playlists_sortby_array">
         <item>Name (Ascending)</item>
