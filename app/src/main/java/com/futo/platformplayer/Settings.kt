@@ -900,7 +900,23 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.payment_status, FieldForm.READONLYTEXT, -1, 1)
         val paymentStatus: String get() = SettingsActivity.getActivity()?.let { if (StatePayment.instance.hasPaid) it.getString(R.string.paid) else it.getString(R.string.not_paid); } ?: "Unknown";
 
-        @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 2)
+        @FormField(R.string.license_status, FieldForm.BUTTON, R.string.view_license_status, 2)
+        fun viewLicenseStatus() {
+            SettingsActivity.getActivity()?.let {
+                try {
+                    if (StatePayment.instance.hasPaid) {
+                        val paymentKey = StatePayment.instance.getPaymentKey()
+                        UIDialogs.showDialogOk(it, R.drawable.ic_paid, "License activated\n" + paymentKey.first)
+                    } else {
+                        UIDialogs.showDialogOk(it, R.drawable.ic_paid, "No license activated")
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show license status dialog", e)
+                }
+            }
+        }
+
+        @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 3)
         fun clearPayment() {
             SettingsActivity.getActivity()?.let { context ->
                 UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete your license?", {

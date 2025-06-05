@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragVideoDetail: VideoDetailFragment;
 
     //State
-    private val _queue: Queue<Pair<MainFragment, Any?>> = LinkedList();
+    private val _queue: LinkedList<Pair<MainFragment, Any?>> = LinkedList();
     lateinit var fragCurrent: MainFragment private set;
     private var _parameterCurrent: Any? = null;
 
@@ -1183,7 +1183,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             if (segment.isOverlay && !fragCurrent.isOverlay && withHistory)// && fragCurrent.isHistory)
                 fragBeforeOverlay = fragCurrent;
-
 
             fragCurrent = segment;
             _parameterCurrent = parameter;

@@ -330,7 +330,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             }
 
             if (!StatePayment.instance.hasPaid) {
-                newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid_filled, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>(withHistory = false) }))
+                newCurrentButtonDefinitions.add(ButtonDefinition(98, R.drawable.ic_paid, R.drawable.ic_paid_filled, R.string.buy, canToggle = false, { it.currentMain is BuyFragment }, { it.navigate<BuyFragment>(withHistory = true) }))
             }
 
             //Add conditional buttons here, when you add a conditional button, be sure to add the register and unregister events for when the button needs to be updated
@@ -396,7 +396,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>(withHistory = false) }),
             ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>(withHistory = false) }),
             ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { false }, {
-                val c = it.context ?: return@ButtonDefinition;
+            val c = it.context ?: return@ButtonDefinition;
                 Logger.i(TAG, "settings preventPictureInPicture()");
                 it.requireFragment<VideoDetailFragment>().preventPictureInPicture();
                 val intent = Intent(c, SettingsActivity::class.java);

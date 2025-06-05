@@ -442,6 +442,8 @@
     <string name="show_home_filters_plugin_names_description">If home filters should show full plugin names or just icons</string>
     <string name="log_level">Log Level</string>
     <string name="logging">Logging</string>
+    <string name="license_status">License status</string>
+    <string name="view_license_status">View license status</string>
     <string name="sync_grayjay">Sync Grayjay</string>
     <string name="sync_grayjay_description">Sync your data across multiple devices</string>
     <string name="manage_polycentric_identity">Manage Polycentric identity</string>
