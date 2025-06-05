@@ -803,8 +803,12 @@ class SyncService(
         _relaySession = null
         _serverSocket?.close()
         _serverSocket = null
+
         synchronized(_sessions) {
-            _sessions.values.forEach { it.close() }
+            _sessions.values.toList()
+        }.forEach { it.close() }
+
+        synchronized(_sessions) {
             _sessions.clear()
         }
     }
