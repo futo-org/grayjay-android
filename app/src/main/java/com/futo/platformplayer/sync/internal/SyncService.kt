@@ -328,7 +328,7 @@ class SyncService(
                     val now = System.currentTimeMillis()
                     synchronized(_mdnsCache) {
                         for ((pkey, info) in _mdnsCache) {
-                            if (!database.isAuthorized(pkey) || isConnected(pkey)) continue
+                            if (!database.isAuthorized(pkey) || getLinkType(pkey) == LinkType.Direct) continue
 
                             val last = synchronized(_lastConnectTimesMdns) {
                                 _lastConnectTimesMdns[pkey] ?: 0L
@@ -360,8 +360,8 @@ class SyncService(
             while (_started) {
                 val authorizedDevices = database.getAllAuthorizedDevices() ?: arrayOf()
                 val addressesToConnect = authorizedDevices.mapNotNull {
-                    val connected = isConnected(it)
-                    if (connected) {
+                    val connectedDirectly = getLinkType(it) == LinkType.Direct
+                    if (connectedDirectly) {
                         return@mapNotNull null
                     }
 
@@ -468,8 +468,13 @@ class SyncService(
                                         while (_started && !socketClosed) {
                                             val unconnectedAuthorizedDevices =
                                                 database.getAllAuthorizedDevices()
-                                                    ?.filter { !isConnected(it) }?.toTypedArray()
-                                                    ?: arrayOf()
+                                                    ?.filter {
+                                                        if (Settings.instance.synchronization.connectLocalDirectThroughRelay) {
+                                                            getLinkType(it) != LinkType.Direct
+                                                        } else {
+                                                            !isConnected(it)
+                                                        }
+                                                    }?.toTypedArray() ?: arrayOf()
                                             relaySession.publishConnectionInformation(
                                                 unconnectedAuthorizedDevices,
                                                 settings.listenerPort,
@@ -497,7 +502,7 @@ class SyncService(
                                                 val potentialLocalAddresses =
                                                     connectionInfo.ipv4Addresses
                                                         .filter { it != connectionInfo.remoteIp }
-                                                if (connectionInfo.allowLocalDirect && Settings.instance.synchronization.connectLocalDirectThroughRelay) {
+                                                if (getLinkType(targetKey) != LinkType.Direct && connectionInfo.allowLocalDirect && Settings.instance.synchronization.connectLocalDirectThroughRelay) {
                                                     Thread {
                                                         try {
                                                             Log.v(
@@ -529,7 +534,7 @@ class SyncService(
                                                     // TODO: Implement hole punching if needed
                                                 }
 
-                                                if (connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
+                                                if (getLinkType(targetKey) == LinkType.None && connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
                                                     try {
                                                         Logger.v(
                                                             TAG,
@@ -741,6 +746,7 @@ class SyncService(
         )
     }
 
+    fun getLinkType(publicKey: String): LinkType = synchronized(_sessions) { _sessions[publicKey]?.linkType ?: LinkType.None }
     fun isConnected(publicKey: String): Boolean = synchronized(_sessions) { _sessions[publicKey]?.connected ?: false }
     fun isAuthorized(publicKey: String): Boolean = database.isAuthorized(publicKey)
     fun getSession(publicKey: String): SyncSession? = synchronized(_sessions) { _sessions[publicKey] }

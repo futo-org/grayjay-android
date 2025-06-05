@@ -2,6 +2,7 @@ package com.futo.platformplayer.sync.internal
 
 import android.os.Build
 import com.futo.platformplayer.ensureNotMainThread
+import com.futo.platformplayer.findCandidateAddresses
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.DHState
@@ -1078,20 +1079,9 @@ class SyncSocketSession {
     ) {
         if (authorizedKeys.size > 255) throw IllegalArgumentException("Number of authorized keys exceeds 255")
 
-        val ipv4Addresses = mutableListOf<String>()
-        val ipv6Addresses = mutableListOf<String>()
-        for (nic in NetworkInterface.getNetworkInterfaces()) {
-            if (nic.isUp) {
-                for (addr in nic.inetAddresses) {
-                    if (!addr.isLoopbackAddress) {
-                        when (addr) {
-                            is Inet4Address -> ipv4Addresses.add(addr.hostAddress)
-                            is Inet6Address -> ipv6Addresses.add(addr.hostAddress)
-                        }
-                    }
-                }
-            }
-        }
+        val candidateAddresses = findCandidateAddresses()
+        val ipv4Addresses = candidateAddresses.filterIsInstance<Inet4Address>()
+        val ipv6Addresses = candidateAddresses.filterIsInstance<Inet6Address>()
 
         val deviceName = getDeviceName()
         val nameBytes = getLimitedUtf8Bytes(deviceName, 255)
@@ -1103,12 +1093,12 @@ class SyncSocketSession {
         data.put(nameBytes)
         data.put(ipv4Addresses.size.toByte())
         for (addr in ipv4Addresses) {
-            val addrBytes = InetAddress.getByName(addr).address
+            val addrBytes = addr.address
             data.put(addrBytes)
         }
         data.put(ipv6Addresses.size.toByte())
         for (addr in ipv6Addresses) {
-            val addrBytes = InetAddress.getByName(addr).address
+            val addrBytes = addr.address
             data.put(addrBytes)
         }
         data.put(if (allowLocalDirect) 1 else 0)
