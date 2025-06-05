@@ -13,6 +13,7 @@ import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.Noise
 import com.futo.platformplayer.states.StateSync
 import com.futo.polycentric.core.base64ToByteArray
+import com.futo.polycentric.core.base64UrlToByteArray
 import com.futo.polycentric.core.toBase64
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,7 +99,7 @@ class SyncService(
         override fun onServiceLost(service: NsdServiceInfo) {
             Log.e(TAG, "service lost: $service")
             val urlSafePkey = service.attributes["pk"]?.decodeToString() ?: return
-            val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
+            val pkey = urlSafePkey.base64UrlToByteArray().toBase64()
             synchronized(_mdnsCache) {
                 _mdnsCache.remove(pkey)
             }
@@ -128,7 +129,7 @@ class SyncService(
             }
 
             val urlSafePkey = attributes.get("pk")?.decodeToString() ?: return
-            val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
+            val pkey = urlSafePkey.base64UrlToByteArray().toBase64()
             val syncDeviceInfo = SyncDeviceInfo(pkey, adrs.map { it.hostAddress }.toTypedArray(), port, null)
 
             synchronized(_mdnsCache) {
@@ -157,7 +158,7 @@ class SyncService(
                     override fun onServiceLost() {
                         Log.v(TAG, "onServiceLost: $service")
                         val urlSafePkey = service.attributes["pk"]?.decodeToString() ?: return
-                        val pkey = Base64.getDecoder().decode(urlSafePkey.replace('-', '+').replace('_', '/')).toBase64()
+                        val pkey = urlSafePkey.base64UrlToByteArray().toBase64()
                         synchronized(_mdnsCache) {
                             _mdnsCache.remove(pkey)
                         }
