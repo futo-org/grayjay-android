@@ -467,10 +467,14 @@ class VideoDetailFragment() : MainFragment() {
             activity?.enterPictureInPictureMode(params);
     }
     fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, isStop: Boolean, newConfig: Configuration) {
-        if (isInPictureInPictureMode) {
-            _viewDetail?.startPictureInPicture();
-        } else if (isInPictureInPicture) {
-            leavePictureInPictureMode(isStop);
+        try {
+            if (isInPictureInPictureMode) {
+                _viewDetail?.startPictureInPicture();
+            } else if (isInPictureInPicture) {
+                leavePictureInPictureMode(isStop);
+            }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to handle onPictureInPictureModeChanged", e)
         }
     }
     fun leavePictureInPictureMode(isStop: Boolean) {
