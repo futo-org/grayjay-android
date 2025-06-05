@@ -534,7 +534,7 @@ class SyncService(
                                                     // TODO: Implement hole punching if needed
                                                 }
 
-                                                if (getLinkType(targetKey) == LinkType.None && connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
+                                                if (!isConnected(targetKey) && connectionInfo.allowRemoteRelayed && Settings.instance.synchronization.connectThroughRelay) {
                                                     try {
                                                         Logger.v(
                                                             TAG,
