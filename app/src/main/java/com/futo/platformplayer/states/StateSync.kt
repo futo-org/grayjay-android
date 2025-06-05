@@ -84,16 +84,20 @@ class StateSync {
 
             onUnauthorized = { sess ->
                 StateApp.instance.scope.launch(Dispatchers.Main) {
-                    UIDialogs.showConfirmationDialog(
-                        context,
-                        "Device Unauthorized: ${sess.displayName}",
-                        action = {
-                            Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
-                            removeAuthorizedDevice(sess.remotePublicKey)
-                            deviceRemoved.emit(sess.remotePublicKey)
-                        },
-                        cancelAction = {}
-                    )
+                    try {
+                        UIDialogs.showConfirmationDialog(
+                            context,
+                            "Device Unauthorized: ${sess.displayName}",
+                            action = {
+                                Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
+                                removeAuthorizedDevice(sess.remotePublicKey)
+                                deviceRemoved.emit(sess.remotePublicKey)
+                            },
+                            cancelAction = {}
+                        )
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to show unauthorized dialog.", e)
+                    }
                 }
             }
 
@@ -118,30 +122,38 @@ class StateSync {
 
                 if (scope != null && activity != null) {
                     scope.launch(Dispatchers.Main) {
-                        UIDialogs.showConfirmationDialog(activity, "Allow connection from $remotePublicKey?",
-                            action = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        callback(true)
-                                        Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
+                        try {
+                            UIDialogs.showConfirmationDialog(
+                                activity, "Allow connection from $remotePublicKey?",
+                                action = {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            callback(true)
+                                            Logger.i(
+                                                TAG,
+                                                "Connection authorized for $remotePublicKey by confirmation"
+                                            )
 
-                                        activity.finish()
-                                    } catch (e: Throwable) {
-                                        Logger.e(TAG, "Failed to send authorize", e)
+                                            activity.finish()
+                                        } catch (e: Throwable) {
+                                            Logger.e(TAG, "Failed to send authorize", e)
+                                        }
+                                    }
+                                },
+                                cancelAction = {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            callback(false)
+                                            Logger.i(TAG, "$remotePublicKey unauthorized received")
+                                        } catch (e: Throwable) {
+                                            Logger.w(TAG, "Failed to send unauthorize", e)
+                                        }
                                     }
                                 }
-                            },
-                            cancelAction = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        callback(false)
-                                        Logger.i(TAG, "$remotePublicKey unauthorized received")
-                                    } catch (e: Throwable) {
-                                        Logger.w(TAG, "Failed to send unauthorize", e)
-                                    }
-                                }
-                            }
-                        )
+                            )
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to show authorized dialog.", e)
+                        }
                     }
                 } else {
                     callback(false)
