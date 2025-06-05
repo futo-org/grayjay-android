@@ -427,6 +427,12 @@
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
     <string name="seek_offset">Seek duration</string>
+    <string name="min_playback_speed">Minimum Playback Speed</string>
+    <string name="min_playback_speed_description">Minimum Available Speed</string>
+    <string name="max_playback_speed">Maximum Playback Speed</string>
+    <string name="max_playback_speed_description">Maximum Available Speed</string>
+    <string name="step_playback_speed">Playback Speed Step Size</string>
+    <string name="step_playback_speed_description">The step size of playback speeds, may not affect higher playback speeds.</string>
     <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
     <string name="background_switch_audio">Switch to Audio in Background</string>
     <string name="subscription_group_menu">Groups</string>
@@ -1090,6 +1096,23 @@
         <item>20 seconds</item>
         <item>30 seconds</item>
         <item>60 seconds</item>
+    </string-array>
+    <string-array name="max_playback_speed">
+        <item>2.0</item>
+        <item>2.25</item>
+        <item>3.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="min_playback_speed">
+        <item>0.25</item>
+        <item>0.5</item>
+        <item>1.0</item>
+    </string-array>
+    <string-array name="step_playback_speed">
+        <item>0.05</item>
+        <item>0.1</item>
+        <item>0.25</item>
     </string-array>
     <string-array name="rotation_zone">
         <item>15</item>
