@@ -814,7 +814,7 @@ class SyncSocketSession {
                     return
                 }
                 val decryptedPayload = channel.decrypt(data)
-                val errorCode = SyncErrorCode.entries.find { it.value == decryptedPayload.int } ?: SyncErrorCode.ConnectionClosed
+                val errorCode = decryptedPayload.int
                 Logger.e(TAG, "Received relayed error (errorCode = $errorCode) on connectionId $connectionId, closing")
                 channel.close()
                 _channels.remove(connectionId)
@@ -825,7 +825,7 @@ class SyncSocketSession {
                     return
                 }
                 val connectionId = data.long
-                val errorCode = SyncErrorCode.entries.find { it.value == data.int } ?: SyncErrorCode.ConnectionClosed
+                val errorCode = data.int
                 val channel = _channels[connectionId] ?: run {
                     Logger.e(TAG, "Received error code $errorCode for non-existent channel with connectionId $connectionId")
                     return
