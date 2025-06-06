@@ -178,6 +178,7 @@ class PlaylistFragment : MainFragment() {
                 newName = "${playlist.name} (Copy $copyNumber)"
             }
             StatePlaylists.instance.playlistStore.save(playlist.makeCopy(newName))
+            _fragment.navigate<PlaylistsFragment>(withHistory = false)
             UIDialogs.toast("Playlist copied")
         }
 
