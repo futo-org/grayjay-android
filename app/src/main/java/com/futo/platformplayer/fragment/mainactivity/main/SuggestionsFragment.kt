@@ -25,10 +25,10 @@ data class SuggestionsFragmentData(val query: String, val searchType: SearchType
 
 class SuggestionsFragment : MainFragment {
     override val isMainView : Boolean = true;
-    override val hasBottomBar: Boolean = false;
+    override val hasBottomBar: Boolean = true;
     override val isHistory: Boolean = false;
 
-    private var  _recyclerSuggestions: RecyclerView? = null;
+    private var _recyclerSuggestions: RecyclerView? = null;
     private var _llmSuggestions: LinearLayoutManager? = null;
     private var _radioGroupView: RadioGroupView? = null;
     private val _suggestions: ArrayList<String> = ArrayList();
