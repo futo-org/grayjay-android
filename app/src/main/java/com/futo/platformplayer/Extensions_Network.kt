@@ -241,8 +241,11 @@ fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? 
         return null;
     }
 
+    val sortedAddresses: List<InetAddress> = addresses
+        .sortedBy { addr -> addressScore(addr) }
+
     val sockets: ArrayList<Socket> = arrayListOf();
-    for (i in addresses.indices) {
+    for (i in sortedAddresses.indices) {
         sockets.add(Socket());
     }
 
@@ -250,7 +253,7 @@ fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? 
     var connectedSocket: Socket? = null;
     val threads: ArrayList<Thread> = arrayListOf();
     for (i in 0 until sockets.size) {
-        val address = addresses[i];
+        val address = sortedAddresses[i];
         val socket = sockets[i];
         val thread = Thread {
             try {
