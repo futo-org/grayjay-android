@@ -35,8 +35,8 @@ class Playlist {
         this.videos = ArrayList(list);
     }
 
-    fun makeCopy(): Playlist {
-        return Playlist("$name (Copy)", videos)
+    fun makeCopy(newName: String? = null): Playlist {
+        return Playlist(newName ?: name, videos)
     }
 
     companion object {

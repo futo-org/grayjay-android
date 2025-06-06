@@ -170,7 +170,14 @@ class PlaylistFragment : MainFragment() {
         }
 
         private fun copyPlaylist(playlist: Playlist) {
-            StatePlaylists.instance.playlistStore.save(playlist.makeCopy())
+            var copyNumber = 1
+            var newName = "${playlist.name} (Copy)"
+            val playlists = StatePlaylists.instance.playlistStore.getItems()
+            while (playlists.any { it.name == newName }) {
+                copyNumber += 1
+                newName = "${playlist.name} (Copy $copyNumber)"
+            }
+            StatePlaylists.instance.playlistStore.save(playlist.makeCopy(newName))
             UIDialogs.toast("Playlist copied")
         }
 
