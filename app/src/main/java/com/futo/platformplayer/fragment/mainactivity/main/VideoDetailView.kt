@@ -2149,23 +2149,40 @@ class VideoDetailView : ConstraintLayout {
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
+        val qualityPlaybackSpeedTitle = if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", currentPlaybackRate)})"); } else null;
         _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, context.getString(
                     R.string.quality), null, true,
-            if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate)) } else null,
+            qualityPlaybackSpeedTitle,
             if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
-                setButtons(listOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25"), currentPlaybackRate!!.toString());
+                val playbackSpeeds = Settings.instance.playback.getPlaybackSpeeds();
+                val format = if(playbackSpeeds.size < 20) "%.2f" else "%.1f";
+                val playbackLabels = playbackSpeeds.map { String.format(format, it) }.toMutableList();
+                playbackLabels.add("+");
+                playbackLabels.add(0, "-");
+
+                setButtons(playbackLabels, String.format(format, currentPlaybackRate));
                 onClick.subscribe { v ->
+                    val currentPlaybackSpeed = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate();
+                    var playbackSpeedString = v;
+                    val stepSpeed = Settings.instance.playback.getPlaybackSpeedStep();
+                    if(v == "+")
+                        playbackSpeedString = String.format("%.2f", (currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed).toString();
+                    else if(v == "-")
+                        playbackSpeedString = String.format("%.2f", (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed).toString();
+                    val newPlaybackSpeed = playbackSpeedString.toDouble();
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
                         if (!ad.canSetSpeed) {
                             return@subscribe
                         }
 
-                        ad.changeSpeed(v.toDouble())
-                        setSelected(v);
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        ad.changeSpeed(newPlaybackSpeed)
+                        setSelected(playbackSpeedString);
                     } else {
-                        _player.setPlaybackRate(v.toFloat());
-                        setSelected(v);
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        _player.setPlaybackRate(playbackSpeedString.toFloat());
+                        setSelected(playbackSpeedString);
                     }
                 };
             } else null,

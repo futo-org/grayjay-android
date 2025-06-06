@@ -531,6 +531,59 @@ class Settings : FragmentedStorageFileJson() {
             else -> 10_000L;
           }
         }
+
+
+        @FormField(R.string.min_playback_speed, FieldForm.DROPDOWN, R.string.min_playback_speed_description, 25)
+        @DropdownFieldOptionsId(R.array.min_playback_speed)
+        var minimumPlaybackSpeed: Int = 0;
+        @FormField(R.string.max_playback_speed, FieldForm.DROPDOWN, R.string.max_playback_speed_description, 26)
+        @DropdownFieldOptionsId(R.array.max_playback_speed)
+        var maximumPlaybackSpeed: Int = 2;
+        @FormField(R.string.step_playback_speed, FieldForm.DROPDOWN, R.string.step_playback_speed_description, 26)
+        @DropdownFieldOptionsId(R.array.step_playback_speed)
+        var stepPlaybackSpeed: Int = 1;
+
+        fun getPlaybackSpeedStep(): Double {
+            return when(stepPlaybackSpeed) {
+                0 -> 0.05
+                1 -> 0.1
+                2 -> 0.25
+                else -> 0.1;
+            }
+        }
+        fun getPlaybackSpeeds(): List<Double> {
+            val playbackSpeeds = mutableListOf<Double>();
+            playbackSpeeds.add(1.0);
+            val minSpeed = when(minimumPlaybackSpeed) {
+                0 -> 0.25
+                1 -> 0.5
+                2 -> 1.0
+                else -> 0.25
+            }
+            val maxSpeed = when(maximumPlaybackSpeed) {
+                0 -> 2.0
+                1 -> 2.25
+                2 -> 3.0
+                3 -> 4.0
+                4 -> 5.0
+                else -> 2.25;
+            }
+            var testSpeed = 1.0;
+
+            while(testSpeed > minSpeed) {
+                val nextSpeed = (testSpeed - 0.25) as Double;
+                testSpeed = Math.max(nextSpeed, minSpeed);
+                playbackSpeeds.add(testSpeed);
+            }
+            testSpeed = 1.0;
+            while(testSpeed < maxSpeed) {
+                val nextSpeed = (testSpeed + if(testSpeed < 2) 0.25 else 1.0) as Double;
+                testSpeed = Math.min(nextSpeed, maxSpeed);
+                playbackSpeeds.add(testSpeed);
+            }
+            playbackSpeeds.sort();
+            return playbackSpeeds;
+        }
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
