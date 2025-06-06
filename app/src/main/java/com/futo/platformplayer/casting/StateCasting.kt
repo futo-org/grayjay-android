@@ -166,10 +166,11 @@ class StateCasting {
         Logger.i(TAG, "CastingService started.");
 
         _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        startDiscovering()
     }
 
     @Synchronized
-    fun startDiscovering() {
+    private fun startDiscovering() {
         _nsdManager?.apply {
             _discoveryListeners.forEach {
                 discoverServices(it.key, NsdManager.PROTOCOL_DNS_SD, it.value)
@@ -178,7 +179,7 @@ class StateCasting {
     }
 
     @Synchronized
-    fun stopDiscovering() {
+    private fun stopDiscovering() {
         _nsdManager?.apply {
             _discoveryListeners.forEach {
                 try {
