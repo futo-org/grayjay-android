@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
-import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.TaskHandler
@@ -165,12 +164,14 @@ class PlaylistFragment : MainFragment() {
                 };
         }
 
-        private fun copyPlaylist(playlist: Playlist) {
+        private fun savePlaylist(playlist: Playlist) {
             StatePlaylists.instance.playlistStore.save(playlist)
-            _fragment.topBar?.assume<NavigationTopBarFragment>()?.setMenuItems(
-                arrayListOf()
-            )
             UIDialogs.toast("Playlist saved")
+        }
+
+        private fun copyPlaylist(playlist: Playlist) {
+            StatePlaylists.instance.playlistStore.save(playlist.makeCopy())
+            UIDialogs.toast("Playlist copied")
         }
 
         fun onShown(parameter: Any?) {
@@ -188,12 +189,14 @@ class PlaylistFragment : MainFragment() {
                     setButtonExportVisible(false)
                     setButtonEditVisible(true)
 
-                    if (!StatePlaylists.instance.playlistStore.hasItem { it.id == parameter.id }) {
-                        _fragment.topBar?.assume<NavigationTopBarFragment>()
-                            ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
+                    _fragment.topBar?.assume<NavigationTopBarFragment>()
+                        ?.setMenuItems(arrayListOf(Pair(R.drawable.ic_copy) {
+                            if (StatePlaylists.instance.playlistStore.hasItem { it.id == parameter.id }) {
                                 copyPlaylist(parameter)
-                            }))
-                    }
+                            } else {
+                                savePlaylist(parameter)
+                            }
+                        }))
                 } else {
                     setName(null)
                     setVideos(null, false)
@@ -259,7 +262,7 @@ class PlaylistFragment : MainFragment() {
             val playlist = _playlist ?: return
             if (!StatePlaylists.instance.playlistStore.hasItem { it.id == playlist.id }) {
                 UIDialogs.showConfirmationDialog(context, "Playlist must be saved to download", {
-                    copyPlaylist(playlist)
+                    savePlaylist(playlist)
                     download()
                 })
                 return
@@ -292,7 +295,7 @@ class PlaylistFragment : MainFragment() {
             val playlist = _playlist ?: return
             if (!StatePlaylists.instance.playlistStore.hasItem { it.id == playlist.id }) {
                 UIDialogs.showConfirmationDialog(context, "Playlist must be saved to edit the name", {
-                    copyPlaylist(playlist)
+                    savePlaylist(playlist)
                     onEditClick()
                 })
                 return
