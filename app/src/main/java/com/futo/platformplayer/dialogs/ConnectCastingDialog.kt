@@ -103,7 +103,6 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
         super.show();
         Logger.i(TAG, "Dialog shown.");
 
-        StateCasting.instance.startDiscovering()
         (_imageLoader.drawable as Animatable?)?.start();
 
         synchronized(StateCasting.instance.devices) {
@@ -148,7 +147,6 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
     override fun dismiss() {
         super.dismiss()
         (_imageLoader.drawable as Animatable?)?.stop()
-        StateCasting.instance.stopDiscovering()
         StateCasting.instance.onDeviceAdded.remove(this)
         StateCasting.instance.onDeviceChanged.remove(this)
         StateCasting.instance.onDeviceRemoved.remove(this)
