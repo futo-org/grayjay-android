@@ -628,6 +628,11 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var allowIpv6: Boolean = true;
 
+        @AdvancedField
+        @FormField(R.string.allow_ipv4, FieldForm.TOGGLE, R.string.allow_ipv4_description, 5)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var allowLinkLocalIpv4: Boolean = false;
+
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)

@@ -1221,9 +1221,16 @@ class StateCasting {
 
     private fun getLocalUrl(ad: CastingDevice): String {
         var address = ad.localAddress!!
-        if (address.isLinkLocalAddress) {
-            address = findPreferredAddress() ?: address
-            Logger.i(TAG, "Selected casting address: $address")
+        if (Settings.instance.casting.allowLinkLocalIpv4) {
+            if (address.isLinkLocalAddress && address is Inet6Address) {
+                address = findPreferredAddress() ?: address
+                Logger.i(TAG, "Selected casting address: $address")
+            }
+        } else {
+            if (address.isLinkLocalAddress) {
+                address = findPreferredAddress() ?: address
+                Logger.i(TAG, "Selected casting address: $address")
+            }
         }
         return "http://${address.toUrlAddress().trim('/')}:${_castServer.port}";
     }
