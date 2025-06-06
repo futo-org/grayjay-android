@@ -115,6 +115,7 @@ import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.Queue
+import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
 
@@ -218,6 +219,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    val mainId = UUID.randomUUID().toString().substring(0, 5)
+
     constructor() : super() {
         if (BuildConfig.DEBUG) {
             StrictMode.setVmPolicy(
@@ -269,8 +272,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
-        Logger.i(TAG, "MainActivity Starting");
-        StateApp.instance.setGlobalContext(this, lifecycleScope);
+        Logger.w(TAG, "MainActivity Starting [$mainId]");
+        StateApp.instance.setGlobalContext(this, lifecycleScope, mainId);
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
@@ -671,13 +674,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onResume() {
         super.onResume();
-        Logger.v(TAG, "onResume")
+        Logger.w(TAG, "onResume [$mainId]")
         _isVisible = true;
     }
 
     override fun onPause() {
         super.onPause();
-        Logger.v(TAG, "onPause")
+        Logger.w(TAG, "onPause [$mainId]")
         _isVisible = false;
 
         _qrCodeLoadingDialog?.dismiss()
@@ -686,7 +689,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onStop() {
         super.onStop()
-        Logger.v(TAG, "_wasStopped = true");
+        Logger.w(TAG, "onStop [$mainId]");
         _wasStopped = true;
     }
 
@@ -1103,8 +1106,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onDestroy() {
         super.onDestroy();
-        Logger.v(TAG, "onDestroy")
-        StateApp.instance.mainAppDestroyed(this);
+        Logger.w(TAG, "onDestroy [$mainId]")
+        StateApp.instance.mainAppDestroyed(this, mainId);
     }
 
     inline fun <reified T> isFragmentActive(): Boolean {
