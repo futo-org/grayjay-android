@@ -8,7 +8,7 @@
     android:orientation="vertical"
     android:paddingTop="10dp"
     android:animateLayoutChanges="true">
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <LinearLayout
@@ -152,13 +152,14 @@
                 android:id="@+id/button_add_sources"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
                 app:buttonIcon="@drawable/ic_explore"
                 app:buttonText="Add Sources"
                 app:buttonSubText="Install new sources to see more content."
                 />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 
 </LinearLayout>
