@@ -2166,9 +2166,9 @@ class VideoDetailView : ConstraintLayout {
                     var playbackSpeedString = v;
                     val stepSpeed = Settings.instance.playback.getPlaybackSpeedStep();
                     if(v == "+")
-                        playbackSpeedString = String.format("%.2f", (currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed).toString();
+                        playbackSpeedString = String.format("%.2f", Math.min((currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed, 5.0)).toString();
                     else if(v == "-")
-                        playbackSpeedString = String.format("%.2f", (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed).toString();
+                        playbackSpeedString = String.format("%.2f", Math.max(0.1, (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed)).toString();
                     val newPlaybackSpeed = playbackSpeedString.toDouble();
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
