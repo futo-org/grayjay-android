@@ -434,7 +434,7 @@ private fun interfaceScore(nif: NetworkInterface): Int {
     }
 }
 
-private fun addressScore(addr: InetAddress): Int {
+fun addressScore(addr: InetAddress): Int {
     return when (addr) {
         is Inet4Address -> {
             val octets = addr.address.map { it.toInt() and 0xFF }

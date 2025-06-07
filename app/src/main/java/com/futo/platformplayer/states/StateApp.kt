@@ -156,6 +156,8 @@ class StateApp {
         return thisContext;
     }
 
+    private var _mainId: String? = null;
+
     //Files
     private var _tempDirectory: File? = null;
     private var _cacheDirectory: File? = null;
@@ -295,9 +297,12 @@ class StateApp {
     }
 
     //Lifecycle
-    fun setGlobalContext(context: Context, coroutineScope: CoroutineScope? = null) {
+    fun setGlobalContext(context: Context, coroutineScope: CoroutineScope? = null, mainId: String? = null) {
+        _mainId = mainId;
         _context = context;
         _scope = coroutineScope
+        Logger.w(TAG, "Scope initialized ${(coroutineScope != null)}\n ${Log.getStackTraceString(Throwable())}")
+
     }
 
     fun initializeFiles(force: Boolean = false) {
@@ -719,7 +724,9 @@ class StateApp {
             migrateStores(context, managedStores, index + 1);
     }
 
-    fun mainAppDestroyed(context: Context) {
+    fun mainAppDestroyed(context: Context, mainId: String? = null) {
+        if (mainId != null && (_mainId != mainId || _mainId == null))
+            return
         Logger.i(TAG, "App ended");
         _receiverBecomingNoisy?.let {
             _receiverBecomingNoisy = null;
@@ -743,7 +750,8 @@ class StateApp {
 
     fun dispose(){
         _context = null;
-        _scope = null;
+        // _scope = null;
+        Logger.w(TAG, "StateApp disposed: ${Log.getStackTraceString(Throwable())}")
     }
 
     private val _connectivityEvents = object : ConnectivityManager.NetworkCallback() {
