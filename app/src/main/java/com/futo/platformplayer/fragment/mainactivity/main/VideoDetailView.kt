@@ -2719,6 +2719,8 @@ class VideoDetailView : ConstraintLayout {
                         if(it is IPlatformVideo) {
                             if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
                                 UIDialogs.toast("Added to watch later\n[${it.name}]");
+                            else
+                                UIDialogs.toast(context.getString(R.string.already_in_watch_later))
                         }
                     }
                     onAddToQueueClicked.subscribe(this) {

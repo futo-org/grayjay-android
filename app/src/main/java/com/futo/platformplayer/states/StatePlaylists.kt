@@ -178,31 +178,30 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1): Boolean {
-        var wasNew = false;
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false): Boolean {
         synchronized(_watchlistStore) {
-            if(!_watchlistStore.hasItem { it.url == video.url })
-                wasNew = true;
-            _watchlistStore.saveAsync(video);
-            if(orderPosition == -1)
-                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray());
-            else {
-                val existing = _watchlistOrderStore.getAllValues().toMutableList();
-                existing.add(orderPosition, video.url);
-                _watchlistOrderStore.set(*existing.toTypedArray());
+            if (_watchlistStore.hasItem { it.url == video.url }) {
+                return false
             }
-            _watchlistOrderStore.save();
+
+            _watchlistStore.saveAsync(video)
+            if (Settings.instance.other.addToBeginning) {
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray())
+            } else {
+                _watchlistOrderStore.set(*(_watchlistOrderStore.values + listOf(video.url)).toTypedArray())
+            }
+            _watchlistOrderStore.save()
         }
         onWatchLaterChanged.emit();
 
-        if(isUserInteraction) {
+        if (isUserInteraction) {
             val now = OffsetDateTime.now();
             _watchLaterAdds.setAndSave(video.url, now);
             broadcastWatchLaterAddition(video, now);
         }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
-        return wasNew;
+        return true;
     }
 
     fun getLastPlayedPlaylist() : Playlist? {

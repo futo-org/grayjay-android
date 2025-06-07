@@ -466,6 +466,9 @@
     <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
     <string name="playlist_allow_dups">Allow duplicate playlist videos</string>
     <string name="playlist_allow_dups_description">Allow adding duplicate videos to playlists</string>
+    <string name="add_to_beginning_of_watch_later">Save new videos to start of watch later</string>
+    <string name="add_to_beginning_description">When adding videos to watch later add them to the beginning of the list instead of the end</string>
+    <string name="already_in_watch_later">Already in watch later</string>
     <string name="enable_polycentric">Enable Polycentric</string>
     <string name="polycentric_local_cache">Enable Polycentric Local Caching</string>
     <string name="polycentric_local_cache_description">Caches polycentric results on-device to reduce load times, changing requires app reboot</string>
