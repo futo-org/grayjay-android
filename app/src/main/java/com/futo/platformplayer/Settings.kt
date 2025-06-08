@@ -425,48 +425,6 @@ class Settings : FragmentedStorageFileJson() {
             else -> 1.0f;
         };
 
-        @FormField(R.string.maximum_playback_speed, FieldForm.DROPDOWN, -1, 0)
-        @DropdownFieldOptionsId(R.array.maximum_playback_speed)
-        var maximumPlaybackSpeed: Int = 0;
-        fun getMaximumPlaybackSpeed(): Float = when(maximumPlaybackSpeed) {
-            0 -> 2.25f;
-            1 -> 1.0f;
-            2 -> 2.0f;
-            3 -> 3.0f;
-            4 -> 4.0f;
-            5 -> 5.0f;
-            6 -> 6.0f;
-            else -> 2.25f;
-        };
-
-        @FormField(R.string.minimum_playback_speed, FieldForm.DROPDOWN, -1, 0)
-        @DropdownFieldOptionsId(R.array.minimum_playback_speed)
-        var minimumPlaybackSpeed: Int = 0;
-        fun getMinimumPlaybackSpeed(): Float = when(minimumPlaybackSpeed) {
-            0 -> 0.25f;
-            1 -> 1.0f;
-            2 -> 2.0f;
-            3 -> 3.0f;
-            4 -> 4.0f;
-            5 -> 5.0f;
-            else -> 0.25f;
-        };
-
-        fun getPlaybackSpeedList(): List<String> {
-            var maximumSpeed = getMaximumPlaybackSpeed();
-            var currentSpeed = getMinimumPlaybackSpeed();
-            var speedList = mutableListOf<String>()
-            while (currentSpeed <= maximumSpeed) {
-                speedList.add(currentSpeed.toString());
-                currentSpeed += 0.25f
-            }
-            if ("1.0" !in speedList) {
-                speedList.add("1.0");
-                speedList.sort()
-            }
-            return speedList;
-        }
-
         @FormField(R.string.preferred_quality, FieldForm.DROPDOWN, R.string.preferred_quality_description, 1)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
         var preferredQuality: Int = 0;
