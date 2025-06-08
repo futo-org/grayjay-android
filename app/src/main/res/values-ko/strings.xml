@@ -308,8 +308,6 @@
     <string name="manage_your_polycentric_identity">자신의 다중 중심 아이덴티티 관리</string>
     <string name="manual_check">수동 확인</string>
     <string name="manually_check_for_updates">수동으로 업데이트 확인</string>
-    <string name="minimum_playback_speed">최소 재생 속도</string>
-    <string name="maximum_playback_speed">최대 재생 속도</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">제한된 소스에서 다운로드 속도를 증가시키기 위한 동시 스레드 수</string>
     <string name="payment">결제</string>
     <string name="payment_status">결제 상태</string>
@@ -611,23 +609,6 @@
     <string-array name="home_screen_array">
         <item>추천</item>
         <item>구독</item>
-    </string-array>
-    <string-array name="minimum_playback_speed">
-        <item>기본값</item>
-        <item>1.0</item>
-        <item>2.0</item>
-        <item>3.0</item>
-        <item>4.0</item>
-        <item>5.0</item>
-    </string-array>
-    <string-array name="maximum_playback_speed">
-        <item>기본값</item>
-        <item>1.0</item>
-        <item>2.0</item>
-        <item>3.0</item>
-        <item>4.0</item>
-        <item>5.0</item>
-        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>자동 (720p)</item>

@@ -305,8 +305,6 @@
     <string name="manage_your_polycentric_identity">Управляйте своей полицентрической идентичностью</string>
     <string name="manual_check">Ручная проверка</string>
     <string name="manually_check_for_updates">Проверить обновления вручную</string>
-    <string name="minimum_playback_speed">Минимальная скорость воспроизведения</string>
-    <string name="maximum_playback_speed">Максимальная скорость воспроизведения</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Количество одновременных потоков для увеличения скорости загрузки с ограниченных источников</string>
     <string name="payment">Платеж</string>
     <string name="payment_status">Статус платежа</string>
@@ -611,23 +609,6 @@
     <string-array name="home_screen_array">
         <item>Рекомендации</item>
         <item>Подписки</item>
-    </string-array>
-    <string-array name="minimum_playback_speed">
-        <item>По умолчанию</item>
-        <item>1.0</item>
-        <item>2.0</item>
-        <item>3.0</item>
-        <item>4.0</item>
-        <item>5.0</item>
-    </string-array>
-    <string-array name="maximum_playback_speed">
-        <item>По умолчанию</item>
-        <item>1.0</item>
-        <item>2.0</item>
-        <item>3.0</item>
-        <item>4.0</item>
-        <item>5.0</item>
-        <item>6.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>Автоматически (720p)</item>
