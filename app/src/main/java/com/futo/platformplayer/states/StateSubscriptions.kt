@@ -1,5 +1,6 @@
 package com.futo.platformplayer.states
 
+import SubsExchangeClient
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -15,10 +16,10 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringDateMapStorage
+import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ReconstructStore
@@ -68,10 +69,24 @@ class StateSubscriptions {
 
     val onSubscriptionsChanged = Event2<List<Subscription>, Boolean>();
 
+    private val _subsExchangeServer = "https://exchange.grayjay.app/";
+    private val _subscriptionKey = FragmentedStorage.get<StringStorage>("sub_exchange_key");
+
     init {
         global.onUpdateProgress.subscribe { progress, total ->
             onFeedProgress.emit(null, progress, total);
         }
+        if(_subscriptionKey.value.isNullOrBlank())
+            generateNewSubsExchangeKey();
+    }
+
+    fun generateNewSubsExchangeKey(){
+        _subscriptionKey.setAndSave(SubsExchangeClient.createPrivateKey());
+    }
+    fun getSubsExchangeClient(): SubsExchangeClient {
+        if(_subscriptionKey.value.isNullOrBlank())
+            throw IllegalStateException("No valid subscription exchange key set");
+        return SubsExchangeClient(_subsExchangeServer, _subscriptionKey.value);
     }
 
     fun getOldestUpdateTime(): OffsetDateTime {
@@ -314,8 +329,19 @@ class StateSubscriptions {
                 }
             }
 
-            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url))
-                getSubscriptionOtherOrCreate(sub.channel.url, sub.channel.name, sub.channel.thumbnail);
+            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url)) {
+                val subGroups = StateSubscriptionGroups.instance.getSubscriptionGroups().filter { it.urls.contains(sub.channel.url) };
+                for(group in subGroups) {
+                    group.urls.remove(sub.channel.url);
+                    StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
+                }
+                /*
+                getSubscriptionOtherOrCreate(
+                    sub.channel.url,
+                    sub.channel.name,
+                    sub.channel.thumbnail
+                ); */
+            }
         }
         return sub;
     }
@@ -333,12 +359,6 @@ class StateSubscriptions {
         synchronized(_subscriptions) {
             if (_subscriptions.hasItem { urls.contains(it.channel.url) }) {
                 return true;
-            }
-
-            //TODO: This causes issues, because what if the profile is not cached yet when the susbcribe button is loaded for example?
-            val cachedProfile = PolycentricCache.instance.getCachedProfile(urls.first(), true)?.profile;
-            if (cachedProfile != null) {
-                return cachedProfile.ownedClaims.any { c -> _subscriptions.hasItem { s -> c.claim.resolveChannelUrl() == s.channel.url } };
             }
 
             return false;
@@ -366,7 +386,17 @@ class StateSubscriptions {
     }
 
     fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null, subGroup: SubscriptionGroup? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
-        val algo = SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, cacheScope, allowFailure, withCacheFallback, _subscriptionsPool);
+        var exchangeClient: SubsExchangeClient? = null;
+        if(Settings.instance.subscriptions.useSubscriptionExchange) {
+            try {
+                exchangeClient = getSubsExchangeClient();
+            }
+            catch(ex: Throwable){
+                Logger.e(TAG, "Failed to get subs exchange client: ${ex.message}", ex);
+            }
+        }
+
+        val algo = SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, cacheScope, allowFailure, withCacheFallback, _subscriptionsPool, exchangeClient);
         if(onNewCacheHit != null)
             algo.onNewCacheHit.subscribe(onNewCacheHit)
 

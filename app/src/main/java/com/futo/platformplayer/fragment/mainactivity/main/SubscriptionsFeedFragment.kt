@@ -18,6 +18,7 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.exceptions.ChannelException
 import com.futo.platformplayer.exceptions.RateLimitException
+import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionsFeedFragment.SubscriptionsFeedView.FeedFilterSettings
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.models.SubscriptionGroup
@@ -35,7 +36,6 @@ import com.futo.platformplayer.views.ToastView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
@@ -56,6 +56,9 @@ class SubscriptionsFeedFragment : MainFragment() {
     private var _view: SubscriptionsFeedView? = null;
     private var _group: SubscriptionGroup? = null;
     private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+
+    private val _filterLock = Object();
+    private val _filterSettings = FragmentedStorage.get<FeedFilterSettings>("subFeedFilter");
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
@@ -125,6 +128,9 @@ class SubscriptionsFeedFragment : MainFragment() {
             initializeToolbarContent();
 
             setPreviewsEnabled(Settings.instance.subscriptions.previewFeedItems);
+            if (Settings.instance.tabs.find { it.id == 0 }?.enabled != true) {
+                showAnnouncementView()
+            }
         }
 
         fun onShown() {
@@ -142,26 +148,6 @@ class SubscriptionsFeedFragment : MainFragment() {
                 else if(recyclerData.results.size == 0) {
                     loadCache();
                     setLoading(false);
-                }
-            }
-
-            val announcementsView = _announcementsView;
-            val homeTab = Settings.instance.tabs.find { it.id == 0 };
-            val isHomeEnabled = homeTab?.enabled == true;
-            if (announcementsView != null && isHomeEnabled) {
-                recyclerData.adapter.viewsToPrepend.remove(announcementsView)
-                _announcementsView = null
-            }
-
-            if (announcementsView == null && !isHomeEnabled) {
-                val c = context;
-                if (c != null) {
-                    _announcementsView = AnnouncementView(c, null).apply {
-                        recyclerData.adapter.viewsToPrepend.add(this)
-                        this.onClose.subscribe {
-                            recyclerData.adapter.viewsToPrepend.remove(this)
-                        }
-                    }
                 }
             }
 
@@ -192,8 +178,6 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         private var _subscriptionBar: SubscriptionBar? = null;
 
-        private var _announcementsView: AnnouncementView? = null;
-
         @Serializable
         class FeedFilterSettings: FragmentedStorageFileJson() {
             val allowContentTypes: MutableList<ContentType> = mutableListOf(ContentType.MEDIA, ContentType.POST);
@@ -204,12 +188,10 @@ class SubscriptionsFeedFragment : MainFragment() {
                 return Json.encodeToString(this);
             }
         }
-        private val _filterLock = Object();
-        private val _filterSettings = FragmentedStorage.get<FeedFilterSettings>("subFeedFilter");
 
         private var _bypassRateLimit = false;
         private val _lastExceptions: List<Throwable>? = null;
-        private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({StateApp.instance.scope}, { withRefresh ->
+        private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({fragment.lifecycleScope}, { withRefresh ->
             val group = subGroup;
             if(!_bypassRateLimit) {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount(group);
@@ -220,12 +202,14 @@ class SubscriptionsFeedFragment : MainFragment() {
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }
             _bypassRateLimit = false;
-            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh, group);
+            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(fragment.lifecycleScope, withRefresh, group);
             val feed = StateSubscriptions.instance.getFeed(group?.id);
 
             val currentExs = feed?.exceptions ?: listOf();
-            if(currentExs != _lastExceptions && currentExs.any())
-                handleExceptions(currentExs);
+            if(currentExs != _lastExceptions && currentExs.any()) {
+                handleExceptions(currentExs)
+                feed?.exceptions = listOf()
+            }
 
             return@TaskHandler resp;
         })
@@ -302,13 +286,18 @@ class SubscriptionsFeedFragment : MainFragment() {
                     fragment.navigate<SubscriptionGroupFragment>(g);
             };
 
-            synchronized(_filterLock) {
+            synchronized(fragment._filterLock) {
                 _subscriptionBar?.setToggles(
-                    SubscriptionBar.Toggle(context.getString(R.string.videos), _filterSettings.allowContentTypes.contains(ContentType.MEDIA)) { toggleFilterContentTypes(listOf(ContentType.MEDIA, ContentType.NESTED_VIDEO), it);  },
-                    SubscriptionBar.Toggle(context.getString(R.string.posts),  _filterSettings.allowContentTypes.contains(ContentType.POST)) { toggleFilterContentType(ContentType.POST, it); },
-                    SubscriptionBar.Toggle(context.getString(R.string.live), _filterSettings.allowLive) { _filterSettings.allowLive = it; _filterSettings.save(); loadResults(false); },
-                    SubscriptionBar.Toggle(context.getString(R.string.planned), _filterSettings.allowPlanned) { _filterSettings.allowPlanned = it; _filterSettings.save(); loadResults(false); },
-                    SubscriptionBar.Toggle(context.getString(R.string.watched), _filterSettings.allowWatched) { _filterSettings.allowWatched = it; _filterSettings.save(); loadResults(false); }
+                    SubscriptionBar.Toggle(context.getString(R.string.videos), fragment._filterSettings.allowContentTypes.contains(ContentType.MEDIA)) {  view, active ->
+                        toggleFilterContentTypes(listOf(ContentType.MEDIA, ContentType.NESTED_VIDEO), active);  },
+                    SubscriptionBar.Toggle(context.getString(R.string.posts),  fragment._filterSettings.allowContentTypes.contains(ContentType.POST)) {  view, active ->
+                        toggleFilterContentType(ContentType.POST, active); },
+                    SubscriptionBar.Toggle(context.getString(R.string.live), fragment._filterSettings.allowLive) {  view, active ->
+                        fragment._filterSettings.allowLive = active; fragment._filterSettings.save(); loadResults(false); },
+                    SubscriptionBar.Toggle(context.getString(R.string.planned), fragment._filterSettings.allowPlanned) {  view, active ->
+                        fragment._filterSettings.allowPlanned = active; fragment._filterSettings.save(); loadResults(false); },
+                    SubscriptionBar.Toggle(context.getString(R.string.watched), fragment._filterSettings.allowWatched) {  view, active ->
+                        fragment._filterSettings.allowWatched = active; fragment._filterSettings.save(); loadResults(false); }
                 );
             }
 
@@ -319,13 +308,13 @@ class SubscriptionsFeedFragment : MainFragment() {
                 toggleFilterContentType(contentType, isTrue);
         }
         private fun toggleFilterContentType(contentType: ContentType, isTrue: Boolean) {
-            synchronized(_filterLock) {
+            synchronized(fragment._filterLock) {
                 if(!isTrue) {
-                    _filterSettings.allowContentTypes.remove(contentType);
-                } else if(!_filterSettings.allowContentTypes.contains(contentType)) {
-                    _filterSettings.allowContentTypes.add(contentType)
+                    fragment._filterSettings.allowContentTypes.remove(contentType);
+                } else if(!fragment._filterSettings.allowContentTypes.contains(contentType)) {
+                    fragment._filterSettings.allowContentTypes.add(contentType)
                 }
-                _filterSettings.save();
+                fragment._filterSettings.save();
             };
             if(Settings.instance.subscriptions.fetchOnTabOpen) { //TODO: Do this different, temporary workaround
                 loadResults(false);
@@ -338,9 +327,9 @@ class SubscriptionsFeedFragment : MainFragment() {
             val nowSoon = OffsetDateTime.now().plusMinutes(5);
             val filterGroup = subGroup;
             return results.filter {
-                val allowedContentType = _filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
+                val allowedContentType = fragment._filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
 
-                if(it is IPlatformVideo && it.duration > 0 && !_filterSettings.allowWatched && StateHistory.instance.isHistoryWatched(it.url, it.duration))
+                if(it is IPlatformVideo && it.duration > 0 && !fragment._filterSettings.allowWatched && StateHistory.instance.isHistoryWatched(it.url, it.duration))
                     return@filter false;
 
                 //TODO: Check against a sub cache
@@ -349,11 +338,11 @@ class SubscriptionsFeedFragment : MainFragment() {
 
 
                 if(it.datetime?.isAfter(nowSoon) == true) {
-                    if(!_filterSettings.allowPlanned)
+                    if(!fragment._filterSettings.allowPlanned)
                         return@filter false;
                 }
 
-                if(_filterSettings.allowLive) { //If allowLive, always show live
+                if(fragment._filterSettings.allowLive) { //If allowLive, always show live
                     if(it is IPlatformVideo && it.isLive)
                         return@filter true;
                 }

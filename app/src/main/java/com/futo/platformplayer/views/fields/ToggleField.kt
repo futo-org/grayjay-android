@@ -33,6 +33,7 @@ class ToggleField : TableRow, IField {
     private var _lastValue: Boolean = false;
 
     override var reference: Any? = null;
+    override var isAdvanced: Boolean = false;
 
     override val onChanged = Event3<IField, Any, Any>();
 
@@ -75,7 +76,7 @@ class ToggleField : TableRow, IField {
         return this;
     }
 
-    override fun fromField(obj : Any, field : Field, formField: FormField?) : ToggleField {
+    override fun fromField(obj : Any, field : Field, formField: FormField?, advanced: Boolean) : ToggleField {
         this._field = field;
         this._obj = obj;
 
@@ -86,6 +87,11 @@ class ToggleField : TableRow, IField {
         }
         else
             _title.text = field.name;
+
+        val advancedFieldAttr = field.getAnnotation(AdvancedField::class.java)
+        if(advancedFieldAttr != null || advanced) {
+            isAdvanced = true;
+        }
 
         if(attrField == null || attrField.subtitle == -1)
             _description.visibility = View.GONE;

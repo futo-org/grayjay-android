@@ -2,14 +2,18 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.allViews
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.ResultCapabilities
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.TaskHandler
@@ -17,8 +21,12 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.isHttpUrl
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.SearchType
+import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.ToggleBar
+import com.futo.platformplayer.views.others.RadioGroupView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,7 +89,7 @@ class ContentSearchResultsFragment : MainFragment() {
         private var _sortBy: String? = null;
         private var _filterValues: HashMap<String, List<String>> = hashMapOf();
         private var _enabledClientIds: List<String>? = null;
-        private var _channelUrl: String? = null;
+        private var _searchType: SearchType? = null;
 
         private val _taskSearch: TaskHandler<String, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.search.progressBar
@@ -89,11 +97,12 @@ class ContentSearchResultsFragment : MainFragment() {
         constructor(fragment: ContentSearchResultsFragment, inflater: LayoutInflater) : super(fragment, inflater) {
             _taskSearch = TaskHandler<String, IPager<IPlatformContent>>({fragment.lifecycleScope}, { query ->
                 Logger.i(TAG, "Searching for: $query")
-                val channelUrl = _channelUrl;
-                if (channelUrl != null) {
-                    StatePlatform.instance.searchChannel(channelUrl, query, null, _sortBy, _filterValues, _enabledClientIds)
-                } else {
-                    StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
+                when (_searchType)
+                {
+                    SearchType.VIDEO -> StatePlatform.instance.searchRefresh(fragment.lifecycleScope, query, null, _sortBy, _filterValues, _enabledClientIds)
+                    SearchType.CREATOR -> StatePlatform.instance.searchChannelsAsContent(query)
+                    SearchType.PLAYLIST -> StatePlatform.instance.searchPlaylist(query)
+                    else -> throw Exception("Search type must be specified")
                 }
             })
             .success { loadedResult(it); }.exception<ScriptCaptchaRequiredException> {  }
@@ -103,6 +112,25 @@ class ContentSearchResultsFragment : MainFragment() {
             }
 
             setPreviewsEnabled(Settings.instance.search.previewFeedItems);
+
+            initializeToolbar();
+        }
+
+        fun initializeToolbar(){
+            if(_toolbarContentView.allViews.any { it is RadioGroupView })
+                _toolbarContentView.removeView(_toolbarContentView.allViews.find { it is RadioGroupView });
+
+            val radioGroup = RadioGroupView(context);
+            radioGroup.onSelectedChange.subscribe {
+
+                if (it.size != 1)
+                    setSearchType(SearchType.VIDEO);
+                else
+                setSearchType((it[0] ?: SearchType.VIDEO) as SearchType);
+            }
+            radioGroup?.setOptions(listOf(Pair("Media", SearchType.VIDEO), Pair("Creators", SearchType.CREATOR), Pair("Playlists", SearchType.PLAYLIST)), listOf(_searchType), false, true)
+
+            _toolbarContentView.addView(radioGroup);
         }
 
         override fun cleanup() {
@@ -113,7 +141,7 @@ class ContentSearchResultsFragment : MainFragment() {
         fun onShown(parameter: Any?) {
             if(parameter is SuggestionsFragmentData) {
                 setQuery(parameter.query, false);
-                setChannelUrl(parameter.channelUrl, false);
+                setSearchType(parameter.searchType, false)
 
                 fragment.topBar?.apply {
                     if (this is SearchTopBarFragment) {
@@ -129,7 +157,7 @@ class ContentSearchResultsFragment : MainFragment() {
                     onFilterClick.subscribe(this) {
                         _overlayContainer.let {
                             val filterValuesCopy = HashMap(_filterValues);
-                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy, _channelUrl != null);
+                            val filtersOverlay = UISlideOverlays.showFiltersOverlay(lifecycleScope, it, _enabledClientIds!!, filterValuesCopy);
                             filtersOverlay.onOK.subscribe { enabledClientIds, changed ->
                                 if (changed) {
                                     setFilterValues(filtersOverlay.commonCapabilities, filterValuesCopy);
@@ -159,8 +187,14 @@ class ContentSearchResultsFragment : MainFragment() {
                                 navigate<RemotePlaylistFragment>(it);
                             else if(StatePlatform.instance.hasEnabledChannelClient(it))
                                 navigate<ChannelFragment>(it);
-                            else
-                                navigate<VideoDetailFragment>(it);
+                            else {
+                                val url = it;
+                                activity?.let {
+                                    close()
+                                    if(it is MainActivity)
+                                        it.navigate(it.getFragment<VideoDetailFragment>(), url);
+                                }
+                            }
                         }
                         else
                             setQuery(it, true);
@@ -170,11 +204,7 @@ class ContentSearchResultsFragment : MainFragment() {
 
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val commonCapabilities =
-                        if(_channelUrl == null)
-                            StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
-                        else
-                            StatePlatform.instance.getCommonSearchChannelContentsCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
+                    val commonCapabilities = StatePlatform.instance.getCommonSearchCapabilities(StatePlatform.instance.getEnabledClients().map { it.id });
                     val sorts = commonCapabilities?.sorts ?: listOf();
                     if (sorts.size > 1) {
                         withContext(Dispatchers.Main) {
@@ -222,6 +252,12 @@ class ContentSearchResultsFragment : MainFragment() {
             setSortByOptions(null);
         }
 
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
+            if(Settings.instance.search.hidefromSearch)
+                return super.filterResults(results.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) });
+            return super.filterResults(results)
+        }
+
         override fun reload() {
             loadResults();
         }
@@ -235,8 +271,8 @@ class ContentSearchResultsFragment : MainFragment() {
             }
         }
 
-        private fun setChannelUrl(channelUrl: String?, updateResults: Boolean = true) {
-            _channelUrl = channelUrl;
+        private fun setSearchType(searchType: SearchType, updateResults: Boolean = true) {
+            _searchType = searchType
 
             if (updateResults) {
                 clearResults();

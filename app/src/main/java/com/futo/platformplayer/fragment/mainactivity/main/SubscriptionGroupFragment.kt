@@ -256,6 +256,8 @@ class SubscriptionGroupFragment : MainFragment() {
                             val sub = StateSubscriptions.instance.getSubscription(sub) ?: StateSubscriptions.instance.getSubscriptionOther(sub);
                             if(sub != null && sub.channel.thumbnail != null) {
                                 g.image = ImageVariable.fromUrl(sub.channel.thumbnail!!);
+                                if(g.image != null)
+                                    g.image!!.subscriptionUrl = sub.channel.url;
                                 g.image?.setImageView(_imageGroup);
                                 g.image?.setImageView(_imageGroupBackground);
                                 break;
@@ -288,8 +290,8 @@ class SubscriptionGroupFragment : MainFragment() {
                 image.setImageView(_imageGroup);
             }
             else {
-                _imageGroupBackground.setImageResource(0);
-                _imageGroup.setImageResource(0);
+                _imageGroupBackground.setImageDrawable(null);
+                _imageGroup.setImageDrawable(null);
             }
             updateMeta();
             reloadCreators(group);

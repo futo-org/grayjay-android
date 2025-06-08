@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -18,6 +19,7 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -84,7 +86,7 @@ class StatePlaylists {
         if(value.isEmpty())
             return OffsetDateTime.MIN;
         val tryParse = value.toLongOrNull() ?: 0;
-        return OffsetDateTime.ofInstant(Instant.ofEpochSecond(tryParse), ZoneOffset.UTC);
+        return tryParse.sToOffsetDateTimeUTC();
     }
     private fun setWatchLaterReorderTime() {
         val now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -176,11 +178,14 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1) {
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1): Boolean {
+        var wasNew = false;
         synchronized(_watchlistStore) {
+            if(!_watchlistStore.hasItem { it.url == video.url })
+                wasNew = true;
             _watchlistStore.saveAsync(video);
             if(orderPosition == -1)
-                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values) .toTypedArray());
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray());
             else {
                 val existing = _watchlistOrderStore.getAllValues().toMutableList();
                 existing.add(orderPosition, video.url);
@@ -197,6 +202,7 @@ class StatePlaylists {
         }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
+        return wasNew;
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
@@ -225,33 +231,55 @@ class StatePlaylists {
         }
     }
 
+    public fun getWatchLaterSyncPacket(orderOnly: Boolean = false): SyncWatchLaterPackage{
+        return SyncWatchLaterPackage(
+            if (orderOnly) listOf() else getWatchLater(),
+            if (orderOnly) mapOf() else _watchLaterAdds.all(),
+            if (orderOnly) mapOf() else _watchLaterRemovals.all(),
+            getWatchLaterLastReorderTime().toEpochSecond(),
+            _watchlistOrderStore.values.toList()
+        )
+    }
     private fun broadcastWatchLater(orderOnly: Boolean = false) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                if(orderOnly) listOf() else getWatchLater(),
-                if(orderOnly) mapOf() else _watchLaterAdds.all(),
-                if(orderOnly) mapOf() else _watchLaterRemovals.all(),
-                getWatchLaterLastReorderTime().toEpochSecond(),
-                _watchlistOrderStore.values.toList()));
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, getWatchLaterSyncPacket(orderOnly)
+                );
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later", e)
+            }
         };
     }
     private fun broadcastWatchLaterAddition(video: SerializedPlatformVideo, time: OffsetDateTime) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                listOf(video),
-                mapOf(Pair(video.url, time.toEpochSecond())),
-                mapOf(),
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                        listOf(video),
+                        mapOf(Pair(video.url, time.toEpochSecond())),
+                        mapOf(),
 
-            ))
+                        )
+                )
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later addition", e)
+            }
         };
     }
     private fun broadcastWatchLaterRemoval(url: String, time: OffsetDateTime) {
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            StateSync.instance.broadcastJsonData(GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
-                listOf(),
-                mapOf(),
-                mapOf(Pair(url, time.toEpochSecond()))
-            ))
+            try {
+                StateSync.instance.broadcastJsonData(
+                    GJSyncOpcodes.syncWatchLater, SyncWatchLaterPackage(
+                        listOf(),
+                        mapOf(),
+                        mapOf(Pair(url, time.toEpochSecond()))
+                    )
+                )
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to broadcast watch later removal", e)
+            }
         };
     }
 
@@ -287,25 +315,32 @@ class StatePlaylists {
                 broadcastSyncPlaylist(playlist);
         }
     }
-    fun addToPlaylist(id: String, video: IPlatformVideo) {
+    fun addToPlaylist(id: String, video: IPlatformVideo): Boolean {
         synchronized(playlistStore) {
-            val playlist = getPlaylist(id) ?: return;
+            val playlist = getPlaylist(id) ?: return false;
+            if(!Settings.instance.other.playlistAllowDups && playlist.videos.any { it.url == video.url })
+                return false;
+
+
             playlist.videos.add(SerializedPlatformVideo.fromVideo(video));
             playlist.dateUpdate = OffsetDateTime.now();
             playlistStore.saveAsync(playlist, true);
 
             broadcastSyncPlaylist(playlist);
+            return true;
         }
     }
 
     private fun broadcastSyncPlaylist(playlist: Playlist){
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+            try {
                 Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
                 StateSync.instance.broadcastJsonData(
                     GJSyncOpcodes.syncPlaylists,
                     SyncPlaylistsPackage(listOf(playlist), mapOf())
                 );
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to broadcast sync playlist", e)
             }
         };
     }
@@ -319,12 +354,14 @@ class StatePlaylists {
             _playlistRemoved.setAndSave(playlist.id, OffsetDateTime.now());
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                try {
                     Logger.i(StateSubscriptionGroups.TAG, "SyncPlaylist (${playlist.name})");
                     StateSync.instance.broadcastJsonData(
                         GJSyncOpcodes.syncPlaylists,
                         SyncPlaylistsPackage(listOf(), mapOf(Pair(playlist.id, OffsetDateTime.now().toEpochSecond())))
                     );
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to broadcast sync playlists", e)
                 }
             };
         }
@@ -364,12 +401,15 @@ class StatePlaylists {
     companion object {
         val TAG = "StatePlaylists";
         private var _instance : StatePlaylists? = null;
+        private var _lockObject = Object()
         val instance : StatePlaylists
-            get(){
-            if(_instance == null)
-                _instance = StatePlaylists();
-            return _instance!!;
-        };
+            get() {
+                synchronized(_lockObject) {
+                    if (_instance == null)
+                        _instance = StatePlaylists();
+                    return _instance!!;
+                }
+            }
 
         fun finish() {
             _instance?.let {
@@ -383,17 +423,25 @@ class StatePlaylists {
     class PlaylistBackup: ReconstructStore<Playlist>() {
         override fun toReconstruction(obj: Playlist): String {
             val items = ArrayList<String>();
-            items.add(obj.name);
+            items.add(obj.name + ":::" + obj.id);
             items.addAll(obj.videos.map { it.url });
             return items.map { it.replace("\n","") }.joinToString("\n");
         }
         override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, importCache: ImportCache?): Playlist {
+            var idToUse = id;
             val items = backup.split("\n");
             if(items.size <= 0) {
                 throw IllegalStateException("Cannot reconstructor playlist ${id}");
             }
 
-            val name = items[0];
+            var name = items[0];
+            if(name.contains(":::")){
+                val splitIndex = name.indexOf(":::");
+                val foundId = name.substring(splitIndex + 3);
+                if(!foundId.isNullOrEmpty())
+                    idToUse = foundId;
+                name = name.substring(0, splitIndex);
+            }
             val videos = items.drop(1).filter { it.isNotEmpty() }.map {
                 try {
                     val videoUrl = it;
@@ -425,7 +473,7 @@ class StatePlaylists {
                     throw ReconstructionException(name, "${name}:[${it}] ${ex.message}", ex);
                 }
             }.filter { it != null }.map { it!! }
-            return Playlist(id, name, videos);
+            return Playlist(idToUse, name, videos);
         }
     }
 }

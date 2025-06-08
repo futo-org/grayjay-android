@@ -233,7 +233,7 @@
                 android:isScrollContainer="true"
                 android:scrollbars="vertical"
                 android:maxHeight="200dp"
-                android:text="An error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurredAn error has occurred" />
+                android:text="An error has occurred" />
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

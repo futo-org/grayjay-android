@@ -67,7 +67,7 @@ class WebViewRequirementExtractor {
         if(cookieString != null) {
             //val domainParts = domain!!.split(".");
             val cookieDomain = domain!!.getSubdomainWildcardQuery()//"." + domainParts.drop(domainParts.size - 2).joinToString(".");
-            if(allowedUrls.any { it == "everywhere" || it.lowercase().matchesDomain(cookieDomain) })
+            if(allowedUrls.any { it == "everywhere" || domain.matchesDomain(it) })
                 cookiesToFind?.let { cookiesToFind ->
                     val cookies = cookieString.split(";");
                     for(cookieStr in cookies) {

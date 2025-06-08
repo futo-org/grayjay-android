@@ -32,6 +32,7 @@ import com.futo.platformplayer.engine.internal.V8Converter
 import com.futo.platformplayer.engine.packages.PackageBridge
 import com.futo.platformplayer.engine.packages.PackageDOMParser
 import com.futo.platformplayer.engine.packages.PackageHttp
+import com.futo.platformplayer.engine.packages.PackageJSDOM
 import com.futo.platformplayer.engine.packages.PackageUtilities
 import com.futo.platformplayer.engine.packages.V8Package
 import com.futo.platformplayer.getOrThrow
@@ -94,7 +95,11 @@ class V8Plugin {
         withDependency(PackageBridge(this, config));
 
         for(pack in config.packages)
-            withDependency(getPackage(pack));
+            withDependency(getPackage(pack)!!);
+        for(pack in config.packagesOptional)
+            getPackage(pack, true)?.let {
+                withDependency(it);
+            }
     }
 
     fun changeAllowDevSubmit(isAllowed: Boolean) {
@@ -183,6 +188,14 @@ class V8Plugin {
         whenNotBusy {
             synchronized(_runtimeLock) {
                 isStopped = true;
+
+                //Cleanup http
+                for(pack in _depsPackages) {
+                    if(pack is PackageHttp) {
+                        pack.cleanup();
+                    }
+                }
+
                 _runtime?.let {
                     _runtime = null;
                     if(!it.isClosed && !it.isDead) {
@@ -254,13 +267,14 @@ class V8Plugin {
         }
     }
 
-    private fun getPackage(packageName: String): V8Package {
+    private fun getPackage(packageName: String, allowNull: Boolean = false): V8Package? {
         //TODO: Auto get all package types?
         return when(packageName) {
             "DOMParser" -> PackageDOMParser(this)
             "Http" -> PackageHttp(this, config)
             "Utilities" -> PackageUtilities(this, config)
-            else -> throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
+            "JSDOM" -> PackageJSDOM(this, config)
+            else -> if(allowNull) null else throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
         };
     }
 

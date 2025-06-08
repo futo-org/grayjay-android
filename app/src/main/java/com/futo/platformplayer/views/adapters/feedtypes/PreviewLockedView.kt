@@ -76,8 +76,8 @@ class PreviewLockedView : LinearLayout {
             _textLockedUrl.text = content.unlockUrl ?: "";
         }
         else {
-            _imageChannelThumbnail.setImageResource(0);
-            _imageVideoThumbnail.setImageResource(0);
+            _imageChannelThumbnail.setImageDrawable(null);
+            _imageVideoThumbnail.setImageDrawable(null);
             _textLockedDescription.text = "";
             _textLockedUrl.text = "";
         }

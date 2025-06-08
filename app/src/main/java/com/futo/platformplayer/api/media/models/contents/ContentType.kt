@@ -8,10 +8,12 @@ enum class ContentType(val value: Int) {
     POST(2),
     ARTICLE(3),
     PLAYLIST(4),
+    WEB(7),
 
     URL(9),
 
     NESTED_VIDEO(11),
+    CHANNEL(60),
 
     LOCKED(70),
 

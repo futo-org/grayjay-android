@@ -5,6 +5,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
+import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -16,12 +17,12 @@ import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
 import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
-import com.futo.platformplayer.fragment.mainactivity.main.PolycentricProfile
+import com.futo.polycentric.core.PolycentricProfile
 import com.google.android.material.tabs.TabLayout
 
 
 enum class ChannelTab {
-    VIDEOS, CHANNELS, PLAYLISTS, SUPPORT, ABOUT
+    VIDEOS, SHORTS, CHANNELS, PLAYLISTS, SUPPORT, ABOUT
 }
 
 class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
@@ -80,6 +81,19 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
         when (_tabs[position]) {
             ChannelTab.VIDEOS -> {
                 fragment = ChannelContentsFragment.newInstance().apply {
+                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
+                    onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
+                    onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)
+                    onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit)
+                    onAddToClicked.subscribe(this@ChannelViewPagerAdapter.onAddToClicked::emit)
+                    onAddToQueueClicked.subscribe(this@ChannelViewPagerAdapter.onAddToQueueClicked::emit)
+                    onAddToWatchLaterClicked.subscribe(this@ChannelViewPagerAdapter.onAddToWatchLaterClicked::emit)
+                    onLongPress.subscribe(this@ChannelViewPagerAdapter.onLongPress::emit)
+                }
+            }
+
+            ChannelTab.SHORTS -> {
+                fragment = ChannelContentsFragment.newInstance(ResultCapabilities.TYPE_SHORTS).apply {
                     onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
                     onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
                     onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)

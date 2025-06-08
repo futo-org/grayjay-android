@@ -10,7 +10,7 @@ import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.LocalVideoMuxedSourceDescriptor
+import com.futo.platformplayer.api.media.models.streams.DownloadedVideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.LocalVideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
@@ -23,6 +23,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.stores.v2.IStoreItem
 import java.io.File
 import java.time.OffsetDateTime
@@ -56,7 +57,7 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
     override val video: IVideoSourceDescriptor get() = if(audioSource.isNotEmpty())
         LocalVideoUnMuxedSourceDescriptor(this)
     else
-        LocalVideoMuxedSourceDescriptor(this);
+        DownloadedVideoMuxedSourceDescriptor(this);
     override val preview: IVideoSourceDescriptor? get() = videoSerialized.preview;
 
     override val live: IVideoSource? get() = videoSerialized.live;
@@ -70,14 +71,21 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
 
     override val isLive: Boolean get() = videoSerialized.isLive;
 
+    override val isShort: Boolean get() = videoSerialized.isShort;
+
     //TODO: Offline subtitles
     override val subtitles: List<ISubtitleSource> = listOf();
 
-    constructor(video: SerializedPlatformVideoDetails) {
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    var downloadDate: OffsetDateTime? = null;
+
+    constructor(video: SerializedPlatformVideoDetails, downloadDate: OffsetDateTime? = null) {
         this.videoSerialized = video;
+        this.downloadDate = downloadDate;
     }
     constructor(video: IPlatformVideoDetails, subtitleSources: List<SubtitleRawSource>) {
         this.videoSerialized = SerializedPlatformVideoDetails.fromVideo(video, subtitleSources);
+        downloadDate = OffsetDateTime.now();
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? = null;

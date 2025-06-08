@@ -14,7 +14,6 @@ import java.text.DecimalFormat
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
-import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 
@@ -226,6 +225,25 @@ fun Long.toHumanTime(isMs: Boolean): String {
     else
         return  "${prefix}${minsStr}:${secsStr}"
 }
+fun Long.toHumanDuration(isMs: Boolean): String {
+    var scaler = 1;
+    if(isMs)
+        scaler = 1000;
+    val v = Math.abs(this);
+    val hours = Math.max(v/(secondsInHour*scaler), 0);
+    val mins = Math.max((v % (secondsInHour*scaler)) / (secondsInMinute * scaler), 0);
+    val minsStr = mins.toString();
+    val seconds = Math.max(((v % (secondsInHour*scaler)) % (secondsInMinute * scaler))/scaler, 0);
+    val secsStr = seconds.toString().padStart(2, '0');
+    val prefix = if (this < 0) { "-" } else { "" };
+
+    return listOf(
+        if(hours > 0) "${hours}h" else null,
+        if(mins > 0) "${mins}m" else null ,
+        if(seconds > 0) "${seconds}s" else null
+    ).filterNotNull().joinToString(" ");
+}
+
 
 //TODO: Determine if below stuff should have its own proper class, seems a bit too complex for a utility method
 fun String.fixHtmlWhitespace(): Spanned {
@@ -357,14 +375,19 @@ private val slds = hashSetOf(".com.ac", ".net.ac", ".gov.ac", ".org.ac", ".mil.a
 fun String.matchesDomain(queryDomain: String): Boolean {
 
     if(queryDomain.startsWith(".")) {
-
-        val parts = queryDomain.lowercase().split(".");
-        if(parts.size < 3)
+        val parts = this.lowercase().split(".");
+        val queryParts = queryDomain.lowercase().trimStart("."[0]).split(".");
+        if(queryParts.size < 2)
             throw IllegalStateException("Illegal use of wildcards on First-Level-Domain (" + queryDomain + ")");
-        if(parts.size >= 3){
-            val isSLD = slds.contains("." + parts[parts.size - 2] + "." + parts[parts.size - 1]);
-            if(isSLD && parts.size <= 3)
+        else {
+            val possibleDomain = "." + queryParts.joinToString(".");
+            if(slds.contains(possibleDomain))
                 throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain (" + queryDomain + ")");
+            /*
+            val isSLD = slds.contains("." + queryParts[queryParts.size - 2] + "." + queryParts[queryParts.size - 1]);
+            if(isSLD && queryParts.size <= 3)
+                throw IllegalStateException("Illegal use of wildcards on Second-Level-Domain (" + queryDomain + ")");
+            */
         }
 
         //TODO: Should be safe, but double verify if can't be exploited
@@ -376,9 +399,11 @@ fun String.matchesDomain(queryDomain: String): Boolean {
 
 fun String.getSubdomainWildcardQuery(): String {
     val domainParts = this.split(".");
-    val sldParts = "." + domainParts[domainParts.size - 2].lowercase() + "." + domainParts[domainParts.size - 1].lowercase();
-    if(slds.contains(sldParts))
-        return "." + domainParts.drop(domainParts.size - 3).joinToString(".");
+    var wildcardDomain = if(domainParts.size > 2)
+        "." + domainParts.drop(1).joinToString(".")
     else
-        return "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+        "." + domainParts.joinToString(".");
+    if(slds.contains(wildcardDomain.lowercase()))
+        "." + domainParts.joinToString(".");
+    return wildcardDomain;
 }

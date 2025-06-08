@@ -41,6 +41,8 @@ class ButtonField : BigButton, IField {
         return null;
     };
 
+    override var isAdvanced: Boolean = false;
+
     //private val _title : TextView;
     //private val _subtitle : TextView;
 
@@ -89,7 +91,7 @@ class ButtonField : BigButton, IField {
 
         return this;
     }
-    override fun fromField(obj : Any, field : Field, formField: FormField?) : ButtonField {
+    override fun fromField(obj : Any, field : Field, formField: FormField?, advanced: Boolean) : ButtonField {
         throw IllegalStateException("ButtonField should only be used for methods");
     }
     override fun setField() {

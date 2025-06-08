@@ -10,12 +10,14 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
+import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.models.JSWeb
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
@@ -33,6 +35,7 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.withTimestamp
 import kotlin.math.floor
+import kotlin.math.max
 
 abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent, IPlatformContent, IPager<IPlatformContent>, ContentPreviewViewHolder> where TFragment : MainFragment {
     private var _exoPlayer: PlayerManager? = null;
@@ -81,8 +84,8 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         };
         adapter.onAddToWatchLaterClicked.subscribe(this) {
             if(it is IPlatformVideo) {
-                StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true);
-                UIDialogs.toast("Added to watch later\n[${it.name}]");
+                if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
+                    UIDialogs.toast("Added to watch later\n[${it.name}]");
             }
         };
         adapter.onLongPress.subscribe(this) {
@@ -168,7 +171,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         val glmResults =
             GridLayoutManager(
                 context,
-                (resources.configuration.screenWidthDp / resources.getDimension(R.dimen.landscape_threshold)).toInt() + 1
+                max((resources.configuration.screenWidthDp.toDouble() / resources.getInteger(R.integer.column_width_dp)).toInt(), 1)
             );
         return glmResults
     }
@@ -195,16 +198,24 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
             fragment.navigate<RemotePlaylistFragment>(content);
         } else if (content is IPlatformPost) {
             fragment.navigate<PostDetailFragment>(content);
+        } else if(content is IPlatformArticle) {
+            fragment.navigate<ArticleDetailFragment>(content);
         }
+        else if(content is JSWeb) {
+            fragment.navigate<WebDetailFragment>(content);
+        }
+        else
+            UIDialogs.appToast("Unknown content type [" + content.contentType.name + "]");
     }
     protected open fun onContentUrlClicked(url: String, contentType: ContentType) {
         when(contentType) {
             ContentType.MEDIA -> {
-                StatePlayer.instance.clearQueue();
-                fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail();
-            };
-            ContentType.PLAYLIST -> fragment.navigate<RemotePlaylistFragment>(url);
-            ContentType.URL -> fragment.navigate<BrowserFragment>(url);
+                StatePlayer.instance.clearQueue()
+                fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail()
+            }
+            ContentType.PLAYLIST -> fragment.navigate<RemotePlaylistFragment>(url)
+            ContentType.URL -> fragment.navigate<BrowserFragment>(url)
+            ContentType.CHANNEL -> fragment.navigate<ChannelFragment>(url)
             else -> {};
         }
     }

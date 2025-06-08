@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.text.Layout
 import android.text.method.ScrollingMovementMethod
@@ -199,16 +200,21 @@ class UIDialogs {
             dialog.show();
         }
 
-        fun showDialog(context: Context, icon: Int, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action) {
+        fun showDialog(context: Context, icon: Int, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action): AlertDialog {
+            return showDialog(context, icon, false, text, textDetails, code, defaultCloseAction, *actions);
+        }
+        fun showDialog(context: Context, icon: Int, animated: Boolean, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action): AlertDialog {
             val builder = AlertDialog.Builder(context);
             val view = LayoutInflater.from(context).inflate(R.layout.dialog_multi_button, null);
             builder.setView(view);
-
+            builder.setCancelable(defaultCloseAction > -2);
             val dialog = builder.create();
             registerDialogOpened(dialog);
 
             view.findViewById<ImageView>(R.id.dialog_icon).apply {
                 this.setImageResource(icon);
+                if(animated)
+                    this.drawable.assume<Animatable, Unit> { it.start() };
             }
             view.findViewById<TextView>(R.id.dialog_text).apply {
                 this.text = text;
@@ -275,6 +281,7 @@ class UIDialogs {
                 registerDialogClosed(dialog);
             }
             dialog.show();
+            return dialog;
         }
 
         fun showGeneralErrorDialog(context: Context, msg: String, ex: Throwable? = null, button: String = "Ok", onOk: (()->Unit)? = null) {
@@ -312,7 +319,11 @@ class UIDialogs {
                         closeAction?.invoke()
                     }, UIDialogs.ActionStyle.NONE),
                     UIDialogs.Action(context.getString(R.string.retry), {
-                        retryAction?.invoke();
+                        try {
+                            retryAction?.invoke();
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Unhandled exception retrying", e)
+                        }
                     }, UIDialogs.ActionStyle.PRIMARY)
                 );
             else
@@ -326,7 +337,11 @@ class UIDialogs {
                         closeAction?.invoke()
                     }, UIDialogs.ActionStyle.NONE),
                     UIDialogs.Action(context.getString(R.string.retry), {
-                        retryAction?.invoke();
+                        try {
+                            retryAction?.invoke();
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Unhandled exception retrying", e)
+                        }
                     }, UIDialogs.ActionStyle.PRIMARY)
                 );
         }
@@ -368,8 +383,8 @@ class UIDialogs {
             }
         }
 
-        fun showChangelogDialog(context: Context, lastVersion: Int) {
-            val dialog = ChangelogDialog(context);
+        fun showChangelogDialog(context: Context, lastVersion: Int, changelogs: Map<Int, String>? = null) {
+            val dialog = ChangelogDialog(context, changelogs);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();

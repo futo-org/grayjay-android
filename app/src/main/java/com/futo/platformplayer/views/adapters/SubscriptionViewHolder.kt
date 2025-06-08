@@ -15,7 +15,6 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanTimeIndicator
@@ -31,14 +30,6 @@ class SubscriptionViewHolder : ViewHolder {
     private val _buttonSettings: ImageButton;
     private val _platformIndicator : PlatformIndicator;
     private val _textMeta: TextView;
-
-    private val _taskLoadProfile = TaskHandler<PlatformID, PolycentricCache.CachedPolycentricProfile?>(
-        StateApp.instance.scopeGetter,
-        { PolycentricCache.instance.getProfileAsync(it) })
-        .success { it -> onProfileLoaded(null, it, true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load profile.", it);
-        };
 
     var subscription: Subscription? = null
         private set;
@@ -74,45 +65,12 @@ class SubscriptionViewHolder : ViewHolder {
     }
 
     fun bind(sub: Subscription) {
-        _taskLoadProfile.cancel();
-
         this.subscription = sub;
 
         _creatorThumbnail.setThumbnail(sub.channel.thumbnail, false);
         _textName.text = sub.channel.name;
         bindViewMetrics(sub);
         _platformIndicator.setPlatformFromClientID(sub.channel.id.pluginId);
-        
-        val cachedProfile = PolycentricCache.instance.getCachedProfile(sub.channel.url, true);
-        if (cachedProfile != null) {
-            onProfileLoaded(sub, cachedProfile, false);
-            if (cachedProfile.expired) {
-                _taskLoadProfile.run(sub.channel.id);
-            }
-        } else {
-            _taskLoadProfile.run(sub.channel.id);
-        }
-    }
-
-    private fun onProfileLoaded(sub: Subscription?, cachedPolycentricProfile: PolycentricCache.CachedPolycentricProfile?, animate: Boolean) {
-        val dp_46 = 46.dp(itemView.context.resources);
-        val profile = cachedPolycentricProfile?.profile;
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_46 * dp_46)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) };
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(this.subscription?.channel?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        if (profile != null) {
-            _textName.text = profile.systemState.username;
-        }
-
-        if(sub != null)
-            bindViewMetrics(sub)
     }
 
     fun bindViewMetrics(sub: Subscription?) {

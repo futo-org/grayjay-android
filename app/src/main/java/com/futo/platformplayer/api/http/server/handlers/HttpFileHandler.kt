@@ -73,7 +73,7 @@ class HttpFileHandler(method: String, path: String, private val contentType: Str
                         Logger.v(TAG, "Sent bytes $current-${current + bytesToSend}, totalBytesSent=$totalBytesSent")
 
                         current += bytesToSend.toLong()
-                        if (current >= end) {
+                        if (current > end) {
                             Logger.i(TAG, "Expected amount of bytes sent")
                             break
                         }

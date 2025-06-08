@@ -4,19 +4,31 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.services.DownloadService
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.toHumanBytesSize
+import com.futo.platformplayer.toHumanDuration
 import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
 import com.futo.platformplayer.views.adapters.viewholders.VideoDownloadViewHolder
@@ -25,6 +37,7 @@ import com.futo.platformplayer.views.items.PlaylistDownloadItem
 import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
 
 class DownloadsFragment : MainFragment() {
     private val TAG = "DownloadsFragment";
@@ -44,6 +57,15 @@ class DownloadsFragment : MainFragment() {
     override fun onResume() {
         super.onResume()
         _view?.reloadUI();
+
+        if(StateDownloads.instance.getDownloading().any { it.state == VideoDownload.State.QUEUED } &&
+            !StateDownloads.instance.getDownloading().any { it.state == VideoDownload.State.DOWNLOADING } &&
+            Settings.instance.downloads.shouldDownload()) {
+            Logger.w(TAG, "Detected queued download, while not downloading, attempt recreating service");
+            StateApp.withContext {
+                DownloadService.getOrCreateService(it);
+            }
+        }
 
         StateDownloads.instance.onDownloadsChanged.subscribe(this) {
             lifecycleScope.launch(Dispatchers.Main) {
@@ -92,11 +114,18 @@ class DownloadsFragment : MainFragment() {
 
         private val _listDownloadedHeader: LinearLayout;
         private val _listDownloadedMeta: TextView;
+        private val _listDownloadSearch: EditText;
         private val _listDownloaded: AnyInsertedAdapterView<VideoLocal, VideoDownloadViewHolder>;
+
+        private var lastDownloads: List<VideoLocal>? = null;
+        private var ordering = FragmentedStorage.get<StringStorage>("downloads_ordering")
 
         constructor(frag: DownloadsFragment, inflater: LayoutInflater): super(frag.requireContext()) {
             inflater.inflate(R.layout.fragment_downloads, this);
             _frag = frag;
+
+            if(ordering.value.isNullOrBlank())
+                ordering.value = "nameAsc";
 
             _usageUsed = findViewById(R.id.downloads_usage_used);
             _usageAvailable = findViewById(R.id.downloads_usage_available);
@@ -104,6 +133,7 @@ class DownloadsFragment : MainFragment() {
 
             _listActiveDownloadsContainer = findViewById(R.id.downloads_active_downloads_container);
             _listActiveDownloadsMeta = findViewById(R.id.downloads_active_downloads_meta);
+            _listDownloadSearch = findViewById(R.id.downloads_search);
             _listActiveDownloads = findViewById(R.id.downloads_active_downloads_list);
 
             _listPlaylistsContainer = findViewById(R.id.downloads_playlist_container);
@@ -112,6 +142,33 @@ class DownloadsFragment : MainFragment() {
 
             _listDownloadedHeader = findViewById(R.id.downloads_videos_header);
             _listDownloadedMeta = findViewById(R.id.downloads_videos_meta);
+
+            _listDownloadSearch.addTextChangedListener {
+                updateContentFilters();
+            }
+            val spinnerSortBy: Spinner = findViewById(R.id.spinner_sortby);
+            spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.downloads_sortby_array)).also {
+                it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
+            };
+            val options = listOf("nameAsc", "nameDesc", "downloadDateAsc", "downloadDateDesc", "releasedAsc", "releasedDesc", "sizeAsc", "sizeDesc");
+            spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                    when(pos) {
+                        0 -> ordering.setAndSave("nameAsc")
+                        1 -> ordering.setAndSave("nameDesc")
+                        2 -> ordering.setAndSave("downloadDateAsc")
+                        3 -> ordering.setAndSave("downloadDateDesc")
+                        4 -> ordering.setAndSave("releasedAsc")
+                        5 -> ordering.setAndSave("releasedDesc")
+                        6 -> ordering.setAndSave("sizeAsc")
+                        7 -> ordering.setAndSave("sizeDesc")
+                        else -> ordering.setAndSave("")
+                    }
+                    updateContentFilters()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            };
+            spinnerSortBy.setSelection(Math.max(0, options.indexOf(ordering.value)));
 
             _listDownloaded = findViewById<RecyclerView>(R.id.list_downloaded)
                 .asAnyWithTop(findViewById(R.id.downloads_top)) {
@@ -124,7 +181,6 @@ class DownloadsFragment : MainFragment() {
 
             reloadUI();
         }
-
 
         fun reloadUI() {
             val usage = StateDownloads.instance.getTotalUsage(true);
@@ -181,10 +237,34 @@ class DownloadsFragment : MainFragment() {
                 _listDownloadedHeader.visibility = GONE;
             } else {
                 _listDownloadedHeader.visibility = VISIBLE;
-                _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()})";
+                _listDownloadedMeta.text = "(${downloaded.size} ${context.getString(R.string.videos).lowercase()}${if(downloaded.size > 0) ", ${downloaded.sumOf { it.duration }.toHumanDuration(false)}" else ""})";
             }
 
-            _listDownloaded.setData(downloaded);
+            lastDownloads = downloaded;
+            _listDownloaded.setData(filterDownloads(downloaded));
+        }
+        fun updateContentFilters(){
+            val toFilter = lastDownloads ?: return;
+            _listDownloaded.setData(filterDownloads(toFilter));
+        }
+        fun filterDownloads(vids: List<VideoLocal>): List<VideoLocal>{
+            var vidsToReturn = vids;
+            if(!_listDownloadSearch.text.isNullOrEmpty())
+                vidsToReturn = vids.filter { it.name.contains(_listDownloadSearch.text, true) || it.author.name.contains(_listDownloadSearch.text, true) };
+            if(!ordering.value.isNullOrEmpty()) {
+                vidsToReturn = when(ordering.value){
+                    "downloadDateAsc" -> vidsToReturn.sortedBy { it.downloadDate ?: OffsetDateTime.MAX };
+                    "downloadDateDesc" -> vidsToReturn.sortedByDescending { it.downloadDate ?: OffsetDateTime.MIN };
+                    "nameAsc" -> vidsToReturn.sortedBy { it.name.lowercase() }
+                    "nameDesc" -> vidsToReturn.sortedByDescending { it.name.lowercase() }
+                    "releasedAsc" -> vidsToReturn.sortedBy { it.datetime ?: OffsetDateTime.MAX }
+                    "releasedDesc" -> vidsToReturn.sortedByDescending { it.datetime ?: OffsetDateTime.MIN }
+                    "sizeAsc" -> vidsToReturn.sortedBy { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
+                    "sizeDesc" -> vidsToReturn.sortedByDescending { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
+                    else -> vidsToReturn
+                }
+            }
+            return vidsToReturn;
         }
     }
 }

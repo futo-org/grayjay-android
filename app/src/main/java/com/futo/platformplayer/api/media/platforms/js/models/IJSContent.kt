@@ -1,6 +1,7 @@
 package com.futo.platformplayer.api.media.platforms.js.models
 
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.api.media.models.JSChannelContent
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -26,6 +27,9 @@ interface IJSContent: IPlatformContent  {
                 ContentType.NESTED_VIDEO -> JSNestedMediaContent(config, obj);
                 ContentType.PLAYLIST -> JSPlaylist(config, obj);
                 ContentType.LOCKED -> JSLockedContent(config, obj);
+                ContentType.CHANNEL -> JSChannelContent(config, obj);
+                ContentType.ARTICLE -> JSArticle(config, obj);
+                ContentType.WEB -> JSWeb(config, obj);
                 else -> throw NotImplementedError("Unknown content type ${type}");
             }
         }

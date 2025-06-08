@@ -38,7 +38,8 @@ open class SerializedPlatformVideoDetails(
     override val video: ISerializedVideoSourceDescriptor,
     override val preview: ISerializedVideoSourceDescriptor?,
 
-    override val subtitles: List<SubtitleRawSource> = listOf()
+    override val subtitles: List<SubtitleRawSource> = listOf(),
+    override val isShort: Boolean = false
 ) : IPlatformVideo, IPlatformVideoDetails {
     final override val contentType: ContentType get() = ContentType.MEDIA;
 

@@ -7,6 +7,8 @@ import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.PresetImages
 import com.futo.platformplayer.R
+import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateSubscriptions
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Transient
 import java.io.File
@@ -18,7 +20,8 @@ data class ImageVariable(
     @Transient
     @Contextual
     private val bitmap: Bitmap? = null,
-    val presetName: String? = null) {
+    val presetName: String? = null,
+    var subscriptionUrl: String? = null) {
 
     @SuppressLint("DiscouragedApi")
     fun setImageView(imageView: ImageView, fallbackResId: Int = -1) {
@@ -26,13 +29,19 @@ data class ImageVariable(
             Glide.with(imageView)
                 .load(bitmap)
                 .into(imageView)
-        } else if(resId != null) {
+        } else if(resId != null && resId > 0) {
             Glide.with(imageView)
                 .load(resId)
                 .into(imageView)
         } else if(!url.isNullOrEmpty()) {
             Glide.with(imageView)
                 .load(url)
+                .error(if(!subscriptionUrl.isNullOrBlank()) StateSubscriptions.instance.getSubscription(subscriptionUrl!!)?.channel?.thumbnail else null)
+                .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .into(imageView);
+        } else if(!subscriptionUrl.isNullOrEmpty()) {
+            Glide.with(imageView)
+                .load(StateSubscriptions.instance.getSubscription(subscriptionUrl!!)?.channel?.thumbnail)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
                 .into(imageView);
         } else if(!presetName.isNullOrEmpty()) {
@@ -63,7 +72,13 @@ data class ImageVariable(
             return ImageVariable(null, null, null, str);
         }
         fun fromFile(file: File): ImageVariable {
-            return ImageVariable.fromBitmap(BitmapFactory.decodeFile(file.absolutePath));
+            try {
+                return ImageVariable.fromBitmap(BitmapFactory.decodeFile(file.absolutePath));
+            }
+            catch(ex: Throwable) {
+                Logger.e("ImageVariable", "Unsupported image format? " + ex.message, ex);
+                return fromResource(R.drawable.ic_error_pred);
+            }
         }
     }
 }

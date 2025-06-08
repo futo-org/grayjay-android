@@ -27,6 +27,7 @@ class HLSVariantAudioUrlSource(
     override val language: String,
     override val duration: Long?,
     override val priority: Boolean,
+    override val original: Boolean,
     val url: String
 ) : IAudioUrlSource {
     override fun getAudioUrl(): String {

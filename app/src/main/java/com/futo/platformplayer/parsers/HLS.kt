@@ -1,5 +1,11 @@
 package com.futo.platformplayer.parsers
 
+import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.hls.playlist.DefaultHlsPlaylistParserFactory
+import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
+import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantSubtitleUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.HLSVariantVideoUrlSource
@@ -7,12 +13,15 @@ import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudi
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.toYesNo
 import com.futo.platformplayer.yesNoToBoolean
+import java.io.ByteArrayInputStream
 import java.net.URI
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.text.ifEmpty
 
 class HLS {
     companion object {
+        @OptIn(UnstableApi::class)
         fun parseMasterPlaylist(masterPlaylistContent: String, sourceUrl: String): MasterPlaylist {
             val baseUrl = URI(sourceUrl).resolve("./").toString()
 
@@ -49,6 +58,31 @@ class HLS {
             return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments)
         }
 
+        fun mediaRenditionToVariant(rendition: MediaRendition): HLSVariantAudioUrlSource? {
+            if (rendition.uri == null) {
+                return null
+            }
+
+            val suffix = listOf(rendition.language, rendition.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+            return when (rendition.type) {
+                "AUDIO" -> HLSVariantAudioUrlSource(rendition.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", rendition.language ?: "", null, false, false, rendition.uri)
+                else -> null
+            }
+        }
+
+        fun variantReferenceToVariant(reference: VariantPlaylistReference): HLSVariantVideoUrlSource {
+            var width: Int? = null
+            var height: Int? = null
+            val resolutionTokens = reference.streamInfo.resolution?.split('x')
+            if (resolutionTokens?.isNotEmpty() == true) {
+                width = resolutionTokens[0].toIntOrNull()
+                height = resolutionTokens[1].toIntOrNull()
+            }
+
+            val suffix = listOf(reference.streamInfo.video, reference.streamInfo.codecs).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
+            return HLSVariantVideoUrlSource(suffix, width ?: 0, height ?: 0, "application/vnd.apple.mpegurl", reference.streamInfo.codecs ?: "", reference.streamInfo.bandwidth, 0, false, reference.url)
+        }
+
         fun parseVariantPlaylist(content: String, sourceUrl: String): VariantPlaylist {
             val lines = content.lines()
             val version = lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull()
@@ -61,7 +95,25 @@ class HLS {
             val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
             val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
+            val keyInfo =
+                lines.find { it.startsWith("#EXT-X-KEY:") }?.substringAfter(":")?.split(",")
+
+            val key = keyInfo?.find { it.startsWith("URI=") }?.substringAfter("=")?.trim('"')
+            val iv =
+                keyInfo?.find { it.startsWith("IV=") }?.substringAfter("=")?.substringAfter("x")
+
+            val decryptionInfo: DecryptionInfo? = key?.let { k ->
+                DecryptionInfo(k, iv)
+            }
+
+            val initSegment =
+                lines.find { it.startsWith("#EXT-X-MAP:") }?.substringAfter(":")?.split(",")?.get(0)
+                    ?.substringAfter("=")?.trim('"')
             val segments = mutableListOf<Segment>()
+            if (initSegment != null) {
+                segments.add(MediaSegment(0.0, resolveUrl(sourceUrl, initSegment)))
+            }
+
             var currentSegment: MediaSegment? = null
             lines.forEach { line ->
                 when {
@@ -86,7 +138,7 @@ class HLS {
                 }
             }
 
-            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments)
+            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments, decryptionInfo)
         }
 
         fun parseAndGetVideoSources(source: Any, content: String, url: String): List<HLSVariantVideoUrlSource> {
@@ -119,7 +171,7 @@ class HLS {
                     return if (source is IHLSManifestSource) {
                         listOf()
                     } else if (source is IHLSManifestAudioSource) {
-                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, url))
+                        listOf(HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, url))
                     } else {
                         throw NotImplementedError()
                     }
@@ -270,7 +322,7 @@ class HLS {
         val name: String?,
         val isDefault: Boolean?,
         val isAutoSelect: Boolean?,
-        val isForced: Boolean?
+        val isForced: Boolean?,
     ) {
         fun toM3U8Line(): String = buildString {
             append("#EXT-X-MEDIA:")
@@ -319,30 +371,13 @@ class HLS {
 
         fun getVideoSources(): List<HLSVariantVideoUrlSource> {
             return variantPlaylistsRefs.map {
-                var width: Int? = null
-                var height: Int? = null
-                val resolutionTokens = it.streamInfo.resolution?.split('x')
-                if (resolutionTokens?.isNotEmpty() == true) {
-                    width = resolutionTokens[0].toIntOrNull()
-                    height = resolutionTokens[1].toIntOrNull()
-                }
-
-                val suffix = listOf(it.streamInfo.video, it.streamInfo.codecs).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
-                HLSVariantVideoUrlSource(suffix, width ?: 0, height ?: 0, "application/vnd.apple.mpegurl", it.streamInfo.codecs ?: "", it.streamInfo.bandwidth, 0, false, it.url)
+                variantReferenceToVariant(it)
             }
         }
 
         fun getAudioSources(): List<HLSVariantAudioUrlSource> {
             return mediaRenditions.mapNotNull {
-                if (it.uri == null) {
-                    return@mapNotNull null
-                }
-
-                val suffix = listOf(it.language, it.groupID).mapNotNull { x -> x?.ifEmpty { null } }.joinToString(", ")
-                return@mapNotNull when (it.type) {
-                    "AUDIO" -> HLSVariantAudioUrlSource(it.name?.ifEmpty { "Audio (${suffix})" } ?: "Audio (${suffix})", 0, "application/vnd.apple.mpegurl", "", it.language ?: "", null, false, it.uri)
-                    else -> null
-                }
+                return@mapNotNull mediaRenditionToVariant(it)
             }
         }
 
@@ -368,6 +403,11 @@ class HLS {
         }
     }
 
+    data class DecryptionInfo(
+        val keyUrl: String,
+        val iv: String?
+    )
+
     data class VariantPlaylist(
         val version: Int?,
         val targetDuration: Int?,
@@ -376,7 +416,8 @@ class HLS {
         val programDateTime: ZonedDateTime?,
         val playlistType: String?,
         val streamInfo: StreamInfo?,
-        val segments: List<Segment>
+        val segments: List<Segment>,
+        val decryptionInfo: DecryptionInfo? = null
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")

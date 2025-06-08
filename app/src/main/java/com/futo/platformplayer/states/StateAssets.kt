@@ -1,6 +1,7 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import com.futo.platformplayer.logging.Logger
 import kotlin.streams.asSequence
 
 /***
@@ -45,10 +46,16 @@ class StateAssets {
             var text: String?;
             synchronized(_cache) {
                 if (!_cache.containsKey(path)) {
-                    text = context.assets
-                        ?.open(path)
-                        ?.bufferedReader()
-                        ?.use { it.readText(); };
+                    try {
+                        text = context.assets
+                            ?.open(path)
+                            ?.bufferedReader()
+                            ?.use { it.readText(); };
+                    }
+                    catch(ex: Throwable) {
+                        Logger.e("StateAssets", "Could not open asset: " + path, ex);
+                        return null;
+                    }
 
                     _cache.put(path, text);
                 } else {

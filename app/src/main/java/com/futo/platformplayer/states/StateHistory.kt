@@ -8,6 +8,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.states.StatePlaylists.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
@@ -89,12 +90,14 @@ class StateHistory {
                 if(isUserAction && _lastHistoryBroadcast != historyBroadcastSig) {
                     _lastHistoryBroadcast = historyBroadcastSig;
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                        if(StateSync.instance.hasAtLeastOneOnlineDevice()) {
+                        try {
                             Logger.i(TAG, "SyncHistory playback broadcasted (${liveObj.name}: ${position})");
                             StateSync.instance.broadcastJsonData(
                                 GJSyncOpcodes.syncHistory,
                                 listOf(historyVideo)
                             );
+                        } catch (e: Throwable) {
+                            Logger.e(StatePlaylists.TAG, "Failed to broadcast sync history", e)
                         }
                     };
                 }
@@ -128,8 +131,13 @@ class StateHistory {
     fun getHistoryPager(): IPager<HistoryVideo> {
         return _historyDBStore.getObjectPager();
     }
-    fun getHistorySearchPager(query: String): IPager<HistoryVideo> {
-        return _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10);
+    fun getHistorySearchPager(query: String, withAuthor: Boolean = false): IPager<HistoryVideo> {
+        return if(!withAuthor)
+            _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10)
+        else
+            _historyDBStore.queryLikeObjectPager(DBHistory.Index::name, "%${query}%", 10)
+            //_historyDBStore.queryLike2ObjectPager(DBHistory.Index::name, DBHistory.Index::auth,"%${query}%", 10)
+        //TODO: See if we can include author name?
     }
     fun getHistoryIndexByUrl(url: String): DBHistory.Index? {
         return historyIndex[url];

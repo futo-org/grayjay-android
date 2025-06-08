@@ -39,7 +39,7 @@ class VideoExport {
         this.subtitleSource = subtitleSource;
     }
 
-    suspend fun export(context: Context, onProgress: ((Double) -> Unit)? = null): DocumentFile = coroutineScope {
+    suspend fun export(context: Context, onProgress: ((Double) -> Unit)? = null, documentRoot: DocumentFile? = null): DocumentFile = coroutineScope {
         val v = videoSource;
         val a = audioSource;
         val s = subtitleSource;
@@ -50,7 +50,7 @@ class VideoExport {
         if (s != null) sourceCount++;
 
         val outputFile: DocumentFile?;
-        val downloadRoot = StateApp.instance.getExternalDownloadDirectory(context) ?: throw Exception("External download directory is not set");
+        val downloadRoot = documentRoot ?: StateApp.instance.getExternalDownloadDirectory(context) ?: throw Exception("External download directory is not set");
         if (sourceCount > 1) {
             val outputFileName = videoLocal.name.sanitizeFileName(true) + ".mp4"// + VideoDownload.videoContainerToExtension(v.container);
             val f = downloadRoot.createFile("video/mp4", outputFileName)
@@ -69,7 +69,7 @@ class VideoExport {
             outputFile = f;
         } else if (v != null) {
             val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.videoContainerToExtension(v.container);
-            val f = downloadRoot.createFile(v.container, outputFileName)
+            val f = downloadRoot.createFile(if (v.container == "application/vnd.apple.mpegurl") "video/mp4" else v.container, outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
             Logger.i(TAG, "Copying video.");
@@ -81,8 +81,8 @@ class VideoExport {
             outputFile = f;
         } else if (a != null) {
             val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.audioContainerToExtension(a.container);
-            val f = downloadRoot.createFile(a.container, outputFileName)
-                ?: throw Exception("Failed to create file in external directory.");
+            val f = downloadRoot.createFile(if (a.container == "application/vnd.apple.mpegurl") "video/mp4" else a.container, outputFileName)
+                    ?: throw Exception("Failed to create file in external directory.");
 
             Logger.i(TAG, "Copying audio.");
 

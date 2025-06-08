@@ -1,13 +1,18 @@
 package com.futo.platformplayer.engine.packages
 
+import android.media.MediaCodec
+import android.media.MediaCodecList
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
+import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.V8Value
+import com.caoccao.javet.values.reference.V8ValueFunction
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClientConstants
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -16,6 +21,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -37,6 +43,18 @@ class PackageBridge : V8Package {
         _config = config;
         _client = plugin.httpClient;
         _clientAuth = plugin.httpClientAuth;
+
+        withScript("""
+             function setTimeout(func, delay) {
+                 let args = Array.prototype.slice.call(arguments, 2);
+                 return bridge.setTimeout(func.bind(globalThis, ...args), delay || 0);
+             }
+        """.trimIndent());
+        withScript("""
+               function clearTimeout(id) {
+                    bridge.clearTimeout(id);
+                }
+        """.trimIndent());
     }
 
 
@@ -55,11 +73,73 @@ class PackageBridge : V8Package {
     fun buildSpecVersion(): Int {
         return JSClientConstants.PLUGIN_SPEC_VERSION;
     }
+    @V8Property
+    fun buildPlatform(): String {
+        return "android";
+    }
+
+    @V8Property
+    fun supportedContent(): Array<Int> {
+        return arrayOf(
+            ContentType.MEDIA.value,
+            ContentType.POST.value,
+            ContentType.PLAYLIST.value,
+            ContentType.WEB.value,
+            ContentType.URL.value,
+            ContentType.NESTED_VIDEO.value,
+            ContentType.CHANNEL.value,
+            ContentType.LOCKED.value,
+            ContentType.PLACEHOLDER.value,
+            ContentType.DEFERRED.value
+        )
+    }
 
     @V8Function
     fun dispose(value: V8Value) {
         Logger.e(TAG, "Manual dispose: " + value.javaClass.name);
         value.close();
+    }
+
+    var timeoutCounter = 0;
+    var timeoutMap = HashSet<Int>();
+    @V8Function
+    fun setTimeout(func: V8ValueFunction, timeout: Long): Int {
+        val id = timeoutCounter++;
+
+        val funcClone = func.toClone<V8ValueFunction>()
+
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            delay(timeout);
+            synchronized(timeoutMap) {
+                if(!timeoutMap.contains(id)) {
+                    JavetResourceUtils.safeClose(funcClone);
+                    return@launch;
+                }
+                timeoutMap.remove(id);
+            }
+            try {
+                _plugin.whenNotBusy {
+                    funcClone.callVoid(null, arrayOf<Any>());
+                }
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed timeout callback", ex);
+            }
+            finally {
+                JavetResourceUtils.safeClose(funcClone);
+            }
+        };
+        synchronized(timeoutMap) {
+            timeoutMap.add(id);
+        }
+        return id;
+    }
+    @V8Function
+    fun clearTimeout(id: Int) {
+        synchronized(timeoutMap) {
+            if(timeoutMap.contains(id))
+                timeoutMap.remove(id);
+        }
     }
 
     @V8Function
@@ -130,7 +210,44 @@ class PackageBridge : V8Package {
         return false;
     }
 
+    @V8Function
+    fun getHardwareCodecs(): List<String>{
+        return getSupportedHardwareMediaCodecs();
+    }
+
+
     companion object {
         private const val TAG = "PackageBridge";
+
+        private var _mediaCodecList: MutableList<String> = mutableListOf();
+        private var _mediaCodecListHardware: MutableList<String> = mutableListOf();
+
+        fun getSupportedMediaCodecs(): List<String>{
+            synchronized(_mediaCodecList) {
+                if(_mediaCodecList.size <= 0)
+                    updateMediaCodecList();
+                return _mediaCodecList;
+            }
+        }
+        fun getSupportedHardwareMediaCodecs(): List<String>{
+            synchronized(_mediaCodecList) {
+                if(_mediaCodecList.size <= 0)
+                    updateMediaCodecList();
+                return _mediaCodecListHardware;
+            }
+        }
+        private fun updateMediaCodecList() {
+            _mediaCodecList.clear();
+            _mediaCodecListHardware.clear();
+            for(codec in MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos) {
+                if(!codec.isEncoder) {
+                    _mediaCodecList.add(codec.canonicalName);
+                    if (codec.isHardwareAccelerated)
+                        _mediaCodecListHardware.add(codec.canonicalName);
+                }
+            }
+        }
+
+
     }
 }

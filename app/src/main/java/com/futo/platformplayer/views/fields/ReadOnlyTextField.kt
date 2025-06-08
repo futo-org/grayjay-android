@@ -31,6 +31,7 @@ class ReadOnlyTextField : TableRow, IField {
     override val onChanged = Event3<IField, Any, Any>();
 
     override var reference: Any? = null;
+    override var isAdvanced: Boolean = false;
 
     override val value: Any? = null;
 
@@ -45,7 +46,7 @@ class ReadOnlyTextField : TableRow, IField {
 
     override fun setValue(value: Any) {}
 
-    override fun fromField(obj : Any, field : Field, formField: FormField?) : ReadOnlyTextField {
+    override fun fromField(obj : Any, field : Field, formField: FormField?, advanced: Boolean) : ReadOnlyTextField {
         this._field = field;
         this._obj = obj;
 

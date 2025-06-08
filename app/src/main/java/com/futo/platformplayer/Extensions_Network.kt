@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.net.Inet4Address
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -215,8 +216,13 @@ private fun ByteArray.toInetAddress(): InetAddress {
     return InetAddress.getByAddress(this);
 }
 
-fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
-    val timeout = 2000
+fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? {
+    ensureNotMainThread()
+
+    val timeout = 10000
+    val addresses = if(!Settings.instance.casting.allowIpv6) attemptAddresses.filterIsInstance<Inet4Address>() else attemptAddresses;
+    if(addresses.isEmpty())
+        throw IllegalStateException("No valid addresses found (ipv6: ${(if(Settings.instance.casting.allowIpv6) "enabled" else "disabled")})");
 
     if (addresses.isEmpty()) {
         return null;
@@ -235,8 +241,11 @@ fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
         return null;
     }
 
+    val sortedAddresses: List<InetAddress> = addresses
+        .sortedBy { addr -> addressScore(addr) }
+
     val sockets: ArrayList<Socket> = arrayListOf();
-    for (i in addresses.indices) {
+    for (i in sortedAddresses.indices) {
         sockets.add(Socket());
     }
 
@@ -244,7 +253,7 @@ fun getConnectedSocket(addresses: List<InetAddress>, port: Int): Socket? {
     var connectedSocket: Socket? = null;
     val threads: ArrayList<Thread> = arrayListOf();
     for (i in 0 until sockets.size) {
-        val address = addresses[i];
+        val address = sortedAddresses[i];
         val socket = sockets[i];
         val thread = Thread {
             try {

@@ -11,7 +11,8 @@ let Type = {
         Streams: "STREAMS",
         Mixed: "MIXED",
         Live: "LIVE",
-        Subscriptions: "SUBSCRIPTIONS"
+        Subscriptions: "SUBSCRIPTIONS",
+        Shorts: "SHORTS"
     },
     Order: {
         Chronological: "CHRONOLOGICAL"
@@ -31,7 +32,8 @@ let Type = {
     Text: {
         RAW: 0,
         HTML: 1,
-        MARKUP: 2
+        MARKUP: 2,
+        CODE: 3
     },
     Chapter: {
         NORMAL: 0,
@@ -244,6 +246,7 @@ class PlatformVideo extends PlatformContent {
         this.viewCount = obj.viewCount ?? -1; //Long
 
         this.isLive = obj.isLive ?? false; //Boolean
+        this.isShort = !!obj.isShort ?? false;
     }
 }
 class PlatformVideoDetails extends PlatformVideo {
@@ -260,6 +263,11 @@ class PlatformVideoDetails extends PlatformVideo {
 
         this.rating = obj.rating ?? null; //IRating
         this.subtitles = obj.subtitles ?? [];
+        this.isShort = !!obj.isShort ?? false;
+
+        if (obj.getContentRecommendations) {
+            this.getContentRecommendations = obj.getContentRecommendations
+        }
     }
 }
 
@@ -284,15 +292,39 @@ class PlatformPostDetails extends PlatformPost {
     }
 }
 
-class PlatformArticleDetails extends PlatformContent {
+class PlatformWeb extends PlatformContent {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWeb";
+    }
+}
+class PlatformWebDetails extends PlatformWeb {
+    constructor(obj) {
+        super(obj, 7);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformWebDetails";
+        this.html = obj.html;
+    }
+}
+
+class PlatformArticle extends PlatformContent {
+    constructor(obj) {
+        super(obj, 3);
+        obj = obj ?? {};
+        this.plugin_type = "PlatformArticle";
+        this.rating = obj.rating ?? new RatingLikes(-1);
+        this.summary = obj.summary ?? "";
+        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
+    }
+}
+class PlatformArticleDetails extends PlatformArticle {
     constructor(obj) {
         super(obj, 3);
         obj = obj ?? {};
         this.plugin_type = "PlatformArticleDetails";
         this.rating = obj.rating ?? new RatingLikes(-1);
-        this.summary = obj.summary ?? "";
         this.segments = obj.segments ?? [];
-        this.thumbnails = obj.thumbnails ?? new Thumbnails([]);
     }
 }
 class ArticleSegment {
@@ -308,9 +340,17 @@ class ArticleTextSegment extends ArticleSegment {
     }
 }
 class ArticleImagesSegment extends ArticleSegment {
-    constructor(images) {
+    constructor(images, caption) {
         super(2);
         this.images = images;
+        this.caption = caption;
+    }
+}
+class ArticleHeaderSegment extends ArticleSegment {
+    constructor(content, level) {
+        super(3);
+        this.level = level;
+        this.content = content;
     }
 }
 class ArticleNestedSegment extends ArticleSegment {
@@ -588,6 +628,8 @@ class PlatformComment {
         this.date = obj.date ?? 0;
         this.replyCount = obj.replyCount ?? 0;
         this.context = obj.context ?? {};
+        if(obj.getReplies)
+            this.getReplies = obj.getReplies;
     }
 }
 

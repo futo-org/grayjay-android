@@ -237,7 +237,19 @@ class SourceDetailFragment : MainFragment() {
                 BigButtonGroup(c, context.getString(R.string.update),
                     BigButton(c, context.getString(R.string.check_for_updates), context.getString(R.string.checks_for_new_versions_of_the_source), R.drawable.ic_update) {
                         checkForUpdatesSource();
-                    }
+                    },
+                    if(config.changelog?.any() == true)
+                        BigButton(c, context.getString(R.string.changelog), context.getString(R.string.changelog_plugin_description), R.drawable.ic_list) {
+                            UIDialogs.showChangelogDialog(context, config.version, config.changelog!!.filterKeys { it.toIntOrNull() != null }
+                                .mapKeys { it.key.toInt() }
+                                .mapValues { config.getChangelogString(it.key.toString()) ?: "" });
+                        }.apply {
+                            this.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                                setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                            };
+                        }
+                    else
+                        null
                 )
             );
 

@@ -8,78 +8,136 @@ import android.text.Spannable
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.MotionEvent
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
 import com.futo.platformplayer.receivers.MediaControlReceiver
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.timestampRegex
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
+    private var _lastTouchedLinks: Array<URLSpan>? = null
+    private var downX = 0f
+    private var downY = 0f
+    private var linkPressed = false
+    private val touchSlop = 20
+
     constructor(context: Context) : super(context) {}
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {}
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
 
     override fun scrollTo(x: Int, y: Int) {
-        //do nothing
+        // do nothing
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val action = event?.action
-        Logger.i(TAG, "onTouchEvent (action = $action)");
+        val action = event?.actionMasked
+        if (event == null) return super.onTouchEvent(event)
 
-        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {
-            val x = event.x.toInt()
-            val y = event.y.toInt()
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                val x = event.x.toInt()
+                val y = event.y.toInt()
 
-            val layout: Layout? = this.layout
-            if (layout != null) {
-                val line = layout.getLineForVertical(y)
-                val offset = layout.getOffsetForHorizontal(line, x.toFloat())
-
-                val text = this.text
-                if (text is Spannable) {
+                val layout: Layout? = this.layout
+                if (layout != null && this.text is Spannable) {
+                    val offset = layout.getOffsetForHorizontal(layout.getLineForVertical(y), x.toFloat())
+                    val text = this.text as Spannable
                     val links = text.getSpans(offset, offset, URLSpan::class.java)
                     if (links.isNotEmpty()) {
-                        runBlocking {
-                            for (link in links) {
-                                Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." };
-
-                                val c = context;
-                                if (c is MainActivity) {
-                                    if (c.handleUrl(link.url)) {
-                                        continue;
-                                    }
-
-                                    if (timestampRegex.matches(link.url)) {
-                                        val tokens = link.url.split(':');
-
-                                        var time_s = -1L;
-                                        if (tokens.size == 2) {
-                                            time_s = tokens[0].toLong() * 60 + tokens[1].toLong();
-                                        } else if (tokens.size == 3) {
-                                            time_s = tokens[0].toLong() * 60 * 60 + tokens[1].toLong() * 60 + tokens[2].toLong();
-                                        }
-
-                                        if (time_s != -1L) {
-                                            MediaControlReceiver.onSeekToReceived.emit(time_s * 1000);
-                                            continue;
-                                        }
-                                    }
-
-                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)));
-                                }
-                            }
-                        }
-
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                        _lastTouchedLinks = links
+                        downX = event.x
+                        downY = event.y
+                        linkPressed = true
                         return true
+                    } else {
+                        linkPressed = false
+                        _lastTouchedLinks = null
                     }
                 }
             }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (linkPressed) {
+                    val dx = event.x - downX
+                    val dy = event.y - downY
+                    if (Math.abs(dx) > touchSlop || Math.abs(dy) > touchSlop) {
+                        linkPressed = false
+                        _lastTouchedLinks = null
+                        parent?.requestDisallowInterceptTouchEvent(false)
+                        return false
+                    }
+                    return true
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+                if (linkPressed && _lastTouchedLinks != null) {
+                    val dx = event.x - downX
+                    val dy = event.y - downY
+                    if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop && isTouchInside(event)) {
+                        for (link in _lastTouchedLinks!!) {
+                            Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." }
+                            val c = context
+                            if (c is MainActivity) {
+                                c.lifecycleScope.launch(Dispatchers.IO) {
+                                    if (c.handleUrl(link.url)) {
+                                        return@launch
+                                    }
+                                    if (timestampRegex.matches(link.url)) {
+                                        val tokens = link.url.split(':')
+                                        var time_s = -1L
+                                        when (tokens.size) {
+                                            2 -> time_s = tokens[0].toLong() * 60 + tokens[1].toLong()
+                                            3 -> time_s = tokens[0].toLong() * 3600 +
+                                                    tokens[1].toLong() * 60 +
+                                                    tokens[2].toLong()
+                                        }
+
+                                        if (time_s != -1L) {
+                                            withContext(Dispatchers.Main) {
+                                                MediaControlReceiver.onSeekToReceived.emit(time_s * 1000)
+                                            }
+                                            return@launch
+                                        }
+                                    }
+
+                                    withContext(Dispatchers.Main) {
+                                        c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    }
+                                }
+                            } else {
+                                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                }
+                            }
+                        }
+                        _lastTouchedLinks = null
+                        linkPressed = false
+                        return true
+                    } else {
+                        linkPressed = false
+                        _lastTouchedLinks = null
+                    }
+                }
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                linkPressed = false
+                _lastTouchedLinks = null
+            }
         }
 
-        super.onTouchEvent(event)
         return false
+    }
+
+    private fun isTouchInside(event: MotionEvent): Boolean {
+        return event.x >= 0 && event.x <= width && event.y >= 0 && event.y <= height
     }
 
     companion object {

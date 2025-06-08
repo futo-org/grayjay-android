@@ -5,28 +5,38 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.allViews
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.futo.platformplayer.*
+import com.futo.platformplayer.UISlideOverlays.Companion.showOrderOverlay
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.api.media.structures.IRefreshPager
+import com.futo.platformplayer.api.media.structures.IReusablePager
+import com.futo.platformplayer.api.media.structures.ReusablePager
+import com.futo.platformplayer.api.media.structures.ReusableRefreshPager
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePlugins
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
+import com.futo.platformplayer.views.ToggleBar
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
-import com.futo.platformplayer.views.announcements.AnnouncementView
 import com.futo.platformplayer.views.buttons.BigButton
 import kotlinx.coroutines.runBlocking
 import java.time.OffsetDateTime
@@ -38,6 +48,12 @@ class HomeFragment : MainFragment() {
 
     private var _view: HomeView? = null;
     private var _cachedRecyclerData: FeedView.RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null;
+    private var _cachedLastPager: IReusablePager<IPlatformContent>? = null
+
+    private var _toggleRecent = false;
+    private var _toggleWatched = false;
+    private var _togglePluginsDisabled = mutableListOf<String>();
+
 
     fun reloadFeed() {
         _view?.reloadFeed()
@@ -63,7 +79,7 @@ class HomeFragment : MainFragment() {
     }
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val view = HomeView(this, inflater, _cachedRecyclerData);
+        val view = HomeView(this, inflater, _cachedRecyclerData, _cachedLastPager);
         _view = view;
         return view;
     }
@@ -81,6 +97,7 @@ class HomeFragment : MainFragment() {
         val view = _view;
         if (view != null) {
             _cachedRecyclerData = view.recyclerData;
+            _cachedLastPager = view.lastPager;
             view.cleanup();
             _view = null;
         }
@@ -90,28 +107,32 @@ class HomeFragment : MainFragment() {
         _view?.setPreviewsEnabled(previewsEnabled && Settings.instance.home.previewFeedItems);
     }
 
+
     @SuppressLint("ViewConstructor")
     class HomeView : ContentFeedView<HomeFragment> {
         override val feedStyle: FeedStyle get() = Settings.instance.home.getHomeFeedStyle();
 
-        private var _announcementsView: AnnouncementView = AnnouncementView(context, null).apply {
-            if(!this.isClosed()) {
-                recyclerData.adapter.viewsToPrepend.add(this)
-                this.onClose.subscribe {
-                    recyclerData.adapter.viewsToPrepend.remove(this)
-                }
-            }
-        };
+        private var _toggleBar: ToggleBar? = null;
 
         private val _taskGetPager: TaskHandler<Boolean, IPager<IPlatformContent>>;
         override val shouldShowTimeBar: Boolean get() = Settings.instance.home.progressBar
 
-        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
+        var lastPager: IReusablePager<IPlatformContent>? = null;
 
+        constructor(fragment: HomeFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null, cachedLastPager: IReusablePager<IPlatformContent>? = null) : super(fragment, inflater, cachedRecyclerData) {
+            lastPager = cachedLastPager
             _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({ fragment.lifecycleScope }, {
                 StatePlatform.instance.getHomeRefresh(fragment.lifecycleScope)
             })
-            .success { loadedResult(it); }
+            .success {
+                val wrappedPager = if(it is IRefreshPager)
+                    ReusableRefreshPager(it);
+                else
+                    ReusablePager(it);
+                lastPager = wrappedPager;
+                resetAutomaticNextPageCounter();
+                loadedResult(wrappedPager.getWindow());
+            }
             .exception<ScriptCaptchaRequiredException> {  }
             .exception<ScriptExecutionException> {
                 Logger.w(ChannelFragment.TAG, "Plugin failure.", it);
@@ -137,7 +158,10 @@ class HomeFragment : MainFragment() {
                 }, fragment);
             };
 
+            initializeToolbarContent();
+
             setPreviewsEnabled(Settings.instance.home.previewFeedItems);
+            showAnnouncementView()
         }
 
         fun onShown() {
@@ -210,13 +234,119 @@ class HomeFragment : MainFragment() {
             loadResults();
         }
 
-        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
-            return results.filter { !StateMeta.instance.isVideoHidden(it.url) && !StateMeta.instance.isCreatorHidden(it.author.url) };
+        private val _filterLock = Object();
+        private var _togglesConfig = FragmentedStorage.get<StringArrayStorage>("home_toggles");
+        fun initializeToolbarContent() {
+            if(_toolbarContentView.allViews.any { it is ToggleBar })
+                _toolbarContentView.removeView(_toolbarContentView.allViews.find { it is ToggleBar });
+
+            if(Settings.instance.home.showHomeFilters) {
+
+                if (!_togglesConfig.any()) {
+                    _togglesConfig.set("today", "watched", "plugins");
+                    _togglesConfig.save();
+                }
+                _toggleBar = ToggleBar(context).apply {
+                    layoutParams =
+                        LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+                }
+
+                synchronized(_filterLock) {
+                    var buttonsPlugins: List<ToggleBar.Toggle> = listOf()
+                    buttonsPlugins = (if (_togglesConfig.contains("plugins"))
+                        (StatePlatform.instance.getEnabledClients()
+                            .filter { it is JSClient && it.enableInHome }
+                            .map { plugin ->
+                                ToggleBar.Toggle(if(Settings.instance.home.showHomeFiltersPluginNames) plugin.name else "", plugin.icon, !fragment._togglePluginsDisabled.contains(plugin.id), { view, active ->
+                                    var dontSwap = false;
+                                    if (active) {
+                                        if (fragment._togglePluginsDisabled.contains(plugin.id))
+                                            fragment._togglePluginsDisabled.remove(plugin.id);
+                                    } else {
+                                        if (!fragment._togglePluginsDisabled.contains(plugin.id)) {
+                                            val enabledClients = StatePlatform.instance.getEnabledClients();
+                                            val availableAfterDisable = enabledClients.count { !fragment._togglePluginsDisabled.contains(it.id) && it.id != plugin.id };
+                                            if(availableAfterDisable > 0)
+                                                fragment._togglePluginsDisabled.add(plugin.id);
+                                            else {
+                                                UIDialogs.appToast("Home needs atleast 1 plugin active");
+                                                dontSwap = true;
+                                            }
+                                        }
+                                    }
+                                    if(!dontSwap)
+                                        reloadForFilters();
+                                    else {
+                                        view.setToggle(!active);
+                                    }
+                                }).withTag("plugins")
+                            })
+                    else listOf())
+                    val buttons = (listOf<ToggleBar.Toggle?>(
+                        (if (_togglesConfig.contains("today"))
+                            ToggleBar.Toggle("Today", fragment._toggleRecent) { view, active ->
+                                fragment._toggleRecent = active; reloadForFilters()
+                            }
+                                .withTag("today") else null),
+                        (if (_togglesConfig.contains("watched"))
+                            ToggleBar.Toggle("Unwatched", fragment._toggleWatched) { view, active ->
+                                fragment._toggleWatched = active; reloadForFilters()
+                            }
+                                .withTag("watched") else null),
+                    ).filterNotNull() + buttonsPlugins)
+                        .sortedBy { _togglesConfig.indexOf(it.tag ?: "") } ?: listOf()
+
+                    val buttonSettings = ToggleBar.Toggle("", R.drawable.ic_settings, true, { view, active ->
+                        showOrderOverlay(_overlayContainer,
+                            "Visible home filters",
+                            listOf(
+                                Pair("Plugins", "plugins"),
+                                Pair("Today", "today"),
+                                Pair("Watched", "watched")
+                            ),
+                            {
+                                val newArray = it.map { it.toString() }.toTypedArray();
+                                _togglesConfig.set(*(if (newArray.any()) newArray else arrayOf("none")));
+                                _togglesConfig.save();
+                                initializeToolbarContent();
+                            },
+                            "Select which toggles you want to see in order. You can also choose to hide filters in the Grayjay Settings"
+                        );
+                    }).asButton();
+
+                    val buttonsOrder = (buttons + listOf(buttonSettings)).toTypedArray();
+                    _toggleBar?.setToggles(*buttonsOrder);
+                }
+
+                _toolbarContentView.addView(_toggleBar, 0);
+            }
+        }
+        fun reloadForFilters() {
+            lastPager?.let { loadedResult(it.getWindow()) };
         }
 
-        private fun loadResults() {
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
+            return results.filter {
+                if(StateMeta.instance.isVideoHidden(it.url))
+                    return@filter false;
+                if(StateMeta.instance.isCreatorHidden(it.author.url))
+                    return@filter false;
+
+                if(fragment._toggleRecent && (it.datetime?.getNowDiffHours() ?: 0) > 25)
+                    return@filter false;
+                if(fragment._toggleWatched && StateHistory.instance.isHistoryWatched(it.url, 0))
+                    return@filter false;
+                if(fragment._togglePluginsDisabled.any() && it.id.pluginId != null && fragment._togglePluginsDisabled.contains(it.id.pluginId)) {
+                    return@filter false;
+                }
+
+                return@filter true;
+            };
+        }
+
+        private fun loadResults(withRefetch: Boolean = true) {
             setLoading(true);
-            _taskGetPager.run(true);
+            _taskGetPager.run(withRefetch);
         }
         private fun loadedResult(pager : IPager<IPlatformContent>) {
             if (pager is EmptyPager<IPlatformContent>) {

@@ -29,6 +29,7 @@ import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.fields.AdvancedField
 import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
@@ -175,6 +176,10 @@ class Settings : FragmentedStorageFileJson() {
         }
     }*/
 
+
+    @FormField(R.string.advanced_settings, FieldForm.TOGGLE, R.string.advanced_settings_description, -1, "advancedSettings")
+    var advancedSettings: Boolean = false;
+
     @FormField(R.string.language, "group", -1, 0)
     var language = LanguageSettings();
     @Serializable
@@ -205,7 +210,7 @@ class Settings : FragmentedStorageFileJson() {
     var home = HomeSettings();
     @Serializable
     class HomeSettings {
-        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 5)
+        @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 3)
         @DropdownFieldOptionsId(R.array.feed_style)
         var homeFeedStyle: Int = 1;
 
@@ -216,10 +221,16 @@ class Settings : FragmentedStorageFileJson() {
                 return FeedStyle.THUMBNAIL;
         }
 
+        @FormField(R.string.show_home_filters, FieldForm.TOGGLE, R.string.show_home_filters_description, 4)
+        var showHomeFilters: Boolean = true;
+        @FormField(R.string.show_home_filters_plugin_names, FieldForm.TOGGLE, R.string.show_home_filters_plugin_names_description, 5)
+        var showHomeFiltersPluginNames: Boolean = false;
+
+        @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
 
-
+        @AdvancedField
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
         var progressBar: Boolean = true;
 
@@ -248,11 +259,16 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.feed_style)
         var searchFeedStyle: Int = 1;
 
+        @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 5)
         var previewFeedItems: Boolean = true;
 
+        @AdvancedField
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
         var progressBar: Boolean = true;
+
+        @FormField(R.string.hide_hidden_from_search, FieldForm.TOGGLE, R.string.hide_hidden_from_search_description, 7)
+        var hidefromSearch: Boolean = false;
 
 
         fun getSearchFeedStyle(): FeedStyle {
@@ -269,6 +285,7 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class ChannelSettings {
 
+        @AdvancedField
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 6)
         var progressBar: Boolean = true;
     }
@@ -291,16 +308,23 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.show_subscription_group, FieldForm.TOGGLE, R.string.show_subscription_group_description, 5)
         var showSubscriptionGroups: Boolean = true;
 
+        @FormField(R.string.use_subscription_exchange, FieldForm.TOGGLE, R.string.use_subscription_exchange_description, 6)
+        var useSubscriptionExchange: Boolean = false;
+
+        @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)
         var previewFeedItems: Boolean = true;
 
+        @AdvancedField
         @FormField(R.string.progress_bar, FieldForm.TOGGLE, R.string.progress_bar_description, 7)
         var progressBar: Boolean = true;
 
+        @AdvancedField
         @FormField(R.string.fetch_on_app_boot, FieldForm.TOGGLE, R.string.shortly_after_opening_the_app_start_fetching_subscriptions, 8)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var fetchOnAppBoot: Boolean = true;
 
+        @AdvancedField
         @FormField(R.string.fetch_on_tab_opened, FieldForm.TOGGLE, R.string.fetch_on_tab_opened_description, 9)
         var fetchOnTabOpen: Boolean = true;
 
@@ -331,13 +355,16 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.show_watch_metrics, FieldForm.TOGGLE, R.string.show_watch_metrics_description, 12)
         var showWatchMetrics: Boolean = false;
 
+        @AdvancedField
         @FormField(R.string.track_playtime_locally, FieldForm.TOGGLE, R.string.track_playtime_locally_description, 13)
         var allowPlaytimeTracking: Boolean = true;
 
 
+        @AdvancedField
         @FormField(R.string.always_reload_from_cache, FieldForm.TOGGLE, R.string.always_reload_from_cache_description, 14)
         var alwaysReloadFromCache: Boolean = false;
 
+        @AdvancedField
         @FormField(R.string.peek_channel_contents, FieldForm.TOGGLE, R.string.peek_channel_contents_description, 15)
         var peekChannelContents: Boolean = false;
 
@@ -353,7 +380,7 @@ class Settings : FragmentedStorageFileJson() {
     var playback = PlaybackSettings();
     @Serializable
     class PlaybackSettings {
-        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -1)
+        @FormField(R.string.primary_language, FieldForm.DROPDOWN, -1, -2)
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
@@ -377,6 +404,8 @@ class Settings : FragmentedStorageFileJson() {
                 else -> null
             }
         }
+        @FormField(R.string.prefer_original_audio, FieldForm.TOGGLE, R.string.prefer_original_audio_description, -1)
+        var preferOriginalAudio: Boolean = true;
 
         //= context.resources.getStringArray(R.array.audio_languages)[primaryLanguage];
 
@@ -454,21 +483,22 @@ class Settings : FragmentedStorageFileJson() {
         var preferredPreviewQuality: Int = 5;
         fun getPreferredPreviewQualityPixelCount(): Int = preferedQualityToPixels(preferredPreviewQuality);
 
-
+        @AdvancedField
         @FormField(R.string.simplify_sources, FieldForm.TOGGLE, R.string.simplify_sources_description, 4)
         var simplifySources: Boolean = true;
 
-        @FormField(R.string.auto_rotate, FieldForm.DROPDOWN, -1, 5)
-        @DropdownFieldOptionsId(R.array.system_enabled_disabled_array)
-        var autoRotate: Int = 2;
+        @AdvancedField
+        @FormField(R.string.always_allow_reverse_landscape_auto_rotate, FieldForm.TOGGLE, R.string.always_allow_reverse_landscape_auto_rotate_description, 5)
+        var alwaysAllowReverseLandscapeAutoRotate: Boolean = true
 
-        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 7)
+        @FormField(R.string.background_behavior, FieldForm.DROPDOWN, -1, 6)
         @DropdownFieldOptionsId(R.array.player_background_behavior)
         var backgroundPlay: Int = 2;
 
         fun isBackgroundContinue() = backgroundPlay == 1;
         fun isBackgroundPictureInPicture() = backgroundPlay == 2;
 
+        @AdvancedField
         @FormField(R.string.resume_after_preview, FieldForm.DROPDOWN, R.string.when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code, 7)
         @DropdownFieldOptionsId(R.array.resume_after_preview)
         var resumeAfterPreview: Int = 1;
@@ -495,13 +525,9 @@ class Settings : FragmentedStorageFileJson() {
             };
         }
 
+        @AdvancedField
         @FormField(R.string.live_chat_webview, FieldForm.TOGGLE, R.string.use_the_live_chat_web_window_when_available_over_native_implementation, 9)
         var useLiveChatWindow: Boolean = true;
-
-
-
-        @FormField(R.string.background_switch_audio, FieldForm.TOGGLE, R.string.background_switch_audio_description, 10)
-        var backgroundSwitchToAudio: Boolean = true;
 
         @FormField(R.string.restart_after_audio_focus_loss, FieldForm.DROPDOWN, R.string.restart_playback_when_gaining_audio_focus_after_a_loss, 11)
         @DropdownFieldOptionsId(R.array.restart_playback_after_loss)
@@ -528,8 +554,78 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 21)
         var autoplay: Boolean = false;
 
+        @AdvancedField
         @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
         var deleteFromWatchLaterAuto: Boolean = true;
+
+        @FormField(R.string.seek_offset, FieldForm.DROPDOWN, R.string.seek_offset_description, 23)
+        @DropdownFieldOptionsId(R.array.seek_offset_duration)
+        var seekOffset: Int = 2;
+
+        fun getSeekOffset(): Long {
+          return when(seekOffset) {
+            0 -> 3_000L;
+            1 -> 5_000L;
+            2 -> 10_000L;
+            3 -> 20_000L;
+            4 -> 30_000L;
+            5 -> 60_000L;
+            else -> 10_000L;
+          }
+        }
+
+
+        @FormField(R.string.min_playback_speed, FieldForm.DROPDOWN, R.string.min_playback_speed_description, 25)
+        @DropdownFieldOptionsId(R.array.min_playback_speed)
+        var minimumPlaybackSpeed: Int = 0;
+        @FormField(R.string.max_playback_speed, FieldForm.DROPDOWN, R.string.max_playback_speed_description, 26)
+        @DropdownFieldOptionsId(R.array.max_playback_speed)
+        var maximumPlaybackSpeed: Int = 2;
+        @FormField(R.string.step_playback_speed, FieldForm.DROPDOWN, R.string.step_playback_speed_description, 26)
+        @DropdownFieldOptionsId(R.array.step_playback_speed)
+        var stepPlaybackSpeed: Int = 1;
+
+        fun getPlaybackSpeedStep(): Double {
+            return when(stepPlaybackSpeed) {
+                0 -> 0.05
+                1 -> 0.1
+                2 -> 0.25
+                else -> 0.1;
+            }
+        }
+        fun getPlaybackSpeeds(): List<Double> {
+            val playbackSpeeds = mutableListOf<Double>();
+            playbackSpeeds.add(1.0);
+            val minSpeed = when(minimumPlaybackSpeed) {
+                0 -> 0.25
+                1 -> 0.5
+                2 -> 1.0
+                else -> 0.25
+            }
+            val maxSpeed = when(maximumPlaybackSpeed) {
+                0 -> 2.0
+                1 -> 2.25
+                2 -> 3.0
+                3 -> 4.0
+                4 -> 5.0
+                else -> 2.25;
+            }
+            var testSpeed = 1.0;
+
+            while(testSpeed > minSpeed) {
+                val nextSpeed = (testSpeed - 0.25) as Double;
+                testSpeed = Math.max(nextSpeed, minSpeed);
+                playbackSpeeds.add(testSpeed);
+            }
+            testSpeed = 1.0;
+            while(testSpeed < maxSpeed) {
+                val nextSpeed = (testSpeed + if(testSpeed < 2) 0.25 else 1.0) as Double;
+                testSpeed = Math.min(nextSpeed, maxSpeed);
+                playbackSpeeds.add(testSpeed);
+            }
+            playbackSpeeds.sort();
+            return playbackSpeeds;
+        }
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
@@ -545,6 +641,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.default_recommendations, FieldForm.TOGGLE, R.string.default_recommendations_description, 0)
         var recommendationsDefault: Boolean = false;
 
+        @AdvancedField
         @FormField(R.string.hide_recommendations, FieldForm.TOGGLE, R.string.hide_recommendations_description, 0)
         var hideRecommendations: Boolean = false;
 
@@ -581,10 +678,12 @@ class Settings : FragmentedStorageFileJson() {
         var preferredAudioQuality: Int = 1;
         fun isHighBitrateDefault(): Boolean = preferredAudioQuality > 0;
 
+        @AdvancedField
         @FormField(R.string.byte_range_download, FieldForm.TOGGLE, R.string.attempt_to_utilize_byte_ranges, 4)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var byteRangeDownload: Boolean = true;
 
+        @AdvancedField
         @FormField(R.string.byte_range_concurrency, FieldForm.DROPDOWN, R.string.number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources, 5)
         @DropdownFieldOptionsId(R.array.thread_count)
         var byteRangeConcurrency: Int = 3;
@@ -614,9 +713,20 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var keepScreenOn: Boolean = true;
 
-        @FormField(R.string.always_proxy_requests, FieldForm.TOGGLE, R.string.always_proxy_requests_description, 1)
+        @AdvancedField
+        @FormField(R.string.always_proxy_requests, FieldForm.TOGGLE, R.string.always_proxy_requests_description, 3)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var alwaysProxyRequests: Boolean = false;
+
+        @AdvancedField
+        @FormField(R.string.allow_ipv6, FieldForm.TOGGLE, R.string.allow_ipv6_description, 4)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var allowIpv6: Boolean = true;
+
+        @AdvancedField
+        @FormField(R.string.allow_ipv4, FieldForm.TOGGLE, R.string.allow_ipv4_description, 5)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var allowLinkLocalIpv4: Boolean = false;
 
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
@@ -685,6 +795,11 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Plugins {
 
+        @AdvancedField
+        @FormField(R.string.check_disabled_plugin_updates, FieldForm.TOGGLE, R.string.check_disabled_plugin_updates_description, -1)
+        var checkDisabledPluginsForUpdates: Boolean = false;
+
+        @AdvancedField
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
 
@@ -885,7 +1000,23 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.payment_status, FieldForm.READONLYTEXT, -1, 1)
         val paymentStatus: String get() = SettingsActivity.getActivity()?.let { if (StatePayment.instance.hasPaid) it.getString(R.string.paid) else it.getString(R.string.not_paid); } ?: "Unknown";
 
-        @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 2)
+        @FormField(R.string.license_status, FieldForm.BUTTON, R.string.view_license_status, 2)
+        fun viewLicenseStatus() {
+            SettingsActivity.getActivity()?.let {
+                try {
+                    if (StatePayment.instance.hasPaid) {
+                        val paymentKey = StatePayment.instance.getPaymentKey()
+                        UIDialogs.showDialogOk(it, R.drawable.ic_paid, "License activated\n" + paymentKey.first)
+                    } else {
+                        UIDialogs.showDialogOk(it, R.drawable.ic_paid, "No license activated")
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show license status dialog", e)
+                }
+            }
+        }
+
+        @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 3)
         fun clearPayment() {
             SettingsActivity.getActivity()?.let { context ->
                 UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete your license?", {
@@ -903,11 +1034,18 @@ class Settings : FragmentedStorageFileJson() {
     var other = Other();
     @Serializable
     class Other {
+        @AdvancedField
         @FormField(R.string.playlist_delete_confirmation, FieldForm.TOGGLE, R.string.playlist_delete_confirmation_description, 2)
         var playlistDeleteConfirmation: Boolean = true;
+        @AdvancedField
+        @FormField(R.string.playlist_allow_dups, FieldForm.TOGGLE, R.string.playlist_allow_dups_description, 3)
+        var playlistAllowDups: Boolean = true;
 
-        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 3)
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 4)
         var polycentricEnabled: Boolean = true;
+
+        @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 5)
+        var polycentricLocalCache: Boolean = true;
     }
 
     @FormField(R.string.gesture_controls, FieldForm.GROUP, -1, 19)
@@ -944,7 +1082,7 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Synchronization {
         @FormField(R.string.enabled, FieldForm.TOGGLE, R.string.enabled_description, 1)
-        var enabled: Boolean = true;
+        var enabled: Boolean = false;
 
         @FormField(R.string.broadcast, FieldForm.TOGGLE, R.string.broadcast_description, 1)
         var broadcast: Boolean = false;
@@ -954,6 +1092,21 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.connect_last, FieldForm.TOGGLE, R.string.connect_last_description, 3)
         var connectLast: Boolean = true;
+
+        @FormField(R.string.discover_through_relay, FieldForm.TOGGLE, R.string.discover_through_relay_description, 3)
+        var discoverThroughRelay: Boolean = true;
+
+        @FormField(R.string.pair_through_relay, FieldForm.TOGGLE, R.string.pair_through_relay_description, 3)
+        var pairThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_through_relay, FieldForm.TOGGLE, R.string.connect_through_relay_description, 3)
+        var connectThroughRelay: Boolean = true;
+
+        @FormField(R.string.connect_local_direct_through_relay, FieldForm.TOGGLE, R.string.connect_local_direct_through_relay_description, 3)
+        var connectLocalDirectThroughRelay: Boolean = true;
+
+        @FormField(R.string.local_connections, FieldForm.TOGGLE, R.string.local_connections_description, 3)
+        var localConnections: Boolean = true;
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)

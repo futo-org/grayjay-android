@@ -19,6 +19,7 @@
         android:scaleType="fitCenter"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
+        android:paddingStart="12dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="@id/layout_video_thumbnail"
         app:layout_constraintBottom_toBottomOf="@id/layout_video_thumbnail" />
@@ -30,7 +31,8 @@
         app:layout_constraintLeft_toRightOf="@id/image_drag_drop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintDimensionRatio="W,1.7:1" >
+        app:layout_constraintDimensionRatio="W,1.7:1"
+        android:layout_marginStart="12dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/image_video_thumbnail"
@@ -41,6 +43,19 @@
             app:srcCompat="@drawable/placeholder_video_thumbnail"
             android:background="@drawable/video_thumbnail_outline" />
 
+        <com.futo.platformplayer.views.others.ProgressBar
+            android:id="@+id/time_bar"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            app:progress="60%"
+            app:inactiveColor="#55EEEEEE"
+            android:layout_marginBottom="0dp"
+            app:radiusBottomLeft="4dp"
+            app:radiusBottomRight="4dp"
+            app:radiusTopLeft="0dp"
+            app:radiusTopRight="0dp" />
+
         <LinearLayout
             android:id="@+id/thumbnail_live_container"
             android:layout_width="wrap_content"
@@ -49,7 +64,7 @@
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="6dp"
             android:paddingTop="0dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -77,7 +92,7 @@
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="6dp"
             android:paddingTop="0dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -103,7 +118,7 @@
             android:layout_height="20dp"
             android:layout_gravity="bottom|start"
             android:layout_marginStart="4dp"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="6dp" />
 
         <FrameLayout android:id="@+id/layout_downloaded"
             android:layout_width="16dp"
@@ -135,7 +150,7 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         app:layout_constraintBottom_toTopOf="@id/text_author"
         android:layout_marginStart="10dp" />
 
@@ -152,7 +167,7 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_video_name"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         app:layout_constraintBottom_toTopOf="@id/text_video_metadata"
         android:layout_marginStart="10dp"  />
 
@@ -169,19 +184,35 @@
         android:ellipsize="end"
         app:layout_constraintLeft_toRightOf="@id/layout_video_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/text_author"
-        app:layout_constraintRight_toLeftOf="@id/image_trash"
+        app:layout_constraintRight_toLeftOf="@id/buttons"
         android:layout_marginStart="10dp" />
 
-    <ImageButton
-        android:id="@+id/image_trash"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:contentDescription="@string/cd_button_delete"
-        app:srcCompat="@drawable/ic_trash_18dp"
-        android:scaleType="fitCenter"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@id/layout_video_thumbnail"
-        app:layout_constraintBottom_toBottomOf="@id/layout_video_thumbnail" />
+        app:layout_constraintBottom_toBottomOf="@id/layout_video_thumbnail" >
+        <ImageButton
+            android:id="@+id/image_trash"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_delete"
+            app:srcCompat="@drawable/ic_trash_18dp"
+            android:scaleType="fitCenter"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"/>
+        <ImageButton
+            android:id="@+id/image_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_settings"
+            app:srcCompat="@drawable/ic_settings"
+            android:scaleType="fitCenter"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"  />
+
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

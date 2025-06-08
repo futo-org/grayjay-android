@@ -579,6 +579,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+        <com.futo.platformplayer.views.overlays.ChaptersOverlay
+            android:id="@+id/videodetail_container_chapters"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <com.futo.platformplayer.views.overlays.SupportOverlay
             android:id="@+id/videodetail_container_support"
             android:visibility="gone"

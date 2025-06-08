@@ -96,6 +96,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val exoPlayerStateName: String;
 
     var playing: Boolean = false;
+    val activelyPlaying: Boolean get() = (exoPlayer?.player?.playbackState == Player.STATE_READY) && (exoPlayer?.player?.playWhenReady ?: false)
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
 
@@ -110,8 +111,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _didCallSourceChange = false;
     private var _lastState: Int = -1;
 
-    private var _targetTrackVideoHeight = -1;
-    private var _targetTrackAudioBitrate = -1;
+
+    var targetTrackVideoHeight = -1
+        private set
+    private var _targetTrackAudioBitrate = -1
 
     private var _toResume = false;
 
@@ -249,12 +252,22 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun switchToVideoMode() {
         Logger.i(TAG, "Switching to Video Mode");
         isAudioMode = false;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
     fun switchToAudioMode() {
         Logger.i(TAG, "Switching to Audio Mode");
         isAudioMode = true;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
 
     fun seekTo(ms: Long) {
@@ -278,7 +291,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     //TODO: Temporary solution, Implement custom track selector without using constraints
     fun selectVideoTrack(height: Int) {
-        _targetTrackVideoHeight = height;
+        targetTrackVideoHeight = height;
         updateTrackSelector();
     }
     fun selectAudioTrack(bitrate: Int) {
@@ -288,14 +301,20 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
         var builder = DefaultTrackSelector.Parameters.Builder(context);
-        if(_targetTrackVideoHeight > 0) {
+        if(targetTrackVideoHeight > 0) {
             builder = builder
-                .setMinVideoSize(0, _targetTrackVideoHeight - 10)
-                .setMaxVideoSize(9999, _targetTrackVideoHeight + 10);
+                .setMinVideoSize(0, targetTrackVideoHeight - 10)
+                .setMaxVideoSize(9999, targetTrackVideoHeight + 10);
         }
 
         if(_targetTrackAudioBitrate > 0) {
             builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
+        }
+
+        builder = if (isAudioMode) {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+        } else {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
         }
 
         val trackSelector = exoPlayer?.player?.trackSelector;
@@ -737,6 +756,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val sourceAudio = _lastAudioMediaSource;
         val sourceSubs = _lastSubtitleMediaSource;
 
+        updateTrackSelector()
 
         beforeSourceChanged();
 
@@ -820,7 +840,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss");
 
         when (error.errorCode) {
-            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
                 Logger.w(TAG, "ERROR_CODE_IO_BAD_HTTP_STATUS ${error.cause?.javaClass?.simpleName}");
                 if(error.cause is HttpDataSource.InvalidResponseCodeException) {
                     val cause = error.cause as HttpDataSource.InvalidResponseCodeException

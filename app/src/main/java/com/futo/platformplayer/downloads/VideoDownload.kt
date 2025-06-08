@@ -47,6 +47,7 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
+import com.futo.polycentric.core.hexStringToByteArray
 import hasAnySource
 import isDownloadable
 import kotlinx.coroutines.CancellationException
@@ -59,16 +60,21 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Transient
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.lang.Thread.sleep
+import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.ThreadLocalRandom
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.coroutines.resumeWithException
 import kotlin.time.times
 
@@ -100,6 +106,7 @@ class VideoDownload {
 
     var requireVideoSource: Boolean = false;
     var requireAudioSource: Boolean = false;
+    var requiredCheck: Boolean = false;
 
     @Contextual
     @Transient
@@ -140,11 +147,17 @@ class VideoDownload {
     var error: String? = null;
 
     var videoFilePath: String? = null;
-    var videoFileName: String? = null;
+    var videoFileNameBase: String? = null;
+    var videoFileNameExt: String? = null;
+    val videoFileName: String? get() = if(videoFileNameBase.isNullOrEmpty()) null else videoFileNameBase + (if(!videoFileNameExt.isNullOrEmpty()) "." + videoFileNameExt else "");
+    var videoOverrideContainer: String? = null;
     var videoFileSize: Long? = null;
 
     var audioFilePath: String? = null;
-    var audioFileName: String? = null;
+    var audioFileNameBase: String? = null;
+    var audioFileNameExt: String? = null;
+    val audioFileName: String? get() = if(audioFileNameBase.isNullOrEmpty()) null else audioFileNameBase + (if(!audioFileNameExt.isNullOrEmpty()) "." + audioFileNameExt else "");
+    var audioOverrideContainer: String? = null;
     var audioFileSize: Long? = null;
 
     var subtitleFilePath: String? = null;
@@ -164,7 +177,7 @@ class VideoDownload {
         onStateChanged.emit(newState);
     }
 
-    constructor(video: IPlatformVideo, targetPixelCount: Long? = null, targetBitrate: Long? = null) {
+    constructor(video: IPlatformVideo, targetPixelCount: Long? = null, targetBitrate: Long? = null, optionalSources: Boolean = false) {
         this.video = SerializedPlatformVideo.fromVideo(video);
         this.videoSource = null;
         this.audioSource = null;
@@ -175,8 +188,9 @@ class VideoDownload {
         this.requiresLiveVideoSource = false;
         this.requiresLiveAudioSource = false;
         this.targetVideoName = videoSource?.name;
-        this.requireVideoSource = targetPixelCount != null
+        this.requireVideoSource = targetPixelCount != null;
         this.requireAudioSource = targetBitrate != null; //TODO: May not be a valid check.. can only be determined after live fetch?
+        this.requiredCheck = optionalSources;
     }
     constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
         this.video = SerializedPlatformVideo.fromVideo(video);
@@ -233,11 +247,13 @@ class VideoDownload {
             videoDetails = null;
             videoSource = null;
             videoSourceLive = null;
+            videoOverrideContainer = null;
         }
         if(requiresLiveAudioSource && !isLiveAudioSourceValid) {
             videoDetails = null;
             audioSource = null;
             videoSourceLive = null;
+            audioOverrideContainer = null;
         }
         if(video == null && videoDetails == null)
             throw IllegalStateException("Missing information for download to complete");
@@ -249,6 +265,30 @@ class VideoDownload {
             val original = StatePlatform.instance.getContentDetails(video!!.url).await();
             if(original !is IPlatformVideoDetails)
                 throw IllegalStateException("Original content is not media?");
+
+            if(requiredCheck) {
+                if(original.video is VideoUnMuxedSourceDescriptor) {
+                    if(requireVideoSource) {
+                        if((original.video as VideoUnMuxedSourceDescriptor).audioSources.any() && !original.video.videoSources.any()) {
+                            requireVideoSource = false;
+                            targetPixelCount = null;
+                        }
+                    }
+                    if(requireAudioSource) {
+                        if(!(original.video as VideoUnMuxedSourceDescriptor).audioSources.any() && original.video.videoSources.any()) {
+                            requireAudioSource = false;
+                            targetBitrate = null;
+                        }
+                    }
+                }
+                else {
+                    if(requireAudioSource) {
+                        requireAudioSource = false;
+                        targetBitrate = null;
+                    }
+                }
+                requiredCheck = false;
+            }
 
             if(original.video.hasAnySource() && !original.isDownloadable()) {
                 Logger.i(TAG, "Attempted to download unsupported video [${original.name}]:${original.url}");
@@ -284,6 +324,10 @@ class VideoDownload {
                 if(vsource == null)
                     vsource = VideoHelper.selectBestVideoSource(videoSources, targetPixelCount!!.toInt(), arrayOf())
                 //    ?: throw IllegalStateException("Could not find a valid video source for video");
+                if(vsource is JSSource) {
+                    this.hasVideoRequestExecutor = this.hasVideoRequestExecutor || vsource.hasRequestExecutor;
+                    this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (vsource is JSDashManifestRawSource && vsource.hasGenerate);
+                }
 
                 if(vsource == null) {
                     videoSource = null;
@@ -335,6 +379,12 @@ class VideoDownload {
                     asource = VideoHelper.selectBestAudioSource(audioSources, arrayOf(), null, targetBitrate)
                         ?: if(videoSource != null ) null
                         else throw DownloadException("Could not find a valid video or audio source for download")
+
+                if(asource is JSSource) {
+                    this.hasAudioRequestExecutor = this.hasAudioRequestExecutor || asource.hasRequestExecutor;
+                    this.requiresLiveAudioSource = this.hasAudioRequestExecutor || (asource is JSDashManifestRawSource && asource.hasGenerate);
+                }
+
                 if(asource == null) {
                     audioSource = null;
                     if(!original.video.isUnMuxed || original.video.videoSources.size == 0)
@@ -374,11 +424,13 @@ class VideoDownload {
         else audioSource;
 
         if(actualVideoSource != null) {
-            videoFileName = "${videoDetails!!.id.value!!} [${actualVideoSource!!.width}x${actualVideoSource!!.height}].${videoContainerToExtension(actualVideoSource!!.container)}".sanitizeFileName();
+            videoFileNameBase = "${videoDetails!!.id.value!!} [${actualVideoSource!!.width}x${actualVideoSource!!.height}]".sanitizeFileName();
+            videoFileNameExt = videoContainerToExtension(actualVideoSource!!.container);
             videoFilePath = File(downloadDir, videoFileName!!).absolutePath;
         }
         if(actualAudioSource != null) {
-            audioFileName = "${videoDetails!!.id.value!!} [${actualAudioSource!!.language}-${actualAudioSource!!.bitrate}].${audioContainerToExtension(actualAudioSource!!.container)}".sanitizeFileName();
+            audioFileNameBase = "${videoDetails!!.id.value!!} [${actualAudioSource!!.language}-${actualAudioSource!!.bitrate}]".sanitizeFileName();
+            audioFileNameExt = audioContainerToExtension(actualAudioSource!!.container);
             audioFilePath = File(downloadDir, audioFileName!!).absolutePath;
         }
         if(subtitleSource != null) {
@@ -518,6 +570,14 @@ class VideoDownload {
         }
     }
 
+    private fun decryptSegment(encryptedSegment: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val secretKey = SecretKeySpec(key, "AES")
+        val ivSpec = IvParameterSpec(iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+        return cipher.doFinal(encryptedSegment)
+    }
+
     private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
@@ -533,6 +593,14 @@ class VideoDownload {
                 ?: throw Exception("Variant playlist content is empty")
 
             val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
+            val decryptionInfo: DecryptionInfo? = if (variantPlaylist.decryptionInfo != null) {
+                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl)
+                check(keyResponse.isOk) { "HLS request failed for decryption key: ${keyResponse.code}" }
+                DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv?.hexStringToByteArray())
+            } else {
+                null
+            }
+
             variantPlaylist.segments.forEachIndexed { index, segment ->
                 if (segment !is HLS.MediaSegment) {
                     return@forEachIndexed
@@ -544,7 +612,7 @@ class VideoDownload {
                 try {
                     segmentFiles.add(segmentFile)
 
-                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri) { segmentLength, totalRead, lastSpeed ->
+                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
                         val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
                         val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
                         onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
@@ -584,10 +652,8 @@ class VideoDownload {
 
     private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { continuation ->
-            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
-            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
-
-            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+            val cmd =
+                "-i \"concat:${segmentFiles.joinToString("|")}\" -c copy \"${targetFile.absolutePath}\""
 
             val statisticsCallback = StatisticsCallback { _ ->
                 //TODO: Show progress?
@@ -597,7 +663,6 @@ class VideoDownload {
             val session = FFmpegKit.executeAsync(cmd,
                 { session ->
                     if (ReturnCode.isSuccess(session.returnCode)) {
-                        fileList.delete()
                         continuation.resumeWith(Result.success(Unit))
                     } else {
                         val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
@@ -605,7 +670,6 @@ class VideoDownload {
                         } else {
                             "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
                         }
-                        fileList.delete()
                         continuation.resumeWithException(RuntimeException(errorMessage))
                     }
                 },
@@ -725,7 +789,7 @@ class VideoDownload {
             else {
                 Logger.i(TAG, "Download $name Sequential");
                 try {
-                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, onProgress);
+                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, null, 0, onProgress);
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
                     throw e
@@ -752,7 +816,31 @@ class VideoDownload {
         }
         return sourceLength!!;
     }
-    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, onProgress: (Long, Long, Long) -> Unit): Long {
+
+    data class DecryptionInfo(
+        val key: ByteArray,
+        val iv: ByteArray?
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as DecryptionInfo
+
+            if (!key.contentEquals(other.key)) return false
+            if (!iv.contentEquals(other.iv)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = key.contentHashCode()
+            result = 31 * result + iv.contentHashCode()
+            return result
+        }
+    }
+
+    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, index: Int, onProgress: (Long, Long, Long) -> Unit): Long {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -772,6 +860,8 @@ class VideoDownload {
         val sourceLength = result.body.contentLength();
         val sourceStream = result.body.byteStream();
 
+        val segmentBuffer = ByteArrayOutputStream()
+
         var totalRead: Long = 0;
         try {
             var read: Int;
@@ -782,7 +872,7 @@ class VideoDownload {
                 if (read < 0)
                     break;
 
-                fileStream.write(buffer, 0, read);
+                segmentBuffer.write(buffer, 0, read);
 
                 totalRead += read;
 
@@ -806,6 +896,21 @@ class VideoDownload {
         } finally {
             sourceStream.close()
             result.body.close()
+        }
+
+        if (decryptionInfo != null) {
+            var iv = decryptionInfo.iv
+            if (iv == null) {
+                iv = ByteBuffer.allocate(16)
+                    .putLong(0L)
+                    .putLong(index.toLong())
+                    .array()
+            }
+
+            val decryptedData = decryptSegment(segmentBuffer.toByteArray(), decryptionInfo.key, iv!!)
+            fileStream.write(decryptedData)
+        } else {
+            fileStream.write(segmentBuffer.toByteArray())
         }
 
         onProgress(sourceLength, totalRead, 0);
@@ -1026,8 +1131,8 @@ class VideoDownload {
     fun complete() {
         Logger.i(TAG, "VideoDownload Complete [${name}]");
         val existing = StateDownloads.instance.getCachedVideo(id);
-        val localVideoSource = videoFilePath?.let { LocalVideoSource.fromSource(videoSourceToUse!!, it, videoFileSize ?: 0) };
-        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(audioSourceToUse!!, it, audioFileSize ?: 0) };
+        val localVideoSource = videoFilePath?.let { LocalVideoSource.fromSource(videoSourceToUse!!, it, videoFileSize ?: 0, videoOverrideContainer) };
+        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(audioSourceToUse!!, it, audioFileSize ?: 0, audioOverrideContainer) };
         val localSubtitleSource = subtitleFilePath?.let { LocalSubtitleSource.fromSource(subtitleSource!!, it) };
 
         if(localVideoSource != null && videoSourceToUse != null && videoSourceToUse is IStreamMetaDataSource)
@@ -1056,7 +1161,7 @@ class VideoDownload {
             StateDownloads.instance.updateCachedVideo(existing);
         }
         else {
-            val newVideo = VideoLocal(videoDetails!!);
+            val newVideo = VideoLocal(videoDetails!!, OffsetDateTime.now());
             if(localVideoSource != null)
                 newVideo.videoSource.add(localVideoSource);
             if(localAudioSource != null)
@@ -1108,22 +1213,24 @@ class VideoDownload {
             else if (container.contains("video/x-matroska"))
                 return "mkv";
             else
-                return "video";
+                return "video";//throw IllegalStateException("Unknown container: " + container)
         }
 
         fun audioContainerToExtension(container: String): String {
             if (container.contains("audio/mp4"))
                 return "mp4a";
+            else if (container.contains("video/mp4"))
+                return "mp4";
             else if (container.contains("audio/mpeg"))
                 return "mpga";
             else if (container.contains("audio/mp3"))
                 return "mp3";
             else if (container.contains("audio/webm"))
-                return "webma";
+                return "webm";
             else if (container == "application/vnd.apple.mpegurl")
-                return "mp4";
+                return "m4a";
             else
-                return "audio";
+                return "audio";// throw IllegalStateException("Unknown container: " + container)
         }
 
         fun subtitleContainerToExtension(container: String?): String {

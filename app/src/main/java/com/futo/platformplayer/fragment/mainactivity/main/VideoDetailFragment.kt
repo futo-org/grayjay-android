@@ -1,17 +1,24 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.database.ContentObserver
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.view.ViewCompat.getDisplay
 import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
@@ -28,13 +35,18 @@ import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.containers.SingleViewTouchableMotionLayout
-import kotlin.math.min
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+
+//region Fragment
 @UnstableApi
-class VideoDetailFragment : MainFragment {
-    override val isMainView : Boolean = false;
+class VideoDetailFragment() : MainFragment() {
+    override val isMainView: Boolean = false;
     override val hasBottomBar: Boolean = true;
-    override val isOverlay : Boolean = true;
+    override val isOverlay: Boolean = true;
     override val isHistory: Boolean = false;
 
     private var _isActive: Boolean = false;
@@ -76,8 +88,9 @@ class VideoDetailFragment : MainFragment {
     private var _loadUrlOnCreate: UrlVideoWithTime? = null;
     private var _leavingPiP = false;
 
-//region Fragment
-    constructor() : super()
+    private var _landscapeOrientationListener: LandscapeOrientationListener? = null
+    private var _portraitOrientationListener: PortraitOrientationListener? = null
+    private var _autoRotateObserver: AutoRotateObserver? = null
 
     fun nextVideo() {
         _viewDetail?.nextVideo(true, true, true);
@@ -88,23 +101,27 @@ class VideoDetailFragment : MainFragment {
     }
 
     private fun isSmallWindow(): Boolean {
-        return min(
-            resources.configuration.screenWidthDp,
-            resources.configuration.screenHeightDp
-        ) < resources.getDimension(R.dimen.landscape_threshold)
+        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.column_width_dp) * 2
+    }
+
+    private fun isAutoRotateEnabled(): Boolean {
+        return android.provider.Settings.System.getInt(
+            context?.contentResolver,
+            android.provider.Settings.System.ACCELEROMETER_ROTATION, 0
+        ) == 1
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
         val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
-
         val isSmallWindow = isSmallWindow()
 
         if (
             isSmallWindow
             && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
             && !isFullscreen
+            && !isInPictureInPicture
             && state == State.MAXIMIZED
         ) {
             _viewDetail?.setFullscreen(true)
@@ -141,49 +158,93 @@ class VideoDetailFragment : MainFragment {
         ) {
             _viewDetail?.setFullscreen(true)
         }
+
+        updateOrientation()
     }
 
-    @SuppressLint("SourceLockedOrientationActivity")
     fun updateOrientation() {
         val a = activity ?: return
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
+        val alwaysAllowReverseLandscapeAutoRotate = Settings.instance.playback.alwaysAllowReverseLandscapeAutoRotate
 
-        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: false
+        val isLandscapeVideo: Boolean = _viewDetail?.isLandscapeVideo() ?: true
 
         val isSmallWindow = isSmallWindow()
+        val autoRotateEnabled = isAutoRotateEnabled()
 
         // For small windows if the device isn't landscape right now and full screen portrait isn't allowed then we should force landscape
         if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !rotationLock && isLandscapeVideo) {
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            if (alwaysAllowReverseLandscapeAutoRotate){
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            } else {
+                a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+            }
+            if (autoRotateEnabled
+            ) {
+                // start listening for the device to rotate to landscape
+                // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
+                _landscapeOrientationListener?.enableListener()
+            }
+        }
+        // For small windows if always all reverse landscape then we'll lock the orientation to landscape when system auto-rotate is off to make sure that locking
+        // and unlockiung in the player settings keep orientation in landscape
+        else if (isSmallWindow && isFullscreen && !isFullScreenPortraitAllowed && alwaysAllowReverseLandscapeAutoRotate && !rotationLock && isLandscapeVideo && !autoRotateEnabled) {
+            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         }
         // For small windows if the device isn't in a portrait orientation and we're in the maximized state then we should force portrait
+        // only do this if auto-rotate is on portrait is forced when leaving full screen for autorotate off
         else if (isSmallWindow && !isMinimizingFromFullScreen && !isFullscreen && state == State.MAXIMIZED && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            @SuppressLint("SourceLockedOrientationActivity")
             a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            if (autoRotateEnabled
+            ) {
+                // start listening for the device to rotate to portrait
+                // at which point we'll be able to set requestedOrientation to back to UNSPECIFIED
+                _portraitOrientationListener?.enableListener()
+            }
         } else if (rotationLock) {
-            a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            _portraitOrientationListener?.disableListener()
+            _landscapeOrientationListener?.disableListener()
+            val display = getDisplay(_viewDetail!!)
+            val rotation = display!!.rotation
+            val orientation = resources.configuration.orientation
+
+            a.requestedOrientation = when (orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> {
+                    if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+                        if (rotation == Surface.ROTATION_0) {
+                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                        }
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                }
+
+                Configuration.ORIENTATION_LANDSCAPE -> {
+                    if (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+                        if (rotation == Surface.ROTATION_90) {
+                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                        }
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+                }
+
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         } else {
-            when (Settings.instance.playback.autoRotate) {
-                0 -> {
-                    a.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                }
-
-                1 -> {
-                    a.requestedOrientation = if (isReversePortraitAllowed) {
-                        ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-                    } else {
-                        ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                    }
-                }
-
-                2 -> {
-                    a.requestedOrientation = if (isReversePortraitAllowed) {
-                        ActivityInfo.SCREEN_ORIENTATION_FULL_USER
-                    } else {
-                        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    }
-                }
+            _portraitOrientationListener?.disableListener()
+            _landscapeOrientationListener?.disableListener()
+            a.requestedOrientation = if (isReversePortraitAllowed) {
+                ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             }
         }
     }
@@ -354,6 +415,30 @@ class VideoDetailFragment : MainFragment {
         StatePlayer.instance.onRotationLockChanged.subscribe(this) {
             updateOrientation()
         }
+
+        val delayBeforeRemoveRotationLock = 800L
+
+        _landscapeOrientationListener = LandscapeOrientationListener(requireContext())
+        {
+            CoroutineScope(Dispatchers.Main).launch {
+                // delay to make sure that the system auto rotate updates
+                delay(delayBeforeRemoveRotationLock)
+                updateOrientation()
+            }
+        }
+        _portraitOrientationListener = PortraitOrientationListener(requireContext())
+        {
+            CoroutineScope(Dispatchers.Main).launch {
+                // delay to make sure that the system auto rotate updates
+                delay(delayBeforeRemoveRotationLock)
+                updateOrientation()
+            }
+        }
+        _autoRotateObserver = AutoRotateObserver(requireContext(), Handler(Looper.getMainLooper())) {
+            updateOrientation()
+        }
+        _autoRotateObserver?.startObserving()
+
         return _view!!;
     }
 
@@ -370,6 +455,10 @@ class VideoDetailFragment : MainFragment {
                 activity?.enterPictureInPictureMode(params);
             }
         }
+
+        if (isFullscreen) {
+            viewDetail?.restoreBrightness()
+        }
     }
 
     fun forcePictureInPicture() {
@@ -378,10 +467,14 @@ class VideoDetailFragment : MainFragment {
             activity?.enterPictureInPictureMode(params);
     }
     fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, isStop: Boolean, newConfig: Configuration) {
-        if (isInPictureInPictureMode) {
-            _viewDetail?.startPictureInPicture();
-        } else if (isInPictureInPicture) {
-            leavePictureInPictureMode(isStop);
+        try {
+            if (isInPictureInPictureMode) {
+                _viewDetail?.startPictureInPicture();
+            } else if (isInPictureInPicture) {
+                leavePictureInPictureMode(isStop);
+            }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to handle onPictureInPictureModeChanged", e)
         }
     }
     fun leavePictureInPictureMode(isStop: Boolean) {
@@ -401,6 +494,10 @@ class VideoDetailFragment : MainFragment {
         Logger.v(TAG, "onResume");
         _isActive = true;
         _leavingPiP = false;
+
+        if (isFullscreen) {
+            _viewDetail?.saveBrightness()
+        }
 
         _viewDetail?.let {
             Logger.v(TAG, "onResume preventPictureInPicture=false");
@@ -454,6 +551,10 @@ class VideoDetailFragment : MainFragment {
 
         SettingsActivity.settingsActivityClosed.remove(this)
         StatePlayer.instance.onRotationLockChanged.remove(this)
+
+        _landscapeOrientationListener?.disableListener()
+        _portraitOrientationListener?.disableListener()
+        _autoRotateObserver?.stopObserving()
 
         _viewDetail?.let {
             _viewDetail = null;
@@ -526,6 +627,11 @@ class VideoDetailFragment : MainFragment {
             showSystemUI()
         }
 
+        // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
+//        @SuppressLint("SourceLockedOrientationActivity")
+//        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+//        }
         updateOrientation();
         _view?.allowMotion = !fullscreen;
     }
@@ -547,4 +653,88 @@ class VideoDetailFragment : MainFragment {
 //region View
     //TODO: Determine if encapsulated would be readable enough
 //endregion
+}
+
+class LandscapeOrientationListener(
+    context: Context,
+    private val onLandscapeDetected: () -> Unit
+) : OrientationEventListener(context) {
+
+    private var isListening = false
+
+    override fun onOrientationChanged(orientation: Int) {
+        if (!isListening) return
+
+        if (orientation in 60..120 || orientation in 240..300) {
+            onLandscapeDetected()
+            disableListener()
+        }
+    }
+
+    fun enableListener() {
+        if (!isListening) {
+            isListening = true
+            enable()
+        }
+    }
+
+    fun disableListener() {
+        if (isListening) {
+            isListening = false
+            disable()
+        }
+    }
+}
+
+class PortraitOrientationListener(
+    context: Context,
+    private val onPortraitDetected: () -> Unit
+) : OrientationEventListener(context) {
+
+    private var isListening = false
+
+    override fun onOrientationChanged(orientation: Int) {
+        if (!isListening) return
+
+        if (orientation in 0..30 || orientation in 330..360 || orientation in 150..210) {
+            onPortraitDetected()
+            disableListener()
+        }
+    }
+
+    fun enableListener() {
+        if (!isListening) {
+            isListening = true
+            enable()
+        }
+    }
+
+    fun disableListener() {
+        if (isListening) {
+            isListening = false
+            disable()
+        }
+    }
+}
+
+class AutoRotateObserver(context: Context, handler: Handler, private val onAutoRotateChanged: () -> Unit) : ContentObserver(handler) {
+    private val contentResolver = context.contentResolver
+
+    override fun onChange(selfChange: Boolean) {
+        super.onChange(selfChange)
+
+        onAutoRotateChanged()
+    }
+
+    fun startObserving() {
+        contentResolver.registerContentObserver(
+            android.provider.Settings.System.getUriFor(android.provider.Settings.System.ACCELEROMETER_ROTATION),
+            false,
+            this
+        )
+    }
+
+    fun stopObserving() {
+        contentResolver.unregisterContentObserver(this)
+    }
 }

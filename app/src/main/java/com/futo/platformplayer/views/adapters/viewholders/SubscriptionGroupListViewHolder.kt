@@ -19,7 +19,6 @@ import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
-import com.futo.platformplayer.polycentric.PolycentricCache
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.AnyAdapter
@@ -89,7 +88,7 @@ class SubscriptionGroupListViewHolder(private val _viewGroup: ViewGroup) : AnyAd
         if(img != null)
             img.setImageView(_image)
         else {
-            _image.setImageResource(0);
+            _image.setImageDrawable(null);
 
             if(value is SubscriptionGroup.Add)
                 _image.setBackgroundColor(Color.DKGRAY);

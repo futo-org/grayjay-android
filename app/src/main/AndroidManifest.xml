@@ -36,6 +36,12 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
+        <receiver android:name=".receivers.MediaButtonReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
         <service android:name=".services.MediaPlaybackService"
             android:enabled="true"
             android:foregroundServiceType="mediaPlayback" />
@@ -49,10 +55,10 @@
 
         <activity
             android:name=".activities.MainActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
             android:exported="true"
             android:theme="@style/Theme.FutoVideo.NoActionBar"
-            android:launchMode="singleTask"
+            android:launchMode="singleInstance"
             android:resizeableActivity="true"
             android:supportsPictureInPicture="true">
 
@@ -150,7 +156,6 @@
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.SettingsActivity"
-            android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
         <activity
             android:name=".activities.DeveloperActivity"

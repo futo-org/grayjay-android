@@ -4,6 +4,8 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.models.Thumbnails
+import com.futo.platformplayer.api.media.models.article.IPlatformArticle
+import com.futo.platformplayer.api.media.models.article.IPlatformArticleDetails
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -21,20 +23,20 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.states.StateDeveloper
 
-open class JSArticleDetails : JSContent, IPluginSourced, IPlatformContentDetails {
+open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced, IPlatformContentDetails {
     final override val contentType: ContentType get() = ContentType.ARTICLE;
 
     private val _hasGetComments: Boolean;
     private val _hasGetContentRecommendations: Boolean;
 
-    val rating: IRating;
+    override val rating: IRating;
 
-    val summary: String;
-    val thumbnails: Thumbnails?;
-    val segments: List<IJSArticleSegment>;
+    override val summary: String;
+    override val thumbnails: Thumbnails?;
+    override val segments: List<IJSArticleSegment>;
 
     constructor(client: JSClient, obj: V8ValueObject): super(client.config, obj) {
-        val contextName = "PlatformPost";
+        val contextName = "PlatformArticle";
 
         rating = obj.getOrDefault<V8ValueObject>(client.config, "rating", contextName, null)?.let { IRating.fromV8(client.config, it, contextName) } ?: RatingLikes(0);
         summary = _content.getOrThrow(client.config, "summary", contextName);
@@ -99,6 +101,7 @@ open class JSArticleDetails : JSContent, IPluginSourced, IPlatformContentDetails
             return when(SegmentType.fromInt(obj.getOrThrow(client.config, "type", "JSArticle.Segment"))) {
                 SegmentType.TEXT -> JSTextSegment(client, obj);
                 SegmentType.IMAGES -> JSImagesSegment(client, obj);
+                SegmentType.HEADER -> JSHeaderSegment(client, obj);
                 SegmentType.NESTED -> JSNestedSegment(client, obj);
                 else -> null;
             }
@@ -110,6 +113,7 @@ enum class SegmentType(val value: Int) {
     UNKNOWN(0),
     TEXT(1),
     IMAGES(2),
+    HEADER(3),
 
     NESTED(9);
 
@@ -148,6 +152,17 @@ class JSImagesSegment: IJSArticleSegment {
         val contextName = "JSTextSegment";
         images = obj.getOrThrowNullableList<String>(client.config, "images", contextName) ?: listOf();
         caption = obj.getOrDefault(client.config, "caption", contextName, "") ?: "";
+    }
+}
+class JSHeaderSegment: IJSArticleSegment {
+    override val type = SegmentType.HEADER;
+    val content: String;
+    val level: Int;
+
+    constructor(client: JSClient, obj: V8ValueObject) {
+        val contextName = "JSHeaderSegment";
+        content = obj.getOrDefault(client.config, "content", contextName, "") ?: "";
+        level = obj.getOrDefault(client.config, "level", contextName, 1) ?: 1;
     }
 }
 class JSNestedSegment: IJSArticleSegment {

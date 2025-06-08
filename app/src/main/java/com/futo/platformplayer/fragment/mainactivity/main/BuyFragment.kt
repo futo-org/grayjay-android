@@ -1,6 +1,8 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,8 +68,7 @@ class BuyFragment : MainFragment() {
 
             _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, _, exception ->
                 if(success) {
-                    UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0,
-                        UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY));
+                    UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0, UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY));
                     _fragment.close(true);
                 }
                 else {
@@ -90,7 +91,7 @@ class BuyFragment : MainFragment() {
                 try {
                     val currencies = StatePayment.instance.getAvailableCurrencies("grayjay");
                     val prices = StatePayment.instance.getAvailableCurrencyPrices("grayjay");
-                    val country = StatePayment.instance.getPaymentCountryFromIP()?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
+                    val country = StatePayment.instance.getPaymentCountryFromIP(true)?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
                     val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id)) } };
 
                     if(currency != null && prices.containsKey(currency.id)) {
@@ -115,11 +116,14 @@ class BuyFragment : MainFragment() {
             val licenseInput = SlideUpMenuTextInput(context, context.getString(R.string.license));
             val productLicenseDialog = SlideUpMenuOverlay(context, findViewById<FrameLayout>(R.id.overlay_paid), context.getString(R.string.enter_license_key), context.getString(R.string.ok), true, licenseInput);
             productLicenseDialog.onOK.subscribe {
+                licenseInput.deactivate();
                 val licenseText = licenseInput.text;
                 if (licenseText.isNullOrEmpty()) {
                     UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.invalid_license_key));
                     return@subscribe;
                 }
+                licenseInput.clear();
+                productLicenseDialog.hide(true);
 
                 _fragment.lifecycleScope.launch(Dispatchers.IO) {
 
@@ -127,17 +131,18 @@ class BuyFragment : MainFragment() {
                         val activationResult = StatePayment.instance.setPaymentLicense(licenseText);
 
                         withContext(Dispatchers.Main) {
-                            if(activationResult) {
-                                licenseInput.deactivate();
-                                licenseInput.clear();
-                                productLicenseDialog.hide(true);
-
-                                UIDialogs.showDialogOk(context, R.drawable.ic_check, context.getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required));
-                                _fragment.close(true);
-                            }
-                            else
-                            {
-                                UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.invalid_license_key));
+                            try {
+                                if(activationResult) {
+                                    UIDialogs.showDialogOk(context, R.drawable.ic_check, context.getString(R.string.your_license_key_has_been_set_an_app_restart_might_be_required)) {
+                                        _fragment.close(true)
+                                    }
+                                }
+                                else
+                                {
+                                    UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, context.getString(R.string.invalid_license_key));
+                                }
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to update UI after buy complete", e)
                             }
                         }
                     }
@@ -158,5 +163,6 @@ class BuyFragment : MainFragment() {
 
     companion object {
         fun newInstance() = BuyFragment().apply {}
+        private val TAG = "BuyFragment"
     }
 }

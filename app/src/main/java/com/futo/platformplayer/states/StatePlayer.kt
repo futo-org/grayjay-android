@@ -13,6 +13,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
@@ -128,6 +129,12 @@ class StatePlayer {
         clearQueue();
         onPlayerClosed.emit();
         closeMediaSession();
+    }
+
+    fun saveQueueAsPlaylist(name: String){
+        val videos = _queue.toList();
+        val playlist = Playlist(name, videos.map { SerializedPlatformVideo.fromVideo(it) });
+        StatePlaylists.instance.createOrUpdatePlaylist(playlist);
     }
 
     //Notifications
@@ -591,7 +598,7 @@ class StatePlayer {
             }
 
             if(_queuePosition < _queue.size) {
-                return _queue[_queuePosition];
+                return getCurrentQueueItem();
             }
         }
         return null;

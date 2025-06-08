@@ -29,6 +29,7 @@ import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.SettingsActivity
+import com.futo.platformplayer.activities.SettingsActivity.Companion.settingsActivityClosed
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -47,6 +48,7 @@ import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
+import com.futo.polycentric.core.ApiMethods
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -154,13 +156,12 @@ class StateApp {
         return thisContext;
     }
 
+    private var _mainId: String? = null;
+
     //Files
     private var _tempDirectory: File? = null;
+    private var _cacheDirectory: File? = null;
     private var _persistentDirectory: File? = null;
-
-
-    //AutoRotate
-    var systemAutoRotate: Boolean = false;
 
     //Network
     private var _lastMeteredState: Boolean = false;
@@ -198,17 +199,6 @@ class StateApp {
 
         return File(_persistentDirectory, name);
     }
-
-    fun getCurrentSystemAutoRotate(): Boolean {
-        _context?.let {
-            systemAutoRotate = android.provider.Settings.System.getInt(
-                it.contentResolver,
-                android.provider.Settings.System.ACCELEROMETER_ROTATION, 0
-            ) == 1;
-        };
-        return systemAutoRotate;
-    }
-
 
     fun isCurrentMetered(): Boolean {
         ensureConnectivityManager();
@@ -307,12 +297,12 @@ class StateApp {
     }
 
     //Lifecycle
-    fun setGlobalContext(context: Context, coroutineScope: CoroutineScope? = null) {
+    fun setGlobalContext(context: Context, coroutineScope: CoroutineScope? = null, mainId: String? = null) {
+        _mainId = mainId;
         _context = context;
         _scope = coroutineScope
+        Logger.w(TAG, "Scope initialized ${(coroutineScope != null)}\n ${Log.getStackTraceString(Throwable())}")
 
-        //System checks
-        systemAutoRotate = getCurrentSystemAutoRotate();
     }
 
     fun initializeFiles(force: Boolean = false) {
@@ -324,6 +314,9 @@ class StateApp {
                 _tempDirectory?.deleteRecursively();
             }
             _tempDirectory?.mkdirs();
+            _cacheDirectory = File(context.filesDir, "cache");
+            if(_cacheDirectory?.exists() == false)
+                _cacheDirectory?.mkdirs();
             _persistentDirectory = File(context.filesDir, "persist");
             if(_persistentDirectory?.exists() == false) {
                 _persistentDirectory?.mkdirs();
@@ -383,6 +376,11 @@ class StateApp {
         Logger.i(TAG, "MainApp Starting");
         initializeFiles(true);
 
+        if(Settings.instance.other.polycentricLocalCache) {
+            Logger.i(TAG, "Initialize Polycentric Disk Cache")
+            _cacheDirectory?.let { ApiMethods.initCache(it) };
+        }
+
         val logFile = File(context.filesDir, "log.txt");
         if (Settings.instance.logging.logLevel > LogLevel.NONE.value) {
             val fileLogConsumer = FileLogConsumer(logFile, LogLevel.fromInt(Settings.instance.logging.logLevel), false);
@@ -419,7 +417,15 @@ class StateApp {
         }
 
         if (Settings.instance.synchronization.enabled) {
-            StateSync.instance.start()
+            StateSync.instance.start(context)
+        }
+
+        settingsActivityClosed.subscribe {
+            if (Settings.instance.synchronization.enabled) {
+                StateSync.instance.start(context)
+            } else {
+                StateSync.instance.stop()
+            }
         }
 
         Logger.onLogSubmitted.subscribe {
@@ -517,22 +523,33 @@ class StateApp {
 
         //Migration
         Logger.i(TAG, "MainApp Started: Check [Migrations]");
-        migrateStores(context, listOf(
-            StateSubscriptions.instance.toMigrateCheck(),
-            StatePlaylists.instance.toMigrateCheck()
-        ).flatten(), 0);
+
+        scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                migrateStores(context, listOf(
+                    StateSubscriptions.instance.toMigrateCheck(),
+                    StatePlaylists.instance.toMigrateCheck()
+                ).flatten(), 0)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to migrate stores")
+            }
+        }
 
         if(Settings.instance.subscriptions.fetchOnAppBoot) {
             scope.launch(Dispatchers.IO) {
                 Logger.i(TAG, "MainApp Started: Fetch [Subscriptions]");
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount();
                 val reqCountStr = subRequestCounts.map { "    ${it.key.config.name}: ${it.value}/${it.key.getSubscriptionRateLimit()}" }.joinToString("\n");
-                val isRateLimitReached = !subRequestCounts.any { clientCount -> clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true };
-                if (isRateLimitReached) {
+                val isBelowRateLimit = !subRequestCounts.any { clientCount ->
+                    clientCount.key.getSubscriptionRateLimit()?.let { rateLimit -> clientCount.value > rateLimit } == true
+                };
+                if (isBelowRateLimit) {
                     Logger.w(TAG, "Subscriptions request on boot, request counts:\n${reqCountStr}");
                     delay(5000);
-                    if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
-                        StateSubscriptions.instance.updateSubscriptionFeed(scope, false);
+                    scopeOrNull?.let {
+                        if(StateSubscriptions.instance.getOldestUpdateTime().getNowDiffMinutes() > 5)
+                            StateSubscriptions.instance.updateSubscriptionFeed(it, false);
+                    }
                 }
                 else
                     Logger.w(TAG, "Too many subscription requests required:\n${reqCountStr}");
@@ -683,19 +700,33 @@ class StateApp {
     }
 
 
-    private fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
+    private suspend fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
         if(managedStores.size <= index)
             return;
         val store = managedStores[index];
-        if(store.hasMissingReconstructions())
-            UIDialogs.showMigrateDialog(context, store) {
-                migrateStores(context, managedStores, index + 1);
-            };
-        else
+        if(store.hasMissingReconstructions()) {
+            withContext(Dispatchers.Main) {
+                try {
+                    UIDialogs.showMigrateDialog(context, store) {
+                        scopeOrNull?.launch(Dispatchers.IO) {
+                            try {
+                                migrateStores(context, managedStores, index + 1);
+                            } catch (e: Throwable) {
+                                Logger.e(TAG, "Failed to migrate store", e)
+                            }
+                        }
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to migrate stores", e)
+                }
+            }
+        } else
             migrateStores(context, managedStores, index + 1);
     }
 
-    fun mainAppDestroyed(context: Context) {
+    fun mainAppDestroyed(context: Context, mainId: String? = null) {
+        if (mainId != null && (_mainId != mainId || _mainId == null))
+            return
         Logger.i(TAG, "App ended");
         _receiverBecomingNoisy?.let {
             _receiverBecomingNoisy = null;
@@ -711,6 +742,7 @@ class StateApp {
 
         StatePlayer.instance.closeMediaSession();
         StateCasting.instance.stop();
+        StateSync.instance.stop();
         StatePlayer.dispose();
         Companion.dispose();
         _fileLogConsumer?.close();
@@ -718,7 +750,8 @@ class StateApp {
 
     fun dispose(){
         _context = null;
-        _scope = null;
+        // _scope = null;
+        Logger.w(TAG, "StateApp disposed: ${Log.getStackTraceString(Throwable())}")
     }
 
     private val _connectivityEvents = object : ConnectivityManager.NetworkCallback() {

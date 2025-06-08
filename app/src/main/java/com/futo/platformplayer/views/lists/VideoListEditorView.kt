@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -22,8 +23,10 @@ class VideoListEditorView : FrameLayout {
 
     val onVideoOrderChanged = Event1<List<IPlatformVideo>>()
     val onVideoRemoved = Event1<IPlatformVideo>();
+    val onVideoOptions = Event1<IPlatformVideo>();
     val onVideoClicked = Event1<IPlatformVideo>();
     val isEmpty get() = _videos.isEmpty();
+    val itemMoveCallback: ItemMoveCallback
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
         val recyclerPlaylist = RecyclerView(context, attrs);
@@ -32,14 +35,14 @@ class VideoListEditorView : FrameLayout {
         recyclerPlaylist.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(recyclerPlaylist);
 
-        val callback = ItemMoveCallback();
-        val touchHelper = ItemTouchHelper(callback);
+        itemMoveCallback = ItemMoveCallback();
+        val touchHelper = ItemTouchHelper(itemMoveCallback);
         val adapterVideos = VideoListEditorAdapter(touchHelper);
         recyclerPlaylist.adapter = adapterVideos;
         recyclerPlaylist.layoutManager = LinearLayoutManager(context);
         touchHelper.attachToRecyclerView(recyclerPlaylist);
 
-        callback.onRowMoved.subscribe { fromPosition, toPosition ->
+        itemMoveCallback.onRowMoved.subscribe { fromPosition, toPosition ->
             synchronized(_videos) {
                 if (fromPosition < toPosition) {
                     for (i in fromPosition until toPosition)
@@ -54,6 +57,9 @@ class VideoListEditorView : FrameLayout {
             }
         };
 
+        adapterVideos.onOptions.subscribe { v ->
+            onVideoOptions?.emit(v);
+        }
         adapterVideos.onRemove.subscribe { v ->
             val executeDelete = {
                 synchronized(_videos) {
@@ -89,6 +95,7 @@ class VideoListEditorView : FrameLayout {
         synchronized(_videos) {
             _videos.clear();
             _videos.addAll(videos ?: listOf());
+            itemMoveCallback.canEdit = canEdit
             _adapterVideos?.setVideos(_videos, canEdit);
         }
     }

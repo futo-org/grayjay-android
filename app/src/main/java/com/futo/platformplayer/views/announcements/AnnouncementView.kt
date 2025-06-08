@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AnnouncementView : LinearLayout {
-    private val _root: ConstraintLayout;
+    private val _root: FrameLayout;
     private val _textTitle: TextView;
     private val _textCounter: TextView;
     private val _textBody: TextView;
@@ -44,9 +44,6 @@ class AnnouncementView : LinearLayout {
         inflate(context, R.layout.view_announcement, this);
 
         _scope = findViewTreeLifecycleOwner()?.lifecycleScope ?: StateApp.instance.scopeOrNull; //TODO: Fetch correct scope
-
-        val dp10 = 10.dp(resources);
-        setPadding(dp10, dp10, dp10, dp10);
 
         _root = findViewById(R.id.root);
         _textTitle = findViewById(R.id.text_title);
@@ -115,12 +112,12 @@ class AnnouncementView : LinearLayout {
         _currentAnnouncement = announcement;
 
         if (announcement == null) {
-            visibility = View.GONE
+            _root.visibility = View.GONE
             onClose.emit()
             return;
         }
 
-        visibility = View.VISIBLE
+        _root.visibility = View.VISIBLE
 
         _textTitle.text = announcement.title;
         _textBody.text = announcement.msg;

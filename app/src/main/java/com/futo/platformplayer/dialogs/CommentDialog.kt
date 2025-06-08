@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -21,7 +22,6 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
-import com.futo.platformplayer.fullyBackfillServersAnnounceExceptions
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
@@ -29,6 +29,7 @@ import com.futo.platformplayer.states.StatePolycentric
 import com.futo.polycentric.core.ClaimType
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
+import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.button.MaterialButton
@@ -57,11 +58,21 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
         _editComment = findViewById(R.id.edit_comment);
         _textCharacterCount = findViewById(R.id.character_count);
         _textCharacterCountMax = findViewById(R.id.character_count_max);
+        setCanceledOnTouchOutside(false)
+        setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                handleCloseAttempt()
+                true
+            } else {
+                false
+            }
+        }
 
         _editComment.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) = Unit
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, c: Int) {
+                val count = s?.length ?: 0;
                 _textCharacterCount.text = count.toString();
 
                 if (count > PolycentricPlatformComment.MAX_COMMENT_SIZE) {
@@ -79,9 +90,12 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
         _inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager;
 
         _buttonCancel.setOnClickListener {
-            clearFocus();
-            dismiss();
+            handleCloseAttempt()
         };
+
+        setOnCancelListener {
+            handleCloseAttempt()
+        }
 
         _buttonCreate.setOnClickListener {
             clearFocus();
@@ -132,6 +146,22 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
 
         window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
         focus();
+    }
+
+    private fun handleCloseAttempt() {
+        if (_editComment.text.isEmpty()) {
+            clearFocus()
+            dismiss()
+        } else {
+            UIDialogs.showConfirmationDialog(
+                context,
+                context.resources.getString(R.string.not_empty_close),
+                action = {
+                    clearFocus()
+                    dismiss()
+                }
+            )
+        }
     }
 
     private fun focus() {
