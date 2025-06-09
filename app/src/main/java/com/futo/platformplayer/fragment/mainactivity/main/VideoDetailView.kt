@@ -1897,8 +1897,8 @@ class VideoDetailView : ConstraintLayout {
             }
 
             updateQualityFormatsOverlay(
-                videoTrackFormats.distinctBy { it.height }.sortedBy { it.height },
-                audioTrackFormats.distinctBy { it.bitrate }.sortedBy { it.bitrate });
+                videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
+                audioTrackFormats.distinctBy { it.bitrate }.sortedByDescending { it.bitrate });
         }
     }
 
