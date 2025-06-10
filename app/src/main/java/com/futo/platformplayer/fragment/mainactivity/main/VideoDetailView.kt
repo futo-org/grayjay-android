@@ -1484,7 +1484,7 @@ class VideoDetailView : ConstraintLayout {
                             )
                         }
 
-                        if (me.video == video)
+                        if (me.video.url == video.url && !me.video.url.isNullOrBlank())
                             me._playbackTracker = tracker;
                     } else if (me.video == video)
                         me._playbackTracker = null;
