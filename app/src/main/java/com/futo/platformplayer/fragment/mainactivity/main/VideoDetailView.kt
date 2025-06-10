@@ -1399,8 +1399,8 @@ class VideoDetailView : ConstraintLayout {
             onVideoChanged.emit(0, 0)
         }
 
+        val me = this;
         if (video is JSVideoDetails) {
-            val me = this;
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     //TODO: Implement video.getContentChapters()
@@ -1456,6 +1456,32 @@ class VideoDetailView : ConstraintLayout {
                     updateMoreButtons();
                 }
             };
+        }
+        else {
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    if (!StateApp.instance.privateMode) {
+                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
+                        var tracker = video.getPlaybackTracker()
+                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+
+                        if (tracker == null) {
+                            stopwatch.reset()
+                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
+                            Logger.i(
+                                TAG,
+                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
+                            )
+                        }
+
+                        if (me.video == video)
+                            me._playbackTracker = tracker;
+                    } else if (me.video == video)
+                        me._playbackTracker = null;
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Playback tracker failed", ex);
+                }
+            }
         }
 
         val ref = Models.referenceFromBuffer(video.url.toByteArray())
