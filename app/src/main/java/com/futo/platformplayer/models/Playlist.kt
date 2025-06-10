@@ -35,6 +35,9 @@ class Playlist {
         this.videos = ArrayList(list);
     }
 
+    fun makeCopy(newName: String? = null): Playlist {
+        return Playlist(newName ?: name, videos)
+    }
 
     companion object {
         fun fromV8(config: SourcePluginConfig, obj: V8ValueObject?): Playlist? {
