@@ -2539,7 +2539,9 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun saveBrightness() {
-        _player.gestureControl.saveBrightness()
+        if (Settings.instance.gestureControls.useSystemBrightness) {
+            _player.gestureControl.saveBrightness()
+        }
     }
     fun restoreBrightness() {
         _player.gestureControl.restoreBrightness()
