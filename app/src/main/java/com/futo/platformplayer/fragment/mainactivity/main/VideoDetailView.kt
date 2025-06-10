@@ -429,6 +429,9 @@ class VideoDetailView : ConstraintLayout {
             showChaptersUI();
         };
 
+        _layoutPlayerContainer.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            onShouldEnterPictureInPictureChanged.emit()
+        }
 
         _buttonSubscribe.onSubscribed.subscribe {
             _slideUpOverlay = UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
@@ -2746,6 +2749,7 @@ class VideoDetailView : ConstraintLayout {
 
         _overlayContainer.removeAllViews();
         _overlay_quality_selector?.hide();
+        _container_content.visibility = GONE
 
         _player.fillHeight(false)
         _layoutPlayerContainer.setPadding(0, 0, 0, 0);
@@ -2754,10 +2758,15 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "handleLeavePictureInPicture")
 
         if(!_player.isFullScreen) {
+            _container_content.visibility = VISIBLE
             _player.fitHeight();
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
         } else {
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
+        }
+
+        _layoutPlayerContainer.post {
+            onShouldEnterPictureInPictureChanged.emit()
         }
     }
     fun getPictureInPictureParams() : PictureInPictureParams {
@@ -2778,9 +2787,7 @@ class VideoDetailView : ConstraintLayout {
             videoSourceWidth = 9;
         }
 
-        val r = Rect();
-        _player.getGlobalVisibleRect(r);
-        r.right = r.right - _player.paddingEnd;
+        val r = _player.getVideoRect()
         val playpauseAction = if(_player.playing)
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 5));
         else
@@ -2789,7 +2796,8 @@ class VideoDetailView : ConstraintLayout {
         val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
 
         val params = PictureInPictureParams.Builder()
-            .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight)).setSourceRectHint(r)
+            .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
+            .setSourceRectHint(r)
             .setActions(listOf(toBackgroundAction, playpauseAction))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

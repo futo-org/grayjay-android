@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.net.Uri
@@ -462,6 +463,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private fun updateAutoplayButton() {
         _control_autoplay.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
         _control_autoplay_fullscreen.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
+    }
+
+    fun getVideoRect(): Rect {
+        val r = Rect()
+        _videoView.getGlobalVisibleRect(r)
+        return r
     }
 
     private fun setSystemBrightness(brightness: Float) {
