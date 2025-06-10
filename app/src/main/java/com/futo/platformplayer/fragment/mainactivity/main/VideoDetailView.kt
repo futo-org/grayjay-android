@@ -174,6 +174,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -2192,19 +2193,19 @@ class VideoDetailView : ConstraintLayout {
             if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
                 val playbackSpeeds = Settings.instance.playback.getPlaybackSpeeds();
                 val format = if(playbackSpeeds.size < 20) "%.2f" else "%.1f";
-                val playbackLabels = playbackSpeeds.map { String.format(format, it) }.toMutableList();
+                val playbackLabels = playbackSpeeds.map { String.format(Locale.US, format, it) }.toMutableList();
                 playbackLabels.add("+");
                 playbackLabels.add(0, "-");
 
-                setButtons(playbackLabels, String.format(format, currentPlaybackRate));
+                setButtons(playbackLabels, String.format(Locale.US, format, currentPlaybackRate));
                 onClick.subscribe { v ->
                     val currentPlaybackSpeed = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate();
                     var playbackSpeedString = v;
                     val stepSpeed = Settings.instance.playback.getPlaybackSpeedStep();
                     if(v == "+")
-                        playbackSpeedString = String.format("%.2f", Math.min((currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed, 5.0)).toString();
+                        playbackSpeedString = String.format(Locale.US, "%.2f", Math.min((currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed, 5.0)).toString();
                     else if(v == "-")
-                        playbackSpeedString = String.format("%.2f", Math.max(0.1, (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed)).toString();
+                        playbackSpeedString = String.format(Locale.US, "%.2f", Math.max(0.1, (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed)).toString();
                     val newPlaybackSpeed = playbackSpeedString.toDouble();
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
@@ -2212,11 +2213,11 @@ class VideoDetailView : ConstraintLayout {
                             return@subscribe
                         }
 
-                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format(Locale.US, "%.2f", newPlaybackSpeed)})");
                         ad.changeSpeed(newPlaybackSpeed)
                         setSelected(playbackSpeedString);
                     } else {
-                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format(Locale.US, "%.2f", newPlaybackSpeed)})");
                         _player.setPlaybackRate(playbackSpeedString.toFloat());
                         setSelected(playbackSpeedString);
                     }
