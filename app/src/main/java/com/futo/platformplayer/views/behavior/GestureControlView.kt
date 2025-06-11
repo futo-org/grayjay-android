@@ -92,6 +92,7 @@ class GestureControlView : LinearLayout {
     private var _surfaceView: View? = null
     private var _layoutIndicatorFill: FrameLayout;
     private var _layoutIndicatorFit: FrameLayout;
+    private var _speedHolding = false
 
     private val _gestureController: GestureDetectorCompat;
 
@@ -103,6 +104,8 @@ class GestureControlView : LinearLayout {
     val onZoom = Event1<Float>();
     val onSoundAdjusted = Event1<Float>();
     val onToggleFullscreen = Event0();
+    val onSpeedHoldStart = Event0()
+    val onSpeedHoldEnd = Event0()
 
     var fullScreenGestureEnabled = true
 
@@ -216,7 +219,19 @@ class GestureControlView : LinearLayout {
 
                 return true;
             }
-            override fun onLongPress(p0: MotionEvent) = Unit
+            override fun onLongPress(p0: MotionEvent) {
+                if (!_isControlsLocked
+                    && !_skipping
+                    && !_adjustingBrightness
+                    && !_adjustingSound
+                    && !_adjustingFullscreenUp
+                    && !_adjustingFullscreenDown
+                    && !_isPanning
+                    && !_isZooming) {
+                    _speedHolding = true
+                    onSpeedHoldStart.emit()
+                }
+            }
         });
 
         _gestureController.setOnDoubleTapListener(object : GestureDetector.OnDoubleTapListener {
@@ -308,6 +323,11 @@ class GestureControlView : LinearLayout {
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val ev = event ?: return super.onTouchEvent(event);
+
+        if (ev.action == MotionEvent.ACTION_UP && _speedHolding) {
+            _speedHolding = false
+            onSpeedHoldEnd.emit()
+        }
 
         cancelHideJob();
 
