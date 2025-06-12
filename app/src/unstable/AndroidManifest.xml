@@ -7,7 +7,7 @@
     <application>
         <receiver android:name=".receivers.InstallReceiver" />
 
-        <activity android:name=".activities.MainActivity" android:launchMode="singleInstance">
+        <activity android:name=".activities.MainActivity">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
