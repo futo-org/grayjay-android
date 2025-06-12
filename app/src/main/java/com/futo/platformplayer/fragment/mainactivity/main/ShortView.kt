@@ -343,6 +343,13 @@ class ShortView : FrameLayout {
             mainFragment.navigate<ChannelFragment>(video?.author)
         }
 
+        videoTitle.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            if (!bottomSheet.isAdded) {
+                bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
+            }
+        }
+
         commentsButton.setOnClickListener {
             playSoundEffect(SoundEffectConstants.CLICK)
             if (!bottomSheet.isAdded) {
@@ -370,6 +377,56 @@ class ShortView : FrameLayout {
             showVideoSettings()
         }
 
+        likeButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            val checked = !likeButton.isChecked
+            StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+                if (checked) {
+                    likes++
+                } else {
+                    likes--
+                }
+
+                likeButton.isChecked = checked
+
+                if (dislikeButton.isChecked && checked) {
+                    dislikeButton.isChecked = false
+                    dislikes--
+                }
+
+                onLikeDislikeUpdated.emit(
+                    OnLikeDislikeUpdatedArgs(
+                        it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                    )
+                )
+            }
+        }
+
+        dislikeButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            val checked = !dislikeButton.isChecked
+            StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+                if (checked) {
+                    dislikes++
+                } else {
+                    dislikes--
+                }
+
+                dislikeButton.isChecked = checked
+
+                if (likeButton.isChecked && checked) {
+                    likeButton.isChecked = false
+                    likes--
+                }
+
+                onLikeDislikeUpdated.emit(
+                    OnLikeDislikeUpdatedArgs(
+                        it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                    )
+                )
+            }
+        }
+
         onLikesLoaded.subscribe(tag) { rating, liked, disliked ->
             likes = rating.likes
             dislikes = rating.dislikes
@@ -378,52 +435,6 @@ class ShortView : FrameLayout {
 
             dislikeContainer.visibility = VISIBLE
             likeContainer.visibility = VISIBLE
-
-            likeButton.addOnCheckedChangeListener { button, checked ->
-                playSoundEffect(SoundEffectConstants.CLICK)
-                StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
-                    if (checked) {
-                        likes++
-                    } else {
-                        likes--
-                    }
-
-                    if (dislikeButton.isChecked && checked) {
-                        // Chain reaction
-                        dislikeButton.isChecked = false
-                    } else {
-                        // No chain reaction submit changes
-                        onLikeDislikeUpdated.emit(
-                            OnLikeDislikeUpdatedArgs(
-                                it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
-                            )
-                        )
-                    }
-                }
-            }
-
-            dislikeButton.addOnCheckedChangeListener { button, checked ->
-                playSoundEffect(SoundEffectConstants.CLICK)
-                StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
-                    if (checked) {
-                        dislikes++
-                    } else {
-                        dislikes--
-                    }
-
-                    if (likeButton.isChecked && checked) {
-                        // Chain reaction
-                        likeButton.isChecked = false
-                    } else {
-                        // No chain reaction submit changes
-                        onLikeDislikeUpdated.emit(
-                            OnLikeDislikeUpdatedArgs(
-                                it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
-                            )
-                        )
-                    }
-                }
-            }
         }
     }
 
@@ -732,8 +743,6 @@ class ShortView : FrameLayout {
     private fun loadLikes(video: IPlatformVideo) {
         likeContainer.visibility = GONE
         dislikeContainer.visibility = GONE
-        likeButton.clearOnCheckedChangeListeners()
-        dislikeButton.clearOnCheckedChangeListeners()
 
         loadLikesTask?.cancel()
         loadLikesTask =

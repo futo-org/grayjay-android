@@ -99,7 +99,7 @@
                     app:iconSize="24dp"
                     app:iconTint="@android:color/white"
                     app:rippleColor="@color/ripple"
-                    app:toggleCheckedStateOnClick="true" />
+                    app:toggleCheckedStateOnClick="false" />
 
                 <TextView
                     android:id="@+id/like_count"
@@ -133,7 +133,7 @@
                     app:iconSize="24dp"
                     app:iconTint="@android:color/white"
                     app:rippleColor="@color/ripple"
-                    app:toggleCheckedStateOnClick="true" />
+                    app:toggleCheckedStateOnClick="false" />
 
                 <TextView
                     android:id="@+id/dislike_count"
