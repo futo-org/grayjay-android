@@ -160,10 +160,10 @@ class ShortView : FrameLayout {
         null
 
     val onResetTriggered = Event0()
-    val onPlayingToggled = Event1<Boolean>()
-    val onLikesLoaded = Event3<RatingLikeDislikes, Boolean, Boolean>()
-    val onLikeDislikeUpdated = Event1<OnLikeDislikeUpdatedArgs>()
-    val onVideoUpdated = Event1<IPlatformVideo?>()
+    private val onPlayingToggled = Event1<Boolean>()
+    private val onLikesLoaded = Event3<RatingLikeDislikes, Boolean, Boolean>()
+    private val onLikeDislikeUpdated = Event1<OnLikeDislikeUpdatedArgs>()
+    private val onVideoUpdated = Event1<IPlatformVideo?>()
 
     private val bottomSheet: CommentsModalBottomSheet = CommentsModalBottomSheet()
 
@@ -447,8 +447,7 @@ class ShortView : FrameLayout {
         overlay.visibility = VISIBLE
 
         overlay.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(400)
-            .setInterpolator(OvershootInterpolator(1.2f))
-            .start()
+            .setInterpolator(OvershootInterpolator(1.2f)).start()
 
         overlay.postDelayed({
             hidePlayPauseIcon()
@@ -783,11 +782,11 @@ class ShortView : FrameLayout {
 
                     mainFragment.lifecycleScope.launch(Dispatchers.IO) {
                         try {
-                            Logger.i(CommentsModalBottomSheet.Companion.TAG, "Started backfill")
+                            Logger.i(CommentsModalBottomSheet.TAG, "Started backfill")
                             args.processHandle.fullyBackfillServersAnnounceExceptions()
-                            Logger.i(CommentsModalBottomSheet.Companion.TAG, "Finished backfill")
+                            Logger.i(CommentsModalBottomSheet.TAG, "Finished backfill")
                         } catch (e: Throwable) {
-                            Logger.e(CommentsModalBottomSheet.Companion.TAG, "Failed to backfill servers", e)
+                            Logger.e(CommentsModalBottomSheet.TAG, "Failed to backfill servers", e)
                         }
                     }
 
@@ -832,13 +831,13 @@ class ShortView : FrameLayout {
             Logger.w(TAG, "exception<ScriptLoginRequiredException>", e)
             UIDialogs.showDialog(
                 context, R.drawable.ic_security, "Authentication", e.message, null, 0, UIDialogs.Action("Cancel", {}), UIDialogs.Action("Login", {
-                    val id = e.config.let { if (it is SourcePluginConfig) it.id else null }
-                    val didLogin =
-                        if (id == null) false else StatePlugins.instance.loginPlugin(context, id) {
-                            loadVideo(url)
-                        }
-                    if (!didLogin) UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login")
-                }, UIDialogs.ActionStyle.PRIMARY)
+                val id = e.config.let { if (it is SourcePluginConfig) it.id else null }
+                val didLogin =
+                    if (id == null) false else StatePlugins.instance.loginPlugin(context, id) {
+                        loadVideo(url)
+                    }
+                if (!didLogin) UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login")
+            }, UIDialogs.ActionStyle.PRIMARY)
             )
         }.exception<ContentNotAvailableYetException> {
             Logger.w(TAG, "exception<ContentNotAvailableYetException>", it)
@@ -924,7 +923,7 @@ class ShortView : FrameLayout {
         const val TAG = "VideoDetailView"
     }
 
-    class CommentsModalBottomSheet() : BottomSheetDialogFragment() {
+    class CommentsModalBottomSheet : BottomSheetDialogFragment() {
         var mainFragment: MainFragment? = null
 
         private lateinit var containerContent: FrameLayout
@@ -968,7 +967,7 @@ class ShortView : FrameLayout {
         private lateinit var behavior: BottomSheetBehavior<FrameLayout>
 
         private val _taskLoadPolycentricProfile =
-            TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) }).success { it -> setPolycentricProfile(it, animate = true) }
+            TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) }).success { setPolycentricProfile(it, animate = true) }
                 .exception<Throwable> {
                     Logger.w(TAG, "Failed to load claims.", it)
                 }
@@ -1024,7 +1023,7 @@ class ShortView : FrameLayout {
                 val id = c.author.id.value
 
                 Logger.i(TAG, "onAuthorClick: $id")
-                if (id != null && id.startsWith("polycentric://") == true) {
+                if (id != null && id.startsWith("polycentric://")) {
                     val navUrl = "https://harbor.social/" + id.substring("polycentric://".length)
                     mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, navUrl.toUri()))
                 }
@@ -1229,15 +1228,21 @@ class ShortView : FrameLayout {
             buttonPlatform.setTextColor(resources.getColor(if (index == 1) R.color.white else R.color.gray_ac, null))
             buttonPolycentric.setTextColor(resources.getColor(if (index == 0) R.color.white else R.color.gray_ac, null))
 
-            if (index == null) {
-                addCommentView.visibility = GONE
-                commentsList.clear()
-            } else if (index == 0) {
-                addCommentView.visibility = VISIBLE
-                fetchPolycentricComments()
-            } else if (index == 1) {
-                addCommentView.visibility = GONE
-                fetchComments()
+            when (index) {
+                null -> {
+                    addCommentView.visibility = GONE
+                    commentsList.clear()
+                }
+
+                0 -> {
+                    addCommentView.visibility = VISIBLE
+                    fetchPolycentricComments()
+                }
+
+                1 -> {
+                    addCommentView.visibility = GONE
+                    fetchComments()
+                }
             }
         }
 
@@ -1252,7 +1257,7 @@ class ShortView : FrameLayout {
             Logger.i(TAG, "fetchPolycentricComments")
             val video = video
             val idValue = video.id.value
-            if (video.url.isEmpty() != false) {
+            if (video.url.isEmpty()) {
                 Logger.w(TAG, "Failed to fetch polycentric comments because url was null")
                 commentsList.clear()
                 return

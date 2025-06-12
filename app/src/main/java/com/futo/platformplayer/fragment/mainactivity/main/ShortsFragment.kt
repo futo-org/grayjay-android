@@ -31,8 +31,19 @@ class ShortsFragment : MainFragment() {
     private var loadPagerTask: TaskHandler<ShortsFragment, IPager<IPlatformVideo>>? = null
     private var nextPageTask: TaskHandler<ShortsFragment, List<IPlatformVideo>>? = null
 
-    private var shortsPager: IPager<IPlatformVideo>? = null
-    private val videos: MutableList<IPlatformVideo> = mutableListOf()
+    private var mainShortsPager: IPager<IPlatformVideo>? = null
+    private val mainShorts: MutableList<IPlatformVideo> = mutableListOf()
+
+    // the pager to call next on
+    private var currentShortsPager: IPager<IPlatformVideo>? = null
+
+    // the shorts array bound to the ViewPager2 adapter
+    private val currentShorts: MutableList<IPlatformVideo> = mutableListOf()
+
+    private var channelShortsPager: IPager<IPlatformVideo>? = null
+    private val channelShorts: MutableList<IPlatformVideo> = mutableListOf()
+    val isChannelShortsMode: Boolean
+        get() = channelShortsPager != null
 
     private var viewPager: ViewPager2? = null
     private lateinit var overlayLoading: FrameLayout
@@ -42,6 +53,47 @@ class ShortsFragment : MainFragment() {
 
     init {
         loadPager()
+    }
+
+    // we just completely reset the data structure so we want to tell the adapter that
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onShown(parameter: Any?, isBack: Boolean) {
+        super.onShown(parameter, isBack)
+
+        if (parameter is Triple<*, *, *>) {
+            setLoading(false)
+            channelShorts.clear()
+            @Suppress("UNCHECKED_CAST") // TODO replace with a strongly typed parameter
+            channelShorts.addAll(parameter.third as ArrayList<IPlatformVideo>)
+            @Suppress("UNCHECKED_CAST") // TODO replace with a strongly typed parameter
+            channelShortsPager = parameter.second as IPager<IPlatformVideo>
+
+            currentShorts.clear()
+            currentShorts.addAll(channelShorts)
+            currentShortsPager = channelShortsPager
+
+            viewPager?.adapter?.notifyDataSetChanged()
+
+            viewPager?.post {
+                viewPager?.currentItem = channelShorts.indexOfFirst {
+                    return@indexOfFirst (parameter.first as IPlatformVideo).id == it.id
+                }
+            }
+        } else if (isChannelShortsMode) {
+            channelShortsPager = null
+            channelShorts.clear()
+            currentShorts.clear()
+
+            if (loadPagerTask == null) {
+                currentShorts.addAll(mainShorts)
+                currentShortsPager = mainShortsPager
+            } else {
+                setLoading(true)
+            }
+
+            viewPager?.adapter?.notifyDataSetChanged()
+            viewPager?.currentItem = 0
+        }
     }
 
     override fun onCreateMainView(
@@ -62,8 +114,8 @@ class ShortsFragment : MainFragment() {
 
         Logger.i(TAG, "Creating adapter")
         val customViewAdapter =
-            CustomViewAdapter(videos, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
-                if (!shortsPager!!.hasMorePages()) {
+            CustomViewAdapter(currentShorts, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
+                if (!currentShortsPager!!.hasMorePages()) {
                     return@CustomViewAdapter
                 }
                 nextPage()
@@ -81,19 +133,16 @@ class ShortsFragment : MainFragment() {
 
         this.customViewAdapter = customViewAdapter
 
-        if (loadPagerTask == null && videos.isEmpty()) {
+        if (loadPagerTask == null && currentShorts.isEmpty()) {
             loadPager()
 
             loadPagerTask!!.success {
-                applyData()
+                setLoading(false)
             }
         } else {
-            applyData()
+            setLoading(false)
         }
-    }
 
-    private fun applyData() {
-        val viewPager = viewPager!!
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             fun play(adapter: CustomViewAdapter, position: Int) {
                 val recycler = (viewPager.getChildAt(0) as RecyclerView)
@@ -126,17 +175,13 @@ class ShortsFragment : MainFragment() {
                 super.onPageScrollStateChanged(state)
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     val adapter = (viewPager.adapter as CustomViewAdapter)
-                    val position = adapter.newPosition
-                    if (position == null) {
-                        return
-                    }
+                    val position = adapter.newPosition ?: return
                     adapter.newPosition = null
 
                     play(adapter, position)
                 }
             }
         })
-        setLoading(false)
     }
 
     private fun nextPage() {
@@ -144,12 +189,17 @@ class ShortsFragment : MainFragment() {
 
         val nextPageTask =
             TaskHandler<ShortsFragment, List<IPlatformVideo>>(StateApp.instance.scopeGetter, {
-                shortsPager!!.nextPage()
+                currentShortsPager!!.nextPage()
 
-                return@TaskHandler shortsPager!!.getResults()
+                return@TaskHandler currentShortsPager!!.getResults()
             }).success { newVideos ->
                 val prevCount = customViewAdapter!!.itemCount
-                videos.addAll(newVideos)
+                currentShorts.addAll(newVideos)
+                if (isChannelShortsMode) {
+                    channelShorts.addAll(newVideos)
+                } else {
+                    mainShorts.addAll(newVideos)
+                }
                 customViewAdapter!!.notifyItemRangeInserted(prevCount, newVideos.size)
                 nextPageTask = null
             }
@@ -170,13 +220,19 @@ class ShortsFragment : MainFragment() {
 
                 return@TaskHandler pager
             }).success { pager ->
-                videos.clear()
-                videos.addAll(pager.getResults())
-                shortsPager = pager
+                mainShorts.clear()
+                mainShorts.addAll(pager.getResults())
+                mainShortsPager = pager
 
-                // if the view pager exists go back to the beginning
-                viewPager?.adapter?.notifyDataSetChanged()
-                viewPager?.currentItem = 0
+                if (!isChannelShortsMode) {
+                    currentShorts.clear()
+                    currentShorts.addAll(mainShorts)
+                    currentShortsPager = pager
+
+                    // if the view pager exists go back to the beginning
+                    viewPager?.adapter?.notifyDataSetChanged()
+                    viewPager?.currentItem = 0
+                }
 
                 loadPagerTask = null
             }.exception<Throwable> { err ->
