@@ -433,6 +433,8 @@
     <string name="min_playback_speed_description">Minimum Available Speed</string>
     <string name="max_playback_speed">Maximum Playback Speed</string>
     <string name="max_playback_speed_description">Maximum Available Speed</string>
+    <string name="hold_playback_speed">Hold playback speed</string>
+    <string name="hold_playback_speed_description">Playback speed when pressing down on the video</string>
     <string name="step_playback_speed">Playback Speed Step Size</string>
     <string name="step_playback_speed_description">The step size of playback speeds, may not affect higher playback speeds.</string>
     <string name="seek_offset_description">Fast-Forward / Fast-Rewind duration</string>
@@ -1105,6 +1107,16 @@
         <item>3.0</item>
         <item>4.0</item>
         <item>5.0</item>
+    </string-array>
+    <string-array name="hold_playback_speeds">
+        <item>1.25</item>
+        <item>1.5</item>
+        <item>1.75</item>
+        <item>2.0</item>
+        <item>2.25</item>
+        <item>2.5</item>
+        <item>2.75</item>
+        <item>3.0</item>
     </string-array>
     <string-array name="min_playback_speed">
         <item>0.25</item>

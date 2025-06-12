@@ -261,7 +261,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             exoPlayer?.player?.let { player ->
                 _speedHoldWasPlaying = player.isPlaying
                 _speedHoldPrevRate = getPlaybackRate()
-                setPlaybackRate(2f)
+                setPlaybackRate(Settings.instance.playback.getHoldPlaybackSpeed().toFloat())
                 player.play()
             }
         }
