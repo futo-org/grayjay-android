@@ -598,7 +598,8 @@ class Settings : FragmentedStorageFileJson() {
                 4 -> 2.25
                 5 -> 2.5
                 6 -> 2.75
-                else -> 3.0
+                7 -> 3.0
+                else -> 2.0
             }
         }
     }
