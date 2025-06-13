@@ -423,17 +423,25 @@ class StatePlaylists {
     class PlaylistBackup: ReconstructStore<Playlist>() {
         override fun toReconstruction(obj: Playlist): String {
             val items = ArrayList<String>();
-            items.add(obj.name);
+            items.add(obj.name + ":::" + obj.id);
             items.addAll(obj.videos.map { it.url });
             return items.map { it.replace("\n","") }.joinToString("\n");
         }
         override suspend fun toObject(id: String, backup: String, reconstructionBuilder: Builder, importCache: ImportCache?): Playlist {
+            var idToUse = id;
             val items = backup.split("\n");
             if(items.size <= 0) {
                 throw IllegalStateException("Cannot reconstructor playlist ${id}");
             }
 
-            val name = items[0];
+            var name = items[0];
+            if(name.contains(":::")){
+                val splitIndex = name.indexOf(":::");
+                val foundId = name.substring(splitIndex + 3);
+                if(!foundId.isNullOrEmpty())
+                    idToUse = foundId;
+                name = name.substring(0, splitIndex);
+            }
             val videos = items.drop(1).filter { it.isNotEmpty() }.map {
                 try {
                     val videoUrl = it;
@@ -465,7 +473,7 @@ class StatePlaylists {
                     throw ReconstructionException(name, "${name}:[${it}] ${ex.message}", ex);
                 }
             }.filter { it != null }.map { it!! }
-            return Playlist(id, name, videos);
+            return Playlist(idToUse, name, videos);
         }
     }
 }

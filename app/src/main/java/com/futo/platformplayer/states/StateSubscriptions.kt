@@ -329,8 +329,19 @@ class StateSubscriptions {
                 }
             }
 
-            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url))
-                getSubscriptionOtherOrCreate(sub.channel.url, sub.channel.name, sub.channel.thumbnail);
+            if(StateSubscriptionGroups.instance.hasSubscriptionGroup(sub.channel.url)) {
+                val subGroups = StateSubscriptionGroups.instance.getSubscriptionGroups().filter { it.urls.contains(sub.channel.url) };
+                for(group in subGroups) {
+                    group.urls.remove(sub.channel.url);
+                    StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
+                }
+                /*
+                getSubscriptionOtherOrCreate(
+                    sub.channel.url,
+                    sub.channel.name,
+                    sub.channel.thumbnail
+                ); */
+            }
         }
         return sub;
     }

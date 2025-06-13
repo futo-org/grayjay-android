@@ -252,12 +252,22 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun switchToVideoMode() {
         Logger.i(TAG, "Switching to Video Mode");
         isAudioMode = false;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
     fun switchToAudioMode() {
         Logger.i(TAG, "Switching to Audio Mode");
         isAudioMode = true;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
 
     fun seekTo(ms: Long) {

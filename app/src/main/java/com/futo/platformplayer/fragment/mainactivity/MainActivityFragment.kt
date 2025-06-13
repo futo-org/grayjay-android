@@ -23,7 +23,7 @@ open class MainActivityFragment : Fragment() {
     fun navigate(frag: MainFragment, parameter: Any? = null, withHistory: Boolean = true) {
         val a = activity
         if (a is MainActivity)
-            (activity as MainActivity).navigate(frag, parameter, withHistory)
+            (activity as MainActivity).navigate(frag, parameter, withHistory, false)
         else
             Log.e(TAG, "Failed to navigate due to activity not being a main activity.")
     }

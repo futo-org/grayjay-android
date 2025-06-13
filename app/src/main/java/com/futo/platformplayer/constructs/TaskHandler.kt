@@ -82,7 +82,11 @@ class TaskHandler<TParameter, TResult> {
                         handled = true;
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Handled exception in TaskHandler onSuccess.", e);
-                        onError.emit(e, parameter);
+                        try {
+                            onError.emit(e, parameter);
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Unhandled exception in .exception handler 1", e)
+                        }
                         handled = true;
                     }
                 }
@@ -99,10 +103,14 @@ class TaskHandler<TParameter, TResult> {
                     if (id != _idGenerator)
                         return@withContext;
 
-                    if (!onError.emit(e, parameter)) {
-                        Logger.e(TAG, "Uncaught exception handled by TaskHandler.", e);
-                    } else {
-                        //Logger.w(TAG, "Handled exception in TaskHandler invoke.", e); (Prevents duplicate logs)
+                    try {
+                        if (!onError.emit(e, parameter)) {
+                            Logger.e(TAG, "Uncaught exception handled by TaskHandler.", e);
+                        } else {
+                            //Logger.w(TAG, "Handled exception in TaskHandler invoke.", e); (Prevents duplicate logs)
+                        }
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Unhandled exception in .exception handler 2", e)
                     }
                 }
             }

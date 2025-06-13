@@ -4,6 +4,10 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
 
+@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class AdvancedField();
+
 
 @Target(AnnotationTarget.FIELD, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
@@ -22,6 +26,8 @@ interface IField {
     val obj : Any?;
     val field : Field?;
 
+    val isAdvanced: Boolean;
+
     val value: Any?;
     val onChanged : Event3<IField, Any, Any>;
 
@@ -29,7 +35,7 @@ interface IField {
 
     val searchContent: String?;
 
-    fun fromField(obj : Any, field : Field, formField: FormField? = null) : IField;
+    fun fromField(obj : Any, field : Field, formField: FormField? = null, advanced: Boolean = false) : IField;
     fun setField();
 
     fun setValue(value: Any);

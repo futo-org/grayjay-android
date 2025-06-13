@@ -195,4 +195,39 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:visibility="gone"/>
 
+    <LinearLayout
+        android:id="@+id/layout_controls_increased_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/background_pill_black"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:layout_marginTop="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/text_holdFastForward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="2x"
+            android:textSize="14dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_regular" />
+
+        <ImageView
+            android:id="@+id/image_holdFastForward"
+            android:layout_width="wrap_content"
+            android:layout_height="8dp"
+            android:adjustViewBounds="true"
+            app:srcCompat="@drawable/ic_fastforward_animated"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

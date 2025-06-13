@@ -27,7 +27,9 @@ interface IJSContent: IPlatformContent  {
                 ContentType.NESTED_VIDEO -> JSNestedMediaContent(config, obj);
                 ContentType.PLAYLIST -> JSPlaylist(config, obj);
                 ContentType.LOCKED -> JSLockedContent(config, obj);
-                ContentType.CHANNEL -> JSChannelContent(config, obj)
+                ContentType.CHANNEL -> JSChannelContent(config, obj);
+                ContentType.ARTICLE -> JSArticle(config, obj);
+                ContentType.WEB -> JSWeb(config, obj);
                 else -> throw NotImplementedError("Unknown content type ${type}");
             }
         }

@@ -84,16 +84,20 @@ class StateSync {
 
             onUnauthorized = { sess ->
                 StateApp.instance.scope.launch(Dispatchers.Main) {
-                    UIDialogs.showConfirmationDialog(
-                        context,
-                        "Device Unauthorized: ${sess.displayName}",
-                        action = {
-                            Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
-                            removeAuthorizedDevice(sess.remotePublicKey)
-                            deviceRemoved.emit(sess.remotePublicKey)
-                        },
-                        cancelAction = {}
-                    )
+                    try {
+                        UIDialogs.showConfirmationDialog(
+                            context,
+                            "Device Unauthorized: ${sess.displayName}",
+                            action = {
+                                Logger.i(TAG, "${sess.remotePublicKey} unauthorized received")
+                                removeAuthorizedDevice(sess.remotePublicKey)
+                                deviceRemoved.emit(sess.remotePublicKey)
+                            },
+                            cancelAction = {}
+                        )
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to show unauthorized dialog.", e)
+                    }
                 }
             }
 
@@ -118,30 +122,38 @@ class StateSync {
 
                 if (scope != null && activity != null) {
                     scope.launch(Dispatchers.Main) {
-                        UIDialogs.showConfirmationDialog(activity, "Allow connection from $remotePublicKey?",
-                            action = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        callback(true)
-                                        Logger.i(TAG, "Connection authorized for $remotePublicKey by confirmation")
+                        try {
+                            UIDialogs.showConfirmationDialog(
+                                activity, "Allow connection from $remotePublicKey?",
+                                action = {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            callback(true)
+                                            Logger.i(
+                                                TAG,
+                                                "Connection authorized for $remotePublicKey by confirmation"
+                                            )
 
-                                        activity.finish()
-                                    } catch (e: Throwable) {
-                                        Logger.e(TAG, "Failed to send authorize", e)
+                                            activity.finish()
+                                        } catch (e: Throwable) {
+                                            Logger.e(TAG, "Failed to send authorize", e)
+                                        }
+                                    }
+                                },
+                                cancelAction = {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            callback(false)
+                                            Logger.i(TAG, "$remotePublicKey unauthorized received")
+                                        } catch (e: Throwable) {
+                                            Logger.w(TAG, "Failed to send unauthorize", e)
+                                        }
                                     }
                                 }
-                            },
-                            cancelAction = {
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        callback(false)
-                                        Logger.i(TAG, "$remotePublicKey unauthorized received")
-                                    } catch (e: Throwable) {
-                                        Logger.w(TAG, "Failed to send unauthorize", e)
-                                    }
-                                }
-                            }
-                        )
+                            )
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to show authorized dialog.", e)
+                        }
                     }
                 } else {
                     callback(false)
@@ -223,6 +235,11 @@ class StateSync {
             }
         }
     }
+
+    private val _lockSubscriptions = Any();
+    private val _lockSubscriptionGroups = Any();
+    private val _lockPlaylists = Any();
+    private val _lockWatchlater = Any();
 
     private fun handleData(session: SyncSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
         val remotePublicKey = session.remotePublicKey
@@ -307,7 +324,9 @@ class StateSync {
                 data.get(dataBody);
                 val json = String(dataBody, Charsets.UTF_8);
                 val subPackage = Serializer.json.decodeFromString<SyncSubscriptionsPackage>(json);
-                handleSyncSubscriptionPackage(session, subPackage);
+                synchronized(_lockSubscriptions) {
+                    handleSyncSubscriptionPackage(session, subPackage);
+                }
 
                 if(subPackage.subscriptions.size > 0) {
                     val newestSub = subPackage.subscriptions.maxOf { it.creationTime };
@@ -327,21 +346,23 @@ class StateSync {
                 val pack = Serializer.json.decodeFromString<SyncSubscriptionGroupsPackage>(json);
 
                 var lastSubgroupChange = OffsetDateTime.MIN;
-                for(group in pack.groups){
-                    if(group.lastChange > lastSubgroupChange)
-                        lastSubgroupChange = group.lastChange;
+                synchronized(_lockSubscriptionGroups) {
+                    for(group in pack.groups){
+                        if(group.lastChange > lastSubgroupChange)
+                            lastSubgroupChange = group.lastChange;
 
-                    val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+                        val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
 
-                    if(existing == null)
-                        StateSubscriptionGroups.instance.updateSubscriptionGroup(group, false, true);
-                    else if(existing.lastChange < group.lastChange) {
-                        existing.name = group.name;
-                        existing.urls = group.urls;
-                        existing.image = group.image;
-                        existing.priority = group.priority;
-                        existing.lastChange = group.lastChange;
-                        StateSubscriptionGroups.instance.updateSubscriptionGroup(existing, false, true);
+                        if(existing == null)
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(group, false, true);
+                        else if(existing.lastChange < group.lastChange) {
+                            existing.name = group.name;
+                            existing.urls = group.urls;
+                            existing.image = group.image;
+                            existing.priority = group.priority;
+                            existing.lastChange = group.lastChange;
+                            StateSubscriptionGroups.instance.updateSubscriptionGroup(existing, false, true);
+                        }
                     }
                 }
                 for(removal in pack.groupRemovals) {
@@ -358,18 +379,20 @@ class StateSync {
                 val json = String(dataBody, Charsets.UTF_8);
                 val pack = Serializer.json.decodeFromString<SyncPlaylistsPackage>(json);
 
-                for(playlist in pack.playlists) {
-                    val existing = StatePlaylists.instance.getPlaylist(playlist.id);
+                synchronized(_lockPlaylists) {
+                    for(playlist in pack.playlists) {
+                        val existing = StatePlaylists.instance.getPlaylist(playlist.id);
 
-                    if(existing == null)
-                        StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
-                    else if(existing.dateUpdate < playlist.dateUpdate) {
-                        existing.dateUpdate = playlist.dateUpdate;
-                        existing.name = playlist.name;
-                        existing.videos = playlist.videos;
-                        existing.dateCreation = playlist.dateCreation;
-                        existing.datePlayed = playlist.datePlayed;
-                        StatePlaylists.instance.createOrUpdatePlaylist(existing, false);
+                        if(existing == null)
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist, false);
+                        else if(existing.dateUpdate < playlist.dateUpdate) {
+                            existing.dateUpdate = playlist.dateUpdate;
+                            existing.name = playlist.name;
+                            existing.videos = playlist.videos;
+                            existing.dateCreation = playlist.dateCreation;
+                            existing.datePlayed = playlist.datePlayed;
+                            StatePlaylists.instance.createOrUpdatePlaylist(existing, false);
+                        }
                     }
                 }
                 for(removal in pack.playlistRemovals) {
@@ -390,14 +413,16 @@ class StateSync {
                 Logger.i(TAG, "SyncWatchLater received ${pack.videos.size} (${pack.videoAdds?.size}, ${pack.videoRemovals?.size})");
 
                 val allExisting = StatePlaylists.instance.getWatchLater();
-                for(video in pack.videos) {
-                    val existing = allExisting.firstOrNull { it.url == video.url };
-                    val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) (pack.videoAdds[video.url] ?: 0).sToOffsetDateTimeUTC() else OffsetDateTime.MIN;
-                    val removalTime = StatePlaylists.instance.getWatchLaterRemovalTime(video.url) ?: OffsetDateTime.MIN;
-                    if(existing == null && time > removalTime) {
-                        StatePlaylists.instance.addToWatchLater(video, false);
-                        if(time > OffsetDateTime.MIN)
-                            StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
+                synchronized(_lockWatchlater) {
+                    for(video in pack.videos) {
+                        val existing = allExisting.firstOrNull { it.url == video.url };
+                        val time = if(pack.videoAdds != null && pack.videoAdds.containsKey(video.url)) (pack.videoAdds[video.url] ?: 0).sToOffsetDateTimeUTC() else OffsetDateTime.MIN;
+                        val removalTime = StatePlaylists.instance.getWatchLaterRemovalTime(video.url) ?: OffsetDateTime.MIN;
+                        if(existing == null && time > removalTime) {
+                            StatePlaylists.instance.addToWatchLater(video, false);
+                            if(time > OffsetDateTime.MIN)
+                                StatePlaylists.instance.setWatchLaterAddTime(video.url, time);
+                        }
                     }
                 }
                 for(removal in pack.videoRemovals) {

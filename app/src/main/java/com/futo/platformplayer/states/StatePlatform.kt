@@ -5,7 +5,6 @@ import androidx.collection.LruCache
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.PlatformMultiClientPool
@@ -46,7 +45,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
-import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -56,7 +54,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.internal.concat
 import java.lang.Thread.sleep
 import java.time.OffsetDateTime
 import kotlin.streams.asSequence
@@ -669,7 +666,7 @@ class StatePlatform {
 
 
     //Video
-    fun hasEnabledVideoClient(url: String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) };
+    fun hasEnabledContentClient(url: String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) };
     fun getContentClient(url: String) : IPlatformClient = getContentClientOrNull(url)
         ?: throw NoPlatformClientException("No client enabled that supports this content url (${url})");
     fun getContentClientOrNull(url: String) : IPlatformClient? = getEnabledClients().find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) };

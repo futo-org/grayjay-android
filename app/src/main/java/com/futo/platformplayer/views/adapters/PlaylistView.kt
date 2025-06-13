@@ -126,7 +126,7 @@ open class PlaylistView : LinearLayout {
         }
         else {
             currentPlaylist = null;
-            _imageThumbnail.setImageResource(0);
+            _imageThumbnail.setImageDrawable(null);
         }
     }
 
