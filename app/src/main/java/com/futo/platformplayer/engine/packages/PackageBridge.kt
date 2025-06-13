@@ -141,6 +141,10 @@ class PackageBridge : V8Package {
                 timeoutMap.remove(id);
         }
     }
+    @V8Function
+    fun sleep(length: Int) {
+        Thread.sleep(length.toLong());
+    }
 
     @V8Function
     fun toast(str: String) {

@@ -69,7 +69,7 @@ class JSHttpClient : ManagedHttpClient {
 
     override fun clone(): ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
-        newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
+        //newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
         return newClient;
     }
 

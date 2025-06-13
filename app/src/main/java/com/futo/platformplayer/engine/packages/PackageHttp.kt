@@ -429,8 +429,23 @@ class PackageHttp: V8Package {
             };
         }
         @V8Function
-        fun POST(url: String, body: String, headers: MutableMap<String, String> = HashMap(), useBytes: Boolean = false) : IBridgeHttpResponse
-            = POSTInternal(url, body, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING)
+        fun POST(url: String, body: Any, headers: MutableMap<String, String> = HashMap(), useBytes: Boolean = false) : IBridgeHttpResponse {
+            if(body is V8ValueString)
+                return POSTInternal(url, body.value, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING);
+            else if(body is String)
+                return POSTInternal(url, body, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING);
+            else if(body is V8ValueTypedArray)
+                return POSTInternal(url, body.toBytes(), headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING);
+            else if(body is ByteArray)
+                return POSTInternal(url, body, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING);
+            else if(body is ArrayList<*>) //Avoid this case, used purely for testing
+                return POSTInternal(url, body.map { (it as Double).toInt().toByte() }.toByteArray(), headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING);
+            else
+                throw NotImplementedError("Body type " + body?.javaClass?.name?.toString() + " not implemented for POST");
+        }
+
+
+        //    = POSTInternal(url, body, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING)
         fun POSTInternal(url: String, body: String, headers: MutableMap<String, String> = HashMap(), returnType: ReturnType = ReturnType.STRING) : IBridgeHttpResponse {
             applyDefaultHeaders(headers);
             return logExceptions {
@@ -452,9 +467,6 @@ class PackageHttp: V8Package {
                 }
             };
         }
-        @V8Function
-        fun POST(url: String, body: ByteArray, headers: MutableMap<String, String> = HashMap(), useBytes: Boolean = false) : IBridgeHttpResponse
-                = POSTInternal(url, body, headers, if(useBytes) ReturnType.BYTES else ReturnType.STRING)
         fun POSTInternal(url: String, body: ByteArray, headers: MutableMap<String, String> = HashMap(), returnType: ReturnType = ReturnType.STRING) : IBridgeHttpResponse {
             applyDefaultHeaders(headers);
             return logExceptions {

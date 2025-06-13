@@ -174,7 +174,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
 
                             if (resolve != null) {
                                 resolveCount = resolves.size;
-                                UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size}")
+                                UIDialogs.appToast("SubsExchange (Res: ${resolves.size}, Prov: ${resolve.size})")
                                 for(result in resolve){
                                     val task = providedTasks?.find { it.url == result.channelUrl };
                                     if(task != null) {
