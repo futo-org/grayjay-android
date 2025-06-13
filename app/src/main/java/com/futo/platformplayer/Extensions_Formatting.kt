@@ -276,6 +276,7 @@ fun String.fixHtmlLinks(): Spanned {
     return HtmlCompat.fromHtml(modifiedDoc, HtmlCompat.FROM_HTML_MODE_LEGACY);
 }
 
+val privateYoutubeDomainRegex = Regex("^rr\\d+---(sn-)?[a-z0-9]+\\.c\\.youtube\\.com\$");
 val timestampRegex = Regex("\\d+:\\d+(?::\\d+)?");
 private val urlRegex = Regex("https?://\\S+");
 private val linkTag = Tag.valueOf("a");

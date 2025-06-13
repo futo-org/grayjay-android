@@ -5,6 +5,7 @@ import com.futo.platformplayer.SignatureProvider
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.matchesDomain
+import com.futo.platformplayer.privateYoutubeDomainRegex
 import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.Contextual
 import java.net.URL
@@ -181,7 +182,7 @@ class SourcePluginConfig(
             return true;
         val uri = Uri.parse(url);
         val host = uri.host?.lowercase() ?: "";
-        return _allowUrlsLower.any { it == host || (it.length > 0 && it[0] == '.' && host.matchesDomain(it)) };
+        return _allowUrlsLower.any { it == host || (it.length > 0 && it[0] == '.' && host.matchesDomain(it)) }  || privateYoutubeDomainRegex.matchEntire(host) != null;
     }
 
     fun getChangelogString(version: String): String?{

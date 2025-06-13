@@ -12,6 +12,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
 import com.futo.platformplayer.developer.DeveloperEndpoints
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.matchesDomain
+import com.futo.platformplayer.privateYoutubeDomainRegex
 import com.futo.platformplayer.states.StateDeveloper
 import com.google.common.net.MediaType
 import okhttp3.OkHttpClient
@@ -67,6 +68,21 @@ class JSHttpClient : ManagedHttpClient {
 
     }
 
+    fun fillCookieMap(auth: SourceAuth? = _auth) {
+        if(!auth?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in auth!!.cookieMap!!)
+                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+        }
+        if(!_captcha?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in _captcha!!.cookieMap!!) {
+                if(_currentCookieMap.containsKey(domainCookies.key))
+                    _currentCookieMap[domainCookies.key]?.putAll(domainCookies.value);
+                else
+                    _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+            }
+        }
+    }
+
     override fun clone(): ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
         newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
@@ -114,7 +130,13 @@ class JSHttpClient : ManagedHttpClient {
 
     override fun beforeRequest(request: okhttp3.Request): okhttp3.Request {
         val domain = request.url.host.lowercase();
-        val auth = _auth;
+        var auth = _auth;
+
+        val isPrivateVideo = privateYoutubeDomainRegex.matchEntire(domain) != null
+        if (isPrivateVideo && _auth == null && _jsClient?.auth != null) {
+            auth = _jsClient.auth;
+            fillCookieMap(auth);
+        }
 
         val newBuilder = if(auth != null || doApplyCookies)
             request.newBuilder();

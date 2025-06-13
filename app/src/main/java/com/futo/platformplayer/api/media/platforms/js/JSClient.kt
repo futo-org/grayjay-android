@@ -101,6 +101,7 @@ open class JSClient : IPlatformClient {
     private val _busyLock = Object();
     private var _busyCounter = 0;
     private var _busyAction = "";
+    val auth: SourceAuth? get() = _auth
     val isBusy: Boolean get() = _busyCounter > 0;
     val isBusyAction: String get() {
         return _busyAction;
