@@ -15,6 +15,7 @@ import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
+import com.futo.platformplayer.assume
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.NoInternetException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
@@ -26,6 +27,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptTimeoutException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.engine.internal.V8Converter
@@ -186,6 +188,7 @@ class V8Plugin {
         Logger.i(TAG, "Stopping plugin [${config.name}]");
         isStopped = true;
         whenNotBusy {
+            Logger.i(TAG, "Plugin stopping");
             synchronized(_runtimeLock) {
                 isStopped = true;
 
@@ -200,7 +203,7 @@ class V8Plugin {
                     _runtime = null;
                     if(!it.isClosed && !it.isDead) {
                         try {
-                            it.close();
+                            it.close(true);
                         }
                         catch(ex: JavetException) {
                             //In case race conditions are going on, already closed runtimes are fine.
@@ -211,6 +214,7 @@ class V8Plugin {
                     Logger.i(TAG, "Stopped plugin [${config.name}]");
                 };
             }
+            Logger.i(TAG, "Plugin stopped");
             onStopped.emit(this);
         }
     }
@@ -327,26 +331,38 @@ class V8Plugin {
                 throw ScriptCompilationException(config, "Compilation: [${context}]: ${scriptEx.message}\n(${scriptEx.scriptingError.lineNumber})[${scriptEx.scriptingError.startColumn}-${scriptEx.scriptingError.endColumn}]: ${scriptEx.scriptingError.sourceLine}", null, codeStripped);
             }
             catch(executeEx: JavetExecutionException) {
-                if(executeEx.scriptingError?.context?.containsKey("plugin_type") == true) {
-                    val pluginType = executeEx.scriptingError.context["plugin_type"].toString();
+                if(executeEx.scriptingError?.context is V8ValueObject) {
+                    val obj = executeEx.scriptingError?.context as V8ValueObject
+                    if(obj.has("plugin_type") == true) {
+                        val pluginType = obj.get<V8ValueString>("plugin_type").toString();
 
-                    //Captcha
-                    if (pluginType == "CaptchaRequiredException") {
-                        throw ScriptCaptchaRequiredException(config,
-                            executeEx.scriptingError.context["url"]?.toString(),
-                            executeEx.scriptingError.context["body"]?.toString(),
-                            executeEx, executeEx.scriptingError?.stack, codeStripped);
+                        //Captcha
+                        if (pluginType == "CaptchaRequiredException") {
+                            throw ScriptCaptchaRequiredException(config,
+                                obj.get<V8ValueString>("url")?.toString(),
+                                obj.get<V8ValueString>("body")?.toString(),
+                                executeEx, executeEx.scriptingError?.stack, codeStripped);
+                        }
+
+                        //Reload Required
+                        if (pluginType == "ReloadRequiredException") {
+                            throw ScriptReloadRequiredException(config,
+                                obj.get<V8ValueString>("message")?.toString(),
+                                obj.get<V8ValueString>("reloadData")?.toString(),
+                                executeEx, executeEx.scriptingError?.stack, codeStripped);
+                        }
+
+                        //Others
+                        throwExceptionFromV8(
+                            config,
+                            pluginType,
+                            (extractJSExceptionMessage(executeEx) ?: ""),
+                            executeEx,
+                            executeEx.scriptingError?.stack,
+                            codeStripped
+                        );
                     }
 
-                    //Others
-                    throwExceptionFromV8(
-                        config,
-                        pluginType,
-                        (extractJSExceptionMessage(executeEx) ?: ""),
-                        executeEx,
-                        executeEx.scriptingError?.stack,
-                        codeStripped
-                    );
                 }
                 throw ScriptExecutionException(config, extractJSExceptionMessage(executeEx) ?: "", null, executeEx.scriptingError?.stack, codeStripped);
             }

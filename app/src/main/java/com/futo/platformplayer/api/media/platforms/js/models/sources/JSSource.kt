@@ -75,9 +75,11 @@ abstract class JSSource {
         if (!hasRequestExecutor || _obj.isClosed)
             return null;
 
+        Logger.v("JSSource", "Request executor for [${type}] requesting");
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
             _obj.invoke("getRequestExecutor", arrayOf<Any>());
         };
+        Logger.v("JSSource", "Request executor for [${type}] received");
 
         if (result !is V8ValueObject)
             return null;

@@ -93,6 +93,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.fixHtmlLinks
@@ -606,6 +607,10 @@ class VideoDetailView : ConstraintLayout {
                 _didTriggerDatasourceErrorCount = 0;
                 _didTriggerDatasourceError = false;
             }
+        }
+
+        _player.onReloadRequired.subscribe {
+            fetchVideo();
         }
 
         _player.onPlayChanged.subscribe {
@@ -3025,6 +3030,11 @@ class VideoDetailView : ConstraintLayout {
             return@TaskHandler result;
         })
         .success { setVideoDetails(it, true) }
+        .exception<ScriptReloadRequiredException> {
+            StatePlatform.instance.handleReloadRequired(it, {
+                fetchVideo();
+            });
+        }
         .exception<NoPlatformClientException> {
             Logger.w(TAG, "exception<NoPlatformClientException>", it)
 

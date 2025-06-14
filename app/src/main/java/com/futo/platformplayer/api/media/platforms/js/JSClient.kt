@@ -62,6 +62,7 @@ import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import java.util.Random
 import kotlin.Exception
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.jvm.kotlinFunction
@@ -105,6 +106,8 @@ open class JSClient : IPlatformClient {
     val isBusyAction: String get() {
         return _busyAction;
     }
+
+    val declareOnEnable = HashMap<String, String>();
 
     val settings: HashMap<String, String?> get() = descriptor.settings;
 
@@ -213,6 +216,10 @@ open class JSClient : IPlatformClient {
         return plugin.httpClientOthers[id];
     }
 
+    fun setReloadData(data: String?) {
+        declareOnEnable.put("__reloadData", data ?: "");
+    }
+
     override fun initialize() {
         if (_initialized) return
 
@@ -263,7 +270,13 @@ open class JSClient : IPlatformClient {
     fun enable() {
         if(!_initialized)
             initialize();
+        for(toDeclare in declareOnEnable) {
+            plugin.execute("var ${toDeclare.key} = " + Json.encodeToString(toDeclare.value));
+        }
         plugin.execute("source.enable(${Json.encodeToString(config)}, parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())}), ${Json.encodeToString(_injectedSaveState)})");
+
+        if(declareOnEnable.containsKey("__reloadData"))
+            declareOnEnable.remove("__reloadData");
         _enabled = true;
     }
     @JSDocs(1, "source.saveState()", "Provide a string that is passed to enable for quicker startup of multiple instances")
@@ -735,8 +748,12 @@ open class JSClient : IPlatformClient {
     }
 
 
-    private fun <T> isBusyWith(actionName: String, handle: ()->T): T {
+
+    fun <T> isBusyWith(actionName: String, handle: ()->T): T {
+        val busyId = kotlin.random.Random.nextInt(9999);
         try {
+
+            Logger.v(TAG, "Busy with [${actionName}] (${busyId})")
             synchronized(_busyLock) {
                 _busyCounter++;
             }
@@ -748,6 +765,7 @@ open class JSClient : IPlatformClient {
             synchronized(_busyLock) {
                 _busyCounter--;
             }
+            Logger.v(TAG, "Busy done [${actionName}] (${busyId})")
         }
     }
     private fun <T> isBusyWith(handle: ()->T): T {

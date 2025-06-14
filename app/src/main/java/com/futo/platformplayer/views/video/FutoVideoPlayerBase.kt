@@ -52,10 +52,13 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.video.datasources.PluginMediaDrmCallback
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
@@ -107,6 +110,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val onStateChange = Event1<Int>();
     val onPositionDiscontinuity = Event1<Long>();
     val onDatasourceError = Event1<Throwable>();
+
+    val onReloadRequired = Event0();
 
     private var _didCallSourceChange = false;
     private var _lastState: Int = -1;
@@ -585,6 +590,12 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                         }
                     }
                 }
+                catch(reloadRequired: ScriptReloadRequiredException) {
+                    Logger.i(TAG, "Reload required detected");
+                    StatePlatform.instance.handleReloadRequired(reloadRequired, {
+                        onReloadRequired.emit();
+                    });
+                }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "DashRaw generator failed", ex);
                 }
@@ -677,14 +688,28 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         if(audioSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
-                val generated = audioSource.generate();
-                if(generated != null) {
-                    withContext(Dispatchers.Main) {
-                        _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                            .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
-                                ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
-                        loadSelectedSources(play, resume);
+                try {
+                    val generated = audioSource.generate();
+                    if(generated != null) {
+                        withContext(Dispatchers.Main) {
+                            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
+                                    ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
+                            loadSelectedSources(play, resume);
+                        }
                     }
+                }
+                catch(reloadRequired: ScriptReloadRequiredException) {
+                    Logger.i(TAG, "Reload required detected");
+                    val plugin = audioSource.getUnderlyingPlugin();
+                    if(plugin == null)
+                        return@launch;
+                    StatePlatform.instance.reEnableClient(plugin.id, {
+                        onReloadRequired.emit();
+                    });
+                }
+                catch(ex: Throwable) {
+
                 }
             }
             return false;

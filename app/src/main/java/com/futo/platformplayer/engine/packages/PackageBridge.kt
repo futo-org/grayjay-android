@@ -79,6 +79,13 @@ class PackageBridge : V8Package {
     }
 
     @V8Property
+    fun supportedFeatures(): Array<String> {
+        return arrayOf(
+          "ReloadRequiredException"
+        );
+    }
+
+    @V8Property
     fun supportedContent(): Array<Int> {
         return arrayOf(
             ContentType.MEDIA.value,

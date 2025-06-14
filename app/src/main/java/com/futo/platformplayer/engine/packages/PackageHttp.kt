@@ -44,6 +44,17 @@ class PackageHttp: V8Package {
     private val aliveSockets = mutableListOf<SocketResult>();
     private var _cleanedUp = false;
 
+    private val _clients = mutableMapOf<String, PackageHttpClient>()
+
+    fun getClient(id: String?): PackageHttpClient {
+        if(id == null)
+            throw IllegalArgumentException("Http client ${id} doesn't exist");
+        if(_packageClient.clientId() == id)
+            return _packageClient;
+        if(_packageClientAuth.clientId() == id)
+            return _packageClientAuth;
+        return _clients.getOrDefault(id, null) ?: throw IllegalArgumentException("Http client ${id} doesn't exist");
+    }
 
     constructor(plugin: V8Plugin, config: IV8PluginConfig): super(plugin) {
         _config = config;
@@ -111,6 +122,8 @@ class PackageHttp: V8Package {
         if(httpClient is JSHttpClient)
             _plugin.registerHttpClient(httpClient);
         val client = PackageHttpClient(this, httpClient);
+
+        _clients.put(client.clientId() ?: "", client);
 
         return client;
     }
@@ -246,18 +259,18 @@ class PackageHttp: V8Package {
 
         @V8Function
         fun request(method: String, url: String, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false) : BatchBuilder {
-            return clientRequest(_package.getDefaultClient(useAuth), method, url, headers);
+            return clientRequest(_package.getDefaultClient(useAuth).clientId(), method, url, headers);
         }
         @V8Function
         fun requestWithBody(method: String, url: String, body:String, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false) : BatchBuilder {
-            return clientRequestWithBody(_package.getDefaultClient(useAuth), method, url, body, headers);
+            return clientRequestWithBody(_package.getDefaultClient(useAuth).clientId(), method, url, body, headers);
         }
         @V8Function
         fun GET(url: String, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false) : BatchBuilder
-            = clientGET(_package.getDefaultClient(useAuth), url, headers);
+            = clientGET(_package.getDefaultClient(useAuth).clientId(), url, headers);
         @V8Function
         fun POST(url: String, body: String, headers: MutableMap<String, String> = HashMap(), useAuth: Boolean = false) : BatchBuilder
-            = clientPOST(_package.getDefaultClient(useAuth), url, body, headers);
+            = clientPOST(_package.getDefaultClient(useAuth).clientId(), url, body, headers);
 
         @V8Function
         fun DUMMY(): BatchBuilder {
@@ -268,21 +281,21 @@ class PackageHttp: V8Package {
         //Client-specific
 
         @V8Function
-        fun clientRequest(client: PackageHttpClient, method: String, url: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder {
-            _reqs.add(Pair(client, RequestDescriptor(method, url, headers)));
+        fun clientRequest(clientId: String?, method: String, url: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder {
+            _reqs.add(Pair(_package.getClient(clientId), RequestDescriptor(method, url, headers)));
             return BatchBuilder(_package, _reqs);
         }
         @V8Function
-        fun clientRequestWithBody(client: PackageHttpClient, method: String, url: String, body:String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder {
-            _reqs.add(Pair(client, RequestDescriptor(method, url, headers, body)));
+        fun clientRequestWithBody(clientId: String?, method: String, url: String, body:String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder {
+            _reqs.add(Pair(_package.getClient(clientId), RequestDescriptor(method, url, headers, body)));
             return BatchBuilder(_package, _reqs);
         }
         @V8Function
-        fun clientGET(client: PackageHttpClient, url: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder
-                = clientRequest(client, "GET", url, headers);
+        fun clientGET(clientId: String?, url: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder
+                = clientRequest(clientId, "GET", url, headers);
         @V8Function
-        fun clientPOST(client: PackageHttpClient, url: String, body: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder
-                = clientRequestWithBody(client, "POST", url, body, headers);
+        fun clientPOST(clientId: String?, url: String, body: String, headers: MutableMap<String, String> = HashMap()) : BatchBuilder
+                = clientRequestWithBody(clientId, "POST", url, body, headers);
 
 
         //Finalizer
@@ -320,6 +333,7 @@ class PackageHttp: V8Package {
         private val _defaultHeaders = mutableMapOf<String, String>();
         @Transient
         private val _clientId: String?;
+
 
         @V8Property
         fun clientId(): String? {
