@@ -626,7 +626,7 @@
     <string name="unknown_url_format">Formato url sconosciuto</string>
     <string name="failed_to_handle_file">Gestione file non riuscita</string>
     <string name="unknown_reconstruction_type">Tipo di ricostruzione sconosciuto</string>
-<string name="failed_to_parse_text_file">Analisi file di testo non riuscita</string>
+    <string name="failed_to_parse_text_file">Analisi file di testo non riuscita</string>
     <string name="failed_to_parse_newpipe_subscriptions">Analisi delle sottoscrizioni di NewPipe non riuscita</string>
     <string name="failed_to_generate_qr_code">Generazione codice QR non riuscita</string>
     <string name="share_text">Condividi testo</string>
