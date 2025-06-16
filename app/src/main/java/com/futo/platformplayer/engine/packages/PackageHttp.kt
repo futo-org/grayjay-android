@@ -348,6 +348,17 @@ class PackageHttp: V8Package {
         }
 
         @V8Function
+        fun resetAuthCookies(){
+            if(_client is JSHttpClient)
+                _client.resetAuthCookies();
+        }
+        @V8Function
+        fun clearOtherCookies(){
+            if(_client is JSHttpClient)
+                _client.clearOtherCookies();
+        }
+
+        @V8Function
         fun setDefaultHeaders(defaultHeaders: Map<String, String>) {
             for(pair in defaultHeaders)
                 _defaultHeaders[pair.key] = pair.value;

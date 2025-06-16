@@ -1,15 +1,12 @@
 package com.futo.platformplayer.engine
 
 import android.content.Context
-import com.caoccao.javet.entities.JavetEntityError
 import com.caoccao.javet.exceptions.JavetCompilationException
 import com.caoccao.javet.exceptions.JavetException
 import com.caoccao.javet.exceptions.JavetExecutionException
 import com.caoccao.javet.interfaces.IJavetEntityError
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.V8Runtime
-import com.caoccao.javet.interop.options.V8Flags
-import com.caoccao.javet.interop.options.V8RuntimeOptions
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
@@ -17,7 +14,6 @@ import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
-import com.futo.platformplayer.assume
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.NoInternetException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
@@ -44,7 +40,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
 import com.futo.platformplayer.warnIfMainThread
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Semaphore
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -58,7 +53,7 @@ class V8Plugin {
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
     val httpClientOthers: Map<String, JSHttpClient> get() = _clientOthers;
 
-    var startId: Int = 0;
+    var runtimeId: Int = 0;
 
     fun registerHttpClient(client: JSHttpClient) {
         synchronized(_clientOthers) {
@@ -76,11 +71,8 @@ class V8Plugin {
     var isStopped = true;
     val onStopped = Event1<V8Plugin>();
 
-    //TODO: Implement a more universal isBusy system for plugins + JSClient + pooling? TBD if propagation would be beneficial
-    //private val _busyCounterLock = Object();
-    //private var _busyCounter = 0;
-    private val _busyLock = ReentrantLock()//Semaphore(1);
-    val isBusy get() = _busyLock.isLocked;//synchronized(_busyCounterLock) { _busyCounter > 0 };
+    private val _busyLock = ReentrantLock()
+    val isBusy get() = _busyLock.isLocked;
 
     var allowDevSubmit: Boolean = false
         private set(value) {
@@ -150,24 +142,19 @@ class V8Plugin {
         synchronized(_runtimeLock) {
             if (_runtime != null)
                 return;
-            startId + 1;
+            runtimeId = runtimeId + 1;
             //V8RuntimeOptions.V8_FLAGS.setUseStrict(true);
             val host = V8Host.getV8Instance();
             val options = host.jsRuntimeType.getRuntimeOptions();
-
-            Logger.i(TAG, "Plugin [${config.name}] start: Creating runtime")
 
             _runtime = host.createV8Runtime(options);
             if (!host.isIsolateCreated)
                 throw IllegalStateException("Isolate not created");
 
-            Logger.i(TAG, "Plugin [${config.name}] start: Created runtime")
-
             //Setup bridge
             _runtime?.let {
                 it.converter = V8Converter();
 
-                Logger.i(TAG, "Plugin [${config.name}] start: Loading packages")
                 for (pack in _depsPackages) {
                     if (pack.variableName != null)
                         it.createV8ValueObject().use { v8valueObject ->
@@ -180,8 +167,6 @@ class V8Plugin {
                     }
                 }
 
-                Logger.i(TAG, "Plugin [${config.name}] start: Loading deps")
-
                 //Load deps
                 for (dep in _deps)
                     catchScriptErrors("Dep[${dep.key}]") {
@@ -192,13 +177,11 @@ class V8Plugin {
                 if (config.allowEval)
                     it.allowEval(true);
 
-                Logger.i(TAG, "Plugin [${config.name}] start: Loading script")
                 //Load plugin
                 catchScriptErrors("Plugin[${config.name}]") {
                     it.getExecutor(script).executeVoid()
                 };
                 isStopped = false;
-                Logger.i(TAG, "Plugin [${config.name}] start: Script loaded")
             }
         }
     }
@@ -210,7 +193,7 @@ class V8Plugin {
                 if(isStopped)
                     return@busy;
                 isStopped = true;
-                startId = -1;
+                runtimeId = runtimeId + 1;
 
                 //Cleanup http
                 for(pack in _depsPackages) {
@@ -260,78 +243,10 @@ class V8Plugin {
                 runtime.getExecutor(js).execute()
             };
         }
-        /*
-        synchronized(_busyCounterLock) {
-            _busyCounter++;
-        }
-
-        val runtime = _runtime ?: throw IllegalStateException("JSPlugin not started yet");
-        try {
-            return catchScriptErrors("Plugin[${config.name}]", js) {
-                runtime.getExecutor(js).execute()
-            };
-        }
-        finally {
-            synchronized(_busyCounterLock) {
-                //Free busy *after* afterBusy calls are done to prevent calls on dead runtimes
-                try {
-                    afterBusy.emit(_busyCounter - 1);
-                }
-                catch(ex: Throwable) {
-                    Logger.e(TAG, "Unhandled V8Plugin.afterBusy", ex);
-                }
-                _busyCounter--;
-            }
-        }
-        */
     }
     fun executeBoolean(js: String) : Boolean? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueBoolean>(js).value } }
     fun executeString(js: String) : String? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueString>(js).value } }
     fun executeInteger(js: String) : Int? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueInteger>(js).value } }
-
-    /*
-    fun <T> whenNotBusyBlocking(handler: (V8Plugin)->T): T {
-        while(true) {
-            synchronized(_busyCounterLock) {
-                if(_busyCounter == 0)
-                {
-                    return handler(this);
-                }
-            }
-            Thread.sleep(1);
-        }
-    }
-    */
-    /*
-    fun whenNotBusy(handler: (V8Plugin)->Unit) {
-        synchronized(_busyCounterLock) {
-            if(_busyCounter == 0)
-                handler(this);
-            else {
-                val tag = Object();
-                afterBusy.subscribe(tag) {
-                    if(it == 0) {
-                        Logger.w(TAG, "V8Plugin afterBusy handled");
-                        afterBusy.remove(tag);
-
-                        var failed = false;
-                        synchronized(_busyCounterLock) {
-                            if(_busyCounter > 0) {
-                                failed = true;
-                                return@synchronized
-                            }
-                            handler(this);
-                        }
-                        if(failed)
-                            busy {
-                                handler(this);
-                            }
-                    }
-                }
-            }
-        }
-    }
-    */
 
     private fun getPackage(packageName: String, allowNull: Boolean = false): V8Package? {
         //TODO: Auto get all package types?
@@ -397,15 +312,12 @@ class V8Plugin {
                     val obj = executeEx.scriptingError?.context as IJavetEntityError
                     if(obj.context.containsKey("plugin_type") == true) {
                         val pluginType = obj.context["plugin_type"].toString();
-                        //val pluginType = obj.get<V8ValueString>("plugin_type").toString();
 
                         //Captcha
                         if (pluginType == "CaptchaRequiredException") {
                             throw ScriptCaptchaRequiredException(config,
                                 obj.context["url"]?.toString(),
                                 obj.context["body"]?.toString(),
-                                //obj.get<V8ValueString>("url")?.toString(),
-                                //obj.get<V8ValueString>("body")?.toString(),
                                 executeEx, executeEx.scriptingError?.stack, codeStripped);
                         }
 
@@ -414,8 +326,6 @@ class V8Plugin {
                             throw ScriptReloadRequiredException(config,
                                 obj.context["msg"]?.toString(),
                                 obj.context["reloadData"]?.toString(),
-                                //obj.get<V8ValueString>("message")?.toString(),
-                                //obj.get<V8ValueString>("reloadData")?.toString(),
                                 executeEx, executeEx.scriptingError?.stack, codeStripped);
                         }
 
@@ -481,9 +391,4 @@ class V8Plugin {
             return StateAssets.readAsset(context, path) ?: throw java.lang.IllegalStateException("script ${path} not found");
         }
     }
-
-
-    /**
-     * Methods available for scripts (bridge object)
-     */
 }

@@ -67,9 +67,28 @@ class JSHttpClient : ManagedHttpClient {
 
     }
 
+    fun resetAuthCookies() {
+        _currentCookieMap.clear();
+        if(!_auth?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in _auth!!.cookieMap!!)
+                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+        }
+        if(!_captcha?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in _captcha!!.cookieMap!!) {
+                if(_currentCookieMap.containsKey(domainCookies.key))
+                    _currentCookieMap[domainCookies.key]?.putAll(domainCookies.value);
+                else
+                    _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+            }
+        }
+    }
+    fun clearOtherCookies() {
+        _otherCookieMap.clear();
+    }
+
     override fun clone(): ManagedHttpClient {
         val newClient = JSHttpClient(_jsClient, _auth);
-        //newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
+        newClient._currentCookieMap = HashMap(_currentCookieMap.toList().associate { Pair(it.first, HashMap(it.second)) })
         return newClient;
     }
 

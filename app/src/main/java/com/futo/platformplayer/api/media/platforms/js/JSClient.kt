@@ -84,6 +84,8 @@ open class JSClient : IPlatformClient {
     private var _channelCapabilities: ResultCapabilities? = null;
     private var _peekChannelTypes: List<String>? = null;
 
+    private var _usedReloadData: String? = null;
+
     protected val _script: String;
 
     private var _initialized: Boolean = false;
@@ -198,6 +200,7 @@ open class JSClient : IPlatformClient {
 
     open fun getCopy(withoutCredentials: Boolean = false, noSaveState: Boolean = false): JSClient {
         val client = JSClient(_context, descriptor, if (noSaveState) null else saveState(), _script, withoutCredentials);
+        client.setReloadData(getReloadData(true));
         if (noSaveState)
             client.initialize()
         return client
@@ -215,19 +218,29 @@ open class JSClient : IPlatformClient {
     }
 
     fun setReloadData(data: String?) {
-        declareOnEnable.put("__reloadData", data ?: "");
+        if(data == null) {
+            if(declareOnEnable.containsKey("__reloadData"))
+                declareOnEnable.remove("__reloadData");
+        }
+        else
+            declareOnEnable.put("__reloadData", data ?: "");
+    }
+    fun getReloadData(orLast: Boolean): String? {
+        if(declareOnEnable.containsKey("__reloadData"))
+            return declareOnEnable["__reloadData"];
+        else if(orLast)
+            return _usedReloadData;
+        return null;
     }
 
     override fun initialize() {
         if (_initialized) return
 
-        Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
-        Logger.i(TAG, "Plugin [${config.name}] started");
+
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");
         plugin.execute("plugin.settings = parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())})");
 
-        Logger.i(TAG, "Plugin [${config.name}] configs set");
 
         descriptor.appSettings.loadDefaults(descriptor.config);
 
@@ -255,7 +268,6 @@ open class JSClient : IPlatformClient {
             hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false,
             hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false
         );
-        Logger.i(TAG, "Plugin [${config.name}] capabilities retrieved");
 
         try {
             if (capabilities.hasGetChannelTemplateByClaimMap)
@@ -277,8 +289,11 @@ open class JSClient : IPlatformClient {
         }
         plugin.execute("source.enable(${Json.encodeToString(config)}, parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())}), ${Json.encodeToString(_injectedSaveState)})");
 
-        if(declareOnEnable.containsKey("__reloadData"))
+        if(declareOnEnable.containsKey("__reloadData")) {
+            Logger.i(TAG, "Plugin [${config.name}] enabled with reload data: ${declareOnEnable["__reloadData"]}");
+            _usedReloadData = declareOnEnable["__reloadData"];
             declareOnEnable.remove("__reloadData");
+        }
         _enabled = true;
     }
     @JSDocs(1, "source.saveState()", "Provide a string that is passed to enable for quicker startup of multiple instances")

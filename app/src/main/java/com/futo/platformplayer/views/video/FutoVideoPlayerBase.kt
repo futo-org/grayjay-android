@@ -567,7 +567,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
                 var startId = -1;
                 try {
-                    startId = videoSource?.getUnderlyingPlugin()?.getUnderlyingPlugin()?.startId ?: -1;
+                    startId = videoSource?.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
                     val generated = videoSource.generate();
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
@@ -597,7 +597,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     val plugin = videoSource.getUnderlyingPlugin();
                     if(plugin == null)
                         return@launch;
-                    if(startId != -1 && plugin.getUnderlyingPlugin()?.startId != startId)
+                    if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)
                         return@launch;
                     StatePlatform.instance.handleReloadRequired(reloadRequired, {
                         onReloadRequired.emit();
@@ -689,17 +689,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource, play: Boolean, resume: Boolean): Boolean {
         Logger.i(TAG, "Loading AudioSource [DashRaw]");
-        val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
-            audioSource.getHttpDataSourceFactory()
-        else
-            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         if(audioSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
                 var startId = -1;
                 try {
-                    startId = audioSource.getUnderlyingPlugin()?.getUnderlyingPlugin()?.startId ?: -1;
+                    startId = audioSource.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
                     val generated = audioSource.generate();
                     if(generated != null) {
+                        val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
+                            audioSource.getHttpDataSourceFactory()
+                        else
+                            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
                         withContext(Dispatchers.Main) {
                             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                                 .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
@@ -713,7 +713,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     val plugin = audioSource.getUnderlyingPlugin();
                     if(plugin == null)
                         return@launch;
-                    if(startId != -1 && plugin.getUnderlyingPlugin()?.startId != startId)
+                    if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)
                         return@launch;
                     StatePlatform.instance.reEnableClient(plugin.id, {
                         onReloadRequired.emit();
@@ -726,6 +726,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             return false;
         }
         else {
+            val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
+                audioSource.getHttpDataSourceFactory()
+            else
+                DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(
                     DashManifestParser().parse(

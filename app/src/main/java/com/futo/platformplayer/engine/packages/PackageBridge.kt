@@ -82,7 +82,8 @@ class PackageBridge : V8Package {
     @V8Property
     fun supportedFeatures(): Array<String> {
         return arrayOf(
-          "ReloadRequiredException"
+            "ReloadRequiredException",
+            "HttpBatchClient"
         );
     }
 
@@ -130,14 +131,10 @@ class PackageBridge : V8Package {
                 timeoutMap.remove(id);
             }
             try {
-                Logger.v(TAG, "Timeout started [${id}]");
                 _plugin.busy {
-                    Logger.v(TAG, "Timeout call started [${id}]");
                     if(!_plugin.isStopped)
                         funcClone.callVoid(null, arrayOf<Any>());
-                    Logger.v(TAG, "Timeout call ended [${id}]");
                 }
-                Logger.v(TAG, "Timeout resolved [${id}]");
             }
             catch(ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);
@@ -173,7 +170,7 @@ class PackageBridge : V8Package {
         Logger.i(TAG, "Plugin toast [${_config.name}]: ${str}");
         StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
             try {
-                UIDialogs.toast(str);
+                UIDialogs.appToast(str);
             } catch (e: Throwable) {
                 Logger.e(TAG, "Failed to show toast.", e);
             }
