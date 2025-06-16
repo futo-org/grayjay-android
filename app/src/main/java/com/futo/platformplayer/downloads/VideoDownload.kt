@@ -724,7 +724,7 @@ class VideoDownload {
                 val t = cue.groupValues[1];
                 val d = cue.groupValues[2];
 
-                val url = foundTemplateUrl.replace("\$Number\$", indexCounter.toString());
+                val url = foundTemplateUrl.replace("\$Number\$", (indexCounter).toString());
 
                 val data = if(executor != null)
                     executor.executeRequest("GET", url, null, mapOf());

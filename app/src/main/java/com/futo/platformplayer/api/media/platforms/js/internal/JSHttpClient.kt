@@ -53,18 +53,7 @@ class JSHttpClient : ManagedHttpClient {
 
         _currentCookieMap = hashMapOf();
         _otherCookieMap = hashMapOf();
-        if(!auth?.cookieMap.isNullOrEmpty()) {
-            for(domainCookies in auth!!.cookieMap!!)
-                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
-        }
-        if(!captcha?.cookieMap.isNullOrEmpty()) {
-            for(domainCookies in captcha!!.cookieMap!!) {
-                if(_currentCookieMap.containsKey(domainCookies.key))
-                    _currentCookieMap[domainCookies.key]?.putAll(domainCookies.value);
-                else
-                    _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
-            }
-        }
+        fillCookieMap();
 
     }
 
@@ -81,6 +70,25 @@ class JSHttpClient : ManagedHttpClient {
                     _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
             }
         }
+    }
+    
+    fun resetAuthCookies() {
+        _currentCookieMap.clear();
+        if(!_auth?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in _auth!!.cookieMap!!)
+                _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+        }
+        if(!_captcha?.cookieMap.isNullOrEmpty()) {
+            for(domainCookies in _captcha!!.cookieMap!!) {
+                if(_currentCookieMap.containsKey(domainCookies.key))
+                    _currentCookieMap[domainCookies.key]?.putAll(domainCookies.value);
+                else
+                    _currentCookieMap.put(domainCookies.key, HashMap(domainCookies.value));
+            }
+        }
+    }
+    fun clearOtherCookies() {
+        _otherCookieMap.clear();
     }
 
     override fun clone(): ManagedHttpClient {

@@ -2,6 +2,8 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -91,6 +93,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.fixHtmlLinks
@@ -172,6 +175,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import java.time.OffsetDateTime
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -408,6 +412,14 @@ class VideoDetailView : ConstraintLayout {
             showChaptersUI();
         };
 
+        _title.setOnLongClickListener {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager;
+            val clip = ClipData.newPlainText("Video Title", (it as TextView).text);
+            clipboard.setPrimaryClip(clip);
+            UIDialogs.toast(context, "Copied", false)
+            // let other interactions happen based on the touch
+            false
+        }
 
         _buttonSubscribe.onSubscribed.subscribe {
             _slideUpOverlay = UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer);
@@ -595,6 +607,10 @@ class VideoDetailView : ConstraintLayout {
                 _didTriggerDatasourceErrorCount = 0;
                 _didTriggerDatasourceError = false;
             }
+        }
+
+        _player.onReloadRequired.subscribe {
+            fetchVideo();
         }
 
         _player.onPlayChanged.subscribe {
@@ -1399,8 +1415,8 @@ class VideoDetailView : ConstraintLayout {
             onVideoChanged.emit(0, 0)
         }
 
+        val me = this;
         if (video is JSVideoDetails) {
-            val me = this;
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     //TODO: Implement video.getContentChapters()
@@ -1456,6 +1472,32 @@ class VideoDetailView : ConstraintLayout {
                     updateMoreButtons();
                 }
             };
+        }
+        else {
+            fragment.lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    if (!StateApp.instance.privateMode) {
+                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
+                        var tracker = video.getPlaybackTracker()
+                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
+
+                        if (tracker == null) {
+                            stopwatch.reset()
+                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
+                            Logger.i(
+                                TAG,
+                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
+                            )
+                        }
+
+                        if (me.video?.url == video.url && !video.url.isNullOrBlank())
+                            me._playbackTracker = tracker;
+                    } else if (me.video == video)
+                        me._playbackTracker = null;
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Playback tracker failed", ex);
+                }
+            }
         }
 
         val ref = Models.referenceFromBuffer(video.url.toByteArray())
@@ -1897,8 +1939,8 @@ class VideoDetailView : ConstraintLayout {
             }
 
             updateQualityFormatsOverlay(
-                videoTrackFormats.distinctBy { it.height }.sortedBy { it.height },
-                audioTrackFormats.distinctBy { it.bitrate }.sortedBy { it.bitrate });
+                videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
+                audioTrackFormats.distinctBy { it.bitrate }.sortedByDescending { it.bitrate });
         }
     }
 
@@ -2156,19 +2198,19 @@ class VideoDetailView : ConstraintLayout {
             if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
                 val playbackSpeeds = Settings.instance.playback.getPlaybackSpeeds();
                 val format = if(playbackSpeeds.size < 20) "%.2f" else "%.1f";
-                val playbackLabels = playbackSpeeds.map { String.format(format, it) }.toMutableList();
+                val playbackLabels = playbackSpeeds.map { String.format(Locale.US, format, it) }.toMutableList();
                 playbackLabels.add("+");
                 playbackLabels.add(0, "-");
 
-                setButtons(playbackLabels, String.format(format, currentPlaybackRate));
+                setButtons(playbackLabels, String.format(Locale.US, format, currentPlaybackRate));
                 onClick.subscribe { v ->
                     val currentPlaybackSpeed = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate();
                     var playbackSpeedString = v;
                     val stepSpeed = Settings.instance.playback.getPlaybackSpeedStep();
                     if(v == "+")
-                        playbackSpeedString = String.format("%.2f", Math.min((currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed, 5.0)).toString();
+                        playbackSpeedString = String.format(Locale.US, "%.2f", Math.min((currentPlaybackSpeed?.toDouble() ?: 1.0) + stepSpeed, 5.0)).toString();
                     else if(v == "-")
-                        playbackSpeedString = String.format("%.2f", Math.max(0.1, (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed)).toString();
+                        playbackSpeedString = String.format(Locale.US, "%.2f", Math.max(0.1, (currentPlaybackSpeed?.toDouble() ?: 1.0) - stepSpeed)).toString();
                     val newPlaybackSpeed = playbackSpeedString.toDouble();
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
@@ -2176,11 +2218,11 @@ class VideoDetailView : ConstraintLayout {
                             return@subscribe
                         }
 
-                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format(Locale.US, "%.2f", newPlaybackSpeed)})");
                         ad.changeSpeed(newPlaybackSpeed)
                         setSelected(playbackSpeedString);
                     } else {
-                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", newPlaybackSpeed)})");
+                        qualityPlaybackSpeedTitle?.setTitle(context.getString(R.string.playback_rate) + " (${String.format(Locale.US, "%.2f", newPlaybackSpeed)})");
                         _player.setPlaybackRate(playbackSpeedString.toFloat());
                         setSelected(playbackSpeedString);
                     }
@@ -2455,7 +2497,9 @@ class VideoDetailView : ConstraintLayout {
 
         val url = _url;
         if (!url.isNullOrBlank()) {
-            setLoading(true);
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                setLoading(true);
+            }
             _taskLoadVideo.run(url);
         }
     }
@@ -2539,7 +2583,9 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun saveBrightness() {
-        _player.gestureControl.saveBrightness()
+        if (Settings.instance.gestureControls.useSystemBrightness) {
+            _player.gestureControl.saveBrightness()
+        }
     }
     fun restoreBrightness() {
         _player.gestureControl.restoreBrightness()
@@ -2719,6 +2765,8 @@ class VideoDetailView : ConstraintLayout {
                         if(it is IPlatformVideo) {
                             if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
                                 UIDialogs.toast("Added to watch later\n[${it.name}]");
+                            else
+                                UIDialogs.toast(context.getString(R.string.already_in_watch_later))
                         }
                     }
                     onAddToQueueClicked.subscribe(this) {
@@ -2986,6 +3034,11 @@ class VideoDetailView : ConstraintLayout {
             return@TaskHandler result;
         })
         .success { setVideoDetails(it, true) }
+        .exception<ScriptReloadRequiredException> {
+            StatePlatform.instance.handleReloadRequired(it, {
+                fetchVideo();
+            });
+        }
         .exception<NoPlatformClientException> {
             Logger.w(TAG, "exception<NoPlatformClientException>", it)
 

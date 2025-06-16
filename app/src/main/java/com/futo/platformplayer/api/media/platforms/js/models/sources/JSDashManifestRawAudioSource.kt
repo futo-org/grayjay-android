@@ -62,12 +62,16 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         if(_plugin is DevJSClient)
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                    _obj.invokeString("generate");
+                    _plugin.isBusyWith("dashAudio.generate") {
+                        _obj.invokeString("generate");
+                    }
                 }
             }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                _obj.invokeString("generate");
+                _plugin.isBusyWith("dashAudio.generate") {
+                    _obj.invokeString("generate");
+                }
             }
 
         if(result != null){

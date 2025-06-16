@@ -18,6 +18,7 @@ import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.AirPlayCastingDevice
@@ -58,6 +59,8 @@ class CastView : ConstraintLayout {
     private var _inPictureInPicture: Boolean = false;
     private var _chapters: List<IChapter>? = null;
     private var _currentChapter: IChapter? = null;
+    private var _speedHoldPrevRate = 1.0
+    private var _speedHoldWasPlaying = false
 
     val onChapterChanged = Event2<IChapter?, Boolean>();
     val onMinimizeClick = Event0();
@@ -87,6 +90,20 @@ class CastView : ConstraintLayout {
         _gestureControlView = findViewById(R.id.gesture_control);
         _gestureControlView.fullScreenGestureEnabled = false
         _gestureControlView.setupTouchArea();
+        _gestureControlView.onSpeedHoldStart.subscribe {
+            val d = StateCasting.instance.activeDevice ?: return@subscribe;
+            _speedHoldWasPlaying = d.isPlaying
+            _speedHoldPrevRate = d.speed
+            if (d.canSetSpeed)
+                d.changeSpeed(Settings.instance.playback.getHoldPlaybackSpeed())
+            d.resumeVideo()
+        }
+        _gestureControlView.onSpeedHoldEnd.subscribe {
+            val d = StateCasting.instance.activeDevice ?: return@subscribe;
+            if (!_speedHoldWasPlaying) d.pauseVideo()
+            d.changeSpeed(_speedHoldPrevRate)
+        }
+
         _gestureControlView.onSeek.subscribe {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;
             StateCasting.instance.videoSeekTo(d.expectedCurrentTime + it / 1000);

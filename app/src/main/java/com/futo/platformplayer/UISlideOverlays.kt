@@ -1151,6 +1151,8 @@ class UISlideOverlays {
                         call = {
                             if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(video), true))
                                 UIDialogs.appToast("Added to watch later", false);
+                            else
+                                UIDialogs.toast(container.context.getString(R.string.already_in_watch_later))
                         }),
                 )
             );
