@@ -570,7 +570,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
                             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
-                                videoSource.getHttpDataSourceFactory()
+                                withContext(Dispatchers.IO) { videoSource.getHttpDataSourceFactory() }
                             else
                                 DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
 
@@ -593,6 +593,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 catch(reloadRequired: ScriptReloadRequiredException) {
                     Logger.i(TAG, "Reload required detected");
                     StatePlatform.instance.handleReloadRequired(reloadRequired, {
+                        Logger.i(TAG, "ReloadRequired started reloading video");
                         onReloadRequired.emit();
                     });
                 }
@@ -704,9 +705,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     val plugin = audioSource.getUnderlyingPlugin();
                     if(plugin == null)
                         return@launch;
+                    /*
                     StatePlatform.instance.reEnableClient(plugin.id, {
                         onReloadRequired.emit();
                     });
+                    */
                 }
                 catch(ex: Throwable) {
 

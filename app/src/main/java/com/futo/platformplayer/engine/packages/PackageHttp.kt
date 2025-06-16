@@ -656,7 +656,9 @@ class PackageHttp: V8Package {
                         _isOpen = true;
                         if(hasOpen && _listeners?.isClosed != true) {
                             try {
-                                _listeners?.invokeVoid("open", arrayOf<Any>());
+                                _package._plugin.busy {
+                                    _listeners?.invokeVoid("open", arrayOf<Any>());
+                                }
                             }
                             catch(ex: Throwable){
                                 Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] open failed: " + ex.message, ex);
@@ -666,7 +668,9 @@ class PackageHttp: V8Package {
                     override fun message(msg: String) {
                         if(hasMessage && _listeners?.isClosed != true) {
                             try {
-                                _listeners?.invokeVoid("message", msg);
+                                _package._plugin.busy {
+                                    _listeners?.invokeVoid("message", msg);
+                                }
                             }
                             catch(ex: Throwable) {}
                         }
@@ -675,7 +679,9 @@ class PackageHttp: V8Package {
                         if(hasClosing && _listeners?.isClosed != true)
                         {
                             try {
-                                _listeners?.invokeVoid("closing", code, reason);
+                                _package._plugin.busy {
+                                    _listeners?.invokeVoid("closing", code, reason);
+                                }
                             }
                             catch(ex: Throwable){
                                 Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closing failed: " + ex.message, ex);
@@ -686,7 +692,9 @@ class PackageHttp: V8Package {
                         _isOpen = false;
                         if(hasClosed && _listeners?.isClosed != true) {
                             try {
-                                _listeners?.invokeVoid("closed", code, reason);
+                                _package._plugin.busy {
+                                    _listeners?.invokeVoid("closed", code, reason);
+                                }
                             }
                             catch(ex: Throwable){
                                 Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closed failed: " + ex.message, ex);
@@ -702,7 +710,9 @@ class PackageHttp: V8Package {
                         Logger.e(TAG, "Websocket failure: ${exception.message} (${_url})", exception);
                         if(hasFailure &&  _listeners?.isClosed != true) {
                             try {
-                                _listeners?.invokeVoid("failure", exception.message);
+                                _package._plugin.busy {
+                                    _listeners?.invokeVoid("failure", exception.message);
+                                }
                             }
                             catch(ex: Throwable){
                                 Logger.e(TAG, "Socket for [${_packageClient.parentConfig.name}] closed failed: " + ex.message, ex);

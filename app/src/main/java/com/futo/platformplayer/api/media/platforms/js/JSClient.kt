@@ -99,10 +99,8 @@ open class JSClient : IPlatformClient {
     override val icon: ImageVariable;
     override var capabilities: PlatformClientCapabilities = PlatformClientCapabilities();
 
-    private val _busyLock = Object();
-    private var _busyCounter = 0;
     private var _busyAction = "";
-    val isBusy: Boolean get() = _busyCounter > 0;
+    val isBusy: Boolean get() = _plugin.isBusy;
     val isBusyAction: String get() {
         return _busyAction;
     }
@@ -225,8 +223,11 @@ open class JSClient : IPlatformClient {
 
         Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
+        Logger.i(TAG, "Plugin [${config.name}] started");
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");
         plugin.execute("plugin.settings = parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())})");
+
+        Logger.i(TAG, "Plugin [${config.name}] configs set");
 
         descriptor.appSettings.loadDefaults(descriptor.config);
 
@@ -254,6 +255,7 @@ open class JSClient : IPlatformClient {
             hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false,
             hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false
         );
+        Logger.i(TAG, "Plugin [${config.name}] capabilities retrieved");
 
         try {
             if (capabilities.hasGetChannelTemplateByClaimMap)
@@ -565,7 +567,7 @@ open class JSClient : IPlatformClient {
         Logger.i(TAG, "JSClient.getPlaybackTracker(${url})");
         val tracker = plugin.executeTyped<V8Value>("source.getPlaybackTracker(${Json.encodeToString(url)})");
         if(tracker is V8ValueObject)
-            return@isBusyWith JSPlaybackTracker(config, tracker);
+            return@isBusyWith JSPlaybackTracker(this, tracker);
         else
             return@isBusyWith null;
     }
@@ -747,25 +749,23 @@ open class JSClient : IPlatformClient {
         return urls;
     }
 
-
+    fun <T> busy(handle: ()->T): T {
+        return _plugin.busy {
+            return@busy handle();
+        }
+    }
 
     fun <T> isBusyWith(actionName: String, handle: ()->T): T {
-        val busyId = kotlin.random.Random.nextInt(9999);
-        try {
+        //val busyId = kotlin.random.Random.nextInt(9999);
+        return busy {
+            try {
+                _busyAction = actionName;
+                return@busy handle();
 
-            Logger.v(TAG, "Busy with [${actionName}] (${busyId})")
-            synchronized(_busyLock) {
-                _busyCounter++;
             }
-            _busyAction = actionName;
-            return handle();
-        }
-        finally {
-            _busyAction = "";
-            synchronized(_busyLock) {
-                _busyCounter--;
+            finally {
+                _busyAction = "";
             }
-            Logger.v(TAG, "Busy done [${actionName}] (${busyId})")
         }
     }
     private fun <T> isBusyWith(handle: ()->T): T {

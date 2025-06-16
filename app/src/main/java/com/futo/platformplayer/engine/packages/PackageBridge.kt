@@ -4,6 +4,7 @@ import android.media.MediaCodec
 import android.media.MediaCodecList
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
+import com.caoccao.javet.interop.callback.JavetCallbackContext
 import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueFunction
@@ -112,28 +113,42 @@ class PackageBridge : V8Package {
     @V8Function
     fun setTimeout(func: V8ValueFunction, timeout: Long): Int {
         val id = timeoutCounter++;
-
         val funcClone = func.toClone<V8ValueFunction>()
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             delay(timeout);
+            if(_plugin.isStopped)
+                return@launch;
             synchronized(timeoutMap) {
                 if(!timeoutMap.contains(id)) {
-                    JavetResourceUtils.safeClose(funcClone);
+                    _plugin.busy {
+                        if(!_plugin.isStopped)
+                            JavetResourceUtils.safeClose(funcClone);
+                    }
                     return@launch;
                 }
                 timeoutMap.remove(id);
             }
             try {
-                _plugin.whenNotBusy {
-                    funcClone.callVoid(null, arrayOf<Any>());
+                Logger.v(TAG, "Timeout started [${id}]");
+                _plugin.busy {
+                    Logger.v(TAG, "Timeout call started [${id}]");
+                    if(!_plugin.isStopped)
+                        funcClone.callVoid(null, arrayOf<Any>());
+                    Logger.v(TAG, "Timeout call ended [${id}]");
                 }
+                Logger.v(TAG, "Timeout resolved [${id}]");
             }
             catch(ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);
             }
             finally {
-                JavetResourceUtils.safeClose(funcClone);
+                _plugin.busy {
+                    if(!_plugin.isStopped)
+                        JavetResourceUtils.safeClose(funcClone);
+                }
+                //_plugin.whenNotBusy {
+                //}
             }
         };
         synchronized(timeoutMap) {

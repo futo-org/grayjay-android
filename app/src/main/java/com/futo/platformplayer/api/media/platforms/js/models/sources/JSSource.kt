@@ -77,7 +77,11 @@ abstract class JSSource {
 
         Logger.v("JSSource", "Request executor for [${type}] requesting");
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
-            _obj.invoke("getRequestExecutor", arrayOf<Any>());
+            _plugin.isBusyWith("getRequestExecutor") {
+                _plugin.getUnderlyingPlugin().busy {
+                    _obj.invoke("getRequestExecutor", arrayOf<Any>());
+                }
+            }
         };
         Logger.v("JSSource", "Request executor for [${type}] received");
 

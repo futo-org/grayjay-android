@@ -2497,7 +2497,9 @@ class VideoDetailView : ConstraintLayout {
 
         val url = _url;
         if (!url.isNullOrBlank()) {
-            setLoading(true);
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                setLoading(true);
+            }
             _taskLoadVideo.run(url);
         }
     }
