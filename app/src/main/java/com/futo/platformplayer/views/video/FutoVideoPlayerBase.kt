@@ -565,7 +565,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         if(videoSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
+                var startId = -1;
                 try {
+                    startId = videoSource?.getUnderlyingPlugin()?.getUnderlyingPlugin()?.startId ?: -1;
                     val generated = videoSource.generate();
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
@@ -592,6 +594,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 }
                 catch(reloadRequired: ScriptReloadRequiredException) {
                     Logger.i(TAG, "Reload required detected");
+                    val plugin = videoSource.getUnderlyingPlugin();
+                    if(plugin == null)
+                        return@launch;
+                    if(startId != -1 && plugin.getUnderlyingPlugin()?.startId != startId)
+                        return@launch;
                     StatePlatform.instance.handleReloadRequired(reloadRequired, {
                         onReloadRequired.emit();
                     });
