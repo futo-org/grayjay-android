@@ -84,14 +84,16 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             return getPlaybackTrackerJS();
     }
     private fun getPlaybackTrackerJS(): IPlaybackTracker? {
-        return V8Plugin.catchScriptErrors(_pluginConfig, "VideoDetails", "videoDetails.getPlaybackTracker()") {
-            val tracker = _content.invoke<V8Value>("getPlaybackTracker", arrayOf<Any>())
-                ?: return@catchScriptErrors null;
-            if(tracker is V8ValueObject)
-                return@catchScriptErrors JSPlaybackTracker(_plugin, tracker);
-            else
-                return@catchScriptErrors null;
-        };
+        return _plugin.busy {
+            V8Plugin.catchScriptErrors(_pluginConfig, "VideoDetails", "videoDetails.getPlaybackTracker()") {
+                val tracker = _content.invoke<V8Value>("getPlaybackTracker", arrayOf<Any>())
+                    ?: return@catchScriptErrors null;
+                if(tracker is V8ValueObject)
+                    return@catchScriptErrors JSPlaybackTracker(_plugin, tracker);
+                else
+                    return@catchScriptErrors null;
+            }
+        }
     }
 
     override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? {
@@ -108,8 +110,10 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
         return null;
     }
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
-        return JSContentPager(_pluginConfig, client, contentPager);
+        return _plugin.busy {
+            val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+            return@busy JSContentPager(_pluginConfig, client, contentPager);
+        }
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {
@@ -125,10 +129,12 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     }
 
     private fun getCommentsJS(client: JSClient): IPager<IPlatformComment>? {
-        val commentPager = _content.invoke<V8Value>("getComments", arrayOf<Any>());
-        if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
-            return null;
+        return _plugin.busy {
+            val commentPager = _content.invoke<V8Value>("getComments", arrayOf<Any>());
+            if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
+                return@busy null;
 
-        return JSCommentPager(_pluginConfig, client, commentPager);
+            return@busy JSCommentPager(_pluginConfig, client, commentPager);
+        }
     }
 }
