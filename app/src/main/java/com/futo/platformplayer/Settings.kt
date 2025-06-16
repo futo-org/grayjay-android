@@ -1017,8 +1017,8 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.playlist_allow_dups, FieldForm.TOGGLE, R.string.playlist_allow_dups_description, 3)
         var playlistAllowDups: Boolean = true;
 
-        @FormField(R.string.add_to_beginning_of_watch_later, FieldForm.TOGGLE, R.string.add_to_beginning_description, 4)
-        var addToBeginning: Boolean = true;
+        @FormField(R.string.watch_later_add_start, FieldForm.TOGGLE, R.string.watch_later_add_start_description, 4)
+        var watchLaterAddStart: Boolean = true;
 
         @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 5)
         var polycentricEnabled: Boolean = true;
