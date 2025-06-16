@@ -58,6 +58,8 @@ class V8Plugin {
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
     val httpClientOthers: Map<String, JSHttpClient> get() = _clientOthers;
 
+    var startId: Int = 0;
+
     fun registerHttpClient(client: JSHttpClient) {
         synchronized(_clientOthers) {
             _clientOthers.put(client.clientId, client);
@@ -148,6 +150,7 @@ class V8Plugin {
         synchronized(_runtimeLock) {
             if (_runtime != null)
                 return;
+            startId + 1;
             //V8RuntimeOptions.V8_FLAGS.setUseStrict(true);
             val host = V8Host.getV8Instance();
             val options = host.jsRuntimeType.getRuntimeOptions();
@@ -207,6 +210,7 @@ class V8Plugin {
                 if(isStopped)
                     return@busy;
                 isStopped = true;
+                startId = -1;
 
                 //Cleanup http
                 for(pack in _depsPackages) {
