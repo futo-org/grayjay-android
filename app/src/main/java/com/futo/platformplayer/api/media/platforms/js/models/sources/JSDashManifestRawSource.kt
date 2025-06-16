@@ -67,13 +67,17 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         if(_plugin is DevJSClient) {
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                    _obj.invokeString("generate");
+                    _plugin.isBusyWith("dashVideo.generate") {
+                        _obj.invokeString("generate");
+                    }
                 });
             }
         }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                _obj.invokeString("generate");
+                _plugin.isBusyWith("dashVideo.generate") {
+                    _obj.invokeString("generate");
+                }
             });
 
         if(result != null){

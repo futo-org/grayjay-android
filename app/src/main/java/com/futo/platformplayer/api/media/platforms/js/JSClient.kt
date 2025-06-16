@@ -62,6 +62,7 @@ import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import java.util.Random
 import kotlin.Exception
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.jvm.kotlinFunction
@@ -83,6 +84,8 @@ open class JSClient : IPlatformClient {
     private var _channelCapabilities: ResultCapabilities? = null;
     private var _peekChannelTypes: List<String>? = null;
 
+    private var _usedReloadData: String? = null;
+
     protected val _script: String;
 
     private var _initialized: Boolean = false;
@@ -98,13 +101,13 @@ open class JSClient : IPlatformClient {
     override val icon: ImageVariable;
     override var capabilities: PlatformClientCapabilities = PlatformClientCapabilities();
 
-    private val _busyLock = Object();
-    private var _busyCounter = 0;
     private var _busyAction = "";
-    val isBusy: Boolean get() = _busyCounter > 0;
+    val isBusy: Boolean get() = _plugin.isBusy;
     val isBusyAction: String get() {
         return _busyAction;
     }
+
+    val declareOnEnable = HashMap<String, String>();
 
     val settings: HashMap<String, String?> get() = descriptor.settings;
 
@@ -197,6 +200,7 @@ open class JSClient : IPlatformClient {
 
     open fun getCopy(withoutCredentials: Boolean = false, noSaveState: Boolean = false): JSClient {
         val client = JSClient(_context, descriptor, if (noSaveState) null else saveState(), _script, withoutCredentials);
+        client.setReloadData(getReloadData(true));
         if (noSaveState)
             client.initialize()
         return client
@@ -213,13 +217,30 @@ open class JSClient : IPlatformClient {
         return plugin.httpClientOthers[id];
     }
 
+    fun setReloadData(data: String?) {
+        if(data == null) {
+            if(declareOnEnable.containsKey("__reloadData"))
+                declareOnEnable.remove("__reloadData");
+        }
+        else
+            declareOnEnable.put("__reloadData", data ?: "");
+    }
+    fun getReloadData(orLast: Boolean): String? {
+        if(declareOnEnable.containsKey("__reloadData"))
+            return declareOnEnable["__reloadData"];
+        else if(orLast)
+            return _usedReloadData;
+        return null;
+    }
+
     override fun initialize() {
         if (_initialized) return
 
-        Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
+
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");
         plugin.execute("plugin.settings = parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())})");
+
 
         descriptor.appSettings.loadDefaults(descriptor.config);
 
@@ -263,7 +284,16 @@ open class JSClient : IPlatformClient {
     fun enable() {
         if(!_initialized)
             initialize();
+        for(toDeclare in declareOnEnable) {
+            plugin.execute("var ${toDeclare.key} = " + Json.encodeToString(toDeclare.value));
+        }
         plugin.execute("source.enable(${Json.encodeToString(config)}, parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())}), ${Json.encodeToString(_injectedSaveState)})");
+
+        if(declareOnEnable.containsKey("__reloadData")) {
+            Logger.i(TAG, "Plugin [${config.name}] enabled with reload data: ${declareOnEnable["__reloadData"]}");
+            _usedReloadData = declareOnEnable["__reloadData"];
+            declareOnEnable.remove("__reloadData");
+        }
         _enabled = true;
     }
     @JSDocs(1, "source.saveState()", "Provide a string that is passed to enable for quicker startup of multiple instances")
@@ -552,7 +582,7 @@ open class JSClient : IPlatformClient {
         Logger.i(TAG, "JSClient.getPlaybackTracker(${url})");
         val tracker = plugin.executeTyped<V8Value>("source.getPlaybackTracker(${Json.encodeToString(url)})");
         if(tracker is V8ValueObject)
-            return@isBusyWith JSPlaybackTracker(config, tracker);
+            return@isBusyWith JSPlaybackTracker(this, tracker);
         else
             return@isBusyWith null;
     }
@@ -734,19 +764,22 @@ open class JSClient : IPlatformClient {
         return urls;
     }
 
-
-    private fun <T> isBusyWith(actionName: String, handle: ()->T): T {
-        try {
-            synchronized(_busyLock) {
-                _busyCounter++;
-            }
-            _busyAction = actionName;
-            return handle();
+    fun <T> busy(handle: ()->T): T {
+        return _plugin.busy {
+            return@busy handle();
         }
-        finally {
-            _busyAction = "";
-            synchronized(_busyLock) {
-                _busyCounter--;
+    }
+
+    fun <T> isBusyWith(actionName: String, handle: ()->T): T {
+        //val busyId = kotlin.random.Random.nextInt(9999);
+        return busy {
+            try {
+                _busyAction = actionName;
+                return@busy handle();
+
+            }
+            finally {
+                _busyAction = "";
             }
         }
     }

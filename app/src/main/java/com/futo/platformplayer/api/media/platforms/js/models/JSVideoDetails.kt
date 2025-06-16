@@ -27,6 +27,7 @@ import com.futo.platformplayer.getOrThrowNullable
 import com.futo.platformplayer.states.StateDeveloper
 
 class JSVideoDetails : JSVideo, IPlatformVideoDetails {
+    private val _plugin: JSClient;
     private val _hasGetComments: Boolean;
     private val _hasGetContentRecommendations: Boolean;
     private val _hasGetPlaybackTracker: Boolean;
@@ -48,6 +49,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(plugin.config, obj) {
         val contextName = "VideoDetails";
+        _plugin = plugin;
         val config = plugin.config;
         description = _content.getOrThrow(config, "description", contextName);
         video = JSVideoSourceDescriptor.fromV8(plugin, _content.getOrThrow(config, "video", contextName));
@@ -86,7 +88,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             val tracker = _content.invoke<V8Value>("getPlaybackTracker", arrayOf<Any>())
                 ?: return@catchScriptErrors null;
             if(tracker is V8ValueObject)
-                return@catchScriptErrors JSPlaybackTracker(_pluginConfig, tracker);
+                return@catchScriptErrors JSPlaybackTracker(_plugin, tracker);
             else
                 return@catchScriptErrors null;
         };

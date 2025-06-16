@@ -103,6 +103,12 @@ class UnavailableException extends ScriptException {
         super("UnavailableException", msg);
     }
 }
+class ReloadRequiredException extends ScriptException {
+    constructor(msg, reloadData) {
+        super("ReloadRequiredException", msg);
+        this.reloadData = reloadData;
+    }
+}
 class AgeException extends ScriptException {
     constructor(msg) {
         super("AgeException", msg);

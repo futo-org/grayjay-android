@@ -62,9 +62,11 @@ abstract class JSSource {
         if (!hasRequestModifier || _obj.isClosed)
             return null;
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
-            _obj.invoke("getRequestModifier", arrayOf<Any>());
-        };
+        val result = _plugin.isBusyWith("getRequestModifier") {
+            V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
+                _obj.invoke("getRequestModifier", arrayOf<Any>());
+            };
+        }
 
         if (result !is V8ValueObject)
             return null;
@@ -75,9 +77,14 @@ abstract class JSSource {
         if (!hasRequestExecutor || _obj.isClosed)
             return null;
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
-            _obj.invoke("getRequestExecutor", arrayOf<Any>());
-        };
+        Logger.v("JSSource", "Request executor for [${type}] requesting");
+        val result =_plugin.isBusyWith("getRequestExecutor") {
+            V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
+                _obj.invoke("getRequestExecutor", arrayOf<Any>());
+            };
+        }
+
+        Logger.v("JSSource", "Request executor for [${type}] received");
 
         if (result !is V8ValueObject)
             return null;
