@@ -6,6 +6,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.getSourcePlugin
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,8 +36,11 @@ class JSSubtitleSource : ISubtitleSource {
     override fun getSubtitles(): String {
         if(!hasFetch)
             throw IllegalStateException("This subtitle doesn't support getSubtitles..");
-        val v8String = _obj.invoke<V8ValueString>("getSubtitles", arrayOf<Any>());
-        return v8String.value;
+
+        return _obj.getSourcePlugin()?.busy {
+            val v8String = _obj.invoke<V8ValueString>("getSubtitles", arrayOf<Any>());
+            return@busy v8String.value;
+        } ?: "";
     }
 
     override suspend fun getSubtitlesURI(): Uri? {
