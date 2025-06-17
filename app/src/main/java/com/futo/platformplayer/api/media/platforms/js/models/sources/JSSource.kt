@@ -53,43 +53,39 @@ abstract class JSSource {
         hasRequestExecutor = _requestExecutor != null || obj.has("getRequestExecutor");
     }
 
-    fun getRequestModifier(): IRequestModifier? {
+    fun getRequestModifier(): IRequestModifier? = _plugin.isBusyWith("getRequestModifier") {
         if(_requestModifier != null)
-            return AdhocRequestModifier { url, headers ->
+            return@isBusyWith AdhocRequestModifier { url, headers ->
                   return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers);
             };
 
         if (!hasRequestModifier || _obj.isClosed)
-            return null;
+            return@isBusyWith null;
 
-        val result = _plugin.isBusyWith("getRequestModifier") {
-            V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
-                _obj.invoke("getRequestModifier", arrayOf<Any>());
-            };
-        }
+        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
+            _obj.invoke("getRequestModifier", arrayOf<Any>());
+        };
 
         if (result !is V8ValueObject)
-            return null;
+            return@isBusyWith null;
 
-        return JSRequestModifier(_plugin, result)
+        return@isBusyWith JSRequestModifier(_plugin, result)
     }
-    open fun getRequestExecutor(): JSRequestExecutor? {
+    open fun getRequestExecutor(): JSRequestExecutor? = _plugin.isBusyWith("getRequestExecutor") {
         if (!hasRequestExecutor || _obj.isClosed)
-            return null;
+            return@isBusyWith null;
 
         Logger.v("JSSource", "Request executor for [${type}] requesting");
-        val result =_plugin.isBusyWith("getRequestExecutor") {
-            V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
-                _obj.invoke("getRequestExecutor", arrayOf<Any>());
-            };
-        }
+        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
+            _obj.invoke("getRequestExecutor", arrayOf<Any>());
+        };
 
         Logger.v("JSSource", "Request executor for [${type}] received");
 
         if (result !is V8ValueObject)
-            return null;
+            return@isBusyWith null;
 
-        return JSRequestExecutor(_plugin, result)
+        return@isBusyWith JSRequestExecutor(_plugin, result)
     }
 
     fun getUnderlyingPlugin(): JSClient? {

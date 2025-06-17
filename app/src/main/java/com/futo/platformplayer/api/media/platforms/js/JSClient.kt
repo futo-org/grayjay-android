@@ -59,6 +59,9 @@ import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
@@ -769,6 +772,13 @@ open class JSClient : IPlatformClient {
     fun <T> busy(handle: ()->T): T {
         return _plugin.busy {
             return@busy handle();
+        }
+    }
+    fun <T> busyBlockingSuspended(handle: suspend ()->T): T {
+        return _plugin.busy {
+            return@busy runBlocking {
+                return@runBlocking handle();
+            }
         }
     }
 

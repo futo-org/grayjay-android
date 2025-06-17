@@ -49,6 +49,7 @@ class V8Plugin {
     private val _clientAuth: ManagedHttpClient;
     private val _clientOthers: ConcurrentHashMap<String, JSHttpClient> = ConcurrentHashMap();
 
+
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
     val httpClientOthers: Map<String, JSHttpClient> get() = _clientOthers;
@@ -151,6 +152,8 @@ class V8Plugin {
             if (!host.isIsolateCreated)
                 throw IllegalStateException("Isolate not created");
 
+            _runtimeMap.put(_runtime!!, this);
+
             //Setup bridge
             _runtime?.let {
                 it.converter = V8Converter();
@@ -203,6 +206,7 @@ class V8Plugin {
                 }
 
                 _runtime?.let {
+                    _runtimeMap.remove(it);
                     _runtime = null;
                     if(!it.isClosed && !it.isDead) {
                         try {
@@ -222,6 +226,9 @@ class V8Plugin {
         }
     }
 
+    fun isThreadAlreadyBusy(): Boolean {
+        return _busyLock.isHeldByCurrentThread;
+    }
     fun <T> busy(handle: ()->T): T {
         _busyLock.withLock {
             //Logger.i(TAG, "Entered busy: " + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString());
@@ -273,7 +280,13 @@ class V8Plugin {
         private val REGEX_EX_FALLBACK = Regex(".*throw.*?[\"](.*)[\"].*");
         private val REGEX_EX_FALLBACK2 = Regex(".*throw.*?['](.*)['].*");
 
+        private val _runtimeMap = ConcurrentHashMap<V8Runtime, V8Plugin>();
+
         val TAG = "V8Plugin";
+
+        fun getPluginFromRuntime(runtime: V8Runtime): V8Plugin? {
+            return _runtimeMap.getOrDefault(runtime, null);
+        }
 
         fun <T: Any?> catchScriptErrors(config: IV8PluginConfig, context: String, code: String? = null, handle: ()->T): T {
             var codeStripped = code;

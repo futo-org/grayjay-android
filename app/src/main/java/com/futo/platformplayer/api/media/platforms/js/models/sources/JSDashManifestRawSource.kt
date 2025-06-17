@@ -32,7 +32,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
     override val duration: Long;
     override val priority: Boolean;
 
-    var url: String?;
+    val url: String?;
     override var manifest: String?;
 
     override val hasGenerate: Boolean;

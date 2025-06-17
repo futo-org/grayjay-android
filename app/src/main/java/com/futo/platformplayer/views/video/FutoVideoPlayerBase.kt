@@ -353,8 +353,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         var videoSourceUsed = videoSource;
         var audioSourceUsed = audioSource;
         if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
-            videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
-            audioSourceUsed = null;
+            videoSource.getUnderlyingPlugin()?.busy {
+                videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+                audioSourceUsed = null;
+            }
         }
 
         val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
@@ -567,8 +569,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
                 var startId = -1;
                 try {
-                    startId = videoSource?.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
-                    val generated = videoSource.generate();
+                    val plugin = videoSource.getUnderlyingPlugin() ?: return@launch;
+                    startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
+                    val generated = plugin.busy { videoSource.generate(); };
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
                             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))

@@ -958,7 +958,7 @@ class StatePlatform {
     //Comments
     fun getComments(content: IPlatformContentDetails): IPager<IPlatformComment> {
         val client = getContentClient(content.url);
-        val pager = content.getComments(client);
+        val pager = null;//content.getComments(client);
 
         return pager ?: getComments(content.url);
     }
@@ -969,7 +969,7 @@ class StatePlatform {
             return EmptyPager();
 
         if(!StateApp.instance.privateMode)
-            return client.fromPool(_mainClientPool).getComments(url);
+            return client.fromPool(_pagerClientPool).getComments(url);
         else
             return client.fromPool(_privateClientPool).getComments(url);
     }
