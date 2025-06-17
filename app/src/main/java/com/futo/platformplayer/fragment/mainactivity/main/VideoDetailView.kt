@@ -432,10 +432,6 @@ class VideoDetailView : ConstraintLayout {
             showChaptersUI();
         };
 
-        _layoutPlayerContainer.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-            onShouldEnterPictureInPictureChanged.emit()
-        }
-
         _title.setOnLongClickListener {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager;
             val clip = ClipData.newPlainText("Video Title", (it as TextView).text);
@@ -1967,6 +1963,10 @@ class VideoDetailView : ConstraintLayout {
                 videoTrackFormats.distinctBy { it.height }.sortedBy { it.height },
                 audioTrackFormats.distinctBy { it.bitrate }.sortedBy { it.bitrate });
         }
+
+        _layoutPlayerContainer.post {
+            onShouldEnterPictureInPictureChanged.emit()
+        }
     }
 
     private var _didTriggerDatasourceErrorCount = 0;
@@ -2427,7 +2427,6 @@ class VideoDetailView : ConstraintLayout {
         }
 
         isPlaying = playing;
-        onShouldEnterPictureInPictureChanged.emit()
         updateTracker(lastPositionMilliseconds, playing, true);
     }
 
@@ -2559,6 +2558,9 @@ class VideoDetailView : ConstraintLayout {
             setProgressBarOverlayed(false);
         }
         onFullscreenChanged.emit(fullscreen);
+        _layoutPlayerContainer.post {
+                onShouldEnterPictureInPictureChanged.emit()
+        }
     }
 
     private fun setCastEnabled(isCasting: Boolean) {
@@ -2831,10 +2833,6 @@ class VideoDetailView : ConstraintLayout {
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
         } else {
             _layoutPlayerContainer.setPadding(0, 0, 0, 0);
-        }
-
-        _layoutPlayerContainer.post {
-            onShouldEnterPictureInPictureChanged.emit()
         }
     }
     fun getPictureInPictureParams() : PictureInPictureParams {
