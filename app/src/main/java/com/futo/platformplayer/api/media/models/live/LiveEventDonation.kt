@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media.models.live
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -37,6 +38,7 @@ class LiveEventDonation: IPlatformLiveEvent, ILiveEventChatMessage {
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : LiveEventDonation {
+            obj.ensureIsBusy();
             val contextName = "LiveEventDonation"
             return LiveEventDonation(
                 obj.getOrThrow(config, "name", contextName),
