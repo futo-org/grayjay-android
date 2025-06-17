@@ -57,8 +57,8 @@ class ShortsFragment : MainFragment() {
 
     // we just completely reset the data structure so we want to tell the adapter that
     @SuppressLint("NotifyDataSetChanged")
-    override fun onShown(parameter: Any?, isBack: Boolean) {
-        super.onShown(parameter, isBack)
+    override fun onShownWithView(parameter: Any?, isBack: Boolean) {
+        super.onShownWithView(parameter, isBack)
 
         if (parameter is Triple<*, *, *>) {
             setLoading(false)
