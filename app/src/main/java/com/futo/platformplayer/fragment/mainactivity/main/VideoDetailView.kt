@@ -2559,7 +2559,7 @@ class VideoDetailView : ConstraintLayout {
         }
         onFullscreenChanged.emit(fullscreen);
         _layoutPlayerContainer.post {
-                onShouldEnterPictureInPictureChanged.emit()
+            onShouldEnterPictureInPictureChanged.emit()
         }
     }
 
