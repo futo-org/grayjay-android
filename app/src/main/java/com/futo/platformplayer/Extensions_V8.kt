@@ -118,7 +118,7 @@ inline fun V8Value.ensureIsBusy() {
 }
 
 inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextName: String): T {
-    if(true)
+    if(false)
         ensureIsBusy();
     return when(T::class) {
         String::class -> this.expectOrThrow<V8ValueString>(config, contextName).value as T;

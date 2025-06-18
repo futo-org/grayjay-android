@@ -958,7 +958,7 @@ class StatePlatform {
     //Comments
     fun getComments(content: IPlatformContentDetails): IPager<IPlatformComment> {
         val client = getContentClient(content.url);
-        val pager = null;//content.getComments(client);
+        val pager = content.getComments(client);
 
         return pager ?: getComments(content.url);
     }
