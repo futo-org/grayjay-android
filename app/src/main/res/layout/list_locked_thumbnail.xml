@@ -118,7 +118,13 @@
                 android:layout_height="match_parent"
                 android:background="#BB000000"
                 android:visibility="gone"
-                android:orientation="vertical" />
+                android:gravity="center"
+                android:orientation="vertical">
+                <com.futo.platformplayer.views.LoaderView
+                    android:id="@+id/loader"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/container_locked"
