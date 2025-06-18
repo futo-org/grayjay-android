@@ -2844,16 +2844,23 @@ class VideoDetailView : ConstraintLayout {
             videoSourceHeight = 9;
         }
         val aspectRatio = videoSourceWidth.toDouble() / videoSourceHeight;
+        val r = _player.getVideoRect()
         if(aspectRatio > 2.38) {
             videoSourceWidth = 16;
             videoSourceHeight = 9;
+
+            // shrink the left and right equally to get the rect to be 16 by 9 aspect ratio
+            // we don't want a picture in picture mode that's more squashed than 16 by 9
+            val targetWidth = r.height() * 16 / 9
+            val shrinkAmount = (r.width() - targetWidth) / 2
+            r.left += shrinkAmount
+            r.right -= shrinkAmount
         }
         else if(aspectRatio < 0.43) {
             videoSourceHeight = 16;
             videoSourceWidth = 9;
         }
 
-        val r = _player.getVideoRect()
         val playpauseAction = if(_player.playing)
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 5));
         else
