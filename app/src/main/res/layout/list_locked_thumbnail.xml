@@ -120,10 +120,7 @@
                 android:visibility="gone"
                 android:gravity="center"
                 android:orientation="vertical">
-                <com.futo.platformplayer.views.LoaderView
-                    android:id="@+id/loader"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp" />
+
             </LinearLayout>
 
             <LinearLayout
