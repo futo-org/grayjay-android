@@ -98,16 +98,14 @@ inline fun <reified T> V8ValueArray.expectV8Variants(config: IV8PluginConfig, co
 inline fun V8Plugin.ensureIsBusy() {
     this.let {
         if (!it.isThreadAlreadyBusy()) {
-            throw IllegalStateException("Tried to access V8Plugin without busy");
-            /*
+            //throw IllegalStateException("Tried to access V8Plugin without busy");
             val stacktrace = Thread.currentThread().stackTrace;
             Logger.w("Extensions_V8",
                 "V8 USE OUTSIDE BUSY: " + stacktrace.drop(3)?.firstOrNull().toString() +
                         ", " + stacktrace.drop(4)?.firstOrNull().toString() +
                         ", " + stacktrace.drop(5)?.firstOrNull()?.toString() +
                         ", " + stacktrace.drop(6)?.firstOrNull()?.toString()
-            )
-            */
+            );
         }
     }
 }
