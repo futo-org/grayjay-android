@@ -580,7 +580,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                                 DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
 
                             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
-                                dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+                                dataSource.setRequestExecutor2(withContext(Dispatchers.IO){videoSource.audio.getRequestExecutor()});
                             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                                 .createMediaSource(
                                     DashManifestParser().parse(

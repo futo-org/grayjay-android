@@ -14,6 +14,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.orNull
@@ -108,8 +109,12 @@ abstract class JSSource {
         const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
         const val TYPE_VIDEOURL_WIDEVINE = "VideoUrlWidevineSource"
 
-        fun fromV8VideoNullable(plugin: JSClient, obj: V8Value?) : IVideoSource? = obj.orNull { fromV8Video(plugin, it as V8ValueObject) };
+        fun fromV8VideoNullable(plugin: JSClient, obj: V8Value?) : IVideoSource? {
+            obj?.ensureIsBusy();
+            return obj.orNull { fromV8Video(plugin, it as V8ValueObject) }
+        };
         fun fromV8Video(plugin: JSClient, obj: V8ValueObject) : IVideoSource? {
+            obj.ensureIsBusy()
             val type = obj.getString("plugin_type");
             return when(type) {
                 TYPE_VIDEOURL -> JSVideoUrlSource(plugin, obj);
@@ -126,13 +131,26 @@ abstract class JSSource {
             }
         }
         fun fromV8DashNullable(plugin: JSClient, obj: V8Value?) : JSDashManifestSource? = obj.orNull { fromV8Dash(plugin, it as V8ValueObject) };
-        fun fromV8Dash(plugin: JSClient, obj: V8ValueObject) : JSDashManifestSource = JSDashManifestSource(plugin, obj);
-        fun fromV8DashRaw(plugin: JSClient, obj: V8ValueObject) : JSDashManifestRawSource = JSDashManifestRawSource(plugin, obj);
-        fun fromV8DashRawAudio(plugin: JSClient, obj: V8ValueObject) : JSDashManifestRawAudioSource = JSDashManifestRawAudioSource(plugin, obj);
+        fun fromV8Dash(plugin: JSClient, obj: V8ValueObject) : JSDashManifestSource{
+            obj.ensureIsBusy();
+            return JSDashManifestSource(plugin, obj)
+        };
+        fun fromV8DashRaw(plugin: JSClient, obj: V8ValueObject) : JSDashManifestRawSource{
+            obj.ensureIsBusy()
+            return JSDashManifestRawSource(plugin, obj);
+        }
+        fun fromV8DashRawAudio(plugin: JSClient, obj: V8ValueObject) : JSDashManifestRawAudioSource {
+            obj?.ensureIsBusy();
+            return JSDashManifestRawAudioSource(plugin, obj)
+        };
         fun fromV8HLSNullable(plugin: JSClient, obj: V8Value?) : JSHLSManifestSource? = obj.orNull { fromV8HLS(plugin, it as V8ValueObject) };
-        fun fromV8HLS(plugin: JSClient, obj: V8ValueObject) : JSHLSManifestSource = JSHLSManifestSource(plugin, obj);
+        fun fromV8HLS(plugin: JSClient, obj: V8ValueObject) : JSHLSManifestSource {
+            obj.ensureIsBusy();
+            return JSHLSManifestSource(plugin, obj)
+        };
 
         fun fromV8Audio(plugin: JSClient, obj: V8ValueObject) : IAudioSource? {
+            obj.ensureIsBusy();
             val type = obj.getString("plugin_type");
             return when(type) {
                 TYPE_HLS -> JSHLSManifestAudioSource.fromV8HLS(plugin, obj);

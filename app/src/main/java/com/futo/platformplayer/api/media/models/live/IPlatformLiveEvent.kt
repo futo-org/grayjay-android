@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media.models.live
 
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrThrow
 
 interface IPlatformLiveEvent {
@@ -10,6 +11,7 @@ interface IPlatformLiveEvent {
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject, contextName: String = "LiveEvent") : IPlatformLiveEvent {
+            obj.ensureIsBusy();
             val t = LiveEventType.fromInt(obj.getOrThrow<Int>(config, "type", contextName));
             return when(t) {
                 LiveEventType.COMMENT -> LiveEventComment.fromV8(config, obj);

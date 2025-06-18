@@ -4,6 +4,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -11,6 +12,7 @@ class ScriptReloadRequiredException(config: IV8PluginConfig, val msg: String?, v
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : ScriptException {
+            obj.ensureIsBusy();
             val contextName = "ScriptReloadRequiredException";
             return ScriptReloadRequiredException(config,
                 obj.getOrThrow(config, "message", contextName),

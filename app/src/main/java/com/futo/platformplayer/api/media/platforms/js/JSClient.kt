@@ -346,8 +346,10 @@ open class JSClient : IPlatformClient {
                 return _searchCapabilities!!;
             }
 
-            _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
-            return _searchCapabilities!!;
+            return busy {
+                _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
+                return@busy _searchCapabilities!!;
+            }
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getSearchCapabilities", ex);
@@ -375,8 +377,10 @@ open class JSClient : IPlatformClient {
         if (_searchChannelContentsCapabilities != null)
             return _searchChannelContentsCapabilities!!;
 
-        _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
-        return _searchChannelContentsCapabilities!!;
+        return busy {
+            _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
+            return@busy _searchChannelContentsCapabilities!!;
+        }
     }
     @JSDocs(5, "source.searchChannelContents(query)", "Searches for videos on the platform")
     @JSDocsParameter("channelUrl", "Channel url to search")
@@ -433,9 +437,10 @@ open class JSClient : IPlatformClient {
             if (_channelCapabilities != null) {
                 return _channelCapabilities!!;
             }
-
-            _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
-            return _channelCapabilities!!;
+            return busy {
+                _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
+                return@busy _channelCapabilities!!;
+            };
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getChannelCapabilities", ex);
