@@ -1112,6 +1112,7 @@
         <item>5.0</item>
     </string-array>
     <string-array name="hold_playback_speeds">
+        <item>Disabled</item>
         <item>1.25</item>
         <item>1.5</item>
         <item>1.75</item>

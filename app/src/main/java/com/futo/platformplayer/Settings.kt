@@ -587,18 +587,19 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.hold_playback_speed, FieldForm.DROPDOWN, R.string.hold_playback_speed_description, 27)
         @DropdownFieldOptionsId(R.array.hold_playback_speeds)
-        var holdPlaybackSpeed: Int = 3;
+        var holdPlaybackSpeed: Int = 4;
 
         fun getHoldPlaybackSpeed(): Double {
             return when(holdPlaybackSpeed) {
-                0 -> 1.25
-                1 -> 1.5
-                2 -> 1.75
-                3 -> 2.0
-                4 -> 2.25
-                5 -> 2.5
-                6 -> 2.75
-                7 -> 3.0
+                0 -> 1.0
+                1 -> 1.25
+                2 -> 1.5
+                3 -> 1.75
+                4 -> 2.0
+                5 -> 2.25
+                6 -> 2.5
+                7 -> 2.75
+                8 -> 3.0
                 else -> 2.0
             }
         }
