@@ -37,19 +37,40 @@
                 android:orientation="horizontal"
                 android:paddingVertical="8dp">
 
-                <com.futo.platformplayer.views.others.CreatorThumbnail
-                    android:id="@+id/creator_thumbnail"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginEnd="8dp"
-                    android:contentDescription="@string/cd_creator_thumbnail" />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <com.futo.platformplayer.views.others.CreatorThumbnail
+                        android:id="@+id/creator_thumbnail"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:contentDescription="@string/cd_creator_thumbnail"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.futo.platformplayer.views.platform.PlatformIndicator
+                        android:id="@+id/short_platform_indicator"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="-12dp"
+                        android:layout_marginBottom="-12dp"
+                        android:background="@drawable/rounded_square_outline"
+                        android:clipToOutline="true"
+                        app:layout_constraintBottom_toTopOf="@id/creator_thumbnail"
+                        app:layout_constraintStart_toEndOf="@id/creator_thumbnail" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:id="@+id/channel_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:text=""
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
@@ -63,8 +84,9 @@
                 android:layout_marginStart="4dp"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:paddingHorizontal="4dp"
                 android:shadowColor="@android:color/black"
-                android:shadowRadius="2"
+                android:shadowRadius="8"
                 android:text=""
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
@@ -132,8 +154,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
             </FrameLayout>
@@ -189,8 +212,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
             </FrameLayout>
@@ -241,8 +265,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:text="@string/comments"
                     android:textColor="@android:color/white"
                     android:textSize="12sp"
@@ -295,8 +320,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:text="@string/share"
                     android:textColor="@android:color/white"
                     android:textSize="12sp"
@@ -350,8 +376,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:text="@string/refresh"
                     android:textColor="@android:color/white"
                     android:textSize="12sp"
@@ -403,20 +430,14 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
-                    android:shadowRadius="2"
+                    android:shadowRadius="8"
                     android:text="@string/quality"
                     android:textColor="@android:color/white"
                     android:textSize="12sp"
                     tools:ignore="TextContrastCheck" />
             </FrameLayout>
-
-            <com.futo.platformplayer.views.platform.PlatformIndicator
-                android:id="@+id/short_platform_indicator"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginTop="12dp"
-                android:layout_gravity="center_horizontal" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
