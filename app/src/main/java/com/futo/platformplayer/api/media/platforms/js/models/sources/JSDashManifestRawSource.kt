@@ -81,12 +81,14 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
             });
 
         if(result != null){
-            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
-            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
-            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
-            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
-            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
-                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            _plugin.busy {
+                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+                if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                }
             }
         }
         return result;
