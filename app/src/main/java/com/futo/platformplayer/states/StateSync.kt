@@ -78,7 +78,13 @@ class StateSync {
             onAuthorized = { sess, isNewlyAuthorized, isNewSession ->
                 if (isNewSession) {
                     deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess)
-                    StateApp.instance.scope.launch(Dispatchers.IO) { checkForSync(sess) }
+                    StateApp.instance.scope.launch(Dispatchers.IO) {
+                        try {
+                            checkForSync(sess)
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to check for sync.", e)
+                        }
+                    }
                 }
             }
 
