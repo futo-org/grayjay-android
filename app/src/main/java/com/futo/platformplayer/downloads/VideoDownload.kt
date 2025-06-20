@@ -303,9 +303,10 @@ class VideoDownload {
                         try {
                             val playlistResponse = client.get(source.url)
                             if (playlistResponse.isOk) {
+                                val resolvedPlaylistUrl = playlistResponse.url
                                 val playlistContent = playlistResponse.body?.string()
                                 if (playlistContent != null) {
-                                    videoSources.addAll(HLS.parseAndGetVideoSources(source, playlistContent, source.url))
+                                    videoSources.addAll(HLS.parseAndGetVideoSources(source, playlistContent, resolvedPlaylistUrl))
                                 }
                             }
                         } catch (e: Throwable) {
@@ -351,9 +352,10 @@ class VideoDownload {
                             try {
                                 val playlistResponse = client.get(source.url)
                                 if (playlistResponse.isOk) {
+                                    val resolvedPlaylistUrl = playlistResponse.url
                                     val playlistContent = playlistResponse.body?.string()
                                     if (playlistContent != null) {
-                                        audioSources.addAll(HLS.parseAndGetAudioSources(source, playlistContent, source.url))
+                                        audioSources.addAll(HLS.parseAndGetAudioSources(source, playlistContent, resolvedPlaylistUrl))
                                     }
                                 }
                             } catch (e: Throwable) {
