@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Button
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
 import com.futo.platformplayer.readBytes
@@ -47,7 +48,12 @@ class ImportOptionsDialog: AlertDialog {
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     val zipBytes = it?.readBytes(context) ?: return@launch;
                     withContext(Dispatchers.Main) {
-                        StateBackup.importZipBytes(_context, StateApp.instance.scope, zipBytes);
+                        try {
+                            StateBackup.importZipBytes(_context, StateApp.instance.scope, zipBytes);
+                        }
+                        catch(ex: Throwable) {
+                            UIDialogs.toast("Failed to import, invalid format?\n" + ex.message);
+                        }
                     }
                 }
             };
@@ -62,7 +68,12 @@ class ImportOptionsDialog: AlertDialog {
                     val txtBytes = it?.readBytes(context) ?: return@launch;
                     val txt = String(txtBytes);
                     withContext(Dispatchers.Main) {
-                        StateBackup.importTxt(_context, txt);
+                        try {
+                            StateBackup.importTxt(_context, txt);
+                        }
+                        catch(ex: Throwable) {
+                            UIDialogs.toast("Failed to import, invalid format?\n" + ex.message);
+                        }
                     }
                 }
             };
@@ -74,7 +85,12 @@ class ImportOptionsDialog: AlertDialog {
                     val jsonBytes = it?.readBytes(context) ?: return@launch;
                     val json = String(jsonBytes);
                     withContext(Dispatchers.Main) {
-                        StateBackup.importNewPipeSubs(_context, json);
+                        try {
+                            StateBackup.importNewPipeSubs(_context, json);
+                        }
+                        catch(ex: Throwable) {
+                            UIDialogs.toast("Failed to import, invalid format?\n" + ex.message);
+                        }
                     }
                 }
             };
