@@ -12,6 +12,9 @@ import com.futo.platformplayer.readBytes
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.views.buttons.BigButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ImportOptionsDialog: AlertDialog {
     private val _context: MainActivity;
@@ -41,8 +44,12 @@ class ImportOptionsDialog: AlertDialog {
         _button_import_zip.onClick.subscribe {
             dismiss();
             StateApp.instance.requestFileReadAccess(_context, null, "application/zip") {
-                val zipBytes = it?.readBytes(context) ?: return@requestFileReadAccess;
-                StateBackup.importZipBytes(_context, StateApp.instance.scope, zipBytes);
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    val zipBytes = it?.readBytes(context) ?: return@launch;
+                    withContext(Dispatchers.Main) {
+                        StateBackup.importZipBytes(_context, StateApp.instance.scope, zipBytes);
+                    }
+                }
             };
         }
         _button_import_ezip.setOnClickListener {
@@ -51,17 +58,25 @@ class ImportOptionsDialog: AlertDialog {
         _button_import_txt.onClick.subscribe  {
             dismiss();
             StateApp.instance.requestFileReadAccess(_context, null, "text/plain") {
-                val txtBytes = it?.readBytes(context) ?: return@requestFileReadAccess;
-                val txt = String(txtBytes);
-                StateBackup.importTxt(_context, txt);
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    val txtBytes = it?.readBytes(context) ?: return@launch;
+                    val txt = String(txtBytes);
+                    withContext(Dispatchers.Main) {
+                        StateBackup.importTxt(_context, txt);
+                    }
+                }
             };
         }
         _button_import_newpipe_subs.onClick.subscribe  {
             dismiss();
             StateApp.instance.requestFileReadAccess(_context, null, "application/json") {
-                val jsonBytes = it?.readBytes(context) ?: return@requestFileReadAccess;
-                val json = String(jsonBytes);
-                StateBackup.importNewPipeSubs(_context, json);
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    val jsonBytes = it?.readBytes(context) ?: return@launch;
+                    val json = String(jsonBytes);
+                    withContext(Dispatchers.Main) {
+                        StateBackup.importNewPipeSubs(_context, json);
+                    }
+                }
             };
         };
         _button_import_platform.onClick.subscribe  {
