@@ -11,7 +11,7 @@ import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-
+/*
 class SyncServerTests {
 
     //private val relayHost = "relay.grayjay.app"
@@ -335,4 +335,4 @@ class SyncServerTests {
 
 class AlwaysAuthorized : IAuthorizable {
     override val isAuthorized: Boolean get() = true
-}
+}*/

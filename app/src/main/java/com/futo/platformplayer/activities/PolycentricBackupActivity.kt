@@ -14,10 +14,12 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateApp.Companion.withContext
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.polycentric.core.ContentType
@@ -29,6 +31,9 @@ import com.futo.polycentric.core.toBase64Url
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import userpackage.Protocol.ExportBundle
 import userpackage.Protocol.URLInfo
@@ -39,6 +44,7 @@ class PolycentricBackupActivity : AppCompatActivity() {
     private lateinit var _imageQR: ImageView;
     private lateinit var _exportBundle: String;
     private lateinit var _textQR: TextView;
+    private lateinit var _loader: View
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
@@ -49,24 +55,47 @@ class PolycentricBackupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_polycentric_backup);
         setNavigationBarColorAndIcons();
 
-        _buttonShare = findViewById(R.id.button_share);
-        _buttonCopy = findViewById(R.id.button_copy);
-        _imageQR = findViewById(R.id.image_qr);
-        _textQR = findViewById(R.id.text_qr);
+        _buttonShare = findViewById(R.id.button_share)
+        _buttonCopy = findViewById(R.id.button_copy)
+        _imageQR = findViewById(R.id.image_qr)
+        _textQR = findViewById(R.id.text_qr)
+        _loader = findViewById(R.id.progress_loader)
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             finish();
         };
 
-        _exportBundle = createExportBundle();
+        _imageQR.visibility = View.INVISIBLE
+        _textQR.visibility = View.INVISIBLE
+        _loader.visibility = View.VISIBLE
+        _buttonShare.visibility = View.INVISIBLE
+        _buttonCopy.visibility = View.INVISIBLE
 
-        try {
-            val dimension = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, resources.displayMetrics).toInt();
-            val qrCodeBitmap = generateQRCode(_exportBundle, dimension, dimension);
-            _imageQR.setImageBitmap(qrCodeBitmap);
-        } catch (e: Exception) {
-            Logger.e(TAG, getString(R.string.failed_to_generate_qr_code), e);
-            _imageQR.visibility = View.INVISIBLE;
-            _textQR.visibility = View.INVISIBLE;
+        lifecycleScope.launch {
+            try {
+                val pair = withContext(Dispatchers.IO) {
+                    val bundle = createExportBundle()
+                    val dimension = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 200f, resources.displayMetrics
+                    ).toInt()
+                    val qr = generateQRCode(bundle, dimension, dimension)
+                    Pair(bundle, qr)
+                }
+
+                _exportBundle = pair.first
+                _imageQR.setImageBitmap(pair.second)
+                _imageQR.visibility = View.VISIBLE
+                _textQR.visibility = View.VISIBLE
+                _buttonShare.visibility = View.VISIBLE
+                _buttonCopy.visibility = View.VISIBLE
+            } catch (e: Exception) {
+                Logger.e(TAG, getString(R.string.failed_to_generate_qr_code), e)
+                _imageQR.visibility = View.INVISIBLE
+                _textQR.visibility = View.INVISIBLE
+                _buttonShare.visibility = View.INVISIBLE
+                _buttonCopy.visibility = View.INVISIBLE
+            } finally {
+                _loader.visibility = View.GONE
+            }
         }
 
         _buttonShare.onClick.subscribe {

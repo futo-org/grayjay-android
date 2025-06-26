@@ -4,6 +4,7 @@ import android.media.MediaCodec
 import android.media.MediaCodecList
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
+import com.caoccao.javet.interop.callback.JavetCallbackContext
 import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueFunction
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
 
 class PackageBridge : V8Package {
     @Transient
@@ -79,6 +81,14 @@ class PackageBridge : V8Package {
     }
 
     @V8Property
+    fun supportedFeatures(): Array<String> {
+        return arrayOf(
+            "ReloadRequiredException",
+            "HttpBatchClient"
+        );
+    }
+
+    @V8Property
     fun supportedContent(): Array<Int> {
         return arrayOf(
             ContentType.MEDIA.value,
@@ -101,45 +111,51 @@ class PackageBridge : V8Package {
     }
 
     var timeoutCounter = 0;
-    var timeoutMap = HashSet<Int>();
+    var timeoutMap = ConcurrentHashMap<Int, Any?>();
     @V8Function
     fun setTimeout(func: V8ValueFunction, timeout: Long): Int {
         val id = timeoutCounter++;
-
         val funcClone = func.toClone<V8ValueFunction>()
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             delay(timeout);
-            synchronized(timeoutMap) {
-                if(!timeoutMap.contains(id)) {
-                    JavetResourceUtils.safeClose(funcClone);
-                    return@launch;
+            if (_plugin.isStopped)
+                return@launch;
+            if (!timeoutMap.containsKey(id)) {
+                _plugin.busy {
+                    if (!_plugin.isStopped)
+                        JavetResourceUtils.safeClose(funcClone);
                 }
-                timeoutMap.remove(id);
+                return@launch;
             }
+            timeoutMap.remove(id);
             try {
-                _plugin.whenNotBusy {
-                    funcClone.callVoid(null, arrayOf<Any>());
+                _plugin.busy {
+                    if (!_plugin.isStopped)
+                        funcClone.callVoid(null, arrayOf<Any>());
                 }
-            }
-            catch(ex: Throwable) {
+            } catch (ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);
-            }
-            finally {
-                JavetResourceUtils.safeClose(funcClone);
+            } finally {
+                _plugin.busy {
+                    if (!_plugin.isStopped)
+                        JavetResourceUtils.safeClose(funcClone);
+                }
+                //_plugin.whenNotBusy {
+                //}
             }
         };
-        synchronized(timeoutMap) {
-            timeoutMap.add(id);
-        }
+        timeoutMap.put(id, true);
         return id;
     }
     @V8Function
     fun clearTimeout(id: Int) {
-        synchronized(timeoutMap) {
-            if(timeoutMap.contains(id))
-                timeoutMap.remove(id);
-        }
+        if (timeoutMap.containsKey(id))
+            timeoutMap.remove(id);
+    }
+    @V8Function
+    fun sleep(length: Int) {
+        Thread.sleep(length.toLong());
     }
 
     @V8Function
@@ -147,7 +163,7 @@ class PackageBridge : V8Package {
         Logger.i(TAG, "Plugin toast [${_config.name}]: ${str}");
         StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
             try {
-                UIDialogs.toast(str);
+                UIDialogs.appToast(str);
             } catch (e: Throwable) {
                 Logger.e(TAG, "Failed to show toast.", e);
             }

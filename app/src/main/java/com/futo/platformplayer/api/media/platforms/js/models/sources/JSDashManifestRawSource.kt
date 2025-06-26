@@ -32,7 +32,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
     override val duration: Long;
     override val priority: Boolean;
 
-    var url: String?;
+    val url: String?;
     override var manifest: String?;
 
     override val hasGenerate: Boolean;
@@ -67,22 +67,28 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         if(_plugin is DevJSClient) {
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                    _obj.invokeString("generate");
+                    _plugin.isBusyWith("dashVideo.generate") {
+                        _obj.invokeString("generate");
+                    }
                 });
             }
         }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                _obj.invokeString("generate");
+                _plugin.isBusyWith("dashVideo.generate") {
+                    _obj.invokeString("generate");
+                }
             });
 
         if(result != null){
-            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
-            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
-            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
-            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
-            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
-                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            _plugin.busy {
+                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+                if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                }
             }
         }
         return result;

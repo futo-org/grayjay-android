@@ -62,21 +62,27 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         if(_plugin is DevJSClient)
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                    _obj.invokeString("generate");
+                    _plugin.isBusyWith("dashAudio.generate") {
+                        _obj.invokeString("generate");
+                    }
                 }
             }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                _obj.invokeString("generate");
+                _plugin.isBusyWith("dashAudio.generate") {
+                    _obj.invokeString("generate");
+                }
             }
 
         if(result != null){
-            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
-            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
-            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
-            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
-            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
-                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            plugin.busy {
+                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+                if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                }
             }
         }
         return result;

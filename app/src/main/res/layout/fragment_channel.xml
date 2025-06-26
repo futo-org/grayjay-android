@@ -173,7 +173,7 @@
         android:background="#77000000"
         android:gravity="center">
         <ImageView
-            android:id="@+id/channel_loader"
+            android:id="@+id/channel_loader_frag"
             android:layout_width="80dp"
             android:layout_height="80dp"
             app:srcCompat="@drawable/ic_loader_animated"

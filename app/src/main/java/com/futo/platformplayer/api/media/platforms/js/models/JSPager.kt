@@ -29,7 +29,9 @@ abstract class JSPager<T> : IPager<T> {
         this.pager = pager;
         this.config = config;
 
-        _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
+        plugin.busy {
+            _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
+        }
         getResults();
     }
 
@@ -44,11 +46,14 @@ abstract class JSPager<T> : IPager<T> {
     override fun nextPage() {
         warnIfMainThread("JSPager.nextPage");
 
-        pager = plugin.getUnderlyingPlugin().catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
-            pager.invoke("nextPage", arrayOf<Any>());
-        };
-        _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
-        _resultChanged = true;
+        val pluginV8 = plugin.getUnderlyingPlugin();
+        pluginV8.busy {
+            pager = pluginV8.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
+                pager.invoke("nextPage", arrayOf<Any>());
+            };
+            _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
+            _resultChanged = true;
+        }
         /*
         try {
         }
@@ -70,15 +75,18 @@ abstract class JSPager<T> : IPager<T> {
             return previousResults;
 
         warnIfMainThread("JSPager.getResults");
-        val items = pager.getOrThrow<V8ValueArray>(config, "results", "JSPager");
-        if(items.v8Runtime.isDead || items.v8Runtime.isClosed)
-            throw IllegalStateException("Runtime closed");
-        val newResults = items.toArray()
-            .map { convertResult(it as V8ValueObject) }
-            .toList();
-        _lastResults = newResults;
-        _resultChanged = false;
-        return newResults;
+
+        return plugin.getUnderlyingPlugin().busy {
+            val items = pager.getOrThrow<V8ValueArray>(config, "results", "JSPager");
+            if (items.v8Runtime.isDead || items.v8Runtime.isClosed)
+                throw IllegalStateException("Runtime closed");
+            val newResults = items.toArray()
+                .map { convertResult(it as V8ValueObject) }
+                .toList();
+            _lastResults = newResults;
+            _resultChanged = false;
+            return@busy newResults;
+        }
     }
 
     abstract fun convertResult(obj: V8ValueObject): T;

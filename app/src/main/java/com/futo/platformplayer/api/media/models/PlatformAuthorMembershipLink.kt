@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media.models
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -20,6 +21,7 @@ class PlatformAuthorMembershipLink: PlatformAuthorLink {
 
     companion object {
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformAuthorMembershipLink {
+            value.ensureIsBusy();
             val context = "AuthorMembershipLink"
             return PlatformAuthorMembershipLink(PlatformID.fromV8(config, value.getOrThrow(config, "id", context, false)),
                 value.getOrThrow(config ,"name", context),

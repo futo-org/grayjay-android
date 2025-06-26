@@ -62,7 +62,7 @@ class DownloadService : Service() {
         Logger.i(TAG, "onStartCommand");
         synchronized(this) {
             if(_started)
-                return START_STICKY;
+                return START_NOT_STICKY;
 
             if(!FragmentedStorage.isInitialized) {
                 Logger.i(TAG, "Attempted to start DownloadService without initialized files");

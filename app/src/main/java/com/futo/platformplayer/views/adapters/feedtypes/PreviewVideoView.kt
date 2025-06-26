@@ -204,8 +204,14 @@ open class PreviewVideoView : LinearLayout {
                     .into(_imageVideo);
             };
 
-            if(!isPlanned)
-                _textVideoDuration.text = video.duration.toHumanTime(false);
+            if(!isPlanned) {
+                if(video.duration > 0) {
+                    _textVideoDuration.text = video.duration.toHumanTime(false);
+                    _textVideoDuration.visibility = View.VISIBLE;
+                }
+                else
+                    _textVideoDuration.visibility = View.GONE;
+            }
             else
                 _textVideoDuration.text = context.getString(R.string.planned);
 

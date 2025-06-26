@@ -3,7 +3,6 @@ package com.futo.platformplayer.states
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
-import androidx.fragment.app.Fragment
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
@@ -21,7 +20,6 @@ import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
-import com.futo.platformplayer.states.StateSubscriptionGroups.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringDateMapStorage
@@ -30,15 +28,12 @@ import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.stores.v2.ReconstructStore
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.models.SyncPlaylistsPackage
-import com.futo.platformplayer.sync.models.SyncSubscriptionGroupsPackage
-import com.futo.platformplayer.sync.models.SyncSubscriptionsPackage
 import com.futo.platformplayer.sync.models.SyncWatchLaterPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
@@ -178,31 +173,30 @@ class StatePlaylists {
             StateDownloads.instance.checkForOutdatedPlaylistVideos(VideoDownload.GROUP_WATCHLATER);
         }
     }
-    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false, orderPosition: Int = -1): Boolean {
-        var wasNew = false;
+    fun addToWatchLater(video: SerializedPlatformVideo, isUserInteraction: Boolean = false): Boolean {
         synchronized(_watchlistStore) {
-            if(!_watchlistStore.hasItem { it.url == video.url })
-                wasNew = true;
-            _watchlistStore.saveAsync(video);
-            if(orderPosition == -1)
-                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray());
-            else {
-                val existing = _watchlistOrderStore.getAllValues().toMutableList();
-                existing.add(orderPosition, video.url);
-                _watchlistOrderStore.set(*existing.toTypedArray());
+            if (_watchlistStore.hasItem { it.url == video.url }) {
+                return false
             }
-            _watchlistOrderStore.save();
+
+            _watchlistStore.saveAsync(video)
+            if (Settings.instance.other.watchLaterAddStart) {
+                _watchlistOrderStore.set(*(listOf(video.url) + _watchlistOrderStore.values).toTypedArray())
+            } else {
+                _watchlistOrderStore.set(*(_watchlistOrderStore.values + listOf(video.url)).toTypedArray())
+            }
+            _watchlistOrderStore.save()
         }
         onWatchLaterChanged.emit();
 
-        if(isUserInteraction) {
+        if (isUserInteraction) {
             val now = OffsetDateTime.now();
             _watchLaterAdds.setAndSave(video.url, now);
             broadcastWatchLaterAddition(video, now);
         }
 
         StateDownloads.instance.checkForOutdatedPlaylists();
-        return wasNew;
+        return true;
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
