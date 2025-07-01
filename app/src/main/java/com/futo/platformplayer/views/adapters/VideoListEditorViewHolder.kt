@@ -51,7 +51,6 @@ class VideoListEditorViewHolder : ViewHolder {
     constructor(view: View, touchHelper: ItemTouchHelper? = null) : super(view) {
         _root = view.findViewById(R.id.root);
         _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
-        _imageThumbnail?.clipToOutline = true;
         _textName = view.findViewById(R.id.text_video_name);
         _textAuthor = view.findViewById(R.id.text_author);
         _textMetadata = view.findViewById(R.id.text_video_metadata);
