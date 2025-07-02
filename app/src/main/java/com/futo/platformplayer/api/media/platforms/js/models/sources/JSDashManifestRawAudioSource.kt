@@ -1,5 +1,6 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
+import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
@@ -13,6 +14,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
 
@@ -63,14 +65,14 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                     _plugin.isBusyWith("dashAudio.generate") {
-                        _obj.invokeString("generate");
+                        _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 }
             }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                 _plugin.isBusyWith("dashAudio.generate") {
-                    _obj.invokeString("generate");
+                    _obj.invokeV8<V8ValueString>("generate").value;
                 }
             }
 

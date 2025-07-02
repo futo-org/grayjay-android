@@ -84,7 +84,8 @@ class PackageBridge : V8Package {
     fun supportedFeatures(): Array<String> {
         return arrayOf(
             "ReloadRequiredException",
-            "HttpBatchClient"
+            "HttpBatchClient",
+            "Async"
         );
     }
 
@@ -130,9 +131,12 @@ class PackageBridge : V8Package {
             }
             timeoutMap.remove(id);
             try {
+                Logger.w(TAG, "setTimeout before busy (${timeout}): ${_plugin.isBusy}");
                 _plugin.busy {
+                    Logger.w(TAG, "setTimeout in busy");
                     if (!_plugin.isStopped)
                         funcClone.callVoid(null, arrayOf<Any>());
+                    Logger.w(TAG, "setTimeout after");
                 }
             } catch (ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);

@@ -2,12 +2,22 @@ package com.futo.platformplayer
 
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.*
+import com.caoccao.javet.values.reference.IV8ValuePromise
 import com.caoccao.javet.values.reference.V8ValueArray
+import com.caoccao.javet.values.reference.V8ValueError
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.caoccao.javet.values.reference.V8ValuePromise
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.logging.Logger
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.cancel
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CountDownLatch
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 
 //V8
@@ -174,4 +184,73 @@ fun V8ObjectToHashMap(obj: V8ValueObject?): HashMap<String, String> {
     for(prop in obj.ownPropertyNames.keys.map { obj.ownPropertyNames.get<V8Value>(it).toString() })
         map.put(prop, obj.getString(prop));
     return map;
+}
+
+
+fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
+    val latch = CountDownLatch(1);
+    var promiseResult: T? = null;
+    var promiseException: Throwable? = null;
+    plugin.busy {
+        this.register(object: IV8ValuePromise.IListener {
+            override fun onFulfilled(p0: V8Value?) {
+                if(p0 is V8ValueError)
+                    promiseException = ScriptExecutionException(plugin.config, p0.message);
+                else
+                    promiseResult = p0 as T;
+                latch.countDown();
+            }
+            override fun onRejected(p0: V8Value?) {
+                promiseException = (NotImplementedError("onRejected promise not implemented.."));
+                latch.countDown();
+            }
+            override fun onCatch(p0: V8Value?) {
+                promiseException = (NotImplementedError("onCatch promise not implemented.."));
+                latch.countDown();
+            }
+        });
+    }
+
+    plugin.registerPromise(this) {
+        promiseException =  CancellationException("Cancelled by system");
+        latch.countDown();
+    }
+    plugin.unbusy {
+        latch.await();
+    }
+    if(promiseException != null)
+        throw promiseException!!;
+    return promiseResult!!;
+}
+fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): Deferred<T> {
+    val def = CompletableDeferred<T>();
+    val promise = this;
+    this.register(object: IV8ValuePromise.IListener {
+        override fun onFulfilled(p0: V8Value?) {
+            plugin.resolvePromise(promise);
+            def.complete(p0 as T);
+        }
+        override fun onRejected(p0: V8Value?) {
+            plugin.resolvePromise(promise);
+            def.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
+        }
+        override fun onCatch(p0: V8Value?) {
+            plugin.resolvePromise(promise);
+            def.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
+        }
+    });
+    plugin.registerPromise(promise) {
+        if(def.isActive)
+            def.cancel("Cancelled by system");
+    }
+    return def;
+}
+
+
+fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any): T {
+    var result = this.invoke<V8Value>(method, *obj);
+    if(result is V8ValuePromise) {
+        return result.toV8ValueBlocking(this.getSourcePlugin()!!);
+    }
+    return result as T;
 }

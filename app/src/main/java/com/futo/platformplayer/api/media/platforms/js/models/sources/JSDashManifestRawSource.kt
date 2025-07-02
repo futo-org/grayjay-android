@@ -15,6 +15,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.states.StateDeveloper
 
 interface IJSDashManifestRawSource {
@@ -68,7 +69,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                     _plugin.isBusyWith("dashVideo.generate") {
-                        _obj.invokeString("generate");
+                        _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 });
             }
@@ -76,7 +77,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                 _plugin.isBusyWith("dashVideo.generate") {
-                    _obj.invokeString("generate");
+                    _obj.invokeV8<V8ValueString>("generate").value;
                 }
             });
 
