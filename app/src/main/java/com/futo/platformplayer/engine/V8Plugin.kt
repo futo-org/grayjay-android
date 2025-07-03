@@ -277,7 +277,7 @@ class V8Plugin {
     }
 
     suspend fun <T : V8Value> executeTypedAsync(js: String) : Deferred<T> {
-        warnIfMainThread("V8Plugin.executeTyped");
+        warnIfMainThread("V8Plugin.executeTypedAsync");
         if(isStopped)
             throw PluginEngineStoppedException(config, "Instance is stopped", js);
 
@@ -358,7 +358,7 @@ class V8Plugin {
             _promises.remove(promise);
             return@synchronized found;
         };
-        if(found != null)
+        if(found != null && cancelled)
             found(promise);
     }
     fun cancelAllPromises(){

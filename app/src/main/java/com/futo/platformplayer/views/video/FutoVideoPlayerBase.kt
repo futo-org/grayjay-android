@@ -567,11 +567,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         if(videoSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
+                val scope = this;
                 var startId = -1;
                 try {
                     val plugin = videoSource.getUnderlyingPlugin() ?: return@launch;
                     startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
-                    val generated = plugin.busy { videoSource.generate(); };
+                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); };
+                    val generated = generatedDef.await();
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
                             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
