@@ -712,7 +712,7 @@ class LiveEventRaid extends LiveEvent {
         this.targetUrl = targetUrl;
         this.targetName = targetName;
         this.targetThumbnail = targetThumbnail;
-        this.isOutgoing = isOutgoing;
+        this.isOutgoing = isOutgoing ?? true;
     }
 }
 
