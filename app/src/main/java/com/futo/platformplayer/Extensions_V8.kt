@@ -231,26 +231,27 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
     return promiseResult!!;
 }
 fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> {
+    val underlyingDef = CompletableDeferred<T>();
     val def = if(this.has("estDuration"))
-        V8Deferred(CompletableDeferred<T>(),
+        V8Deferred(underlyingDef,
             this.getOrDefault(plugin.config, "estDuration", "toV8ValueAsync", -1) ?: -1);
     else
-        V8Deferred<T>(CompletableDeferred<T>());
+        V8Deferred<T>(underlyingDef);
 
     val promise = this;
     plugin.busy {
         this.register(object: IV8ValuePromise.IListener {
             override fun onFulfilled(p0: V8Value?) {
                 plugin.resolvePromise(promise);
-                def.complete(p0 as T);
+                underlyingDef.complete(p0 as T);
             }
             override fun onRejected(p0: V8Value?) {
                 plugin.resolvePromise(promise);
-                def.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
+                underlyingDef.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
             }
             override fun onCatch(p0: V8Value?) {
                 plugin.resolvePromise(promise);
-                def.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
+                underlyingDef.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
             }
         });
     }
@@ -277,7 +278,7 @@ class V8Deferred<T>(val deferred: Deferred<T>, val estDuration: Int = -1): Defer
 
 
     companion object {
-        fun <R> merge(scope: CoroutineScope, defs: List<V8Deferred<T>> conversion: (result: List<T>)->R): V8Deferred<R> {
+        fun <T, R> merge(scope: CoroutineScope, defs: List<V8Deferred<T>>, conversion: (result: List<T>)->R): V8Deferred<R> {
 
             var amount = -1;
             for(def in defs)
