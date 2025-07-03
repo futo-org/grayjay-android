@@ -1,6 +1,8 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
+import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.V8Deferred
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
@@ -13,8 +15,13 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Async
 import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 
 class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource, IStreamMetaDataSource {
     override val container : String;
@@ -50,6 +57,44 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         hasGenerate = _obj.has("generate");
     }
 
+    override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
+        if(!hasGenerate)
+            return V8Deferred(CompletableDeferred(manifest));
+        if(_obj.isClosed)
+            throw IllegalStateException("Source object already closed");
+
+        val plugin = _plugin.getUnderlyingPlugin();
+
+        var result: V8Deferred<V8ValueString>? = null;
+        if(_plugin is DevJSClient)
+            result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
+                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                    _plugin.isBusyWith("dashAudio.generate") {
+                        _obj.invokeV8Async<V8ValueString>("generate");
+                    }
+                }
+            }
+        else
+            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                _plugin.isBusyWith("dashAudio.generate") {
+                    _obj.invokeV8Async<V8ValueString>("generate");
+                }
+            }
+
+        return plugin.busy {
+            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            }
+
+            return@busy result.convert {
+                it.value
+            };
+        }
+    }
     override fun generate(): String? {
         if(!hasGenerate)
             return manifest;
@@ -63,14 +108,14 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                     _plugin.isBusyWith("dashAudio.generate") {
-                        _obj.invokeString("generate");
+                        _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 }
             }
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
                 _plugin.isBusyWith("dashAudio.generate") {
-                    _obj.invokeString("generate");
+                    _obj.invokeV8<V8ValueString>("generate").value;
                 }
             }
 

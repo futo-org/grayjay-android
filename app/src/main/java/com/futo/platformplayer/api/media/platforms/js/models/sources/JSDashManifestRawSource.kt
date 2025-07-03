@@ -3,6 +3,7 @@ package com.futo.platformplayer.api.media.platforms.js.models.sources
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.futo.platformplayer.V8Deferred
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
@@ -15,11 +16,18 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Async
 import com.futo.platformplayer.states.StateDeveloper
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 
 interface IJSDashManifestRawSource {
     val hasGenerate: Boolean;
     var manifest: String?;
+    fun generateAsync(scope: CoroutineScope): Deferred<String?>;
     fun generate(): String?;
 }
 open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource, IStreamMetaDataSource {
@@ -57,6 +65,45 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         hasGenerate = _obj.has("generate");
     }
 
+    override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
+        if(!hasGenerate)
+            return V8Deferred(CompletableDeferred(manifest));
+        if(_obj.isClosed)
+            throw IllegalStateException("Source object already closed");
+
+        val plugin = _plugin.getUnderlyingPlugin();
+
+        var result: V8Deferred<V8ValueString>? = null;
+        if(_plugin is DevJSClient) {
+            result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
+                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                    _plugin.isBusyWith("dashVideo.generate") {
+                        _obj.invokeV8Async<V8ValueString>("generate");
+                    }
+                });
+            }
+        }
+        else
+            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                _plugin.isBusyWith("dashVideo.generate") {
+                    _obj.invokeV8Async<V8ValueString>("generate");
+                }
+            });
+
+        return plugin.busy {
+            val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
+            val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
+            val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
+            val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+            if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
+                streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+            }
+
+            return@busy result.convert {
+                it.value
+            };
+        }
+    }
     override open fun generate(): String? {
         if(!hasGenerate)
             return manifest;
@@ -68,7 +115,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
                 _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                     _plugin.isBusyWith("dashVideo.generate") {
-                        _obj.invokeString("generate");
+                        _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 });
             }
@@ -76,7 +123,7 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         else
             result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
                 _plugin.isBusyWith("dashVideo.generate") {
-                    _obj.invokeString("generate");
+                    _obj.invokeV8<V8ValueString>("generate").value;
                 }
             });
 
@@ -116,6 +163,32 @@ class JSDashManifestMergingRawSource(
     override val priority: Boolean
         get() = video.priority;
 
+    override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
+        val videoDashDef = video.generateAsync(scope);
+        val audioDashDef = audio.generateAsync(scope);
+
+        return V8Deferred.merge(scope, listOf(videoDashDef, audioDashDef)) {
+            val (videoDash: String?, audioDash: String?) = it;
+
+            if (videoDash != null && audioDash == null) return@merge videoDash;
+            if (audioDash != null && videoDash == null) return@merge audioDash;
+            if (videoDash == null) return@merge null;
+
+            //TODO: Temporary simple solution..make more reliable version
+
+            var result: String? = null;
+            val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
+            if (audioAdaptationSet != null) {
+                result = videoDash.replace(
+                    "</AdaptationSet>",
+                    "</AdaptationSet>\n" + audioAdaptationSet.value
+                )
+            } else
+                result = videoDash;
+
+            return@merge result;
+        };
+    }
     override fun generate(): String? {
         val videoDash = video.generate();
         val audioDash = audio.generate();

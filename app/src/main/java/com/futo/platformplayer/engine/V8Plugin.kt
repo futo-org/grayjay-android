@@ -10,7 +10,9 @@ import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueBoolean
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
+import com.caoccao.javet.values.reference.IV8ValuePromise
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.caoccao.javet.values.reference.V8ValuePromise
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
@@ -37,7 +39,15 @@ import com.futo.platformplayer.engine.packages.V8Package
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
+import com.futo.platformplayer.toList
+import com.futo.platformplayer.toV8ValueBlocking
+import com.futo.platformplayer.toV8ValueAsync
 import com.futo.platformplayer.warnIfMainThread
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -48,6 +58,7 @@ class V8Plugin {
     private val _clientAuth: ManagedHttpClient;
     private val _clientOthers: ConcurrentHashMap<String, JSHttpClient> = ConcurrentHashMap();
 
+    private val _promises = ConcurrentHashMap<V8ValuePromise, ((V8ValuePromise)->Unit)?>();
 
     val httpClient: ManagedHttpClient get() = _client;
     val httpClientAuth: ManagedHttpClient get() = _clientAuth;
@@ -223,36 +234,143 @@ class V8Plugin {
             Logger.i(TAG, "Plugin stopped");
             onStopped.emit(this);
         }
+        cancelAllPromises();
     }
 
     fun isThreadAlreadyBusy(): Boolean {
         return _busyLock.isHeldByCurrentThread;
     }
     fun <T> busy(handle: ()->T): T {
+        _busyLock.lock();
+        try {
+            return handle();
+        }
+        finally {
+            _busyLock.unlock();
+        }
+        /*
         _busyLock.withLock {
             //Logger.i(TAG, "Entered busy: " + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString());
             return handle();
+        }*/
+    }
+    fun <T> unbusy(handle: ()->T): T {
+        val wasLocked = isThreadAlreadyBusy();
+        if(!wasLocked)
+            return handle();
+        val lockCount = _busyLock.holdCount;
+        for(i in 1..lockCount)
+            _busyLock.unlock();
+        try {
+            Logger.w(TAG, "Unlocking V8 thread for [${config.name}] for a blocking resolve of a promise")
+            return handle();
+        }
+        finally {
+            Logger.w(TAG, "Relocking V8 thread for [${config.name}] for a blocking resolve of a promise")
+
+            for(i in 1..lockCount)
+                _busyLock.lock();
         }
     }
     fun execute(js: String) : V8Value {
         return executeTyped<V8Value>(js);
+    }
+
+    suspend fun <T : V8Value> executeTypedAsync(js: String) : Deferred<T> {
+        warnIfMainThread("V8Plugin.executeTypedAsync");
+        if(isStopped)
+            throw PluginEngineStoppedException(config, "Instance is stopped", js);
+
+        return withContext(IO) {
+            return@withContext busy {
+                try {
+                    val runtime = _runtime ?: throw IllegalStateException("JSPlugin not started yet");
+                    val result = catchScriptErrors<V8Value>("Plugin[${config.name}]", js) {
+                        runtime.getExecutor(js).execute()
+                    };
+
+                    if (result is V8ValuePromise) {
+                        return@busy result.toV8ValueAsync<T>(this@V8Plugin);
+                    } else
+                        return@busy CompletableDeferred(result as T);
+                }
+                catch(ex: Throwable) {
+                    val def = CompletableDeferred<T>();
+                    def.completeExceptionally(ex);
+                    return@busy def;
+                }
+            }
+        }
     }
     fun <T : V8Value> executeTyped(js: String) : T {
         warnIfMainThread("V8Plugin.executeTyped");
         if(isStopped)
             throw PluginEngineStoppedException(config, "Instance is stopped", js);
 
-        return busy {
-
+        val result = busy {
             val runtime = _runtime ?: throw IllegalStateException("JSPlugin not started yet");
-            return@busy catchScriptErrors("Plugin[${config.name}]", js) {
+            return@busy catchScriptErrors<V8Value>("Plugin[${config.name}]", js) {
                 runtime.getExecutor(js).execute()
             };
+        };
+        if(result is V8ValuePromise) {
+            return result.toV8ValueBlocking(this@V8Plugin);
         }
+        return result as T;
     }
     fun executeBoolean(js: String) : Boolean? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueBoolean>(js).value } }
     fun executeString(js: String) : String? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueString>(js).value } }
     fun executeInteger(js: String) : Int? = busy { catchScriptErrors("Plugin[${config.name}]") { executeTyped<V8ValueInteger>(js).value } }
+
+
+    fun <T: V8Value> handlePromise(result: V8ValuePromise): CompletableDeferred<T> {
+        val def = CompletableDeferred<T>();
+        result.register(object: IV8ValuePromise.IListener {
+            override fun onFulfilled(p0: V8Value?) {
+                resolvePromise(result);
+                def.complete(p0 as T);
+            }
+            override fun onRejected(p0: V8Value?) {
+                resolvePromise(result);
+                def.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
+            }
+            override fun onCatch(p0: V8Value?) {
+                resolvePromise(result);
+                def.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
+            }
+        });
+        registerPromise(result) {
+            if(def.isActive)
+                def.cancel("Cancelled by system");
+        }
+        return def;
+    }
+    fun registerPromise(promise: V8ValuePromise, onCancelled: ((V8ValuePromise)->Unit)? = null) {
+        Logger.v(TAG, "Promise registered for plugin [${config.name}]: ${promise.hashCode()}");
+        if (onCancelled != null) {
+            _promises.put(promise, onCancelled)
+        };
+    }
+    fun resolvePromise(promise: V8ValuePromise, cancelled: Boolean = false) {
+        Logger.v(TAG, "Promise resolved for plugin [${config.name}]: ${promise.hashCode()}");
+        val found = synchronized(_promises) {
+            val found = _promises.getOrDefault(promise, null);
+            _promises.remove(promise);
+            return@synchronized found;
+        };
+        if(found != null && cancelled)
+            found(promise);
+    }
+    fun cancelAllPromises(){
+        val promises = _promises.keys().toList();
+        for(key in promises) {
+            try {
+                resolvePromise(key, true);
+            }
+            catch(ex: Throwable) {}
+        }
+    }
+
 
     private fun getPackage(packageName: String, allowNull: Boolean = false): V8Package? {
         //TODO: Auto get all package types?

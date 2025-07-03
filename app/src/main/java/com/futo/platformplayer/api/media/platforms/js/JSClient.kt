@@ -632,7 +632,6 @@ open class JSClient : IPlatformClient {
             plugin.executeTyped("source.getLiveEvents(${Json.encodeToString(url)})"));
     }
 
-
     @JSDocs(19, "source.getContentRecommendations(url)", "Gets recommendations of a content page")
     @JSDocsParameter("url", "Url of content")
     override fun getContentRecommendations(url: String): IPager<IPlatformContent>? = isBusyWith("getContentRecommendations") {
