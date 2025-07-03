@@ -707,11 +707,12 @@ class LiveEventViewCount extends LiveEvent {
     }
 }
 class LiveEventRaid extends LiveEvent {
-    constructor(targetUrl, targetName, targetThumbnail) {
+    constructor(targetUrl, targetName, targetThumbnail, isOutgoing) {
         super(100);
         this.targetUrl = targetUrl;
         this.targetName = targetName;
         this.targetThumbnail = targetThumbnail;
+        this.isOutgoing = isOutgoing;
     }
 }
 
