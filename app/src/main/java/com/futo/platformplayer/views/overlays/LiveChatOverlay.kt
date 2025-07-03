@@ -14,9 +14,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
@@ -43,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import toAndroidColor
 
 
 class LiveChatOverlay : LinearLayout {
@@ -69,7 +67,7 @@ class LiveChatOverlay : LinearLayout {
     private val _overlayRaid_Thumbnail: ImageView;
 
     private val _overlayRaid_ButtonGo: Button;
-    private val _overlayRaid_ButtonPrevent: Button;
+    private val _overlayRaid_ButtonDismiss: Button;
 
     private val _textViewers: TextView;
 
@@ -150,7 +148,7 @@ class LiveChatOverlay : LinearLayout {
         _overlayRaid_Name = findViewById(R.id.raid_name);
         _overlayRaid_Thumbnail = findViewById(R.id.raid_thumbnail);
         _overlayRaid_ButtonGo = findViewById(R.id.raid_button_go);
-        _overlayRaid_ButtonPrevent = findViewById(R.id.raid_button_prevent);
+        _overlayRaid_ButtonDismiss = findViewById(R.id.raid_button_prevent);
 
         _overlayRaid.visibility = View.GONE;
 
@@ -159,7 +157,7 @@ class LiveChatOverlay : LinearLayout {
                 onRaidNow.emit(it);
             }
         }
-        _overlayRaid_ButtonPrevent.setOnClickListener {
+        _overlayRaid_ButtonDismiss.setOnClickListener {
             _currentRaid?.let {
                 _currentRaid = null;
                 _overlayRaid.visibility = View.GONE;
@@ -291,10 +289,10 @@ class LiveChatOverlay : LinearLayout {
             _overlayDonation_Amount.text = donation.amount.trim();
             _overlayDonation.visibility = VISIBLE;
             if(donation.colorDonation != null && donation.colorDonation.isHexColor()) {
-                val color = Color.parseColor(donation.colorDonation);
-                _overlayDonation_AmountContainer.background.setTint(color);
+                val color = CSSColor.parseColor(donation.colorDonation);
+                _overlayDonation_AmountContainer.background.setTint(color.toAndroidColor());
 
-                if((color.green > 140 || color.red > 140 || color.blue > 140) && (color.red + color.green + color.blue) > 400)
+                if(color.lightness > 0.5)
                     _overlayDonation_Amount.setTextColor(Color.BLACK)
                 else
                     _overlayDonation_Amount.setTextColor(Color.WHITE);
@@ -372,6 +370,8 @@ class LiveChatOverlay : LinearLayout {
             }
             else
                 _overlayRaid.visibility = View.GONE;
+
+            _overlayRaid_ButtonGo.visibility = if (raid?.isOutgoing == true) View.VISIBLE else View.GONE
         }
     }
     fun setViewCount(viewCount: Int) {

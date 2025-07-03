@@ -18,8 +18,7 @@ class LiveEventEmojis: IPlatformLiveEvent {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : LiveEventEmojis {
             obj.ensureIsBusy();
             val contextName = "LiveEventEmojis"
-            return LiveEventEmojis(
-                obj.getOrThrow(config, "emojis", contextName));
+            return LiveEventEmojis(obj.getOrThrow(config, "emojis", contextName));
         }
     }
 }
