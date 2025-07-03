@@ -43,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import toAndroidColor
 
 
 class LiveChatOverlay : LinearLayout {
@@ -291,10 +292,10 @@ class LiveChatOverlay : LinearLayout {
             _overlayDonation_Amount.text = donation.amount.trim();
             _overlayDonation.visibility = VISIBLE;
             if(donation.colorDonation != null && donation.colorDonation.isHexColor()) {
-                val color = Color.parseColor(donation.colorDonation);
-                _overlayDonation_AmountContainer.background.setTint(color);
+                val color = CSSColor.parseColor(donation.colorDonation);
+                _overlayDonation_AmountContainer.background.setTint(color.toAndroidColor());
 
-                if((color.green > 140 || color.red > 140 || color.blue > 140) && (color.red + color.green + color.blue) > 400)
+                if(color.lightness > 0.5)
                     _overlayDonation_Amount.setTextColor(Color.BLACK)
                 else
                     _overlayDonation_Amount.setTextColor(Color.WHITE);
