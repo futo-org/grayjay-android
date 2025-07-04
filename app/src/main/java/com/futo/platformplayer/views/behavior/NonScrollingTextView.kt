@@ -8,12 +8,16 @@ import android.text.Spannable
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.MotionEvent
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.PlatformLinkMovementMethod
 import com.futo.platformplayer.receivers.MediaControlReceiver
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.timestampRegex
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
     private var _lastTouchedLinks: Array<URLSpan>? = null
@@ -77,12 +81,14 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
                     val dx = event.x - downX
                     val dy = event.y - downY
                     if (Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop && isTouchInside(event)) {
-                        runBlocking {
-                            for (link in _lastTouchedLinks!!) {
-                                Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." }
-                                val c = context
-                                if (c is MainActivity) {
-                                    if (c.handleUrl(link.url)) continue
+                        for (link in _lastTouchedLinks!!) {
+                            Logger.i(PlatformLinkMovementMethod.TAG) { "Link clicked '${link.url}'." }
+                            val c = context
+                            if (c is MainActivity) {
+                                c.lifecycleScope.launch(Dispatchers.IO) {
+                                    if (c.handleUrl(link.url)) {
+                                        return@launch
+                                    }
                                     if (timestampRegex.matches(link.url)) {
                                         val tokens = link.url.split(':')
                                         var time_s = -1L
@@ -92,13 +98,21 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
                                                     tokens[1].toLong() * 60 +
                                                     tokens[2].toLong()
                                         }
+
                                         if (time_s != -1L) {
-                                            MediaControlReceiver.onSeekToReceived.emit(time_s * 1000)
-                                            continue
+                                            withContext(Dispatchers.Main) {
+                                                MediaControlReceiver.onSeekToReceived.emit(time_s * 1000)
+                                            }
+                                            return@launch
                                         }
                                     }
-                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
-                                } else {
+
+                                    withContext(Dispatchers.Main) {
+                                        c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    }
+                                }
+                            } else {
+                                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                                     c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
                                 }
                             }

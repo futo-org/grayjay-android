@@ -2,6 +2,7 @@ package com.futo.platformplayer.sync.internal
 
 import android.os.Build
 import com.futo.platformplayer.ensureNotMainThread
+import com.futo.platformplayer.findCandidateAddresses
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.CipherStatePair
 import com.futo.platformplayer.noise.protocol.DHState
@@ -123,7 +124,7 @@ class SyncSocketSession {
 
         val localPublicKey = ByteArray(localKeyPair.publicKeyLength)
         localKeyPair.getPublicKey(localPublicKey, 0)
-        _localPublicKey = Base64.getEncoder().encodeToString(localPublicKey)
+        _localPublicKey = localPublicKey.toBase64()
     }
 
     fun startAsInitiator(remotePublicKey: String, appId: UInt = 0u, pairingCode: String? = null) {
@@ -253,14 +254,14 @@ class SyncSocketSession {
 
         val initiator = HandshakeState(SyncService.protocolName, HandshakeState.INITIATOR)
         initiator.localKeyPair.copyFrom(_localKeyPair)
-        initiator.remotePublicKey.setPublicKey(Base64.getDecoder().decode(remotePublicKey), 0)
+        initiator.remotePublicKey.setPublicKey(remotePublicKey.base64ToByteArray(), 0)
         initiator.start()
 
         val pairingMessage: ByteArray
         val pairingMessageLength: Int
         if (pairingCode != null) {
             val pairingHandshake = HandshakeState(SyncSocketSession.nProtocolName, HandshakeState.INITIATOR)
-            pairingHandshake.remotePublicKey.setPublicKey(Base64.getDecoder().decode(remotePublicKey), 0)
+            pairingHandshake.remotePublicKey.setPublicKey(remotePublicKey.base64ToByteArray(), 0)
             pairingHandshake.start()
             val pairingCodeBytes = pairingCode.toByteArray(Charsets.UTF_8)
             val pairingBuffer = ByteArray(512)
@@ -299,7 +300,7 @@ class SyncSocketSession {
         _cipherStatePair = initiator.split()
         val remoteKeyBytes = ByteArray(initiator.remotePublicKey.publicKeyLength)
         initiator.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
-        _remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes).base64ToByteArray().toBase64()
+        _remotePublicKey = remoteKeyBytes.toBase64()
     }
 
     private fun handshakeAsResponder(): Boolean {
@@ -516,7 +517,7 @@ class SyncSocketSession {
                     return
                 }
                 val channelHandshakeMessage = ByteArray(channelMessageLength).also { data.get(it) }
-                val publicKey = Base64.getEncoder().encodeToString(publicKeyBytes)
+                val publicKey = publicKeyBytes.toBase64()
                 val pairingCode = if (pairingMessageLength > 0) {
                     val pairingProtocol = HandshakeState(SyncSocketSession.nProtocolName, HandshakeState.RESPONDER).apply {
                         localKeyPair.copyFrom(_localKeyPair)
@@ -671,7 +672,7 @@ class SyncSocketSession {
                             val records = mutableMapOf<String, Pair<ByteArray, Long>>()
                             repeat(recordCount) {
                                 val publisherBytes = ByteArray(32).also { data.get(it) }
-                                val publisher = Base64.getEncoder().encodeToString(publisherBytes)
+                                val publisher = publisherBytes.toBase64()
                                 val blobLength = data.int
                                 val encryptedBlob = ByteArray(blobLength).also { data.get(it) }
                                 val timestamp = data.long
@@ -712,7 +713,7 @@ class SyncSocketSession {
                         val numResponses = data.get().toInt()
                         val result = mutableMapOf<String, ConnectionInfo>()
                         repeat(numResponses) {
-                            val publicKey = Base64.getEncoder().encodeToString(ByteArray(32).also { data.get(it) })
+                            val publicKey = ByteArray(32).also { data.get(it) }.toBase64()
                             val status = data.get().toInt()
                             if (status == 0) {
                                 val infoSize = data.int
@@ -813,7 +814,7 @@ class SyncSocketSession {
                     return
                 }
                 val decryptedPayload = channel.decrypt(data)
-                val errorCode = SyncErrorCode.entries.find { it.value == decryptedPayload.int } ?: SyncErrorCode.ConnectionClosed
+                val errorCode = decryptedPayload.int
                 Logger.e(TAG, "Received relayed error (errorCode = $errorCode) on connectionId $connectionId, closing")
                 channel.close()
                 _channels.remove(connectionId)
@@ -824,7 +825,7 @@ class SyncSocketSession {
                     return
                 }
                 val connectionId = data.long
-                val errorCode = SyncErrorCode.entries.find { it.value == data.int } ?: SyncErrorCode.ConnectionClosed
+                val errorCode = data.int
                 val channel = _channels[connectionId] ?: run {
                     Logger.e(TAG, "Received error code $errorCode for non-existent channel with connectionId $connectionId")
                     return
@@ -994,7 +995,7 @@ class SyncSocketSession {
         val deferred = CompletableDeferred<ConnectionInfo?>()
         _pendingConnectionInfoRequests[requestId] = deferred
         try {
-            val publicKeyBytes = Base64.getDecoder().decode(publicKey)
+            val publicKeyBytes = publicKey.base64ToByteArray()
             if (publicKeyBytes.size != 32) throw IllegalArgumentException("Public key must be 32 bytes")
             val packet = ByteBuffer.allocate(4 + 32).order(ByteOrder.LITTLE_ENDIAN)
             packet.putInt(requestId)
@@ -1017,7 +1018,7 @@ class SyncSocketSession {
             packet.putInt(requestId)
             packet.put(publicKeys.size.toByte())
             for (pk in publicKeys) {
-                val pkBytes = Base64.getDecoder().decode(pk)
+                val pkBytes = pk.base64ToByteArray()
                 if (pkBytes.size != 32) throw IllegalArgumentException("Invalid public key length for $pk")
                 packet.put(pkBytes)
             }
@@ -1078,20 +1079,9 @@ class SyncSocketSession {
     ) {
         if (authorizedKeys.size > 255) throw IllegalArgumentException("Number of authorized keys exceeds 255")
 
-        val ipv4Addresses = mutableListOf<String>()
-        val ipv6Addresses = mutableListOf<String>()
-        for (nic in NetworkInterface.getNetworkInterfaces()) {
-            if (nic.isUp) {
-                for (addr in nic.inetAddresses) {
-                    if (!addr.isLoopbackAddress) {
-                        when (addr) {
-                            is Inet4Address -> ipv4Addresses.add(addr.hostAddress)
-                            is Inet6Address -> ipv6Addresses.add(addr.hostAddress)
-                        }
-                    }
-                }
-            }
-        }
+        val candidateAddresses = findCandidateAddresses()
+        val ipv4Addresses = candidateAddresses.filterIsInstance<Inet4Address>()
+        val ipv6Addresses = candidateAddresses.filterIsInstance<Inet6Address>()
 
         val deviceName = getDeviceName()
         val nameBytes = getLimitedUtf8Bytes(deviceName, 255)
@@ -1103,12 +1093,12 @@ class SyncSocketSession {
         data.put(nameBytes)
         data.put(ipv4Addresses.size.toByte())
         for (addr in ipv4Addresses) {
-            val addrBytes = InetAddress.getByName(addr).address
+            val addrBytes = addr.address
             data.put(addrBytes)
         }
         data.put(ipv6Addresses.size.toByte())
         for (addr in ipv6Addresses) {
-            val addrBytes = InetAddress.getByName(addr).address
+            val addrBytes = addr.address
             data.put(addrBytes)
         }
         data.put(if (allowLocalDirect) 1 else 0)
@@ -1125,7 +1115,7 @@ class SyncSocketSession {
         publishBytes.put(authorizedKeys.size.toByte())
 
         for (key in authorizedKeys) {
-            val publicKeyBytes = Base64.getDecoder().decode(key)
+            val publicKeyBytes = key.base64ToByteArray()
             if (publicKeyBytes.size != 32) throw IllegalArgumentException("Public key must be 32 bytes")
 
             val protocol = HandshakeState(SyncSocketSession.nProtocolName, HandshakeState.INITIATOR)
@@ -1183,7 +1173,7 @@ class SyncSocketSession {
             packet.put(consumerPublicKeys.size.toByte())
 
             for (consumer in consumerPublicKeys) {
-                val consumerBytes = Base64.getDecoder().decode(consumer)
+                val consumerBytes = consumer.base64ToByteArray()
                 if (consumerBytes.size != 32) throw IllegalArgumentException("Consumer public key must be 32 bytes")
                 packet.put(consumerBytes)
                 val protocol = HandshakeState(SyncSocketSession.nProtocolName, HandshakeState.INITIATOR).apply {
@@ -1222,7 +1212,7 @@ class SyncSocketSession {
         val deferred = CompletableDeferred<Pair<ByteArray, Long>?>()
         _pendingGetRecordRequests[requestId] = deferred
         try {
-            val publisherBytes = Base64.getDecoder().decode(publisherPublicKey)
+            val publisherBytes = publisherPublicKey.base64ToByteArray()
             if (publisherBytes.size != 32) throw IllegalArgumentException("Publisher public key must be 32 bytes")
             val keyBytes = key.toByteArray(Charsets.UTF_8)
             val packet = ByteBuffer.allocate(4 + 32 + 1 + keyBytes.size).order(ByteOrder.LITTLE_ENDIAN)
@@ -1253,7 +1243,7 @@ class SyncSocketSession {
             packet.put(keyBytes)
             packet.put(publisherPublicKeys.size.toByte())
             for (publisher in publisherPublicKeys) {
-                val bytes = Base64.getDecoder().decode(publisher)
+                val bytes = publisher.base64ToByteArray()
                 if (bytes.size != 32) throw IllegalArgumentException("Publisher public key must be 32 bytes")
                 packet.put(bytes)
             }
@@ -1272,9 +1262,9 @@ class SyncSocketSession {
         val deferred = CompletableDeferred<Boolean>()
         _pendingDeleteRequests[requestId] = deferred
         try {
-            val publisherBytes = Base64.getDecoder().decode(publisherPublicKey)
+            val publisherBytes = publisherPublicKey.base64ToByteArray()
             if (publisherBytes.size != 32) throw IllegalArgumentException("Publisher public key must be 32 bytes")
-            val consumerBytes = Base64.getDecoder().decode(consumerPublicKey)
+            val consumerBytes = consumerPublicKey.base64ToByteArray()
             if (consumerBytes.size != 32) throw IllegalArgumentException("Consumer public key must be 32 bytes")
             val packetSize = 4 + 32 + 32 + 1 + keys.sumOf { 1 + it.toByteArray(Charsets.UTF_8).size }
             val packet = ByteBuffer.allocate(packetSize).order(ByteOrder.LITTLE_ENDIAN)
@@ -1301,9 +1291,9 @@ class SyncSocketSession {
         val deferred = CompletableDeferred<List<Pair<String, Long>>>()
         _pendingListKeysRequests[requestId] = deferred
         try {
-            val publisherBytes = Base64.getDecoder().decode(publisherPublicKey)
+            val publisherBytes = publisherPublicKey.base64ToByteArray()
             if (publisherBytes.size != 32) throw IllegalArgumentException("Publisher public key must be 32 bytes")
-            val consumerBytes = Base64.getDecoder().decode(consumerPublicKey)
+            val consumerBytes = consumerPublicKey.base64ToByteArray()
             if (consumerBytes.size != 32) throw IllegalArgumentException("Consumer public key must be 32 bytes")
             val packet = ByteBuffer.allocate(4 + 32 + 32).order(ByteOrder.LITTLE_ENDIAN)
             packet.putInt(requestId)

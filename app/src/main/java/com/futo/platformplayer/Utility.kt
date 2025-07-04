@@ -339,6 +339,33 @@ fun ByteArray.fromGzip(): ByteArray {
     return outputStream.toByteArray()
 }
 
+fun findCandidateAddresses(): List<InetAddress> {
+    val candidates = NetworkInterface.getNetworkInterfaces()
+        .toList()
+        .asSequence()
+        .filter(::isUsableInterface)
+        .flatMap { nif ->
+            nif.interfaceAddresses
+                .asSequence()
+                .mapNotNull { ia ->
+                    ia.address.takeIf(::isUsableAddress)?.let { addr ->
+                        nif to ia
+                    }
+                }
+        }
+        .toList()
+
+    return candidates
+        .sortedWith(
+            compareBy<Pair<NetworkInterface, InterfaceAddress>>(
+                { addressScore(it.second.address) },
+                { interfaceScore(it.first) },
+                { -it.second.networkPrefixLength.toInt() },
+                { -it.first.mtu }
+            )
+        ).map { it.second.address }
+}
+
 fun findPreferredAddress(): InetAddress? {
     val candidates = NetworkInterface.getNetworkInterfaces()
         .toList()
@@ -407,7 +434,7 @@ private fun interfaceScore(nif: NetworkInterface): Int {
     }
 }
 
-private fun addressScore(addr: InetAddress): Int {
+fun addressScore(addr: InetAddress): Int {
     return when (addr) {
         is Inet4Address -> {
             val octets = addr.address.map { it.toInt() and 0xFF }

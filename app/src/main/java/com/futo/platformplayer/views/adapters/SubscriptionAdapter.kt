@@ -31,10 +31,11 @@ class SubscriptionAdapter : RecyclerView.Adapter<SubscriptionViewHolder> {
             updateDataset();
         }
 
-    constructor(inflater: LayoutInflater, confirmationMessage: String, onDatasetChanged: ((List<Subscription>)->Unit)? = null) : super() {
+    constructor(inflater: LayoutInflater, confirmationMessage: String, sortByDefault: Int, onDatasetChanged: ((List<Subscription>)->Unit)? = null) : super() {
         _inflater = inflater;
         _confirmationMessage = confirmationMessage;
         _onDatasetChanged = onDatasetChanged;
+        sortBy = sortByDefault
 
         StateSubscriptions.instance.onSubscriptionsChanged.subscribe { _, _ -> if(Looper.myLooper() != Looper.getMainLooper())
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) { updateDataset() }

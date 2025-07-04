@@ -2,10 +2,30 @@ package com.futo.platformplayer
 
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.*
+import com.caoccao.javet.values.reference.IV8ValuePromise
 import com.caoccao.javet.values.reference.V8ValueArray
+import com.caoccao.javet.values.reference.V8ValueError
 import com.caoccao.javet.values.reference.V8ValueObject
+import com.caoccao.javet.values.reference.V8ValuePromise
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
+import com.futo.platformplayer.logging.Logger
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.selects.SelectClause0
+import kotlinx.coroutines.selects.SelectClause1
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CountDownLatch
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 
 //V8
@@ -22,6 +42,10 @@ fun <R> V8Value?.orDefault(default: R, handler: (V8Value)->R): R {
         return default;
     else
         return handler(this);
+}
+
+inline fun V8Value.getSourcePlugin(): V8Plugin? {
+    return V8Plugin.getPluginFromRuntime(this.v8Runtime);
 }
 
 inline fun <reified T> V8Value.expectOrThrow(config: IV8PluginConfig, contextName: String): T  {
@@ -89,7 +113,29 @@ inline fun <reified T> V8ValueArray.expectV8Variants(config: IV8PluginConfig, co
             .map { kv-> kv.second.orNull { it.expectV8Variant<T>(config, contextName + "[${kv.first}]", ) } as T };
 }
 
+inline fun V8Plugin.ensureIsBusy() {
+    this.let {
+        if (!it.isThreadAlreadyBusy()) {
+            //throw IllegalStateException("Tried to access V8Plugin without busy");
+            val stacktrace = Thread.currentThread().stackTrace;
+            Logger.w("Extensions_V8",
+                "V8 USE OUTSIDE BUSY: " + stacktrace.drop(3)?.firstOrNull().toString() +
+                        ", " + stacktrace.drop(4)?.firstOrNull().toString() +
+                        ", " + stacktrace.drop(5)?.firstOrNull()?.toString() +
+                        ", " + stacktrace.drop(6)?.firstOrNull()?.toString()
+            );
+        }
+    }
+}
+inline fun V8Value.ensureIsBusy() {
+    this?.getSourcePlugin()?.let {
+        it.ensureIsBusy();
+    }
+}
+
 inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextName: String): T {
+    if(false)
+        ensureIsBusy();
     return when(T::class) {
         String::class -> this.expectOrThrow<V8ValueString>(config, contextName).value as T;
         Int::class -> {
@@ -146,4 +192,119 @@ fun V8ObjectToHashMap(obj: V8ValueObject?): HashMap<String, String> {
     for(prop in obj.ownPropertyNames.keys.map { obj.ownPropertyNames.get<V8Value>(it).toString() })
         map.put(prop, obj.getString(prop));
     return map;
+}
+
+
+fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
+    val latch = CountDownLatch(1);
+    var promiseResult: T? = null;
+    var promiseException: Throwable? = null;
+    plugin.busy {
+        this.register(object: IV8ValuePromise.IListener {
+            override fun onFulfilled(p0: V8Value?) {
+                if(p0 is V8ValueError)
+                    promiseException = ScriptExecutionException(plugin.config, p0.message);
+                else
+                    promiseResult = p0 as T;
+                latch.countDown();
+            }
+            override fun onRejected(p0: V8Value?) {
+                promiseException = (NotImplementedError("onRejected promise not implemented.."));
+                latch.countDown();
+            }
+            override fun onCatch(p0: V8Value?) {
+                promiseException = (NotImplementedError("onCatch promise not implemented.."));
+                latch.countDown();
+            }
+        });
+    }
+
+    plugin.registerPromise(this) {
+        promiseException =  CancellationException("Cancelled by system");
+        latch.countDown();
+    }
+    plugin.unbusy {
+        latch.await();
+    }
+    if(promiseException != null)
+        throw promiseException!!;
+    return promiseResult!!;
+}
+fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> {
+    val underlyingDef = CompletableDeferred<T>();
+    val def = if(this.has("estDuration"))
+        V8Deferred(underlyingDef,
+            this.getOrDefault(plugin.config, "estDuration", "toV8ValueAsync", -1) ?: -1);
+    else
+        V8Deferred<T>(underlyingDef);
+
+    val promise = this;
+    plugin.busy {
+        this.register(object: IV8ValuePromise.IListener {
+            override fun onFulfilled(p0: V8Value?) {
+                plugin.resolvePromise(promise);
+                underlyingDef.complete(p0 as T);
+            }
+            override fun onRejected(p0: V8Value?) {
+                plugin.resolvePromise(promise);
+                underlyingDef.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
+            }
+            override fun onCatch(p0: V8Value?) {
+                plugin.resolvePromise(promise);
+                underlyingDef.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
+            }
+        });
+    }
+    plugin.registerPromise(promise) {
+        if(def.isActive)
+            def.cancel("Cancelled by system");
+    }
+    return def;
+}
+
+class V8Deferred<T>(val deferred: Deferred<T>, val estDuration: Int = -1): Deferred<T> by deferred {
+
+    fun <R> convert(conversion: (result: T)->R): V8Deferred<R>{
+        val newDef = CompletableDeferred<R>()
+        this.invokeOnCompletion { 
+            if(it != null)
+                newDef.completeExceptionally(it);
+            else
+                newDef.complete(conversion(this@V8Deferred.getCompleted()));
+        }
+        
+        return V8Deferred<R>(newDef, estDuration);
+    }
+
+
+    companion object {
+        fun <T, R> merge(scope: CoroutineScope, defs: List<V8Deferred<T>>, conversion: (result: List<T>)->R): V8Deferred<R> {
+
+            var amount = -1;
+            for(def in defs)
+                amount = Math.max(amount, def.estDuration);
+
+            val def = scope.async {
+                val results = defs.map { it.await() };
+                return@async conversion(results);
+            }
+            return V8Deferred(def, amount);
+        }
+    }
+}
+
+
+fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any): T {
+    var result = this.invoke<V8Value>(method, *obj);
+    if(result is V8ValuePromise) {
+        return result.toV8ValueBlocking(this.getSourcePlugin()!!);
+    }
+    return result as T;
+}
+fun <T: V8Value> V8ValueObject.invokeV8Async(method: String, vararg obj: Any): V8Deferred<T> {
+    var result = this.invoke<V8Value>(method, *obj);
+    if(result is V8ValuePromise) {
+        return result.toV8ValueAsync(this.getSourcePlugin()!!);
+    }
+    return V8Deferred(CompletableDeferred(result as T));
 }

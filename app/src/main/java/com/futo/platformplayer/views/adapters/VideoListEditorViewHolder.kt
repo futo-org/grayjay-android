@@ -51,7 +51,6 @@ class VideoListEditorViewHolder : ViewHolder {
     constructor(view: View, touchHelper: ItemTouchHelper? = null) : super(view) {
         _root = view.findViewById(R.id.root);
         _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
-        _imageThumbnail?.clipToOutline = true;
         _textName = view.findViewById(R.id.text_video_name);
         _textAuthor = view.findViewById(R.id.text_author);
         _textMetadata = view.findViewById(R.id.text_video_metadata);
@@ -95,7 +94,13 @@ class VideoListEditorViewHolder : ViewHolder {
             .into(_imageThumbnail);
         _textName.text = v.name;
         _textAuthor.text = v.author.name;
-        _textVideoDuration.text = v.duration.toHumanTime(false);
+
+        if(v.duration > 0) {
+            _textVideoDuration.text = v.duration.toHumanTime(false);
+            _textVideoDuration.visibility = View.VISIBLE;
+        }
+        else
+            _textVideoDuration.visibility = View.GONE;
 
         val historyPosition = StateHistory.instance.getHistoryPosition(v.url)
         _timeBar.progress = historyPosition.toFloat() / v.duration.toFloat();

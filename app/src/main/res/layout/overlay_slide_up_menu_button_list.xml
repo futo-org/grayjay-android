@@ -5,7 +5,7 @@
     android:layout_marginTop="10dp"
     android:id="@+id/root"
     android:orientation="horizontal"
-    android:paddingStart="6dp"
-    android:paddingEnd="6dp">
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp">
 
 </LinearLayout>

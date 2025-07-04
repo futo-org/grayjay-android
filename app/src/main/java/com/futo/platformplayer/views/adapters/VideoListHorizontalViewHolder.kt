@@ -29,7 +29,6 @@ class VideoListHorizontalViewHolder : ViewHolder {
     constructor(view: View) : super(view) {
         _root = view.findViewById(R.id.root);
         _imageThumbnail = view.findViewById(R.id.image_video_thumbnail);
-        _imageThumbnail?.clipToOutline = true;
         _textName = view.findViewById(R.id.text_video_name);
         _textAuthor = view.findViewById(R.id.text_author);
         _textVideoDuration = view.findViewById(R.id.thumbnail_duration);

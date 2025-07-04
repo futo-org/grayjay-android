@@ -191,7 +191,7 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         private var _bypassRateLimit = false;
         private val _lastExceptions: List<Throwable>? = null;
-        private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({StateApp.instance.scope}, { withRefresh ->
+        private val _taskGetPager = TaskHandler<Boolean, IPager<IPlatformContent>>({fragment.lifecycleScope}, { withRefresh ->
             val group = subGroup;
             if(!_bypassRateLimit) {
                 val subRequestCounts = StateSubscriptions.instance.getSubscriptionRequestCount(group);
@@ -202,7 +202,7 @@ class SubscriptionsFeedFragment : MainFragment() {
                     throw RateLimitException(rateLimitPlugins.map { it.key.id });
             }
             _bypassRateLimit = false;
-            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(StateApp.instance.scope, withRefresh, group);
+            val resp = StateSubscriptions.instance.getGlobalSubscriptionFeed(fragment.lifecycleScope, withRefresh, group);
             val feed = StateSubscriptions.instance.getFeed(group?.id);
 
             val currentExs = feed?.exceptions ?: listOf();

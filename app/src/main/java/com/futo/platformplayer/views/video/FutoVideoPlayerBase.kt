@@ -53,16 +53,21 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
 import com.futo.platformplayer.views.video.datasources.PluginMediaDrmCallback
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -106,6 +111,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val onStateChange = Event1<Int>();
     val onPositionDiscontinuity = Event1<Long>();
     val onDatasourceError = Event1<Throwable>();
+
+    val onReloadRequired = Event0();
 
     private var _didCallSourceChange = false;
     private var _lastState: Int = -1;
@@ -251,12 +258,22 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun switchToVideoMode() {
         Logger.i(TAG, "Switching to Video Mode");
         isAudioMode = false;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
     fun switchToAudioMode() {
         Logger.i(TAG, "Switching to Audio Mode");
         isAudioMode = true;
-        loadSelectedSources(playing, true);
+        val player = exoPlayer ?: return
+        player.player.trackSelectionParameters =
+            player.player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+                .build()
     }
 
     fun seekTo(ms: Long) {
@@ -337,8 +354,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         var videoSourceUsed = videoSource;
         var audioSourceUsed = audioSource;
         if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
-            videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
-            audioSourceUsed = null;
+            videoSource.getUnderlyingPlugin()?.busy {
+                videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+                audioSourceUsed = null;
+            }
         }
 
         val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
@@ -549,17 +568,32 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         if(videoSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
+                val scope = this;
+                var startId = -1;
                 try {
-                    val generated = videoSource.generate();
+                    val plugin = videoSource.getUnderlyingPlugin() ?: return@launch;
+                    startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
+                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); };
+                    withContext(Dispatchers.Main) {
+                        if (generatedDef.estDuration >= 0) {
+                            setLoading(generatedDef.estDuration)
+                        } else {
+                            setLoading(true)
+                        }
+                    }
+                    val generated = generatedDef.await();
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
                             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
-                                videoSource.getHttpDataSourceFactory()
+                                withContext(Dispatchers.IO) { videoSource.getHttpDataSourceFactory() }
                             else
                                 DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
 
                             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
-                                dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+                                dataSource.setRequestExecutor2(withContext(Dispatchers.IO){videoSource.audio.getRequestExecutor()});
                             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                                 .createMediaSource(
                                     DashManifestParser().parse(
@@ -574,8 +608,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                         }
                     }
                 }
+                catch(reloadRequired: ScriptReloadRequiredException) {
+                    Logger.i(TAG, "Reload required detected");
+                    val plugin = videoSource.getUnderlyingPlugin();
+                    if(plugin == null)
+                        return@launch;
+                    if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)
+                        return@launch;
+                    StatePlatform.instance.handleReloadRequired(reloadRequired, {
+                        onReloadRequired.emit();
+                    });
+                }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "DashRaw generator failed", ex);
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                 }
             }
             return false;
@@ -660,25 +709,64 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource, play: Boolean, resume: Boolean): Boolean {
         Logger.i(TAG, "Loading AudioSource [DashRaw]");
-        val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
-            audioSource.getHttpDataSourceFactory()
-        else
-            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         if(audioSource.hasGenerate) {
             findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch(Dispatchers.IO) {
-                val generated = audioSource.generate();
-                if(generated != null) {
+                val scope = this;
+                var startId = -1;
+                try {
+                    val plugin = audioSource.getUnderlyingPlugin() ?: return@launch;
+                    startId = audioSource.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
+                    val generatedDef = plugin.busy { audioSource.generateAsync(scope); }
                     withContext(Dispatchers.Main) {
-                        _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                            .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
-                                ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
-                        loadSelectedSources(play, resume);
+                        if (generatedDef.estDuration >= 0) {
+                            setLoading(generatedDef.estDuration)
+                        } else {
+                            setLoading(true)
+                        }
+                    }
+                    val generated = generatedDef.await();
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
+                    if(generated != null) {
+                        val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
+                            audioSource.getHttpDataSourceFactory()
+                        else
+                            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+                        withContext(Dispatchers.Main) {
+                            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+                                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
+                                    ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
+                            loadSelectedSources(play, resume);
+                        }
+                    }
+                }
+                catch(reloadRequired: ScriptReloadRequiredException) {
+                    Logger.i(TAG, "Reload required detected");
+                    val plugin = audioSource.getUnderlyingPlugin();
+                    if(plugin == null)
+                        return@launch;
+                    if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)
+                        return@launch;
+                    StatePlatform.instance.reEnableClient(plugin.id, {
+                        onReloadRequired.emit();
+                    });
+                }
+                catch(ex: Throwable) {
+
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
                     }
                 }
             }
             return false;
         }
         else {
+            val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
+                audioSource.getHttpDataSourceFactory()
+            else
+                DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(
                     DashManifestParser().parse(
@@ -878,6 +966,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             _shouldPlaybackRestartOnConnectivity = false;
         }
     }
+
+    protected open fun setLoading(isLoading: Boolean) { }
+    protected open fun setLoading(expectedDurationMs: Int) { }
 
     companion object {
         val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";

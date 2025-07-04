@@ -75,7 +75,7 @@ class ChannelRelayed(
     private var handshakeState: HandshakeState? = if (initiator) {
         HandshakeState(SyncService.protocolName, HandshakeState.INITIATOR).apply {
             localKeyPair.copyFrom(this@ChannelRelayed.localKeyPair)
-            remotePublicKey.setPublicKey(Base64.getDecoder().decode(publicKey), 0)
+            remotePublicKey.setPublicKey(publicKey.base64ToByteArray(), 0)
         }
     } else {
         HandshakeState(SyncService.protocolName, HandshakeState.RESPONDER).apply {
@@ -177,7 +177,7 @@ class ChannelRelayed(
         this.remoteVersion = remoteVersion
         val remoteKeyBytes = ByteArray(handshakeState!!.remotePublicKey.publicKeyLength)
         handshakeState!!.remotePublicKey.getPublicKey(remoteKeyBytes, 0)
-        this.remotePublicKey = Base64.getEncoder().encodeToString(remoteKeyBytes)
+        this.remotePublicKey = remoteKeyBytes.toBase64()
         handshakeState?.destroy()
         handshakeState = null
         this.transport = transport
@@ -316,7 +316,7 @@ class ChannelRelayed(
             val channelMessage = ByteArray(1024)
             val channelBytesWritten = handshakeState!!.writeMessage(channelMessage, 0, null, 0, 0)
 
-            val publicKeyBytes = Base64.getDecoder().decode(publicKey)
+            val publicKeyBytes = publicKey.base64ToByteArray()
             if (publicKeyBytes.size != 32) throw IllegalArgumentException("Public key must be 32 bytes")
 
             val (pairingMessageLength, pairingMessage) = if (pairingCode != null) {

@@ -31,7 +31,7 @@ class SlideUpMenuButtonList : LinearLayout {
     fun setButtons(texts: List<String>, activeText: String? = null) {
         _root.removeAllViews();
 
-        val marginLeft = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3.0f, resources.displayMetrics).toInt();
+        val marginLeft = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1.5f, resources.displayMetrics).toInt();
         val marginRight = marginLeft;
 
         buttons.clear();
