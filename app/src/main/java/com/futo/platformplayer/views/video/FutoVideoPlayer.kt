@@ -911,6 +911,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 loaderDeterminate.progress = anim.animatedValue as Int
             }
             start()
-        }
+        };
     }
 }

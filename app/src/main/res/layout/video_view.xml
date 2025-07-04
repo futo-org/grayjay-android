@@ -87,6 +87,7 @@
         <ProgressBar
             android:id="@+id/loader_determinate"
             style="@android:style/Widget.ProgressBar.Horizontal"
+            android:progressDrawable="@drawable/progress_bar"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

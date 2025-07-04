@@ -238,6 +238,9 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
     else
         V8Deferred<T>(underlyingDef);
 
+    if(def.estDuration > 0)
+        Logger.i("V8", "Promise with duration: [${def.estDuration}]");
+
     val promise = this;
     plugin.busy {
         this.register(object: IV8ValuePromise.IListener {
