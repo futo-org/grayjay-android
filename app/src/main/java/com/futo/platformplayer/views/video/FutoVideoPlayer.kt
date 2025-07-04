@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.video
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
@@ -44,8 +45,11 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.behavior.GestureControlView
+import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
@@ -150,6 +154,11 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     val onChapterClicked = Event1<IChapter>();
 
+    private val loaderOverlay: FrameLayout
+    private val loaderIndeterminate: android.widget.ProgressBar
+    private val loaderDeterminate: android.widget.ProgressBar
+    private var determinateAnimator: ValueAnimator? = null
+
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.video_view, this, true);
@@ -189,6 +198,14 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
+
+        loaderOverlay = findViewById(R.id.loader_overlay)
+        loaderIndeterminate = findViewById(R.id.loader_indeterminate)
+        loaderDeterminate = findViewById(R.id.loader_determinate)
+
+        loaderOverlay.visibility = View.GONE
+        loaderIndeterminate.visibility = View.GONE
+        loaderDeterminate.visibility = View.GONE
 
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
@@ -864,5 +881,36 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     override fun onSurfaceSizeChanged(width: Int, height: Int) {
         gestureControl.resetZoomPan()
+    }
+
+    override fun setLoading(isLoading: Boolean) {
+        determinateAnimator?.cancel()
+        if (isLoading) {
+            loaderOverlay.visibility = View.VISIBLE
+            loaderIndeterminate.visibility = View.VISIBLE
+            loaderDeterminate.visibility = View.GONE
+        } else {
+            loaderOverlay.visibility = View.GONE
+            loaderIndeterminate.visibility = View.GONE
+            loaderDeterminate.visibility = View.GONE
+        }
+    }
+
+    override fun setLoading(expectedDurationMs: Int) {
+        determinateAnimator?.cancel()
+
+        loaderOverlay.visibility = View.VISIBLE
+        loaderIndeterminate.visibility = View.GONE
+        loaderDeterminate.visibility = View.VISIBLE
+        loaderDeterminate.max = expectedDurationMs
+        loaderDeterminate.progress = 0
+
+        determinateAnimator = ValueAnimator.ofInt(0, expectedDurationMs).apply {
+            duration = expectedDurationMs.toLong()
+            addUpdateListener { anim ->
+                loaderDeterminate.progress = anim.animatedValue as Int
+            }
+            start()
+        }
     }
 }

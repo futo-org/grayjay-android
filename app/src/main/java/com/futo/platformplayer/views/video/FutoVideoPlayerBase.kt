@@ -65,6 +65,8 @@ import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -573,7 +575,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     val plugin = videoSource.getUnderlyingPlugin() ?: return@launch;
                     startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
                     val generatedDef = plugin.busy { videoSource.generateAsync(scope); };
+                    withContext(Dispatchers.Main) {
+                        if (generatedDef.estDuration >= 0) {
+                            setLoading(generatedDef.estDuration)
+                        } else {
+                            setLoading(true)
+                        }
+                    }
                     val generated = generatedDef.await();
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                     if (generated != null) {
                         withContext(Dispatchers.Main) {
                             val dataSource = if(videoSource is JSSource && (videoSource.requiresCustomDatasource))
@@ -610,6 +622,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 }
                 catch(ex: Throwable) {
                     Logger.e(TAG, "DashRaw generator failed", ex);
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                 }
             }
             return false;
@@ -702,7 +718,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                     val plugin = audioSource.getUnderlyingPlugin() ?: return@launch;
                     startId = audioSource.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
                     val generatedDef = plugin.busy { audioSource.generateAsync(scope); }
+                    withContext(Dispatchers.Main) {
+                        if (generatedDef.estDuration >= 0) {
+                            setLoading(generatedDef.estDuration)
+                        } else {
+                            setLoading(true)
+                        }
+                    }
                     val generated = generatedDef.await();
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                     if(generated != null) {
                         val dataSource = if(audioSource is JSSource && (audioSource.requiresCustomDatasource))
                             audioSource.getHttpDataSourceFactory()
@@ -729,6 +755,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 }
                 catch(ex: Throwable) {
 
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                    }
                 }
             }
             return false;
@@ -937,6 +967,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             _shouldPlaybackRestartOnConnectivity = false;
         }
     }
+
+    protected open fun setLoading(isLoading: Boolean) { }
+    protected open fun setLoading(expectedDurationMs: Int) { }
 
     companion object {
         val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";
