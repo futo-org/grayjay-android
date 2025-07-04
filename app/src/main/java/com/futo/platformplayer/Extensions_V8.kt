@@ -294,17 +294,32 @@ class V8Deferred<T>(val deferred: Deferred<T>, val estDuration: Int = -1): Defer
 }
 
 
-fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any): T {
+fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any?): T {
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         return result.toV8ValueBlocking(this.getSourcePlugin()!!);
     }
     return result as T;
 }
-fun <T: V8Value> V8ValueObject.invokeV8Async(method: String, vararg obj: Any): V8Deferred<T> {
+fun <T: V8Value> V8ValueObject.invokeV8Async(method: String, vararg obj: Any?): V8Deferred<T> {
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         return result.toV8ValueAsync(this.getSourcePlugin()!!);
     }
     return V8Deferred(CompletableDeferred(result as T));
+}
+fun V8ValueObject.invokeV8Void(method: String, vararg obj: Any?): V8Value {
+    var result = this.invoke<V8Value>(method, *obj);
+    if(result is V8ValuePromise) {
+        return result.toV8ValueBlocking(this.getSourcePlugin()!!);
+    }
+    return result;
+}
+fun V8ValueObject.invokeV8VoidAsync(method: String, vararg obj: Any?): V8Deferred<V8Value> {
+    var result = this.invoke<V8Value>(method, *obj);
+    if(result is V8ValuePromise) {
+        val result = result.toV8ValueAsync<V8Value>(this.getSourcePlugin()!!);
+        return result;
+    }
+    return V8Deferred(CompletableDeferred(result));
 }

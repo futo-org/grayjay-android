@@ -17,6 +17,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.internal.IV8Convertable
 import com.futo.platformplayer.engine.internal.V8BindObject
+import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
 import java.net.SocketTimeoutException
 import java.util.concurrent.ForkJoinPool
@@ -668,7 +669,7 @@ class PackageHttp: V8Package {
                         if(hasOpen && _listeners?.isClosed != true) {
                             try {
                                 _package._plugin.busy {
-                                    _listeners?.invokeVoid("open", arrayOf<Any>());
+                                    _listeners?.invokeV8Void("open", arrayOf<Any>());
                                 }
                             }
                             catch(ex: Throwable){
@@ -680,7 +681,7 @@ class PackageHttp: V8Package {
                         if(hasMessage && _listeners?.isClosed != true) {
                             try {
                                 _package._plugin.busy {
-                                    _listeners?.invokeVoid("message", msg);
+                                    _listeners?.invokeV8Void("message", msg);
                                 }
                             }
                             catch(ex: Throwable) {}
@@ -691,7 +692,7 @@ class PackageHttp: V8Package {
                         {
                             try {
                                 _package._plugin.busy {
-                                    _listeners?.invokeVoid("closing", code, reason);
+                                    _listeners?.invokeV8Void("closing", code, reason);
                                 }
                             }
                             catch(ex: Throwable){
@@ -704,7 +705,7 @@ class PackageHttp: V8Package {
                         if(hasClosed && _listeners?.isClosed != true) {
                             try {
                                 _package._plugin.busy {
-                                    _listeners?.invokeVoid("closed", code, reason);
+                                    _listeners?.invokeV8Void("closed", code, reason);
                                 }
                             }
                             catch(ex: Throwable){
@@ -722,7 +723,7 @@ class PackageHttp: V8Package {
                         if(hasFailure &&  _listeners?.isClosed != true) {
                             try {
                                 _package._plugin.busy {
-                                    _listeners?.invokeVoid("failure", exception.message);
+                                    _listeners?.invokeV8Void("failure", exception.message);
                                 }
                             }
                             catch(ex: Throwable){

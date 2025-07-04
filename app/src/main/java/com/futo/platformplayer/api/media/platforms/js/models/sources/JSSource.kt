@@ -16,6 +16,7 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.orNull
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
@@ -64,7 +65,7 @@ abstract class JSSource {
             return@isBusyWith null;
 
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
-            _obj.invoke("getRequestModifier", arrayOf<Any>());
+            _obj.invokeV8("getRequestModifier", arrayOf<Any>());
         };
 
         if (result !is V8ValueObject)
@@ -78,7 +79,7 @@ abstract class JSSource {
 
         Logger.v("JSSource", "Request executor for [${type}] requesting");
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
-            _obj.invoke("getRequestExecutor", arrayOf<Any>());
+            _obj.invokeV8("getRequestExecutor", arrayOf<Any>());
         };
 
         Logger.v("JSSource", "Request executor for [${type}] received");

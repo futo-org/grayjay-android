@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.warnIfMainThread
 
 abstract class JSPager<T> : IPager<T> {
@@ -49,7 +50,7 @@ abstract class JSPager<T> : IPager<T> {
         val pluginV8 = plugin.getUnderlyingPlugin();
         pluginV8.busy {
             pager = pluginV8.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
-                pager.invoke("nextPage", arrayOf<Any>());
+                pager.invokeV8("nextPage", arrayOf<Any>());
             };
             _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
             _resultChanged = true;
