@@ -909,6 +909,10 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             duration = expectedDurationMs.toLong()
             addUpdateListener { anim ->
                 loaderDeterminate.progress = anim.animatedValue as Int
+                if(loaderDeterminate.progress > loaderDeterminate.max -  10) {
+                    setLoading(true);
+                }
+
             }
             start()
         };

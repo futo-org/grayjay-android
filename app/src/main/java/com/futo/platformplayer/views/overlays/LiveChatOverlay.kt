@@ -64,6 +64,7 @@ class LiveChatOverlay : LinearLayout {
 
     private val _overlayRaid: ConstraintLayout;
     private val _overlayRaid_Name: TextView;
+    private val _overlayRaid_Message: TextView;
     private val _overlayRaid_Thumbnail: ImageView;
 
     private val _overlayRaid_ButtonGo: Button;
@@ -146,6 +147,7 @@ class LiveChatOverlay : LinearLayout {
 
         _overlayRaid = findViewById(R.id.overlay_raid);
         _overlayRaid_Name = findViewById(R.id.raid_name);
+        _overlayRaid_Message = findViewById(R.id.textRaidMessage);
         _overlayRaid_Thumbnail = findViewById(R.id.raid_thumbnail);
         _overlayRaid_ButtonGo = findViewById(R.id.raid_button_go);
         _overlayRaid_ButtonDismiss = findViewById(R.id.raid_button_prevent);
@@ -371,7 +373,14 @@ class LiveChatOverlay : LinearLayout {
             else
                 _overlayRaid.visibility = View.GONE;
 
-            _overlayRaid_ButtonGo.visibility = if (raid?.isOutgoing == true) View.VISIBLE else View.GONE
+            if(raid?.isOutgoing ?: false) {
+                _overlayRaid_ButtonGo.visibility = View.VISIBLE
+                _overlayRaid_Message.text = "Viewers are raiding";
+            }
+            else {
+                _overlayRaid_ButtonGo.visibility = View.GONE;
+                _overlayRaid_Message.text = "Raid incoming from";
+            }
         }
     }
     fun setViewCount(viewCount: Int) {
