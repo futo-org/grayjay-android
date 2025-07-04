@@ -120,6 +120,7 @@ class ShortView : FrameLayout {
     private val creatorThumbnail: CreatorThumbnail
     private val channelName: TextView
     private val videoTitle: TextView
+    private val platformIndicator: PlatformIndicator
 
     private val likeContainer: FrameLayout
     private val dislikeContainer: FrameLayout
@@ -188,6 +189,7 @@ class ShortView : FrameLayout {
         creatorThumbnail = findViewById(R.id.creator_thumbnail)
         channelName = findViewById(R.id.channel_name)
         videoTitle = findViewById(R.id.video_title)
+        platformIndicator = findViewById(R.id.short_platform_indicator)
 
         likeContainer = findViewById(R.id.like_container)
         dislikeContainer = findViewById(R.id.dislike_container)
@@ -219,6 +221,7 @@ class ShortView : FrameLayout {
         creatorThumbnail = findViewById(R.id.creator_thumbnail)
         channelName = findViewById(R.id.channel_name)
         videoTitle = findViewById(R.id.video_title)
+        platformIndicator = findViewById(R.id.short_platform_indicator)
 
         likeContainer = findViewById(R.id.like_container)
         dislikeContainer = findViewById(R.id.dislike_container)
@@ -250,6 +253,7 @@ class ShortView : FrameLayout {
         creatorThumbnail = findViewById(R.id.creator_thumbnail)
         channelName = findViewById(R.id.channel_name)
         videoTitle = findViewById(R.id.video_title)
+        platformIndicator = findViewById(R.id.short_platform_indicator)
 
         likeContainer = findViewById(R.id.like_container)
         dislikeContainer = findViewById(R.id.dislike_container)
@@ -280,6 +284,7 @@ class ShortView : FrameLayout {
         creatorThumbnail = findViewById(R.id.creator_thumbnail)
         channelName = findViewById(R.id.channel_name)
         videoTitle = findViewById(R.id.video_title)
+        platformIndicator = findViewById(R.id.short_platform_indicator)
 
         likeContainer = findViewById(R.id.like_container)
         dislikeContainer = findViewById(R.id.dislike_container)
@@ -334,6 +339,7 @@ class ShortView : FrameLayout {
 
         onVideoUpdated.subscribe {
             videoTitle.text = it?.name
+            platformIndicator.setPlatformFromClientID(it?.id?.pluginId)
             creatorThumbnail.setThumbnail(it?.author?.thumbnail, true)
             channelName.text = it?.author?.name
         }

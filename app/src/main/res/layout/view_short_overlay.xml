@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -36,18 +37,40 @@
                 android:orientation="horizontal"
                 android:paddingVertical="8dp">
 
-                <com.futo.platformplayer.views.others.CreatorThumbnail
-                    android:id="@+id/creator_thumbnail"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginEnd="8dp"
-                    android:contentDescription="@string/cd_creator_thumbnail" />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <com.futo.platformplayer.views.others.CreatorThumbnail
+                        android:id="@+id/creator_thumbnail"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:contentDescription="@string/cd_creator_thumbnail"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.futo.platformplayer.views.platform.PlatformIndicator
+                        android:id="@+id/short_platform_indicator"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="-12dp"
+                        android:layout_marginBottom="-12dp"
+                        android:background="@drawable/rounded_square_outline"
+                        android:clipToOutline="true"
+                        app:layout_constraintBottom_toTopOf="@id/creator_thumbnail"
+                        app:layout_constraintStart_toEndOf="@id/creator_thumbnail" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:id="@+id/channel_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:text=""
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
@@ -56,11 +79,14 @@
             <!-- Video title -->
             <TextView
                 android:id="@+id/video_title"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:paddingHorizontal="4dp"
                 android:shadowColor="@android:color/black"
+                android:shadowRadius="8"
                 android:text=""
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
@@ -86,27 +112,51 @@
                 android:layout_marginBottom="12dp"
                 android:visibility="gone">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/like_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:checkable="true"
-                    android:contentDescription="@string/cd_image_like_icon"
-                    app:backgroundTint="@color/transparent"
-                    app:icon="@drawable/thumb_up_selector"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple"
-                    app:toggleCheckedStateOnClick="false" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/like_button"
+                        app:layout_constraintEnd_toEndOf="@id/like_button"
+                        app:layout_constraintStart_toStartOf="@id/like_button"
+                        app:layout_constraintTop_toTopOf="@id/like_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/like_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:checkable="true"
+                        android:contentDescription="@string/cd_image_like_icon"
+                        app:backgroundTint="@color/transparent"
+                        app:icon="@drawable/thumb_up_selector"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple"
+                        app:toggleCheckedStateOnClick="false" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:id="@+id/like_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
             </FrameLayout>
@@ -120,27 +170,51 @@
                 android:layout_marginBottom="12dp"
                 android:visibility="gone">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/dislike_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:checkable="true"
-                    android:contentDescription="@string/cd_image_dislike_icon"
-                    app:backgroundTint="@color/transparent"
-                    app:icon="@drawable/thumb_down_selector"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple"
-                    app:toggleCheckedStateOnClick="false" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/dislike_button"
+                        app:layout_constraintEnd_toEndOf="@id/dislike_button"
+                        app:layout_constraintStart_toStartOf="@id/dislike_button"
+                        app:layout_constraintTop_toTopOf="@id/dislike_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/dislike_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:checkable="true"
+                        android:contentDescription="@string/cd_image_dislike_icon"
+                        app:backgroundTint="@color/transparent"
+                        app:icon="@drawable/thumb_down_selector"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple"
+                        app:toggleCheckedStateOnClick="false" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:id="@+id/dislike_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
             </FrameLayout>
@@ -152,28 +226,52 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="12dp">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/comments_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/comments"
-                    app:icon="@drawable/ic_comment"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/comments_button"
+                        app:layout_constraintEnd_toEndOf="@id/comments_button"
+                        app:layout_constraintStart_toStartOf="@id/comments_button"
+                        app:layout_constraintTop_toTopOf="@id/comments_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/comments_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="@string/comments"
+                        app:icon="@drawable/desktop_comments"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:text="@string/comments"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    tools:ignore="TextContrastCheck" />
             </FrameLayout>
 
             <!-- Share button -->
@@ -183,27 +281,52 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="12dp">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/share_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/share"
-                    app:icon="@drawable/ic_share"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/share_button"
+                        app:layout_constraintEnd_toEndOf="@id/share_button"
+                        app:layout_constraintStart_toStartOf="@id/share_button"
+                        app:layout_constraintTop_toTopOf="@id/share_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/share_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="@string/share"
+                        app:icon="@drawable/desktop_share"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:text="@string/share"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    tools:ignore="TextContrastCheck" />
             </FrameLayout>
 
             <!-- Refresh button -->
@@ -213,27 +336,53 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="12dp">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/refresh_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/refresh"
-                    app:icon="@drawable/ic_refresh"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/refresh_button"
+                        app:layout_constraintEnd_toEndOf="@id/refresh_button"
+                        app:layout_constraintStart_toStartOf="@id/refresh_button"
+                        app:layout_constraintTop_toTopOf="@id/refresh_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/refresh_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="@string/refresh"
+                        app:icon="@drawable/desktop_refresh"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:text="@string/refresh"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    tools:ignore="TextContrastCheck" />
             </FrameLayout>
 
             <!-- Quality/More button -->
@@ -242,27 +391,52 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/quality_button"
-                    style="@style/Widget.Material3.Button.IconButton"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/quality"
-                    app:icon="@drawable/ic_more"
-                    app:iconSize="24dp"
-                    app:iconTint="@android:color/white"
-                    app:rippleColor="@color/ripple" />
+                    android:layout_gravity="center_horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/button_shadow"
+                        app:layout_constraintBottom_toBottomOf="@id/quality_button"
+                        app:layout_constraintEnd_toEndOf="@id/quality_button"
+                        app:layout_constraintStart_toStartOf="@id/quality_button"
+                        app:layout_constraintTop_toTopOf="@id/quality_button"
+                        app:tint="@color/black"
+                        tools:ignore="ImageContrastCheck" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quality_button"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:contentDescription="@string/quality"
+                        app:icon="@drawable/desktop_gear"
+                        app:iconSize="24dp"
+                        app:iconTint="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:rippleColor="@color/ripple" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
                     android:importantForAccessibility="no"
+                    android:paddingHorizontal="4dp"
                     android:shadowColor="@android:color/black"
+                    android:shadowRadius="8"
                     android:text="@string/quality"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    tools:ignore="TextContrastCheck" />
             </FrameLayout>
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
