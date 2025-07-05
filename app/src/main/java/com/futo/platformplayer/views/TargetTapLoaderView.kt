@@ -20,13 +20,8 @@ class TargetTapLoaderView @JvmOverloads constructor(
 ) : View(context, attrs) {
     private val primaryColor = "#2D63ED".toColorInt()
     private val inactiveGlobalAlpha = 110
-    private val streakAccelerationStep = .3f
-    private val minSpawnDelay = 200L
     private val idleSpeedMultiplier = .015f
-    private val baseDeterministicDelay = 700L
-    private val baseIndeterminateDelay = 1400L
-    private val overshootInterpolator = OvershootInterpolator(2f)
-    private val initialSpawnFactor = 2f
+    private val overshootInterpolator = OvershootInterpolator(1.5f)
     private val floatAccel = .03f
     private val idleMaxSpeed = .35f
     private val idleInitialTargets = 10
@@ -39,7 +34,6 @@ class TargetTapLoaderView @JvmOverloads constructor(
     private var forceIndeterminate= false
     private var lastFrameTime = System.currentTimeMillis()
 
-    private var streak = 0
     private var score = 0
     private var isPlaying = false
 
@@ -52,6 +46,11 @@ class TargetTapLoaderView @JvmOverloads constructor(
         textAlign = Paint.Align.LEFT
         setShadowLayer(4f, 0f, 0f, Color.BLACK)
         typeface = Typeface.DEFAULT_BOLD
+    }
+    private val idleHintPaint = Paint(textPaint).apply {
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, resources.displayMetrics)
+        typeface = Typeface.DEFAULT
+        setShadowLayer(2f, 0f, 0f, Color.BLACK)
     }
     private val progressBarPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = primaryColor }
     private val spinnerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -67,10 +66,11 @@ class TargetTapLoaderView @JvmOverloads constructor(
     private val backgroundPaint = Paint()
     private var spinnerShader: SweepGradient? = null
     private var spinnerAngle = 0f
-    private var lastSpawnDelayMs: Long = baseDeterministicDelay
-    private var currentSpawnDelayMs = baseDeterministicDelay.toFloat()
-    private val DELAY_SMOOTHING = 0.7f
-    private val MISS_PENALTY = 1
+    private val MIN_SPAWN_RATE = 1f
+    private val MAX_SPAWN_RATE = 20.0f
+    private val HIT_RATE_INCREMENT = 0.15f
+    private val MISS_RATE_DECREMENT = 0.09f
+    private var spawnRate = MIN_SPAWN_RATE
 
     private val frameRunnable = object : Runnable {
         override fun run() { invalidate(); if (!loaderFinished) postDelayed(this, 16L) }
@@ -91,8 +91,8 @@ class TargetTapLoaderView @JvmOverloads constructor(
         loaderFinished = false
         isPlaying = false
         score = 0
-        streak = 0
         particles.clear()
+        spawnRate = MIN_SPAWN_RATE
 
         post { if (targets.isEmpty()) prepopulateIdleTargets() }
 
@@ -122,6 +122,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
         if (score > 0) {
             val elapsed = (System.currentTimeMillis() - (if (playStartTime > 0) playStartTime else loadStartTime)) / 1000.0
             UIDialogs.toast("Nice! score $score | ${"%.1f".format(score / elapsed)} / s")
+            score = 0
         }
         loaderFinished = true
         isPlaying = false
@@ -139,7 +140,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
             val t = targets[idx]
             t.hit = true; t.hitTime = System.currentTimeMillis()
-            streak++
+            accelerateSpawnRate()
             score += if (!isIndeterminate) 10 else 5
             spawnParticles(t.x, t.y, t.radius)
 
@@ -147,21 +148,29 @@ class TargetTapLoaderView @JvmOverloads constructor(
                 isPlaying = true
                 playStartTime  = System.currentTimeMillis()
                 score = 0
-                streak = 0
+                spawnRate = MIN_SPAWN_RATE
                 targets.retainAll { it === t }
                 spawnTarget()
             }
-        } else if (isPlaying) applyMissPenalty()
+        } else if (isPlaying) decelerateSpawnRate()
     }
 
-    private fun applyMissPenalty() { streak = max(0, streak - MISS_PENALTY) }
+    private inline fun accelerateSpawnRate() {
+        spawnRate = (spawnRate + HIT_RATE_INCREMENT).coerceAtMost(MAX_SPAWN_RATE)
+    }
+
+    private inline fun decelerateSpawnRate() {
+        spawnRate = (spawnRate - MISS_RATE_DECREMENT).coerceAtLeast(MIN_SPAWN_RATE)
+    }
 
     private fun spawnTarget() {
         if (loaderFinished || width == 0 || height == 0) {
             postDelayed({ spawnTarget() }, 200L); return
         }
 
-        if (!isPlaying) { postDelayed({ spawnTarget() }, 500L); return }
+        if (!isPlaying) {
+            postDelayed({ spawnTarget() }, 500L); return
+        }
 
         val radius = Random.nextInt(40, 80).toFloat()
         val x = Random.nextFloat() * (width  - 2 * radius) + radius
@@ -175,14 +184,8 @@ class TargetTapLoaderView @JvmOverloads constructor(
         val alpha = Random.nextInt(150, 255)
 
         targets += Target(x, y, radius, System.currentTimeMillis(), baseAlpha = alpha, vx = vx, vy = vy)
-        val delayBase   = if (isIndeterminate) baseIndeterminateDelay else baseDeterministicDelay
-        val streakBoost = 1f + streak * streakAccelerationStep
-        val baseFactor  = if (streak == 0) initialSpawnFactor else 1f
-        val targetDelay = max(minSpawnDelay.toFloat(), delayBase * baseFactor / streakBoost)
 
-        currentSpawnDelayMs = currentSpawnDelayMs * DELAY_SMOOTHING + targetDelay * (1 - DELAY_SMOOTHING)
-        val delay = currentSpawnDelayMs.roundToLong()
-        lastSpawnDelayMs = delay
+        val delay = (1000f / spawnRate).roundToLong()
         postDelayed({ spawnTarget() }, delay)
     }
 
@@ -234,8 +237,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
         if (isPlaying) {
             val margin = 24f
             val scoreTxt = "Score $score"
-            val speed = 1000f / lastSpawnDelayMs
-            val speedTxt = "Speed ${"%.2f".format(speed)}/s"
+            val speedTxt = "Speed ${"%.2f".format(spawnRate)}/s"
             val maxWidth = width - margin
             val needRight = max(textPaint.measureText(scoreTxt), textPaint.measureText(speedTxt)) > maxWidth
 
@@ -249,17 +251,29 @@ class TargetTapLoaderView @JvmOverloads constructor(
         else if (loaderFinished)
             canvas.drawText("Loading Complete!", width/2f, height/2f, textPaint.apply { textAlign = Paint.Align.CENTER })
         else {
-            textPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(idleHintText, width / 2f, height - 48f, textPaint)
-            textPaint.textAlign = Paint.Align.LEFT
+            idleHintPaint.textAlign = Paint.Align.CENTER
+            canvas.drawText(idleHintText, width / 2f, height - 48f, idleHintPaint)
         }
     }
 
     private fun drawBackground(canvas: Canvas) {
-        backgroundPaint.shader = LinearGradient(
-            0f, 0f, 0f, height.toFloat(),
-            Color.rgb(20, 20, 40), Color.BLACK, Shader.TileMode.CLAMP
+        val colors = intArrayOf(
+            Color.rgb(20, 20, 40),
+            Color.rgb(15, 15, 30),
+            Color.rgb(10, 10, 20),
+            Color.rgb( 5,  5, 10),
+            Color.BLACK
         )
+        val pos = floatArrayOf(0f, 0.25f, 0.5f, 0.75f, 1f)
+
+        if (backgroundPaint.shader == null) {
+            backgroundPaint.shader = LinearGradient(
+                0f, 0f, 0f, height.toFloat(),
+                colors, pos,
+                Shader.TileMode.CLAMP
+            )
+        }
+
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
     }
 
@@ -270,7 +284,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
             val t = it.next()
             if (t.hit && now - t.hitTime > 300L) { it.remove(); continue }
             if (isPlaying && !t.hit && now - t.spawnTime > expireMsActive) {
-                it.remove(); applyMissPenalty(); continue
+                it.remove(); decelerateSpawnRate(); continue
             }
             t.x += t.vx; t.y += t.vy
             t.vx += (Random.nextFloat() - .5f) * floatAccel
@@ -289,13 +303,13 @@ class TargetTapLoaderView @JvmOverloads constructor(
                 if (e < 300L) overshootInterpolator.getInterpolation(e/300f)
                 else 1f + .02f * sin(((now - t.spawnAnimStart)/1000f)*TAU + t.pulseOffset)
             }
-            val animAlpha   = if (t.hit) ((1f - scale)*255).toInt() else 255
+            val animAlpha = if (t.hit) ((1f - scale)*255).toInt() else 255
             val globalAlpha = if (isPlaying) 255 else inactiveGlobalAlpha
-            val alpha       = (animAlpha * t.baseAlpha /255f * globalAlpha/255f).toInt().coerceAtMost(255)
-            val r           = max(1f, t.radius*scale)
-            val outerCol  = ColorUtils.setAlphaComponent(primaryColor, alpha)
-            val midCol    = ColorUtils.setAlphaComponent(primaryColor, (alpha*.7f).toInt())
-            val innerCol  = ColorUtils.setAlphaComponent(primaryColor, (alpha*.4f).toInt())
+            val alpha = (animAlpha * t.baseAlpha /255f * globalAlpha/255f).toInt().coerceAtMost(255)
+            val r = max(1f, t.radius*scale)
+            val outerCol = ColorUtils.setAlphaComponent(primaryColor, alpha)
+            val midCol = ColorUtils.setAlphaComponent(primaryColor, (alpha*.7f).toInt())
+            val innerCol = ColorUtils.setAlphaComponent(primaryColor, (alpha*.4f).toInt())
             outerRingPaint.color = outerCol; middleRingPaint.color = midCol; centerDotPaint.color = innerCol
 
             glowPaint.shader = RadialGradient(t.x, t.y, r, outerCol, Color.TRANSPARENT, Shader.TileMode.CLAMP)
