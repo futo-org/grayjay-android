@@ -44,6 +44,7 @@ import com.futo.platformplayer.formatDuration
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
 import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.CoroutineScope
@@ -154,10 +155,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     val onChapterClicked = Event1<IChapter>();
 
-    private val loaderOverlay: FrameLayout
-    private val loaderIndeterminate: android.widget.ProgressBar
-    private val loaderDeterminate: android.widget.ProgressBar
-    private var determinateAnimator: ValueAnimator? = null
+    private val _loaderGame: TargetTapLoaderView
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
@@ -199,13 +197,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
 
-        loaderOverlay = findViewById(R.id.loader_overlay)
-        loaderIndeterminate = findViewById(R.id.loader_indeterminate)
-        loaderDeterminate = findViewById(R.id.loader_determinate)
-
-        loaderOverlay.visibility = View.GONE
-        loaderIndeterminate.visibility = View.GONE
-        loaderDeterminate.visibility = View.GONE
+        _loaderGame = findViewById(R.id.loader_overlay)
+        _loaderGame.visibility = View.GONE
 
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
@@ -884,37 +877,17 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
 
     override fun setLoading(isLoading: Boolean) {
-        determinateAnimator?.cancel()
         if (isLoading) {
-            loaderOverlay.visibility = View.VISIBLE
-            loaderIndeterminate.visibility = View.VISIBLE
-            loaderDeterminate.visibility = View.GONE
+            _loaderGame.visibility = View.VISIBLE
+            _loaderGame.startLoader()
         } else {
-            loaderOverlay.visibility = View.GONE
-            loaderIndeterminate.visibility = View.GONE
-            loaderDeterminate.visibility = View.GONE
+            _loaderGame.visibility = View.GONE
+            _loaderGame.stopAndResetLoader()
         }
     }
 
     override fun setLoading(expectedDurationMs: Int) {
-        determinateAnimator?.cancel()
-
-        loaderOverlay.visibility = View.VISIBLE
-        loaderIndeterminate.visibility = View.GONE
-        loaderDeterminate.visibility = View.VISIBLE
-        loaderDeterminate.max = expectedDurationMs
-        loaderDeterminate.progress = 0
-
-        determinateAnimator = ValueAnimator.ofInt(0, expectedDurationMs).apply {
-            duration = expectedDurationMs.toLong()
-            addUpdateListener { anim ->
-                loaderDeterminate.progress = anim.animatedValue as Int
-                if(loaderDeterminate.progress > loaderDeterminate.max -  10) {
-                    setLoading(true);
-                }
-
-            }
-            start()
-        };
+        _loaderGame.visibility = View.VISIBLE
+        _loaderGame.startLoader(expectedDurationMs.toLong())
     }
 }

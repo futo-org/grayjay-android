@@ -65,36 +65,10 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <FrameLayout
+    <com.futo.platformplayer.views.TargetTapLoaderView
         android:id="@+id/loader_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="6dp"
-        android:background="@color/black"
-        android:clickable="true"
-        android:focusable="true"
-        android:visibility="gone">
-
-        <ProgressBar
-            android:id="@+id/loader_indeterminate"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminate="true"
-            android:visibility="gone" />
-
-        <ProgressBar
-            android:id="@+id/loader_determinate"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:progressDrawable="@drawable/progress_bar"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:visibility="gone"/>
-</FrameLayout>
+        android:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
