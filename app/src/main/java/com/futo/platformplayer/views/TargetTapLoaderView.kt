@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.graphics.toColorInt
+import com.futo.platformplayer.UIDialogs
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -128,6 +129,13 @@ class TargetTapLoaderView @JvmOverloads constructor(
     }
 
     fun stopAndResetLoader() {
+        if (score > 0) {
+            val now = System.currentTimeMillis()
+            val dt = (now - startTime) / 1000.0
+            UIDialogs.toast("Nice! score was $score, ${"%.${1}f".format(score / dt).toDouble()} (per second)")
+            score = 0
+        }
+
         loaderFinished = true
         targets.clear()
         particles.clear()
