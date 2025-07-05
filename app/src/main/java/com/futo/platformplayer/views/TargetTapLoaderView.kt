@@ -3,6 +3,7 @@ package com.futo.platformplayer.views
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
@@ -19,6 +20,9 @@ class TargetTapLoaderView @JvmOverloads constructor(
     private var startTime: Long = 0L
     private var loaderFinished = false
     private var forceIndeterminate = false
+    private var spinnerShader: SweepGradient? = null
+    private var lastFrameTime = System.currentTimeMillis()
+    private val bounceInterpolator = android.view.animation.OvershootInterpolator(2f)
 
     private val isIndeterminate: Boolean
         get() = forceIndeterminate || expectedDurationMs == null || expectedDurationMs == 0L
@@ -29,7 +33,9 @@ class TargetTapLoaderView @JvmOverloads constructor(
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 48f
+        textSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP, 18f, resources.displayMetrics
+        )
         textAlign = Paint.Align.CENTER
         setShadowLayer(4f, 0f, 0f, Color.BLACK)
         typeface = Typeface.DEFAULT_BOLD
@@ -58,6 +64,10 @@ class TargetTapLoaderView @JvmOverloads constructor(
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(50, 0, 0, 0)
     }
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.YELLOW
+    }
     private val backgroundPaint = Paint()
 
     private var spinnerAngle = 0f
@@ -79,7 +89,17 @@ class TargetTapLoaderView @JvmOverloads constructor(
     }
 
     fun startLoader(durationMs: Long? = null) {
-        expectedDurationMs = durationMs?.takeIf { it > 0L }
+        val isAlreadyRunning = !loaderFinished
+
+        val newDuration = durationMs?.takeIf { it > 0L }
+
+        if (isAlreadyRunning && newDuration == null) {
+            forceIndeterminate = true
+            startTime = System.currentTimeMillis()
+            return
+        }
+
+        expectedDurationMs = newDuration
         forceIndeterminate = expectedDurationMs == null
         loaderFinished = false
         startTime = System.currentTimeMillis()
@@ -103,6 +123,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
 
     fun finishLoader() {
         loaderFinished = true
+        particles.clear()
         invalidate()
     }
 
@@ -120,15 +141,22 @@ class TargetTapLoaderView @JvmOverloads constructor(
         if (hitIndex >= 0) {
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
             val target = targets[hitIndex]
-            target.hit = true
-            target.hitTime = now
-            score += if (!isIndeterminate) 10 else 5
-            spawnParticles(target.x, target.y, target.radius)
+            if (!target.hit) {
+                target.hit = true
+                target.hitTime = now
+                score += if (!isIndeterminate) 10 else 5
+                spawnParticles(target.x, target.y, target.radius)
+            }
         }
     }
 
     private fun spawnTarget() {
         if (loaderFinished) return
+        if (width <= 0 || height <= 0) {
+            post { spawnTarget() }
+            return
+        }
+
         val radius = Random.nextInt(40, 80).toFloat()
         val x = Random.nextFloat() * (width - 2 * radius) + radius
         val y = Random.nextFloat() * (height - 2 * radius - 60f) + radius
@@ -144,7 +172,7 @@ class TargetTapLoaderView @JvmOverloads constructor(
             val speed = Random.nextFloat() * 5f + 2f
             val vx = cos(angle) * speed
             val vy = sin(angle) * speed
-            particles.add(Particle(cx, cy, vx, vy, 255, System.currentTimeMillis()))
+            particles.add(Particle(cx, cy, vx, vy, System.currentTimeMillis()))
         }
     }
 
@@ -153,11 +181,14 @@ class TargetTapLoaderView @JvmOverloads constructor(
         drawBackground(canvas)
 
         val now = System.currentTimeMillis()
+        val deltaMs = now - lastFrameTime
+        lastFrameTime = now
+
         drawTargets(canvas, now)
         drawParticles(canvas, now)
 
         if (!loaderFinished) {
-            if (isIndeterminate) drawIndeterminateSpinner(canvas)
+            if (isIndeterminate) drawIndeterminateSpinner(canvas, deltaMs)
             else drawDeterministicProgressBar(canvas, now)
         }
 
@@ -184,17 +215,37 @@ class TargetTapLoaderView @JvmOverloads constructor(
         targets.removeAll { !it.hit && now - it.spawnTime > expireMs }
 
         for (t in targets) {
-            val scale = if (t.hit) 1f - ((now - t.hitTime) / 300f).coerceIn(0f, 1f) else 1f
+            val scale = when {
+                t.hit -> {
+                    1f - ((now - t.hitTime) / 300f).coerceIn(0f, 1f)
+                }
+                else -> {
+                    val spawnElapsed = now - t.spawnAnimationStartTime
+                    if (spawnElapsed < 300L) {
+                        val animProgress = spawnElapsed / 300f
+                        bounceInterpolator.getInterpolation(animProgress)
+                    } else {
+                        val pulseTime = ((now - t.spawnAnimationStartTime) / 1000f) * 2f * PI.toFloat() + t.idlePulseOffset
+                        1f + 0.02f * sin(pulseTime)
+                    }
+                }
+            }
+
             val alpha = if (t.hit) ((1f - scale) * 255).toInt().coerceAtMost(255) else 255
             val safeRadius = (t.radius * scale).coerceAtLeast(1f)
-            val glowPaint = Paint().apply {
-                shader = RadialGradient(t.x, t.y, safeRadius, Color.YELLOW, Color.TRANSPARENT, Shader.TileMode.CLAMP)
-            }
+
+            glowPaint.shader = RadialGradient(
+                t.x, t.y, safeRadius,
+                Color.YELLOW, Color.TRANSPARENT,
+                Shader.TileMode.CLAMP
+            )
             canvas.drawCircle(t.x, t.y, safeRadius * 1.2f, glowPaint)
             canvas.drawCircle(t.x + 4f, t.y + 4f, safeRadius, shadowPaint)
+
             outerRingPaint.alpha = alpha
             middleRingPaint.alpha = alpha
             centerDotPaint.alpha = alpha
+
             canvas.drawCircle(t.x, t.y, safeRadius, outerRingPaint)
             canvas.drawCircle(t.x, t.y, safeRadius * 0.66f, middleRingPaint)
             canvas.drawCircle(t.x, t.y, safeRadius * 0.33f, centerDotPaint)
@@ -212,13 +263,10 @@ class TargetTapLoaderView @JvmOverloads constructor(
                 continue
             }
             val alpha = ((1f - (age / lifespan.toFloat())) * 255).toInt()
-            val paint = Paint().apply {
-                color = Color.YELLOW
-                this.alpha = alpha
-            }
             p.x += p.vx
             p.y += p.vy
-            canvas.drawCircle(p.x, p.y, 6f, paint)
+            particlePaint.alpha = alpha
+            canvas.drawCircle(p.x, p.y, 6f, particlePaint)
         }
     }
 
@@ -235,19 +283,28 @@ class TargetTapLoaderView @JvmOverloads constructor(
         canvas.drawRoundRect(rect, barRadius, barRadius, progressBarPaint)
     }
 
-    private fun drawIndeterminateSpinner(canvas: Canvas) {
-        spinnerAngle = (spinnerAngle + 6f) % 360f
+
+    private fun drawIndeterminateSpinner(canvas: Canvas, deltaMs: Long) {
         val cx = width / 2f
         val cy = height / 2f
         val radius = min(width, height) / 6f
         val sweepAngle = 270f
 
+        spinnerAngle = (spinnerAngle + 0.25f * deltaMs) % 360f
+
+        if (spinnerShader == null) {
+            spinnerShader = SweepGradient(
+                cx, cy,
+                intArrayOf(Color.TRANSPARENT, Color.WHITE, Color.TRANSPARENT),
+                floatArrayOf(0f, 0.5f, 1f)
+            )
+        }
+
+        spinnerPaint.shader = spinnerShader
+
         val glowPaint = Paint(spinnerPaint).apply {
             maskFilter = BlurMaskFilter(15f, BlurMaskFilter.Blur.SOLID)
         }
-
-        val shader = SweepGradient(cx, cy, intArrayOf(Color.TRANSPARENT, Color.WHITE, Color.TRANSPARENT), floatArrayOf(0f, 0.5f, 1f))
-        spinnerPaint.shader = shader
 
         canvas.drawArc(cx - radius, cy - radius, cx + radius, cy + radius, spinnerAngle, sweepAngle, false, glowPaint)
         canvas.drawArc(cx - radius, cy - radius, cx + radius, cy + radius, spinnerAngle, sweepAngle, false, spinnerPaint)
@@ -259,7 +316,9 @@ class TargetTapLoaderView @JvmOverloads constructor(
         val radius: Float,
         val spawnTime: Long,
         var hit: Boolean = false,
-        var hitTime: Long = 0L
+        var hitTime: Long = 0L,
+        val spawnAnimationStartTime: Long = System.currentTimeMillis(),
+        val idlePulseOffset: Float = Random.nextFloat() * 2f * PI.toFloat()
     )
 
     private data class Particle(
@@ -267,7 +326,6 @@ class TargetTapLoaderView @JvmOverloads constructor(
         var y: Float,
         val vx: Float,
         val vy: Float,
-        var alpha: Int,
         val startTime: Long
     )
 }
