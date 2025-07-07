@@ -395,8 +395,9 @@ class StatePlatform {
     }
     suspend fun selectClients(afterLoad: (() -> Unit)?, vararg ids: String) {
         withContext(Dispatchers.IO) {
+            var removed: MutableList<IPlatformClient>;
             synchronized(_clientsLock) {
-                val removed = _enabledClients.toMutableList();
+                removed = _enabledClients.toMutableList();
                 _enabledClients.clear();
                 for (id in ids) {
                     val client = getClient(id);
@@ -412,11 +413,11 @@ class StatePlatform {
                 }
                 _enabledClientsPersistent.set(*ids);
                 _enabledClientsPersistent.save();
+            }
 
-                for (oldClient in removed) {
-                    oldClient.disable();
-                    onSourceDisabled.emit(oldClient);
-                }
+            for (oldClient in removed) {
+                oldClient.disable();
+                onSourceDisabled.emit(oldClient);
             }
             afterLoad?.invoke();
         };
