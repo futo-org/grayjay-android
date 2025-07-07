@@ -806,6 +806,8 @@ class VideoDetailView : ConstraintLayout {
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
+            _cast.cancel()
+            StateCasting.instance.cancel()
             video = null;
             _container_content_liveChat?.close();
             _player.clear();
@@ -1899,7 +1901,13 @@ class VideoDetailView : ConstraintLayout {
     private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
 
-        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)) {
+        val castSucceeded = StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
+            _cast.setLoading(it)
+        }, onLoadingEstimate = {
+            _cast.setLoading(it)
+        })
+
+        if (castSucceeded) {
             _cast.setVideoDetails(video, resumePositionMs / 1000);
             setCastEnabled(true);
         } else throw IllegalStateException("Disconnected cast during loading");
@@ -2553,8 +2561,7 @@ class VideoDetailView : ConstraintLayout {
             _cast.visibility = View.VISIBLE;
         } else {
             StateCasting.instance.stopVideo();
-            _cast.stopTimeJob();
-            _cast.visibility = View.GONE;
+            _cast.cancel()
 
             if (video?.isLive == false) {
                 _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
