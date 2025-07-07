@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.getOrDefault
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.states.StateDeveloper
 
 class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
@@ -68,12 +69,12 @@ class JSPostDetails : JSPost, IPlatformPost, IPlatformPostDetails {
         return null;
     }
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+        val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
         return JSContentPager(_pluginConfig, client, contentPager);
     }
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
-        val commentPager = _content.invoke<V8ValueObject>("getComments", arrayOf<Any>());
+        val commentPager = _content.invokeV8<V8ValueObject>("getComments", arrayOf<Any>());
         return JSCommentPager(_pluginConfig, client, commentPager);
     }
 
