@@ -64,6 +64,7 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
 class StateCasting {
     private val _scopeIO = CoroutineScope(Dispatchers.IO);
@@ -89,6 +90,7 @@ class StateCasting {
     var _resumeCastingDevice: CastingDeviceInfo? = null;
     private var _nsdManager: NsdManager? = null
     val isCasting: Boolean get() = activeDevice != null;
+    private val _castId = AtomicInteger(0)
 
     private val _discoveryListeners = mapOf(
         "_googlecast._tcp" to createDiscoveryListener(::addOrUpdateChromeCastDevice),
@@ -432,13 +434,18 @@ class StateCasting {
         action();
     }
 
-    fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?): Boolean {
+    fun cancel() {
+        _castId.incrementAndGet()
+    }
+
+    fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
         val ad = activeDevice ?: return false;
         if (ad.connectionState != CastConnectionState.CONNECTED) {
             return false;
         }
 
         val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
+        val castId = _castId.incrementAndGet()
 
         var sourceCount = 0;
         if (videoSource != null) sourceCount++;
@@ -466,7 +473,7 @@ class StateCasting {
                             Logger.i(TAG, "Casting as raw DASH");
 
                             try {
-                                castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed);
+                                castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed, castId, onLoadingEstimate, onLoading);
                             } catch (e: Throwable) {
                                 Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource} audioSource=${audioSource}.", e);
                             }
@@ -529,7 +536,7 @@ class StateCasting {
 
                 StateApp.instance.scope.launch(Dispatchers.IO) {
                     try {
-                        castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed);
+                        castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource}.", e);
                     }
@@ -539,7 +546,7 @@ class StateCasting {
 
                 StateApp.instance.scope.launch(Dispatchers.IO) {
                     try {
-                        castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed);
+                        castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to start casting DASH raw audioSource=${audioSource}.", e);
                     }
@@ -1236,7 +1243,7 @@ class StateCasting {
     }
 
     @OptIn(UnstableApi::class)
-    private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
+    private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null) : List<String> {
         val ad = activeDevice ?: return listOf();
 
         cleanExecutors()
@@ -1283,19 +1290,47 @@ class StateCasting {
             }
         }
 
-        var dashContent = withContext(Dispatchers.IO) {
+        var dashContent: String = withContext(Dispatchers.IO) {
+            stopVideo()
+
             //TODO: Include subtitlesURl in the future
-            return@withContext if (audioSource != null && videoSource != null) {
-                JSDashManifestMergingRawSource(videoSource, audioSource).generate()
+            val deferred = if (audioSource != null && videoSource != null) {
+                JSDashManifestMergingRawSource(videoSource, audioSource).generateAsync(_scopeIO)
             } else if (audioSource != null) {
-                audioSource.generate()
+                audioSource.generateAsync(_scopeIO)
             } else if (videoSource != null) {
-                videoSource.generate()
+                videoSource.generateAsync(_scopeIO)
             } else {
                 Logger.e(TAG, "Expected at least audio or video to be set")
                 null
             }
+
+            if (deferred != null) {
+                try {
+                    withContext(Dispatchers.Main) {
+                        if (deferred.estDuration >= 0) {
+                            onLoadingEstimate?.invoke(deferred.estDuration)
+                        } else {
+                            onLoading?.invoke(true)
+                        }
+                    }
+                    deferred.await()
+                } finally {
+                    if (castId == _castId.get()) {
+                        withContext(Dispatchers.Main) {
+                            onLoading?.invoke(false)
+                        }
+                    }
+                }
+            } else {
+                return@withContext null
+            }
         } ?: throw Exception("Dash is null")
+
+        if (castId != _castId.get()) {
+            Log.i(TAG, "Get DASH cancelled.")
+            return emptyList()
+        }
 
         for (representation in representationRegex.findAll(dashContent)) {
             val mediaType = representation.groups[1]?.value ?: throw Exception("Media type should be found")
