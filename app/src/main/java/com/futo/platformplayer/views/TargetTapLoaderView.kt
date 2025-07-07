@@ -41,8 +41,8 @@ class TargetTapLoaderView @JvmOverloads constructor(
     private val particles = mutableListOf<Particle>()
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18f, resources.displayMetrics)
+        color = Color.argb(0.7f, 1f, 1f, 1f)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, resources.displayMetrics)
         textAlign = Paint.Align.LEFT
         setShadowLayer(4f, 0f, 0f, Color.BLACK)
         typeface = Typeface.DEFAULT_BOLD
@@ -236,8 +236,8 @@ class TargetTapLoaderView @JvmOverloads constructor(
 
         if (isPlaying) {
             val margin = 24f
-            val scoreTxt = "Score $score"
-            val speedTxt = "Speed ${"%.2f".format(spawnRate)}/s"
+            val scoreTxt = "Score: $score"
+            val speedTxt = "Speed: ${"%.2f".format(spawnRate)}/s"
             val maxWidth = width - margin
             val needRight = max(textPaint.measureText(scoreTxt), textPaint.measureText(speedTxt)) > maxWidth
 
