@@ -438,130 +438,108 @@ class StateCasting {
         _castId.incrementAndGet()
     }
 
-    fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
-        val ad = activeDevice ?: return false;
-        if (ad.connectionState != CastConnectionState.CONNECTED) {
-            return false;
-        }
+    suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
+        return withContext(Dispatchers.IO) {
+            val ad = activeDevice ?: return@withContext false;
+            if (ad.connectionState != CastConnectionState.CONNECTED) {
+                return@withContext false;
+            }
 
-        val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
-        val castId = _castId.incrementAndGet()
+            val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
+            val castId = _castId.incrementAndGet()
 
-        var sourceCount = 0;
-        if (videoSource != null) sourceCount++;
-        if (audioSource != null) sourceCount++;
-        if (subtitleSource != null) sourceCount++;
+            var sourceCount = 0;
+            if (videoSource != null) sourceCount++;
+            if (audioSource != null) sourceCount++;
+            if (subtitleSource != null) sourceCount++;
 
-        if (sourceCount < 1) {
-            throw Exception("At least one source should be specified.");
-        }
+            if (sourceCount < 1) {
+                throw Exception("At least one source should be specified.");
+            }
 
-        if (sourceCount > 1) {
-            if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
-                if (ad is AirPlayCastingDevice) {
-                    Logger.i(TAG, "Casting as local HLS");
-                    castLocalHls(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
+            if (sourceCount > 1) {
+                if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
+                    if (ad is AirPlayCastingDevice) {
+                        Logger.i(TAG, "Casting as local HLS");
+                        castLocalHls(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
+                    } else {
+                        Logger.i(TAG, "Casting as local DASH");
+                        castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
+                    }
                 } else {
-                    Logger.i(TAG, "Casting as local DASH");
-                    castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
-                }
-            } else {
-                StateApp.instance.scope.launch(Dispatchers.IO) {
-                    try {
-                        val isRawDash = videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
-                        if (isRawDash) {
-                            Logger.i(TAG, "Casting as raw DASH");
+                    val isRawDash = videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
+                    if (isRawDash) {
+                        Logger.i(TAG, "Casting as raw DASH");
 
-                            try {
-                                castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed, castId, onLoadingEstimate, onLoading);
-                            } catch (e: Throwable) {
-                                Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource} audioSource=${audioSource}.", e);
-                            }
+                        castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed, castId, onLoadingEstimate, onLoading);
+                    } else {
+                        if (ad is FCastCastingDevice) {
+                            Logger.i(TAG, "Casting as DASH direct");
+                            castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
+                        } else if (ad is AirPlayCastingDevice) {
+                            Logger.i(TAG, "Casting as HLS indirect");
+                            castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         } else {
-                            if (ad is FCastCastingDevice) {
-                                Logger.i(TAG, "Casting as DASH direct");
-                                castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
-                            } else if (ad is AirPlayCastingDevice) {
-                                Logger.i(TAG, "Casting as HLS indirect");
-                                castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
-                            } else {
-                                Logger.i(TAG, "Casting as DASH indirect");
-                                castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
-                            }
+                            Logger.i(TAG, "Casting as DASH indirect");
+                            castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         }
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to start casting DASH videoSource=${videoSource} audioSource=${audioSource}.", e);
-                    }
-                }
-            }
-        } else {
-            val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
-            val url = getLocalUrl(ad);
-            val id = UUID.randomUUID();
-
-            if (videoSource is IVideoUrlSource) {
-                val videoPath = "/video-${id}"
-                val videoUrl = if(proxyStreams) url + videoPath else videoSource.getVideoUrl();
-                Logger.i(TAG, "Casting as singular video");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed);
-            } else if (audioSource is IAudioUrlSource) {
-                val audioPath = "/audio-${id}"
-                val audioUrl = if(proxyStreams) url + audioPath else audioSource.getAudioUrl();
-                Logger.i(TAG, "Casting as singular audio");
-                ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed);
-            } else if(videoSource is IHLSManifestSource) {
-                if (proxyStreams || ad is ChromecastCastingDevice) {
-                    Logger.i(TAG, "Casting as proxied HLS");
-                    castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed);
-                } else {
-                    Logger.i(TAG, "Casting as non-proxied HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed);
-                }
-            } else if(audioSource is IHLSManifestAudioSource) {
-                if (proxyStreams || ad is ChromecastCastingDevice) {
-                    Logger.i(TAG, "Casting as proxied audio HLS");
-                    castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed);
-                } else {
-                    Logger.i(TAG, "Casting as non-proxied audio HLS");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed);
-                }
-            } else if (videoSource is LocalVideoSource) {
-                Logger.i(TAG, "Casting as local video");
-                castLocalVideo(video, videoSource, resumePosition, speed);
-            } else if (audioSource is LocalAudioSource) {
-                Logger.i(TAG, "Casting as local audio");
-                castLocalAudio(video, audioSource, resumePosition, speed);
-            } else if (videoSource is JSDashManifestRawSource) {
-                Logger.i(TAG, "Casting as JSDashManifestRawSource video");
-
-                StateApp.instance.scope.launch(Dispatchers.IO) {
-                    try {
-                        castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to start casting DASH raw videoSource=${videoSource}.", e);
-                    }
-                }
-            } else if (audioSource is JSDashManifestRawAudioSource) {
-                Logger.i(TAG, "Casting as JSDashManifestRawSource audio");
-
-                StateApp.instance.scope.launch(Dispatchers.IO) {
-                    try {
-                        castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to start casting DASH raw audioSource=${audioSource}.", e);
                     }
                 }
             } else {
-                var str = listOf(
-                    if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
-                    if(audioSource != null) "Audio: ${audioSource::class.java.simpleName}" else null,
-                    if(subtitleSource != null) "Subtitles: ${subtitleSource::class.java.simpleName}" else null
-                ).filterNotNull().joinToString(", ");
-                throw UnsupportedCastException(str);
-            }
-        }
+                val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
+                val url = getLocalUrl(ad);
+                val id = UUID.randomUUID();
 
-        return true;
+                if (videoSource is IVideoUrlSource) {
+                    val videoPath = "/video-${id}"
+                    val videoUrl = if(proxyStreams) url + videoPath else videoSource.getVideoUrl();
+                    Logger.i(TAG, "Casting as singular video");
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed);
+                } else if (audioSource is IAudioUrlSource) {
+                    val audioPath = "/audio-${id}"
+                    val audioUrl = if(proxyStreams) url + audioPath else audioSource.getAudioUrl();
+                    Logger.i(TAG, "Casting as singular audio");
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed);
+                } else if(videoSource is IHLSManifestSource) {
+                    if (proxyStreams || ad is ChromecastCastingDevice) {
+                        Logger.i(TAG, "Casting as proxied HLS");
+                        castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed);
+                    } else {
+                        Logger.i(TAG, "Casting as non-proxied HLS");
+                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed);
+                    }
+                } else if(audioSource is IHLSManifestAudioSource) {
+                    if (proxyStreams || ad is ChromecastCastingDevice) {
+                        Logger.i(TAG, "Casting as proxied audio HLS");
+                        castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed);
+                    } else {
+                        Logger.i(TAG, "Casting as non-proxied audio HLS");
+                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed);
+                    }
+                } else if (videoSource is LocalVideoSource) {
+                    Logger.i(TAG, "Casting as local video");
+                    castLocalVideo(video, videoSource, resumePosition, speed);
+                } else if (audioSource is LocalAudioSource) {
+                    Logger.i(TAG, "Casting as local audio");
+                    castLocalAudio(video, audioSource, resumePosition, speed);
+                } else if (videoSource is JSDashManifestRawSource) {
+                    Logger.i(TAG, "Casting as JSDashManifestRawSource video");
+                    castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
+                } else if (audioSource is JSDashManifestRawAudioSource) {
+                    Logger.i(TAG, "Casting as JSDashManifestRawSource audio");
+                    castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
+                } else {
+                    var str = listOf(
+                        if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
+                        if(audioSource != null) "Audio: ${audioSource::class.java.simpleName}" else null,
+                        if(subtitleSource != null) "Subtitles: ${subtitleSource::class.java.simpleName}" else null
+                    ).filterNotNull().joinToString(", ");
+                    throw UnsupportedCastException(str);
+                }
+            }
+
+            return@withContext true;
+        }
     }
 
     fun resumeVideo(): Boolean {

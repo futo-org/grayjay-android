@@ -4,6 +4,7 @@ import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -79,7 +80,9 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.JSVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -1900,17 +1903,46 @@ class VideoDetailView : ConstraintLayout {
     }
     private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
+        castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)
+    }
 
-        val castSucceeded = StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
-            _cast.setLoading(it)
-        }, onLoadingEstimate = {
-            _cast.setLoading(it)
-        })
+    private fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val plugin = if (videoSource is JSSource) videoSource.getUnderlyingPlugin()
+                    else if (audioSource is JSSource) audioSource.getUnderlyingPlugin()
+                    else null
 
-        if (castSucceeded) {
-            _cast.setVideoDetails(video, resumePositionMs / 1000);
-            setCastEnabled(true);
-        } else throw IllegalStateException("Disconnected cast during loading");
+                val startId = plugin?.getUnderlyingPlugin()?.runtimeId
+                try {
+                    val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
+                        _cast.setLoading(it)
+                    }, onLoadingEstimate = {
+                        _cast.setLoading(it)
+                    })
+
+                    if (castingSucceeded) {
+                        withContext(Dispatchers.Main) {
+                            _cast.setVideoDetails(video, resumePositionMs / 1000);
+                            setCastEnabled(true);
+                        }
+                    }
+                } catch (e: ScriptReloadRequiredException) {
+                    Log.i(TAG, "Reload required exception", e)
+                    if (plugin == null)
+                        throw e
+
+                    if (startId != -1 && plugin.getUnderlyingPlugin().runtimeId != startId)
+                        throw e
+
+                    StatePlatform.instance.handleReloadRequired(e, {
+                        fetchVideo()
+                    });
+                }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "loadCurrentVideoCast", e)
+            }
+        }
     }
 
     //Events
@@ -2423,7 +2455,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
             _player.hideControls(false); //TODO: Disable player?
 
@@ -2438,7 +2470,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed)
         else(!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
         _player.hideControls(false); //TODO: Disable player?
 
@@ -2454,7 +2486,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else
             _player.swapSubtitles(fragment.lifecycleScope, toSet);
 
