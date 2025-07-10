@@ -28,6 +28,62 @@
             app:srcCompat="@drawable/ic_loader_animated" />
     </FrameLayout>
 
+    <!-- zero state -->
+    <LinearLayout
+        android:id="@+id/zero_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="24dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="10dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_help" />
+
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/inter_bold"
+            android:gravity="center"
+            android:text="@string/no_results"
+            android:textColor="@color/white"
+            android:textSize="22dp" />
+
+        <TextView
+            android:id="@+id/text_centered"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="@font/inter_regular"
+            android:gravity="center"
+            android:text="@string/no_results_shorts"
+            android:textColor="@color/gray_ac"
+            android:textSize="13dp" />
+
+        <com.futo.platformplayer.views.buttons.BigButton
+            android:id="@+id/sources_button"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:buttonIcon="@drawable/ic_creators"
+            app:buttonSubText="Go to the sources tab"
+            app:buttonText="Sources" />
+
+    </LinearLayout>
+
     <FrameLayout
         android:id="@+id/shorts_quality_overview"
         android:layout_width="match_parent"

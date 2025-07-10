@@ -4,10 +4,12 @@ import android.annotation.SuppressLint
 import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +24,7 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.views.buttons.BigButton
 
 @UnstableApi
 class ShortsFragment : MainFragment() {
@@ -47,6 +50,8 @@ class ShortsFragment : MainFragment() {
         get() = channelShortsPager != null
 
     private var viewPager: ViewPager2? = null
+    private lateinit var zeroState: LinearLayout
+    private lateinit var sourcesButton: BigButton
     private lateinit var overlayLoading: FrameLayout
     private lateinit var overlayLoadingSpinner: ImageView
     private lateinit var overlayQualityContainer: FrameLayout
@@ -108,9 +113,16 @@ class ShortsFragment : MainFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewPager = view.findViewById(R.id.view_pager)
+        zeroState = view.findViewById(R.id.zero_state)
+        sourcesButton = view.findViewById(R.id.sources_button)
         overlayLoading = view.findViewById(R.id.short_view_loading_overlay)
         overlayLoadingSpinner = view.findViewById(R.id.short_view_loader)
         overlayQualityContainer = view.findViewById(R.id.shorts_quality_overview)
+
+        sourcesButton.setOnClickListener {
+            sourcesButton.playSoundEffect(SoundEffectConstants.CLICK)
+            navigate<SourcesFragment>()
+        }
 
         setLoading(true)
 
@@ -140,9 +152,11 @@ class ShortsFragment : MainFragment() {
 
             loadPagerTask!!.success {
                 setLoading(false)
+                updateZeroState()
             }
         } else {
             setLoading(false)
+            updateZeroState()
         }
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -184,6 +198,14 @@ class ShortsFragment : MainFragment() {
                 }
             }
         })
+    }
+
+    private fun updateZeroState() {
+        if (mainShorts.isEmpty()) {
+            zeroState.visibility = View.VISIBLE
+        } else {
+            zeroState.visibility = View.GONE
+        }
     }
 
     private fun nextPage() {
@@ -290,7 +312,7 @@ class ShortsFragment : MainFragment() {
         private val inflater: LayoutInflater,
         private val fragment: MainFragment,
         private val overlayQualityContainer: FrameLayout,
-        private val isChannelShortsMode:  () -> Boolean,
+        private val isChannelShortsMode: () -> Boolean,
         private val onNearEnd: () -> Unit,
     ) : RecyclerView.Adapter<CustomViewHolder>() {
         val onResetTriggered = Event0()
@@ -300,8 +322,7 @@ class ShortsFragment : MainFragment() {
 
         @OptIn(UnstableApi::class)
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
-            val shortView =
-                ShortView(inflater, fragment, overlayQualityContainer)
+            val shortView = ShortView(inflater, fragment, overlayQualityContainer)
             shortView.onResetTriggered.subscribe {
                 onResetTriggered.emit()
             }

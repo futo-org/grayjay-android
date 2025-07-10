@@ -87,6 +87,8 @@
     <string name="these_creators_not_in_group">These creators are not in this group.</string>
     <string name="disabled">Disabled</string>
     <string name="watch_later">Watch Later</string>
+    <string name="no_results">Nothing to see here</string>
+    <string name="no_results_shorts">The enabled sources do not have any short video results.</string>
     <string name="create">Create</string>
     <string name="ok">OK</string>
     <string name="yes">Yes</string>
