@@ -119,7 +119,7 @@ class ShortsFragment : MainFragment() {
         overlayLoadingSpinner = view.findViewById(R.id.short_view_loader)
         overlayQualityContainer = view.findViewById(R.id.shorts_quality_overview)
 
-        sourcesButton.setOnClickListener {
+        sourcesButton.onClick.subscribe {
             sourcesButton.playSoundEffect(SoundEffectConstants.CLICK)
             navigate<SourcesFragment>()
         }
