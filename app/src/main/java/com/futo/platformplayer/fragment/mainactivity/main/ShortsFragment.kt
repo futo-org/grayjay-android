@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event0
@@ -58,6 +59,7 @@ class ShortsFragment : MainFragment() {
     // we just completely reset the data structure so we want to tell the adapter that
     @SuppressLint("NotifyDataSetChanged")
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
+        (activity as MainActivity?)?.getFragment<VideoDetailFragment>()?.closeVideoDetails()
         super.onShownWithView(parameter, isBack)
 
         if (parameter is Triple<*, *, *>) {
@@ -114,7 +116,7 @@ class ShortsFragment : MainFragment() {
 
         Logger.i(TAG, "Creating adapter")
         val customViewAdapter =
-            CustomViewAdapter(currentShorts, layoutInflater, this@ShortsFragment, overlayQualityContainer) {
+            CustomViewAdapter(currentShorts, layoutInflater, this@ShortsFragment, overlayQualityContainer, { isChannelShortsMode }) {
                 if (!currentShortsPager!!.hasMorePages()) {
                     return@CustomViewAdapter
                 }
@@ -288,6 +290,7 @@ class ShortsFragment : MainFragment() {
         private val inflater: LayoutInflater,
         private val fragment: MainFragment,
         private val overlayQualityContainer: FrameLayout,
+        private val isChannelShortsMode:  () -> Boolean,
         private val onNearEnd: () -> Unit,
     ) : RecyclerView.Adapter<CustomViewHolder>() {
         val onResetTriggered = Event0()
@@ -297,7 +300,8 @@ class ShortsFragment : MainFragment() {
 
         @OptIn(UnstableApi::class)
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
-            val shortView = ShortView(inflater, fragment, overlayQualityContainer)
+            val shortView =
+                ShortView(inflater, fragment, overlayQualityContainer)
             shortView.onResetTriggered.subscribe {
                 onResetTriggered.emit()
             }
@@ -306,7 +310,7 @@ class ShortsFragment : MainFragment() {
 
         @OptIn(UnstableApi::class)
         override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
-            holder.shortView.changeVideo(videos[position])
+            holder.shortView.changeVideo(videos[position], isChannelShortsMode())
 
             if (position == itemCount - 1) {
                 onNearEnd()

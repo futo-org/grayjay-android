@@ -21,6 +21,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
@@ -122,6 +123,9 @@ class ShortView : FrameLayout {
     private val videoTitle: TextView
     private val platformIndicator: PlatformIndicator
 
+    private val backButton: MaterialButton
+    private val backButtonContainer: ConstraintLayout
+
     private val likeContainer: FrameLayout
     private val dislikeContainer: FrameLayout
     private val likeButton: MaterialButton
@@ -132,6 +136,7 @@ class ShortView : FrameLayout {
     private val commentsButton: MaterialButton
     private val shareButton: MaterialButton
     private val refreshButton: MaterialButton
+    private val refreshButtonContainer: View
     private val qualityButton: MaterialButton
 
     private val playPauseOverlay: FrameLayout
@@ -180,129 +185,7 @@ class ShortView : FrameLayout {
             dislikeCount.text = value.toString()
         }
 
-    // Required constructor for XML inflation
-    constructor(context: Context) : super(context) {
-        inflate(context, R.layout.view_short, this)
-        player = findViewById(R.id.short_player)
-
-        channelInfo = findViewById(R.id.channel_info)
-        creatorThumbnail = findViewById(R.id.creator_thumbnail)
-        channelName = findViewById(R.id.channel_name)
-        videoTitle = findViewById(R.id.video_title)
-        platformIndicator = findViewById(R.id.short_platform_indicator)
-
-        likeContainer = findViewById(R.id.like_container)
-        dislikeContainer = findViewById(R.id.dislike_container)
-        likeButton = findViewById(R.id.like_button)
-        likeCount = findViewById(R.id.like_count)
-        dislikeButton = findViewById(R.id.dislike_button)
-        dislikeCount = findViewById(R.id.dislike_count)
-
-        commentsButton = findViewById(R.id.comments_button)
-        shareButton = findViewById(R.id.share_button)
-        refreshButton = findViewById(R.id.refresh_button)
-        qualityButton = findViewById(R.id.quality_button)
-
-        playPauseOverlay = findViewById(R.id.play_pause_overlay)
-        playPauseIcon = findViewById(R.id.play_pause_icon)
-
-        overlayLoading = findViewById(R.id.short_view_loading_overlay)
-        overlayLoadingSpinner = findViewById(R.id.short_view_loader)
-
-        init()
-    }
-
-    // Required constructor for XML inflation with attributes
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        inflate(context, R.layout.view_short, this)
-        player = findViewById(R.id.short_player)
-
-        channelInfo = findViewById(R.id.channel_info)
-        creatorThumbnail = findViewById(R.id.creator_thumbnail)
-        channelName = findViewById(R.id.channel_name)
-        videoTitle = findViewById(R.id.video_title)
-        platformIndicator = findViewById(R.id.short_platform_indicator)
-
-        likeContainer = findViewById(R.id.like_container)
-        dislikeContainer = findViewById(R.id.dislike_container)
-        likeButton = findViewById(R.id.like_button)
-        likeCount = findViewById(R.id.like_count)
-        dislikeButton = findViewById(R.id.dislike_button)
-        dislikeCount = findViewById(R.id.dislike_count)
-
-        commentsButton = findViewById(R.id.comments_button)
-        shareButton = findViewById(R.id.share_button)
-        refreshButton = findViewById(R.id.refresh_button)
-        qualityButton = findViewById(R.id.quality_button)
-
-        playPauseOverlay = findViewById(R.id.play_pause_overlay)
-        playPauseIcon = findViewById(R.id.play_pause_icon)
-
-        overlayLoading = findViewById(R.id.short_view_loading_overlay)
-        overlayLoadingSpinner = findViewById(R.id.short_view_loader)
-
-        init()
-    }
-
-    // Required constructor for XML inflation with attributes and style
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        inflate(context, R.layout.view_short, this)
-        player = findViewById(R.id.short_player)
-
-        channelInfo = findViewById(R.id.channel_info)
-        creatorThumbnail = findViewById(R.id.creator_thumbnail)
-        channelName = findViewById(R.id.channel_name)
-        videoTitle = findViewById(R.id.video_title)
-        platformIndicator = findViewById(R.id.short_platform_indicator)
-
-        likeContainer = findViewById(R.id.like_container)
-        dislikeContainer = findViewById(R.id.dislike_container)
-        likeButton = findViewById(R.id.like_button)
-        likeCount = findViewById(R.id.like_count)
-        dislikeButton = findViewById(R.id.dislike_button)
-        dislikeCount = findViewById(R.id.dislike_count)
-
-        commentsButton = findViewById(R.id.comments_button)
-        shareButton = findViewById(R.id.share_button)
-        refreshButton = findViewById(R.id.refresh_button)
-        qualityButton = findViewById(R.id.quality_button)
-
-        playPauseOverlay = findViewById(R.id.play_pause_overlay)
-        playPauseIcon = findViewById(R.id.play_pause_icon)
-
-        overlayLoading = findViewById(R.id.short_view_loading_overlay)
-        overlayLoadingSpinner = findViewById(R.id.short_view_loader)
-
-        init()
-    }
-
-    constructor(inflater: LayoutInflater, fragment: MainFragment, overlayQualityContainer: FrameLayout) : super(inflater.context) {
-        inflater.inflate(R.layout.view_short, this, true)
-        player = findViewById(R.id.short_player)
-
-        channelInfo = findViewById(R.id.channel_info)
-        creatorThumbnail = findViewById(R.id.creator_thumbnail)
-        channelName = findViewById(R.id.channel_name)
-        videoTitle = findViewById(R.id.video_title)
-        platformIndicator = findViewById(R.id.short_platform_indicator)
-
-        likeContainer = findViewById(R.id.like_container)
-        dislikeContainer = findViewById(R.id.dislike_container)
-        likeButton = findViewById(R.id.like_button)
-        likeCount = findViewById(R.id.like_count)
-        dislikeButton = findViewById(R.id.dislike_button)
-        dislikeCount = findViewById(R.id.dislike_count)
-
-        commentsButton = findViewById(R.id.comments_button)
-        shareButton = findViewById(R.id.share_button)
-        refreshButton = findViewById(R.id.refresh_button)
-        qualityButton = findViewById(R.id.quality_button)
-
-        playPauseOverlay = findViewById(R.id.play_pause_overlay)
-        playPauseIcon = findViewById(R.id.play_pause_icon)
-
-        overlayLoading = findViewById(R.id.short_view_loading_overlay)
-        overlayLoadingSpinner = findViewById(R.id.short_view_loader)
+    constructor(inflater: LayoutInflater, fragment: MainFragment, overlayQualityContainer: FrameLayout) : this(inflater.context) {
         this.overlayQualityContainer = overlayQualityContainer
 
         layoutParams = LayoutParams(
@@ -311,11 +194,46 @@ class ShortView : FrameLayout {
 
         this.mainFragment = fragment
         bottomSheet.mainFragment = fragment
-
-        init()
     }
 
-    private fun init() {
+    // Required constructor for XML inflation
+    constructor(context: Context) : this(context, null, null)
+
+    // Required constructor for XML inflation with attributes
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, null)
+
+    // Required constructor for XML inflation with attributes and style
+    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int? = null) : super(
+        context, attrs, defStyleAttr ?: 0
+    ) {
+        // Inflate the layout once here
+        inflate(context, R.layout.view_short, this)
+
+        // Initialize all val properties using findViewById
+        player = findViewById(R.id.short_player)
+        channelInfo = findViewById(R.id.channel_info)
+        creatorThumbnail = findViewById(R.id.creator_thumbnail)
+        channelName = findViewById(R.id.channel_name)
+        videoTitle = findViewById(R.id.video_title)
+        platformIndicator = findViewById(R.id.short_platform_indicator)
+        backButton = findViewById(R.id.back_button)
+        backButtonContainer = findViewById(R.id.back_button_container)
+        likeContainer = findViewById(R.id.like_container)
+        dislikeContainer = findViewById(R.id.dislike_container)
+        likeButton = findViewById(R.id.like_button)
+        likeCount = findViewById(R.id.like_count)
+        dislikeButton = findViewById(R.id.dislike_button)
+        dislikeCount = findViewById(R.id.dislike_count)
+        commentsButton = findViewById(R.id.comments_button)
+        shareButton = findViewById(R.id.share_button)
+        refreshButton = findViewById(R.id.refresh_button)
+        refreshButtonContainer = findViewById(R.id.refresh_button_container)
+        qualityButton = findViewById(R.id.quality_button)
+        playPauseOverlay = findViewById(R.id.play_pause_overlay)
+        playPauseIcon = findViewById(R.id.play_pause_icon)
+        overlayLoading = findViewById(R.id.short_view_loading_overlay)
+        overlayLoadingSpinner = findViewById(R.id.short_view_loader)
+
         player.setOnClickListener {
             if (player.activelyPlaying) {
                 player.pause()
@@ -342,6 +260,11 @@ class ShortView : FrameLayout {
             platformIndicator.setPlatformFromClientID(it?.id?.pluginId)
             creatorThumbnail.setThumbnail(it?.author?.thumbnail, true)
             channelName.text = it?.author?.name
+        }
+
+        backButton.setOnClickListener {
+            playSoundEffect(SoundEffectConstants.CLICK)
+            mainFragment.closeSegment()
         }
 
         channelInfo.setOnClickListener {
@@ -376,6 +299,11 @@ class ShortView : FrameLayout {
         refreshButton.setOnClickListener {
             playSoundEffect(SoundEffectConstants.CLICK)
             onResetTriggered.emit()
+        }
+
+        refreshButton.setOnLongClickListener {
+            UIDialogs.toast(context, "Reload all platform shorts pagers")
+            false
         }
 
         qualityButton.setOnClickListener {
@@ -692,11 +620,22 @@ class ShortView : FrameLayout {
         this.overlayQualityContainer = overlayQualityContainer
     }
 
-    fun changeVideo(video: IPlatformVideo) {
+    fun changeVideo(video: IPlatformVideo, isChannelShortsMode: Boolean) {
         if (this.video?.url == video.url) {
             return
         }
         this.video = video
+
+        refreshButtonContainer.visibility = if (isChannelShortsMode) {
+            GONE
+        } else {
+            VISIBLE
+        }
+        backButtonContainer.visibility = if (isChannelShortsMode) {
+            VISIBLE
+        } else {
+            GONE
+        }
 
         loadVideo(video.url)
     }
