@@ -101,6 +101,8 @@ class ShortsFragment : MainFragment() {
             viewPager?.adapter?.notifyDataSetChanged()
             viewPager?.currentItem = 0
         }
+
+        updateZeroState()
     }
 
     override fun onCreateMainView(
@@ -201,7 +203,7 @@ class ShortsFragment : MainFragment() {
     }
 
     private fun updateZeroState() {
-        if (mainShorts.isEmpty()) {
+        if (mainShorts.isEmpty() && !isChannelShortsMode && loadPagerTask == null) {
             zeroState.visibility = View.VISIBLE
         } else {
             zeroState.visibility = View.GONE

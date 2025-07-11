@@ -1155,7 +1155,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             if (segment.isMainView) {
                 var transaction = supportFragmentManager.beginTransaction();
-                transaction.setReorderingAllowed(true)
                 if (segment.topBar != null) {
                     if (segment.topBar != fragCurrent.topBar) {
                         transaction = transaction
