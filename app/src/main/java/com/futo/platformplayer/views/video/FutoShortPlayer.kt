@@ -14,6 +14,7 @@ import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
 import com.futo.platformplayer.R
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.video.PlayerManager
@@ -33,6 +34,8 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
     private lateinit var player: PlayerManager
     private var progressAnimator: ValueAnimator = createProgressBarAnimator()
 
+    val onPlaybackStateChanged = Event1<Int>();
+
     private var playerEventListener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             if (events.containsAny(
@@ -49,6 +52,10 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
                 if (player.isPlaying) {
                     progressAnimator.start()
                 }
+            }
+
+            if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
+                onPlaybackStateChanged.emit(player.playbackState)
             }
         }
     }

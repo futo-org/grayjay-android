@@ -370,6 +370,33 @@ class ShortView : FrameLayout {
             dislikeContainer.visibility = VISIBLE
             likeContainer.visibility = VISIBLE
         }
+
+        player.onPlaybackStateChanged.subscribe {
+            val videoSource = _lastVideoSource
+
+            if (videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
+                val videoTracks =
+                    player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
+                val audioTracks =
+                    player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+
+                val videoTrackFormats = mutableListOf<Format>()
+                val audioTrackFormats = mutableListOf<Format>()
+
+                if (videoTracks != null) {
+                    for (i in 0 until videoTracks.mediaTrackGroup.length) videoTrackFormats.add(videoTracks.mediaTrackGroup.getFormat(i))
+                }
+                if (audioTracks != null) {
+                    for (i in 0 until audioTracks.mediaTrackGroup.length) audioTrackFormats.add(audioTracks.mediaTrackGroup.getFormat(i))
+                }
+
+                updateQualitySourcesOverlay(videoDetails, null, videoTrackFormats.distinctBy { it.height }
+                    .sortedBy { it.height }, audioTrackFormats.distinctBy { it.bitrate }
+                    .sortedBy { it.bitrate })
+            } else {
+                updateQualitySourcesOverlay(videoDetails, null)
+            }
+        }
     }
 
     private fun showPlayPauseIcon() {
@@ -543,31 +570,6 @@ class ShortView : FrameLayout {
 
     private fun showVideoSettings() {
         Logger.i(TAG, "showVideoSettings")
-
-        val videoSource = _lastVideoSource
-
-        if (videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
-            val videoTracks =
-                player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
-            val audioTracks =
-                player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
-
-            val videoTrackFormats = mutableListOf<Format>()
-            val audioTrackFormats = mutableListOf<Format>()
-
-            if (videoTracks != null) {
-                for (i in 0 until videoTracks.mediaTrackGroup.length) videoTrackFormats.add(videoTracks.mediaTrackGroup.getFormat(i))
-            }
-            if (audioTracks != null) {
-                for (i in 0 until audioTracks.mediaTrackGroup.length) audioTrackFormats.add(audioTracks.mediaTrackGroup.getFormat(i))
-            }
-
-            updateQualitySourcesOverlay(videoDetails, null, videoTrackFormats.distinctBy { it.height }
-                .sortedBy { it.height }, audioTrackFormats.distinctBy { it.bitrate }
-                .sortedBy { it.bitrate })
-        } else {
-            updateQualitySourcesOverlay(videoDetails, null)
-        }
 
         overlayQualitySelector?.selectOption("video", _lastVideoSource)
         overlayQualitySelector?.selectOption("audio", _lastAudioSource)
@@ -818,6 +820,8 @@ class ShortView : FrameLayout {
             playWhenReady = true
             return
         }
+
+        updateQualitySourcesOverlay(videoDetails, null)
 
         try {
             val videoSource = _lastVideoSource
