@@ -32,7 +32,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.whenStateAtLeast
 import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
@@ -115,7 +114,6 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
-import java.util.Queue
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -613,6 +611,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 }, UIDialogs.ActionStyle.PRIMARY)
             )
         }
+
+        //startActivity(Intent(this, TestActivity::class.java))
     }
 
     /*

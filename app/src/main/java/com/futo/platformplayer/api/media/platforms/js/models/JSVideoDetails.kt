@@ -24,6 +24,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.states.StateDeveloper
 
 class JSVideoDetails : JSVideo, IPlatformVideoDetails {
@@ -86,7 +87,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     private fun getPlaybackTrackerJS(): IPlaybackTracker? {
         return _plugin.busy {
             V8Plugin.catchScriptErrors(_pluginConfig, "VideoDetails", "videoDetails.getPlaybackTracker()") {
-                val tracker = _content.invoke<V8Value>("getPlaybackTracker", arrayOf<Any>())
+                val tracker = _content.invokeV8<V8Value>("getPlaybackTracker", arrayOf<Any>())
                     ?: return@catchScriptErrors null;
                 if(tracker is V8ValueObject)
                     return@catchScriptErrors JSPlaybackTracker(_plugin, tracker);
@@ -111,7 +112,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     }
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
         return _plugin.busy {
-            val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+            val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
             return@busy JSContentPager(_pluginConfig, client, contentPager);
         }
     }
@@ -130,7 +131,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
 
     private fun getCommentsJS(client: JSClient): IPager<IPlatformComment>? {
         return _plugin.busy {
-            val commentPager = _content.invoke<V8Value>("getComments", arrayOf<Any>());
+            val commentPager = _content.invokeV8<V8Value>("getComments", arrayOf<Any>());
             if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
                 return@busy null;
 
