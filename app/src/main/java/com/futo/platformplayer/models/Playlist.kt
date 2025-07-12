@@ -5,6 +5,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideo
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
 import kotlinx.serialization.Serializable
@@ -35,11 +36,15 @@ class Playlist {
         this.videos = ArrayList(list);
     }
 
+    fun makeCopy(newName: String? = null): Playlist {
+        return Playlist(newName ?: name, videos)
+    }
 
     companion object {
         fun fromV8(config: SourcePluginConfig, obj: V8ValueObject?): Playlist? {
             if(obj == null)
                 return null;
+            obj.ensureIsBusy();
 
             val contextName = "Playlist";
 

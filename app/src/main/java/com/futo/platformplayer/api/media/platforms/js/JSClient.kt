@@ -59,9 +59,13 @@ import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
+import java.util.Random
 import kotlin.Exception
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.jvm.kotlinFunction
@@ -83,6 +87,8 @@ open class JSClient : IPlatformClient {
     private var _channelCapabilities: ResultCapabilities? = null;
     private var _peekChannelTypes: List<String>? = null;
 
+    private var _usedReloadData: String? = null;
+
     protected val _script: String;
 
     private var _initialized: Boolean = false;
@@ -98,13 +104,13 @@ open class JSClient : IPlatformClient {
     override val icon: ImageVariable;
     override var capabilities: PlatformClientCapabilities = PlatformClientCapabilities();
 
-    private val _busyLock = Object();
-    private var _busyCounter = 0;
     private var _busyAction = "";
-    val isBusy: Boolean get() = _busyCounter > 0;
+    val isBusy: Boolean get() = _plugin.isBusy;
     val isBusyAction: String get() {
         return _busyAction;
     }
+
+    val declareOnEnable = HashMap<String, String>();
 
     val settings: HashMap<String, String?> get() = descriptor.settings;
 
@@ -197,6 +203,7 @@ open class JSClient : IPlatformClient {
 
     open fun getCopy(withoutCredentials: Boolean = false, noSaveState: Boolean = false): JSClient {
         val client = JSClient(_context, descriptor, if (noSaveState) null else saveState(), _script, withoutCredentials);
+        client.setReloadData(getReloadData(true));
         if (noSaveState)
             client.initialize()
         return client
@@ -213,13 +220,30 @@ open class JSClient : IPlatformClient {
         return plugin.httpClientOthers[id];
     }
 
+    fun setReloadData(data: String?) {
+        if(data == null) {
+            if(declareOnEnable.containsKey("__reloadData"))
+                declareOnEnable.remove("__reloadData");
+        }
+        else
+            declareOnEnable.put("__reloadData", data ?: "");
+    }
+    fun getReloadData(orLast: Boolean): String? {
+        if(declareOnEnable.containsKey("__reloadData"))
+            return declareOnEnable["__reloadData"];
+        else if(orLast)
+            return _usedReloadData;
+        return null;
+    }
+
     override fun initialize() {
         if (_initialized) return
 
-        Logger.i(TAG, "Plugin [${config.name}] initializing");
         plugin.start();
+
         plugin.execute("plugin.config = ${Json.encodeToString(config)}");
         plugin.execute("plugin.settings = parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())})");
+
 
         descriptor.appSettings.loadDefaults(descriptor.config);
 
@@ -260,19 +284,28 @@ open class JSClient : IPlatformClient {
     }
 
     @JSDocs(0, "source.enable()", "Called when the plugin is enabled/started")
-    fun enable() {
+    fun enable() = isBusyWith("enable") {
         if(!_initialized)
             initialize();
+        for(toDeclare in declareOnEnable) {
+            plugin.execute("var ${toDeclare.key} = " + Json.encodeToString(toDeclare.value));
+        }
         plugin.execute("source.enable(${Json.encodeToString(config)}, parseSettings(${Json.encodeToString(descriptor.getSettingsWithDefaults())}), ${Json.encodeToString(_injectedSaveState)})");
+
+        if(declareOnEnable.containsKey("__reloadData")) {
+            Logger.i(TAG, "Plugin [${config.name}] enabled with reload data: ${declareOnEnable["__reloadData"]}");
+            _usedReloadData = declareOnEnable["__reloadData"];
+            declareOnEnable.remove("__reloadData");
+        }
         _enabled = true;
     }
     @JSDocs(1, "source.saveState()", "Provide a string that is passed to enable for quicker startup of multiple instances")
-    fun saveState(): String? {
+    fun saveState(): String? = isBusyWith("saveState") {
         ensureEnabled();
         if(!capabilities.hasSaveState)
-            return null;
+            return@isBusyWith null;
         val resp = plugin.executeTyped<V8ValueString>("source.saveState()").value;
-        return resp;
+        return@isBusyWith resp;
     }
 
     @JSDocs(1, "source.disable()", "Called before the plugin is disabled/stopped")
@@ -313,8 +346,10 @@ open class JSClient : IPlatformClient {
                 return _searchCapabilities!!;
             }
 
-            _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
-            return _searchCapabilities!!;
+            return busy {
+                _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
+                return@busy _searchCapabilities!!;
+            }
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getSearchCapabilities", ex);
@@ -342,8 +377,10 @@ open class JSClient : IPlatformClient {
         if (_searchChannelContentsCapabilities != null)
             return _searchChannelContentsCapabilities!!;
 
-        _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
-        return _searchChannelContentsCapabilities!!;
+        return busy {
+            _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
+            return@busy _searchChannelContentsCapabilities!!;
+        }
     }
     @JSDocs(5, "source.searchChannelContents(query)", "Searches for videos on the platform")
     @JSDocsParameter("channelUrl", "Channel url to search")
@@ -375,14 +412,14 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(6, "source.isChannelUrl(url)", "Validates if an channel url is for this platform")
     @JSDocsParameter("url", "A channel url (May not be your platform)")
-    override fun isChannelUrl(url: String): Boolean {
+    override fun isChannelUrl(url: String): Boolean = isBusyWith("isChannelUrl") {
         try {
-            return plugin.executeTyped<V8ValueBoolean>("source.isChannelUrl(${Json.encodeToString(url)})")
+            return@isBusyWith plugin.executeTyped<V8ValueBoolean>("source.isChannelUrl(${Json.encodeToString(url)})")
                 .value;
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("isChannelUrl", ex);
-            return false;
+            return@isBusyWith false;
         }
     }
     @JSDocs(7, "source.getChannel(channelUrl)", "Gets a channel by its url")
@@ -400,9 +437,10 @@ open class JSClient : IPlatformClient {
             if (_channelCapabilities != null) {
                 return _channelCapabilities!!;
             }
-
-            _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
-            return _channelCapabilities!!;
+            return busy {
+                _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
+                return@busy _channelCapabilities!!;
+            };
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getChannelCapabilities", ex);
@@ -513,14 +551,14 @@ open class JSClient : IPlatformClient {
 
     @JSDocs(13, "source.isContentDetailsUrl(url)", "Validates if an content url is for this platform")
     @JSDocsParameter("url", "A content url (May not be your platform)")
-    override fun isContentDetailsUrl(url: String): Boolean {
+    override fun isContentDetailsUrl(url: String): Boolean = isBusyWith("isContentDetailsUrl") {
         try {
-            return plugin.executeTyped<V8ValueBoolean>("source.isContentDetailsUrl(${Json.encodeToString(url)})")
+            return@isBusyWith plugin.executeTyped<V8ValueBoolean>("source.isContentDetailsUrl(${Json.encodeToString(url)})")
                 .value;
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("isContentDetailsUrl", ex);
-            return false;
+            return@isBusyWith false;
         }
     }
     @JSDocs(14, "source.getContentDetails(url)", "Gets content details by its url")
@@ -552,7 +590,7 @@ open class JSClient : IPlatformClient {
         Logger.i(TAG, "JSClient.getPlaybackTracker(${url})");
         val tracker = plugin.executeTyped<V8Value>("source.getPlaybackTracker(${Json.encodeToString(url)})");
         if(tracker is V8ValueObject)
-            return@isBusyWith JSPlaybackTracker(config, tracker);
+            return@isBusyWith JSPlaybackTracker(this, tracker);
         else
             return@isBusyWith null;
     }
@@ -594,7 +632,6 @@ open class JSClient : IPlatformClient {
             plugin.executeTyped("source.getLiveEvents(${Json.encodeToString(url)})"));
     }
 
-
     @JSDocs(19, "source.getContentRecommendations(url)", "Gets recommendations of a content page")
     @JSDocsParameter("url", "Url of content")
     override fun getContentRecommendations(url: String): IPager<IPlatformContent>? = isBusyWith("getContentRecommendations") {
@@ -622,17 +659,19 @@ open class JSClient : IPlatformClient {
     @JSOptional
     @JSDocs(20, "source.isPlaylistUrl(url)", "Validates if a playlist url is for this platform")
     @JSDocsParameter("url", "Url of playlist")
-    override fun isPlaylistUrl(url: String): Boolean {
+    override fun isPlaylistUrl(url: String): Boolean = isBusyWith("isPlaylistUrl") {
         if (!capabilities.hasGetPlaylist)
-            return false;
+            return@isBusyWith false;
 
         try {
-            return plugin.executeTyped<V8ValueBoolean>("source.isPlaylistUrl(${Json.encodeToString(url)})")
-                .value;
+            return@isBusyWith busy {
+                return@busy plugin.executeTyped<V8ValueBoolean>("source.isPlaylistUrl(${Json.encodeToString(url)})")
+                    .value;
+            }
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("isPlaylistUrl", ex);
-            return false;
+            return@isBusyWith false;
         }
     }
     @JSOptional
@@ -734,19 +773,29 @@ open class JSClient : IPlatformClient {
         return urls;
     }
 
-
-    private fun <T> isBusyWith(actionName: String, handle: ()->T): T {
-        try {
-            synchronized(_busyLock) {
-                _busyCounter++;
-            }
-            _busyAction = actionName;
-            return handle();
+    fun <T> busy(handle: ()->T): T {
+        return _plugin.busy {
+            return@busy handle();
         }
-        finally {
-            _busyAction = "";
-            synchronized(_busyLock) {
-                _busyCounter--;
+    }
+    fun <T> busyBlockingSuspended(handle: suspend ()->T): T {
+        return _plugin.busy {
+            return@busy runBlocking {
+                return@runBlocking handle();
+            }
+        }
+    }
+
+    fun <T> isBusyWith(actionName: String, handle: ()->T): T {
+        //val busyId = kotlin.random.Random.nextInt(9999);
+        return busy {
+            try {
+                _busyAction = actionName;
+                return@busy handle();
+
+            }
+            finally {
+                _busyAction = "";
             }
         }
     }

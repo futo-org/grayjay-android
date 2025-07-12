@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.video
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
@@ -43,9 +44,13 @@ import com.futo.platformplayer.formatDuration
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
+import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
@@ -117,6 +122,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     private var _isControlsLocked: Boolean = false;
 
+    private var _speedHoldPrevRate = 1f
+    private var _speedHoldWasPlaying = false
+
     private val _time_bar_listener: TimeBar.OnScrubListener;
 
     var isFitMode : Boolean = false
@@ -146,6 +154,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     val onTimeBarChanged = Event2<Long, Long>();
 
     val onChapterClicked = Event1<IChapter>();
+
+    private val _loaderGame: TargetTapLoaderView
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
@@ -186,6 +196,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
+
+        _loaderGame = findViewById(R.id.loader_overlay)
+        _loaderGame.visibility = View.GONE
 
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
@@ -254,6 +267,20 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         gestureControl = findViewById(R.id.gesture_control);
 
         gestureControl.setupTouchArea(_layoutControls, background);
+        gestureControl.onSpeedHoldStart.subscribe {
+            exoPlayer?.player?.let { player ->
+                _speedHoldWasPlaying = player.isPlaying
+                _speedHoldPrevRate = getPlaybackRate()
+                setPlaybackRate(Settings.instance.playback.getHoldPlaybackSpeed().toFloat())
+                player.play()
+            }
+        }
+        gestureControl.onSpeedHoldEnd.subscribe {
+            exoPlayer?.player?.let { player ->
+                if (!_speedHoldWasPlaying) player.pause()
+                setPlaybackRate(_speedHoldPrevRate)
+            }
+        }
         gestureControl.onSeek.subscribe { seekFromCurrent(it); };
         gestureControl.onSoundAdjusted.subscribe {
             if (Settings.instance.gestureControls.useSystemVolume) {
@@ -847,5 +874,20 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     override fun onSurfaceSizeChanged(width: Int, height: Int) {
         gestureControl.resetZoomPan()
+    }
+
+    override fun setLoading(isLoading: Boolean) {
+        if (isLoading) {
+            _loaderGame.visibility = View.VISIBLE
+            _loaderGame.startLoader()
+        } else {
+            _loaderGame.visibility = View.GONE
+            _loaderGame.stopAndResetLoader()
+        }
+    }
+
+    override fun setLoading(expectedDurationMs: Int) {
+        _loaderGame.visibility = View.VISIBLE
+        _loaderGame.startLoader(expectedDurationMs.toLong())
     }
 }

@@ -37,6 +37,8 @@ class FieldForm : LinearLayout {
 
     private var _fields : List<IField> = arrayListOf();
 
+    private var _showAdvancedSettings: Boolean = false;
+
     constructor(context : Context, attrs : AttributeSet? = null) : super(context, attrs) {
         inflate(context, R.layout.field_form, this);
         _containerSearch = findViewById(R.id.container_search);
@@ -58,11 +60,17 @@ class FieldForm : LinearLayout {
             if(field is GroupField) {
                 updateSettingsVisibility(field);
             } else if(field is View && field.descriptor != null) {
-                val txt = field.searchContent?.lowercase();
-                if(txt != null) {
-                    val visible = isGroupMatch || txt.contains(query);
-                    field.visibility = if (visible) View.VISIBLE else View.GONE;
-                    groupVisible = groupVisible || visible;
+                if(field.isAdvanced && !_showAdvancedSettings)
+                {
+                    field.visibility = View.GONE;
+                }
+                else {
+                    val txt = field.searchContent?.lowercase();
+                    if (txt != null) {
+                        val visible = isGroupMatch || txt.contains(query);
+                        field.visibility = if (visible) View.VISIBLE else View.GONE;
+                        groupVisible = groupVisible || visible;
+                    }
                 }
             }
         }
@@ -71,6 +79,10 @@ class FieldForm : LinearLayout {
         }
     }
 
+    fun setShowAdvancedSettings(show: Boolean) {
+        _showAdvancedSettings = show;
+        updateSettingsVisibility();
+    }
     fun setSearchQuery(query: String) {
         _editSearch.setText(query);
         updateSettingsVisibility();
@@ -92,13 +104,22 @@ class FieldForm : LinearLayout {
                         throw java.lang.IllegalStateException("Only views can be IFields");
                     }
 
+                    if(field is ToggleField && field.descriptor?.id == "advancedSettings") {
+                        _showAdvancedSettings = field.value as Boolean;
+                    }
+
                     _fieldsContainer.addView(field as View);
                     field.onChanged.subscribe { a1, a2, _ ->
+                        if(field is ToggleField && field.descriptor?.id == "advancedSettings") {
+                            setShowAdvancedSettings((a2 as Boolean));
+                        }
+
                         onChanged.emit(a1, a2);
                     };
                 }
                 _fields = newFields;
 
+                updateSettingsVisibility();
                 onLoaded?.invoke();
             }
         }
@@ -267,10 +288,12 @@ class FieldForm : LinearLayout {
             for(prop in objFields) {
                 prop.first.javaField!!.isAccessible = true;
 
+                val advanced = prop.first.hasAnnotation<AdvancedField>();
+
                 val field = when(prop.second.type) {
                     GROUP -> GroupField(context).fromField(obj, prop.first.javaField!!, prop.second);
-                    DROPDOWN -> DropdownField(context).fromField(obj, prop.first.javaField!!, prop.second);
-                    TOGGLE -> ToggleField(context).fromField(obj, prop.first.javaField!!, prop.second);
+                    DROPDOWN -> DropdownField(context).fromField(obj, prop.first.javaField!!, prop.second, advanced);
+                    TOGGLE -> ToggleField(context).fromField(obj, prop.first.javaField!!, prop.second, advanced);
                     READONLYTEXT -> ReadOnlyTextField(context).fromField(obj, prop.first.javaField!!, prop.second);
                     else -> throw java.lang.IllegalStateException("Unknown field type ${prop.second.type} for ${prop.second.title}")
                 }

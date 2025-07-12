@@ -2,6 +2,7 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Animatable
 import android.os.Bundle
@@ -44,6 +45,7 @@ import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSArticleDetails
+import com.futo.platformplayer.api.media.platforms.js.models.JSHeaderSegment
 import com.futo.platformplayer.api.media.platforms.js.models.JSImagesSegment
 import com.futo.platformplayer.api.media.platforms.js.models.JSNestedSegment
 import com.futo.platformplayer.api.media.platforms.js.models.JSTextSegment
@@ -54,6 +56,7 @@ import com.futo.platformplayer.fixHtmlWhitespace
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
+import com.futo.platformplayer.sp
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
@@ -480,6 +483,11 @@ class ArticleDetailFragment : MainFragment {
 
             for(seg in value.segments) {
                 when(seg.type) {
+                    SegmentType.HEADER -> {
+                        if(seg is JSHeaderSegment) {
+                            _containerSegments.addView(ArticleHeaderBlock(context, seg.content, seg.level))
+                        }
+                    }
                     SegmentType.TEXT -> {
                         if(seg is JSTextSegment) {
                             _containerSegments.addView(ArticleTextBlock(context, seg.content, seg.textType))
@@ -690,6 +698,27 @@ class ArticleDetailFragment : MainFragment {
             }
         }
 
+        class ArticleHeaderBlock : LinearLayout {
+            constructor(context: Context?, content: String, level: Int) : super(context){
+                inflate(context, R.layout.view_segment_text, this);
+
+                findViewById<TextView>(R.id.text_content)?.let {
+                    it.text = content;
+
+                    val sp = when(level) {
+                        1 -> 6.sp(resources);
+                        2 -> 8.sp(resources);
+                        3 -> 10.sp(resources);
+                        4 -> 12.sp(resources);
+                        5 -> 14.sp(resources);
+                        else -> 6.sp(resources);
+                    }
+                    it.setTextColor(Color.WHITE);
+                    it.setTypeface(Typeface.create(null, 600, false));
+                    it.textSize = sp.toFloat();
+                }
+            }
+        }
         class ArticleTextBlock : LinearLayout {
             constructor(context: Context?, content: String, textType: TextType) : super(context){
                 inflate(context, R.layout.view_segment_text, this);
@@ -749,6 +778,8 @@ class ArticleDetailFragment : MainFragment {
                         view.onAddToWatchLaterClicked.subscribe { a ->
                             if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content), true))
                                 UIDialogs.toast("Added to watch later\n[${content.name}]")
+                            else
+                                UIDialogs.toast(context.getString(R.string.already_in_watch_later))
                         }
                     }
                     else if(content is IPlatformPost) {

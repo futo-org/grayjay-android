@@ -150,7 +150,7 @@ class DownloadsFragment : MainFragment() {
             spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.downloads_sortby_array)).also {
                 it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             };
-            val options = listOf("nameAsc", "nameDesc", "downloadDateAsc", "downloadDateDesc", "releasedAsc", "releasedDesc");
+            val options = listOf("nameAsc", "nameDesc", "downloadDateAsc", "downloadDateDesc", "releasedAsc", "releasedDesc", "sizeAsc", "sizeDesc");
             spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
                     when(pos) {
@@ -160,6 +160,8 @@ class DownloadsFragment : MainFragment() {
                         3 -> ordering.setAndSave("downloadDateDesc")
                         4 -> ordering.setAndSave("releasedAsc")
                         5 -> ordering.setAndSave("releasedDesc")
+                        6 -> ordering.setAndSave("sizeAsc")
+                        7 -> ordering.setAndSave("sizeDesc")
                         else -> ordering.setAndSave("")
                     }
                     updateContentFilters()
@@ -257,6 +259,8 @@ class DownloadsFragment : MainFragment() {
                     "nameDesc" -> vidsToReturn.sortedByDescending { it.name.lowercase() }
                     "releasedAsc" -> vidsToReturn.sortedBy { it.datetime ?: OffsetDateTime.MAX }
                     "releasedDesc" -> vidsToReturn.sortedByDescending { it.datetime ?: OffsetDateTime.MIN }
+                    "sizeAsc" -> vidsToReturn.sortedBy { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
+                    "sizeDesc" -> vidsToReturn.sortedByDescending { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
                     else -> vidsToReturn
                 }
             }

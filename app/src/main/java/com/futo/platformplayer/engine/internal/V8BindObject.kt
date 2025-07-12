@@ -13,8 +13,8 @@ open class V8BindObject : IV8Convertable {
 
     override fun toV8(runtime: V8Runtime): V8Value? {
         synchronized(this) {
-            if(_runtimeObj != null)
-                return _runtimeObj;
+            //if(_runtimeObj != null)
+            //    return _runtimeObj;
 
             val v8Obj = runtime.createV8ValueObject();
             v8Obj.bind(this);

@@ -35,7 +35,7 @@ class ChromecastCastingDevice : CastingDevice {
     override var usedRemoteAddress: InetAddress? = null;
     override var localAddress: InetAddress? = null;
     override val canSetVolume: Boolean get() = true;
-    override val canSetSpeed: Boolean get() = false; //TODO: Implement
+    override val canSetSpeed: Boolean get() = true;
 
     var addresses: Array<InetAddress>? = null;
     var port: Int = 0;
@@ -142,6 +142,23 @@ class ChromecastCastingDevice : CastingDevice {
         //TODO: This replace is necessary to get rid of backward slashes added by the JSON Object serializer
         val json = loadObject.toString().replace("\\/","/");
         sendChannelMessage("sender-0", transportId, "urn:x-cast:com.google.cast.media", json);
+    }
+
+    override fun changeSpeed(speed: Double) {
+        if (invokeInIOScopeIfRequired { changeSpeed(speed) }) return
+
+        val speedClamped = speed.coerceAtLeast(1.0).coerceAtLeast(1.0).coerceAtMost(2.0)
+        setSpeed(speedClamped)
+        val mediaSessionId = _mediaSessionId ?: return
+        val transportId = _transportId ?: return
+        val setSpeedObject = JSONObject().apply {
+            put("type", "SET_PLAYBACK_RATE")
+            put("mediaSessionId", mediaSessionId)
+            put("playbackRate", speedClamped)
+            put("requestId", _requestId++)
+        }
+
+        sendChannelMessage(sourceId = "sender-0", destinationId = transportId, namespace = "urn:x-cast:com.google.cast.media", json = setSpeedObject.toString())
     }
 
     override fun changeVolume(volume: Double) {
@@ -344,6 +361,10 @@ class ChromecastCastingDevice : CastingDevice {
 
                 //Connection loop
                 while (_scopeIO?.isActive == true) {
+                    _sessionId = null;
+                    _launchRetries = 0
+                    _mediaSessionId = null;
+
                     Logger.i(TAG, "Connecting to Chromecast.");
                     connectionState = CastConnectionState.CONNECTING;
 
@@ -499,6 +520,10 @@ class ChromecastCastingDevice : CastingDevice {
             }
         } catch (e: Throwable) {
             Logger.w(TAG, "Failed to send channel message (sourceId: $sourceId, destinationId: $destinationId, namespace: $namespace, json: $json)", e);
+            _socket?.close();
+            Logger.i(TAG, "Socket disconnected.");
+
+            connectionState = CastConnectionState.CONNECTING;
         }
     }
 
@@ -600,7 +625,7 @@ class ChromecastCastingDevice : CastingDevice {
                     }
 
                     isPlaying = playerState == "PLAYING";
-                    if (isPlaying) {
+                    if (isPlaying ||  playerState == "PAUSED") {
                         setTime(currentTime);
                     }
 

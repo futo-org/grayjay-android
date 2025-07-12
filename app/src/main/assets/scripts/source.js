@@ -103,6 +103,12 @@ class UnavailableException extends ScriptException {
         super("UnavailableException", msg);
     }
 }
+class ReloadRequiredException extends ScriptException {
+    constructor(msg, reloadData) {
+        super("ReloadRequiredException", msg);
+        this.reloadData = reloadData;
+    }
+}
 class AgeException extends ScriptException {
     constructor(msg) {
         super("AgeException", msg);
@@ -344,6 +350,13 @@ class ArticleImagesSegment extends ArticleSegment {
         super(2);
         this.images = images;
         this.caption = caption;
+    }
+}
+class ArticleHeaderSegment extends ArticleSegment {
+    constructor(content, level) {
+        super(3);
+        this.level = level;
+        this.content = content;
     }
 }
 class ArticleNestedSegment extends ArticleSegment {
@@ -694,11 +707,12 @@ class LiveEventViewCount extends LiveEvent {
     }
 }
 class LiveEventRaid extends LiveEvent {
-    constructor(targetUrl, targetName, targetThumbnail) {
+    constructor(targetUrl, targetName, targetThumbnail, isOutgoing) {
         super(100);
         this.targetUrl = targetUrl;
         this.targetName = targetName;
         this.targetThumbnail = targetThumbnail;
+        this.isOutgoing = isOutgoing ?? true;
     }
 }
 

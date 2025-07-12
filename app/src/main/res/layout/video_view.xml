@@ -64,4 +64,11 @@
             app:controller_layout_id="@layout/video_player_ui_fullscreen"
             android:visibility="gone" />
     </FrameLayout>
+
+    <com.futo.platformplayer.views.TargetTapLoaderView
+        android:id="@+id/loader_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -21,6 +21,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullableList
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.states.StateDeveloper
 
 open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced, IPlatformContentDetails {
@@ -85,12 +86,12 @@ open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced
     }
 
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        val contentPager = _content.invoke<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+        val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
         return JSContentPager(_pluginConfig, client, contentPager);
     }
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
-        val commentPager = _content.invoke<V8ValueObject>("getComments", arrayOf<Any>());
+        val commentPager = _content.invokeV8<V8ValueObject>("getComments", arrayOf<Any>());
         return JSCommentPager(_pluginConfig, client, commentPager);
     }
 
@@ -101,6 +102,7 @@ open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced
             return when(SegmentType.fromInt(obj.getOrThrow(client.config, "type", "JSArticle.Segment"))) {
                 SegmentType.TEXT -> JSTextSegment(client, obj);
                 SegmentType.IMAGES -> JSImagesSegment(client, obj);
+                SegmentType.HEADER -> JSHeaderSegment(client, obj);
                 SegmentType.NESTED -> JSNestedSegment(client, obj);
                 else -> null;
             }
@@ -112,6 +114,7 @@ enum class SegmentType(val value: Int) {
     UNKNOWN(0),
     TEXT(1),
     IMAGES(2),
+    HEADER(3),
 
     NESTED(9);
 
@@ -150,6 +153,17 @@ class JSImagesSegment: IJSArticleSegment {
         val contextName = "JSTextSegment";
         images = obj.getOrThrowNullableList<String>(client.config, "images", contextName) ?: listOf();
         caption = obj.getOrDefault(client.config, "caption", contextName, "") ?: "";
+    }
+}
+class JSHeaderSegment: IJSArticleSegment {
+    override val type = SegmentType.HEADER;
+    val content: String;
+    val level: Int;
+
+    constructor(client: JSClient, obj: V8ValueObject) {
+        val contextName = "JSHeaderSegment";
+        content = obj.getOrDefault(client.config, "content", contextName, "") ?: "";
+        level = obj.getOrDefault(client.config, "level", contextName, 1) ?: 1;
     }
 }
 class JSNestedSegment: IJSArticleSegment {

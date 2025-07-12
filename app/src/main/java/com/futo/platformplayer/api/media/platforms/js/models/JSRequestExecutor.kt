@@ -14,6 +14,8 @@ import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.serialization.Serializable
@@ -46,52 +48,55 @@ class JSRequestExecutor {
         if (_executor.isClosed)
             throw IllegalStateException("Executor object is closed");
 
-        val result = if(_plugin is DevJSClient)
-            StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
-                V8Plugin.catchScriptErrors<Any>(
-                    _config,
-                    "[${_config.name}] JSRequestExecutor",
-                    "builder.modifyRequest()"
-                ) {
-                    _executor.invoke("executeRequest", url, headers, method, body);
-                } as V8Value;
-            }
+        return _plugin.getUnderlyingPlugin().busy {
+
+            val result = if(_plugin is DevJSClient)
+                StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
+                    V8Plugin.catchScriptErrors<Any>(
+                        _config,
+                        "[${_config.name}] JSRequestExecutor",
+                        "builder.modifyRequest()"
+                    ) {
+                        _executor.invokeV8("executeRequest", url, headers, method, body);
+                    } as V8Value;
+                }
             else V8Plugin.catchScriptErrors<Any>(
                 _config,
                 "[${_config.name}] JSRequestExecutor",
                 "builder.modifyRequest()"
             ) {
-                _executor.invoke("executeRequest", url, headers, method, body);
+                _executor.invokeV8("executeRequest", url, headers, method, body);
             } as V8Value;
 
-        try {
-            if(result is V8ValueString) {
-                val base64Result = Base64.getDecoder().decode(result.value);
-                return base64Result;
-            }
-            if(result is V8ValueTypedArray) {
-                val buffer = result.buffer;
-                val byteBuffer = buffer.byteBuffer;
-                val bytesResult = ByteArray(result.byteLength);
-                byteBuffer.get(bytesResult, 0, result.byteLength);
-                buffer.close();
-                return bytesResult;
-            }
-            if(result is V8ValueObject && result.has("type")) {
-                val type = result.getOrThrow<Int>(_config, "type", "JSRequestModifier");
-                when(type) {
-                    //TODO: Buffer type?
+            try {
+                if(result is V8ValueString) {
+                    val base64Result = Base64.getDecoder().decode(result.value);
+                    return@busy base64Result;
                 }
+                if(result is V8ValueTypedArray) {
+                    val buffer = result.buffer;
+                    val byteBuffer = buffer.byteBuffer;
+                    val bytesResult = ByteArray(result.byteLength);
+                    byteBuffer.get(bytesResult, 0, result.byteLength);
+                    buffer.close();
+                    return@busy bytesResult;
+                }
+                if(result is V8ValueObject && result.has("type")) {
+                    val type = result.getOrThrow<Int>(_config, "type", "JSRequestModifier");
+                    when(type) {
+                        //TODO: Buffer type?
+                    }
+                }
+                if(result is V8ValueUndefined) {
+                    if(_plugin is DevJSClient)
+                        StateDeveloper.instance.logDevException(_plugin.devID, "JSRequestExecutor.executeRequest returned illegal undefined");
+                    throw ScriptImplementationException(_config, "JSRequestExecutor.executeRequest returned illegal undefined", null);
+                }
+                throw NotImplementedError("Executor result type not implemented? " + result.javaClass.name);
             }
-            if(result is V8ValueUndefined) {
-                if(_plugin is DevJSClient)
-                    StateDeveloper.instance.logDevException(_plugin.devID, "JSRequestExecutor.executeRequest returned illegal undefined");
-                throw ScriptImplementationException(_config, "JSRequestExecutor.executeRequest returned illegal undefined", null);
+            finally {
+                result.close();
             }
-            throw NotImplementedError("Executor result type not implemented? " + result.javaClass.name);
-        }
-        finally {
-            result.close();
         }
     }
 
@@ -99,24 +104,25 @@ class JSRequestExecutor {
     open fun cleanup() {
         if (!hasCleanup || _executor.isClosed)
             return;
-
-       if(_plugin is DevJSClient)
-            StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
-                V8Plugin.catchScriptErrors<Any>(
-                    _config,
-                    "[${_config.name}] JSRequestExecutor",
-                    "builder.modifyRequest()"
-                ) {
-                    _executor.invokeVoid("cleanup", null);
-                };
-            }
-        else V8Plugin.catchScriptErrors<Any>(
-            _config,
-            "[${_config.name}] JSRequestExecutor",
-            "builder.modifyRequest()"
-        ) {
-           _executor.invokeVoid("cleanup", null);
-        };
+        _plugin.busy {
+            if(_plugin is DevJSClient)
+                StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
+                    V8Plugin.catchScriptErrors<Any>(
+                        _config,
+                        "[${_config.name}] JSRequestExecutor",
+                        "builder.modifyRequest()"
+                    ) {
+                        _executor.invokeV8("cleanup", null);
+                    };
+                }
+            else V8Plugin.catchScriptErrors<Any>(
+                _config,
+                "[${_config.name}] JSRequestExecutor",
+                "builder.modifyRequest()"
+            ) {
+                _executor.invokeV8("cleanup", null);
+            };
+        }
     }
 
     protected fun finalize() {
