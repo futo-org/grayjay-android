@@ -39,6 +39,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestMergingRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -486,7 +487,7 @@ class StateCasting {
                     }
                 }
             } else {
-                val proxyStreams = Settings.instance.casting.alwaysProxyRequests;
+                val proxyStreams = shouldProxyStreams(ad, videoSource, audioSource)
                 val url = getLocalUrl(ad);
                 val id = UUID.randomUUID();
 
@@ -751,7 +752,7 @@ class StateCasting {
 
     private suspend fun castDashDirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
+        val proxyStreams = shouldProxyStreams(ad, videoSource, audioSource)
 
         val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
@@ -1114,9 +1115,14 @@ class StateCasting {
         return listOf(hlsUrl, videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
+    private fun shouldProxyStreams(castingDevice: CastingDevice, videoSource: IVideoSource?, audioSource: IAudioSource?): Boolean {
+        val hasRequestModifier = (videoSource as? JSSource)?.hasRequestModifier == true || (audioSource as? JSSource)?.hasRequestModifier == true
+        return Settings.instance.casting.alwaysProxyRequests || castingDevice !is FCastCastingDevice || hasRequestModifier
+    }
+
     private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
-        val proxyStreams = Settings.instance.casting.alwaysProxyRequests || ad !is FCastCastingDevice;
+        val proxyStreams = shouldProxyStreams(ad, videoSource, audioSource)
 
         val url = getLocalUrl(ad);
         val id = UUID.randomUUID();
