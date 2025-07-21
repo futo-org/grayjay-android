@@ -4,7 +4,9 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.net.Uri
@@ -29,6 +31,9 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -36,6 +41,7 @@ import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -889,5 +895,30 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     override fun setLoading(expectedDurationMs: Int) {
         _loaderGame.visibility = View.VISIBLE
         _loaderGame.startLoader(expectedDurationMs.toLong())
+    }
+
+    override fun switchToVideoMode() {
+        super.switchToVideoMode()
+        setArtwork(null)
+    }
+
+    override fun switchToAudioMode(video: IPlatformVideoDetails?) {
+        super.switchToAudioMode(video)
+        val thumbnail = video?.thumbnails?.getHQThumbnail()
+        if (!thumbnail.isNullOrBlank()) {
+            Glide.with(context).asBitmap().load(thumbnail)
+                .into(object : CustomTarget<Bitmap>() {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: Transition<in Bitmap>?
+                    ) {
+                        setArtwork(BitmapDrawable(resources, resource));
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        setArtwork(null);
+                    }
+                })
+        }
     }
 }

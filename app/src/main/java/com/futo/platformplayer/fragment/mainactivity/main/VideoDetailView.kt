@@ -719,7 +719,7 @@ class VideoDetailView : ConstraintLayout {
         };
         MediaControlReceiver.onBackgroundReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onBackgroundReceived")
-            _player.switchToAudioMode();
+            _player.switchToAudioMode(video);
             allowBackground = true;
             StateApp.instance.contextOrNull?.let {
                 try {
@@ -966,7 +966,7 @@ class VideoDetailView : ConstraintLayout {
                 } else null,
             if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (allowBackground) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
                 if (!allowBackground) {
-                    _player.switchToAudioMode();
+                    _player.switchToAudioMode(video);
                     allowBackground = true;
                     it.text.text = resources.getString(R.string.background_revert);
                 } else {
@@ -1137,7 +1137,7 @@ class VideoDetailView : ConstraintLayout {
                 0 -> handlePause();
                 1 -> {
                     if(!(video?.isLive ?: false))
-                        _player.switchToAudioMode();
+                        _player.switchToAudioMode(video);
                     StatePlayer.instance.startOrUpdateMediaSession(context, video);
                 }
             }
@@ -1872,7 +1872,7 @@ class VideoDetailView : ConstraintLayout {
                 setCastEnabled(false);
 
                 val thumbnail = video.thumbnails.getHQThumbnail();
-                if (videoSource == null && !thumbnail.isNullOrBlank())
+                if ((videoSource == null || _player.isAudioMode) && !thumbnail.isNullOrBlank())
                     Glide.with(context).asBitmap().load(thumbnail)
                         .into(object: CustomTarget<Bitmap>() {
                             override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {

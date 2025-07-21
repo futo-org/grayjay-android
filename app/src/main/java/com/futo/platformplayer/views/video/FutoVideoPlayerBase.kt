@@ -1,6 +1,9 @@
 package com.futo.platformplayer.views.video
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -31,6 +34,10 @@ import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.source.SingleSampleMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -266,7 +273,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         StateApp.instance.onConnectionAvailable.remove(_referenceObject);
     }
 
-    fun switchToVideoMode() {
+    open fun switchToVideoMode() {
         Logger.i(TAG, "Switching to Video Mode");
         isAudioMode = false;
         val player = exoPlayer ?: return
@@ -276,7 +283,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
                 .build()
     }
-    fun switchToAudioMode() {
+    open fun switchToAudioMode(video: IPlatformVideoDetails?) {
         Logger.i(TAG, "Switching to Audio Mode");
         isAudioMode = true;
         val player = exoPlayer ?: return
@@ -908,6 +915,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun clear() {
+        if (BuildConfig.IS_PLAYSTORE_BUILD) {
+            switchToVideoMode()
+        }
         exoPlayer?.player?.stop();
         exoPlayer?.player?.clearMediaItems();
         setLoading(false)
