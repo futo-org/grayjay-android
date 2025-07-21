@@ -938,6 +938,11 @@ class VideoDetailView : ConstraintLayout {
                 return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
             else false;
         } ?: false;
+
+        if (isLimitedVersion && _player.isAudioMode) {
+            _player.switchToVideoMode()
+        }
+
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {

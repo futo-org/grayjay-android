@@ -915,9 +915,6 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun clear() {
-        if (BuildConfig.IS_PLAYSTORE_BUILD) {
-            switchToVideoMode()
-        }
         exoPlayer?.player?.stop();
         exoPlayer?.player?.clearMediaItems();
         setLoading(false)
