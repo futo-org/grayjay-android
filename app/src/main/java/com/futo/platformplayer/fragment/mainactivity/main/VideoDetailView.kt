@@ -939,10 +939,6 @@ class VideoDetailView : ConstraintLayout {
             else false;
         } ?: false;
 
-        if (isLimitedVersion && _player.isAudioMode) {
-            _player.switchToVideoMode()
-        }
-
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {
@@ -1118,6 +1114,7 @@ class VideoDetailView : ConstraintLayout {
             //Requested behavior to leave it in audio mode. leaving it commented if it causes issues, revert?
             if(!allowBackground) {
                 _player.switchToVideoMode();
+                allowBackground = false;
                 _buttonPins.getButtonByTag(TAG_BACKGROUND)?.text?.text = resources.getString(R.string.background);
             }
         }
@@ -1141,8 +1138,10 @@ class VideoDetailView : ConstraintLayout {
             when (Settings.instance.playback.backgroundPlay) {
                 0 -> handlePause();
                 1 -> {
-                    if(!(video?.isLive ?: false))
+                    if(!(video?.isLive ?: false)) {
                         _player.switchToAudioMode(video);
+                        allowBackground = true;
+                    }
                     StatePlayer.instance.startOrUpdateMediaSession(context, video);
                 }
             }
@@ -1876,19 +1875,30 @@ class VideoDetailView : ConstraintLayout {
             if (!isCasting) {
                 setCastEnabled(false);
 
-                val thumbnail = video.thumbnails.getHQThumbnail();
-                if ((videoSource == null || _player.isAudioMode) && !thumbnail.isNullOrBlank())
-                    Glide.with(context).asBitmap().load(thumbnail)
-                        .into(object: CustomTarget<Bitmap>() {
-                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                _player.setArtwork(BitmapDrawable(resources, resource));
-                            }
-                            override fun onLoadCleared(placeholder: Drawable?) {
-                                _player.setArtwork(null);
-                            }
-                        });
-                else
-                    _player.setArtwork(null);
+                val isLimitedVersion = StatePlatform.instance.getContentClientOrNull(video.url)?.let {
+                    if (it is JSClient)
+                        return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
+                    else false;
+                } ?: false;
+
+                if (isLimitedVersion && _player.isAudioMode) {
+                    _player.switchToVideoMode()
+                    allowBackground = false;
+                } else {
+                    val thumbnail = video.thumbnails.getHQThumbnail();
+                    if ((videoSource == null || _player.isAudioMode) && !thumbnail.isNullOrBlank())
+                        Glide.with(context).asBitmap().load(thumbnail)
+                            .into(object: CustomTarget<Bitmap>() {
+                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                    _player.setArtwork(BitmapDrawable(resources, resource));
+                                }
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                    _player.setArtwork(null);
+                                }
+                            });
+                    else
+                        _player.setArtwork(null);
+                }
                 _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
