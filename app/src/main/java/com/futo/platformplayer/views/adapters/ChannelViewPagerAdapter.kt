@@ -9,8 +9,10 @@ import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
@@ -38,6 +40,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
     val onContentUrlClicked = Event2<String, ContentType>()
     val onUrlClicked = Event1<String>()
     val onContentClicked = Event2<IPlatformContent, Long>()
+    val onShortClicked = Event3<IPlatformContent, Long, Pair<IPager<IPlatformContent>, ArrayList<IPlatformContent>>?>()
     val onChannelClicked = Event1<PlatformAuthorLink>()
     val onAddToClicked = Event1<IPlatformContent>()
     val onAddToQueueClicked = Event1<IPlatformContent>()
@@ -81,7 +84,9 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
         when (_tabs[position]) {
             ChannelTab.VIDEOS -> {
                 fragment = ChannelContentsFragment.newInstance().apply {
-                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
+                    onContentClicked.subscribe { video, num, _ ->
+                        this@ChannelViewPagerAdapter.onContentClicked.emit(video, num)
+                    }
                     onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
                     onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)
                     onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit)
@@ -94,7 +99,7 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
 
             ChannelTab.SHORTS -> {
                 fragment = ChannelContentsFragment.newInstance(ResultCapabilities.TYPE_SHORTS).apply {
-                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
+                    onContentClicked.subscribe(this@ChannelViewPagerAdapter.onShortClicked::emit)
                     onContentUrlClicked.subscribe(this@ChannelViewPagerAdapter.onContentUrlClicked::emit)
                     onUrlClicked.subscribe(this@ChannelViewPagerAdapter.onUrlClicked::emit)
                     onChannelClicked.subscribe(this@ChannelViewPagerAdapter.onChannelClicked::emit)

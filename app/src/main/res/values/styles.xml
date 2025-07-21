@@ -41,4 +41,18 @@
         <item name="cornerSizeBottomLeft">4dp</item>
         <item name="cornerSizeBottomRight">4dp</item>
     </style>
+
+<!--this section here attempts to emulate the look of the default material 3 bottom sheet i got the values from the material 3 theme-->
+    <style name="Custom.BottomSheet.ShapeAppearance" parent="">
+        <item name="cornerFamily">?attr/shapeCornerFamily</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+    <style name="Custom.BottomSheet.Modal.Style" parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <item name="shapeAppearanceOverlay">@style/Custom.BottomSheet.ShapeAppearance</item>
+<!--    force black background while grayjay only has a dark theme TODO remove when adding support for light mode-->
+        <item name="backgroundTint">@color/black</item>
+    </style>
+    <style name="Custom.BottomSheetDialog.Theme" parent="@style/ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Custom.BottomSheet.Modal.Style</item>
+    </style>
 </resources>

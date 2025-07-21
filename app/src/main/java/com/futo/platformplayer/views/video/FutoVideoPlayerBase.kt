@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import androidx.annotation.OptIn
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -85,8 +86,6 @@ import kotlin.math.abs
 
 abstract class FutoVideoPlayerBase : RelativeLayout {
     private val TAG = "FutoVideoPlayerBase"
-
-    private val TEMP_DIRECTORY = StateApp.instance.getTempDirectory();
 
     private var _mediaSource: MediaSource? = null;
 

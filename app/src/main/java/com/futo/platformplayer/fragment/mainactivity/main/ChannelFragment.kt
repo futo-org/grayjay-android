@@ -211,6 +211,14 @@ class ChannelFragment : MainFragment() {
                     }
                 }
             }
+            adapter.onShortClicked.subscribe { v, _, pagerPair ->
+                when (v) {
+                    is IPlatformVideo -> {
+                        StatePlayer.instance.clearQueue()
+                        fragment.navigate<ShortsFragment>(Triple(v, pagerPair!!.first, pagerPair.second))
+                    }
+                }
+            }
             adapter.onAddToClicked.subscribe { content ->
                 _overlayContainer.let {
                     if (content is IPlatformVideo) _slideUpOverlay =

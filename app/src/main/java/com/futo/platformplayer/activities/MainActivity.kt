@@ -62,6 +62,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsF
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PostDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.RemotePlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ShortsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
@@ -169,6 +170,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainRemotePlaylist: RemotePlaylistFragment;
     lateinit var _fragWatchlist: WatchLaterFragment;
     lateinit var _fragHistory: HistoryFragment;
+    lateinit var _fragShorts: ShortsFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
     lateinit var _fragDownloads: DownloadsFragment;
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
@@ -338,6 +340,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
+        _fragShorts = ShortsFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
         _fragDownloads = DownloadsFragment();
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
@@ -1253,6 +1256,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             WebDetailFragment::class -> _fragWebDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
+            ShortsFragment::class -> _fragShorts as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;
             DownloadsFragment::class -> _fragDownloads as T;
             ImportSubscriptionsFragment::class -> _fragImportSubscriptions as T;
