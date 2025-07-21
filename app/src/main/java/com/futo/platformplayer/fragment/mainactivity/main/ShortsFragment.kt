@@ -57,10 +57,6 @@ class ShortsFragment : MainFragment() {
     private lateinit var overlayQualityContainer: FrameLayout
     private var customViewAdapter: CustomViewAdapter? = null
 
-    init {
-        loadPager()
-    }
-
     // we just completely reset the data structure so we want to tell the adapter that
     @SuppressLint("NotifyDataSetChanged")
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {

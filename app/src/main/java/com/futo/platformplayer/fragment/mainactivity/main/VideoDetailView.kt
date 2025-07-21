@@ -1142,6 +1142,10 @@ class VideoDetailView : ConstraintLayout {
                 }
             }
         }
+
+        if (_player.isFullScreen) {
+            restoreBrightness()
+        }
     }
     fun onStop() {
         Logger.i(TAG, "onStop");
