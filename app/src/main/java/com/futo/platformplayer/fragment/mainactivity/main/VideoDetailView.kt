@@ -16,6 +16,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.net.Uri
+import android.os.Build
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.Spanned
 import android.util.AttributeSet
@@ -50,6 +51,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.activities.SyncShowPairingCodeActivity.Companion.activity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
@@ -247,7 +249,13 @@ class VideoDetailView : ConstraintLayout {
     private val _buttonPins: RoundButtonGroup;
     //private val _buttonMore: RoundButton;
 
-    var preventPictureInPicture: Boolean = false;
+    var preventPictureInPicture: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                onShouldEnterPictureInPictureChanged.emit()
+            }
+        }
 
     private val _addCommentView: AddCommentView;
     private var _tabIndex: Int? = null;
@@ -316,11 +324,24 @@ class VideoDetailView : ConstraintLayout {
     val onClose = Event0();
     val onFullscreenChanged = Event1<Boolean>();
     val onEnterPictureInPicture = Event0();
-    val onPlayChanged = Event1<Boolean>();
     val onVideoChanged = Event2<Int, Int>()
 
-    var allowBackground : Boolean = false
-        private set;
+    var allowBackground: Boolean = false
+        private set(value) {
+            if (field != value) {
+                field = value
+                onShouldEnterPictureInPictureChanged.emit()
+            }
+        }
+
+    val shouldEnterPictureInPicture: Boolean
+        get() = !preventPictureInPicture &&
+                !StateCasting.instance.isCasting &&
+                Settings.instance.playback.isBackgroundPictureInPicture() &&
+                !allowBackground &&
+                isPlaying
+
+    val onShouldEnterPictureInPictureChanged = Event0();
 
     val onTouchCancel = Event0();
     private var _lastPositionSaveTime: Long = -1;
@@ -621,6 +642,11 @@ class VideoDetailView : ConstraintLayout {
                 handlePlayChanged(it);
             }
         };
+
+        onShouldEnterPictureInPictureChanged.subscribe {
+            val params = getPictureInPictureParams()
+            fragment.activity?.setPictureInPictureParams(params)
+        }
 
         if (!isInEditMode) {
             StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
@@ -2001,6 +2027,10 @@ class VideoDetailView : ConstraintLayout {
                 videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
                 audioTrackFormats.distinctBy { it.bitrate }.sortedByDescending { it.bitrate });
         }
+
+        _layoutPlayerContainer.post {
+            onShouldEnterPictureInPictureChanged.emit()
+        }
     }
 
     private var _didTriggerDatasourceErrorCount = 0;
@@ -2461,7 +2491,6 @@ class VideoDetailView : ConstraintLayout {
         }
 
         isPlaying = playing;
-        onPlayChanged.emit(playing);
         updateTracker(lastPositionMilliseconds, playing, true);
     }
 
@@ -2595,6 +2624,9 @@ class VideoDetailView : ConstraintLayout {
             setProgressBarOverlayed(false);
         }
         onFullscreenChanged.emit(fullscreen);
+        _layoutPlayerContainer.post {
+            onShouldEnterPictureInPictureChanged.emit()
+        }
     }
 
     private fun setCastEnabled(isCasting: Boolean) {
@@ -2622,6 +2654,8 @@ class VideoDetailView : ConstraintLayout {
         if (changed) {
             stopAllGestures();
         }
+
+        onShouldEnterPictureInPictureChanged.emit()
     }
 
     fun isLandscapeVideo(): Boolean? {
@@ -2852,6 +2886,7 @@ class VideoDetailView : ConstraintLayout {
 
         _overlayContainer.removeAllViews();
         _overlay_quality_selector?.hide();
+        _container_content.visibility = GONE
 
         _player.fillHeight(false)
         _layoutPlayerContainer.setPadding(0, 0, 0, 0);
@@ -2860,6 +2895,7 @@ class VideoDetailView : ConstraintLayout {
         Logger.i(TAG, "handleLeavePictureInPicture")
 
         if(!_player.isFullScreen) {
+            _container_content.visibility = VISIBLE
             _player.fitHeight();
             _layoutPlayerContainer.setPadding(0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, Resources.getSystem().displayMetrics).toInt());
         } else {
@@ -2875,29 +2911,40 @@ class VideoDetailView : ConstraintLayout {
             videoSourceHeight = 9;
         }
         val aspectRatio = videoSourceWidth.toDouble() / videoSourceHeight;
+        val r = _player.getVideoRect()
         if(aspectRatio > 2.38) {
             videoSourceWidth = 16;
             videoSourceHeight = 9;
+
+            // shrink the left and right equally to get the rect to be 16 by 9 aspect ratio
+            // we don't want a picture in picture mode that's more squashed than 16 by 9
+            val targetWidth = r.height() * 16 / 9
+            val shrinkAmount = (r.width() - targetWidth) / 2
+            r.left += shrinkAmount
+            r.right -= shrinkAmount
         }
         else if(aspectRatio < 0.43) {
             videoSourceHeight = 16;
             videoSourceWidth = 9;
         }
 
-        val r = Rect();
-        _player.getGlobalVisibleRect(r);
-        r.right = r.right - _player.paddingEnd;
         val playpauseAction = if(_player.playing)
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 5));
         else
             RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
 
         val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
-        return PictureInPictureParams.Builder()
+
+        val params = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(videoSourceWidth, videoSourceHeight))
             .setSourceRectHint(r)
             .setActions(listOf(toBackgroundAction, playpauseAction))
-            .build();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            params.setAutoEnterEnabled(shouldEnterPictureInPicture)
+        }
+
+        return params.build()
     }
 
     //Other
