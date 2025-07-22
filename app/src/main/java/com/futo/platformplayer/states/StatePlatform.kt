@@ -2,6 +2,7 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import androidx.collection.LruCache
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -38,6 +39,7 @@ import com.futo.platformplayer.awaitFirstNotNullDeferred
 import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.fromPool
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.getNowDiffSeconds
@@ -316,7 +318,18 @@ class StatePlatform {
         _platformOrderPersistent.save();
     }
 
-    suspend fun reloadClient(context: Context, id: String) : JSClient? {
+    fun handleReloadRequired(reloadRequiredException: ScriptReloadRequiredException, afterReload: (() -> Unit)? = null) {
+        val id = if(reloadRequiredException.config is SourcePluginConfig) reloadRequiredException.config.id else "";
+        UIDialogs.appToast("Reloading [${reloadRequiredException.config.name}] by plugin request");
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            if(!reloadRequiredException.reloadData.isNullOrEmpty())
+                reEnableClientWithData(id, reloadRequiredException.reloadData, afterReload);
+            else
+                reEnableClient(id, afterReload);
+        }
+    }
+
+    suspend fun reloadClient(context: Context, id: String, afterReload: (()->Unit)? = null) : JSClient? {
         return withContext(Dispatchers.IO) {
             val client = getClient(id);
             if (client !is JSClient)
@@ -347,10 +360,27 @@ class StatePlatform {
                 _availableClients.removeIf { it.id == id };
                 _availableClients.add(newClient);
             }
+            afterReload?.invoke();
             return@withContext newClient;
         };
     }
 
+    suspend fun reEnableClientWithData(id: String, data: String? = null, afterReload: (()->Unit)? = null) {
+        val enabledBefore = getEnabledClients().map { it.id };
+        if(data != null) {
+            val client = getClientOrNull(id);
+            if(client != null && client is JSClient)
+                client.setReloadData(data);
+        }
+        selectClients({
+            _scope.launch(Dispatchers.IO) {
+                selectClients({
+                    afterReload?.invoke();
+                }, *(enabledBefore).distinct().toTypedArray());
+            }
+        }, *(enabledBefore.filter { it != id }).distinct().toTypedArray())
+    }
+    suspend fun reEnableClient(id: String, afterReload: (()->Unit)? = null) = reEnableClientWithData(id, null, afterReload);
 
     suspend fun enableClient(ids: List<String>) {
         val currentClients = getEnabledClients().map { it.id };
@@ -361,9 +391,13 @@ class StatePlatform {
      * If a client is disabled, NO requests are made to said client
      */
     suspend fun selectClients(vararg ids: String) {
+        selectClients(null, *ids);
+    }
+    suspend fun selectClients(afterLoad: (() -> Unit)?, vararg ids: String) {
         withContext(Dispatchers.IO) {
+            var removed: MutableList<IPlatformClient>;
             synchronized(_clientsLock) {
-                val removed = _enabledClients.toMutableList();
+                removed = _enabledClients.toMutableList();
                 _enabledClients.clear();
                 for (id in ids) {
                     val client = getClient(id);
@@ -379,12 +413,13 @@ class StatePlatform {
                 }
                 _enabledClientsPersistent.set(*ids);
                 _enabledClientsPersistent.save();
-
-                for (oldClient in removed) {
-                    oldClient.disable();
-                    onSourceDisabled.emit(oldClient);
-                }
             }
+
+            for (oldClient in removed) {
+                oldClient.disable();
+                onSourceDisabled.emit(oldClient);
+            }
+            afterLoad?.invoke();
         };
     }
 
@@ -419,6 +454,47 @@ class StatePlatform {
                     clientIdsOngoing.remove(it.id);
                 }
                 return@map homeResult;
+            }
+            .asSequence()
+            .toList()
+            .associateWith { 1f };
+
+        val pager = MultiDistributionContentPager(pages);
+        pager.initialize();
+        return pager;
+    }
+    fun getShorts(): IPager<IPlatformVideo> {
+        Logger.i(TAG, "Platform - getShorts");
+        var clientIdsOngoing = mutableListOf<String>();
+        val clients = getSortedEnabledClient().filter { if (it is JSClient) it.enableInShorts else true };
+
+        StateApp.instance.scopeOrNull?.let {
+            it.launch(Dispatchers.Default) {
+                try {
+                    // plugins that take longer than 5 seconds to load are considered "slow"
+                    delay(5000);
+                    val slowClients = synchronized(clientIdsOngoing) {
+                        return@synchronized clients.filter { clientIdsOngoing.contains(it.id) };
+                    };
+                    for(client in slowClients)
+                        UIDialogs.toast("${client.name} is still loading..\nConsider disabling it for Home", false);
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show toast for slow source.", e)
+                }
+            }
+        }
+
+        val pages = clients.parallelStream()
+            .map {
+                Logger.i(TAG, "getShorts - ${it.name}")
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.add(it.id);
+                }
+                val shortsResult = it.fromPool(_pagerClientPool).getShorts();
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.remove(it.id);
+                }
+                return@map shortsResult;
             }
             .asSequence()
             .toList()
@@ -935,7 +1011,7 @@ class StatePlatform {
             return EmptyPager();
 
         if(!StateApp.instance.privateMode)
-            return client.fromPool(_mainClientPool).getComments(url);
+            return client.fromPool(_pagerClientPool).getComments(url);
         else
             return client.fromPool(_privateClientPool).getComments(url);
     }

@@ -19,7 +19,9 @@ class WebviewOverlay : LinearLayout {
         inflate(context, R.layout.overlay_webview, this)
         _topbar = findViewById(R.id.topbar);
         _webview = findViewById(R.id.webview);
-        _webview.settings.javaScriptEnabled = true;
+        if (!isInEditMode){
+            _webview.settings.javaScriptEnabled = true;
+        }
 
         _topbar.onClose.subscribe(this, onClose::emit);
     }

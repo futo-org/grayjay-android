@@ -101,7 +101,7 @@ class VideoDetailFragment() : MainFragment() {
     }
 
     private fun isSmallWindow(): Boolean {
-        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.column_width_dp) * 2
+        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.smallest_width_dp)
     }
 
     private fun isAutoRotateEnabled(): Boolean {
@@ -625,11 +625,6 @@ class VideoDetailFragment() : MainFragment() {
             showSystemUI()
         }
 
-        // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
-//        @SuppressLint("SourceLockedOrientationActivity")
-//        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
-//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-//        }
         updateOrientation();
         _view?.allowMotion = !fullscreen;
     }

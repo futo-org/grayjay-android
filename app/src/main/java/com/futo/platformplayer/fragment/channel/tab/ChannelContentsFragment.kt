@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.structures.IReplacerPager
 import com.futo.platformplayer.api.media.structures.MultiPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.engine.exceptions.PluginException
@@ -61,7 +62,7 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
     private var _query: String? = null
     private var _searchView: SearchView? = null
 
-    val onContentClicked = Event2<IPlatformContent, Long>();
+    val onContentClicked = Event3<IPlatformContent, Long, Pair<IPager<IPlatformContent>, ArrayList<IPlatformContent>>?>();
     val onContentUrlClicked = Event2<String, ContentType>();
     val onUrlClicked = Event1<String>();
     val onChannelClicked = Event1<PlatformAuthorLink>();
@@ -211,7 +212,10 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
         _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar, viewsToPrepend = arrayListOf(searchView)).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
             this.onUrlClicked.subscribe(this@ChannelContentsFragment.onUrlClicked::emit);
-            this.onContentClicked.subscribe(this@ChannelContentsFragment.onContentClicked::emit);
+            this.onContentClicked.subscribe { content, num ->
+                val results = ArrayList(_results)
+                this@ChannelContentsFragment.onContentClicked.emit(content, num, Pair(_pager!!, results))
+            }
             this.onChannelClicked.subscribe(this@ChannelContentsFragment.onChannelClicked::emit);
             this.onAddToClicked.subscribe(this@ChannelContentsFragment.onAddToClicked::emit);
             this.onAddToQueueClicked.subscribe(this@ChannelContentsFragment.onAddToQueueClicked::emit);

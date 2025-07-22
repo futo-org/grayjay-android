@@ -103,9 +103,11 @@ class SourcePluginDescriptor {
             @FormField(R.string.home, FieldForm.TOGGLE, R.string.show_content_in_home_tab, 1)
             var enableHome: Boolean? = null;
 
-
             @FormField(R.string.search, FieldForm.TOGGLE, R.string.show_content_in_search_results, 2)
             var enableSearch: Boolean? = null;
+
+            @FormField(R.string.shorts, FieldForm.TOGGLE, R.string.show_content_in_shorts_tab, 3)
+            var enableShorts: Boolean? = null;
         }
 
         @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 3)
@@ -143,6 +145,8 @@ class SourcePluginDescriptor {
                 tabEnabled.enableHome = config.enableInHome
             if(tabEnabled.enableSearch == null)
                 tabEnabled.enableSearch = config.enableInSearch
+            if(tabEnabled.enableShorts == null)
+                tabEnabled.enableShorts = config.enableInShorts
         }
     }
 

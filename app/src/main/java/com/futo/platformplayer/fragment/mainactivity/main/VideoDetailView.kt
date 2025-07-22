@@ -4,6 +4,7 @@ import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -81,7 +82,9 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.JSVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -95,6 +98,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.fixHtmlLinks
@@ -633,6 +637,10 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
+        _player.onReloadRequired.subscribe {
+            fetchVideo();
+        }
+
         _player.onPlayChanged.subscribe {
             if (StateCasting.instance.activeDevice == null) {
                 handlePlayChanged(it);
@@ -741,7 +749,7 @@ class VideoDetailView : ConstraintLayout {
         };
         MediaControlReceiver.onBackgroundReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onBackgroundReceived")
-            _player.switchToAudioMode();
+            _player.switchToAudioMode(video);
             allowBackground = true;
             StateApp.instance.contextOrNull?.let {
                 try {
@@ -831,6 +839,8 @@ class VideoDetailView : ConstraintLayout {
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
+            _cast.cancel()
+            StateCasting.instance.cancel()
             video = null;
             _container_content_liveChat?.close();
             _player.clear();
@@ -958,6 +968,7 @@ class VideoDetailView : ConstraintLayout {
                 return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
             else false;
         } ?: false;
+
         val buttons = listOf(RoundButton(context, R.drawable.ic_add, context.getString(R.string.add), TAG_ADD) {
             (video ?: _searchVideo)?.let {
                 _slideUpOverlay = UISlideOverlays.showAddToOverlay(it, _overlayContainer) {
@@ -986,7 +997,7 @@ class VideoDetailView : ConstraintLayout {
                 } else null,
             if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (allowBackground) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
                 if (!allowBackground) {
-                    _player.switchToAudioMode();
+                    _player.switchToAudioMode(video);
                     allowBackground = true;
                     it.text.text = resources.getString(R.string.background_revert);
                 } else {
@@ -1133,6 +1144,7 @@ class VideoDetailView : ConstraintLayout {
             //Requested behavior to leave it in audio mode. leaving it commented if it causes issues, revert?
             if(!allowBackground) {
                 _player.switchToVideoMode();
+                allowBackground = false;
                 _buttonPins.getButtonByTag(TAG_BACKGROUND)?.text?.text = resources.getString(R.string.background);
             }
         }
@@ -1156,11 +1168,17 @@ class VideoDetailView : ConstraintLayout {
             when (Settings.instance.playback.backgroundPlay) {
                 0 -> handlePause();
                 1 -> {
-                    if(!(video?.isLive ?: false))
-                        _player.switchToAudioMode();
+                    if(!(video?.isLive ?: false)) {
+                        _player.switchToAudioMode(video);
+                        allowBackground = true;
+                    }
                     StatePlayer.instance.startOrUpdateMediaSession(context, video);
                 }
             }
+        }
+
+        if (_player.isFullScreen) {
+            restoreBrightness()
         }
     }
     fun onStop() {
@@ -1887,19 +1905,30 @@ class VideoDetailView : ConstraintLayout {
             if (!isCasting) {
                 setCastEnabled(false);
 
-                val thumbnail = video.thumbnails.getHQThumbnail();
-                if (videoSource == null && !thumbnail.isNullOrBlank())
-                    Glide.with(context).asBitmap().load(thumbnail)
-                        .into(object: CustomTarget<Bitmap>() {
-                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                _player.setArtwork(BitmapDrawable(resources, resource));
-                            }
-                            override fun onLoadCleared(placeholder: Drawable?) {
-                                _player.setArtwork(null);
-                            }
-                        });
-                else
-                    _player.setArtwork(null);
+                val isLimitedVersion = StatePlatform.instance.getContentClientOrNull(video.url)?.let {
+                    if (it is JSClient)
+                        return@let it.config.reduceFunctionsInLimitedVersion && BuildConfig.IS_PLAYSTORE_BUILD
+                    else false;
+                } ?: false;
+
+                if (isLimitedVersion && _player.isAudioMode) {
+                    _player.switchToVideoMode()
+                    allowBackground = false;
+                } else {
+                    val thumbnail = video.thumbnails.getHQThumbnail();
+                    if ((videoSource == null || _player.isAudioMode) && !thumbnail.isNullOrBlank())
+                        Glide.with(context).asBitmap().load(thumbnail)
+                            .into(object: CustomTarget<Bitmap>() {
+                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                    _player.setArtwork(BitmapDrawable(resources, resource));
+                                }
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                    _player.setArtwork(null);
+                                }
+                            });
+                    else
+                        _player.setArtwork(null);
+                }
                 _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
@@ -1923,11 +1952,46 @@ class VideoDetailView : ConstraintLayout {
     }
     private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
+        castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)
+    }
 
-        if(StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)) {
-            _cast.setVideoDetails(video, resumePositionMs / 1000);
-            setCastEnabled(true);
-        } else throw IllegalStateException("Disconnected cast during loading");
+    private fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val plugin = if (videoSource is JSSource) videoSource.getUnderlyingPlugin()
+                    else if (audioSource is JSSource) audioSource.getUnderlyingPlugin()
+                    else null
+
+                val startId = plugin?.getUnderlyingPlugin()?.runtimeId
+                try {
+                    val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
+                        _cast.setLoading(it)
+                    }, onLoadingEstimate = {
+                        _cast.setLoading(it)
+                    })
+
+                    if (castingSucceeded) {
+                        withContext(Dispatchers.Main) {
+                            _cast.setVideoDetails(video, resumePositionMs / 1000);
+                            setCastEnabled(true);
+                        }
+                    }
+                } catch (e: ScriptReloadRequiredException) {
+                    Log.i(TAG, "Reload required exception", e)
+                    if (plugin == null)
+                        throw e
+
+                    if (startId != -1 && plugin.getUnderlyingPlugin().runtimeId != startId)
+                        throw e
+
+                    StatePlatform.instance.handleReloadRequired(e, {
+                        fetchVideo()
+                    });
+                }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "loadCurrentVideoCast", e)
+            }
+        }
     }
 
     //Events
@@ -1964,8 +2028,8 @@ class VideoDetailView : ConstraintLayout {
             }
 
             updateQualityFormatsOverlay(
-                videoTrackFormats.distinctBy { it.height }.sortedBy { it.height },
-                audioTrackFormats.distinctBy { it.bitrate }.sortedBy { it.bitrate });
+                videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
+                audioTrackFormats.distinctBy { it.bitrate }.sortedByDescending { it.bitrate });
         }
     }
 
@@ -2440,7 +2504,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
             _player.hideControls(false); //TODO: Disable player?
 
@@ -2455,7 +2519,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed)
         else(!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
         _player.hideControls(false); //TODO: Disable player?
 
@@ -2471,7 +2535,7 @@ class VideoDetailView : ConstraintLayout {
 
         val d = StateCasting.instance.activeDevice;
         if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            StateCasting.instance.castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+            castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
         else
             _player.swapSubtitles(fragment.lifecycleScope, toSet);
 
@@ -2522,7 +2586,9 @@ class VideoDetailView : ConstraintLayout {
 
         val url = _url;
         if (!url.isNullOrBlank()) {
-            setLoading(true);
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                setLoading(true);
+            }
             _taskLoadVideo.run(url);
         }
     }
@@ -2576,8 +2642,7 @@ class VideoDetailView : ConstraintLayout {
             _cast.visibility = View.VISIBLE;
         } else {
             StateCasting.instance.stopVideo();
-            _cast.stopTimeJob();
-            _cast.visibility = View.GONE;
+            _cast.cancel()
 
             if (video?.isLive == false) {
                 _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
@@ -2790,6 +2855,8 @@ class VideoDetailView : ConstraintLayout {
                         if(it is IPlatformVideo) {
                             if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(it), true))
                                 UIDialogs.toast("Added to watch later\n[${it.name}]");
+                            else
+                                UIDialogs.toast(context.getString(R.string.already_in_watch_later))
                         }
                     }
                     onAddToQueueClicked.subscribe(this) {
@@ -3067,6 +3134,11 @@ class VideoDetailView : ConstraintLayout {
             return@TaskHandler result;
         })
         .success { setVideoDetails(it, true) }
+        .exception<ScriptReloadRequiredException> {
+            StatePlatform.instance.handleReloadRequired(it, {
+                fetchVideo();
+            });
+        }
         .exception<NoPlatformClientException> {
             Logger.w(TAG, "exception<NoPlatformClientException>", it)
 

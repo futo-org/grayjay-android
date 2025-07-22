@@ -156,6 +156,7 @@ android {
 dependencies {
     implementation 'com.google.dagger:dagger:2.48'
     implementation 'androidx.test:monitor:1.7.2'
+    implementation 'com.google.android.material:material:1.12.0'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.48'
 
     //Core
@@ -180,6 +181,7 @@ dependencies {
 
     //JS
     implementation("com.caoccao.javet:javet-android:3.0.2")
+    //implementation 'com.caoccao.javet:javet-v8-android:4.1.4' //Change after extensive testing the freezing edge cases are solved.
 
     //Exoplayer
     implementation 'androidx.media3:media3-exoplayer:1.2.1'

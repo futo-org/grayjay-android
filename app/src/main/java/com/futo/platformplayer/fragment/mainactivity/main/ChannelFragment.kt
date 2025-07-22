@@ -172,7 +172,7 @@ class ChannelFragment : MainFragment() {
             _buttonSubscribe = findViewById(R.id.button_subscribe)
             _buttonSubscriptionSettings = findViewById(R.id.button_sub_settings)
             _overlayLoading = findViewById(R.id.channel_loading_overlay)
-            _overlayLoadingSpinner = findViewById(R.id.channel_loader)
+            _overlayLoadingSpinner = findViewById(R.id.channel_loader_frag)
             _overlayContainer = findViewById(R.id.overlay_container)
             _buttonSubscribe.onSubscribed.subscribe {
                 UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer)
@@ -211,6 +211,14 @@ class ChannelFragment : MainFragment() {
                     }
                 }
             }
+            adapter.onShortClicked.subscribe { v, _, pagerPair ->
+                when (v) {
+                    is IPlatformVideo -> {
+                        StatePlayer.instance.clearQueue()
+                        fragment.navigate<ShortsFragment>(Triple(v, pagerPair!!.first, pagerPair.second))
+                    }
+                }
+            }
             adapter.onAddToClicked.subscribe { content ->
                 _overlayContainer.let {
                     if (content is IPlatformVideo) _slideUpOverlay =
@@ -226,6 +234,8 @@ class ChannelFragment : MainFragment() {
                 if (content is IPlatformVideo) {
                     if(StatePlaylists.instance.addToWatchLater(SerializedPlatformVideo.fromVideo(content), true))
                         UIDialogs.toast("Added to watch later\n[${content.name}]")
+                    else
+                        UIDialogs.toast(context.getString(R.string.already_in_watch_later))
                 }
             }
             adapter.onUrlClicked.subscribe { url ->

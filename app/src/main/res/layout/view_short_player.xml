@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/short_player_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/short_player_progress_bar"
+        android:background="@color/black"
+        app:default_artwork="@drawable/placeholder_video_thumbnail"
+        app:resize_mode="fit"
+        app:show_buffering="when_playing"
+        app:use_artwork="true"
+        app:use_controller="false" />
+
+    <androidx.media3.ui.DefaultTimeBar
+        android:id="@+id/short_player_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_alignParentBottom="true"
+        app:bar_height="6dp"
+        app:buffered_color="#DDEEEEEE"
+        app:played_color="@color/colorPrimary"
+        app:scrubber_disabled_size="0dp"
+        app:scrubber_dragged_size="0dp"
+        app:scrubber_enabled_size="0dp"
+        app:unplayed_color="#55EEEEEE" />
+</merge>

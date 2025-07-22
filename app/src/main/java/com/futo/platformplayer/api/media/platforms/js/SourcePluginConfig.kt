@@ -4,6 +4,7 @@ import android.net.Uri
 import com.futo.platformplayer.SignatureProvider
 import com.futo.platformplayer.api.media.Serializer
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.matchesDomain
 import com.futo.platformplayer.states.StatePlugins
 import kotlinx.serialization.Contextual
@@ -47,6 +48,7 @@ class SourcePluginConfig(
     var subscriptionRateLimit: Int? = null,
     var enableInSearch: Boolean = true,
     var enableInHome: Boolean = true,
+    var enableInShorts: Boolean = true,
     var supportedClaimTypes: List<Int> = listOf(),
     var primaryClaimFieldType: Int? = null,
     var developerSubmitUrl: String? = null,
@@ -168,12 +170,17 @@ class SourcePluginConfig(
     }
 
     fun validate(text: String): Boolean {
-        if(scriptPublicKey.isNullOrEmpty())
-            throw IllegalStateException("No public key present");
-        if(scriptSignature.isNullOrEmpty())
-            throw IllegalStateException("No signature present");
+        try {
+            if (scriptPublicKey.isNullOrEmpty())
+                throw IllegalStateException("No public key present");
+            if (scriptSignature.isNullOrEmpty())
+                throw IllegalStateException("No signature present");
 
-        return SignatureProvider.verify(text, scriptSignature, scriptPublicKey);
+            return SignatureProvider.verify(text, scriptSignature, scriptPublicKey);
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to verify due to an unhandled exception", e)
+            return false
+        }
     }
 
     fun isUrlAllowed(url: String): Boolean {
@@ -204,6 +211,8 @@ class SourcePluginConfig(
                 obj.sourceUrl = sourceUrl;
             return obj;
         }
+
+        private val TAG = "SourcePluginConfig"
     }
 
     @kotlinx.serialization.Serializable

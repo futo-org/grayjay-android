@@ -32,7 +32,6 @@
                 <data android:host="twitch.tv" />
                 <data android:host="bilibili.com" />
                 <data android:host="bilibili.tv" />
-                <data android:host="spotify.com" />
                 <data android:host="dailymotion.com" />
                 <data android:host="www.dailymotion.com" />
                 <data android:host="bitchute.com" />
@@ -63,7 +62,6 @@
                 <data android:host="twitch.tv" />
                 <data android:host="bilibili.com" />
                 <data android:host="bilibili.tv" />
-                <data android:host="spotify.com" />
                 <data android:host="dailymotion.com" />
                 <data android:host="www.dailymotion.com" />
                 <data android:host="bitchute.com" />

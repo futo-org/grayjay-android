@@ -587,18 +587,19 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.hold_playback_speed, FieldForm.DROPDOWN, R.string.hold_playback_speed_description, 27)
         @DropdownFieldOptionsId(R.array.hold_playback_speeds)
-        var holdPlaybackSpeed: Int = 3;
+        var holdPlaybackSpeed: Int = 4;
 
         fun getHoldPlaybackSpeed(): Double {
             return when(holdPlaybackSpeed) {
-                0 -> 1.25
-                1 -> 1.5
-                2 -> 1.75
-                3 -> 2.0
-                4 -> 2.25
-                5 -> 2.5
-                6 -> 2.75
-                7 -> 3.0
+                0 -> 1.0
+                1 -> 1.25
+                2 -> 1.5
+                3 -> 1.75
+                4 -> 2.0
+                5 -> 2.25
+                6 -> 2.5
+                7 -> 2.75
+                8 -> 3.0
                 else -> 2.0
             }
         }
@@ -1017,10 +1018,13 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.playlist_allow_dups, FieldForm.TOGGLE, R.string.playlist_allow_dups_description, 3)
         var playlistAllowDups: Boolean = true;
 
-        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 4)
+        @FormField(R.string.watch_later_add_start, FieldForm.TOGGLE, R.string.watch_later_add_start_description, 4)
+        var watchLaterAddStart: Boolean = true;
+
+        @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 5)
         var polycentricEnabled: Boolean = true;
 
-        @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 5)
+        @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 7)
         var polycentricLocalCache: Boolean = true;
     }
 

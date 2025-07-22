@@ -7,12 +7,12 @@ import java.util.stream.IntStream
  * A Content MultiPager that returns results based on a specified distribution
  * TODO: Merge all basic distribution pagers
  */
-class MultiDistributionContentPager : MultiPager<IPlatformContent> {
+class MultiDistributionContentPager<T : IPlatformContent> : MultiPager<T> {
 
-    private val dist : HashMap<IPager<IPlatformContent>, Float>;
-    private val distConsumed : HashMap<IPager<IPlatformContent>, Float>;
+    private val dist : HashMap<IPager<T>, Float>;
+    private val distConsumed : HashMap<IPager<T>, Float>;
 
-    constructor(pagers : Map<IPager<IPlatformContent>, Float>) : super(pagers.keys.toMutableList()) {
+    constructor(pagers : Map<IPager<T>, Float>) : super(pagers.keys.toMutableList()) {
         val distTotal = pagers.values.sum();
         dist = HashMap();
 
@@ -25,7 +25,7 @@ class MultiDistributionContentPager : MultiPager<IPlatformContent> {
     }
 
     @Synchronized
-    override fun selectItemIndex(options: Array<SelectionOption<IPlatformContent>>): Int {
+    override fun selectItemIndex(options: Array<SelectionOption<T>>): Int {
         if(options.size == 0)
             return -1;
         var bestIndex = 0;
@@ -42,6 +42,4 @@ class MultiDistributionContentPager : MultiPager<IPlatformContent> {
         distConsumed[options[bestIndex].pager.getPager()] = bestConsumed;
         return bestIndex;
     }
-
-
 }
