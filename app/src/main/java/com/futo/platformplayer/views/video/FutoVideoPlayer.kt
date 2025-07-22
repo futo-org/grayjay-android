@@ -500,7 +500,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     fun getVideoRect(): Rect {
         val r = Rect()
-        _videoView.getGlobalVisibleRect(r)
+        // this is the only way i could reliably get a reference to a view that matches perfectly with the video playback
+        _videoView.subtitleView?.getGlobalVisibleRect(r)
         return r
     }
 
