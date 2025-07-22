@@ -34,15 +34,18 @@ class PlayerManager {
 
     @Synchronized
     fun attach(view: PlayerView, stateName: String) {
-        if(view != _currentView) {
-            _currentView?.player = null;
-            switchState(stateName);
-            view.player = player;
-            _currentView = view;
+        if (view != _currentView) {
+            _currentView?.player = null
+            _currentView = null
+            switchState(stateName)
+            view.player = player
+            _currentView = view
         }
     }
+
     fun detach() {
-        _currentView?.player = null;
+        _currentView?.player = null
+        _currentView = null
     }
 
     fun getState(name: String): PlayerState {

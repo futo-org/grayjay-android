@@ -1,9 +1,13 @@
 package com.futo.platformplayer.views.video
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.net.Uri
@@ -28,6 +32,9 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -35,6 +42,7 @@ import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
+import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -43,9 +51,13 @@ import com.futo.platformplayer.formatDuration
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
+import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
@@ -117,6 +129,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     private var _isControlsLocked: Boolean = false;
 
+    private var _speedHoldPrevRate = 1f
+    private var _speedHoldWasPlaying = false
+
     private val _time_bar_listener: TimeBar.OnScrubListener;
 
     var isFitMode : Boolean = false
@@ -146,6 +161,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     val onTimeBarChanged = Event2<Long, Long>();
 
     val onChapterClicked = Event1<IChapter>();
+
+    private val _loaderGame: TargetTapLoaderView
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
@@ -186,6 +203,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
+
+        _loaderGame = findViewById(R.id.loader_overlay)
+        _loaderGame.visibility = View.GONE
 
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
@@ -254,6 +274,20 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         gestureControl = findViewById(R.id.gesture_control);
 
         gestureControl.setupTouchArea(_layoutControls, background);
+        gestureControl.onSpeedHoldStart.subscribe {
+            exoPlayer?.player?.let { player ->
+                _speedHoldWasPlaying = player.isPlaying
+                _speedHoldPrevRate = getPlaybackRate()
+                setPlaybackRate(Settings.instance.playback.getHoldPlaybackSpeed().toFloat())
+                player.play()
+            }
+        }
+        gestureControl.onSpeedHoldEnd.subscribe {
+            exoPlayer?.player?.let { player ->
+                if (!_speedHoldWasPlaying) player.pause()
+                setPlaybackRate(_speedHoldPrevRate)
+            }
+        }
         gestureControl.onSeek.subscribe { seekFromCurrent(it); };
         gestureControl.onSoundAdjusted.subscribe {
             if (Settings.instance.gestureControls.useSystemVolume) {
@@ -462,6 +496,13 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private fun updateAutoplayButton() {
         _control_autoplay.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
         _control_autoplay_fullscreen.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
+    }
+
+    fun getVideoRect(): Rect {
+        val r = Rect()
+        // this is the only way i could reliably get a reference to a view that matches perfectly with the video playback
+        _videoView.subtitleView?.getGlobalVisibleRect(r)
+        return r
     }
 
     private fun setSystemBrightness(brightness: Float) {
@@ -847,5 +888,45 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     override fun onSurfaceSizeChanged(width: Int, height: Int) {
         gestureControl.resetZoomPan()
+    }
+
+    override fun setLoading(isLoading: Boolean) {
+        if (isLoading) {
+            _loaderGame.visibility = View.VISIBLE
+            _loaderGame.startLoader()
+        } else {
+            _loaderGame.visibility = View.GONE
+            _loaderGame.stopAndResetLoader()
+        }
+    }
+
+    override fun setLoading(expectedDurationMs: Int) {
+        _loaderGame.visibility = View.VISIBLE
+        _loaderGame.startLoader(expectedDurationMs.toLong())
+    }
+
+    override fun switchToVideoMode() {
+        super.switchToVideoMode()
+        setArtwork(null)
+    }
+
+    override fun switchToAudioMode(video: IPlatformVideoDetails?) {
+        super.switchToAudioMode(video)
+        val thumbnail = video?.thumbnails?.getHQThumbnail()
+        if (!thumbnail.isNullOrBlank()) {
+            Glide.with(context).asBitmap().load(thumbnail)
+                .into(object : CustomTarget<Bitmap>() {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: Transition<in Bitmap>?
+                    ) {
+                        setArtwork(BitmapDrawable(resources, resource));
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        setArtwork(null);
+                    }
+                })
+        }
     }
 }

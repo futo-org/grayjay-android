@@ -80,7 +80,7 @@
             android:isScrollContainer="false"
             android:textColor="#CCCCCC"
             android:textSize="13sp"
-            android:maxLines="100"
+            android:maxLines="150"
             app:layout_constraintTop_toBottomOf="@id/text_metadata"
             app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
             app:layout_constraintRight_toRightOf="parent"

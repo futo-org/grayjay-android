@@ -90,7 +90,6 @@ class ToggleField : TableRow, IField {
 
         val advancedFieldAttr = field.getAnnotation(AdvancedField::class.java)
         if(advancedFieldAttr != null || advanced) {
-            // Logger.w("ToggleField", "Found advanced field: " + field.name);
             isAdvanced = true;
         }
 

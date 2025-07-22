@@ -101,7 +101,7 @@ class VideoDetailFragment() : MainFragment() {
     }
 
     private fun isSmallWindow(): Boolean {
-        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.column_width_dp) * 2
+        return resources.configuration.smallestScreenWidthDp < resources.getInteger(R.integer.smallest_width_dp)
     }
 
     private fun isAutoRotateEnabled(): Boolean {
@@ -337,13 +337,6 @@ class VideoDetailFragment() : MainFragment() {
                 closeVideoDetails();
             };
             it.onMaximize.subscribe { maximizeVideoDetail(it) };
-            it.onPlayChanged.subscribe {
-                if(isInPictureInPicture) {
-                    val params = _viewDetail?.getPictureInPictureParams();
-                    if (params != null)
-                        activity?.setPictureInPictureParams(params);
-                }
-            };
             it.onEnterPictureInPicture.subscribe {
                 Logger.i(TAG, "onEnterPictureInPicture")
                 isInPictureInPicture = true;
@@ -446,9 +439,14 @@ class VideoDetailFragment() : MainFragment() {
         val viewDetail = _viewDetail;
         Logger.i(TAG, "onUserLeaveHint preventPictureInPicture=${viewDetail?.preventPictureInPicture} isCasting=${StateCasting.instance.isCasting} isBackgroundPictureInPicture=${Settings.instance.playback.isBackgroundPictureInPicture()} allowBackground=${viewDetail?.allowBackground}");
 
-        if(viewDetail?.preventPictureInPicture == false && !StateCasting.instance.isCasting && Settings.instance.playback.isBackgroundPictureInPicture() && !viewDetail.allowBackground) {
-            _leavingPiP = false;
+        if (viewDetail === null) {
+            return
+        }
 
+        if (viewDetail.shouldEnterPictureInPicture) {
+            _leavingPiP = false
+        }
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S && viewDetail.preventPictureInPicture == false && !StateCasting.instance.isCasting && Settings.instance.playback.isBackgroundPictureInPicture() && !viewDetail.allowBackground) {
             val params = _viewDetail?.getPictureInPictureParams();
             if(params != null) {
                 Logger.i(TAG, "enterPictureInPictureMode")
@@ -457,7 +455,7 @@ class VideoDetailFragment() : MainFragment() {
         }
 
         if (isFullscreen) {
-            viewDetail?.restoreBrightness()
+            viewDetail.restoreBrightness()
         }
     }
 
@@ -627,11 +625,6 @@ class VideoDetailFragment() : MainFragment() {
             showSystemUI()
         }
 
-        // temporarily force the device to portrait if auto-rotate is disabled to prevent landscape when exiting full screen on a small device
-//        @SuppressLint("SourceLockedOrientationActivity")
-//        if (!isFullscreen && isSmallWindow() && !isAutoRotateEnabled() && !isMinimizingFromFullScreen) {
-//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-//        }
         updateOrientation();
         _view?.allowMotion = !fullscreen;
     }

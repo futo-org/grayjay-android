@@ -263,8 +263,8 @@
                 android:textSize="13dp"
                 android:letterSpacing="0"
                 android:fontFamily="@font/inter_regular"
-                android:layout_marginStart="20dp"
-                android:backgroundTint="#2F2F2F"
+                android:layout_marginStart="5dp"
+                android:backgroundTint="@color/colorPrimary"
                 android:layout_marginEnd="5dp"
                 android:text="@string/go_now"/>
             <Button
@@ -277,9 +277,9 @@
                 android:textSize="13dp"
                 android:letterSpacing="0"
                 android:layout_marginStart="5dp"
-                android:layout_marginEnd="20dp"
-                android:backgroundTint="#481414"
-                android:text="@string/prevent"/>
+                android:layout_marginEnd="5dp"
+                android:backgroundTint="#2F2F2F"
+                android:text="@string/dismiss"/>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

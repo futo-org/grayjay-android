@@ -3,4 +3,5 @@
     <dimen name="minimized_player_max_width">500dp</dimen>
     <dimen name="app_bar_height">200dp</dimen>
     <integer name="column_width_dp">400</integer>
+    <integer name="smallest_width_dp">600</integer>
 </resources>

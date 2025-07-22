@@ -11,12 +11,14 @@ import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Void
 
 class JSRequestModifier: IRequestModifier {
     private val _plugin: JSClient;
     private val _config: IV8PluginConfig;
     private var _modifier: V8ValueObject;
-    override var allowByteSkip: Boolean;
+    override var allowByteSkip: Boolean = false;
 
     constructor(plugin: JSClient, modifier: V8ValueObject) {
         this._plugin = plugin;
@@ -24,10 +26,13 @@ class JSRequestModifier: IRequestModifier {
         this._config = plugin.config;
         val config = plugin.config;
 
-        allowByteSkip = modifier.getOrNull(config, "allowByteSkip", "JSRequestModifier") ?: true;
+        plugin.busy {
+            allowByteSkip = modifier.getOrNull(config, "allowByteSkip", "JSRequestModifier") ?: true;
 
-        if(!modifier.has("modifyRequest"))
-            throw ScriptImplementationException(config, "RequestModifier is missing modifyRequest", null);
+            if(!modifier.has("modifyRequest"))
+                throw ScriptImplementationException(config, "RequestModifier is missing modifyRequest", null);
+        }
+
     }
 
     override fun modifyRequest(url: String, headers: Map<String, String>): IRequest {
@@ -35,13 +40,15 @@ class JSRequestModifier: IRequestModifier {
             return Request(url, headers);
         }
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSRequestModifier", "builder.modifyRequest()") {
-            _modifier.invoke("modifyRequest", url, headers);
-        } as V8ValueObject;
+        return _plugin.busy {
+            val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSRequestModifier", "builder.modifyRequest()") {
+                _modifier.invokeV8("modifyRequest", url, headers);
+            } as V8ValueObject;
 
-        val req = JSRequest(_plugin, result, url, headers);
-        result.close();
-        return req;
+            val req = JSRequest(_plugin, result, url, headers);
+            result.close();
+            return@busy req;
+        }
     }
 
 

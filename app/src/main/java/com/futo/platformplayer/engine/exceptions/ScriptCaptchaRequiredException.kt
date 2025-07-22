@@ -2,6 +2,7 @@ package com.futo.platformplayer.engine.exceptions
 
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -9,6 +10,7 @@ class ScriptCaptchaRequiredException(config: IV8PluginConfig, val url: String?, 
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : ScriptException {
+            obj.ensureIsBusy();
             val contextName = "ScriptCaptchaRequiredException";
             return ScriptCaptchaRequiredException(config,
                 obj.getOrDefault<String>(config, "url", contextName, null),
