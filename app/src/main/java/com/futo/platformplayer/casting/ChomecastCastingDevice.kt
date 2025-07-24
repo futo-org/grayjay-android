@@ -561,7 +561,6 @@ class ChromecastCastingDevice : CastingDevice {
                                 _transportId = transportId;
 
                                 requestMediaStatus();
-                                playVideo();
                             }
                         }
                     }
@@ -640,6 +639,12 @@ class ChromecastCastingDevice : CastingDevice {
                     if (_contentType == null) {
                         stopVideo();
                     }
+                }
+
+                val needsLoad = statuses.length() == 0 || (statuses.getJSONObject(0).getString("playerState") == "IDLE")
+                if (needsLoad && _contentId != null && _mediaSessionId == null) {
+                    Logger.i(TAG, "Receiver idle, sending initial LOAD")
+                    playVideo()
                 }
             } else if (type == "CLOSE") {
                 if (message.sourceId == "receiver-0") {
