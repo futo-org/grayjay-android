@@ -62,6 +62,7 @@ class ChromecastCastingDevice : CastingDevice {
     private val MAX_LAUNCH_RETRIES = 3
     private var _lastLaunchTime_ms = 0L
     private var _retryJob: Job? = null
+    private var _autoLaunchEnabled = true
 
     constructor(name: String, addresses: Array<InetAddress>, port: Int) : super() {
         this.name = name;
@@ -305,6 +306,7 @@ class ChromecastCastingDevice : CastingDevice {
             return;
         }
 
+        _autoLaunchEnabled = true
         _started = true;
         _sessionId = null;
         _launchRetries = 0
@@ -546,6 +548,7 @@ class ChromecastCastingDevice : CastingDevice {
 
                         if (appId == "CC1AD845") {
                             sessionIsRunning = true;
+                            _autoLaunchEnabled = false
 
                             if (_sessionId == null) {
                                 connectionState = CastConnectionState.CONNECTED;
@@ -568,21 +571,22 @@ class ChromecastCastingDevice : CastingDevice {
                     if (System.currentTimeMillis() - _lastLaunchTime_ms > 5000) {
                         _sessionId = null
                         _mediaSessionId = null
-                        setTime(0.0)
                         _transportId = null
 
-                        if (_launching && _launchRetries < MAX_LAUNCH_RETRIES) {
-                            Logger.i(TAG, "No player yet; attempting launch #${_launchRetries + 1}")
-                            _launchRetries++
-                            launchPlayer()
-                        } else if (!_launching && _launchRetries < MAX_LAUNCH_RETRIES) {
-                            // Maybe the first GET_STATUS came back empty; still try launching
-                            Logger.i(TAG, "Player not found; triggering launch #${_launchRetries + 1}")
-                            _launching = true
-                            _launchRetries++
-                            launchPlayer()
+                        if (_autoLaunchEnabled) {
+                            if (_launching && _launchRetries < MAX_LAUNCH_RETRIES) {
+                                Logger.i(TAG, "No player yet; attempting launch #${_launchRetries + 1}")
+                                _launchRetries++
+                                launchPlayer()
+                            } else {
+                                // Maybe the first GET_STATUS came back empty; still try launching
+                                Logger.i(TAG, "Player not found; triggering launch #${_launchRetries + 1}")
+                                _launching = true
+                                _launchRetries++
+                                launchPlayer()
+                            }
                         } else {
-                            Logger.e(TAG, "Player not found after $_launchRetries attempts; giving up.")
+                            Logger.e(TAG, "Player not found ($_launchRetries, _autoLaunchEnabled = $_autoLaunchEnabled); giving up.")
                             Logger.i(TAG, "Unable to start media receiver on device")
                             stop()
                         }
@@ -599,6 +603,7 @@ class ChromecastCastingDevice : CastingDevice {
                 } else {
                     _launching = false
                     _launchRetries = 0
+                    _autoLaunchEnabled = false
                 }
 
                 val volume = status.getJSONObject("volume");
@@ -639,7 +644,7 @@ class ChromecastCastingDevice : CastingDevice {
             } else if (type == "CLOSE") {
                 if (message.sourceId == "receiver-0") {
                     Logger.i(TAG, "Close received.");
-                    stop();
+                    stopCasting();
                 } else if (_transportId == message.sourceId) {
                     throw Exception("Transport id closed.")
                 }
@@ -675,6 +680,10 @@ class ChromecastCastingDevice : CastingDevice {
         usedRemoteAddress = null;
         localAddress = null;
         _started = false;
+
+        _contentId = null
+        _contentType = null
+        _streamType = null
 
         _retryJob?.cancel()
         _retryJob = null
