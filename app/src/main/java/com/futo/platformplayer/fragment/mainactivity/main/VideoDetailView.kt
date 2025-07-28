@@ -649,7 +649,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         if (!isInEditMode) {
-            StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, connectionState ->
+            StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { device, connectionState ->
                 if (_onPauseCalled) {
                     return@subscribe;
                 }
@@ -661,7 +661,7 @@ class VideoDetailView : ConstraintLayout {
                         setCastEnabled(true);
                     }
                     CastConnectionState.DISCONNECTED -> {
-                        loadCurrentVideo(lastPositionMilliseconds);
+                        loadCurrentVideo(lastPositionMilliseconds, playWhenReady = device.isPlaying);
                         updatePillButtonVisibilities();
                         setCastEnabled(false);
 
@@ -1880,7 +1880,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     //Source Loads
-    private fun loadCurrentVideo(resumePositionMs: Long = 0) {
+    private fun loadCurrentVideo(resumePositionMs: Long = 0, playWhenReady: Boolean = true) {
         _didStop = false;
 
         val video = (videoLocal ?: video) ?: return;
@@ -1925,7 +1925,7 @@ class VideoDetailView : ConstraintLayout {
                     else
                         _player.setArtwork(null);
                 }
-                _player.setSource(videoSource, audioSource, _playWhenReady, false, resume = resumePositionMs > 0);
+                _player.setSource(videoSource, audioSource, _playWhenReady && playWhenReady, false, resume = resumePositionMs > 0);
                 if(subtitleSource != null)
                     _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
                 _player.seekTo(resumePositionMs);

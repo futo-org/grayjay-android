@@ -48,6 +48,7 @@ class DownloadService : Service() {
     private val _scope: CoroutineScope = CoroutineScope(Dispatchers.Default);
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
+    private var _isForeground = false
 
     private val _client = ManagedHttpClient(OkHttpClient.Builder()
         //.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(InetAddress.getByName("192.168.1.175"), 8081)))
@@ -66,6 +67,7 @@ class DownloadService : Service() {
 
             if(!FragmentedStorage.isInitialized) {
                 Logger.i(TAG, "Attempted to start DownloadService without initialized files");
+                stopSelf()
                 closeDownloadSession();
                 return START_NOT_STICKY;
             }
@@ -116,6 +118,22 @@ class DownloadService : Service() {
     override fun onCreate() {
         Logger.i(TAG, "onCreate");
         super.onCreate()
+
+        setupNotificationRequirements()
+
+        val bootstrapNotif = NotificationCompat.Builder(this, DOWNLOAD_NOTIF_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_download)
+            .setContentTitle("Preparing downloads...")
+            .setOngoing(true)
+            .setSilent(true)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        else
+            startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif)
+
+        _isForeground = true
     }
 
     override fun onBind(p0: Intent?): IBinder? {
@@ -246,15 +264,14 @@ class DownloadService : Service() {
     }
 
     private fun notifyDownload(download: VideoDownload?) {
-        val channel = _notificationChannel ?: return;
-
+        val channelId = DOWNLOAD_NOTIF_CHANNEL_ID
         val bringUpIntent = Intent(this, MainActivity::class.java);
         bringUpIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         bringUpIntent.action = "TAB";
         bringUpIntent.putExtra("TAB", "Downloads");
 
-        var builder = if(download != null)
-            NotificationCompat.Builder(this, DOWNLOAD_NOTIF_TAG)
+        val builder = if(download != null)
+            NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_download)
                 .setOngoing(true)
                 .setSilent(true)
@@ -262,16 +279,16 @@ class DownloadService : Service() {
                 .setContentTitle("${download.state}: ${download.name}")
                 .setContentText(download.getDownloadInfo())
                 .setProgress(100, (download.progress * 100).toInt(), download.progress == 0.0)
-                .setChannelId(channel.id)
+                .setChannelId(channelId)
         else
-            NotificationCompat.Builder(this, DOWNLOAD_NOTIF_TAG)
+            NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_download)
                 .setOngoing(true)
                 .setSilent(true)
                 .setContentIntent(PendingIntent.getActivity(this, 5, bringUpIntent, PendingIntent.FLAG_IMMUTABLE))
                 .setContentTitle("Preparing for download...")
                 .setContentText("Initializing download process...")
-                .setChannelId(channel.id)
+                .setChannelId(channelId)
 
         val notif = builder.build();
         notif.flags = notif.flags or NotificationCompat.FLAG_ONGOING_EVENT or NotificationCompat.FLAG_NO_CLEAR;
