@@ -1,15 +1,18 @@
 package com.futo.platformplayer.states
 
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.models.ImportCache
-import com.futo.platformplayer.states.StatePlaylists.Companion
+import com.futo.platformplayer.states.StateApp.Companion
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringDateMapStorage
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.stores.v2.ReconstructStore
@@ -19,7 +22,6 @@ import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import kotlin.math.min
 
 class StateHistory {
     //Legacy
@@ -30,6 +32,8 @@ class StateHistory {
                     = HistoryVideo.fromReconString(backup) { url -> cache?.videos?.find { it.url == url } };
         })
         .load();
+
+    private val _remoteHistoryDatesStore = FragmentedStorage.get<StringDateMapStorage>("remoteHistoryDates");
 
     private val historyIndex: ConcurrentMap<Any, DBHistory.Index> = ConcurrentHashMap();
     val _historyDBStore = ManagedDBStore.create("history", DBHistory.Descriptor())
@@ -186,8 +190,95 @@ class StateHistory {
         val toDelete = _historyDBStore.getAllIndexes().filter { minutesToDelete == -1L || (now - it.datetime) < minutesToDelete * 60 };
         for(item in toDelete)
             _historyDBStore.delete(item);
+        _remoteHistoryDatesStore.map = HashMap<String, Long>();
+        _remoteHistoryDatesStore.save();
     }
 
+    fun syncRemoteHistory(plugin: JSClient) {
+        if (plugin.capabilities.hasGetUserHistory &&
+            plugin.isLoggedIn) {
+            Logger.i(TAG, "Syncing remote history for plugin [${plugin.name}]");
+
+            val hist = StatePlatform.instance.getUserHistory(plugin.id);
+
+            syncRemoteHistory(plugin.id, hist, 100, 3);
+        }
+    }
+    fun syncRemoteHistory(pluginId: String, videos: IPager<IPlatformContent>, maxVideos: Int, maxPages: Int) {
+        val lastDate = _remoteHistoryDatesStore.get(pluginId) ?: OffsetDateTime.MIN;
+        val maxVideosCount = if(maxVideos <= 0) 500 else maxVideos;
+        val maxPageCount = if(maxPages <= 0) 3 else maxPages;
+        var exceededDate = false;
+        try {
+            val toSync = mutableListOf<IPlatformVideo>();
+            var pageCount = 0;
+            var videoCount = 0;
+            var isFirst = true;
+            var oldestPlayback = OffsetDateTime.MAX;
+            var newestPlayback = OffsetDateTime.MIN;
+            do {
+                if (!isFirst) videos.nextPage();
+                val newVideos = videos.getResults();
+
+                var foundVideos = false;
+                var toSyncAddedCount = 0;
+                for(video in newVideos) {
+                    if(video is IPlatformVideo && video.playbackDate != null) {
+
+                        if(video.playbackDate!! < lastDate) {
+                            exceededDate = true;
+                            break;
+                        }
+
+                        if(video.playbackTime > 0) {
+                            toSync.add(video);
+                            toSyncAddedCount++;
+                            foundVideos = true;
+                            oldestPlayback = video.playbackDate!!;
+                            if(newestPlayback == OffsetDateTime.MIN)
+                                newestPlayback = video.playbackDate!!;
+                        }
+                    }
+                }
+
+                pageCount++;
+                videoCount += newVideos.size;
+                isFirst = false;
+
+                if(!foundVideos)
+                {
+                    Logger.i(TAG, "Found no more videos in remote history");
+                    break;
+                }
+            }
+            while(videos.hasMorePages() && videoCount <= maxVideosCount && pageCount <= maxPageCount && !exceededDate);
+
+            var updated = 0;
+            if(oldestPlayback < OffsetDateTime.MAX) {
+                for(video in toSync){
+                    val hist = getHistoryByVideo(video, true, video.playbackDate);
+                    if(hist != null && hist.position < video.playbackTime) {
+                        Logger.i(TAG, "Updated history for video [${video.name}] from remote history");
+                        updateHistoryPosition(video, hist, true, video.playbackTime, video.playbackDate, false);
+                        updated++;
+                    }
+                }
+                if(updated > 0) {
+                    _remoteHistoryDatesStore.setAndSave(pluginId, newestPlayback);
+
+                    try {
+                        val client = StatePlatform.instance.getClient(pluginId);
+                        UIDialogs.appToast("Updated ${updated} history from ${client.name}")
+                    }
+                    catch(ex: Throwable){}
+                }
+            }
+        }
+        catch(ex: Throwable) {
+            val plugin = if(pluginId != StateDeveloper.DEV_ID) StatePlugins.instance.getPlugin(pluginId) else null;
+            Logger.e(TAG, "Sync Remote History failed for [${plugin?.config?.name}] due to: " + ex.message)
+        }
+    }
 
     companion object {
         val TAG = "StateHistory";

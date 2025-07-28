@@ -1036,6 +1036,16 @@ class StatePlatform {
         return client.getLiveChatWindow(url);
     }
 
+    //Account
+    fun getUserHistory(id: String): IPager<IPlatformContent> {
+        val client = getClient(id);
+        if(client is JSClient && client.isLoggedIn) {
+            return client.fromPool(_pagerClientPool).getUserHistory()
+        }
+        return EmptyPager<IPlatformContent>();
+    }
+
+
 
     fun injectDevPlugin(source: SourcePluginConfig, script: String): String? {
         var devId: String? = null;

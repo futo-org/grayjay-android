@@ -8,6 +8,10 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
     final override val contentType: ContentType get() = ContentType.MEDIA;
@@ -16,6 +20,10 @@ open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
 
     final override val duration: Long;
     final override val viewCount: Long;
+
+    override var playbackTime: Long = -1;
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    override var playbackDate: OffsetDateTime? = null;
 
     final override val isLive: Boolean;
     final override val isShort: Boolean;
@@ -29,5 +37,11 @@ open class JSVideo : JSContent, IPlatformVideo, IPluginSourced {
         viewCount = _content.getOrThrow(config, "viewCount", contextName);
         isLive = _content.getOrThrow(config, "isLive", contextName);
         isShort = _content.getOrDefault(config, "isShort", contextName, false) ?: false;
+        playbackTime = _content.getOrDefault<Long>(config, "playbackTime", contextName, -1)?.toLong() ?: -1;
+        val playbackDateInt = _content.getOrDefault<Int>(config, "playbackDate", contextName, null)?.toLong();
+        if(playbackDateInt == null || playbackDateInt == 0.toLong())
+            playbackDate = null;
+        else
+            playbackDate = OffsetDateTime.of(LocalDateTime.ofEpochSecond(playbackDateInt, 0, ZoneOffset.UTC), ZoneOffset.UTC);
     }
 }

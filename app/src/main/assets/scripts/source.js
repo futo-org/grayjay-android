@@ -251,6 +251,9 @@ class PlatformVideo extends PlatformContent {
         this.duration = obj.duration ?? -1; //Long
         this.viewCount = obj.viewCount ?? -1; //Long
 
+        this.playbackTime = obj.playbackTime ?? -1;
+        this.playbackDate = obj.playbackDate ?? undefined;
+
         this.isLive = obj.isLive ?? false; //Boolean
         this.isShort = !!obj.isShort ?? false;
     }

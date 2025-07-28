@@ -182,6 +182,10 @@ interface IPlatformClient {
      * Retrieves the subscriptions of the currently logged in user
      */
     fun getUserSubscriptions(): Array<String>;
+    /**
+     * Retrieves the history of the currently logged in user
+     */
+    fun getUserHistory(): IPager<IPlatformContent>;
 
 
     fun isClaimTypeSupported(claimType: Int): Boolean;

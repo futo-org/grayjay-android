@@ -11,6 +11,8 @@
     <string name="general">General</string>
     <string name="channel">Channel</string>
     <string name="home">Home</string>
+    <string name="sync_history">Sync Remote History</string>
+    <string name="sync_history_desc">Synchronize account history from this platform on startup</string>
     <string name="progress_bar">Progress Bar</string>
     <string name="advanced_settings">Advanced Settings</string>
     <string name="advanced_settings_description">If advanced settings should be shown, this exposes additional settings to finetune your experience.</string>
@@ -592,6 +594,8 @@
     <string name="various_tests_against_a_custom_source">Various tests against a custom source</string>
     <string name="writes_to_disk_till_no_space_is_left">Writes to disk till no space is left</string>
     <string name="visibility">Visibility</string>
+    <string name="sync">Sync</string>
+    <string name="sync_desc">Synchronization of platform data</string>
     <string name="check_for_updates_setting">Check for updates</string>
     <string name="check_for_updates_setting_description">If a plugin should be checked for updates on startup</string>
     <string name="automatic_update_setting">Automatic Update</string>

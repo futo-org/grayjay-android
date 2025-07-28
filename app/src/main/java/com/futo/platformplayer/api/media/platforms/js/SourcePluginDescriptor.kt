@@ -5,10 +5,16 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
+import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -110,7 +116,28 @@ class SourcePluginDescriptor {
             var enableShorts: Boolean? = null;
         }
 
-        @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 3)
+        @FormField(R.string.sync, "group", R.string.sync_desc, 3)
+        var sync = Sync();
+        @Serializable
+        class Sync {
+            @FormField(R.string.sync_history, FieldForm.TOGGLE, R.string.sync_history_desc, 1)
+            var enableHistorySync: Boolean? = null;
+
+            @FormField(R.string.sync_history, FieldForm.BUTTON, R.string.sync_history_desc, 2)
+            @FormFieldButton()
+            fun syncHistoryNow() {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    val clients = StatePlatform.instance.getEnabledClients();
+                    for (client in clients) {
+                        if (client is JSClient) {//) && client.descriptor.appSettings.sync.enableHistorySync  == true) {
+                            StateHistory.instance.syncRemoteHistory(client);
+                        }
+                    }
+                };
+            }
+        }
+
+        @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 4)
         var rateLimit = RateLimit();
         @Serializable
         class RateLimit {

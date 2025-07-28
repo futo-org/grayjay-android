@@ -47,10 +47,10 @@ class DeveloperEndpoints(private val context: Context) {
     private val testPluginOrThrow: V8Plugin get() = _testPlugin ?: throw IllegalStateException("Attempted to use test plugin without plugin");
     private val _testPluginVariables: HashMap<String, V8RemoteObject> = hashMapOf();
 
-    private inline fun <reified T> createRemoteObjectArray(objs: Iterable<T>): List<V8RemoteObject> {
-        val remotes = mutableListOf<V8RemoteObject>();
+    private inline fun <reified T> createRemoteObjectArray(objs: Iterable<T>): List<V8RemoteObject?> {
+        val remotes = mutableListOf<V8RemoteObject?>();
         for(obj in objs)
-            remotes.add(createRemoteObject(obj)!!);
+            remotes.add(createRemoteObject(obj));
         return remotes;
     }
     private inline fun <reified T> createRemoteObject(obj: T): V8RemoteObject? {

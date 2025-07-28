@@ -11,7 +11,6 @@ import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
-import com.futo.platformplayer.api.media.models.streams.DownloadedVideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
@@ -19,7 +18,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoFileSource
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.downloads.VideoLocal
+import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -52,6 +51,10 @@ class LocalVideoDetails: IPlatformVideoDetails {
     override val viewCount: Long = 0;
     override val isLive: Boolean = false;
     override val isShort: Boolean = false;
+
+    override var playbackTime: Long = -1;
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    override var playbackDate: OffsetDateTime? = null;
 
     constructor(file: File) {
         id = PlatformID("Local", file.path, "LOCAL")

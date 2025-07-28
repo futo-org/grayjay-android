@@ -13,7 +13,6 @@ import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.models.streams.sources.*
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
@@ -42,6 +41,10 @@ open class SerializedPlatformVideoDetails(
     override val isShort: Boolean = false
 ) : IPlatformVideo, IPlatformVideoDetails {
     final override val contentType: ContentType get() = ContentType.MEDIA;
+
+    override var playbackTime: Long = -1;
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    override var playbackDate: OffsetDateTime? = null;
 
     override val isLive: Boolean get() = false;
 

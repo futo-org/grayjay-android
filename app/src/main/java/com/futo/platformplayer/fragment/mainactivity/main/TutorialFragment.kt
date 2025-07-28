@@ -32,6 +32,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
+import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.views.pills.WidePillButton
 import java.time.OffsetDateTime
 
@@ -152,6 +153,9 @@ class TutorialFragment : MainFragment() {
         override val viewCount: Long = -1
         override val video: IVideoSourceDescriptor = TutorialVideoSourceDescriptor(videoUrl, duration, width, height)
         override val isShort: Boolean = false;
+        override var playbackTime: Long = -1;
+        @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+        override var playbackDate: OffsetDateTime? = null;
         override fun getComments(client: IPlatformClient): IPager<IPlatformComment> {
             return EmptyPager()
         }

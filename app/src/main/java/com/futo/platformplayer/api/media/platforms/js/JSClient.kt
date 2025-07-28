@@ -272,7 +272,8 @@ open class JSClient : IPlatformClient {
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
             hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false,
             hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false,
-            hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false
+            hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false,
+            hasGetUserHistory = plugin.executeBoolean("!!source.getUserHistory") ?: false
         );
 
         try {
@@ -710,6 +711,13 @@ open class JSClient : IPlatformClient {
             .toArray()
             .map { (it as V8ValueString).value }
             .toTypedArray();
+    }
+
+    @JSOptional
+    @JSDocs(23, "source.getUserHistory()", "Gets the history of the current user")
+    override fun getUserHistory(): IPager<IPlatformContent> {
+        ensureEnabled();
+        return JSContentPager(config, this, plugin.executeTyped("source.getUserHistory()"));
     }
 
     fun validate() {
