@@ -42,7 +42,7 @@ class PreviewVideoViewHolder : ContentPreviewViewHolder {
 
     override fun bind(content: IPlatformContent) = view.bind(content);
 
-    override fun preview(details: IPlatformContentDetails?, paused: Boolean) =  view.preview(details, paused);
+    override suspend fun preview(details: IPlatformContentDetails?, paused: Boolean) =  view.preview(details, paused);
     override fun stopPreview() = view.stopPreview();
     override fun pausePreview() = view.pausePreview();
     override fun resumePreview() = view.resumePreview();

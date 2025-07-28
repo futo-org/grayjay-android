@@ -54,6 +54,8 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.casting.CastConnectionState
+import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
@@ -563,7 +565,13 @@ class ShortView : FrameLayout {
         var toSet: ISubtitleSource? = subtitleSource
         if (_lastSubtitleSource == subtitleSource) toSet = null
 
-        player.swapSubtitles(mainFragment.lifecycleScope, toSet)
+        mainFragment.lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                player.swapSubtitles(toSet)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "handleSelectSubtitleTrack failed", e)
+            }
+        }
 
         _lastSubtitleSource = toSet
     }
@@ -852,9 +860,16 @@ class ShortView : FrameLayout {
                     }
                 })
             else player.setArtwork(null)
-            player.setSource(videoSource, audioSource, play = true, keepSubtitles = false, resume = resumePositionMs > 0)
-            if (subtitleSource != null) player.swapSubtitles(mainFragment.lifecycleScope, subtitleSource)
-            player.seekTo(resumePositionMs)
+
+            mainFragment.lifecycleScope.launch(Dispatchers.Main) {
+                try {
+                    player.setSource(videoSource, audioSource, play = true, keepSubtitles = false, resume = resumePositionMs > 0)
+                    if (subtitleSource != null) player.swapSubtitles(subtitleSource)
+                    player.seekTo(resumePositionMs)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "playVideo failed", e)
+                }
+            }
 
             _lastVideoSource = videoSource
             _lastAudioSource = audioSource
