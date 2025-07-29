@@ -1925,13 +1925,28 @@ class VideoDetailView : ConstraintLayout {
                     else
                         _player.setArtwork(null);
                 }
-                _player.setSource(videoSource, audioSource, _playWhenReady && playWhenReady, false, resume = resumePositionMs > 0);
-                if(subtitleSource != null)
-                    _player.swapSubtitles(fragment.lifecycleScope, subtitleSource);
-                _player.seekTo(resumePositionMs);
+
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        _player.setSource(videoSource, audioSource, _playWhenReady && playWhenReady, false, resume = resumePositionMs > 0);
+                        if(subtitleSource != null)
+                            _player.swapSubtitles(subtitleSource);
+                        _player.seekTo(resumePositionMs);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "loadCurrentVideo failed", e)
+                    }
+                }
             }
-            else
-                loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble());
+            else {
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble());
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "loadCurrentVideo failed (casting)", e)
+                    }
+                }
+            }
+
 
             _lastVideoSource = videoSource;
             _lastAudioSource = audioSource;
@@ -1946,47 +1961,45 @@ class VideoDetailView : ConstraintLayout {
             UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_load_media), ex);
         }
     }
-    private fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+    private suspend fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
         castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)
     }
 
-    private fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
-        fragment.lifecycleScope.launch(Dispatchers.IO) {
+    private suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+        try {
+            val plugin = if (videoSource is JSSource) videoSource.getUnderlyingPlugin()
+                else if (audioSource is JSSource) audioSource.getUnderlyingPlugin()
+                else null
+
+            val startId = plugin?.getUnderlyingPlugin()?.runtimeId
             try {
-                val plugin = if (videoSource is JSSource) videoSource.getUnderlyingPlugin()
-                    else if (audioSource is JSSource) audioSource.getUnderlyingPlugin()
-                    else null
+                val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
+                    _cast.setLoading(it)
+                }, onLoadingEstimate = {
+                    _cast.setLoading(it)
+                })
 
-                val startId = plugin?.getUnderlyingPlugin()?.runtimeId
-                try {
-                    val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
-                        _cast.setLoading(it)
-                    }, onLoadingEstimate = {
-                        _cast.setLoading(it)
-                    })
-
-                    if (castingSucceeded) {
-                        withContext(Dispatchers.Main) {
-                            _cast.setVideoDetails(video, resumePositionMs / 1000);
-                            setCastEnabled(true);
-                        }
+                if (castingSucceeded) {
+                    withContext(Dispatchers.Main) {
+                        _cast.setVideoDetails(video, resumePositionMs / 1000);
+                        setCastEnabled(true);
                     }
-                } catch (e: ScriptReloadRequiredException) {
-                    Log.i(TAG, "Reload required exception", e)
-                    if (plugin == null)
-                        throw e
-
-                    if (startId != -1 && plugin.getUnderlyingPlugin().runtimeId != startId)
-                        throw e
-
-                    StatePlatform.instance.handleReloadRequired(e, {
-                        fetchVideo()
-                    });
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "loadCurrentVideoCast", e)
+            } catch (e: ScriptReloadRequiredException) {
+                Log.i(TAG, "Reload required exception", e)
+                if (plugin == null)
+                    throw e
+
+                if (startId != -1 && plugin.getUnderlyingPlugin().runtimeId != startId)
+                    throw e
+
+                StatePlatform.instance.handleReloadRequired(e, {
+                    fetchVideo()
+                });
             }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "loadCurrentVideoCast", e)
         }
     }
 
@@ -2501,11 +2514,17 @@ class VideoDetailView : ConstraintLayout {
         if(_lastVideoSource == videoSource)
             return;
 
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-        else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
-            _player.hideControls(false); //TODO: Disable player?
+        fragment.lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val d = StateCasting.instance.activeDevice;
+                if (d != null && d.connectionState == CastConnectionState.CONNECTED)
+                    castIfAvailable(context.contentResolver, video, videoSource, _lastAudioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+                else if(!_player.swapSources(videoSource, _lastAudioSource, true, true, true))
+                    _player.hideControls(false); //TODO: Disable player?
+            } catch (e: Throwable) {
+                Logger.e(TAG, "handleSelectVideoTrack failed", e)
+            }
+        }
 
         _lastVideoSource = videoSource;
     }
@@ -2516,11 +2535,17 @@ class VideoDetailView : ConstraintLayout {
         if(_lastAudioSource == audioSource)
             return;
 
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed)
-        else(!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
-        _player.hideControls(false); //TODO: Disable player?
+        fragment.lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val d = StateCasting.instance.activeDevice;
+                if (d != null && d.connectionState == CastConnectionState.CONNECTED)
+                    castIfAvailable(context.contentResolver, video, _lastVideoSource, audioSource, _lastSubtitleSource, (d.expectedCurrentTime * 1000.0).toLong(), d.speed)
+                else if (!_player.swapSources(_lastVideoSource, audioSource, true, true, true))
+                    _player.hideControls(false); //TODO: Disable player?
+            } catch (e: Throwable) {
+                Logger.e(TAG, "handleSelectAudioTrack failed", e)
+            }
+        }
 
         _lastAudioSource = audioSource;
     }
@@ -2532,12 +2557,18 @@ class VideoDetailView : ConstraintLayout {
         if(_lastSubtitleSource == subtitleSource)
             toSet = null;
 
-        val d = StateCasting.instance.activeDevice;
-        if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-            castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-        else
-            _player.swapSubtitles(fragment.lifecycleScope, toSet);
-
+        fragment.lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val d = StateCasting.instance.activeDevice;
+                if (d != null && d.connectionState == CastConnectionState.CONNECTED)
+                    castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+                else {
+                    _player.swapSubtitles(toSet);
+                }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "handleSelectSubtitleTrack failed", e)
+            }
+        }
         _lastSubtitleSource = toSet;
     }
 

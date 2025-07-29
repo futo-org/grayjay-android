@@ -29,7 +29,7 @@ class PreviewChannelViewHolder : ContentPreviewViewHolder {
 
     override fun bind(content: IPlatformContent) = view.bind(content);
 
-    override fun preview(details: IPlatformContentDetails?, paused: Boolean) = Unit;
+    override suspend fun preview(details: IPlatformContentDetails?, paused: Boolean) = Unit;
     override fun stopPreview() = Unit;
     override fun pausePreview() = Unit;
     override fun resumePreview() = Unit;

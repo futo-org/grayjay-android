@@ -248,7 +248,7 @@ open class PreviewVideoView : LinearLayout {
         _textVideoMetadata.text = metadata + timeMeta;
     }
 
-    open fun preview(video: IPlatformContentDetails?, paused: Boolean) {
+    open suspend fun preview(video: IPlatformContentDetails?, paused: Boolean) {
         if(video == null)
             return;
         Logger.i(TAG, "Previewing");

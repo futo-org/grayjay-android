@@ -148,7 +148,7 @@ class ChannelPlaylistsFragment : Fragment(), IChannelTabFragment {
         _recyclerResults = view.findViewById(R.id.recycler_videos)
 
         _adapterResults = PreviewContentListAdapter(
-            view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar
+            lifecycleScope, view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar
         ).apply {
             this.onContentUrlClicked.subscribe(this@ChannelPlaylistsFragment.onContentUrlClicked::emit)
             this.onUrlClicked.subscribe(this@ChannelPlaylistsFragment.onUrlClicked::emit)
