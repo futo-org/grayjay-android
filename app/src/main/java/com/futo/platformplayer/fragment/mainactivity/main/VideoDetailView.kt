@@ -2563,12 +2563,10 @@ class VideoDetailView : ConstraintLayout {
                 if (d != null && d.connectionState == CastConnectionState.CONNECTED)
                     castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
                 else {
-                    withContext(Dispatchers.Main) {
-                        _player.swapSubtitles(toSet);
-                    }
+                    _player.swapSubtitles(toSet);
                 }
             } catch (e: Throwable) {
-                Logger.e(TAG, "handleSelectAudioTrack failed", e)
+                Logger.e(TAG, "handleSelectSubtitleTrack failed", e)
             }
         }
         _lastSubtitleSource = toSet;

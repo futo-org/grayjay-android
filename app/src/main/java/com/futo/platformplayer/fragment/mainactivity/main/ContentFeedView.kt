@@ -251,12 +251,13 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         }
 
         //TODO: Is this still necessary?
-        fragment.lifecycleScope.launch(Dispatchers.Main) {
-            try {
-                if(viewHolder.childViewHolder is ContentPreviewViewHolder)
+        if(viewHolder.childViewHolder is ContentPreviewViewHolder) {
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                try {
                     (recyclerData.adapter as PreviewContentListAdapter?)?.preview(viewHolder.childViewHolder)
-            } catch (e: Throwable) {
-                Logger.e(TAG, "playPreview failed", e)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "playPreview failed", e)
+                }
             }
         }
     }
