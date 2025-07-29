@@ -424,7 +424,7 @@ class UIDialogs {
         }
 
 
-        fun showCastingDialog(context: Context) {
+        fun showCastingDialog(context: Context, ownerActivity: Activity? = null) {
             val d = StateCasting.instance.activeDevice;
             if (d != null) {
                 val dialog = ConnectedCastingDialog(context);
@@ -432,6 +432,7 @@ class UIDialogs {
                     dialog.setOwnerActivity(context)
                 }
                 registerDialogOpened(dialog);
+                ownerActivity?.let { dialog.setOwnerActivity(it) }
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             } else {
@@ -444,21 +445,24 @@ class UIDialogs {
                 if (c is Activity) {
                     dialog.setOwnerActivity(c);
                 }
+                ownerActivity?.let { dialog.setOwnerActivity(it) }
                 dialog.setOnDismissListener { registerDialogClosed(dialog) };
                 dialog.show();
             }
         }
 
-        fun showCastingTutorialDialog(context: Context) {
+        fun showCastingTutorialDialog(context: Context, ownerActivity: Activity? = null) {
             val dialog = CastingHelpDialog(context);
             registerDialogOpened(dialog);
+            ownerActivity?.let { dialog.setOwnerActivity(it) }
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();
         }
 
-        fun showCastingAddDialog(context: Context) {
+        fun showCastingAddDialog(context: Context, ownerActivity: Activity? = null) {
             val dialog = CastingAddDialog(context);
             registerDialogOpened(dialog);
+            ownerActivity?.let { dialog.setOwnerActivity(it) }
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.show();
         }
