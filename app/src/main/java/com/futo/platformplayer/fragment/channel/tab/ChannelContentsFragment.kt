@@ -209,7 +209,7 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
         _searchView = searchView
         updateSearchViewVisibility()
 
-        _adapterResults = PreviewContentListAdapter(view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar, viewsToPrepend = arrayListOf(searchView)).apply {
+        _adapterResults = PreviewContentListAdapter(lifecycleScope, view.context, FeedStyle.THUMBNAIL, _results, null, Settings.instance.channel.progressBar, viewsToPrepend = arrayListOf(searchView)).apply {
             this.onContentUrlClicked.subscribe(this@ChannelContentsFragment.onContentUrlClicked::emit);
             this.onUrlClicked.subscribe(this@ChannelContentsFragment.onUrlClicked::emit);
             this.onContentClicked.subscribe { content, num ->

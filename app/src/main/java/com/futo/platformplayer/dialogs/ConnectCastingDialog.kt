@@ -83,7 +83,7 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
 
         _buttonClose.setOnClickListener { dismiss(); };
         _buttonAdd.setOnClickListener {
-            UIDialogs.showCastingAddDialog(context);
+            UIDialogs.showCastingAddDialog(context, ownerActivity);
             dismiss();
         };
 
@@ -139,9 +139,6 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
                 }
             }
         }
-
-        _textNoDevicesFound.visibility = if (_devices.isEmpty()) View.VISIBLE else View.GONE;
-        _recyclerDevices.visibility = if (_devices.isNotEmpty()) View.VISIBLE else View.GONE;
     }
 
     override fun dismiss() {

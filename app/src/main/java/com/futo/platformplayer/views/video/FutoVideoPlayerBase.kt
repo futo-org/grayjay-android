@@ -365,48 +365,63 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return _chapters?.let { chaps -> chaps.find { pos.toDouble() / 1000 > it.timeStart && pos.toDouble() / 1000 < it.timeEnd && (toIgnore.isEmpty() || !toIgnore.contains(it)) } };
     }
 
-    fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false, resume: Boolean = false) {
+    suspend fun setSource(videoSource: IVideoSource?, audioSource: IAudioSource? = null, play: Boolean = false, keepSubtitles: Boolean = false, resume: Boolean = false) {
         swapSources(videoSource, audioSource,resume, play, keepSubtitles);
     }
-    fun swapSources(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true, keepSubtitles: Boolean = false): Boolean {
-        var videoSourceUsed = videoSource;
-        var audioSourceUsed = audioSource;
-        if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
-            videoSource.getUnderlyingPlugin()?.busy {
-                videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
-                audioSourceUsed = null;
+    suspend fun swapSources(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true, keepSubtitles: Boolean = false): Boolean {
+        val didSet = withContext(Dispatchers.IO) {
+            var videoSourceUsed = videoSource;
+            var audioSourceUsed = audioSource;
+            if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
+                videoSource.getUnderlyingPlugin()?.busy {
+                    videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+                    audioSourceUsed = null;
+                }
             }
+
+            val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
+            val didSetAudio = swapSourceInternal(audioSourceUsed, play, resume);
+            if(!keepSubtitles)
+                _lastSubtitleMediaSource = null;
+
+            return@withContext didSetVideo && didSetAudio
         }
 
-        val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
-        val didSetAudio = swapSourceInternal(audioSourceUsed, play, resume);
-        if(!keepSubtitles)
-            _lastSubtitleMediaSource = null;
-        if(didSetVideo && didSetAudio)
-            return loadSelectedSources(play, resume);
-        else
-            return true;
+        return withContext(Dispatchers.Main) {
+            if (didSet)
+                return@withContext loadSelectedSources(play, resume)
+            else
+                return@withContext true
+        }
     }
-    fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
-        var videoSourceUsed = videoSource;
-        if(videoSource is JSDashManifestRawSource && lastVideoSource is JSDashManifestMergingRawSource)
-            videoSourceUsed = JSDashManifestMergingRawSource(videoSource, (lastVideoSource as JSDashManifestMergingRawSource).audio);
-        val didSet = swapSourceInternal(videoSourceUsed, play, resume);
-        if(didSet)
-            return loadSelectedSources(play, resume);
-        else
-            return true;
+    suspend fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
+        val didSet = withContext(Dispatchers.IO) {
+            var videoSourceUsed = videoSource;
+            if (videoSource is JSDashManifestRawSource && lastVideoSource is JSDashManifestMergingRawSource)
+                videoSourceUsed = JSDashManifestMergingRawSource(videoSource, (lastVideoSource as JSDashManifestMergingRawSource).audio);
+            return@withContext swapSourceInternal(videoSourceUsed, play, resume);
+        }
+        return withContext(Dispatchers.Main) {
+            if (didSet)
+                return@withContext loadSelectedSources(play, resume);
+            else
+                return@withContext true;
+        }
     }
-    fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
-        if(audioSource is JSDashManifestRawAudioSource && lastVideoSource is JSDashManifestMergingRawSource)
-            swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource), play, resume);
-        else
-            swapSourceInternal(audioSource, play, resume);
-        return loadSelectedSources(play, resume);
+    suspend fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
+        withContext(Dispatchers.IO) {
+            if (audioSource is JSDashManifestRawAudioSource && lastVideoSource is JSDashManifestMergingRawSource)
+                swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource), play, resume);
+            else
+                swapSourceInternal(audioSource, play, resume);
+        }
+        return withContext(Dispatchers.Main) {
+            return@withContext loadSelectedSources(play, resume);
+        }
     }
 
     @OptIn(UnstableApi::class)
-    fun swapSubtitles(scope: CoroutineScope, subtitles: ISubtitleSource?) {
+    suspend fun swapSubtitles(subtitles: ISubtitleSource?) {
         if(subtitles == null)
             clearSubtitles();
         else {
@@ -420,9 +435,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             C.TIME_UNSET);
                     loadSelectedSources(true, true);
                 } else {
-                    scope.launch(Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
                         try {
-                            val subUri = subtitles.getSubtitlesURI() ?: return@launch;
+                            val subUri = subtitles.getSubtitlesURI() ?: return@withContext;
                             withContext(Dispatchers.Main) {
                                 try {
                                     _lastSubtitleMediaSource = SingleSampleMediaSource.Factory(DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)))
