@@ -454,6 +454,29 @@ class VideoDetailView : ConstraintLayout {
             fragment.navigate<VideoDetailFragment>(it.targetUrl);
         };
 
+        _container_content_liveChat.onUrlClick.subscribe { uri ->
+            val c = context
+            if (c is MainActivity) {
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        if (!c.handleUrl(uri.toString())) {
+                            Intent(Intent.ACTION_VIEW, uri).apply {
+                                addCategory(Intent.CATEGORY_BROWSABLE)
+                                context.startActivity(this)
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "Failed to handle live chat URL")
+                    }
+                }
+            } else {
+                Intent(Intent.ACTION_VIEW, uri).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                    context.startActivity(this)
+                }
+            }
+        }
+
         _monetization.onSupportTap.subscribe {
             _container_content_support.setPolycentricProfile(_polycentricProfile);
             switchContentView(_container_content_support);
@@ -477,11 +500,6 @@ class VideoDetailView : ConstraintLayout {
         }
 
         _player.attachPlayer();
-
-        _container_content_liveChat.onRaidNow.subscribe {
-            StatePlayer.instance.clearQueue();
-            fragment.navigate<VideoDetailFragment>(it.targetUrl);
-        };
 
         StateApp.instance.preventPictureInPicture.subscribe(this) {
             Logger.i(TAG, "StateApp.instance.preventPictureInPicture.subscribe preventPictureInPicture = true");

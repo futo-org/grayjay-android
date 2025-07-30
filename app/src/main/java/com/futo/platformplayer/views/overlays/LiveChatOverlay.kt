@@ -2,11 +2,14 @@ package com.futo.platformplayer.views.overlays
 
 import android.animation.LayoutTransition
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PointF
+import android.net.Uri
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.View
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -19,6 +22,7 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.ILiveEventChatMessage
@@ -41,6 +45,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import toAndroidColor
+import androidx.core.net.toUri
 
 
 class LiveChatOverlay : LinearLayout {
@@ -92,6 +97,7 @@ class LiveChatOverlay : LinearLayout {
 
     val onRaidNow = Event1<LiveEventRaid>();
     val onRaidPrevent = Event1<LiveEventRaid>();
+    val onUrlClick = Event1<Uri>()
 
     private val _argJsonSerializer = Json;
 
@@ -115,6 +121,18 @@ class LiveChatOverlay : LinearLayout {
                     //Cleanup every second as fallback
                     view?.evaluateJavascript("setInterval(()=>{" + toRemoveJSInterval + "}, 1000)") {};
                 };
+            }
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                onUrlClick.emit(request.url)
+                return true
+            }
+
+            // API < 24
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                onUrlClick.emit(url.toUri())
+                return true
             }
         };
 
