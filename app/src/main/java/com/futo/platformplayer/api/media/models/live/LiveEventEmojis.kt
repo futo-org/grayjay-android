@@ -10,6 +10,8 @@ class LiveEventEmojis: IPlatformLiveEvent {
 
     val emojis: HashMap<String, String>;
 
+    override var time: Long = -1;
+
     constructor(emojis: HashMap<String, String>) {
         this.emojis = emojis;
     }

@@ -10,6 +10,8 @@ class LiveEventViewCount: IPlatformLiveEvent {
 
     val viewCount: Int;
 
+    override var time: Long = -1;
+
     constructor(viewCount: Int) {
         this.viewCount = viewCount;
     }

@@ -19,8 +19,8 @@ abstract class JSPager<T> : IPager<T> {
     protected var pager: V8ValueObject;
 
     private var _lastResults: List<T>? = null;
-    private var _resultChanged: Boolean = true;
-    private var _hasMorePages: Boolean = false;
+    protected var _resultChanged: Boolean = true;
+    protected var _hasMorePages: Boolean = false;
     //private var _morePagesWasFalse: Boolean = false;
 
     val isAvailable get() = plugin.getUnderlyingPlugin()._runtime?.let { !it.isClosed && !it.isDead } ?: false;

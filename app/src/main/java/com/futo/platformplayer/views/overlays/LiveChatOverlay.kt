@@ -202,6 +202,8 @@ class LiveChatOverlay : LinearLayout {
 
         if(viewerCount != null)
             _textViewers.text = viewerCount.toHumanNumber() + " " + context.getString(R.string.viewers);
+        else if(manager != null && manager.isVOD)
+            _textViewers.text = manager.viewCount.toHumanNumber() + " past viewers";
         else if(manager != null)
             _textViewers.text = manager.viewCount.toHumanNumber() + " " + context.getString(R.string.viewers);
         else

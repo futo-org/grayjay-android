@@ -18,12 +18,15 @@ class LiveEventComment: IPlatformLiveEvent, ILiveEventChatMessage {
     val colorName: String?;
     val badges: List<String>;
 
-    constructor(name: String, thumbnail: String?, message: String, colorName: String? = null, badges: List<String>? = null) {
+    override var time: Long = -1;
+
+    constructor(name: String, thumbnail: String?, message: String, colorName: String? = null, badges: List<String>? = null, time: Long = -1) {
         this.name = name;
         this.message = message;
         this.thumbnail = thumbnail;
         this.colorName = colorName;
         this.badges = badges ?: listOf();
+        this.time = time;
     }
 
     companion object {
@@ -39,7 +42,8 @@ class LiveEventComment: IPlatformLiveEvent, ILiveEventChatMessage {
                 obj.getOrThrow(config, "name", contextName),
                 obj.getOrThrow(config, "thumbnail", contextName, true),
                 obj.getOrThrow(config, "message", contextName),
-                colorName, badges);
+                colorName, badges,
+                obj.getOrDefault(config, "time", contextName, -1) ?: -1);
         }
     }
 }

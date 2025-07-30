@@ -7,6 +7,7 @@ import com.futo.platformplayer.getOrThrow
 
 interface IPlatformLiveEvent {
     val type : LiveEventType;
+    var time: Long;
 
 
     companion object {

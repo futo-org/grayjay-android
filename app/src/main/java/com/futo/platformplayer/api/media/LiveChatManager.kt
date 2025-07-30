@@ -11,6 +11,7 @@ import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.live.LiveEventComment
 import com.futo.platformplayer.api.media.models.live.LiveEventEmojis
 import com.futo.platformplayer.api.media.platforms.js.models.JSLiveEventPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSVODEventPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.BatchedTaskHandler
 import com.futo.platformplayer.logging.Logger
@@ -26,11 +27,16 @@ class LiveChatManager {
     private val _emojiCache: EmojiCache = EmojiCache();
     private val _pager: IPager<IPlatformLiveEvent>?;
 
+    private var _position: Long = 0;
+    private var _eventsPosition: Long = 0;
+
     private val _history: ArrayList<IPlatformLiveEvent> = arrayListOf();
 
     private var _startCounter = 0;
 
     private val _followers: HashMap<Any, (List<IPlatformLiveEvent>) -> Unit> = hashMapOf();
+
+    val isVOD get() = _pager is JSVODEventPager;
 
     var viewCount: Long = 0
         private set;
@@ -39,8 +45,24 @@ class LiveChatManager {
         _scope = scope;
         _pager = pager;
         viewCount = initialViewCount;
-        handleEvents(listOf(LiveEventComment("SYSTEM", null, "Live chat is still under construction. While it is mostly functional, the experience still needs to be improved.\n")));
-        handleEvents(pager.getResults());
+        if(pager is JSVODEventPager)
+            handleEvents(listOf(LiveEventComment("SYSTEM", null, "VOD chat is still under construction. While it is mostly functional, the experience still needs to be improved.\n")));
+        else
+            handleEvents(listOf(LiveEventComment("SYSTEM", null, "Live chat is still under construction. While it is mostly functional, the experience still needs to be improved.\n")));
+
+        if(pager is JSVODEventPager) {
+            var replayResults = pager.getResults().filter { it.time > _eventsPosition || it is LiveEventEmojis };
+            //TODO: Remove this once dripfeed is done properly
+            replayResults = replayResults.filter{ it.time < _eventsPosition + 1500 || it is LiveEventEmojis };
+            if(replayResults.size > 0) {
+                _eventsPosition = replayResults.maxOf { it.time };
+                Logger.i(TAG, "VOD Events last event: " + _eventsPosition);
+            }
+            else
+                _eventsPosition = _eventsPosition + 1500;
+        }
+        else
+            handleEvents(pager.getResults());
     }
 
     fun start() {
@@ -50,6 +72,10 @@ class LiveChatManager {
 
     fun stop() {
         _startCounter++;
+    }
+
+    fun setVideoPosition(ms: Long) {
+        _position = ms;
     }
 
     fun getHistory(): List<IPlatformLiveEvent> {
@@ -85,12 +111,35 @@ class LiveChatManager {
             try {
                 while(_startCounter == counter) {
                     var nextInterval = 1000L;
+                    if(_pager is JSVODEventPager && _eventsPosition > _position) {
+                        delay(500);
+                        continue;
+                    }
+
                     try {
                         if(_pager == null || !_pager.hasMorePages())
                             return@launch;
-                        _pager.nextPage();
-                        val newEvents = _pager.getResults();
+                        val newEvents = if(_pager is JSVODEventPager) {
+                            val requestPosition = _position;
+                            _pager.nextPage(requestPosition.toInt());
+                            var replayResults = _pager.getResults().filter { it.time > requestPosition || it is LiveEventEmojis };
+                            //TODO: Remove this once dripfeed is done properly
+                            replayResults = replayResults.filter{ it.time < requestPosition + 1500 || it is LiveEventEmojis };
+                            if(replayResults.size > 0) {
+                                _eventsPosition = replayResults.maxOf { it.time };
+                                Logger.i(TAG, "VOD Events last event: " + _eventsPosition);
+                            }
+                            else
+                                _eventsPosition = requestPosition + _pager.nextRequest.coerceAtLeast(800).toLong();
+                            replayResults;
+                        }
+                        else {
+                            _pager.nextPage();
+                            _pager.getResults();
+                        }
                         if(_pager is JSLiveEventPager)
+                            nextInterval = _pager.nextRequest.coerceAtLeast(800).toLong();
+                        else if(_pager is JSVODEventPager)
                             nextInterval = _pager.nextRequest.coerceAtLeast(800).toLong();
 
                         if(newEvents.size > 0)

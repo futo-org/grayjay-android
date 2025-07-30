@@ -14,6 +14,8 @@ class LiveEventRaid: IPlatformLiveEvent {
     val targetUrl: String;
     val isOutgoing: Boolean;
 
+    override var time: Long = -1;
+
     constructor(name: String, url: String, thumbnail: String, isOutgoing: Boolean) {
         this.targetName = name;
         this.targetUrl = url;

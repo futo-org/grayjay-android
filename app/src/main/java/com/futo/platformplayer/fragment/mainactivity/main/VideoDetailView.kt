@@ -1777,12 +1777,19 @@ class VideoDetailView : ConstraintLayout {
 
         _liveChat?.stop();
         _liveChat = null;
+        var gotLive = false;
         if (video.isLive && video.live != null) {
             loadLiveChat(video);
+            gotLive = true;
         }
-        if (video.isLive && video.live == null && !video.video.videoSources.any())
+        if (video.isLive && video.live == null && !video.video.videoSources.any()) {
             startLiveTry(video);
-
+            gotLive = true;
+        }
+        if(!gotLive && video is JSVideoDetails && video.hasVODEvents()) {
+            Logger.i(TAG, "Loading VOD chat");
+            loadVODChat(video);
+        }
 
         _player.updateNextPrevious();
         updateMoreButtons();
@@ -1804,6 +1811,43 @@ class VideoDetailView : ConstraintLayout {
         if (StatePlayer.instance.autoplay) {
             _taskLoadRecommendations.cancel()
             _taskLoadRecommendations.run(videoDetail.url)
+        }
+    }
+    fun loadVODChat(video: IPlatformVideoDetails) {
+        _liveChat?.stop();
+        _container_content_liveChat.cancel();
+        _liveChat = null;
+        if(video !is JSVideoDetails)
+            return;
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                var livePager: IPager<IPlatformLiveEvent>?;
+                try {
+                    //TODO: Create video.getLiveEvents shortcut/optimalization
+                    livePager = video.getVODEvents(video.url);
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Failed to obtain VODEvents pager", ex);
+                    livePager = null;
+                }
+                val liveChat = livePager?.let {
+                    val liveChatManager = LiveChatManager(fragment.lifecycleScope, livePager, video.viewCount);
+                    liveChatManager.start();
+                    return@let liveChatManager;
+                }
+                _liveChat = liveChat;
+
+                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                    try {
+                        _container_content_liveChat.load(fragment.lifecycleScope, liveChat, null, if(liveChat != null) video.viewCount else null);
+                        switchContentView(_container_content_liveChat);
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to switch content view to vod chat.", e);
+                    }
+                }
+            }
+            catch(ex: Throwable) {
+                Logger.e(TAG, "Failed to load vod chat", ex);
+            }
         }
     }
     fun loadLiveChat(video: IPlatformVideoDetails) {
@@ -2961,6 +3005,8 @@ class VideoDetailView : ConstraintLayout {
 
     private fun setLastPositionMilliseconds(positionMilliseconds: Long, updateHistory: Boolean) {
         lastPositionMilliseconds = positionMilliseconds;
+
+        _liveChat?.setVideoPosition(lastPositionMilliseconds);
 
         val v = video ?: return;
         val currentTime = System.currentTimeMillis();

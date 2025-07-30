@@ -21,6 +21,8 @@ class LiveEventDonation: IPlatformLiveEvent, ILiveEventChatMessage {
 
     var expire: Int = 6000;
 
+    override var time: Long = -1;
+
 
     constructor(name: String, thumbnail: String?, message: String, amount: String, expire: Int = 6000, colorDonation: String? = null) {
         this.name = name;
