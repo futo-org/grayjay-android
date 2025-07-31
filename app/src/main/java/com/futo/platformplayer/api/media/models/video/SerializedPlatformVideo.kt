@@ -16,7 +16,7 @@ open class SerializedPlatformVideo(
     override val contentType: ContentType = ContentType.MEDIA,
     override val id: PlatformID,
     override val name: String,
-    override val thumbnails: Thumbnails,
+    override val thumbnails: Thumbnails = Thumbnails(),
     override val author: PlatformAuthorLink,
     @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
     @JsonNames("datetime", "dateTime")
