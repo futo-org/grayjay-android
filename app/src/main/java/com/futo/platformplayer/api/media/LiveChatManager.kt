@@ -123,8 +123,6 @@ class LiveChatManager {
                             val requestPosition = _position;
                             _pager.nextPage(requestPosition.toInt());
                             var replayResults = _pager.getResults().filter { it.time > requestPosition || it is LiveEventEmojis };
-                            //TODO: Remove this once dripfeed is done properly
-                            replayResults = replayResults.filter{ it.time < requestPosition + 1500 || it is LiveEventEmojis };
                             if(replayResults.size > 0) {
                                 _eventsPosition = replayResults.maxOf { it.time };
                                 Logger.i(TAG, "VOD Events last event: " + _eventsPosition);

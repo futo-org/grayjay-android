@@ -152,6 +152,11 @@ class SourceDetailFragment : MainFragment() {
                                 if(field is View)
                                     field.isVisible = false;
                             }
+                            if(!source.capabilities.hasGetUserHistory) {
+                                val field = _settingsAppForm.findField("sync");
+                                if(field is View)
+                                    field.isVisible = false;
+                            }
                             _settingsAppForm.onChanged.clear();
                             _settingsAppForm.onChanged.subscribe { field, value ->
                                 _settingsAppChanged = true;

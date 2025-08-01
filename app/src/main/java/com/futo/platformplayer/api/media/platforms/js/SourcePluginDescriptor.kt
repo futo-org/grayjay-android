@@ -116,25 +116,12 @@ class SourcePluginDescriptor {
             var enableShorts: Boolean? = null;
         }
 
-        @FormField(R.string.sync, "group", R.string.sync_desc, 3)
+        @FormField(R.string.sync, "group", R.string.sync_desc, 3,"sync")
         var sync = Sync();
         @Serializable
         class Sync {
-            @FormField(R.string.sync_history, FieldForm.TOGGLE, R.string.sync_history_desc, 1)
+            @FormField(R.string.sync_history, FieldForm.TOGGLE, R.string.sync_history_desc, 1,"syncHistory")
             var enableHistorySync: Boolean? = null;
-
-            @FormField(R.string.sync_history, FieldForm.BUTTON, R.string.sync_history_desc, 2)
-            @FormFieldButton()
-            fun syncHistoryNow() {
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    val clients = StatePlatform.instance.getEnabledClients();
-                    for (client in clients) {
-                        if (client is JSClient) {//) && client.descriptor.appSettings.sync.enableHistorySync  == true) {
-                            StateHistory.instance.syncRemoteHistory(client);
-                        }
-                    }
-                };
-            }
         }
 
         @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 4)
