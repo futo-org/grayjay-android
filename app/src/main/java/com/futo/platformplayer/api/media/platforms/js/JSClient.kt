@@ -107,6 +107,7 @@ open class JSClient : IPlatformClient {
     override var capabilities: PlatformClientCapabilities = PlatformClientCapabilities();
 
     private var _busyAction = "";
+    val auth: SourceAuth? get() = _auth;
     val isBusy: Boolean get() = _plugin.isBusy;
     val isBusyAction: String get() {
         return _busyAction;
