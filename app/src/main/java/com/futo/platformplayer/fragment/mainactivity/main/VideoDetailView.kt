@@ -1207,6 +1207,7 @@ class VideoDetailView : ConstraintLayout {
         _taskLoadVideo.cancel();
         handleStop();
         _didStop = true;
+        onShouldEnterPictureInPictureChanged.emit()
         Logger.i(TAG, "_didStop set to true");
 
         StatePlayer.instance.rotationLock = false;
