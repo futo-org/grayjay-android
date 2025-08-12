@@ -603,6 +603,11 @@ class Settings : FragmentedStorageFileJson() {
                 else -> 2.0
             }
         }
+
+
+        @AdvancedField
+        @FormField(R.string.shorts_pregenerate, FieldForm.TOGGLE, R.string.shorts_pregenerate_description, 28)
+        var shortsPregenerate: Boolean = false;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)

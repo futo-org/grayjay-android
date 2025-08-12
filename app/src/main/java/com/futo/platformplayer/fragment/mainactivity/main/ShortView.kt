@@ -35,6 +35,8 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
@@ -66,6 +68,8 @@ import com.futo.platformplayer.views.pills.OnLikeDislikeUpdatedArgs
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.video.FutoShortPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_AUDIO_CONTAINERS
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_VIDEO_CONTAINERS
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -741,6 +745,23 @@ class ShortView : FrameLayout {
                 Logger.i(TAG, "Shorts loadVideo [${url}] took ${timeLoadVideo}ms");
                 videoDetails = result
                 video = result
+
+                if(Settings.instance.playback.shortsPregenerate)
+                    fragment.lifecycleScope.launch(Dispatchers.IO) {
+                        if(result != null) {
+                            val prefVid = VideoHelper.selectBestVideoSource(result.video, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), PREFERED_VIDEO_CONTAINERS);
+                            val prefAud = VideoHelper.selectBestAudioSource(result.video, PREFERED_AUDIO_CONTAINERS, Settings.instance.playback.getPrimaryLanguage(context));
+
+                            if(prefVid != null && prefVid is JSDashManifestRawSource) {
+                                Logger.i(TAG, "Shorts pregenerating video (${result.name})");
+                                prefVid.pregenerateAsync(fragment.lifecycleScope);
+                            }
+                            if(prefAud != null && prefAud is JSDashManifestRawAudioSource) {
+                                Logger.i(TAG, "Shorts pregenerating audio (${result.name})");
+                                prefAud.pregenerateAsync(fragment.lifecycleScope);
+                            }
+                        }
+                    }
 
                 bottomSheet.video = result
 

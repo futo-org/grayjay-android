@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.animation.LinearInterpolator
+import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
@@ -64,6 +65,8 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
         LayoutInflater.from(context).inflate(R.layout.view_short_player, this, true)
         videoView = findViewById(R.id.short_player_view)
         progressBar = findViewById(R.id.short_player_progress_bar)
+
+        videoView.subtitleView?.setFixedTextSize(Dimension.SP, 18F);
 
         if (!isInEditMode) {
             player = StatePlayer.instance.getShortPlayerOrCreate(context)
