@@ -15,6 +15,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginAuthConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.matchesDomain
 import com.futo.platformplayer.others.LoginWebViewClient
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
@@ -74,6 +75,7 @@ class LoginActivity : AppCompatActivity() {
             finish();
         };
         var isFirstLoad = true;
+        val loginWarnings = authConfig.loginWarnings?.toMutableList() ?: mutableListOf<SourcePluginAuthConfig.Warning>();
         webViewClient.onPageLoaded.subscribe { view, url ->
             _textUrl.setText(url ?: "");
 
@@ -85,6 +87,19 @@ class LoginActivity : AppCompatActivity() {
                 Logger.i(TAG, "Clicking login button [${authConfig.loginButton}]");
                 //TODO: Find most reliable way to wait for page js to finish
                 view?.evaluateJavascript("setTimeout(()=> document.querySelector(\"${authConfig.loginButton}\")?.click(), 1000)", {});
+            }
+
+            if(loginWarnings.size > 0) {
+                synchronized(loginWarnings) {
+                    val warning = loginWarnings.find { it.url.matches(it.getRegex()) };
+                    if(warning != null) {
+                        if(warning.once == true)
+                            loginWarnings.remove(warning);
+                        UIDialogs.showDialog(this@LoginActivity, R.drawable.ic_warning_yellow, warning.text ?: "", warning.details ?: "", null, 0,
+                            UIDialogs.Action("Understood", {
+                            }, UIDialogs.ActionStyle.PRIMARY));
+                    }
+                }
             }
         }
         _webView.settings.domStorageEnabled = true;

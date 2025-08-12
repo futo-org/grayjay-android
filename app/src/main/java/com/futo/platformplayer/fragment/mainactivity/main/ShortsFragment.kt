@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.annotation.OptIn
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -25,6 +26,9 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.buttons.BigButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.system.measureTimeMillis
 
 @UnstableApi
 class ShortsFragment : MainFragment() {
@@ -35,6 +39,7 @@ class ShortsFragment : MainFragment() {
     private var loadPagerTask: TaskHandler<ShortsFragment, IPager<IPlatformVideo>>? = null
     private var nextPageTask: TaskHandler<ShortsFragment, List<IPlatformVideo>>? = null
 
+    //TODO: Reduce number of pagers (1, or at most 2)
     private var mainShortsPager: IPager<IPlatformVideo>? = null
     private val mainShorts: MutableList<IPlatformVideo> = mutableListOf()
 
@@ -58,6 +63,7 @@ class ShortsFragment : MainFragment() {
     private var customViewAdapter: CustomViewAdapter? = null
 
     // we just completely reset the data structure so we want to tell the adapter that
+    //TODO: Move most of this logic to ShortsView
     @SuppressLint("NotifyDataSetChanged")
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         (activity as MainActivity?)?.getFragment<VideoDetailFragment>()?.closeVideoDetails()
@@ -118,7 +124,6 @@ class ShortsFragment : MainFragment() {
         overlayQualityContainer = view.findViewById(R.id.shorts_quality_overview)
 
         sourcesButton.onClick.subscribe {
-            sourcesButton.playSoundEffect(SoundEffectConstants.CLICK)
             navigate<SourcesFragment>()
         }
 
@@ -145,7 +150,7 @@ class ShortsFragment : MainFragment() {
 
         this.customViewAdapter = customViewAdapter
 
-        if (loadPagerTask == null && currentShorts.isEmpty()) {
+        if (loadPagerTask == null) {// && currentShorts.isEmpty()) {
             loadPager()
 
             loadPagerTask!!.success {
@@ -207,28 +212,29 @@ class ShortsFragment : MainFragment() {
     }
 
     private fun nextPage() {
-        nextPageTask?.cancel()
-
-        val nextPageTask =
-            TaskHandler<ShortsFragment, List<IPlatformVideo>>(StateApp.instance.scopeGetter, {
-                currentShortsPager!!.nextPage()
-
-                return@TaskHandler currentShortsPager!!.getResults()
-            }).success { newVideos ->
+        Logger.i(TAG, "ShortsFragment nextPage");
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val time = measureTimeMillis {
+                    currentShortsPager!!.nextPage();
+                }
+                val newVideos = currentShortsPager!!.getResults();
                 val prevCount = customViewAdapter!!.itemCount
+                Logger.i(TAG, "Shorts nextPage took ${time}ms, ${prevCount}-${prevCount + newVideos.size}, hasMore: ${currentShortsPager?.hasMorePages()}");
                 currentShorts.addAll(newVideos)
                 if (isChannelShortsMode) {
                     channelShorts.addAll(newVideos)
                 } else {
                     mainShorts.addAll(newVideos)
                 }
-                customViewAdapter!!.notifyItemRangeInserted(prevCount, newVideos.size)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    customViewAdapter!!.notifyItemRangeInserted(prevCount, newVideos.size)
+                }
                 nextPageTask = null
+            } catch (ex: Throwable) {
+                Logger.e(TAG, "Shorts Failed to call nextPage", ex);
             }
-
-        nextPageTask.run(this)
-
-        this.nextPageTask = nextPageTask
+        }
     }
 
     // we just completely reset the data structure so we want to tell the adapter that
@@ -236,12 +242,16 @@ class ShortsFragment : MainFragment() {
     private fun loadPager() {
         loadPagerTask?.cancel()
 
+        Logger.i(TAG, "Shorts loadPage");
+        var loadPageStart = System.currentTimeMillis();
         val loadPagerTask =
             TaskHandler<ShortsFragment, IPager<IPlatformVideo>>(StateApp.instance.scopeGetter, {
-                val pager = StatePlatform.instance.getShorts()
+                val pager = StatePlatform.instance.getShorts();
 
                 return@TaskHandler pager
             }).success { pager ->
+                val timeLoadPage = System.currentTimeMillis() - loadPageStart;
+                Logger.i(TAG, "Shorts loadPage took ${timeLoadPage}ms");
                 mainShorts.clear()
                 mainShorts.addAll(pager.getResults())
                 mainShortsPager = pager
@@ -259,7 +269,7 @@ class ShortsFragment : MainFragment() {
                 loadPagerTask = null
             }.exception<Throwable> { err ->
                 val message = "Unable to load shorts $err"
-                Logger.i(TAG, message)
+                Logger.w(TAG, message, err)
                 if (context != null) {
                     UIDialogs.showDialog(
                         requireContext(), R.drawable.ic_sources, message, null, null, 0, UIDialogs.Action(
@@ -329,6 +339,7 @@ class ShortsFragment : MainFragment() {
 
         @OptIn(UnstableApi::class)
         override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
+            Logger.i(TAG, "Shorts change (position: ${position}): ${videos[position].name} (${videos[position].id.value})")
             holder.shortView.changeVideo(videos[position], isChannelShortsMode())
 
             if (position == itemCount - 1) {

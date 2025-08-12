@@ -12,7 +12,7 @@ class MultiDistributionContentPager<T : IPlatformContent> : MultiPager<T> {
     private val dist : HashMap<IPager<T>, Float>;
     private val distConsumed : HashMap<IPager<T>, Float>;
 
-    constructor(pagers : Map<IPager<T>, Float>) : super(pagers.keys.toMutableList()) {
+    constructor(pagers : Map<IPager<T>, Float>, pageSize: Int = 9) : super(pagers.keys.toMutableList(), false, pageSize) {
         val distTotal = pagers.values.sum();
         dist = HashMap();
 
