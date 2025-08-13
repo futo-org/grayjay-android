@@ -9,7 +9,7 @@
         android:layout_above="@+id/short_player_progress_bar"
         android:background="@color/black"
         app:default_artwork="@drawable/placeholder_video_thumbnail"
-        app:resize_mode="fit"
+        app:resize_mode="fill"
         app:show_buffering="when_playing"
         app:use_artwork="true"
         app:use_controller="false" />
@@ -17,9 +17,9 @@
     <androidx.media3.ui.DefaultTimeBar
         android:id="@+id/short_player_progress_bar"
         android:layout_width="match_parent"
-        android:layout_height="6dp"
+        android:layout_height="3dp"
         android:layout_alignParentBottom="true"
-        app:bar_height="6dp"
+        app:bar_height="3dp"
         app:buffered_color="#DDEEEEEE"
         app:played_color="@color/colorPrimary"
         app:scrubber_disabled_size="0dp"

@@ -1,46 +1,27 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
-import android.app.Dialog
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.drawable.Animatable
-import android.graphics.drawable.Drawable
-import android.os.Bundle
-import android.text.Spanned
 import android.util.AttributeSet
-import android.util.TypedValue
 import android.view.LayoutInflater
-import android.view.SoundEffectConstants
-import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
-import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
-import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
-import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
-import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
@@ -54,40 +35,30 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
-import com.futo.platformplayer.casting.CastConnectionState
-import com.futo.platformplayer.casting.StateCasting
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.downloads.VideoLocal
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptLoginRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.exceptions.UnsupportedCastException
-import com.futo.platformplayer.fixHtmlLinks
-import com.futo.platformplayer.getNowDiffSeconds
+import com.futo.platformplayer.fragment.mainactivity.special.CommentsModalBottomSheet
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
-import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSize
-import com.futo.platformplayer.toHumanNowDiffString
-import com.futo.platformplayer.toHumanNumber
-import com.futo.platformplayer.views.MonetizationView
-import com.futo.platformplayer.views.comments.AddCommentView
+import com.futo.platformplayer.views.buttons.ShortsButton
 import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.platformplayer.views.overlays.DescriptionOverlay
-import com.futo.platformplayer.views.overlays.RepliesOverlay
-import com.futo.platformplayer.views.overlays.SupportOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuButtonList
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
@@ -95,20 +66,17 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTitle
 import com.futo.platformplayer.views.pills.OnLikeDislikeUpdatedArgs
 import com.futo.platformplayer.views.platform.PlatformIndicator
-import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.video.FutoShortPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_AUDIO_CONTAINERS
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_VIDEO_CONTAINERS
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
 import com.futo.polycentric.core.Opinion
-import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
+//import com.google.android.material.button.MaterialButton
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -116,30 +84,29 @@ import userpackage.Protocol
 
 @UnstableApi
 class ShortView : FrameLayout {
-    private lateinit var mainFragment: MainFragment
+    private lateinit var fragment: MainFragment
     private val player: FutoShortPlayer
 
     private val channelInfo: LinearLayout
     private val creatorThumbnail: CreatorThumbnail
     private val channelName: TextView
     private val videoTitle: TextView
+    private val videoSubtitle: TextView
     private val platformIndicator: PlatformIndicator
 
+    //TODO: Replace with non-material button
     private val backButton: MaterialButton
     private val backButtonContainer: ConstraintLayout
 
-    private val likeContainer: FrameLayout
-    private val dislikeContainer: FrameLayout
-    private val likeButton: MaterialButton
-    private val likeCount: TextView
-    private val dislikeButton: MaterialButton
-    private val dislikeCount: TextView
+    private val likeButton: ShortsButton
+    //private val likeCount: TextView
+    private val dislikeButton: ShortsButton
+    //private val dislikeCount: TextView
 
-    private val commentsButton: MaterialButton
-    private val shareButton: MaterialButton
-    private val refreshButton: MaterialButton
-    private val refreshButtonContainer: View
-    private val qualityButton: MaterialButton
+    private val commentsButton: ShortsButton
+    private val shareButton: ShortsButton
+    private val refreshButton: ShortsButton
+    private val qualityButton: ShortsButton
 
     private val playPauseOverlay: FrameLayout
     private val playPauseIcon: ImageView
@@ -173,18 +140,21 @@ class ShortView : FrameLayout {
     private val onLikeDislikeUpdated = Event1<OnLikeDislikeUpdatedArgs>()
     private val onVideoUpdated = Event1<IPlatformVideo?>()
 
+    //TODO: Replace with non-material UI? Only true dependency on Material left
     private val bottomSheet: CommentsModalBottomSheet = CommentsModalBottomSheet()
 
     var likes: Long = 0
         set(value) {
             field = value
-            likeCount.text = value.toString()
+            likeButton.withPrimaryText(value.toString());
+            //likeCount.text = value.toString()
         }
 
     var dislikes: Long = 0
         set(value) {
             field = value
-            dislikeCount.text = value.toString()
+            dislikeButton.withPrimaryText(value.toString());
+            //dislikeCount.text = value.toString()
         }
 
     constructor(inflater: LayoutInflater, fragment: MainFragment, overlayQualityContainer: FrameLayout) : this(inflater.context) {
@@ -194,7 +164,7 @@ class ShortView : FrameLayout {
             LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT
         )
 
-        this.mainFragment = fragment
+        this.fragment = fragment
         bottomSheet.mainFragment = fragment
     }
 
@@ -217,19 +187,17 @@ class ShortView : FrameLayout {
         creatorThumbnail = findViewById(R.id.creator_thumbnail)
         channelName = findViewById(R.id.channel_name)
         videoTitle = findViewById(R.id.video_title)
+        videoSubtitle = findViewById(R.id.video_subtitle)
         platformIndicator = findViewById(R.id.short_platform_indicator)
         backButton = findViewById(R.id.back_button)
         backButtonContainer = findViewById(R.id.back_button_container)
-        likeContainer = findViewById(R.id.like_container)
-        dislikeContainer = findViewById(R.id.dislike_container)
         likeButton = findViewById(R.id.like_button)
-        likeCount = findViewById(R.id.like_count)
+        //likeCount = findViewById(R.id.like_count)
         dislikeButton = findViewById(R.id.dislike_button)
-        dislikeCount = findViewById(R.id.dislike_count)
+        //dislikeCount = findViewById(R.id.dislike_count)
         commentsButton = findViewById(R.id.comments_button)
         shareButton = findViewById(R.id.share_button)
         refreshButton = findViewById(R.id.refresh_button)
-        refreshButtonContainer = findViewById(R.id.refresh_button_container)
         qualityButton = findViewById(R.id.quality_button)
         playPauseOverlay = findViewById(R.id.play_pause_overlay)
         playPauseIcon = findViewById(R.id.play_pause_icon)
@@ -258,48 +226,44 @@ class ShortView : FrameLayout {
         }
 
         onVideoUpdated.subscribe {
+            Logger.i(TAG, "Shorts videoUpdated [${it?.name}] (isDetail: ${it is IPlatformVideoDetails}, thumbnail: ${it?.author?.thumbnail})");
             videoTitle.text = it?.name
+            videoSubtitle.text = if(it is IPlatformVideoDetails) it?.description; else "";
             platformIndicator.setPlatformFromClientID(it?.id?.pluginId)
             creatorThumbnail.setThumbnail(it?.author?.thumbnail, true)
             channelName.text = it?.author?.name
         }
 
         backButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
-            mainFragment.closeSegment()
+            fragment.closeSegment()
         }
 
         channelInfo.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
-            mainFragment.navigate<ChannelFragment>(video?.author)
+            fragment.navigate<ChannelFragment>(video?.author)
         }
 
         videoTitle.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
             if (!bottomSheet.isAdded) {
-                bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
+                bottomSheet.show(fragment.childFragmentManager, CommentsModalBottomSheet.TAG)
             }
         }
 
-        commentsButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
+        commentsButton.onClick.subscribe {
             if (!bottomSheet.isAdded) {
-                bottomSheet.show(mainFragment.childFragmentManager, CommentsModalBottomSheet.TAG)
+                bottomSheet.show(fragment.childFragmentManager, CommentsModalBottomSheet.TAG)
             }
         }
 
-        shareButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
+        shareButton.onClick.subscribe {
             val url = video?.shareUrl ?: video?.url
-            mainFragment.startActivity(Intent.createChooser(Intent().apply {
+            fragment.startActivity(Intent.createChooser(Intent().apply {
                 action = Intent.ACTION_SEND
                 putExtra(Intent.EXTRA_TEXT, url)
                 type = "text/plain"
             }, null))
         }
 
-        refreshButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
+        refreshButton.onClick.subscribe {
             onResetTriggered.emit()
         }
 
@@ -308,14 +272,12 @@ class ShortView : FrameLayout {
             false
         }
 
-        qualityButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
+        qualityButton.onClick.subscribe {
             showVideoSettings()
         }
 
-        likeButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
-            val checked = !likeButton.isChecked
+        likeButton.onClick.subscribe {
+            val checked = likeButton.iconId == R.drawable.ic_thumb_up_s // !likeButton.isChecked
             StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
                 if (checked) {
                     likes++
@@ -323,24 +285,27 @@ class ShortView : FrameLayout {
                     likes--
                 }
 
-                likeButton.isChecked = checked
+                if(checked)
+                    likeButton.withIcon(R.drawable.ic_thumb_up_s_filled) //.isChecked = checked
+                else
+                    likeButton.withIcon(R.drawable.ic_thumb_up_s)
 
-                if (dislikeButton.isChecked && checked) {
-                    dislikeButton.isChecked = false
+                if (dislikeButton.iconId == R.drawable.ic_thumb_down_s_filled && checked) {
+                    //dislikeButton.isChecked = false
+                    dislikeButton.withIcon(R.drawable.ic_thumb_down_s)
                     dislikes--
                 }
 
                 onLikeDislikeUpdated.emit(
                     OnLikeDislikeUpdatedArgs(
-                        it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                        it, likes, checked, dislikes, !checked
                     )
                 )
             }
         }
 
-        dislikeButton.setOnClickListener {
-            playSoundEffect(SoundEffectConstants.CLICK)
-            val checked = !dislikeButton.isChecked
+        dislikeButton.onClick.subscribe {
+            val checked =  dislikeButton.iconId == R.drawable.ic_thumb_down_s //!dislikeButton.isChecked
             StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
                 if (checked) {
                     dislikes++
@@ -348,16 +313,21 @@ class ShortView : FrameLayout {
                     dislikes--
                 }
 
-                dislikeButton.isChecked = checked
+                //dislikeButton.isChecked = checked
+                if(checked)
+                    dislikeButton.withIcon(R.drawable.ic_thumb_down_s_filled) //.isChecked = checked
+                else
+                    dislikeButton.withIcon(R.drawable.ic_thumb_down_s)
 
-                if (likeButton.isChecked && checked) {
-                    likeButton.isChecked = false
+                if (likeButton.iconId == R.drawable.ic_thumb_up_s_filled && checked) {
+                    //likeButton.isChecked = false
+                    likeButton.withIcon(R.drawable.ic_thumb_up_s);
                     likes--
                 }
 
                 onLikeDislikeUpdated.emit(
                     OnLikeDislikeUpdatedArgs(
-                        it, likes, likeButton.isChecked, dislikes, dislikeButton.isChecked
+                        it, likes, !checked, dislikes, checked
                     )
                 )
             }
@@ -366,11 +336,11 @@ class ShortView : FrameLayout {
         onLikesLoaded.subscribe(tag) { rating, liked, disliked ->
             likes = rating.likes
             dislikes = rating.dislikes
-            likeButton.isChecked = liked
-            dislikeButton.isChecked = disliked
+            //likeButton.isChecked = liked
+            //dislikeButton.isChecked = disliked
 
-            dislikeContainer.visibility = VISIBLE
-            likeContainer.visibility = VISIBLE
+            dislikeButton.visibility = VISIBLE
+            likeButton.visibility = VISIBLE
         }
 
         player.onPlaybackStateChanged.subscribe {
@@ -565,7 +535,7 @@ class ShortView : FrameLayout {
         var toSet: ISubtitleSource? = subtitleSource
         if (_lastSubtitleSource == subtitleSource) toSet = null
 
-        mainFragment.lifecycleScope.launch(Dispatchers.Main) {
+        fragment.lifecycleScope.launch(Dispatchers.Main) {
             try {
                 player.swapSubtitles(toSet)
             } catch (e: Throwable) {
@@ -625,7 +595,7 @@ class ShortView : FrameLayout {
 
     @Suppress("unused")
     fun setMainFragment(fragment: MainFragment, overlayQualityContainer: FrameLayout) {
-        this.mainFragment = fragment
+        this.fragment = fragment
         this.bottomSheet.mainFragment = fragment
         this.overlayQualityContainer = overlayQualityContainer
     }
@@ -636,10 +606,10 @@ class ShortView : FrameLayout {
         }
         this.video = video
 
-        refreshButtonContainer.visibility = if (isChannelShortsMode) {
+        refreshButton.visibility = if (isChannelShortsMode) {
             GONE
         } else {
-            VISIBLE
+            GONE //TODO: Revert?
         }
         backButtonContainer.visibility = if (isChannelShortsMode) {
             VISIBLE
@@ -695,8 +665,8 @@ class ShortView : FrameLayout {
     }
 
     private fun loadLikes(video: IPlatformVideo) {
-        likeContainer.visibility = GONE
-        dislikeContainer.visibility = GONE
+        likeButton.visibility = GONE
+        dislikeButton.visibility = GONE
 
         loadLikesTask?.cancel()
         loadLikesTask =
@@ -735,13 +705,13 @@ class ShortView : FrameLayout {
                         args.processHandle.opinion(ref, Opinion.neutral)
                     }
 
-                    mainFragment.lifecycleScope.launch(Dispatchers.IO) {
+                    fragment.lifecycleScope.launch(Dispatchers.IO) {
                         try {
-                            Logger.i(CommentsModalBottomSheet.TAG, "Started backfill")
+                            Logger.i(TAG, "Started backfill")
                             args.processHandle.fullyBackfillServersAnnounceExceptions()
-                            Logger.i(CommentsModalBottomSheet.TAG, "Finished backfill")
+                            Logger.i(TAG, "Finished backfill")
                         } catch (e: Throwable) {
-                            Logger.e(CommentsModalBottomSheet.TAG, "Failed to backfill servers", e)
+                            Logger.e(TAG, "Failed to backfill servers", e)
                         }
                     }
 
@@ -763,20 +733,41 @@ class ShortView : FrameLayout {
 
         setLoading(true)
 
+        Logger.i(TAG, "Shorts loadVideo [${url}]");
+        val timeLoadVideoStart = System.currentTimeMillis();
         loadVideoTask = TaskHandler<String, IPlatformVideoDetails>(
             StateApp.instance.scopeGetter, {
                 val result = StatePlatform.instance.getContentDetails(it).await()
                 if (result !is IPlatformVideoDetails) throw IllegalStateException("Expected media content, found ${result.contentType}")
                 return@TaskHandler result
             }).success { result ->
-            videoDetails = result
-            video = result
+                val timeLoadVideo = System.currentTimeMillis() - timeLoadVideoStart;
+                Logger.i(TAG, "Shorts loadVideo [${url}] took ${timeLoadVideo}ms");
+                videoDetails = result
+                video = result
 
-            bottomSheet.video = result
+                if(Settings.instance.playback.shortsPregenerate)
+                    fragment.lifecycleScope.launch(Dispatchers.IO) {
+                        if(result != null) {
+                            val prefVid = VideoHelper.selectBestVideoSource(result.video, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), PREFERED_VIDEO_CONTAINERS);
+                            val prefAud = VideoHelper.selectBestAudioSource(result.video, PREFERED_AUDIO_CONTAINERS, Settings.instance.playback.getPrimaryLanguage(context));
 
-            setLoading(false)
+                            if(prefVid != null && prefVid is JSDashManifestRawSource) {
+                                Logger.i(TAG, "Shorts pregenerating video (${result.name})");
+                                prefVid.pregenerateAsync(fragment.lifecycleScope);
+                            }
+                            if(prefAud != null && prefAud is JSDashManifestRawAudioSource) {
+                                Logger.i(TAG, "Shorts pregenerating audio (${result.name})");
+                                prefAud.pregenerateAsync(fragment.lifecycleScope);
+                            }
+                        }
+                    }
 
-            if (playWhenReady) playVideo()
+                bottomSheet.video = result
+
+                setLoading(false)
+
+                if (playWhenReady) playVideo()
         }.exception<NoPlatformClientException> {
             Logger.w(TAG, "exception<NoPlatformClientException>", it)
             UIDialogs.showDialog(
@@ -799,7 +790,7 @@ class ShortView : FrameLayout {
             UIDialogs.showSingleButtonDialog(context, R.drawable.ic_schedule, "Video is available in ${it.availableWhen}.", "Close") { }
         }.exception<ScriptImplementationException> {
             Logger.w(TAG, "exception<ScriptImplementationException>", it)
-            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, { loadVideo(url) }, null, mainFragment)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptimplementationexception), it, { loadVideo(url) }, null, fragment)
         }.exception<ScriptAgeException> {
             Logger.w(TAG, "exception<ScriptAgeException>", it)
             UIDialogs.showDialog(
@@ -812,10 +803,10 @@ class ShortView : FrameLayout {
             )
         }.exception<ScriptException> {
             Logger.w(TAG, "exception<ScriptException>", it)
-            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, { loadVideo(url) }, null, mainFragment)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video_scriptexception), it, { loadVideo(url) }, null, fragment)
         }.exception<Throwable> {
             Logger.w(ChannelFragment.TAG, "Failed to load video.", it)
-            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, { loadVideo(url) }, null, mainFragment)
+            UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_video), it, { loadVideo(url) }, null, fragment)
         }
 
         loadVideoTask?.run(url)
@@ -849,6 +840,7 @@ class ShortView : FrameLayout {
             }
 
             val thumbnail = videoDetails.thumbnails.getHQThumbnail()
+            /*
             if (videoSource == null && !thumbnail.isNullOrBlank()) Glide.with(context).asBitmap()
                 .load(thumbnail).into(object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
@@ -860,8 +852,9 @@ class ShortView : FrameLayout {
                     }
                 })
             else player.setArtwork(null)
+            */
 
-            mainFragment.lifecycleScope.launch(Dispatchers.Main) {
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
                 try {
                     player.setSource(videoSource, audioSource, play = true, keepSubtitles = false, resume = resumePositionMs > 0)
                     if (subtitleSource != null) player.swapSubtitles(subtitleSource)
@@ -887,397 +880,4 @@ class ShortView : FrameLayout {
         const val TAG = "VideoDetailView"
     }
 
-    class CommentsModalBottomSheet : BottomSheetDialogFragment() {
-        var mainFragment: MainFragment? = null
-
-        private lateinit var containerContent: FrameLayout
-        private lateinit var containerContentMain: LinearLayout
-        private lateinit var containerContentReplies: RepliesOverlay
-        private lateinit var containerContentDescription: DescriptionOverlay
-        private lateinit var containerContentSupport: SupportOverlay
-
-        private lateinit var title: TextView
-        private lateinit var subTitle: TextView
-        private lateinit var channelName: TextView
-        private lateinit var channelMeta: TextView
-        private lateinit var creatorThumbnail: CreatorThumbnail
-        private lateinit var channelButton: LinearLayout
-        private lateinit var monetization: MonetizationView
-        private lateinit var platform: PlatformIndicator
-        private lateinit var textLikes: TextView
-        private lateinit var textDislikes: TextView
-        private lateinit var layoutRating: LinearLayout
-        private lateinit var imageDislikeIcon: ImageView
-        private lateinit var imageLikeIcon: ImageView
-
-        private lateinit var description: TextView
-        private lateinit var descriptionContainer: LinearLayout
-        private lateinit var descriptionViewMore: TextView
-
-        private lateinit var commentsList: CommentsList
-        private lateinit var addCommentView: AddCommentView
-
-        private var polycentricProfile: PolycentricProfile? = null
-
-        private lateinit var buttonPolycentric: Button
-        private lateinit var buttonPlatform: Button
-
-        private var tabIndex: Int? = null
-
-        private var contentOverlayView: View? = null
-
-        lateinit var video: IPlatformVideoDetails
-
-        private lateinit var behavior: BottomSheetBehavior<FrameLayout>
-
-        private val _taskLoadPolycentricProfile =
-            TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) }).success { setPolycentricProfile(it, animate = true) }
-                .exception<Throwable> {
-                    Logger.w(TAG, "Failed to load claims.", it)
-                }
-
-        override fun onCreateDialog(
-            savedInstanceState: Bundle?,
-        ): Dialog {
-            val bottomSheetDialog =
-                BottomSheetDialog(requireContext(), R.style.Custom_BottomSheetDialog_Theme)
-            bottomSheetDialog.setContentView(R.layout.modal_comments)
-
-            behavior = bottomSheetDialog.behavior
-
-            // TODO figure out how to not need all of these non null assertions
-            containerContent = bottomSheetDialog.findViewById(R.id.content_container)!!
-            containerContentMain = bottomSheetDialog.findViewById(R.id.videodetail_container_main)!!
-            containerContentReplies =
-                bottomSheetDialog.findViewById(R.id.videodetail_container_replies)!!
-            containerContentDescription =
-                bottomSheetDialog.findViewById(R.id.videodetail_container_description)!!
-            containerContentSupport =
-                bottomSheetDialog.findViewById(R.id.videodetail_container_support)!!
-
-            title = bottomSheetDialog.findViewById(R.id.videodetail_title)!!
-            subTitle = bottomSheetDialog.findViewById(R.id.videodetail_meta)!!
-            channelName = bottomSheetDialog.findViewById(R.id.videodetail_channel_name)!!
-            channelMeta = bottomSheetDialog.findViewById(R.id.videodetail_channel_meta)!!
-            creatorThumbnail = bottomSheetDialog.findViewById(R.id.creator_thumbnail)!!
-            channelButton = bottomSheetDialog.findViewById(R.id.videodetail_channel_button)!!
-            monetization = bottomSheetDialog.findViewById(R.id.monetization)!!
-            platform = bottomSheetDialog.findViewById(R.id.videodetail_platform)!!
-            layoutRating = bottomSheetDialog.findViewById(R.id.layout_rating)!!
-            textDislikes = bottomSheetDialog.findViewById(R.id.text_dislikes)!!
-            textLikes = bottomSheetDialog.findViewById(R.id.text_likes)!!
-            imageLikeIcon = bottomSheetDialog.findViewById(R.id.image_like_icon)!!
-            imageDislikeIcon = bottomSheetDialog.findViewById(R.id.image_dislike_icon)!!
-
-            description = bottomSheetDialog.findViewById(R.id.videodetail_description)!!
-            descriptionContainer =
-                bottomSheetDialog.findViewById(R.id.videodetail_description_container)!!
-            descriptionViewMore =
-                bottomSheetDialog.findViewById(R.id.videodetail_description_view_more)!!
-
-            addCommentView = bottomSheetDialog.findViewById(R.id.add_comment_view)!!
-            commentsList = bottomSheetDialog.findViewById(R.id.comments_list)!!
-            buttonPolycentric = bottomSheetDialog.findViewById(R.id.button_polycentric)!!
-            buttonPlatform = bottomSheetDialog.findViewById(R.id.button_platform)!!
-
-            commentsList.onAuthorClick.subscribe { c ->
-                if (c !is PolycentricPlatformComment) {
-                    return@subscribe
-                }
-                val id = c.author.id.value
-
-                Logger.i(TAG, "onAuthorClick: $id")
-                if (id != null && id.startsWith("polycentric://")) {
-                    val navUrl = "https://harbor.social/" + id.substring("polycentric://".length)
-                    mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, navUrl.toUri()))
-                }
-            }
-            commentsList.onRepliesClick.subscribe { c ->
-                val replyCount = c.replyCount ?: 0
-                var metadata = ""
-                if (replyCount > 0) {
-                    metadata += "$replyCount " + requireContext().getString(R.string.replies)
-                }
-
-                if (c is PolycentricPlatformComment) {
-                    var parentComment: PolycentricPlatformComment = c
-                    containerContentReplies.load(tabIndex!! != 0, metadata, c.contextUrl, c.reference, c, { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) }, {
-                        val newComment = parentComment.cloneWithUpdatedReplyCount(
-                            (parentComment.replyCount ?: 0) + 1
-                        )
-                        commentsList.replaceComment(parentComment, newComment)
-                        parentComment = newComment
-                    })
-                } else {
-                    containerContentReplies.load(tabIndex!! != 0, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) })
-                }
-                animateOpenOverlayView(containerContentReplies)
-            }
-
-            if (StatePolycentric.instance.enabled) {
-                buttonPolycentric.setOnClickListener {
-                    setTabIndex(0)
-                    StateMeta.instance.setLastCommentSection(0)
-                }
-            } else {
-                buttonPolycentric.visibility = GONE
-            }
-
-            buttonPlatform.setOnClickListener {
-                setTabIndex(1)
-                StateMeta.instance.setLastCommentSection(1)
-            }
-
-            val ref = Models.referenceFromBuffer(video.url.toByteArray())
-            addCommentView.setContext(video.url, ref)
-
-            if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
-                setTabIndex(2, true)
-            } else {
-                when (Settings.instance.comments.defaultCommentSection) {
-                    0 -> if (Settings.instance.other.polycentricEnabled) setTabIndex(0, true) else setTabIndex(1, true)
-                    1 -> setTabIndex(1, true)
-                    2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
-                }
-            }
-
-            containerContentDescription.onClose.subscribe { animateCloseOverlayView() }
-            containerContentReplies.onClose.subscribe { animateCloseOverlayView() }
-
-            descriptionViewMore.setOnClickListener {
-                animateOpenOverlayView(containerContentDescription)
-            }
-
-            updateDescriptionUI(video.description.fixHtmlLinks())
-
-            val dp5 =
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
-            val dp2 =
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
-
-            //UI
-            title.text = video.name
-            channelName.text = video.author.name
-            if (video.author.subscribers != null) {
-                channelMeta.text = if ((video.author.subscribers
-                        ?: 0) > 0
-                ) video.author.subscribers!!.toHumanNumber() + " " + requireContext().getString(R.string.subscribers) else ""
-                (channelName.layoutParams as MarginLayoutParams).setMargins(
-                    0, (dp5 * -1).toInt(), 0, 0
-                )
-            } else {
-                channelMeta.text = ""
-                (channelName.layoutParams as MarginLayoutParams).setMargins(0, (dp2).toInt(), 0, 0)
-            }
-
-            video.author.let {
-                if (it is PlatformAuthorMembershipLink && !it.membershipUrl.isNullOrEmpty()) monetization.setPlatformMembership(video.id.pluginId, it.membershipUrl)
-                else monetization.setPlatformMembership(null, null)
-            }
-
-            val subTitleSegments: ArrayList<String> = ArrayList()
-            if (video.viewCount > 0) subTitleSegments.add("${video.viewCount.toHumanNumber()} ${if (video.isLive) requireContext().getString(R.string.watching_now) else requireContext().getString(R.string.views)}")
-            if (video.datetime != null) {
-                val diff = video.datetime?.getNowDiffSeconds() ?: 0
-                val ago = video.datetime?.toHumanNowDiffString(true)
-                if (diff >= 0) subTitleSegments.add("$ago ago")
-                else subTitleSegments.add("available in $ago")
-            }
-
-            platform.setPlatformFromClientID(video.id.pluginId)
-            subTitle.text = subTitleSegments.joinToString(" • ")
-            creatorThumbnail.setThumbnail(video.author.thumbnail, false)
-
-            setPolycentricProfile(null, animate = false)
-            _taskLoadPolycentricProfile.run(video.author.id)
-
-            when (video.rating) {
-                is RatingLikeDislikes -> {
-                    val r = video.rating as RatingLikeDislikes
-                    layoutRating.visibility = VISIBLE
-
-                    textLikes.visibility = VISIBLE
-                    imageLikeIcon.visibility = VISIBLE
-                    textLikes.text = r.likes.toHumanNumber()
-
-                    imageDislikeIcon.visibility = VISIBLE
-                    textDislikes.visibility = VISIBLE
-                    textDislikes.text = r.dislikes.toHumanNumber()
-                }
-
-                is RatingLikes -> {
-                    val r = video.rating as RatingLikes
-                    layoutRating.visibility = VISIBLE
-
-                    textLikes.visibility = VISIBLE
-                    imageLikeIcon.visibility = VISIBLE
-                    textLikes.text = r.likes.toHumanNumber()
-
-                    imageDislikeIcon.visibility = GONE
-                    textDislikes.visibility = GONE
-                }
-
-                else -> {
-                    layoutRating.visibility = GONE
-                }
-            }
-
-            monetization.onSupportTap.subscribe {
-                containerContentSupport.setPolycentricProfile(polycentricProfile)
-                animateOpenOverlayView(containerContentSupport)
-            }
-
-            monetization.onStoreTap.subscribe {
-                polycentricProfile?.systemState?.store?.let {
-                    try {
-                        val uri = it.toUri()
-                        val intent = Intent(Intent.ACTION_VIEW)
-                        intent.data = uri
-                        requireContext().startActivity(intent)
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to open URI: '${it}'.", e)
-                    }
-                }
-            }
-            monetization.onUrlTap.subscribe {
-                mainFragment!!.navigate<BrowserFragment>(it)
-            }
-
-            addCommentView.onCommentAdded.subscribe {
-                commentsList.addComment(it)
-            }
-
-            channelButton.setOnClickListener {
-                mainFragment!!.navigate<ChannelFragment>(video.author)
-            }
-
-            return bottomSheetDialog
-        }
-
-        override fun onDismiss(dialog: DialogInterface) {
-            super.onDismiss(dialog)
-            animateCloseOverlayView()
-        }
-
-        private fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
-            polycentricProfile = profile
-
-            val dp35 = 35.dp(requireContext().resources)
-            val avatar = profile?.systemState?.avatar?.selectBestImage(dp35 * dp35)
-                ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) }
-
-            if (avatar != null) {
-                creatorThumbnail.setThumbnail(avatar, animate)
-            } else {
-                creatorThumbnail.setThumbnail(video.author.thumbnail, animate)
-                creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto())
-            }
-
-            val username = profile?.systemState?.username
-            if (username != null) {
-                channelName.text = username
-            }
-
-            monetization.setPolycentricProfile(profile)
-        }
-
-        private fun setTabIndex(index: Int?, forceReload: Boolean = false) {
-            Logger.i(TAG, "setTabIndex (index: ${index}, forceReload: ${forceReload})")
-            val changed = tabIndex != index || forceReload
-            if (!changed) {
-                return
-            }
-
-            tabIndex = index
-            buttonPlatform.setTextColor(resources.getColor(if (index == 1) R.color.white else R.color.gray_ac, null))
-            buttonPolycentric.setTextColor(resources.getColor(if (index == 0) R.color.white else R.color.gray_ac, null))
-
-            when (index) {
-                null -> {
-                    addCommentView.visibility = GONE
-                    commentsList.clear()
-                }
-
-                0 -> {
-                    addCommentView.visibility = VISIBLE
-                    fetchPolycentricComments()
-                }
-
-                1 -> {
-                    addCommentView.visibility = GONE
-                    fetchComments()
-                }
-            }
-        }
-
-        private fun fetchComments() {
-            Logger.i(TAG, "fetchComments")
-            video.let {
-                commentsList.load(true) { StatePlatform.instance.getComments(it) }
-            }
-        }
-
-        private fun fetchPolycentricComments() {
-            Logger.i(TAG, "fetchPolycentricComments")
-            val video = video
-            val idValue = video.id.value
-            if (video.url.isEmpty()) {
-                Logger.w(TAG, "Failed to fetch polycentric comments because url was null")
-                commentsList.clear()
-                return
-            }
-
-            val ref = Models.referenceFromBuffer(video.url.toByteArray())
-            val extraBytesRef = idValue?.let { if (it.isNotEmpty()) it.toByteArray() else null }
-            commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); }
-        }
-
-        private fun updateDescriptionUI(text: Spanned) {
-            containerContentDescription.load(text)
-            description.text = text
-
-            if (description.text.isNotEmpty()) descriptionContainer.visibility = VISIBLE
-            else descriptionContainer.visibility = GONE
-        }
-
-        private fun animateOpenOverlayView(view: View) {
-            if (contentOverlayView != null) {
-                Logger.e(TAG, "Content overlay already open")
-                return
-            }
-
-            behavior.isDraggable = false
-            behavior.state = BottomSheetBehavior.STATE_EXPANDED
-
-            val animHeight = containerContentMain.height
-
-            view.translationY = animHeight.toFloat()
-            view.visibility = VISIBLE
-
-            view.animate().setDuration(300).translationY(0f).withEndAction {
-                contentOverlayView = view
-            }.start()
-        }
-
-        private fun animateCloseOverlayView() {
-            val curView = contentOverlayView
-            if (curView == null) {
-                Logger.e(TAG, "No content overlay open")
-                return
-            }
-
-            behavior.isDraggable = true
-
-            val animHeight = contentOverlayView!!.height
-
-            curView.animate().setDuration(300).translationY(animHeight.toFloat()).withEndAction {
-                curView.visibility = GONE
-                contentOverlayView = null
-            }.start()
-        }
-
-        companion object {
-            const val TAG = "ModalBottomSheet"
-        }
-    }
 }

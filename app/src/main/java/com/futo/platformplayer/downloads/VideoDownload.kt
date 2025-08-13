@@ -719,7 +719,7 @@ class VideoDownload {
 
             Logger.i(TAG, "Download $name Dash, CueCount: " + foundCues.count().toString());
 
-            var written = 0;
+            var written: Long = 0;
             var indexCounter = 0;
             onProgress(foundCues.count().toLong(), 0, 0);
             for(cue in foundCues) {
@@ -744,7 +744,7 @@ class VideoDownload {
 
                 indexCounter++;
             }
-            sourceLength = written.toLong();
+            sourceLength = written;
 
             Logger.i(TAG, "$name downloadSource Finished");
         }

@@ -18,6 +18,7 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Async
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -65,11 +66,22 @@ open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSo
         hasGenerate = _obj.has("generate");
     }
 
+    private var _pregenerate: V8Deferred<String?>? = null;
+    fun pregenerateAsync(scope: CoroutineScope): V8Deferred<String?>? {
+        _pregenerate = generateAsync(scope);
+        return _pregenerate;
+    }
+
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         if(!hasGenerate)
             return V8Deferred(CompletableDeferred(manifest));
         if(_obj.isClosed)
             throw IllegalStateException("Source object already closed");
+        val pregenerated = _pregenerate;
+        if(pregenerated != null) {
+            Logger.w("JSDashManifestRawSource", "Returning pre-generated video");
+            return pregenerated;
+        }
 
         val plugin = _plugin.getUnderlyingPlugin();
 

@@ -500,7 +500,7 @@ class StatePlatform {
             .toList()
             .associateWith { 1f };
 
-        val pager = MultiDistributionContentPager(pages);
+        val pager = MultiDistributionContentPager(pages, 2);
         pager.initialize();
         return pager;
     }
