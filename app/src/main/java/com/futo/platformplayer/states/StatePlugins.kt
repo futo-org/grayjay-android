@@ -475,6 +475,7 @@ class StatePlugins {
                 delay(500);
 
                 val client = ManagedHttpClient();
+                client.setTimeout(10000);
                 try {
                     withContext(Dispatchers.Main) {
                         onProgress.invoke("Validating script", 0.25);
@@ -489,13 +490,13 @@ class StatePlugins {
                     }
 
                     val icon = config.absoluteIconUrl?.let { absIconUrl ->
-                        withContext(Dispatchers.Main) {
-                            onProgress.invoke("Saving plugin", 0.75);
-                        }
                         val iconResp = client.get(absIconUrl);
                         if (iconResp.isOk)
                             return@let iconResp.body?.byteStream()?.use { it.readBytes() };
                         return@let null;
+                    }
+                    withContext(Dispatchers.Main) {
+                        onProgress.invoke("Saving plugin", 0.75);
                     }
                     val installEx = StatePlugins.instance.createPlugin(config, script, icon, true);
                     if (installEx != null)
