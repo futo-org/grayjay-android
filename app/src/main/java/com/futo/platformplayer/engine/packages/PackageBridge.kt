@@ -194,7 +194,11 @@ class PackageBridge : V8Package {
 
         val stackTrace = Thread.currentThread().stackTrace;
         val callerMethod = stackTrace.findLast {
-            it.className == JSClient::class.java.name
+            it.className == JSClient::class.java.name &&
+                    it.methodName != "isBusy" &&
+                    it.methodName != "busy" &&
+                    it.methodName != "getCopy" &&
+                    it.methodName != "isBusyWith"
         }?.methodName ?: "";
         val session = StateApp.instance.sessionId;
         val pluginId = _plugin.config.id;
