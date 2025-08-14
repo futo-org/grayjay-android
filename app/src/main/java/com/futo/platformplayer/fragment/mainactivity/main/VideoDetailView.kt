@@ -10,7 +10,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.Rect
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -51,7 +50,6 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SyncShowPairingCodeActivity.Companion.activity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
@@ -82,7 +80,6 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
-import com.futo.platformplayer.api.media.platforms.js.models.JSVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
@@ -326,7 +323,7 @@ class VideoDetailView : ConstraintLayout {
     val onEnterPictureInPicture = Event0();
     val onVideoChanged = Event2<Int, Int>()
 
-    var allowBackground: Boolean = false
+    var isAudioOnlyUserAction: Boolean = false
         private set(value) {
             if (field != value) {
                 field = value
@@ -338,7 +335,7 @@ class VideoDetailView : ConstraintLayout {
         get() = !preventPictureInPicture &&
                 !StateCasting.instance.isCasting &&
                 Settings.instance.playback.isBackgroundPictureInPicture() &&
-                !allowBackground &&
+                !isAudioOnlyUserAction &&
                 isPlaying
 
     val onShouldEnterPictureInPictureChanged = Event0();
@@ -764,7 +761,7 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onBackgroundReceived.subscribe(this) {
             Logger.i(TAG, "MediaControlReceiver.onBackgroundReceived")
             _player.switchToAudioMode(video);
-            allowBackground = true;
+            isAudioOnlyUserAction = true;
             StateApp.instance.contextOrNull?.let {
                 try {
                     if (it is MainActivity) {
@@ -1009,14 +1006,14 @@ class VideoDetailView : ConstraintLayout {
                     }
                     _slideUpOverlay?.hide();
                 } else null,
-            if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (allowBackground) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
-                if (!allowBackground) {
+            if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (isAudioOnlyUserAction) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
+                if (!isAudioOnlyUserAction) {
                     _player.switchToAudioMode(video);
-                    allowBackground = true;
+                    isAudioOnlyUserAction = true;
                     it.text.text = resources.getString(R.string.background_revert);
                 } else {
                     _player.switchToVideoMode();
-                    allowBackground = false;
+                    isAudioOnlyUserAction = false;
                     it.text.text = resources.getString(R.string.background);
                 }
                 _slideUpOverlay?.hide();
@@ -1156,10 +1153,13 @@ class VideoDetailView : ConstraintLayout {
 
         if(_player.isAudioMode) {
             //Requested behavior to leave it in audio mode. leaving it commented if it causes issues, revert?
-            if(!allowBackground) {
+            if(!isAudioOnlyUserAction) {
                 _player.switchToVideoMode();
-                allowBackground = false;
+                isAudioOnlyUserAction = false;
                 _buttonPins.getButtonByTag(TAG_BACKGROUND)?.text?.text = resources.getString(R.string.background);
+            }
+            else {
+                _buttonPins.getButtonByTag(TAG_BACKGROUND)?.text?.text = resources.getString(R.string.video);
             }
         }
         if(!_player.isFitMode && !_player.isFullScreen && !fragment.isInPictureInPicture)
@@ -1176,7 +1176,7 @@ class VideoDetailView : ConstraintLayout {
         if(StateCasting.instance.isCasting)
             return;
 
-        if(allowBackground)
+        if(isAudioOnlyUserAction)
             StatePlayer.instance.startOrUpdateMediaSession(context, video);
         else {
             when (Settings.instance.playback.backgroundPlay) {
@@ -1184,7 +1184,6 @@ class VideoDetailView : ConstraintLayout {
                 1 -> {
                     if(!(video?.isLive ?: false)) {
                         _player.switchToAudioMode(video);
-                        allowBackground = true;
                     }
                     StatePlayer.instance.startOrUpdateMediaSession(context, video);
                 }
@@ -1972,10 +1971,10 @@ class VideoDetailView : ConstraintLayout {
 
                 if (isLimitedVersion && _player.isAudioMode) {
                     _player.switchToVideoMode()
-                    allowBackground = false;
+                    isAudioOnlyUserAction = false;
                 } else {
                     val thumbnail = video.thumbnails.getHQThumbnail();
-                    if ((videoSource == null || _player.isAudioMode) && !thumbnail.isNullOrBlank())
+                    if ((videoSource == null) && !thumbnail.isNullOrBlank()) // || _player.isAudioMode
                         Glide.with(context).asBitmap().load(thumbnail)
                             .into(object: CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {

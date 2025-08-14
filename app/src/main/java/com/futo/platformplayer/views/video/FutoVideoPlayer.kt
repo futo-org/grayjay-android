@@ -907,11 +907,14 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     override fun switchToVideoMode() {
         super.switchToVideoMode()
-        setArtwork(null)
+        //setArtwork(null)
     }
 
     override fun switchToAudioMode(video: IPlatformVideoDetails?) {
         super.switchToAudioMode(video)
+
+        //This causes issues, and is in general confusing, needs improvements
+        /*
         val thumbnail = video?.thumbnails?.getHQThumbnail()
         if (!thumbnail.isNullOrBlank()) {
             Glide.with(context).asBitmap().load(thumbnail)
@@ -928,5 +931,6 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                     }
                 })
         }
+        */
     }
 }
