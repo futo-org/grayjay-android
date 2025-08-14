@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
+import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.views.buttons.BigButton
@@ -152,10 +153,49 @@ class SourceDetailFragment : MainFragment() {
                                 if(field is View)
                                     field.isVisible = false;
                             }
-                            if(!source.capabilities.hasGetUserHistory) {
+                            if(!source.capabilities.hasGetUserHistory || !source.isLoggedIn) {
                                 val field = _settingsAppForm.findField("sync");
                                 if(field is View)
                                     field.isVisible = false;
+                            }
+                            else {
+                                val field = _settingsAppForm.findField("syncHistory");
+                                field?.onChanged?.subscribe { field, new, old ->
+                                    if(old != new && new == true && StatePlatform.instance.isClientEnabled(config.id)) {
+                                        UIDialogs.showDialog(context, R.drawable.ic_sources, "Would you like to sync now?",
+                                            "This will attempt to update your history from the platform, when this setting is enabled, it is done during startup.", null, 0,
+                                            UIDialogs.Action("No", {
+
+                                            }),
+                                            UIDialogs.Action("Yes", {
+                                                UIDialogs.showDialogProgress(context, {
+                                                    it.setText("Importing history..");
+                                                    fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                                        try {
+                                                            val client = StatePlatform.instance.getClient(config.id);
+                                                            if (client != null && client is JSClient) {
+                                                                val count = StateHistory.instance.syncRemoteHistory(client);
+                                                                withContext(Dispatchers.Main) {
+                                                                    it.hide();
+                                                                    if(count > 0)
+                                                                        UIDialogs.showDialogOk(context, R.drawable.ic_pair_success, "Imported ${count} history items");
+                                                                    else
+                                                                        UIDialogs.showDialogOk(context, R.drawable.ic_help, "Imported no history items");
+                                                                }
+
+                                                            }
+                                                        }
+                                                        catch(ex: Throwable) {
+                                                            withContext(Dispatchers.Main) {
+                                                                UIDialogs.appToast("Sync History failed due to:\n" + ex.message);
+                                                                it.hide();
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            }, UIDialogs.ActionStyle.PRIMARY));
+                                    }
+                                }
                             }
                             _settingsAppForm.onChanged.clear();
                             _settingsAppForm.onChanged.subscribe { field, value ->

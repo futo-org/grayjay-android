@@ -194,17 +194,18 @@ class StateHistory {
         _remoteHistoryDatesStore.save();
     }
 
-    fun syncRemoteHistory(plugin: JSClient) {
+    fun syncRemoteHistory(plugin: JSClient): Int {
         if (plugin.capabilities.hasGetUserHistory &&
             plugin.isLoggedIn) {
             Logger.i(TAG, "Syncing remote history for plugin [${plugin.name}]");
 
             val hist = StatePlatform.instance.getUserHistory(plugin.id);
 
-            syncRemoteHistory(plugin.id, hist, 100, 3);
+            return syncRemoteHistory(plugin.id, hist, 100, 3);
         }
+        return 0;
     }
-    fun syncRemoteHistory(pluginId: String, videos: IPager<IPlatformContent>, maxVideos: Int, maxPages: Int) {
+    fun syncRemoteHistory(pluginId: String, videos: IPager<IPlatformContent>, maxVideos: Int, maxPages: Int): Int {
         val lastDate = _remoteHistoryDatesStore.get(pluginId) ?: OffsetDateTime.MIN;
         val maxVideosCount = if(maxVideos <= 0) 500 else maxVideos;
         val maxPageCount = if(maxPages <= 0) 3 else maxPages;
@@ -272,12 +273,14 @@ class StateHistory {
                     }
                     catch(ex: Throwable){}
                 }
+                return updated;
             }
         }
         catch(ex: Throwable) {
             val plugin = if(pluginId != StateDeveloper.DEV_ID) StatePlugins.instance.getPlugin(pluginId) else null;
             Logger.e(TAG, "Sync Remote History failed for [${plugin?.config?.name}] due to: " + ex.message)
         }
+        return 0;
     }
 
     companion object {
