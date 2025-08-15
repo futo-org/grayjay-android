@@ -1141,9 +1141,13 @@ class VideoDetailView : ConstraintLayout {
 
 
     //Lifecycle
+    var isLoginStop = false; //TODO: This is a bit jank, but easiest solution for now without reworking flow. (Alternatively, fix MainActivity getting stopped/disposing video)
     fun onResume() {
         Logger.v(TAG, "onResume");
         _onPauseCalled = false;
+
+        val wasLoginCall = isLoginStop;
+        isLoginStop = false;
 
         Logger.i(TAG, "_video: ${video?.name ?: "no video"}");
         Logger.i(TAG, "_didStop: $_didStop");
@@ -1153,7 +1157,7 @@ class VideoDetailView : ConstraintLayout {
             val t = (lastPositionMilliseconds / 1000.0f).roundToLong();
             if(_searchVideo != null)
                 setVideoOverview(_searchVideo!!, true, t);
-            else if(_url != null)
+            else if(_url != null && !wasLoginCall)
                 setVideo(_url!!, t, _playWhenReady);
         }
         else if(_didStop) {
@@ -3276,8 +3280,13 @@ class VideoDetailView : ConstraintLayout {
                     val id = e.config.let { if(it is SourcePluginConfig) it.id else null };
                     val didLogin = if(id == null)
                         false
-                    else StatePlugins.instance.loginPlugin(context, id) {
-                        fetchVideo();
+                    else {
+                        isLoginStop = true;
+                        StatePlugins.instance.loginPlugin(context, id) {
+                            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                                fetchVideo();
+                            }
+                        }
                     }
                     if(!didLogin)
                         UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, "Failed to login");

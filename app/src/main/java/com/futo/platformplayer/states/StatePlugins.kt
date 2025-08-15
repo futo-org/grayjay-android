@@ -179,8 +179,9 @@ class StatePlugins {
             }
 
             StateApp.instance.scope.launch(Dispatchers.IO) {
-                StatePlatform.instance.reloadClient(context, id);
-                afterLogin.invoke();
+                StatePlatform.instance.reloadClient(context, id) {
+                    afterLogin.invoke();
+                }
             }
         };
         return true;
