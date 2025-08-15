@@ -1006,6 +1006,18 @@ class VideoDetailView : ConstraintLayout {
                     }
                     _slideUpOverlay?.hide();
                 } else null,
+            if(video is JSVideoDetails && (video as JSVideoDetails).hasVODEvents())
+                RoundButton(context, R.drawable.ic_chat, context.getString(R.string.vod_chat), TAG_VODCHAT) {
+                    video?.let {
+                        try {
+                            loadVODChat(it);
+                        }
+                        catch(ex: Throwable) {
+                            Logger.e(TAG, "Failed to reopen vod chat", ex);
+                        }
+                    }
+                    _slideUpOverlay?.hide();
+                } else null,
             if (!isLimitedVersion) RoundButton(context, R.drawable.ic_screen_share, if (isAudioOnlyUserAction) context.getString(R.string.background_revert) else context.getString(R.string.background), TAG_BACKGROUND) {
                 if (!isAudioOnlyUserAction) {
                     _player.switchToAudioMode(video);
@@ -3443,6 +3455,7 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_SHARE = "share";
         const val TAG_OVERLAY = "overlay";
         const val TAG_LIVECHAT = "livechat";
+        const val TAG_VODCHAT = "vodchat";
         const val TAG_CHAPTERS = "chapters";
         const val TAG_OPEN = "open";
         const val TAG_SEND_TO_DEVICE = "send_to_device";
