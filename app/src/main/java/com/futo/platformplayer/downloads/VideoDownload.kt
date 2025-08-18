@@ -8,6 +8,7 @@ import com.arthenica.ffmpegkit.StatisticsCallback
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.PlatformID
+import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
@@ -136,6 +137,8 @@ class VideoDownload {
 
     var hasVideoRequestExecutor: Boolean = false;
     var hasAudioRequestExecutor: Boolean = false;
+    var hasVideoRequestModifier: Boolean = false;
+    var hasAudioRequestModifier: Boolean = false;
 
     var progress: Double = 0.0;
     var isCancelled = false;
@@ -203,8 +206,10 @@ class VideoDownload {
         this.prepareTime = OffsetDateTime.now();
         this.hasVideoRequestExecutor = videoSource is JSSource && videoSource.hasRequestExecutor;
         this.hasAudioRequestExecutor = audioSource is JSSource && audioSource.hasRequestExecutor;
-        this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (videoSource is JSDashManifestRawSource && videoSource.hasGenerate);
-        this.requiresLiveAudioSource = this.hasAudioRequestExecutor || (audioSource is JSDashManifestRawAudioSource && audioSource.hasGenerate);
+        this.hasVideoRequestModifier = videoSource is JSSource && videoSource.hasRequestModifier;
+        this.hasAudioRequestModifier = audioSource is JSSource && audioSource.hasRequestModifier;
+        this.requiresLiveVideoSource = this.hasVideoRequestModifier || this.hasVideoRequestExecutor || (videoSource is JSDashManifestRawSource && videoSource.hasGenerate);
+        this.requiresLiveAudioSource = this.hasAudioRequestModifier || this.hasAudioRequestExecutor || (audioSource is JSDashManifestRawAudioSource && audioSource.hasGenerate);
         this.targetVideoName = videoSource?.name;
         this.targetAudioName = audioSource?.name;
         this.targetPixelCount = if(videoSource != null) (videoSource.width * videoSource.height).toLong() else null;
@@ -479,7 +484,7 @@ class VideoDownload {
                 if(actualVideoSource is IVideoUrlSource)
                     videoFileSize = when (videoSource!!.container) {
                         "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
-                        else -> downloadFileSource("Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        else -> downloadFileSource("Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
                     videoFileSize = downloadDashFileSource("Video", client, actualVideoSource, File(downloadDir, videoFileName!!), progressCallback);
@@ -519,7 +524,7 @@ class VideoDownload {
                 if(actualAudioSource is IAudioUrlSource)
                     audioFileSize = when (audioSource!!.container) {
                         "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
-                        else -> downloadFileSource("Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        else -> downloadFileSource("Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
                     audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback);
@@ -614,7 +619,7 @@ class VideoDownload {
                 try {
                     segmentFiles.add(segmentFile)
 
-                    val segmentLength = downloadSource_Sequential(client, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
+                    val segmentLength = downloadSource_Sequential(client, null, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
                         val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
                         val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
                         onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
@@ -766,7 +771,7 @@ class VideoDownload {
         }
         return sourceLength!!;
     }
-    private fun downloadFileSource(name: String, client: ManagedHttpClient, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
 
@@ -775,7 +780,12 @@ class VideoDownload {
         val sourceLength: Long?;
         val fileStream = FileOutputStream(targetFile);
 
-        try{
+        val modifier = if (source is JSSource && source.hasRequestModifier)
+            source.getRequestModifier();
+        else
+            null;
+
+        try {
             val head = client.tryHead(videoUrl);
             val relatedPlugin = (video?.url ?: videoDetails?.url)?.let { StatePlatform.instance.getContentClient(it) }?.let { if(it is JSClient) it else null };
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
@@ -791,7 +801,7 @@ class VideoDownload {
             else {
                 Logger.i(TAG, "Download $name Sequential");
                 try {
-                    sourceLength = downloadSource_Sequential(client, fileStream, videoUrl, null, 0, onProgress);
+                    sourceLength = downloadSource_Sequential(client, modifier, fileStream, videoUrl, null, 0, onProgress);
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
                     throw e
@@ -842,7 +852,7 @@ class VideoDownload {
         }
     }
 
-    private fun downloadSource_Sequential(client: ManagedHttpClient, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, index: Int, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadSource_Sequential(client: ManagedHttpClient, modifier: IRequestModifier? = null, fileStream: FileOutputStream, url: String, decryptionInfo: DecryptionInfo?, index: Int, onProgress: (Long, Long, Long) -> Unit): Long {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -851,7 +861,12 @@ class VideoDownload {
 
         var lastSpeed: Long = 0;
 
-        val result = client.get(url);
+        val result = if (modifier != null) {
+            val modified = modifier.modifyRequest(url, mapOf())
+            client.get(modified.url!!, modified.headers.toMutableMap())
+        } else {
+            client.get(url)
+        }
         if (!result.isOk) {
             result.body?.close()
             throw IllegalStateException("Failed to download source. Web[${result.code}] Error");
