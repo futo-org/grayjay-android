@@ -79,19 +79,8 @@ class LoginActivity : AppCompatActivity() {
         val uiMods = authConfig.uiMods?.toMutableList() ?: mutableListOf<SourcePluginAuthConfig.UIMod>();
         var currentScale = 100;
         var currentDesktop = false;
-        _webView.setInitialScale(50);
         webViewClient.onPageLoaded.subscribe { view, url ->
             _textUrl.setText(url ?: "");
-
-            if(!isFirstLoad)
-                return@subscribe;
-            isFirstLoad = false;
-
-            if(!authConfig.loginButton.isNullOrEmpty() && authConfig.loginButton.matches(REGEX_LOGIN_BUTTON)) {
-                Logger.i(TAG, "Clicking login button [${authConfig.loginButton}]");
-                //TODO: Find most reliable way to wait for page js to finish
-                view?.evaluateJavascript("setTimeout(()=> document.querySelector(\"${authConfig.loginButton}\")?.click(), 1000)", {});
-            }
 
             if(loginWarnings.size > 0 && url != null) {
                 synchronized(loginWarnings) {
@@ -104,6 +93,16 @@ class LoginActivity : AppCompatActivity() {
                             }, UIDialogs.ActionStyle.PRIMARY));
                     }
                 }
+            }
+
+            if(!isFirstLoad)
+                return@subscribe;
+            isFirstLoad = false;
+
+            if(!authConfig.loginButton.isNullOrEmpty() && authConfig.loginButton.matches(REGEX_LOGIN_BUTTON)) {
+                Logger.i(TAG, "Clicking login button [${authConfig.loginButton}]");
+                //TODO: Find most reliable way to wait for page js to finish
+                view?.evaluateJavascript("setTimeout(()=> document.querySelector(\"${authConfig.loginButton}\")?.click(), 1000)", {});
             }
 
             /*
