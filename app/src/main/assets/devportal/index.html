@@ -1022,15 +1022,35 @@
 					return x.value
 				});
 
+
+				let settingsToUse = __DEV_SETTINGS ?? {};
+				if (true) {
+					for (let setting of this.Plugin?.currentPlugin?.settings) {
+						if (typeof settingsToUse[setting.variable] == "undefined") {
+							switch (setting?.type?.toLowerCase()) {
+								case "boolean":
+									settingsToUse[setting.variable] = setting.default === 'true';
+									break;
+								case "dropdown":
+									let dropDownIndex = parseInt(setting.default);
+									if (dropDownIndex) {
+										settingsToUse[setting.variable] = setting.options[dropDownIndex];
+									}
+									break;
+							}
+						}
+					}
+				}
+
 				if(name == "enable") {
 					if(parameterVals.length > 0)
 						parameterVals[0] = this.Plugin.currentPlugin;
 					else
 						parameterVals.push(this.Plugin.currentPlugin);
 					if(parameterVals.length > 1)
-						parameterVals[1] = __DEV_SETTINGS;
+						parameterVals[1] = settingsToUse;
 					else
-						parameterVals.push(__DEV_SETTINGS);
+						parameterVals.push(settingsToUse);
 				}
 
 				const func = source[name];

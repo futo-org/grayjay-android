@@ -1005,8 +1005,7 @@ class VideoDetailView : ConstraintLayout {
                         }
                     }
                     _slideUpOverlay?.hide();
-                } else null,
-            if(video is JSVideoDetails && (video as JSVideoDetails).hasVODEvents())
+                } else if(video is JSVideoDetails && (video as JSVideoDetails).hasVODEvents())
                 RoundButton(context, R.drawable.ic_chat, context.getString(R.string.vod_chat), TAG_VODCHAT) {
                     video?.let {
                         try {
