@@ -2517,6 +2517,7 @@ class VideoDetailView : ConstraintLayout {
         if (!StateCasting.instance.resumeVideo()) {
             _player.play();
         }
+        onShouldEnterPictureInPictureChanged.emit()
 
         //TODO: This was needed because handleLowerVolume was done.
         //_player.setVolume(1.0f);
@@ -2533,6 +2534,7 @@ class VideoDetailView : ConstraintLayout {
         if (!StateCasting.instance.pauseVideo()) {
             _player.pause();
         }
+        onShouldEnterPictureInPictureChanged.emit()
     }
     private fun handleSeek(ms: Long) {
         Logger.i(TAG, "handleSeek(ms=$ms)")
