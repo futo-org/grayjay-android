@@ -279,6 +279,14 @@ class HomeFragment : MainFragment() {
                                     else {
                                         view.setToggle(!active);
                                     }
+                                }, { view, views, enabled ->
+                                    val toDisable = views.filter { it != view && it.tag == "plugins" };
+                                    if(!view.isActive)
+                                        view.handleClick();
+                                    for(tag in toDisable) {
+                                        if(tag.isActive)
+                                            tag.handleClick();
+                                    }
                                 }).withTag("plugins")
                             })
                     else listOf())

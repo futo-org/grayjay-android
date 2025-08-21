@@ -9,7 +9,7 @@
         android:layout_above="@+id/short_player_progress_bar"
         android:background="@color/black"
         app:default_artwork="@drawable/placeholder_video_thumbnail"
-        app:resize_mode="fill"
+        app:resize_mode="zoom"
         app:show_buffering="when_playing"
         app:use_artwork="true"
         app:use_controller="false" />

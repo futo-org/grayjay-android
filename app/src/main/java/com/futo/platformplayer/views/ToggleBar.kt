@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
+import androidx.core.view.children
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -28,6 +29,8 @@ import kotlinx.coroutines.launch
 class ToggleBar : LinearLayout {
     private val _tagsContainer: LinearLayout;
 
+    private var allowLongPress: Boolean = false;
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow();
     }
@@ -48,12 +51,31 @@ class ToggleBar : LinearLayout {
         for(button in buttons) {
             _tagsContainer.addView(ToggleTagView(context).apply {
                 if(button.icon > 0)
-                    this.setInfo(button.icon, button.name, button.isActive, button.isButton);
+                    this.setInfo(button.icon, button.name, button.isActive, button.isButton, button.tag);
                 else if(button.iconVariable != null)
-                    this.setInfo(button.iconVariable, button.name, button.isActive, button.isButton);
+                    this.setInfo(button.iconVariable, button.name, button.isActive, button.isButton, button.tag);
                 else
-                    this.setInfo(button.name, button.isActive, button.isButton);
+                    this.setInfo(button.name, button.isActive, button.isButton, button.tag);
                 this.onClick.subscribe({ view, enabled -> button.action(view, enabled); });
+                if(allowLongPress) {
+                    this.onLongClick.subscribe({ view, enabled ->
+                        for (tagView in _tagsContainer.children.filter { it is ToggleTagView }) {
+                            if (tagView != view && tagView is ToggleTagView && !tagView.isButton) {
+                                if (enabled && !tagView.isActive) {
+                                    tagView.handleClick();
+                                } else if (!enabled && tagView.isActive) {
+                                    tagView.handleClick();
+                                }
+                            }
+                        }
+                    })
+                }
+                else if(button.actionLong != null) {
+                    this.onLongClick.subscribe({ view, enabled ->
+                        val tags = _tagsContainer.children.filter { it is ToggleTagView }.map { it as ToggleTagView }.toList();
+                        button.actionLong!!(view, tags, enabled);
+                    });
+                }
             });
         }
     }
@@ -63,16 +85,18 @@ class ToggleBar : LinearLayout {
         val icon: Int;
         val iconVariable: ImageVariable?;
         val action: (ToggleTagView, Boolean)->Unit;
+        val actionLong: ((ToggleTagView, List<ToggleTagView>, Boolean) -> Unit)?;
         val isActive: Boolean;
         var isButton: Boolean = false
             private set;
         var tag: String? = null;
 
-        constructor(name: String, icon: ImageVariable?, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
+        constructor(name: String, icon: ImageVariable?, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit, actionLong: ((ToggleTagView, List<ToggleTagView>, Boolean)->Unit)? = null) {
             this.name = name;
             this.icon = 0;
             this.iconVariable = icon;
             this.action = action;
+            this.actionLong = actionLong;
             this.isActive = isActive;
         }
         constructor(name: String, icon: Int, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
@@ -80,6 +104,7 @@ class ToggleBar : LinearLayout {
             this.icon = icon;
             this.iconVariable = null;
             this.action = action;
+            this.actionLong = null;
             this.isActive = isActive;
         }
         constructor(name: String, isActive: Boolean = false, action: (ToggleTagView, Boolean)->Unit) {
@@ -87,6 +112,7 @@ class ToggleBar : LinearLayout {
             this.icon = 0;
             this.iconVariable = null;
             this.action = action;
+            this.actionLong = null;
             this.isActive = isActive;
         }
 
