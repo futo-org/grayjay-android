@@ -1154,7 +1154,7 @@ class VideoDetailView : ConstraintLayout {
         //Recover cancelled loads
         if(video == null) {
             val t = (lastPositionMilliseconds / 1000.0f).roundToLong();
-            if(_searchVideo != null)
+            if(_searchVideo != null && !wasLoginCall)
                 setVideoOverview(_searchVideo!!, true, t);
             else if(_url != null && !wasLoginCall)
                 setVideo(_url!!, t, _playWhenReady);
