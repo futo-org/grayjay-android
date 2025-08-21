@@ -113,8 +113,8 @@ class UIDialogs {
                 currentDialog.code,
                 currentDialog.defaultCloseAction,
                 *currentDialog.actions.map {
-                    return@map Action(it.text, {
-                        it.action();
+                    return@map Action.withInput(it.text, { str ->
+                        it.invokeAction(str);
                         multiShowDialog(context, dialogDescriptor.drop(1), finally);
                     }, it.style);
                 }.toTypedArray());
@@ -203,7 +203,9 @@ class UIDialogs {
         fun showDialog(context: Context, icon: Int, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action): AlertDialog {
             return showDialog(context, icon, false, text, textDetails, code, defaultCloseAction, *actions);
         }
-        fun showDialog(context: Context, icon: Int, animated: Boolean, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action): AlertDialog {
+        fun showDialog(context: Context, icon: Int, animated: Boolean, text: String, textDetails: String? = null, code: String? = null, defaultCloseAction: Int, vararg actions: Action): AlertDialog
+            = showDialog(context, icon, animated, text, textDetails, code, null, null, defaultCloseAction, *actions);
+        fun showDialog(context: Context, icon: Int, animated: Boolean, text: String, textDetails: String? = null, code: String? = null, input: String?, placeholder: String?, defaultCloseAction: Int, vararg actions: Action): AlertDialog {
             val builder = AlertDialog.Builder(context);
             val view = LayoutInflater.from(context).inflate(R.layout.dialog_multi_button, null);
             builder.setView(view);
@@ -224,6 +226,16 @@ class UIDialogs {
                     this.visibility = View.GONE;
                 else {
                     this.text = textDetails;
+                }
+            };
+            var inputView = view.findViewById<TextView>(R.id.dialog_text_input);
+            inputView.apply {
+                if (input == null && placeholder == null) this.visibility = View.GONE;
+                else {
+                    this.text = input ?: "";
+                    this.hint = placeholder ?: "";
+                    this.visibility = View.VISIBLE;
+                    this.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
                 }
             };
             view.findViewById<TextView>(R.id.dialog_text_code).apply {
@@ -250,7 +262,7 @@ class UIDialogs {
                     buttonView.textSize = 14f;
                     buttonView.typeface = resources.getFont(R.font.inter_regular);
                     buttonView.text = act.text;
-                    buttonView.setOnClickListener { act.action(); dialog.dismiss(); };
+                    buttonView.setOnClickListener { act.invokeAction(DialogResult(inputView?.text?.toString())); dialog.dismiss(); };
                     when(act.style) {
                         ActionStyle.PRIMARY -> buttonView.setBackgroundResource(R.drawable.background_button_primary);
                         ActionStyle.ACCENT -> buttonView.setBackgroundResource(R.drawable.background_button_accent);
@@ -275,7 +287,7 @@ class UIDialogs {
             };
             dialog.setOnCancelListener {
                 if(defaultCloseAction >= 0 && defaultCloseAction < actions.size)
-                    actions[defaultCloseAction].action();
+                    actions[defaultCloseAction].invokeAction(DialogResult(inputView?.text?.toString()));
             }
             dialog.setOnDismissListener {
                 registerDialogClosed(dialog);
@@ -535,17 +547,36 @@ class UIDialogs {
     }
     class Action {
         val text: String;
-        val action: ()->Unit;
+        val action: ((DialogResult?)->Unit);
         val style: ActionStyle;
         var center: Boolean;
 
         constructor(text: String, action: ()->Unit, style: ActionStyle = ActionStyle.NONE, center: Boolean = false) {
             this.text = text;
+            this.action = { action() };
+            this.style = style;
+            this.center = center;
+        }
+        protected constructor(text: String, action: (DialogResult?)->Unit, style: ActionStyle = ActionStyle.NONE, center: Boolean = false) {
+            this.text = text;
             this.action = action;
             this.style = style;
             this.center = center;
         }
+
+        fun invokeAction(input: DialogResult? = null) {
+            this.action(input);
+        }
+
+        companion object {
+            fun withInput(text: String, action: (DialogResult?)->Unit, style: ActionStyle = ActionStyle.NONE, center: Boolean = false): Action {
+                return Action(text, action, style, center);
+            }
+        }
     }
+    class DialogResult(
+      val text: String?
+    );
     enum class ActionStyle {
         NONE,
         PRIMARY,

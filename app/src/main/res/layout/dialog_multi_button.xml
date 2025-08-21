@@ -63,6 +63,16 @@
             android:layout_height="wrap_content"
             tools:ignore="HardcodedText" />
 
+        <EditText
+            android:id="@+id/dialog_text_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            />
+
         <LinearLayout
             android:id="@+id/dialog_buttons"
             android:layout_width="match_parent"

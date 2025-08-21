@@ -57,9 +57,12 @@ class StateSync {
             return
         }
 
+        var relayServerUrl = Settings.instance.synchronization.syncServer;
+        Logger.i(TAG, "Relay used: ${relayServerUrl}");
+
         syncService = SyncService(
             SERVICE_NAME,
-            RELAY_SERVER,
+            relayServerUrl,
             RELAY_PUBLIC_KEY,
             APP_ID,
             StoreBasedSyncDatabaseProvider(),

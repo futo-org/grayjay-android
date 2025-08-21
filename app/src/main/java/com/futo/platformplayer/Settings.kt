@@ -25,6 +25,7 @@ import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePayment
 import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.FragmentedStorageFileJson
@@ -1092,6 +1093,38 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.local_connections, FieldForm.TOGGLE, R.string.local_connections_description, 3)
         var localConnections: Boolean = true;
+
+
+
+        var syncServerUrl: String? = null;
+        @FormField(R.string.payment_status, FieldForm.READONLYTEXT, -1, 6)
+        val syncServer: String get() = if(syncServerUrl?.isBlank() == true) StateSync.RELAY_SERVER else syncServerUrl ?: StateSync.RELAY_SERVER;
+
+        @FormField(R.string.configure_sync_server, FieldForm.BUTTON, R.string.configure_sync_server_description, 7)
+        fun configureSyncServer() {
+            SettingsActivity.getActivity()?.let { context ->
+                UIDialogs.showDialog(context, R.drawable.device_sync, false,
+                    "Enter the url to your relay server",
+                    "Using your own relay server requires a proper setup with portforwarding.\nUse at your own risk.",
+                    null,
+                    syncServerUrl ?: "",
+                    "YourRelayServerDomain.com", 0,
+                        UIDialogs.Action("Cancel", {}),
+                        UIDialogs.Action("Reset", {
+                            syncServerUrl = null;
+                            instance.save();
+                            context.reloadSettings();
+                            UIDialogs.toast("Sync server changes require a restart");
+                        }, UIDialogs.ActionStyle.ACCENT),
+                        UIDialogs.Action.withInput("Configure", {
+                            syncServerUrl = it?.text
+                            instance.save();
+                            context.reloadSettings();
+                            UIDialogs.toast("Sync server changes require a restart");
+                        }, UIDialogs.ActionStyle.PRIMARY),
+                    )
+            }
+        }
     }
 
     @FormField(R.string.info, FieldForm.GROUP, -1, 21)
