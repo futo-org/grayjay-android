@@ -1154,7 +1154,7 @@ class VideoDetailView : ConstraintLayout {
         //Recover cancelled loads
         if(video == null) {
             val t = (lastPositionMilliseconds / 1000.0f).roundToLong();
-            if(_searchVideo != null)
+            if(_searchVideo != null && !wasLoginCall)
                 setVideoOverview(_searchVideo!!, true, t);
             else if(_url != null && !wasLoginCall)
                 setVideo(_url!!, t, _playWhenReady);
@@ -2517,6 +2517,7 @@ class VideoDetailView : ConstraintLayout {
         if (!StateCasting.instance.resumeVideo()) {
             _player.play();
         }
+        onShouldEnterPictureInPictureChanged.emit()
 
         //TODO: This was needed because handleLowerVolume was done.
         //_player.setVolume(1.0f);
@@ -2533,6 +2534,7 @@ class VideoDetailView : ConstraintLayout {
         if (!StateCasting.instance.pauseVideo()) {
             _player.pause();
         }
+        onShouldEnterPictureInPictureChanged.emit()
     }
     private fun handleSeek(ms: Long) {
         Logger.i(TAG, "handleSeek(ms=$ms)")
