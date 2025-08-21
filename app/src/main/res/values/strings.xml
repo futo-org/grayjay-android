@@ -440,6 +440,9 @@
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
     <string name="shorts_pregenerate">Pre-generate shorts sources</string>
     <string name="shorts_pregenerate_description">Generates short sources (when applicable) one video ahead</string>
+    <string name="shorts_fit_video">Fit Shorts Video</string>
+    <string name="shorts_fit_video_description">Will scale the video to fit the view, instead of filling the view properly.</string>
+    <string name="shorts_fit_video_warning">This setting will require you to reboot Grayjay.</string>
     <string name="seek_offset">Seek duration</string>
     <string name="min_playback_speed">Minimum Playback Speed</string>
     <string name="min_playback_speed_description">Minimum Available Speed</string>

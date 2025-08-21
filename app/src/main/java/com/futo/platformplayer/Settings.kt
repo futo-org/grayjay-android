@@ -35,6 +35,7 @@ import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
 import com.futo.platformplayer.views.fields.FormFieldButton
+import com.futo.platformplayer.views.fields.FormFieldWarning
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -609,6 +610,11 @@ class Settings : FragmentedStorageFileJson() {
         @AdvancedField
         @FormField(R.string.shorts_pregenerate, FieldForm.TOGGLE, R.string.shorts_pregenerate_description, 28)
         var shortsPregenerate: Boolean = false;
+
+        @AdvancedField
+        @FormField(R.string.shorts_fit_video, FieldForm.TOGGLE, R.string.shorts_fit_video_description, 29)
+        @FormFieldWarning(R.string.shorts_fit_video_warning)
+        var shortsFitVideo: Boolean = false;
     }
 
     @FormField(R.string.comments, "group", R.string.comments_description, 6)
