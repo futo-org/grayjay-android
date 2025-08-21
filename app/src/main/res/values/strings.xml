@@ -478,6 +478,7 @@
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Number of concurrent threads to multiply download speeds from throttled sources</string>
     <string name="payment">Payment</string>
     <string name="payment_status">Payment Status</string>
+    <string name="relay_server">Sync Relay Server</string>
     <string name="bypass_rotation_prevention">Bypass Rotation Prevention</string>
     <string name="playlist_delete_confirmation">Playlist Delete Confirmation</string>
     <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
