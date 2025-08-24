@@ -4,7 +4,7 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import java.lang.reflect.Field
 
-@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class AdvancedField();
 

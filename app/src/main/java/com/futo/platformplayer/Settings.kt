@@ -1106,6 +1106,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.relay_server, FieldForm.READONLYTEXT, -1, 6)
         val syncServer: String get() = if(syncServerUrl?.isBlank() == true) StateSync.RELAY_SERVER else syncServerUrl ?: StateSync.RELAY_SERVER;
 
+        @AdvancedField
         @FormField(R.string.configure_sync_server, FieldForm.BUTTON, R.string.configure_sync_server_description, 7)
         fun configureSyncServer() {
             SettingsActivity.getActivity()?.let { context ->

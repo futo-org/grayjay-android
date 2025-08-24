@@ -135,8 +135,12 @@ class StateApp {
         return _scope;
     }
     val scope: CoroutineScope get() {
-        val thisScope = scopeOrNull
-            ?: throw IllegalStateException("Attempted to use a global lifetime scope while MainActivity is no longer available");
+        val thisScope = scopeOrNull;
+        if(thisScope == null) {
+            //throw IllegalStateException("Attempted to use a global lifetime scope while MainActivity is no longer available");
+            Logger.w(TAG, "Attempted to use a global lifetime scope while MainActivity is no longer available, USING GLOBAL SCOPE");
+            return GlobalScope;
+        }
         return thisScope;
     }
     val scopeGetter: ()->CoroutineScope get() {
