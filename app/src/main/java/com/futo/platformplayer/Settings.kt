@@ -203,6 +203,8 @@ class Settings : FragmentedStorageFileJson() {
                 8 -> "zh";
                 9 -> "ru";
                 10 -> "ar";
+                11 -> "it";
+                12 -> "tr";
                 else -> null
             }
         }

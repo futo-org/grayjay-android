@@ -1028,7 +1028,6 @@
         <item>Sistema</item>
         <item>Inglese (EN)</item>
         <item>Tedesco (DE)</item>
-        <item>Italiano (IT)
         <item>Spagnolo (ES)</item>
         <item>Portoghese (PT)</item>
         <item>Francese (FR)</item>
@@ -1037,6 +1036,8 @@
         <item>Cinese (ZH)</item>
         <item>Russo (RU)</item>
         <item>Arabo (AR)</item>
+        <item>Italiano (IT)</item>
+        <item>Turco (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Nessuno</item>
@@ -1108,16 +1109,6 @@
         <item>3.0</item>
         <item>4.0</item>
         <item>5.0</item>
-    </string-array>
-    <string-array name="hold_playback_speeds">
-        <item>1.25</item>
-        <item>1.5</item>
-        <item>1.75</item>
-        <item>2.0</item>
-        <item>2.25</item>
-        <item>2.5</item>
-        <item>2.75</item>
-        <item>3.0</item>
     </string-array>
     <string-array name="min_playback_speed">
         <item>0.25</item>

@@ -409,7 +409,6 @@
     <string name="delete_watchlist_on_finish">İzlendikten sonra Daha Sonra İzle\'den kaldır</string>
     <string name="delete_watchlist_on_finish_description">Büyük bir çoğunluğunu izlediğiniz bir videoyu Daha Sonra İzle\'de bırakırsanız, Daha Sonra İzle\'den kaldırılacaktır.</string>
     <string name="background_switch_audio">Arka planda sese değiştir</string>
-    <string name="background_switch_audio_description">Mümkünse arka planda yalnızca ses akışına geçerek bant genişliği kullanımını optimize edin, bu takılmalara neden olabilir</string>
     <string name="subscription_group_menu">Gruplar</string>
     <string name="show_subscription_group">Abonelik Gruplarını Göster</string>
     <string name="show_subscription_group_description">Abonelik gruplarının filtrelemek için aboneliklerinizin üzerinde gösterilmesi gerekiyorsa</string>
@@ -969,6 +968,8 @@
         <item>İndirme Tarihi (En Yeni)</item>
         <item>Çıkış Tarihi (En Eski)</item>
         <item>Çıkış Tarihi (En Yeni)</item>
+        <item>Boyut (En Küçük)</item>
+        <item>Boyut (En Büyük)</item>
     </string-array>
     <string-array name="feed_style">
         <item>Önizle</item>
@@ -986,6 +987,8 @@
         <item>Çince (ZH)</item>
         <item>Rusça (RU)</item>
         <item>Arapça (AR)</item>
+        <item>İtalyanca (IT)</item>
+        <item>Türkçe (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Hiç</item>

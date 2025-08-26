@@ -1058,6 +1058,8 @@
         <item>Chinese (ZH)</item>
         <item>Russian (RU)</item>
         <item>Arabic (AR)</item>
+        <item>Italian (IT)</item>
+        <item>Turkish (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>None</item>
