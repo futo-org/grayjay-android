@@ -15,7 +15,7 @@
     <string name="advanced_settings">Impostazioni avanzate</string>
     <string name="advanced_settings_description">Se le impostazioni avanzate sono visibili, verranno mostrate preferenze supplementari per affinare la tua esperienza d\'uso.</string>
     <string name="progress_bar_description">Se la barra di avanzamento cronologica deve essere mostrata</string>
-    <string name="hide_hidden_from_search">Applica 'Nascosto dalla home' anche alla ricerca'</string>
+    <string name="hide_hidden_from_search">Applica \'Nascosto dalla home\' anche alla ricerca\'</string>
     <string name="hide_hidden_from_search_description">Nascondi video e creatori nascosti dalla scheda home anche nei risultati di ricerca</string>
     <string name="recommendations">Suggerimenti</string>
     <string name="more">Altro</string>
@@ -427,7 +427,7 @@
     <string name="autoplay_description">La riproduzione automatica del video successivo sarà attiva per impostazione predefinita ogni volta che guarderai un video</string>
     <string name="allow_full_screen_portrait">Consenti modalità verticale a schermo intero quando si guardano video orizzontali</string>
     <string name="delete_watchlist_on_finish">Elimina da Guarda più tardi dopo visione</string>
-    <string name="delete_watchlist_on_finish_description">Dopo aver chiuso un video che hai guardato in larga parte, questo verrà rimosso da 'Guarda più tardi'.</string>
+    <string name="delete_watchlist_on_finish_description">Dopo aver chiuso un video che hai guardato in larga parte, questo verrà rimosso da \'Guarda più tardi\'.</string>
     <string name="seek_offset">Durata ricerca</string>
     <string name="min_playback_speed">Velocità di riproduzione minima</string>
     <string name="min_playback_speed_description">Velocità minima disponibile</string>
@@ -758,7 +758,7 @@
     <string name="subtitles">Sottotitoli</string>
     <string name="unavailable_video">Video non disponibile</string>
     <string name="this_video_is_unavailable">Questo video non è disponibile.</string>
-    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">C'era un video non disponibile nella tua coda: [{videoName}] di [{authorName}].</string>
+    <string name="there_was_an_unavailable_video_in_your_queue_videoname_by_authorname">C\'era un video non disponibile nella tua coda: [{videoName}] di [{authorName}].</string>
     <string name="back">Indietro</string>
     <string name="pause">Pausa</string>
     <string name="play">Riproduci</string>
@@ -833,7 +833,7 @@
     <string name="add_to_new_playlist">Aggiungi a nuova playlist</string>
     <string name="url_handling">Gestione URL</string>
     <string name="allow_grayjay_to_handle_specific_urls">Consentire a Grayjay di gestire URL specifici?</string>
-    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">Quando fai clic su "Sì", si apriranno le impostazioni dell\'app Grayjay.\n\nDa lì, accedi a:\n1. Sezione 'Apri per impostazione predefinita' o 'Imposta come predefinito'.\nPotresti trovare questa opzione direttamente oppure nella categoria 'Impostazioni Avanzate', a seconda del tuo dispositivo.\n\n2. Seleziona 'Apri link supportati' per Grayjay.\n\n(alcuni dispositivi hanno questa opzione elencata nella finestra 'App predefinite' delle impostazioni di sistema, seguita dalla possibilità di selezionare Grayjay per le categorie pertinenti)</string>
+    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">Quando fai clic su "Sì", si apriranno le impostazioni dell\'app Grayjay.\n\nDa lì, accedi a:\n1. Sezione \'Apri per impostazione predefinita\' o \'Imposta come predefinito\'.\nPotresti trovare questa opzione direttamente oppure nella categoria \'Impostazioni Avanzate\', a seconda del tuo dispositivo.\n\n2. Seleziona \'Apri link supportati\' per Grayjay.\n\n(alcuni dispositivi hanno questa opzione elencata nella finestra \'App predefinite\' delle impostazioni di sistema, seguita dalla possibilità di selezionare Grayjay per le categorie pertinenti)</string>
     <string name="failed_to_show_settings">Apertura impostazioni non riuscita</string>
     <string name="play_store_version_does_not_support_default_url_handling">La versione del Play Store non supporta la gestione URL predefinita.</string>
     <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">Questi sono tutti i {commentCount} commenti che hai postato con Grayjay.</string>
@@ -852,7 +852,7 @@
     <string name="play_pause">Riproduci/Pausa</string>
     <string name="position">Posizione</string>
     <string name="tutorials">Tutorial</string>
-    <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Vuoi guardare i tutorial? Puoi accedervi in qualsiasi momento cliccando sul pulsante 'Altro'.</string>
+    <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Vuoi guardare i tutorial? Puoi accedervi in qualsiasi momento cliccando sul pulsante \'Altro\'.</string>
     <string name="add_creator">Aggiungi creatori</string>
     <string name="select">Seleziona</string>
     <string name="zoom">Zoom</string>
@@ -861,7 +861,7 @@
     <string name="disable_battery_optimization">Disattiva ottimizzazione batteria</string>
     <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Clicca per accedere alle impostazioni di ottimizzazione della batteria. Disattivare l\'ottimizzazione della batteria impedirà al sistema operativo di terminare le sessioni multimediali.</string>
     <string name="contribute_personal_subscriptions_list">Contribuisci con l\'elenco delle sottoscrizioni personali</string>
-    <string name="contribute_personal_subscriptions_list_description">\nTi piacerebbe contribuire a FUTO con la tua attuale lista di sottoscrizioni ai creatori?\n\nI dati saranno gestiti in conformità con la politica sulla privacy di Grayjay. Ovvero, la lista sarà anonimizzata e archiviata senza alcun riferimento a chiunque appartenga l\'elenco dei creatori.\n\nL\'intenzione è che Grayjay e FUTO utilizzino questi dati per costruire un sistema di suggerimenti dei creatori multipiattaforma per rendere più facile trovarne di nuovi che potrebbero piacerti direttamente all\'interno di Grayjay.</string>
+    <string name="contribute_personal_subscriptions_list_description">\nTi piacerebbe contribuire a FUTO con la tua attuale lista di sottanother sanityoscrizioni ai creatori?\n\nI dati saranno gestiti in conformità con la politica sulla privacy di Grayjay. Ovvero, la lista sarà anonimizzata e archiviata senza alcun riferimento a chiunque appartenga l\'elenco dei creatori.\n\nL\'intenzione è che Grayjay e FUTO utilizzino questi dati per costruire un sistema di suggerimenti dei creatori multipiattaforma per rendere più facile trovarne di nuovi che potrebbero piacerti direttamente all\'interno di Grayjay.</string>
     <string name="cd_cast_button">Pulsante trasmetti</string>
     <string name="cd_incognito_button">Pulsante incognito</string>
     <string name="cd_creator_thumbnail">Miniatura creatore</string>
