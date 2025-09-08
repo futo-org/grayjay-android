@@ -402,18 +402,25 @@ class StatePlugins {
                         }
 
                         val icon = config.absoluteIconUrl?.let { absIconUrl ->
-                            withContext(Dispatchers.Main) {
-                                it.setText("Saving plugin...");
-                                it.setProgress(0.75);
-                            }
                             val iconResp = client.get(absIconUrl);
                             if(iconResp.isOk)
                                 return@let iconResp.body?.byteStream()?.use { it.readBytes() };
                             return@let null;
                         }
+
+                        withContext(Dispatchers.Main) {
+                            it.setText("Saving plugin...");
+                            it.setProgress(0.75);
+                        }
+
                         val installEx = StatePlugins.instance.createPlugin(config, script, icon, reinstall);
                         if(installEx != null)
                             throw installEx;
+
+                        withContext(Dispatchers.Main) {
+                            it.setText("Reloading available plugins...");
+                            it.setProgress(0.9);
+                        }
                         StatePlatform.instance.updateAvailableClients(context);
 
                         withContext(Dispatchers.Main) {
@@ -522,9 +529,7 @@ class StatePlugins {
         if(id == StateDeveloper.DEV_ID)
             throw IllegalStateException("Attempted to retrieve a persistent developer plugin, this is not allowed");
 
-        synchronized(_plugins) {
-            return _plugins.findItem { it.config.id == id };
-        }
+        return _plugins.findItem { it.config.id == id };
     }
     fun getPlugins(): List<SourcePluginDescriptor> {
         return _plugins.getItems();
@@ -533,12 +538,10 @@ class StatePlugins {
 
     fun deletePlugin(id: String) {
         synchronized(_pluginScripts) {
-            synchronized(_plugins) {
-                _pluginScripts.deleteFile(id);
-                val plugins = _plugins.findItems { it.config.id == id };
-                for(plugin in plugins)
-                    _plugins.delete(plugin);
-            }
+            _pluginScripts.deleteFile(id);
+            val plugins = _plugins.findItems { it.config.id == id };
+            for(plugin in plugins)
+                _plugins.delete(plugin);
         }
     }
     fun createPlugin(config: SourcePluginConfig, script: String, icon: ByteArray? = null, reinstall: Boolean = false, flags: List<String> = listOf()) : Throwable? {
