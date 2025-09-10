@@ -21,14 +21,13 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
-import com.futo.platformplayer.casting.AirPlayCastingDevice
-import com.futo.platformplayer.casting.ChromecastCastingDevice
+import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.formatDuration
-import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
@@ -36,7 +35,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CastView : ConstraintLayout {
@@ -99,19 +97,30 @@ class CastView : ConstraintLayout {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;
             _speedHoldWasPlaying = d.isPlaying
             _speedHoldPrevRate = d.speed
-            if (d.canSetSpeed)
-                d.changeSpeed(Settings.instance.playback.getHoldPlaybackSpeed())
-            d.resumeVideo()
+            try {
+                if (d.canSetSpeed()) {
+                    d.changeSpeed(Settings.instance.playback.getHoldPlaybackSpeed())
+                }
+                d.resumePlayback()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to change playback speed to hold playback speed: $e")
+            }
         }
         _gestureControlView.onSpeedHoldEnd.subscribe {
-            val d = StateCasting.instance.activeDevice ?: return@subscribe;
-            if (!_speedHoldWasPlaying) d.pauseVideo()
-            d.changeSpeed(_speedHoldPrevRate)
+            try {
+                val d = StateCasting.instance.activeDevice ?: return@subscribe;
+                if (!_speedHoldWasPlaying) {
+                    d.pausePlayback()
+                }
+                d.changeSpeed(_speedHoldPrevRate)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to change playback speed to previous hold playback speed: $e")
+            }
         }
 
         _gestureControlView.onSeek.subscribe {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;
-            StateCasting.instance.videoSeekTo(d.expectedCurrentTime + it / 1000);
+            StateCasting.instance.videoSeekTo( d.expectedCurrentTime + it / 1000);
         };
 
         _buttonLoop.setOnClickListener {
@@ -220,22 +229,9 @@ class CastView : ConstraintLayout {
         stopTimeJob()
 
         if(isPlaying) {
-            val d = StateCasting.instance.activeDevice;
-            if (d is AirPlayCastingDevice || d is ChromecastCastingDevice) {
-                _updateTimeJob = _scope.launch {
-                    while (true) {
-                        val device = StateCasting.instance.activeDevice;
-                        if (device == null || !device.isPlaying) {
-                            break;
-                        }
-
-                        delay(1000);
-                        val time_ms = (device.expectedCurrentTime * 1000.0).toLong()
-                        setTime(time_ms);
-                        onTimeJobTimeChanged_s.emit(device.expectedCurrentTime.toLong())
-                    }
-                }
-            }
+            StateCasting.instance.startUpdateTimeJob(
+                onTimeJobTimeChanged_s
+            ) { setTime(it) }
 
             if (!_inPictureInPicture) {
                 _buttonPause.visibility = View.VISIBLE;
@@ -332,5 +328,9 @@ class CastView : ConstraintLayout {
     fun setLoading(expectedDurationMs: Int) {
         _loaderGame.visibility = View.VISIBLE
         _loaderGame.startLoader(expectedDurationMs.toLong())
+    }
+
+    companion object {
+        private val TAG = "CastView";
     }
 }

@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.net.InetAddress
 import java.util.UUID
 
-class AirPlayCastingDevice : CastingDevice {
+class AirPlayCastingDevice : CastingDeviceLegacy {
     //See for more info: https://nto.github.io/AirPlay
 
     override val protocol: CastProtocolType get() = CastProtocolType.AIRPLAY;

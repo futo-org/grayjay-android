@@ -27,7 +27,7 @@ import javax.net.ssl.SSLSocket
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class ChromecastCastingDevice : CastingDevice {
+class ChromecastCastingDevice : CastingDeviceLegacy {
     //See for more info: https://developers.google.com/cast/docs/media/messages
 
     override val protocol: CastProtocolType get() = CastProtocolType.CHROMECAST;

@@ -3,15 +3,8 @@ package com.futo.platformplayer.casting
 import android.app.AlertDialog
 import android.content.ContentResolver
 import android.content.Context
-import android.net.Uri
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
-import android.os.Build
 import android.os.Looper
-import android.util.Base64
 import android.util.Log
-import java.net.NetworkInterface
-import java.net.Inet4Address
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
@@ -41,39 +34,38 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.builders.DashBuilder
+import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.exceptions.UnsupportedCastException
 import com.futo.platformplayer.findPreferredAddress
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.stores.CastingDeviceInfoStorage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.toUrlAddress
+import com.futo.platformplayer.views.casting.CastView
+import com.futo.platformplayer.views.casting.CastView.Companion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import org.fcast.sender_sdk.Metadata
 import java.net.Inet6Address
-import java.net.InetAddress
 import java.net.URLDecoder
 import java.net.URLEncoder
-import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-class StateCasting {
-    private val _scopeIO = CoroutineScope(Dispatchers.IO);
-    private val _scopeMain = CoroutineScope(Dispatchers.Main);
+abstract class StateCasting {
+    val _scopeIO = CoroutineScope(Dispatchers.IO);
+    val _scopeMain = CoroutineScope(Dispatchers.Main);
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
 
-    private val _castServer = ManagedHttpServer();
-    private var _started = false;
+    val _castServer = ManagedHttpServer();
+    var _started = false;
 
     var devices: HashMap<String, CastingDevice> = hashMapOf();
     val onDeviceAdded = Event1<CastingDevice>();
@@ -89,212 +81,46 @@ class StateCasting {
     private var _audioExecutor: JSRequestExecutor? = null
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
-    private var _nsdManager: NsdManager? = null
     val isCasting: Boolean get() = activeDevice != null;
     private val _castId = AtomicInteger(0)
 
-    private val _discoveryListeners = mapOf(
-        "_googlecast._tcp" to createDiscoveryListener(::addOrUpdateChromeCastDevice),
-        "_airplay._tcp" to createDiscoveryListener(::addOrUpdateAirPlayDevice),
-        "_fastcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice),
-        "_fcast._tcp" to createDiscoveryListener(::addOrUpdateFastCastDevice)
-    )
+    abstract fun handleUrl(url: String)
+    abstract fun onStop()
+    abstract fun start(context: Context)
+    abstract fun stop()
 
-    fun handleUrl(context: Context, url: String) {
-        val uri = Uri.parse(url)
-        if (uri.scheme != "fcast") {
-            throw Exception("Expected scheme to be FCast")
-        }
-
-        val type = uri.host
-        if (type != "r") {
-            throw Exception("Expected type r")
-        }
-
-        val connectionInfo = uri.pathSegments[0]
-        val json = Base64.decode(connectionInfo, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).toString(Charsets.UTF_8)
-        val networkConfig = Json.decodeFromString<FCastNetworkConfig>(json)
-        val tcpService = networkConfig.services.first { v -> v.type == 0 }
-
-        val foundInfo = addRememberedDevice(CastingDeviceInfo(
-            name = networkConfig.name,
-            type = CastProtocolType.FCAST,
-            addresses = networkConfig.addresses.toTypedArray(),
-            port = tcpService.port
-        ))
-
-        connectDevice(deviceFromCastingDeviceInfo(foundInfo))
-    }
-
-    fun onStop() {
-        val ad = activeDevice ?: return;
-        _resumeCastingDevice = ad.getDeviceInfo()
-        Log.i(TAG, "_resumeCastingDevice set to '${ad.name}'")
-        Logger.i(TAG, "Stopping active device because of onStop.");
-        ad.stop();
-    }
+    @Throws
+    abstract fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice
+    abstract fun startUpdateTimeJob(
+        onTimeJobTimeChanged_s: Event1<Long>, setTime: (Long) -> Unit
+    ): Job?
 
     fun onResume() {
         val ad = activeDevice
         if (ad != null) {
-            if (ad is FCastCastingDevice) {
-                ad.ensureThreadStarted()
-            } else if (ad is ChromecastCastingDevice) {
-                ad.ensureThreadsStarted()
-            }
+            ad.ensureThreadStarted()
         } else {
             val resumeCastingDevice = _resumeCastingDevice
             if (resumeCastingDevice != null) {
-                connectDevice(deviceFromCastingDeviceInfo(resumeCastingDevice))
+                val dev = deviceFromInfo(resumeCastingDevice) ?: return
+                connectDevice(dev)
                 _resumeCastingDevice = null
                 Log.i(TAG, "_resumeCastingDevice set to null onResume")
             }
         }
     }
 
-    @Synchronized
-    fun start(context: Context) {
-        if (_started)
+    fun cancel() {
+        _castId.incrementAndGet()
+    }
+
+    fun invokeInMainScopeIfRequired(action: () -> Unit) {
+        if (Looper.getMainLooper().thread != Thread.currentThread()) {
+            _scopeMain.launch { action() }
             return;
-        _started = true;
-
-        Log.i(TAG, "_resumeCastingDevice set null start")
-        _resumeCastingDevice = null;
-
-        Logger.i(TAG, "CastingService starting...");
-
-        _castServer.start();
-        enableDeveloper(true);
-
-        Logger.i(TAG, "CastingService started.");
-
-        _nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-        startDiscovering()
-    }
-
-    @Synchronized
-    private fun startDiscovering() {
-        _nsdManager?.apply {
-            _discoveryListeners.forEach {
-                discoverServices(it.key, NsdManager.PROTOCOL_DNS_SD, it.value)
-            }
         }
-    }
 
-    @Synchronized
-    private fun stopDiscovering() {
-        _nsdManager?.apply {
-            _discoveryListeners.forEach {
-                try {
-                    stopServiceDiscovery(it.value)
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to stop service discovery", e)
-                }
-            }
-        }
-    }
-
-    @Synchronized
-    fun stop() {
-        if (!_started)
-            return;
-
-        _started = false;
-
-        Logger.i(TAG, "CastingService stopping.")
-
-        stopDiscovering()
-        _scopeIO.cancel();
-        _scopeMain.cancel();
-
-        Logger.i(TAG, "Stopping active device because StateCasting is being stopped.")
-        val d = activeDevice;
-        activeDevice = null;
-        d?.stop();
-
-        _castServer.stop();
-        _castServer.removeAllHandlers();
-
-        Logger.i(TAG, "CastingService stopped.")
-
-        _nsdManager = null
-    }
-
-    private fun createDiscoveryListener(addOrUpdate: (String, Array<InetAddress>, Int) -> Unit): NsdManager.DiscoveryListener {
-        return object : NsdManager.DiscoveryListener {
-            override fun onDiscoveryStarted(regType: String) {
-                Log.d(TAG, "Service discovery started for $regType")
-            }
-
-            override fun onDiscoveryStopped(serviceType: String) {
-                Log.i(TAG, "Discovery stopped: $serviceType")
-            }
-
-            override fun onServiceLost(service: NsdServiceInfo) {
-                Log.e(TAG, "service lost: $service")
-                // TODO: Handle service lost, e.g., remove device
-            }
-
-            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Discovery failed for $serviceType: Error code:$errorCode")
-                try {
-                    _nsdManager?.stopServiceDiscovery(this)
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to stop service discovery", e)
-                }
-            }
-
-            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Stop discovery failed for $serviceType: Error code:$errorCode")
-                try {
-                    _nsdManager?.stopServiceDiscovery(this)
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to stop service discovery", e)
-                }
-            }
-
-            override fun onServiceFound(service: NsdServiceInfo) {
-                Log.v(TAG, "Service discovery success for ${service.serviceType}: $service")
-                val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    service.hostAddresses.toTypedArray()
-                } else {
-                    arrayOf(service.host)
-                }
-                addOrUpdate(service.serviceName, addresses, service.port)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    _nsdManager?.registerServiceInfoCallback(service, { it.run() }, object : NsdManager.ServiceInfoCallback {
-                        override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
-                            Log.v(TAG, "onServiceUpdated: $serviceInfo")
-                            addOrUpdate(serviceInfo.serviceName, serviceInfo.hostAddresses.toTypedArray(), serviceInfo.port)
-                        }
-
-                        override fun onServiceLost() {
-                            Log.v(TAG, "onServiceLost: $service")
-                            // TODO: Handle service lost
-                        }
-
-                        override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
-                            Log.v(TAG, "onServiceInfoCallbackRegistrationFailed: $errorCode")
-                        }
-
-                        override fun onServiceInfoCallbackUnregistered() {
-                            Log.v(TAG, "onServiceInfoCallbackUnregistered")
-                        }
-                    })
-                } else {
-                    _nsdManager?.resolveService(service, object : NsdManager.ResolveListener {
-                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                            Log.v(TAG, "Resolve failed: $errorCode")
-                        }
-
-                        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-                            Log.v(TAG, "Resolve Succeeded: $serviceInfo")
-                            addOrUpdate(serviceInfo.serviceName, arrayOf(serviceInfo.host), serviceInfo.port)
-                        }
-                    })
-                }
-            }
-        }
+        action();
     }
 
     private val _castingDialogLock = Any();
@@ -302,8 +128,9 @@ class StateCasting {
 
     @Synchronized
     fun connectDevice(device: CastingDevice) {
-        if (activeDevice == device)
-            return;
+        if (activeDevice == device) {
+            return
+        }
 
         val ad = activeDevice;
         if (ad != null) {
@@ -313,11 +140,11 @@ class StateCasting {
             device.onTimeChanged.clear();
             device.onVolumeChanged.clear();
             device.onDurationChanged.clear();
-            ad.stop();
+            ad.disconnect()
         }
 
         device.onConnectionStateChanged.subscribe { castConnectionState ->
-            Logger.i(TAG, "Active device connection state changed: $castConnectionState");
+            Logger.i(TAG, "Active device connection state changed: $castConnectionState")
 
             if (castConnectionState == CastConnectionState.DISCONNECTED) {
                 Logger.i(TAG, "Clearing events: $castConnectionState");
@@ -351,10 +178,14 @@ class StateCasting {
                                 synchronized(_castingDialogLock) {
                                     if(_currentDialog == null) {
                                         _currentDialog = UIDialogs.showDialog(context, R.drawable.ic_loader_animated, true,
-                                                "Connecting to [${device.name}]",
-                                                "Make sure you are on the same network\n\nVPNs and guest networks can cause issues", null, -2,
+                                            "Connecting to [${device.name}]",
+                                            "Make sure you are on the same network\n\nVPNs and guest networks can cause issues", null, -2,
                                             UIDialogs.Action("Disconnect", {
-                                                device.stop();
+                                                try {
+                                                    device.disconnect()
+                                                } catch (e: Throwable) {
+                                                    Logger.e(TAG, "Failed to disconnect from device: $e")
+                                                }
                                             }));
                                     }
                                 }
@@ -376,7 +207,7 @@ class StateCasting {
         };
         device.onPlayChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDevicePlayChanged.emit(it) };
-        }
+        };
         device.onDurationChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDeviceDurationChanged.emit(it) };
         };
@@ -388,7 +219,7 @@ class StateCasting {
         };
 
         try {
-            device.start();
+            device.connect();
         } catch (e: Throwable) {
             Logger.w(TAG, "Failed to connect to device.");
             device.onConnectionStateChanged.clear();
@@ -399,52 +230,24 @@ class StateCasting {
             return;
         }
 
-        activeDevice = device;
-        Logger.i(TAG, "Connect to device ${device.name}");
+        activeDevice = device
+        Logger.i(TAG, "Connect to device ${device.name}")
     }
 
-    fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo {
-        val device = deviceFromCastingDeviceInfo(deviceInfo);
-        return addRememberedDevice(device);
+    fun metadataFromVideo(video: IPlatformVideoDetails): Metadata {
+        return Metadata(
+            title = video.name, thumbnailUrl = video.thumbnails.getHQThumbnail()
+        )
     }
 
-    fun getRememberedCastingDevices(): List<CastingDevice> {
-        return _storage.getDevices().map { deviceFromCastingDeviceInfo(it) }
-    }
-
-    fun getRememberedCastingDeviceNames(): List<String> {
-        return _storage.getDeviceNames()
-    }
-
-    fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
-        val deviceInfo = device.getDeviceInfo()
-        return _storage.addDevice(deviceInfo)
-    }
-
-    fun removeRememberedDevice(device: CastingDevice) {
-        val name = device.name ?: return
-        _storage.removeDevice(name)
-    }
-
-    private fun invokeInMainScopeIfRequired(action: () -> Unit){
-        if(Looper.getMainLooper().thread != Thread.currentThread()) {
-            _scopeMain.launch { action(); }
-            return;
-        }
-
-        action();
-    }
-
-    fun cancel() {
-        _castId.incrementAndGet()
-    }
-
+    @Throws
     suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
         return withContext(Dispatchers.IO) {
             val ad = activeDevice ?: return@withContext false;
             if (ad.connectionState != CastConnectionState.CONNECTED) {
                 return@withContext false;
             }
+            val deviceProto = ad.protocolType
 
             val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
             val castId = _castId.incrementAndGet()
@@ -460,7 +263,7 @@ class StateCasting {
 
             if (sourceCount > 1) {
                 if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
-                    if (ad is AirPlayCastingDevice) {
+                    if (deviceProto == CastProtocolType.AIRPLAY) {
                         Logger.i(TAG, "Casting as local HLS");
                         castLocalHls(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
                     } else {
@@ -468,16 +271,17 @@ class StateCasting {
                         castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
                     }
                 } else {
-                    val isRawDash = videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
+                    val isRawDash =
+                        videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
                     if (isRawDash) {
                         Logger.i(TAG, "Casting as raw DASH");
 
                         castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed, castId, onLoadingEstimate, onLoading);
                     } else {
-                        if (ad is FCastCastingDevice) {
+                        if (deviceProto == CastProtocolType.FCAST) {
                             Logger.i(TAG, "Casting as DASH direct");
                             castDashDirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
-                        } else if (ad is AirPlayCastingDevice) {
+                        } else if (deviceProto == CastProtocolType.AIRPLAY) {
                             Logger.i(TAG, "Casting as HLS indirect");
                             castHlsIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
                         } else {
@@ -495,27 +299,27 @@ class StateCasting {
                     val videoPath = "/video-${id}"
                     val videoUrl = if(proxyStreams) url + videoPath else videoSource.getVideoUrl();
                     Logger.i(TAG, "Casting as singular video");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed);
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
                 } else if (audioSource is IAudioUrlSource) {
                     val audioPath = "/audio-${id}"
                     val audioUrl = if(proxyStreams) url + audioPath else audioSource.getAudioUrl();
                     Logger.i(TAG, "Casting as singular audio");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed);
-                } else if(videoSource is IHLSManifestSource) {
-                    if (proxyStreams || ad is ChromecastCastingDevice) {
+                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
+                } else if (videoSource is IHLSManifestSource) {
+                    if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
                         Logger.i(TAG, "Casting as proxied HLS");
                         castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed);
                     } else {
                         Logger.i(TAG, "Casting as non-proxied HLS");
-                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed);
+                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
                     }
-                } else if(audioSource is IHLSManifestAudioSource) {
-                    if (proxyStreams || ad is ChromecastCastingDevice) {
+                } else if (audioSource is IHLSManifestAudioSource) {
+                    if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
                         Logger.i(TAG, "Casting as proxied audio HLS");
                         castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed);
                     } else {
                         Logger.i(TAG, "Casting as non-proxied audio HLS");
-                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed);
+                        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
                     }
                 } else if (videoSource is LocalVideoSource) {
                     Logger.i(TAG, "Casting as local video");
@@ -545,28 +349,69 @@ class StateCasting {
 
     fun resumeVideo(): Boolean {
         val ad = activeDevice ?: return false;
-        ad.resumeVideo();
+        try {
+            ad.resumePlayback();
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to resume playback: $e")
+            return false
+        }
         return true;
     }
 
     fun pauseVideo(): Boolean {
         val ad = activeDevice ?: return false;
-        ad.pauseVideo();
+        try {
+            ad.pausePlayback();
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to pause playback: $e")
+            return false
+        }
         return true;
     }
 
     fun stopVideo(): Boolean {
         val ad = activeDevice ?: return false;
-        ad.stopVideo();
+        try {
+            ad.stopPlayback();
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to stop playback: $e")
+            return false
+        }
         return true;
     }
 
     fun videoSeekTo(timeSeconds: Double): Boolean {
         val ad = activeDevice ?: return false;
-        ad.seekVideo(timeSeconds);
+        try {
+            ad.seekTo(timeSeconds);
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to seek: $e")
+            return false
+        }
         return true;
     }
 
+    fun changeVolume(volume: Double): Boolean {
+        val ad = activeDevice ?: return false;
+        try {
+            ad.changeVolume(volume);
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to change volume: $e")
+            return false
+        }
+        return true;
+    }
+
+    fun changeSpeed(speed: Double): Boolean {
+        val ad = activeDevice ?: return false;
+        try {
+            ad.changeSpeed(speed);
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to change speed: $e")
+            return false
+        }
+        return true;
+    }
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 
@@ -581,7 +426,7 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local video (videoUrl: $videoUrl).");
-        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(videoUrl);
     }
@@ -600,7 +445,7 @@ class StateCasting {
         ).withTag("cast");
 
         Logger.i(TAG, "Casting local audio (audioUrl: $audioUrl).");
-        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(audioUrl);
     }
@@ -696,7 +541,7 @@ class StateCasting {
         ).withTag("castLocalHls")
 
         Logger.i(TAG, "added new castLocalHls handlers (hlsPath: $hlsPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).")
-        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed)
+        ad.loadVideo("BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video))
 
         return listOf(hlsUrl, videoUrl, audioUrl, subtitleUrl)
     }
@@ -721,10 +566,10 @@ class StateCasting {
         Logger.v(TAG) { "Dash manifest: $dashContent" };
 
         _castServer.addHandlerWithAllowAllOptions(
-                HttpConstantHandler("GET", dashPath, dashContent,
-                    "application/dash+xml")
-                    .withHeader("Access-Control-Allow-Origin", "*"), true
-            ).withTag("cast");
+            HttpConstantHandler("GET", dashPath, dashContent,
+                "application/dash+xml")
+                .withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("cast");
         if (videoSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpFileHandler("GET", videoPath, videoSource.container, videoSource.filePath)
@@ -745,7 +590,7 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castLocalDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath, subtitlePath: $subtitlePath).");
-        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo("BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(dashUrl, videoUrl, audioUrl, subtitleUrl);
     }
@@ -810,12 +655,18 @@ class StateCasting {
 
         Logger.i(TAG, "Direct dash cast to casting device (videoUrl: $videoUrl, audioUrl: $audioUrl).");
         Logger.v(TAG) { "Dash manifest: $content" };
-        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), speed);
+        ad.loadContent("application/dash+xml", content, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
-    private fun castProxiedHls(video: IPlatformVideoDetails, sourceUrl: String, codec: String?, resumePosition: Double, speed: Double?): List<String> {
+    private fun castProxiedHls(
+        video: IPlatformVideoDetails,
+        sourceUrl: String,
+        codec: String?,
+        resumePosition: Double,
+        speed: Double?
+    ): List<String> {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
         val ad = activeDevice ?: return listOf();
@@ -826,117 +677,151 @@ class StateCasting {
         val hlsUrl = url + hlsPath
         Logger.i(TAG, "HLS url: $hlsUrl");
 
-        _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", hlsPath) { masterContext ->
-            _castServer.removeAllHandlers("castProxiedHlsVariant")
+        _castServer.addHandlerWithAllowAllOptions(
+            HttpFunctionHandler(
+                "GET", hlsPath
+            ) { masterContext ->
+                _castServer.removeAllHandlers("castProxiedHlsVariant")
 
-            val headers = masterContext.headers.clone()
-            headers["Content-Type"] = "application/vnd.apple.mpegurl";
+                val headers = masterContext.headers.clone()
+                headers["Content-Type"] = "application/vnd.apple.mpegurl";
 
-            val masterPlaylistResponse = _client.get(sourceUrl)
-            check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
+                val masterPlaylistResponse = _client.get(sourceUrl)
+                check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
 
-            val masterPlaylistContent = masterPlaylistResponse.body?.string()
-                ?: throw Exception("Master playlist content is empty")
+                val masterPlaylistContent = masterPlaylistResponse.body?.string()
+                    ?: throw Exception("Master playlist content is empty")
 
-            val masterPlaylist: HLS.MasterPlaylist
-            try {
-                masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
-            } catch (e: Throwable) {
-                if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
-                    //This is a variant playlist, not a master playlist
-                    Logger.i(TAG, "HLS casting as variant playlist (codec: $codec): $hlsUrl");
+                val masterPlaylist: HLS.MasterPlaylist
+                try {
+                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
+                } catch (e: Throwable) {
+                    if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
+                        //This is a variant playlist, not a master playlist
+                        Logger.i(TAG, "HLS casting as variant playlist (codec: $codec): $hlsUrl");
 
-                    val vpHeaders = masterContext.headers.clone()
-                    vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
-
-                    val variantPlaylist = HLS.parseVariantPlaylist(masterPlaylistContent, sourceUrl)
-                    val proxiedVariantPlaylist = proxyVariantPlaylist(url, id, variantPlaylist, video.isLive)
-                    val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
-                    masterContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
-                    return@HttpFunctionHandler
-                } else {
-                    throw e
-                }
-            }
-
-            Logger.i(TAG, "HLS casting as master playlist: $hlsUrl");
-
-            val newVariantPlaylistRefs = arrayListOf<HLS.VariantPlaylistReference>()
-            val newMediaRenditions = arrayListOf<HLS.MediaRendition>()
-            val newMasterPlaylist = HLS.MasterPlaylist(newVariantPlaylistRefs, newMediaRenditions, masterPlaylist.sessionDataList, masterPlaylist.independentSegments)
-
-            for (variantPlaylistRef in masterPlaylist.variantPlaylistsRefs) {
-                val playlistId = UUID.randomUUID();
-                val newPlaylistPath = "/hls-playlist-${playlistId}"
-                val newPlaylistUrl = url + newPlaylistPath;
-
-                _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", newPlaylistPath) { vpContext ->
-                    val vpHeaders = vpContext.headers.clone()
-                    vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
-
-                    val response = _client.get(variantPlaylistRef.url)
-                    check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
-
-                    val vpContent = response.body?.string()
-                        ?: throw Exception("Variant playlist content is empty")
-
-                    val variantPlaylist = HLS.parseVariantPlaylist(vpContent, variantPlaylistRef.url)
-                    val proxiedVariantPlaylist = proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive)
-                    val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
-                    vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
-                }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castProxiedHlsVariant")
-
-                newVariantPlaylistRefs.add(HLS.VariantPlaylistReference(
-                    newPlaylistUrl,
-                    variantPlaylistRef.streamInfo
-                ))
-            }
-
-            for (mediaRendition in masterPlaylist.mediaRenditions) {
-                val playlistId = UUID.randomUUID()
-
-                var newPlaylistUrl: String? = null
-                if (mediaRendition.uri != null) {
-                    val newPlaylistPath = "/hls-playlist-${playlistId}"
-                    newPlaylistUrl = url + newPlaylistPath
-
-                    _castServer.addHandlerWithAllowAllOptions(HttpFunctionHandler("GET", newPlaylistPath) { vpContext ->
-                        val vpHeaders = vpContext.headers.clone()
+                        val vpHeaders = masterContext.headers.clone()
                         vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                        val response = _client.get(mediaRendition.uri)
-                        check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
-
-                        val vpContent = response.body?.string()
-                            ?: throw Exception("Variant playlist content is empty")
-
-                        val variantPlaylist = HLS.parseVariantPlaylist(vpContent, mediaRendition.uri)
-                        val proxiedVariantPlaylist = proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive)
+                        val variantPlaylist =
+                            HLS.parseVariantPlaylist(masterPlaylistContent, sourceUrl)
+                        val proxiedVariantPlaylist =
+                            proxyVariantPlaylist(url, id, variantPlaylist, video.isLive)
                         val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
-                        vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
-                    }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castProxiedHlsVariant")
+                        masterContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
+                        return@HttpFunctionHandler
+                    } else {
+                        throw e
+                    }
                 }
 
-                newMediaRenditions.add(HLS.MediaRendition(
-                    mediaRendition.type,
-                    newPlaylistUrl,
-                    mediaRendition.groupID,
-                    mediaRendition.language,
-                    mediaRendition.name,
-                    mediaRendition.isDefault,
-                    mediaRendition.isAutoSelect,
-                    mediaRendition.isForced
-                ))
-            }
+                Logger.i(TAG, "HLS casting as master playlist: $hlsUrl");
 
-            masterContext.respondCode(200, headers, newMasterPlaylist.buildM3U8());
-        }.withHeader("Access-Control-Allow-Origin", "*"), true).withTag("castProxiedHlsMaster")
+                val newVariantPlaylistRefs = arrayListOf<HLS.VariantPlaylistReference>()
+                val newMediaRenditions = arrayListOf<HLS.MediaRendition>()
+                val newMasterPlaylist = HLS.MasterPlaylist(
+                    newVariantPlaylistRefs,
+                    newMediaRenditions,
+                    masterPlaylist.sessionDataList,
+                    masterPlaylist.independentSegments
+                )
+
+                for (variantPlaylistRef in masterPlaylist.variantPlaylistsRefs) {
+                    val playlistId = UUID.randomUUID();
+                    val newPlaylistPath = "/hls-playlist-${playlistId}"
+                    val newPlaylistUrl = url + newPlaylistPath;
+
+                    _castServer.addHandlerWithAllowAllOptions(
+                        HttpFunctionHandler(
+                            "GET", newPlaylistPath
+                        ) { vpContext ->
+                            val vpHeaders = vpContext.headers.clone()
+                            vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
+
+                            val response = _client.get(variantPlaylistRef.url)
+                            check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
+
+                            val vpContent = response.body?.string()
+                                ?: throw Exception("Variant playlist content is empty")
+
+                            val variantPlaylist =
+                                HLS.parseVariantPlaylist(vpContent, variantPlaylistRef.url)
+                            val proxiedVariantPlaylist =
+                                proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive)
+                            val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
+                            vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
+                        }.withHeader("Access-Control-Allow-Origin", "*"), true
+                    ).withTag("castProxiedHlsVariant")
+
+                    newVariantPlaylistRefs.add(
+                        HLS.VariantPlaylistReference(
+                            newPlaylistUrl, variantPlaylistRef.streamInfo
+                        )
+                    )
+                }
+
+                for (mediaRendition in masterPlaylist.mediaRenditions) {
+                    val playlistId = UUID.randomUUID()
+
+                    var newPlaylistUrl: String? = null
+                    if (mediaRendition.uri != null) {
+                        val newPlaylistPath = "/hls-playlist-${playlistId}"
+                        newPlaylistUrl = url + newPlaylistPath
+
+                        _castServer.addHandlerWithAllowAllOptions(
+                            HttpFunctionHandler(
+                                "GET", newPlaylistPath
+                            ) { vpContext ->
+                                val vpHeaders = vpContext.headers.clone()
+                                vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
+
+                                val response = _client.get(mediaRendition.uri)
+                                check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
+
+                                val vpContent = response.body?.string()
+                                    ?: throw Exception("Variant playlist content is empty")
+
+                                val variantPlaylist =
+                                    HLS.parseVariantPlaylist(vpContent, mediaRendition.uri)
+                                val proxiedVariantPlaylist = proxyVariantPlaylist(
+                                    url, playlistId, variantPlaylist, video.isLive
+                                )
+                                val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
+                                vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
+                            }.withHeader("Access-Control-Allow-Origin", "*"), true
+                        ).withTag("castProxiedHlsVariant")
+                    }
+
+                    newMediaRenditions.add(HLS.MediaRendition(
+                        mediaRendition.type,
+                        newPlaylistUrl,
+                        mediaRendition.groupID,
+                        mediaRendition.language,
+                        mediaRendition.name,
+                        mediaRendition.isDefault,
+                        mediaRendition.isAutoSelect,
+                        mediaRendition.isForced
+                    ))
+                }
+
+                masterContext.respondCode(200, headers, newMasterPlaylist.buildM3U8());
+            }.withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("castProxiedHlsMaster")
 
         Logger.i(TAG, "added new castHlsIndirect handlers (hlsPath: $hlsPath).");
 
         //ChromeCast is sometimes funky with resume position 0
-        val hackfixResumePosition = if (ad is ChromecastCastingDevice && !video.isLive && resumePosition == 0.0) 0.1 else resumePosition;
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, hackfixResumePosition, video.duration.toDouble(), speed);
+        val hackfixResumePosition =
+            if (ad.protocolType == CastProtocolType.CHROMECAST && !video.isLive && resumePosition == 0.0) 0.1 else resumePosition;
+        ad.loadVideo(
+            if (video.isLive) "LIVE" else "BUFFERED",
+            "application/vnd.apple.mpegurl",
+            hlsUrl,
+            hackfixResumePosition,
+            video.duration.toDouble(),
+            speed,
+            metadataFromVideo(video)
+        );
 
         return listOf(hlsUrl);
     }
@@ -1110,14 +995,14 @@ class StateCasting {
         ).withTag("castHlsIndirectMaster")
 
         Logger.i(TAG, "added new castHls handlers (hlsPath: $hlsPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/vnd.apple.mpegurl", hlsUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(hlsUrl, videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
     private fun shouldProxyStreams(castingDevice: CastingDevice, videoSource: IVideoSource?, audioSource: IAudioSource?): Boolean {
         val hasRequestModifier = (videoSource as? JSSource)?.hasRequestModifier == true || (audioSource as? JSSource)?.hasRequestModifier == true
-        return Settings.instance.casting.alwaysProxyRequests || castingDevice !is FCastCastingDevice || hasRequestModifier
+        return Settings.instance.casting.alwaysProxyRequests || castingDevice.protocolType != CastProtocolType.FCAST || hasRequestModifier
     }
 
     private suspend fun castDashIndirect(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoUrlSource?, audioSource: IAudioUrlSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?) : List<String> {
@@ -1193,12 +1078,12 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
-    private fun cleanExecutors() {
+    fun cleanExecutors() {
         if (_videoExecutor != null) {
             _videoExecutor?.cleanup()
             _videoExecutor = null
@@ -1397,163 +1282,61 @@ class StateCasting {
         }
 
         Logger.i(TAG, "added new castDash handlers (dashPath: $dashPath, videoPath: $videoPath, audioPath: $audioPath).");
-        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed);
+        ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", "application/dash+xml", dashUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
 
         return listOf()
     }
 
-    private fun deviceFromCastingDeviceInfo(deviceInfo: CastingDeviceInfo): CastingDevice {
-        return when (deviceInfo.type) {
-            CastProtocolType.CHROMECAST -> {
-                ChromecastCastingDevice(deviceInfo);
-            }
-            CastProtocolType.AIRPLAY -> {
-                AirPlayCastingDevice(deviceInfo);
-            }
-            CastProtocolType.FCAST -> {
-                FCastCastingDevice(deviceInfo);
-            }
-        }
+    fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo {
+        val device = deviceFromInfo(deviceInfo);
+        return addRememberedDevice(device);
     }
 
-    private fun addOrUpdateChromeCastDevice(name: String, addresses: Array<InetAddress>, port: Int) {
-        return addOrUpdateCastDevice<ChromecastCastingDevice>(name,
-            deviceFactory = { ChromecastCastingDevice(name, addresses, port) },
-            deviceUpdater = { d ->
-                if (d.isReady) {
-                    return@addOrUpdateCastDevice false;
-                }
-
-                val changed = addresses.contentEquals(d.addresses) || d.name != name || d.port != port;
-                if (changed) {
-                    d.name = name;
-                    d.addresses = addresses;
-                    d.port = port;
-                }
-
-                return@addOrUpdateCastDevice changed;
-            }
-        );
+    fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
+        val deviceInfo = device.getDeviceInfo()
+        return _storage.addDevice(deviceInfo)
     }
 
-    private fun addOrUpdateAirPlayDevice(name: String, addresses: Array<InetAddress>, port: Int) {
-        return addOrUpdateCastDevice<AirPlayCastingDevice>(name,
-            deviceFactory = { AirPlayCastingDevice(name, addresses, port) },
-            deviceUpdater = { d ->
-                if (d.isReady) {
-                    return@addOrUpdateCastDevice false;
-                }
-
-                val changed = addresses.contentEquals(addresses) || d.name != name || d.port != port;
-                if (changed) {
-                    d.name = name;
-                    d.port = port;
-                    d.addresses = addresses;
-                }
-
-                return@addOrUpdateCastDevice changed;
-            }
-        );
+    fun getRememberedCastingDevices(): List<CastingDevice> {
+        return _storage.getDevices().map { deviceFromInfo(it) }
     }
 
-    private fun addOrUpdateFastCastDevice(name: String, addresses: Array<InetAddress>, port: Int) {
-        return addOrUpdateCastDevice<FCastCastingDevice>(name,
-            deviceFactory = { FCastCastingDevice(name, addresses, port) },
-            deviceUpdater = { d ->
-                if (d.isReady) {
-                    return@addOrUpdateCastDevice false;
-                }
-
-                val changed = addresses.contentEquals(addresses) || d.name != name || d.port != port;
-                if (changed) {
-                    d.name = name;
-                    d.port = port;
-                    d.addresses = addresses;
-                }
-
-                return@addOrUpdateCastDevice changed;
-            }
-        );
+    fun getRememberedCastingDeviceNames(): List<String> {
+        return _storage.getDeviceNames()
     }
 
-    private inline fun <reified TCastDevice> addOrUpdateCastDevice(name: String, deviceFactory: () -> TCastDevice, deviceUpdater: (device: TCastDevice) -> Boolean) where TCastDevice : CastingDevice {
-        var invokeEvents: (() -> Unit)? = null;
-
-        synchronized(devices) {
-            val device = devices[name];
-            if (device != null) {
-                if (device !is TCastDevice) {
-                    Logger.w(TAG, "Device name conflict between device types. Ignoring device.");
-                } else {
-                    val changed = deviceUpdater(device as TCastDevice);
-                    if (changed) {
-                        invokeEvents = {
-                            onDeviceChanged.emit(device);
-                        }
-                    } else {
-
-                    }
-                }
-            } else {
-                val newDevice = deviceFactory();
-                this.devices[name] = newDevice;
-
-                invokeEvents = {
-                    onDeviceAdded.emit(newDevice);
-                };
-            }
-        }
-
-        invokeEvents?.let { _scopeMain.launch { it(); }; };
+    fun removeRememberedDevice(device: CastingDevice) {
+        val name = device.name ?: return
+        _storage.removeDevice(name)
     }
 
-    fun enableDeveloper(enableDev: Boolean){
+    fun enableDeveloper(enableDev: Boolean) {
         _castServer.removeAllHandlers("dev");
-        if(enableDev) {
+        if (enableDev) {
             _castServer.addHandler(HttpFunctionHandler("GET", "/dashPlayer") { context ->
                 if (context.query.containsKey("dashUrl")) {
                     val dashUrl = context.query["dashUrl"];
-                    val html = "<div>\n" +
-                            " <video id=\"test\" width=\"1280\" height=\"720\" controls>\n" +
-                            " </video>\n" +
-                            " \n" +
-                            " \n" +
-                            "    <script src=\"https://cdn.dashjs.org/latest/dash.all.min.js\"></script>\n" +
-                            "    <script>\n" +
-                            "    <!--setup the video element and attach it to the Dash player-->\n" +
-                            "            (function(){\n" +
-                            "                var url = \"${dashUrl}\";\n" +
-                            "                var player = dashjs.MediaPlayer().create();\n" +
-                            "                player.initialize(document.querySelector(\"#test\"), url, true);\n" +
-                            "            })();\n" +
-                            "    </script>\n" +
-                            "</div>";
+                    val html =
+                        "<div>\n" + " <video id=\"test\" width=\"1280\" height=\"720\" controls>\n" + " </video>\n" + " \n" + " \n" + "    <script src=\"https://cdn.dashjs.org/latest/dash.all.min.js\"></script>\n" + "    <script>\n" + "    <!--setup the video element and attach it to the Dash player-->\n" + "            (function(){\n" + "                var url = \"${dashUrl}\";\n" + "                var player = dashjs.MediaPlayer().create();\n" + "                player.initialize(document.querySelector(\"#test\"), url, true);\n" + "            })();\n" + "    </script>\n" + "</div>";
                     context.respondCode(200, html, "text/html");
                 }
             }).withTag("dev");
         }
     }
 
-    @Serializable
-    private data class FCastNetworkConfig(
-        val name: String,
-        val addresses: List<String>,
-        val services: List<FCastService>
-    )
-
-    @Serializable
-    private data class FCastService(
-        val port: Int,
-        val type: Int
-    )
-
     companion object {
-        val instance: StateCasting = StateCasting();
-
-        private val representationRegex = Regex("<Representation .*?mimeType=\"(.*?)\".*?>(.*?)<\\/Representation>", RegexOption.DOT_MATCHES_ALL)
-        private val mediaInitializationRegex = Regex("(media|initiali[sz]ation)=\"([^\"]+)\"", RegexOption.DOT_MATCHES_ALL);
+        var instance: StateCasting = if (Settings.instance.casting.experimentalCasting) {
+            StateCastingExp()
+        } else {
+            StateCastingLegacy()
+        }
+        private val representationRegex = Regex(
+            "<Representation .*?mimeType=\"(.*?)\".*?>(.*?)<\\/Representation>",
+            RegexOption.DOT_MATCHES_ALL
+        )
+        private val mediaInitializationRegex =
+            Regex("(media|initiali[sz]ation)=\"([^\"]+)\"", RegexOption.DOT_MATCHES_ALL);
 
         private val TAG = "StateCasting";
     }
 }
-
