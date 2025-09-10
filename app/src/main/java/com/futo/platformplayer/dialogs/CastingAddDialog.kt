@@ -8,11 +8,13 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.CastProtocolType
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.toInetAddress
+import com.futo.platformplayer.logging.Logger
 
 
 class CastingAddDialog(context: Context?) : AlertDialog(context) {
@@ -38,7 +40,13 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
         _buttonConfirm = findViewById(R.id.button_confirm);
         _buttonTutorial = findViewById(R.id.button_tutorial)
 
-        ArrayAdapter.createFromResource(context, R.array.casting_device_type_array, R.layout.spinner_item_simple).also { adapter ->
+        val deviceTypeArray =  if (Settings.instance.casting.experimentalCasting) {
+            R.array.exp_casting_device_type_array
+        } else {
+            R.array.casting_device_type_array
+        }
+
+        ArrayAdapter.createFromResource(context, deviceTypeArray, R.layout.spinner_item_simple).also { adapter ->
             adapter.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             _spinnerType.adapter = adapter;
         };
@@ -101,7 +109,11 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
 
             _textError.visibility = View.GONE;
             val castingDeviceInfo = CastingDeviceInfo(name, castProtocolType, arrayOf(ip), port.toInt());
-            StateCasting.instance.addRememberedDevice(castingDeviceInfo);
+            try {
+                StateCasting.instance.addRememberedDevice(castingDeviceInfo)
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to add remembered device: $e")
+            }
             performDismiss();
         };
 

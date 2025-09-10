@@ -576,9 +576,8 @@ class VideoDetailView : ConstraintLayout {
                 if(chapter?.type == ChapterType.SKIPPABLE) {
                     _layoutSkip.visibility = VISIBLE;
                 } else if(chapter?.type == ChapterType.SKIP || chapter?.type == ChapterType.SKIPONCE) {
-                    val ad = StateCasting.instance.activeDevice
-                    if (ad != null) {
-                        ad.seekVideo(chapter.timeEnd)
+                    if (StateCasting.instance.activeDevice != null) {
+                        StateCasting.instance.videoSeekTo(chapter.timeEnd)
                     } else {
                         _player.seekTo((chapter.timeEnd * 1000).toLong());
                     }
@@ -886,7 +885,7 @@ class VideoDetailView : ConstraintLayout {
             if (ad != null) {
                 val currentChapter = _cast.getCurrentChapter((ad.time * 1000).toLong());
                 if(currentChapter?.type == ChapterType.SKIPPABLE) {
-                    ad.seekVideo(currentChapter.timeEnd);
+                    StateCasting.instance.videoSeekTo(currentChapter.timeEnd);
                 }
             } else {
                 val currentChapter = _player.getCurrentChapter(_player.position);
@@ -2368,11 +2367,11 @@ class VideoDetailView : ConstraintLayout {
             ?.distinct()
             ?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
 
-        val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed == true
+        val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed() == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
         val qualityPlaybackSpeedTitle = if (canSetSpeed) SlideUpMenuTitle(this.context).apply { setTitle(context.getString(R.string.playback_rate) + " (${String.format("%.2f", currentPlaybackRate)})"); } else null;
         _overlay_quality_selector = SlideUpMenuOverlay(this.context, _overlay_quality_container, context.getString(
-                    R.string.quality), null, true,
+                R.string.quality), null, true,
             qualityPlaybackSpeedTitle,
             if (canSetSpeed) SlideUpMenuButtonList(this.context, null, "playback_rate").apply {
                 val playbackSpeeds = Settings.instance.playback.getPlaybackSpeeds();
@@ -2393,7 +2392,7 @@ class VideoDetailView : ConstraintLayout {
                     val newPlaybackSpeed = playbackSpeedString.toDouble();
                     if (_isCasting) {
                         val ad = StateCasting.instance.activeDevice ?: return@subscribe
-                        if (!ad.canSetSpeed) {
+                        if (!ad.canSetSpeed()) {
                             return@subscribe
                         }
 

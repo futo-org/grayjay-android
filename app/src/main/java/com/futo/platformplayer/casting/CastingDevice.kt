@@ -2,147 +2,78 @@ package com.futo.platformplayer.casting
 
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.CastingDeviceInfo
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import org.fcast.sender_sdk.Metadata
 import java.net.InetAddress
 
-enum class CastConnectionState {
-    DISCONNECTED,
-    CONNECTING,
-    CONNECTED
-}
-
-@Serializable(with = CastProtocolType.CastProtocolTypeSerializer::class)
-enum class CastProtocolType {
-    CHROMECAST,
-    AIRPLAY,
-    FCAST;
-
-    object CastProtocolTypeSerializer : KSerializer<CastProtocolType> {
-        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CastProtocolType", PrimitiveKind.STRING)
-
-        override fun serialize(encoder: Encoder, value: CastProtocolType) {
-            encoder.encodeString(value.name)
-        }
-
-        override fun deserialize(decoder: Decoder): CastProtocolType {
-            val name = decoder.decodeString()
-            return when (name) {
-                "FASTCAST" -> FCAST // Handle the renamed case
-                else -> CastProtocolType.valueOf(name)
-            }
-        }
-    }
-}
-
 abstract class CastingDevice {
-    abstract val protocol: CastProtocolType;
-    abstract val isReady: Boolean;
-    abstract var usedRemoteAddress: InetAddress?;
-    abstract var localAddress: InetAddress?;
-    abstract val canSetVolume: Boolean;
-    abstract val canSetSpeed: Boolean;
+    abstract val isReady: Boolean
+    abstract val usedRemoteAddress: InetAddress?
+    abstract val localAddress: InetAddress?
+    abstract val name: String?
+    abstract val onConnectionStateChanged: Event1<CastConnectionState>
+    abstract val onPlayChanged: Event1<Boolean>
+    abstract val onTimeChanged: Event1<Double>
+    abstract val onDurationChanged: Event1<Double>
+    abstract val onVolumeChanged: Event1<Double>
+    abstract val onSpeedChanged: Event1<Double>
+    abstract var connectionState: CastConnectionState
+    abstract val protocolType: CastProtocolType
+    abstract var isPlaying: Boolean
+    abstract val expectedCurrentTime: Double
+    abstract var speed: Double
+    abstract var time: Double
+    abstract var duration: Double
+    abstract var volume: Double
+    abstract fun canSetVolume(): Boolean
+    abstract fun canSetSpeed(): Boolean
 
-    var name: String? = null;
-    var isPlaying: Boolean = false
-            set(value) {
-                val changed = value != field;
-                field = value;
-                if (changed) {
-                    onPlayChanged.emit(value);
-                }
-            };
+    @Throws
+    abstract fun resumePlayback()
 
-    private var lastTimeChangeTime_ms: Long = 0
-    var time: Double = 0.0
-        private set
+    @Throws
+    abstract fun pausePlayback()
 
-    protected fun setTime(value: Double, changeTime_ms: Long = System.currentTimeMillis()) {
-        if (changeTime_ms > lastTimeChangeTime_ms && value != time) {
-            time = value
-            lastTimeChangeTime_ms = changeTime_ms
-            onTimeChanged.emit(value)
-        }
-    }
+    @Throws
+    abstract fun stopPlayback()
 
-    private var lastDurationChangeTime_ms: Long = 0
-    var duration: Double = 0.0
-        private set
+    @Throws
+    abstract fun seekTo(timeSeconds: Double)
 
-    protected fun setDuration(value: Double, changeTime_ms: Long = System.currentTimeMillis()) {
-        if (changeTime_ms > lastDurationChangeTime_ms && value != duration) {
-            duration = value
-            lastDurationChangeTime_ms = changeTime_ms
-            onDurationChanged.emit(value)
-        }
-    }
+    @Throws
+    abstract fun changeVolume(timeSeconds: Double)
 
-    private var lastVolumeChangeTime_ms: Long = 0
-    var volume: Double = 1.0
-        private set
+    @Throws
+    abstract fun changeSpeed(speed: Double)
 
-    protected fun setVolume(value: Double, changeTime_ms: Long = System.currentTimeMillis()) {
-        if (changeTime_ms > lastVolumeChangeTime_ms && value != volume) {
-            volume = value
-            lastVolumeChangeTime_ms = changeTime_ms
-            onVolumeChanged.emit(value)
-        }
-    }
+    @Throws
+    abstract fun connect()
 
-    private var lastSpeedChangeTime_ms: Long = 0
-    var speed: Double = 1.0
-        private set
+    @Throws
+    abstract fun disconnect()
+    abstract fun getDeviceInfo(): CastingDeviceInfo
+    abstract fun getAddresses(): List<InetAddress>
 
-    protected fun setSpeed(value: Double, changeTime_ms: Long = System.currentTimeMillis()) {
-        if (changeTime_ms > lastSpeedChangeTime_ms && value != speed) {
-            speed = value
-            lastSpeedChangeTime_ms = changeTime_ms
-            onSpeedChanged.emit(value)
-        }
-    }
+    @Throws
+    abstract fun loadVideo(
+        streamType: String,
+        contentType: String,
+        contentId: String,
+        resumePosition: Double,
+        duration: Double,
+        speed: Double?,
+        metadata: Metadata?
+    )
 
-    val expectedCurrentTime: Double
-        get() {
-            val diff = if (isPlaying) ((System.currentTimeMillis() - lastTimeChangeTime_ms).toDouble() / 1000.0) else 0.0;
-            return time + diff;
-        };
-    var connectionState: CastConnectionState = CastConnectionState.DISCONNECTED
-        set(value) {
-            val changed = value != field;
-            field = value;
+    @Throws
+    abstract fun loadContent(
+        contentType: String,
+        content: String,
+        resumePosition: Double,
+        duration: Double,
+        speed: Double?,
+        metadata: Metadata?
+    )
 
-            if (changed) {
-                onConnectionStateChanged.emit(value);
-            }
-        };
-
-    var onConnectionStateChanged = Event1<CastConnectionState>();
-    var onPlayChanged = Event1<Boolean>();
-    var onTimeChanged = Event1<Double>();
-    var onDurationChanged = Event1<Double>();
-    var onVolumeChanged = Event1<Double>();
-    var onSpeedChanged = Event1<Double>();
-
-    abstract fun stopCasting();
-
-    abstract fun seekVideo(timeSeconds: Double);
-    abstract fun stopVideo();
-    abstract fun pauseVideo();
-    abstract fun resumeVideo();
-    abstract fun loadVideo(streamType: String, contentType: String, contentId: String, resumePosition: Double, duration: Double, speed: Double?);
-    abstract fun loadContent(contentType: String, content: String, resumePosition: Double, duration: Double, speed: Double?);
-    open fun changeVolume(volume: Double) { throw NotImplementedError() }
-    open fun changeSpeed(speed: Double) { throw NotImplementedError() }
-
-    abstract fun start();
-    abstract fun stop();
-
-    abstract fun getDeviceInfo(): CastingDeviceInfo;
-
-    abstract fun getAddresses(): List<InetAddress>;
+    abstract fun ensureThreadStarted()
 }
+

@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -18,7 +17,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.casting.CastConnectionState
-import com.futo.platformplayer.casting.CastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
@@ -108,15 +106,16 @@ class ConnectCastingDialog(context: Context?) : AlertDialog(context) {
         synchronized(StateCasting.instance.devices) {
             _devices.addAll(StateCasting.instance.devices.values.mapNotNull { it.name })
         }
-
         _rememberedDevices.addAll(StateCasting.instance.getRememberedCastingDeviceNames())
+
         updateUnifiedList()
 
         StateCasting.instance.onDeviceAdded.subscribe(this) { d ->
             val name = d.name
-            if (name != null)
+            if (name != null) {
                 _devices.add(name)
-            updateUnifiedList()
+                updateUnifiedList()
+            }
         }
 
         StateCasting.instance.onDeviceChanged.subscribe(this) { d ->

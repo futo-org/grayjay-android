@@ -1046,7 +1046,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.i(TAG, "handleFCast");
 
         try {
-            StateCasting.instance.handleUrl(this, url)
+            StateCasting.instance.handleUrl(url)
             return true;
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to parse FCast URL '${url}'.", e)
