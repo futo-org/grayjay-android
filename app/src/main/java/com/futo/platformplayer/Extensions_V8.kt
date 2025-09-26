@@ -204,8 +204,12 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
             override fun onFulfilled(p0: V8Value?) {
                 if(p0 is V8ValueError)
                     promiseException = ScriptExecutionException(plugin.config, p0.message);
-                else
+                else {
+                    if (p0 is V8ValueObject) {
+                        p0.setWeak()
+                    }
                     promiseResult = p0 as T;
+                }
                 latch.countDown();
             }
             override fun onRejected(p0: V8Value?) {
