@@ -311,7 +311,6 @@
     <string name="background_update">Aggiornamento in Secondo Piano</string>
     <string name="background_download">Download in Secondo Piano</string>
     <string name="backup">Backup</string>
-    <string name="Browse">Navigazione</string>
     <string name="byte_range_concurrency">Concorrenza ByteRange</string>
     <string name="byte_range_download">Download ByteRange</string>
     <string name="casting">Trasmissione</string>
@@ -332,7 +331,6 @@
     <string name="clear_payment">Cancella Pagamento</string>
     <string name="clears_cookies_when_you_log_out">Cancella i cookie quando effettui la disconnessione</string>
     <string name="clears_in_app_browser_cookies">Cancella i cookie del browser in-app</string>
-    <string name="configure_Browse_behavior">Configura il comportamento di navigazione</string>
     <string name="time_bar">Barra minutaggio</string>
     <string name="configure_if_historical_time_bar_should_be_shown">Configura se la barra del minutaggio cronologica deve essere mostrate</string>
     <string name="configure_casting">Configurazione trasmissione</string>
