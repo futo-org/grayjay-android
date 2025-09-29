@@ -242,10 +242,12 @@ class V8Plugin {
     }
     fun <T> busy(handle: ()->T): T {
         _busyLock.lock();
+        //Logger.i(TAG, "Busy Enter [" + _busyLock.holdCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString())
         try {
             return handle();
         }
         finally {
+            //Logger.i(TAG, "Busy Leave [" + _busyLock.holdCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString()+ ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString())
             _busyLock.unlock();
         }
         /*
