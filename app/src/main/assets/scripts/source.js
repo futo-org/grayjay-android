@@ -67,6 +67,7 @@ class ScriptException extends Error {
             super(arguments[0]);
             this.plugin_type = "ScriptException";
             this.message = arguments[0];
+            this.msg = arguments[0];
         }
         else {
             super(msg);

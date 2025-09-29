@@ -8,7 +8,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.helpers.VideoHelper
 import java.io.File
 
-class LocalVideoFileSource: IVideoSource {
+class LocalVideoContentSource: IVideoSource {
 
 
     override val name: String;
@@ -20,15 +20,14 @@ class LocalVideoFileSource: IVideoSource {
     override val duration: Long;
     override val priority: Boolean = false;
 
-    var file: File;
+    var contentUrl: String;
 
-    constructor(file: File) {
-        this.file = file;
-        name = file.name;
+    constructor(contentUrl: String, mime: String, name: String? = null) {
+        this.name = name ?: "File";
         width = 0;
         height = 0;
-        container = VideoHelper.videoExtensionToMimetype(file.extension) ?: "";
+        container = mime;
         duration = 0;
+        this.contentUrl = contentUrl;
     }
-
 }

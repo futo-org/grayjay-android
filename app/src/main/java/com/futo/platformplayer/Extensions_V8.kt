@@ -194,7 +194,6 @@ fun V8ObjectToHashMap(obj: V8ValueObject?): HashMap<String, String> {
     return map;
 }
 
-
 fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
     val latch = CountDownLatch(1);
     var promiseResult: T? = null;
@@ -205,19 +204,18 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
                 if(p0 is V8ValueError)
                     promiseException = ScriptExecutionException(plugin.config, p0.message);
                 else {
-                    if (p0 is V8ValueObject) {
-                        p0.setWeak()
-                    }
+                    if(p0 is V8ValueObject)
+                        p0.setWeak();
                     promiseResult = p0 as T;
                 }
                 latch.countDown();
             }
             override fun onRejected(p0: V8Value?) {
-                promiseException = (NotImplementedError("onRejected promise not implemented.."));
+                promiseException = p0?.toException(plugin.config);
                 latch.countDown();
             }
             override fun onCatch(p0: V8Value?) {
-                promiseException = (NotImplementedError("onCatch promise not implemented.."));
+                promiseException = p0?.toException(plugin.config);
                 latch.countDown();
             }
         });
@@ -227,8 +225,25 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
         promiseException =  CancellationException("Cancelled by system");
         latch.countDown();
     }
-    plugin.unbusy {
-        latch.await();
+    //Logger.i("V8", "V8ValueBlocking started (Busy) [" + blockCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString()+ ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString());
+
+
+    if(!promise.isPending) {
+        try {
+            Logger.i("V8", "V8Promise resolved synchronously");
+            if(promise.isFulfilled)
+                promiseResult = promise.getResult<T>();
+            else
+                promiseException = promise.getResult<V8Value>().toException(plugin.config);
+        }
+        catch(ex: Throwable) {
+            promiseException = ex;
+        }
+    }
+    else {
+        plugin.unbusy {
+            latch.await();
+        }
     }
     if(promiseException != null)
         throw promiseException!!;
@@ -254,11 +269,11 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
             }
             override fun onRejected(p0: V8Value?) {
                 plugin.resolvePromise(promise);
-                underlyingDef.completeExceptionally(NotImplementedError("onRejected promise not implemented.."));
+                underlyingDef.completeExceptionally(p0?.toException(plugin.config) ?: NotImplementedError("onRejected promise not implemented.."));
             }
             override fun onCatch(p0: V8Value?) {
                 plugin.resolvePromise(promise);
-                underlyingDef.completeExceptionally(NotImplementedError("onCatch promise not implemented.."));
+                underlyingDef.completeExceptionally(p0?.toException(plugin.config) ?: NotImplementedError("onCatch promise not implemented.."));
             }
         });
     }
@@ -267,6 +282,20 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
             def.cancel("Cancelled by system");
     }
     return def;
+}
+
+fun V8Value.toException(config: IV8PluginConfig): Throwable {
+    val p0 = this;
+    if(p0 is V8ValueObject) {
+        val pluginType = p0.getOrDefault(config, "plugin_type", "Promise Exception", "")?.let { if(!it.isNullOrBlank()) it + "" else "" }
+        val msg = p0.getOrDefault<String?>(config, "msg", "Promise Exception", null)
+            ?: p0.getOrDefault(config, "message", "Promise Exception", "");
+        return Exception("Promise Failed: " + pluginType + msg);
+    }
+    else if(p0 is V8ValueString)
+        return Exception("Promise Failed:" + p0.value);
+    else
+        return NotImplementedError("onCatch promise not implemented..");
 }
 
 class V8Deferred<T>(val deferred: Deferred<T>, val estDuration: Int = -1): Deferred<T> by deferred {
