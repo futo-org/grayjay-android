@@ -12,6 +12,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.logging.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -21,7 +22,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.selects.SelectClause0
 import kotlinx.coroutines.selects.SelectClause1
-import java.util.concurrent.CancellationException
 import java.util.concurrent.CountDownLatch
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
@@ -268,12 +268,25 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
                 underlyingDef.complete(p0 as T);
             }
             override fun onRejected(p0: V8Value?) {
-                plugin.resolvePromise(promise);
-                underlyingDef.completeExceptionally(p0?.toException(plugin.config) ?: NotImplementedError("onRejected promise not implemented.."));
+                try {
+                    plugin.resolvePromise(promise);
+                    val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onRejected promise not implemented..");
+                    Logger.i("V8", "Promise rejected, setting exception");
+                    underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                }
+                catch(ex: Throwable) {
+                    Logger.e("V8", "Rejection handling failed?" , ex);
+                }
             }
             override fun onCatch(p0: V8Value?) {
-                plugin.resolvePromise(promise);
-                underlyingDef.completeExceptionally(p0?.toException(plugin.config) ?: NotImplementedError("onCatch promise not implemented.."));
+                try {
+                    plugin.resolvePromise(promise);
+                    val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onCatch promise not implemented..");
+                    underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                }
+                catch(ex: Throwable) {
+                    Logger.e("V8", "Catching handling failed?" , ex);
+                }
             }
         });
     }
@@ -290,10 +303,10 @@ fun V8Value.toException(config: IV8PluginConfig): Throwable {
         val pluginType = p0.getOrDefault(config, "plugin_type", "Promise Exception", "")?.let { if(!it.isNullOrBlank()) it + "" else "" }
         val msg = p0.getOrDefault<String?>(config, "msg", "Promise Exception", null)
             ?: p0.getOrDefault(config, "message", "Promise Exception", "");
-        return Exception("Promise Failed: " + pluginType + msg);
+        return Throwable("Promise Failed: " + pluginType + msg);
     }
     else if(p0 is V8ValueString)
-        return Exception("Promise Failed:" + p0.value);
+        return Throwable("Promise Failed:" + p0.value);
     else
         return NotImplementedError("onCatch promise not implemented..");
 }
