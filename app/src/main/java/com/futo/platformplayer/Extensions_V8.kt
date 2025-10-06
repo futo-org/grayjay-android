@@ -7,6 +7,7 @@ import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueError
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.caoccao.javet.values.reference.V8ValuePromise
+import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
@@ -300,10 +301,13 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
 fun V8Value.toException(config: IV8PluginConfig): Throwable {
     val p0 = this;
     if(p0 is V8ValueObject) {
+        return V8Plugin.getExceptionFromPlugin(config, p0, null, null, null, "P:");
+        /*
         val pluginType = p0.getOrDefault(config, "plugin_type", "Promise Exception", "")?.let { if(!it.isNullOrBlank()) it + "" else "" }
         val msg = p0.getOrDefault<String?>(config, "msg", "Promise Exception", null)
             ?: p0.getOrDefault(config, "message", "Promise Exception", "");
         return Throwable("Promise Failed: " + pluginType + msg);
+        */
     }
     else if(p0 is V8ValueString)
         return Throwable("Promise Failed:" + p0.value);
@@ -371,4 +375,16 @@ fun V8ValueObject.invokeV8VoidAsync(method: String, vararg obj: Any?): V8Deferre
         return result;
     }
     return V8Deferred(CompletableDeferred(result));
+}
+
+suspend fun <T> Deferred<T>.awaitCancelConverted(): T {
+    try {
+        return this.await();
+    }
+    catch(ex: CancellationException) {
+        if(ex.cause != null) {
+            throw ex.cause!!;
+        }
+        throw ex;
+    }
 }

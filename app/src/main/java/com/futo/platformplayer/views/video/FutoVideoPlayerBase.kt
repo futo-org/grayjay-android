@@ -69,6 +69,7 @@ import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalAud
 import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoContentSource
 import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoFileSource
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.awaitCancelConverted
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
@@ -643,7 +644,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             setLoading(true)
                         }
                     }
-                    val generated = generatedDef.await();
+                    val generated = generatedDef.awaitCancelConverted();
                     if (_swapIdVideo.get() != swapId) {
                         return@launch
                     }
@@ -807,7 +808,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             setLoading(true)
                         }
                     }
-                    val generated = generatedDef.await();
+                    val generated = generatedDef.awaitCancelConverted();
                     if (_swapIdAudio.get() != swapId) {
                         return@launch
                     }

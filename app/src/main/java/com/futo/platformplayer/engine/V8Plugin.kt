@@ -18,6 +18,7 @@ import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.NoInternetException
 import com.futo.platformplayer.engine.exceptions.PluginEngineStoppedException
+import com.futo.platformplayer.engine.exceptions.PluginException
 import com.futo.platformplayer.engine.exceptions.ScriptAgeException
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptCompilationException
@@ -36,6 +37,7 @@ import com.futo.platformplayer.engine.packages.PackageHttp
 import com.futo.platformplayer.engine.packages.PackageJSDOM
 import com.futo.platformplayer.engine.packages.PackageUtilities
 import com.futo.platformplayer.engine.packages.V8Package
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
@@ -513,18 +515,29 @@ class V8Plugin {
         }
 
         private fun throwExceptionFromV8(config: IV8PluginConfig, pluginType: String, msg: String, innerEx: Exception? = null, stack: String? = null, code: String? = null) {
+            throw getExceptionFromPlugin(config, pluginType, msg, innerEx, stack, code);
+        }
+        fun getExceptionFromPlugin(config: IV8PluginConfig, obj: V8ValueObject, innerEx: Exception? = null, stack: String? = null, code: String? = null, prefix: String? = null): PluginException {
+            val pluginType = obj.getOrDefault(config, "plugin_type", "Exception Handling", "")?.let { if(!it.isNullOrBlank()) it + "" else "" } ?: "";
+            var msg = obj.getOrDefault<String?>(config, "msg", "Exception Handling", null)
+                ?: obj.getOrDefault(config, "message", "Exception Handling", "");
+            if(!prefix.isNullOrBlank())
+                msg = prefix + msg;
+            return getExceptionFromPlugin(config, pluginType, msg ?: "Unknown exception", innerEx, stack, code);
+        }
+        fun getExceptionFromPlugin(config: IV8PluginConfig, pluginType: String, msg: String, innerEx: Exception? = null, stack: String? = null, code: String? = null): PluginException {
             when(pluginType) {
-                "ScriptException" -> throw ScriptException(config, msg, innerEx, stack, code);
-                "CriticalException" -> throw ScriptCriticalException(config, msg, innerEx, stack, code);
-                "AgeException" -> throw ScriptAgeException(config, msg, innerEx, stack, code);
-                "UnavailableException" -> throw ScriptUnavailableException(config, msg, innerEx, stack, code);
-                "ScriptLoginRequiredException" -> throw ScriptLoginRequiredException(config, msg, innerEx, stack, code);
-                "ScriptExecutionException" -> throw ScriptExecutionException(config, msg, innerEx, stack, code);
-                "ScriptCompilationException" -> throw ScriptCompilationException(config, msg, innerEx, code);
-                "ScriptImplementationException" -> throw ScriptImplementationException(config, msg, innerEx, null, code);
-                "ScriptTimeoutException" -> throw ScriptTimeoutException(config, msg, innerEx);
-                "NoInternetException" -> throw NoInternetException(config, msg, innerEx, stack, code);
-                else -> throw ScriptExecutionException(config, msg, innerEx, stack, code);
+                "ScriptException" -> return ScriptException(config, msg, innerEx, stack, code);
+                "CriticalException" -> return ScriptCriticalException(config, msg, innerEx, stack, code);
+                "AgeException" -> return ScriptAgeException(config, msg, innerEx, stack, code);
+                "UnavailableException" -> return ScriptUnavailableException(config, msg, innerEx, stack, code);
+                "ScriptLoginRequiredException" -> return ScriptLoginRequiredException(config, msg, innerEx, stack, code);
+                "ScriptExecutionException" -> return ScriptExecutionException(config, msg, innerEx, stack, code);
+                "ScriptCompilationException" -> return ScriptCompilationException(config, msg, innerEx, code);
+                "ScriptImplementationException" -> return ScriptImplementationException(config, msg, innerEx, null, code);
+                "ScriptTimeoutException" -> return ScriptTimeoutException(config, msg, innerEx);
+                "NoInternetException" -> return NoInternetException(config, msg, innerEx, stack, code);
+                else -> return ScriptExecutionException(config, msg, innerEx, stack, code);
             }
         }
 

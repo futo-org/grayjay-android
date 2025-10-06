@@ -33,6 +33,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
+import com.futo.platformplayer.awaitCancelConverted
 import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.constructs.Event1
@@ -1183,7 +1184,7 @@ abstract class StateCasting {
                             onLoading?.invoke(true)
                         }
                     }
-                    deferred.await()
+                    deferred.awaitCancelConverted()
                 } finally {
                     if (castId == _castId.get()) {
                         withContext(Dispatchers.Main) {
