@@ -16,7 +16,6 @@ import android.os.StrictMode.VmPolicy
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.activity.result.ActivityResult
@@ -36,6 +35,7 @@ import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
+import com.futo.platformplayer.RootInsetsController
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -199,6 +199,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     private var _privateModeEnabled = false
     private var _pictureInPictureEnabled = false
     private var _isFullscreen = false
+    private lateinit var _rootInsetsController: RootInsetsController
 
     private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -284,9 +285,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
-        if (Settings.instance.playback.allowVideoToGoUnderCutout)
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         runBlocking {
             try {
@@ -301,6 +299,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         FragmentedStorage.get<Settings>();
 
         rootView = findViewById(R.id.rootView);
+        _rootInsetsController = RootInsetsController.attach(this, rootView)
+        _rootInsetsController.setLightSystemBarAppearance(lightStatus = false, lightNav = false)
+
         _fragContainerTopBar = findViewById(R.id.fragment_top_bar);
         _fragContainerMain = findViewById(R.id.fragment_main);
         _fragContainerBotBar = findViewById(R.id.fragment_bottom_bar);
@@ -411,6 +412,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             Logger.i(TAG, "onFullscreenChanged ${it}");
             _isFullscreen = it
             updatePrivateModeVisibility()
+            if (it) {
+                _rootInsetsController.enterFullscreen(allowCutoutShortEdges = Settings.instance.playback.allowVideoToGoUnderCutout)
+            } else {
+                _rootInsetsController.exitFullscreen()
+            }
         }
 
         _fragVideoDetail.onMinimize.subscribe {
@@ -638,6 +644,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     }*/
 
     private var _qrCodeLoadingDialog: AlertDialog? = null
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        _rootInsetsController.onConfigurationChanged()
+    }
 
     fun showUrlQrCodeScanner() {
         try {
