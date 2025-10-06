@@ -216,10 +216,9 @@ private fun ByteArray.toInetAddress(): InetAddress {
     return InetAddress.getByAddress(this);
 }
 
-fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? {
+fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int, timeoutMs: Int = 10_000): Socket? {
     ensureNotMainThread()
 
-    val timeout = 10000
     val addresses = if(!Settings.instance.casting.allowIpv6) attemptAddresses.filterIsInstance<Inet4Address>() else attemptAddresses;
     if(addresses.isEmpty())
         throw IllegalStateException("No valid addresses found (ipv6: ${(if(Settings.instance.casting.allowIpv6) "enabled" else "disabled")})");
@@ -232,7 +231,7 @@ fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? 
         val socket = Socket()
 
         try {
-            return socket.apply { this.connect(InetSocketAddress(addresses[0], port), timeout) }
+            return socket.apply { this.connect(InetSocketAddress(addresses[0], port), timeoutMs) }
         } catch (e: Throwable) {
             Log.i("getConnectedSocket", "Failed to connect to: ${addresses[0]}", e)
             socket.close()
@@ -263,7 +262,7 @@ fun getConnectedSocket(attemptAddresses: List<InetAddress>, port: Int): Socket? 
                     }
                 }
 
-                socket.connect(InetSocketAddress(address, port), timeout);
+                socket.connect(InetSocketAddress(address, port), timeoutMs);
 
                 synchronized(syncObject) {
                     if (connectedSocket == null) {
