@@ -92,6 +92,16 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:navigationBarDividerColor">@color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="Theme.FutoVideo.NoActionBarFitsSystem" parent="Theme.FutoVideo.NoActionBar">
+        <item name="android:fitsSystemWindows">true</item>
     </style>
 
     <style name="Theme.FutoVideo.TextAppearance.TabLayout" parent="@android:style/TextAppearance.Medium">
