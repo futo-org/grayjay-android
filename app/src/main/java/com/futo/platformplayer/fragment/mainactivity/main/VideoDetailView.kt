@@ -3038,9 +3038,9 @@ class VideoDetailView : ConstraintLayout {
         }
 
         val playpauseAction = if(_player.playing)
-            RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 5));
+            RemoteAction(Icon.createWithResource(context, R.drawable.ic_pause_notif), context.getString(R.string.pause), context.getString(R.string.pauses_the_video), MediaControlReceiver.getPauseIntent(context, 2));
         else
-            RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 6));
+            RemoteAction(Icon.createWithResource(context, R.drawable.ic_play_notif), context.getString(R.string.play), context.getString(R.string.resumes_the_video), MediaControlReceiver.getPlayIntent(context, 1));
 
         val toBackgroundAction = RemoteAction(Icon.createWithResource(context, R.drawable.ic_screen_share), context.getString(R.string.background), context.getString(R.string.background_switch_audio), MediaControlReceiver.getToBackgroundIntent(context, 7));
 
