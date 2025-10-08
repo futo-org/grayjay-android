@@ -758,7 +758,7 @@ class SyncService(
     fun removeAuthorizedDevice(publicKey: String) = database.removeAuthorizedDevice(publicKey)
 
 
-    suspend fun connect(deviceInfo: SyncDeviceInfo, alsoTryRelayed: Boolean = false, timeout_ms: Int = 5_000, onStatusUpdate: ((complete: Boolean?, message: String) -> Unit)? = null) {
+    suspend fun connect(deviceInfo: SyncDeviceInfo, alsoTryRelayed: Boolean = false, timeout_ms: Int = 10_000, onStatusUpdate: ((complete: Boolean?, message: String) -> Unit)? = null) {
         val rs = _relaySession
         val startTime = System.currentTimeMillis()
         if (alsoTryRelayed && rs != null && settings.relayPairAllowed) {
@@ -791,7 +791,7 @@ class SyncService(
 
     suspend fun connect(addresses: Array<String>, port: Int, publicKey: String, pairingCode: String?, onStatusUpdate: ((complete: Boolean?, message: String) -> Unit)? = null, timeout_ms: Int = 10_000): SyncSocketSession {
         val startTime_ms = System.currentTimeMillis()
-
+        Log.i(TAG, "Connecting directly (timeout_ms = ${timeout_ms})...")
         onStatusUpdate?.invoke(null, "Connecting directly...")
         val socket = getConnectedSocket(addresses.map { InetAddress.getByName(it) }, port, timeout_ms) ?: throw Exception("Failed to connect")
         onStatusUpdate?.invoke(null, "Handshaking...")
@@ -805,7 +805,7 @@ class SyncService(
 
         session.startAsInitiator(publicKey, appId, pairingCode)
 
-        while (timeout_ms - (startTime_ms - System.currentTimeMillis()) > 0 && !session.isAuthorized && session.started) {
+        while ((System.currentTimeMillis() - startTime_ms) < timeout_ms && !session.isAuthorized) {
             delay(100)
         }
 
