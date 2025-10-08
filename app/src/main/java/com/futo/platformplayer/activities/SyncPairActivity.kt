@@ -110,7 +110,19 @@ class SyncPairActivity : AppCompatActivity() {
 
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
+                    var wasCompleted = false
+
                     StateSync.instance.syncService?.connect(deviceInfo, true) { complete, message ->
+                        if (wasCompleted) {
+                            Logger.i(TAG, "onStatusUpdate(complete = ${complete}, message = '${message} ignored because wasCompleted')")
+                            return@connect
+                        }
+
+                        if (complete == true) {
+                            wasCompleted = true
+                        }
+
+                        Logger.i(TAG, "onStatusUpdate(complete = ${complete}, message = '${message}')")
                         lifecycleScope.launch(Dispatchers.Main) {
                             if (complete != null) {
                                 if (complete) {
