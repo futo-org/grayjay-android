@@ -55,7 +55,9 @@ class StateCastingLegacy : StateCasting() {
             )
         )
 
-        connectDevice(deviceFromInfo(foundInfo))
+        if (foundInfo != null) {
+            connectDevice(deviceFromInfo(foundInfo))
+        }
     }
 
     override fun onStop() {

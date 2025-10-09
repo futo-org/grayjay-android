@@ -90,8 +90,7 @@ abstract class StateCasting {
     abstract fun start(context: Context)
     abstract fun stop()
 
-    @Throws
-    abstract fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice
+    abstract fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice?
     abstract fun startUpdateTimeJob(
         onTimeJobTimeChanged_s: Event1<Long>, setTime: (Long) -> Unit
     ): Job?
@@ -1288,9 +1287,11 @@ abstract class StateCasting {
         return listOf()
     }
 
-    fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo {
-        val device = deviceFromInfo(deviceInfo);
-        return addRememberedDevice(device);
+    fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo? {
+        return when (val device = deviceFromInfo(deviceInfo)) {
+            null -> null
+            else -> addRememberedDevice(device)
+        }
     }
 
     fun addRememberedDevice(device: CastingDevice): CastingDeviceInfo {
@@ -1299,7 +1300,7 @@ abstract class StateCasting {
     }
 
     fun getRememberedCastingDevices(): List<CastingDevice> {
-        return _storage.getDevices().map { deviceFromInfo(it) }
+        return _storage.getDevices().map { deviceFromInfo(it) }.filterNotNull()
     }
 
     fun getRememberedCastingDeviceNames(): List<String> {
