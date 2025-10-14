@@ -57,6 +57,12 @@ import com.futo.platformplayer.fragment.mainactivity.main.HistoryFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ImportPlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ImportSubscriptionsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryAlbumFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryAlbumsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryArtistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryArtistsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryVideosFragment
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsFragment
@@ -179,6 +185,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragBuy: BuyFragment;
     lateinit var _fragSubGroup: SubscriptionGroupFragment;
     lateinit var _fragSubGroupList: SubscriptionGroupListFragment;
+    lateinit var _fragLibrary: LibraryFragment;
+    lateinit var _fragLibraryAlbums: LibraryAlbumsFragment;
+    lateinit var _fragLibraryAlbum: LibraryAlbumFragment;
+    lateinit var _fragLibraryArtists: LibraryArtistsFragment;
+    lateinit var _fragLibraryArtist: LibraryArtistFragment;
+    lateinit var _fragLibraryVideos: LibraryVideosFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
 
@@ -349,6 +361,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragBuy = BuyFragment.newInstance();
         _fragSubGroup = SubscriptionGroupFragment.newInstance();
         _fragSubGroupList = SubscriptionGroupListFragment.newInstance();
+        _fragLibrary = LibraryFragment.newInstance();
+        _fragLibraryAlbums = LibraryAlbumsFragment.newInstance();
+        _fragLibraryAlbum = LibraryAlbumFragment.newInstance();
+        _fragLibraryArtists = LibraryArtistsFragment.newInstance();
+        _fragLibraryArtist = LibraryArtistFragment.newInstance();
+        _fragLibraryVideos = LibraryVideosFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -475,6 +493,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
         _fragSubGroupList.topBar = _fragTopBarAdd;
+        _fragLibrary.topBar = _fragTopBarGeneral;
+        _fragLibraryAlbums.topBar = _fragTopBarNavigation;
+        _fragLibraryAlbum.topBar = _fragTopBarNavigation;
+        _fragLibraryArtists.topBar = _fragTopBarNavigation;
+        _fragLibraryArtist.topBar = _fragTopBarNavigation;
+        _fragLibraryVideos.topBar = _fragTopBarNavigation;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -1273,6 +1297,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             BuyFragment::class -> _fragBuy as T;
             SubscriptionGroupFragment::class -> _fragSubGroup as T;
             SubscriptionGroupListFragment::class -> _fragSubGroupList as T;
+            LibraryFragment::class -> _fragLibrary as T;
+            LibraryAlbumsFragment::class -> _fragLibraryAlbums as T;
+            LibraryAlbumFragment::class -> _fragLibraryAlbum as T;
+            LibraryArtistsFragment::class -> _fragLibraryArtists as T;
+            LibraryArtistFragment::class -> _fragLibraryArtist as T;
+            LibraryVideosFragment::class -> _fragLibraryVideos as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }

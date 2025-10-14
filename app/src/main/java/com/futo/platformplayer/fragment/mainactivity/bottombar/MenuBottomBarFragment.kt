@@ -389,6 +389,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             }),
             ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>(withHistory = false) }),
+            ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigate<LibraryFragment>(withHistory = false) }),
             ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>(withHistory = false) }),
             ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>(withHistory = false) }),
             ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>(withHistory = false) }),

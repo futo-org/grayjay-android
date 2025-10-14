@@ -12,7 +12,7 @@
     android:clickable="true">
 
     <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/image_video_thumbnail"
+        android:id="@+id/image_thumbnail"
         android:layout_height="50dp"
         android:layout_width="50dp"
         android:scaleType="centerCrop"
@@ -33,9 +33,9 @@
         android:fontFamily="@font/inter_light"
         tools:text="Legendary grant recipient: Marvin Wißfeld Very Long Title That is Long"
         android:maxLines="2"
-        app:layout_constraintLeft_toRightOf="@id/image_video_thumbnail"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/button_trash"
         app:layout_constraintBottom_toTopOf="@id/text_metadata"
         android:layout_marginStart="10dp" />
 
@@ -50,8 +50,8 @@
         tools:text="3 videos"
         android:maxLines="1"
         app:layout_constraintTop_toBottomOf="@id/text_name"
-        app:layout_constraintLeft_toRightOf="@id/image_video_thumbnail"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintRight_toLeftOf="@id/button_trash"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="10dp" />
 
@@ -67,17 +67,4 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginEnd="10dp"/> -->
-
-
-    <ImageButton
-        android:id="@+id/button_trash"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:contentDescription="@string/cd_button_delete"
-        app:srcCompat="@drawable/ic_trash"
-        android:padding="10dp"
-        android:scaleType="fitCenter"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
