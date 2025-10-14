@@ -151,21 +151,25 @@ class StateCastingExp : StateCasting() {
         setTime: (Long) -> Unit
     ): Job? = null
 
-    override fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDeviceExp {
-        val rsAddrs =
-            deviceInfo.addresses.map { org.fcast.sender_sdk.tryIpAddrFromStr(it) } // Throws!
-        val rsDeviceInfo = RsDeviceInfo(
-            name = deviceInfo.name,
-            protocol = when (deviceInfo.type) {
-                com.futo.platformplayer.casting.CastProtocolType.CHROMECAST -> ProtocolType.CHROMECAST
-                com.futo.platformplayer.casting.CastProtocolType.FCAST -> ProtocolType.F_CAST
-                else -> throw IllegalArgumentException()
-            },
-            addresses = rsAddrs,
-            port = deviceInfo.port.toUShort(),
-        )
+    override fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDeviceExp? {
+        try {
+            val rsAddrs =
+                deviceInfo.addresses.map { org.fcast.sender_sdk.tryIpAddrFromStr(it) }
+            val rsDeviceInfo = RsDeviceInfo(
+                name = deviceInfo.name,
+                protocol = when (deviceInfo.type) {
+                    com.futo.platformplayer.casting.CastProtocolType.CHROMECAST -> ProtocolType.CHROMECAST
+                    com.futo.platformplayer.casting.CastProtocolType.FCAST -> ProtocolType.F_CAST
+                    else -> throw IllegalArgumentException()
+                },
+                addresses = rsAddrs,
+                port = deviceInfo.port.toUShort(),
+            )
 
-        return CastingDeviceExp(_context.createDeviceFromInfo(rsDeviceInfo))
+            return CastingDeviceExp(_context.createDeviceFromInfo(rsDeviceInfo))
+        } catch (_: Throwable) {
+            return null
+        }
     }
 
     companion object {
