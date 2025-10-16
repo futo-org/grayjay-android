@@ -49,6 +49,8 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
 import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.toBase64Url
+import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -383,6 +385,29 @@ class StateApp {
         if(Settings.instance.other.polycentricLocalCache) {
             Logger.i(TAG, "Initialize Polycentric Disk Cache")
             _cacheDirectory?.let { ApiMethods.initCache(it) };
+        }
+
+        Logger.i(TAG, "MainApp Starting: Initializing [ModerationsManager]");
+        ModerationsManager.initialize(context);
+
+        Logger.i(TAG, "MainApp Starting: Setting [ModerationLevelProvider]");
+        ApiMethods.setModerationLevelProvider {
+            try {
+                ModerationsManager.getInstance().getCurrentModerationLevels()
+            } catch (e: IllegalStateException) {
+                Logger.e(TAG, "Failed to get moderation levels from manager", e);
+                null
+            }
+        }
+
+        Logger.i(TAG, "MainApp Starting: Setting [ModerationExemptSystemProvider]");
+        ApiMethods.setModerationExemptSystemProvider {
+            try {
+                StatePolycentric.instance.processHandle?.system?.toProto()?.toByteArray()?.toBase64Url()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to get moderation exempt system from manager", e);
+                null
+            }
         }
 
         val logFile = File(context.filesDir, "log.txt");
