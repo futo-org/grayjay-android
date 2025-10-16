@@ -28,6 +28,7 @@ import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.ensureServerAndBackfill
 import com.futo.polycentric.core.ClaimType
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Opinion
@@ -46,8 +47,10 @@ import com.google.protobuf.ByteString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import userpackage.Protocol
 import userpackage.Protocol.Reference
@@ -67,6 +70,8 @@ class StatePolycentric {
 
     private val _commentPool = ForkJoinPool(2);
     private val _commentPoolDispatcher = _commentPool.asCoroutineDispatcher();
+    private val _backgroundJob = SupervisorJob()
+    private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
 
     fun load(context: Context) {
         if (!enabled) {
@@ -173,6 +178,15 @@ class StatePolycentric {
             }
 
             _likeDislikeMap = newMap
+
+            // Ensure current server is registered & synced
+            _backgroundScope.launch {
+                try {
+                    processHandle.ensureServerAndBackfill()
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to ensure server and backfill: "+e.message)
+                }
+            }
         } else {
             _activeProcessHandle.setAndSave("");
             _likeDislikeMap = hashMapOf()
@@ -557,6 +571,11 @@ class StatePolycentric {
                 return@mapNotNull null;
             }
         };
+    }
+
+    fun cleanup() {
+        _backgroundJob.cancel()
+        _commentPool.shutdown()
     }
 
     companion object {
