@@ -8,94 +8,52 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.LinearLayout.GONE
-import android.widget.LinearLayout.VISIBLE
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.view.allViews
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
-import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
-import com.futo.platformplayer.api.media.models.ResultCapabilities
-import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
-import com.futo.platformplayer.api.media.platforms.local.LocalClient
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
-import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.dp
-import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
-import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
-import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment.Companion
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryAlbumsFragment.AlbumViewHolder
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
-import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.SearchType
-import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.selectBestImage
-import com.futo.platformplayer.selectHighestResolutionImage
 import com.futo.platformplayer.states.Album
 import com.futo.platformplayer.states.Artist
 import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
-import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.StringStorage
-import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.FeedStyle
-import com.futo.platformplayer.views.ToggleBar
-import com.futo.platformplayer.views.adapters.AnyAdapter
-import com.futo.platformplayer.views.adapters.ChannelTab
-import com.futo.platformplayer.views.adapters.ChannelViewPagerAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
-import com.futo.platformplayer.views.adapters.SubscriptionAdapter
-import com.futo.platformplayer.views.adapters.viewholders.SelectablePlaylist
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
-import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.Dispatchers
@@ -384,31 +342,14 @@ class LibraryArtistFragment : MainFragment() {
 
             var supportsPlaylists = false;
             val playlistPosition = 1
-            if (supportsPlaylists && !(_viewPager.adapter as ArtistViewPagerAdapter).containsItem(
-                    ArtistTab.PLAYLISTS.ordinal.toLong()
-                )
-            ) {
-                // keep the current tab selected
-                if (_viewPager.currentItem >= playlistPosition) {
-                    _viewPager.setCurrentItem(_viewPager.currentItem + 1, false)
-                }
-
-                (_viewPager.adapter as ArtistViewPagerAdapter).insert(
-                    playlistPosition,
-                    ArtistTab.PLAYLISTS
-                )
+            // keep the current tab selected
+            if (_viewPager.currentItem >= playlistPosition) {
+                _viewPager.setCurrentItem(_viewPager.currentItem + 1, false)
             }
-            if (!supportsPlaylists && (_viewPager.adapter as ArtistViewPagerAdapter).containsItem(
-                    ArtistTab.PLAYLISTS.ordinal.toLong()
-                )
-            ) {
-                // keep the current tab selected
-                if (_viewPager.currentItem >= playlistPosition) {
-                    _viewPager.setCurrentItem(_viewPager.currentItem - 1, false)
-                }
-
-                (_viewPager.adapter as ArtistViewPagerAdapter).remove(playlistPosition)
-            }
+            (_viewPager.adapter as ArtistViewPagerAdapter).insert(
+                playlistPosition,
+                ArtistTab.ALBUMS
+            )
 
             // sets the channel for each tab
             for (fragment in _fragment.childFragmentManager.fragments) {
@@ -429,15 +370,15 @@ class LibraryArtistFragment : MainFragment() {
         }
     }
     enum class ArtistTab {
-        VIDEOS, PLAYLISTS
+        SONGS, ALBUMS
     }
 
     class ArtistViewPagerAdapter(private val fragment: LibraryArtistFragment, fragmentManager: FragmentManager, lifecycle: Lifecycle) :
         FragmentStateAdapter(fragmentManager, lifecycle) {
         private val _supportedFragments = mutableMapOf(
-            ArtistTab.VIDEOS.ordinal to ArtistTab.VIDEOS
+            ArtistTab.SONGS.ordinal to ArtistTab.SONGS
         )
-        private val _tabs = arrayListOf(ArtistTab.VIDEOS)
+        private val _tabs = arrayListOf(ArtistTab.SONGS, ArtistTab.ALBUMS)
 
         var artist: Artist? = null
 
@@ -486,35 +427,15 @@ class LibraryArtistFragment : MainFragment() {
         override fun createFragment(position: Int): Fragment {
             val fragment: Fragment
             when (_tabs[position]) {
-                ArtistTab.VIDEOS -> {
+                ArtistTab.SONGS -> {
                     fragment = ChannelContentsFragment(this.fragment).apply {
-                        /*
-                        onContentClicked.subscribe { video, num, _ ->
-                            this@ArtistViewPagerAdapter.onContentClicked.emit(video, num)
-                        }
-                        onContentUrlClicked.subscribe(this@ArtistViewPagerAdapter.onContentUrlClicked::emit)
-                        onUrlClicked.subscribe(this@ArtistViewPagerAdapter.onUrlClicked::emit)
-                        onChannelClicked.subscribe(this@ArtistViewPagerAdapter.onChannelClicked::emit)
-                        onAddToClicked.subscribe(this@ArtistViewPagerAdapter.onAddToClicked::emit)
-                        onAddToQueueClicked.subscribe(this@ArtistViewPagerAdapter.onAddToQueueClicked::emit)
-                        onAddToWatchLaterClicked.subscribe(this@ArtistViewPagerAdapter.onAddToWatchLaterClicked::emit)
-                        onLongPress.subscribe(this@ArtistViewPagerAdapter.onLongPress::emit)
-                        */
+
                     }
                 }
 
-                ArtistTab.PLAYLISTS -> {
-                    fragment = ChannelPlaylistsFragment.newInstance().apply {
-                        /*
-                        onContentClicked.subscribe(this@ArtistViewPagerAdapter.onContentClicked::emit)
-                        onContentUrlClicked.subscribe(this@ArtistViewPagerAdapter.onContentUrlClicked::emit)
-                        onUrlClicked.subscribe(this@ArtistViewPagerAdapter.onUrlClicked::emit)
-                        onChannelClicked.subscribe(this@ArtistViewPagerAdapter.onChannelClicked::emit)
-                        onAddToClicked.subscribe(this@ArtistViewPagerAdapter.onAddToClicked::emit)
-                        onAddToQueueClicked.subscribe(this@ArtistViewPagerAdapter.onAddToQueueClicked::emit)
-                        onAddToWatchLaterClicked.subscribe(this@ArtistViewPagerAdapter.onAddToWatchLaterClicked::emit)
-                        onLongPress.subscribe(this@ArtistViewPagerAdapter.onLongPress::emit)
-                        */
+                ArtistTab.ALBUMS -> {
+                    fragment = ArtistAlbumsFragment(this.fragment).apply {
+
                     }
                 }
             }
@@ -568,6 +489,77 @@ class LibraryArtistFragment : MainFragment() {
 
         override fun updateSpanCount(){ }
 
+
+        companion object {
+            private const val TAG = "LibraryAlbumsFragmentsView";
+        }
+    }
+    class ArtistAlbumsFragment(private val frag: LibraryArtistFragment) : Fragment(), IArtistTabFragment {
+
+        var view: ArtistAlbumsView? = null;
+
+        private var _lastArtist: Artist? = null;
+
+        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+            view = ArtistAlbumsView(frag, inflater);
+            _lastArtist?.let {
+                view?.setArtist(it);
+            }
+            return view;
+        }
+
+        override fun onDestroyView() {
+            view = null;
+            super.onDestroyView()
+        }
+
+        override fun setArtist(artist: Artist) {
+            view?.setArtist(artist);
+            _lastArtist = artist;
+        }
+    }
+    class ArtistAlbumsView : FeedView<LibraryArtistFragment, Album, Album, IPager<Album>, AlbumViewHolder> {
+        override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
+
+        constructor(fragment: LibraryArtistFragment, inflater: LayoutInflater) : super(fragment, inflater)
+
+        fun onShown() {
+        }
+
+        fun setArtist(artist: Artist) {
+            val initialAlbums = artist.getAlbums();
+            Logger.i(TAG, "Initial album count: " + initialAlbums.size);
+
+            setPager(AdhocPager({ listOf() }, initialAlbums));
+        }
+
+        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumViewHolder> {
+            return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
+                childCountGetter = { dataset.size },
+                childViewHolderBinder = { viewHolder, position -> viewHolder.bind(dataset[position]); },
+                childViewHolderFactory = { viewGroup, _ ->
+                    val holder = AlbumViewHolder(viewGroup);
+                    holder.onClick.subscribe { c -> fragment.navigate<LibraryAlbumFragment>(c) };
+                    return@InsertedViewAdapterWithLoader holder;
+                }
+            );
+        }
+
+        override fun updateSpanCount(){ }
+
+        override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager {
+            val glmResults = GridLayoutManager(context, 1)
+
+            _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
+                rightMargin = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    8.0f,
+                    context.resources.displayMetrics
+                ).toInt()
+            }
+
+            return glmResults
+        }
 
         companion object {
             private const val TAG = "LibraryAlbumsFragmentsView";

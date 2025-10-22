@@ -271,7 +271,7 @@ class Artist {
     }
 
     fun getAlbums(): List<Album> {
-        return listOf();
+        return Album.getArtistAlbums(id.toLongOrNull() ?: return listOf());
     }
 
     fun getAudioTracks(): IPager<IPlatformContent> {
@@ -429,6 +429,23 @@ class Album {
             }
             val cursor = resolver?.query(
                 MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, null, null,
+                MediaStore.Audio.Albums.ALBUM + " ASC") ?: return listOf();
+            cursor.moveToFirst();
+            val list = mutableListOf<Album>()
+            while(!cursor.isAfterLast) {
+                list.add(fromCursor(cursor));
+                cursor.moveToNext();
+            }
+            return list;
+        }
+        fun getArtistAlbums(artistId: Long): List<Album> {
+            val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+            if(resolver == null) {
+                Logger.w(TAG, "Album contentResolver not found");
+                return listOf();
+            }
+            val cursor = resolver?.query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf(artistId.toString()),
                 MediaStore.Audio.Albums.ALBUM + " ASC") ?: return listOf();
             cursor.moveToFirst();
             val list = mutableListOf<Album>()

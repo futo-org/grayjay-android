@@ -88,6 +88,19 @@ class LibraryArtistsFragment : MainFragment() {
             setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));
         }
 
+        override fun reload() {
+            try {
+                setLoading(true);
+                val intialArtists = StateLibrary.instance.getArtists();
+                Logger.i(TAG, "Initial album count: " + intialArtists.size);
+
+                setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));
+            }
+            finally {
+                setLoading(false);
+            }
+        }
+
         override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Artist>): InsertedViewAdapterWithLoader<ArtistViewHolder> {
             return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 childCountGetter = { dataset.size },
@@ -123,18 +136,18 @@ class LibraryArtistsFragment : MainFragment() {
     }
 
     class ArtistViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<Artist>(
-        LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_album,
+        LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_artist,
             _viewGroup, false)) {
 
         val onClick = Event1<Artist>();
 
         protected var _artist: Artist? = null;
-        protected val _imageThumbnail: ImageView
+        //protected val _imageThumbnail: ImageView
         protected val _textName: TextView
         protected val _textMetadata: TextView
 
         init {
-            _imageThumbnail = _view.findViewById(R.id.image_thumbnail);
+            //_imageThumbnail = _view.findViewById(R.id.image_thumbnail);
             _textName = _view.findViewById(R.id.text_name);
             _textMetadata = _view.findViewById(R.id.text_metadata);
 
@@ -143,6 +156,7 @@ class LibraryArtistsFragment : MainFragment() {
 
         override fun bind(artist: Artist) {
             _artist = artist;
+            /*
             _imageThumbnail?.let {
                 if (artist.thumbnail != null)
                     Glide.with(it)
@@ -152,6 +166,7 @@ class LibraryArtistsFragment : MainFragment() {
                 else
                     Glide.with(it).load(R.drawable.placeholder_channel_thumbnail).into(it);
             };
+            */
 
             _textName.text = artist.name;
             _textMetadata.text = artist.countTracks?.let { "${it} tracks" } ?: "";
