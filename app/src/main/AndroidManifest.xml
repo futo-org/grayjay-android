@@ -156,30 +156,30 @@
         </activity>
         <activity
             android:name=".activities.TestActivity"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.SettingsActivity"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.DeveloperActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.ExceptionActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.CaptchaActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.LoginActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.AddSourceActivity"
             android:exported="true"
-            android:theme="@style/Theme.FutoVideo.NoActionBar">
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -192,54 +192,58 @@
         <activity
             android:name=".activities.AddSourceOptionsActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricHomeActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricBackupActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricCreateProfileActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricProfileActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricWhyActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricImportProfileActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.ManageTabsActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.QRCaptureActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.FCastGuideActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.SyncHomeActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.SyncPairActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.SyncShowPairingCodeActivity"
             android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBar" />
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
+        <activity
+            android:name=".activities.PolycentricModerationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 </manifest>
