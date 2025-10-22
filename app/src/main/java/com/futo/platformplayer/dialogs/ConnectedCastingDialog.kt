@@ -90,6 +90,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         _buttonClose.setOnClickListener { dismiss(); };
         _buttonDisconnect.setOnClickListener {
             try {
+                StateCasting.instance.stopVideo()
                 StateCasting.instance.activeDevice?.disconnect()
             } catch (e: Throwable) {
                 Logger.e(TAG, "Active device failed to disconnect: $e")
