@@ -935,6 +935,7 @@
     <string name="cd_button_stop">Stop</string>
     <string name="cd_button_scan_qr">Scan QR code</string>
     <string name="cd_button_help">Help</string>
+    <string name="cd_button_sync">Sync</string>
     <string name="cd_image_polycentric">Change Polycentric profile picture</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>

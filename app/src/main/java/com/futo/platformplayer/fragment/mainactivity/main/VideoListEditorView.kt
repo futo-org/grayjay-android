@@ -42,9 +42,11 @@ abstract class VideoListEditorView : LinearLayout {
     private var _buttonShare: ImageButton;
     private var _buttonEdit: ImageButton;
     private var _buttonSearch: ImageButton;
+    private var _buttonSync: ImageButton;
 
     private var _search: SearchView;
 
+    private var _onSync: (()->Unit)? = null;
     private var _onShare: (()->Unit)? = null;
 
     private var _loadedVideos: List<IPlatformVideo>? = null;
@@ -68,6 +70,7 @@ abstract class VideoListEditorView : LinearLayout {
         val buttonPlayAll = findViewById<LinearLayout>(R.id.button_play_all);
         val buttonShuffle = findViewById<LinearLayout>(R.id.button_shuffle);
         _buttonEdit = findViewById(R.id.button_edit);
+        _buttonSync = findViewById(R.id.button_sync);
         _buttonDownload = findViewById(R.id.button_download);
         _buttonDownload.visibility = View.GONE;
         _buttonExport = findViewById(R.id.button_export);
@@ -94,6 +97,14 @@ abstract class VideoListEditorView : LinearLayout {
             }
         }
 
+        val onSync = _onSync;
+        if(onSync != null) {
+            _buttonSync.setOnClickListener {  hideSearchKeyboard(); onSync.invoke() };
+            _buttonSync.visibility = View.VISIBLE;
+        }
+        else
+            _buttonSync.visibility = View.GONE;
+
         _buttonShare = findViewById(R.id.button_share);
         val onShare = _onShare;
         if(onShare != null) {
@@ -116,6 +127,15 @@ abstract class VideoListEditorView : LinearLayout {
         videoListEditorView.onVideoClicked.subscribe { hideSearchKeyboard(); onVideoClicked(it)};
 
         _videoListEditorView = videoListEditorView;
+    }
+
+    fun setOnSync(onSync: (()-> Unit)? = null) {
+        _onSync = onSync;
+        _buttonSync.setOnClickListener {
+            hideSearchKeyboard();
+            onSync?.invoke();
+        };
+        _buttonSync.visibility = View.VISIBLE;
     }
 
     fun setOnShare(onShare: (()-> Unit)? = null) {

@@ -25,15 +25,19 @@ class Playlist {
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
     var datePlayed: OffsetDateTime = OffsetDateTime.MIN;
 
-    constructor(){}
+    var url: String = "";
+
     constructor(name: String, list: List<SerializedPlatformVideo>) {
         this.name = name;
         this.videos = ArrayList(list);
     }
-    constructor(id: String, name: String, list: List<SerializedPlatformVideo>) {
+    constructor(id: String, name: String, list: List<SerializedPlatformVideo>, url: String? = null) {
         this.id = id;
         this.name = name;
         this.videos = ArrayList(list);
+        if (url != null) {
+            this.url = url
+        };
     }
 
     fun makeCopy(newName: String? = null): Playlist {
