@@ -157,6 +157,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 1,
                         call = {
                             playlist.videos.sortBy { it.name }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         }),
                     SlideUpMenuItem(
@@ -167,6 +168,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 2,
                         call = {
                             playlist.videos.sortByDescending { it.name }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         }),
                     SlideUpMenuItem(
@@ -177,6 +179,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 3,
                         call = {
                             playlist.videos.sortBy { it.addedToPlaylistDateTime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         }),
                     SlideUpMenuItem(
@@ -187,6 +190,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 4,
                         call = {
                             playlist.videos.sortByDescending { it.addedToPlaylistDateTime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         }),
                     SlideUpMenuItem(
@@ -197,6 +201,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 5,
                         call = {
                             playlist.videos.sortBy { it.datetime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         }),
                     SlideUpMenuItem(
@@ -207,6 +212,7 @@ class PlaylistFragment : MainFragment() {
                         tag = 6,
                         call = {
                             playlist.videos.sortByDescending { it.datetime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
                             onShown(playlist)
                         })
                 );
