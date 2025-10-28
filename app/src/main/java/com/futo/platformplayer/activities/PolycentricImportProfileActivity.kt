@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import userpackage.Protocol.ExportBundle
+import java.io.ByteArrayInputStream
+import java.util.zip.GZIPInputStream
 
 class PolycentricImportProfileActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
@@ -108,7 +110,20 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val data = url.substring("polycentric://".length).base64UrlToByteArray();
-                val urlInfo = Protocol.URLInfo.parseFrom(data);
+
+                // Try to parse as regular data first, if it fails, try decompressing
+                val urlInfo = try {
+                    Protocol.URLInfo.parseFrom(data)
+                } catch (e: Exception) {
+                    // If parsing fails, try to decompress the data
+                    try {
+                        val decompressedData = decompressData(data)
+                        Protocol.URLInfo.parseFrom(decompressedData)
+                    } catch (decompressException: Exception) {
+                        throw Exception("Failed to parse URL data: ${e.message}")
+                    }
+                }
+
                 if (urlInfo.urlType != 3L) {
                     throw Exception("Expected urlInfo struct of type ExportBundle")
                 }
@@ -161,6 +176,21 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun decompressData(data: ByteArray): ByteArray {
+        val inputStream = ByteArrayInputStream(data)
+        val outputStream = java.io.ByteArrayOutputStream()
+
+        GZIPInputStream(inputStream).use { gzip ->
+            val buffer = ByteArray(8192) // 8KB buffer
+            var bytesRead: Int
+            while (gzip.read(buffer).also { bytesRead = it } != -1) {
+                outputStream.write(buffer, 0, bytesRead)
+            }
+        }
+
+        return outputStream.toByteArray()
     }
 
     companion object {
