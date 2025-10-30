@@ -80,6 +80,9 @@ class StateApp {
         privateModeChanged.emit(privateMode);
     }
 
+    var hasMediaStoreAudioPermission: Boolean = false;
+    var hasMediaStoreVideoPermission: Boolean = false;
+
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();
         if(isValidStorageUri(context, generalUri))

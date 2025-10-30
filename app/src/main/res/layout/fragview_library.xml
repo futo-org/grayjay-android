@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             app:buttonIcon="@drawable/ic_videocam"
             app:buttonText="Videos"
-            app:buttonSubText="All artists known on this phone"
+            app:buttonSubText="All local videos on this phone"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginBottom="8dp" />
@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             android:textAlignment="center"
             android:layout_marginTop="20dp"
-            android:text="Library UI is temporary, and will be replaced"
+            android:text=""
             android:textColor="#AAAAAA"  />
     </LinearLayout>
 

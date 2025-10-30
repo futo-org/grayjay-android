@@ -45,12 +45,17 @@ class LocalClient: IPlatformClient {
         try {
             val uri = Uri.parse(url);
             return ContentResolver.SCHEME_CONTENT == uri.scheme
-                    && MediaStore.AUTHORITY == uri.authority;
+                    && (
+                        MediaStore.AUTHORITY == uri.authority ||
+                        uri.authority == "com.android.externalstorage.documents"
+                    )
         }
         catch(ex: MalformedURLException) {
             return false;
         }
     }
+
+    val audioExtensions = listOf(".mp3", ".wav", ".flac", ".mp4a", ".m4a");
     override fun getContentDetails(url: String): IPlatformContentDetails {
         val uri = Uri.parse(url);
 
@@ -59,6 +64,12 @@ class LocalClient: IPlatformClient {
         }
         else if("video" in uri.pathSegments) {
             return StateLibrary.getVideoTrack(url) ?: throw Exception("Failed to find ${url}");
+        }
+        else if(uri.toString().contains("com.android.externalstorage.documents")) {
+            if(audioExtensions.any { uri.lastPathSegment?.lowercase()?.endsWith(it) ?: false })
+                return StateLibrary.getAudioTrack(url) ?: throw Exception("Failed to find ${url}");
+            else
+                return StateLibrary.getVideoTrack(url) ?: throw Exception("Failed to find ${url}");
         }
         else
             throw Exception("Unknown content url [${url}]");

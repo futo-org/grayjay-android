@@ -53,10 +53,12 @@ class LibraryFragment : MainFragment() {
     fun setPermissionResultAudio(access: Boolean) {
         allowedMusic = access;
         view?.setMusicPermissions(access);
+        StateApp.instance.hasMediaStoreAudioPermission = (access);
     }
     fun setPermissionResultVideo(access: Boolean) {
         allowedVideo = access;
         view?.setVideoPermissions(access);
+        StateApp.instance.hasMediaStoreVideoPermission = (access);
     }
 
     fun requestPermissionMusic() {
@@ -161,9 +163,9 @@ class LibraryFragment : MainFragment() {
                 fragment.navigate<PlaylistsFragment>();
             }
             buttonFiles.onClick.subscribe {
-                UIDialogs.appToast("This is gonna require a bit more work..");
+                fragment.navigate<LibraryFilesFragment>()
             }
-            buttonFiles.setButtonEnabled(false);
+            //buttonFiles.setButtonEnabled(false);
             setMusicPermissions(allowMusic ?: false);
             setVideoPermissions(allowVideo ?: false);
         }

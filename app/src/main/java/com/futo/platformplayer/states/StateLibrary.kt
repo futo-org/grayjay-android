@@ -1,11 +1,16 @@
 package com.futo.platformplayer.states
 
 import android.content.ContentUris
+import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
-import android.provider.MediaStore.Images.ImageColumns
+import android.webkit.MimeTypeMap
+import androidx.core.net.toFile
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.Thumbnail
@@ -21,11 +26,10 @@ import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
-import com.futo.platformplayer.states.Album.Companion
 import com.futo.platformplayer.states.Album.Companion.TAG
-import com.futo.platformplayer.states.StateLibrary.Companion.getAudioTrack
-import com.futo.platformplayer.states.StateLibrary.Companion.videoFromCursor
-import com.google.protobuf.Empty
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringArrayStorage
+import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -33,7 +37,55 @@ import java.time.ZoneOffset
 
 class StateLibrary {
 
+    private val _files = FragmentedStorage.get<StringArrayStorage>("libraryFiles")
 
+
+    fun getFileDirectories(): List<FileEntry> {
+        val context = StateApp.instance.contextOrNull ?: return listOf();
+        return _files.getAllValues().map {
+            if(it.startsWith("content://")) {
+                val uri = it.toUri();
+                val docFile = DocumentFile.fromTreeUri(context, uri) ?: return@map null;
+                //val access = context.contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission }
+                if(!docFile.isDirectory) {
+                    _files.remove(it);
+                    return@map null;
+                }
+                if(docFile == null)
+                    return@map null;
+                return@map FileEntry.fromFile(docFile).apply { this.removable = true }
+            }
+            else
+                FileEntry.fromPath(it);
+        }.filterNotNull();
+    }
+    fun deleteFileDirectory(path: String) {
+        _files.remove(path);
+        _files.save();
+    }
+    fun addFileDirectory(onAdded: ((entry: FileEntry) -> Unit)? = null): Boolean {
+        if(!StateApp.instance.isMainActive)
+            return false;
+        val mainActivity = StateApp.instance.contextOrNull as MainActivity? ?: return false;
+
+        StateApp.instance.requestDirectoryAccess(mainActivity, "Select Directory",
+            "Select a directory you would like to make accessible to Grayjay", null, {
+                if(it != null) {
+                    mainActivity.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION));
+                    try {
+                        val file = DocumentFile.fromTreeUri(mainActivity, it) ?: return@requestDirectoryAccess;
+                        val dir = FileEntry.fromFile(file);
+                        _files.add(dir.path);
+                        _files.save();
+                        onAdded?.invoke(dir);
+                    }
+                    catch(ex: Throwable) {
+                        Logger.e(TAG, "Something went wrong converting requested directory", ex);
+                    }
+                }
+            });
+        return false;
+    }
 
     fun getAlbums(): List<Album> {
         return Album.getAlbums();
@@ -133,11 +185,41 @@ class StateLibrary {
             MediaStore.Audio.Media.BUCKET_DISPLAY_NAME //7
         );
 
+        fun getDocumentTrack(url: String): IPlatformContentDetails? {
+            if(!url.contains("com.android.externalstorage.documents"))
+                return null;
+            val docFile = DocumentFile.fromSingleUri(StateApp.instance.context, url.toUri()) ?: return null;
+
+            val contentUri = docFile.uri.toString();
+
+            val mimeType = MimeTypeMap.getFileExtensionFromUrl(contentUri);
+
+            if(docFile.name != null) {
+                if (StateApp.instance.hasMediaStoreAudioPermission && mimeType.startsWith("audio/")) {
+                    val aud = findAudioByName(docFile.name!!);
+                    if (aud != null)
+                        return aud;
+                }
+                if (StateApp.instance.hasMediaStoreVideoPermission && mimeType.startsWith("video/")) {
+                    val vid = findVideoByName(docFile.name!!);
+                    if (vid != null)
+                        return vid;
+                }
+            }
+
+            return LocalVideoDetails(
+                PlatformID("FILE", contentUri, null, 0, -1),
+                docFile.name ?: docFile.uri.toString(), Thumbnails(arrayOf(
+                    Thumbnail(docFile.uri.toString(), 0)
+                )), PlatformAuthorLink.UNKNOWN, contentUri, 0, mimeType, null);
+        }
+
         fun getAudioTrack(url: String): IPlatformContentDetails? {
             val uri = Uri.parse(url);
             val id = uri.lastPathSegment?.toLongOrNull();
-            if(id == null)
-                return null;
+            if(id == null) {
+                return getDocumentTrack(url);
+            }
 
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
             if(resolver == null) {
@@ -152,11 +234,25 @@ class StateLibrary {
                 return null;
             return audioFromCursor(cursor);
         }
+        fun findAudioByName(name: String): IPlatformContentDetails? {
+            val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+            if(resolver == null) {
+                Logger.w(TAG, "Audio contentResolver not found");
+                return null;
+            }
+            val cursor = resolver?.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA, "${MediaStore.Audio.Media.DISPLAY_NAME} = ?", arrayOf(name),
+                null) ?: return null;
+            cursor.moveToFirst();
+            if(cursor.isAfterLast)
+                return null;
+            return audioFromCursor(cursor);
+        }
         fun getVideoTrack(url: String): IPlatformContentDetails? {
             val uri = Uri.parse(url);
             val id = uri.lastPathSegment?.toLongOrNull();
             if(id == null)
-                return null;
+                return getDocumentTrack(url);
 
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
             if(resolver == null) {
@@ -165,6 +261,20 @@ class StateLibrary {
             }
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_VIDEO, "${MediaStore.Video.Media._ID} = ?", arrayOf(id.toString()),
+                null) ?: return null;
+            cursor.moveToFirst();
+            if(cursor.isAfterLast)
+                return null;
+            return videoFromCursor(cursor);
+        }
+        fun findVideoByName(name: String): IPlatformContentDetails? {
+            val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+            if(resolver == null) {
+                Logger.w(TAG, "Album contentResolver not found");
+                return null;
+            }
+            val cursor = resolver?.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_VIDEO, "${MediaStore.Video.Media.DISPLAY_NAME} = ?", arrayOf(name),
                 null) ?: return null;
             cursor.moveToFirst();
             if(cursor.isAfterLast)
@@ -454,6 +564,48 @@ class Album {
                 cursor.moveToNext();
             }
             return list;
+        }
+    }
+}
+
+
+class FileEntry(
+    val path: String,
+    val name: String,
+    val isDirectory: Boolean = false,
+    val thumbnail: String? = null,
+
+    var removable: Boolean = false
+) {
+
+    fun getSubFiles(): List<FileEntry> {
+        if(isDirectory) {
+            if(path.startsWith("content://"))
+                return DocumentFile.fromTreeUri(StateApp.instance.context, path.toUri())?.listFiles()
+                    ?.map { fromFile(it) } ?: return listOf();
+            return File(path).listFiles()
+                .map { fromFile(it) }
+        }
+        return listOf();
+    }
+
+    companion object {
+        fun fromPath(path: String): FileEntry {
+            /*
+            val cursor = StateApp.instance.context.contentResolver.query(path.toUri(), null, null, null, null);
+            cursor?.moveToFirst();
+            val fileName = cursor?.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+            cursor?.close();
+            return FileEntry(path, fileName, );
+             */
+            val file = File(path);
+            return FileEntry(file.path, file.name, file.isDirectory);
+        }
+        fun fromFile(file: File): FileEntry {
+            return FileEntry(file.path, file.name, file.isDirectory);
+        }
+        fun fromFile(file: DocumentFile): FileEntry {
+            return FileEntry(file.uri.toString(), file.name ?: "", file.isDirectory);
         }
     }
 }
