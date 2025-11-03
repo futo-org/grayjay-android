@@ -68,6 +68,7 @@ class CastView : ConstraintLayout {
     val onPrevious = Event0();
     val onNext = Event0();
     val onTimeJobTimeChanged_s = Event1<Long>()
+    val loaderGameVisibilityChanged = Event1<Boolean>();
 
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
@@ -90,6 +91,7 @@ class CastView : ConstraintLayout {
         _gestureControlView = findViewById(R.id.gesture_control);
         _loaderGame = findViewById(R.id.loader_overlay)
         _loaderGame.visibility = View.GONE
+        loaderGameVisibilityChanged.emit(false)
 
         _gestureControlView.fullScreenGestureEnabled = false
         _gestureControlView.setupTouchArea();
@@ -319,15 +321,18 @@ class CastView : ConstraintLayout {
         if (isLoading) {
             _loaderGame.visibility = View.VISIBLE
             _loaderGame.startLoader()
+            loaderGameVisibilityChanged.emit(true)
         } else {
             _loaderGame.visibility = View.GONE
             _loaderGame.stopAndResetLoader()
+            loaderGameVisibilityChanged.emit(false)
         }
     }
 
     fun setLoading(expectedDurationMs: Int) {
         _loaderGame.visibility = View.VISIBLE
         _loaderGame.startLoader(expectedDurationMs.toLong())
+        loaderGameVisibilityChanged.emit(true)
     }
 
     companion object {

@@ -164,6 +164,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     private val _loaderGame: TargetTapLoaderView
 
+    val loaderGameVisibilityChanged = Event1<Boolean>();
+
     @OptIn(UnstableApi::class)
     constructor(context: Context, attrs: AttributeSet? = null) : super(PLAYER_STATE_NAME, context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.video_view, this, true);
@@ -206,6 +208,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         _loaderGame = findViewById(R.id.loader_overlay)
         _loaderGame.visibility = View.GONE
+        loaderGameVisibilityChanged.emit(false)
 
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
@@ -894,15 +897,18 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         if (isLoading) {
             _loaderGame.visibility = View.VISIBLE
             _loaderGame.startLoader()
+            loaderGameVisibilityChanged.emit(true)
         } else {
             _loaderGame.visibility = View.GONE
             _loaderGame.stopAndResetLoader()
+            loaderGameVisibilityChanged.emit(false)
         }
     }
 
     override fun setLoading(expectedDurationMs: Int) {
         _loaderGame.visibility = View.VISIBLE
         _loaderGame.startLoader(expectedDurationMs.toLong())
+        loaderGameVisibilityChanged.emit(true)
     }
 
     override fun switchToVideoMode() {

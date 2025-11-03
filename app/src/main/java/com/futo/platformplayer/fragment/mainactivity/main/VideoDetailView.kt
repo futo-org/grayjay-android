@@ -244,6 +244,7 @@ class VideoDetailView : ConstraintLayout {
     private val _buttonSubscribe: SubscribeButton;
 
     private val _buttonPins: RoundButtonGroup;
+    private var _loaderGameVisible = false
     //private val _buttonMore: RoundButton;
 
     var preventPictureInPicture: Boolean = false
@@ -261,7 +262,6 @@ class VideoDetailView : ConstraintLayout {
     private val _textSkip: TextView;
     private val _textResume: TextView;
     private val _layoutResume: LinearLayout;
-    private var _jobHideResume: Job? = null;
     private val _layoutPlayerContainer: TouchInterceptFrameLayout;
     private val _layoutChangeBottomSection: LinearLayout;
 
@@ -547,6 +547,13 @@ class VideoDetailView : ConstraintLayout {
         };
         _buttonMore = buttonMore;
         updateMoreButtons();
+
+        val handleLoaderGameVisibilityChanged = { b: Boolean ->
+            _loaderGameVisible = b
+            updateResumeVisibilityFor(lastPositionMilliseconds)
+        }
+        _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
+        _cast.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
 
         _channelButton.setOnClickListener {
             if (video is TutorialFragment.TutorialVideo) {
@@ -872,11 +879,6 @@ class VideoDetailView : ConstraintLayout {
 
         _layoutResume.setOnClickListener {
             handleSeek(_historicalPosition * 1000);
-
-            val job = _jobHideResume;
-            _jobHideResume = null;
-            job?.cancel();
-
             _layoutResume.visibility = View.GONE;
         };
 
@@ -1255,10 +1257,6 @@ class VideoDetailView : ConstraintLayout {
         MediaControlReceiver.onCloseReceived.remove(this);
         MediaControlReceiver.onBackgroundReceived.remove(this);
         MediaControlReceiver.onSeekToReceived.remove(this);
-
-        val job = _jobHideResume;
-        _jobHideResume = null;
-        job?.cancel();
     }
 
     //Video Setters
@@ -1780,26 +1778,7 @@ class VideoDetailView : ConstraintLayout {
                         TAG,
                         "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds"
                     );
-                    if (_historicalPosition > 60 && video.duration - _historicalPosition > 5 && Math.abs(
-                            _historicalPosition - lastPositionMilliseconds / 1000
-                        ) > 5.0
-                    ) {
-                        _layoutResume.visibility = View.VISIBLE;
-                        _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}";
-
-                        _jobHideResume = fragment.lifecycleScope.launch(Dispatchers.Main) {
-                            try {
-                                delay(8000);
-                                _layoutResume.visibility = View.GONE;
-                                _textResume.text = "";
-                            } catch (e: Throwable) {
-                                Logger.e(TAG, "Failed to set resume changes.", e);
-                            }
-                        }
-                    } else {
-                        _layoutResume.visibility = View.GONE;
-                        _textResume.text = "";
-                    }
+                    updateResumeVisibilityFor(lastPositionMilliseconds)
                 }
             }
         }
@@ -1843,6 +1822,35 @@ class VideoDetailView : ConstraintLayout {
         if (StatePlayer.instance.autoplay) {
             _taskLoadRecommendations.cancel()
             _taskLoadRecommendations.run(videoDetail.url)
+        }
+    }
+
+    private fun shouldShowResume(positionMs: Long): Boolean {
+        if (_loaderGameVisible) return false
+        val v = video ?: return false
+        val resumeS = _historicalPosition
+        val durS = v.duration
+
+        if (_overlay_loading.visibility == View.VISIBLE) return false
+        if (resumeS <= 60) return false
+        if (durS - resumeS <= 5) return false
+
+        val posMs = positionMs
+        val resumeMs = resumeS * 1000
+        val durMs = durS * 1000L
+        val inFirstFewSeconds = posMs < 8_000
+        val notYetReachedResume = (resumeMs - posMs) > 5_000
+        return inFirstFewSeconds && notYetReachedResume && durMs > 0
+    }
+
+    private fun updateResumeVisibilityFor(positionMs: Long) {
+        val visible = shouldShowResume(positionMs)
+        if (visible) {
+            _layoutResume.visibility = View.VISIBLE
+            _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}"
+        } else {
+            _layoutResume.visibility = View.GONE
+            _textResume.text = ""
         }
     }
     fun loadVODChat(video: IPlatformVideoDetails) {
@@ -2805,6 +2813,8 @@ class VideoDetailView : ConstraintLayout {
             _overlay_loading.visibility = View.GONE;
             (_overlay_loading_spinner.drawable as Animatable?)?.stop()
         }
+
+        updateResumeVisibilityFor(lastPositionMilliseconds)
     }
 
     //UI Actions
@@ -3095,6 +3105,8 @@ class VideoDetailView : ConstraintLayout {
                 handleSeek(55000);
             }
         }
+
+        updateResumeVisibilityFor(positionMilliseconds)
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {
