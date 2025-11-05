@@ -336,7 +336,7 @@ class VideoDetailView : ConstraintLayout {
                 !StateCasting.instance.isCasting &&
                 Settings.instance.playback.isBackgroundPictureInPicture() &&
                 !isAudioOnlyUserAction &&
-                isPlaying
+                (isPlaying || _loaderGameVisible)
 
     val onShouldEnterPictureInPictureChanged = Event0();
 
@@ -550,6 +550,9 @@ class VideoDetailView : ConstraintLayout {
 
         val handleLoaderGameVisibilityChanged = { b: Boolean ->
             _loaderGameVisible = b
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                onShouldEnterPictureInPictureChanged.emit()
+            }
             updateResumeVisibilityFor(lastPositionMilliseconds)
         }
         _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
