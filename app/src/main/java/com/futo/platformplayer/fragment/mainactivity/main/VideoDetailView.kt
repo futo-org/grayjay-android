@@ -357,6 +357,7 @@ class VideoDetailView : ConstraintLayout {
         Pair(-5 * 60, 30), //around 5 minutes, try every 30 seconds
         Pair(0, 10) //around live, try every 10 seconds
     );
+    private var _subtitleLanguage: String? = null
 
     @androidx.annotation.OptIn(UnstableApi::class)
     constructor(context: Context, attrs : AttributeSet? = null) : super(context, attrs) {
@@ -1975,7 +1976,7 @@ class VideoDetailView : ConstraintLayout {
         try {
             val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount());
             val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, Settings.instance.playback.getPrimaryLanguage(context));
-            val subtitleSource = _lastSubtitleSource ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
+            val subtitleSource = _lastSubtitleSource ?: (if (Settings.instance.playback.stickySubtitles) _player.getPreferredSubtitleSource(video, _subtitleLanguage) else null) ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if(videoSource == null && audioSource == null) {
@@ -2659,6 +2660,7 @@ class VideoDetailView : ConstraintLayout {
             }
         }
         _lastSubtitleSource = toSet;
+        _subtitleLanguage = toSet?.language
     }
 
     private fun handleUnavailableVideo(msg: String? = null) {

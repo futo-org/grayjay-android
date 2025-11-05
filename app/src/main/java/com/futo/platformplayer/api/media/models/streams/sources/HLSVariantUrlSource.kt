@@ -41,6 +41,7 @@ class HLSVariantSubtitleUrlSource(
     override val format: String,
 ) : ISubtitleSource {
     override val hasFetch: Boolean = false
+    override val language: String? = null
 
     override fun getSubtitles(): String? {
         return null

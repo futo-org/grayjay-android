@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 @kotlinx.serialization.Serializable
 class SubtitleRawSource(
     override val name: String,
+    override val language: String?,
     override val format: String?,
     val _subtitles: String,
     override val url: String? = null,
