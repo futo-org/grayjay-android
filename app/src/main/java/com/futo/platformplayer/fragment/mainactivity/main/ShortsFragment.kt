@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -307,6 +308,12 @@ class ShortsFragment : MainFragment() {
         nextPageTask?.cancel()
         nextPageTask = null
         customViewAdapter?.previousShownView?.stop()
+    }
+
+    override fun onDestroyMainView() {
+        super.onDestroyMainView()
+        Logger.i(TAG, "Keep screen on cleared because onDestroyMainView fragment")
+        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     companion object {

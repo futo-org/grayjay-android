@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
@@ -211,6 +212,16 @@ class ShortView : FrameLayout {
             } else {
                 player.play()
                 onPlayingToggled.emit(true)
+            }
+        }
+
+        player.onPlayChanged.subscribe {
+            if (it) {
+                Logger.i(TAG, "Keep screen on set because isPlaying")
+                fragment.activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                Logger.i(TAG, "Keep screen on cleared because not isPlaying")
+                fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         }
 
