@@ -159,6 +159,13 @@
                 app:pillText="55 Replies"
                 android:layout_marginStart="15dp" />
 
+            <ImageView
+                android:id="@+id/button_copy"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_copy"
+                android:layout_marginLeft="15dp"/>
+
             <Space android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1" />

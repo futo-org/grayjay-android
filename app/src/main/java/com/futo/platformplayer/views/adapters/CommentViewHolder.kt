@@ -1,6 +1,11 @@
 package com.futo.platformplayer.views.adapters
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -11,6 +16,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -40,6 +46,7 @@ class CommentViewHolder : ViewHolder {
     private val _imageLikeIcon: ImageView;
     private val _textLikes: TextView;
     private val _imageDislikeIcon: ImageView;
+    private val _imageCopy: ImageView;
     private val _textDislikes: TextView;
     private val _buttonReplies: PillButton;
     private val _layoutRating: LinearLayout;
@@ -70,6 +77,7 @@ class CommentViewHolder : ViewHolder {
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete);
+        _imageCopy = itemView.findViewById(R.id.button_copy)
 
         _containerComments = itemView.findViewById(R.id.comment_container);
         _loader = itemView.findViewById(R.id.loader);
@@ -97,6 +105,32 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
+        val listener = object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val text = comment?.message.orEmpty()
+                val clip = ClipData.newPlainText("Comment", text)
+                clipboard.setPrimaryClip(clip)
+                UIDialogs.toast(viewGroup.context, "Copied", false)
+                return true
+            }
+        }
+
+        val detector = GestureDetector(viewGroup.context, listener).apply {
+            setOnDoubleTapListener(listener)
+        }
+
+        _imageCopy.apply {
+            isClickable = true
+            setOnTouchListener { v, event ->
+                val consumed = detector.onTouchEvent(event)
+                if (!consumed && event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
+                consumed
+            }
+        }
+
         _creatorThumbnail.onClick.subscribe {
             val c = comment ?: return@subscribe;
             onAuthorClick.emit(c);
@@ -120,7 +154,7 @@ class CommentViewHolder : ViewHolder {
             onDelete.emit(c);
         }
 
-        _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
+        _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context)
     }
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {
