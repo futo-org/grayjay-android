@@ -103,7 +103,7 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
-        _textBody.setOnLongClickListener {
+        _layoutComment.setOnLongClickListener {
             val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val text = comment?.message.orEmpty()
             val clip = ClipData.newPlainText("Comment", text)
