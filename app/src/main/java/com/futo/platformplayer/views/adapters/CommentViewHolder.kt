@@ -46,7 +46,6 @@ class CommentViewHolder : ViewHolder {
     private val _imageLikeIcon: ImageView;
     private val _textLikes: TextView;
     private val _imageDislikeIcon: ImageView;
-    private val _imageCopy: ImageView;
     private val _textDislikes: TextView;
     private val _buttonReplies: PillButton;
     private val _layoutRating: LinearLayout;
@@ -77,7 +76,6 @@ class CommentViewHolder : ViewHolder {
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete);
-        _imageCopy = itemView.findViewById(R.id.button_copy)
 
         _containerComments = itemView.findViewById(R.id.comment_container);
         _loader = itemView.findViewById(R.id.loader);
@@ -105,30 +103,13 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
-        val listener = object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean = true
-
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val text = comment?.message.orEmpty()
-                val clip = ClipData.newPlainText("Comment", text)
-                clipboard.setPrimaryClip(clip)
-                UIDialogs.toast(viewGroup.context, "Copied", false)
-                return true
-            }
-        }
-
-        val detector = GestureDetector(viewGroup.context, listener).apply {
-            setOnDoubleTapListener(listener)
-        }
-
-        _imageCopy.apply {
-            isClickable = true
-            setOnTouchListener { v, event ->
-                val consumed = detector.onTouchEvent(event)
-                if (!consumed && event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
-                consumed
-            }
+        _textBody.setOnLongClickListener {
+            val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val text = comment?.message.orEmpty()
+            val clip = ClipData.newPlainText("Comment", text)
+            clipboard.setPrimaryClip(clip)
+            UIDialogs.toast(viewGroup.context, "Copied", false)
+            true
         }
 
         _creatorThumbnail.onClick.subscribe {
