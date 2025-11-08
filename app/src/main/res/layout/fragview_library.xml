@@ -9,22 +9,31 @@
     android:background="@drawable/bottom_menu_border"
     android:id="@+id/root"
     android:clickable="true">
-
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+    <!--
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_artists"
+        <com.futo.platformplayer.views.LibrarySection
+            android:id="@+id/section_artists"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:buttonIcon="@drawable/ic_creators"
-            app:buttonSubText="All artists known on this phone"
-            app:buttonText="Artists"
             android:layout_marginTop="10dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginBottom="8dp"/>
+            android:layout_height="165dp" />
+        <com.futo.platformplayer.views.LibrarySection
+            android:id="@+id/section_albums"
+            android:layout_width="match_parent"
+            android:layout_height="190dp" />
+        <com.futo.platformplayer.views.LibrarySection
+            android:id="@+id/section_videos"
+            android:layout_width="match_parent"
+            android:layout_marginTop="0dp"
+            android:layout_height="180dp" />
+
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_albums"
             android:layout_width="match_parent"
@@ -34,7 +43,8 @@
             app:buttonText="Albums"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="8dp" /> -->
+        <!--
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_playlists"
             android:layout_width="match_parent"
@@ -54,7 +64,8 @@
             app:buttonSubText="All local videos on this phone"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="8dp" /> -->
+    <!--
         <com.futo.platformplayer.views.buttons.BigButton
             android:id="@+id/button_files"
             android:layout_width="match_parent"
@@ -62,6 +73,7 @@
             app:buttonIcon="@drawable/ic_gallery"
             app:buttonText="Files"
             app:buttonSubText="Browse files on your phone"
+            android:layout_marginTop="10dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginBottom="8dp" />
@@ -82,5 +94,6 @@
             android:text=""
             android:textColor="#AAAAAA"  />
     </LinearLayout>
+ -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

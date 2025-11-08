@@ -32,6 +32,7 @@ import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.Album
 import com.futo.platformplayer.states.Artist
+import com.futo.platformplayer.states.ArtistOrdering
 import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
@@ -82,7 +83,7 @@ class LibraryArtistsFragment : MainFragment() {
         constructor(fragment: LibraryArtistsFragment, inflater: LayoutInflater) : super(fragment, inflater)
 
         fun onShown() {
-            val intialArtists = StateLibrary.instance.getArtists();
+            val intialArtists = StateLibrary.instance.getArtists(ArtistOrdering.Alphabethic);
             Logger.i(TAG, "Initial album count: " + intialArtists.size);
 
             setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));
@@ -91,7 +92,7 @@ class LibraryArtistsFragment : MainFragment() {
         override fun reload() {
             try {
                 setLoading(true);
-                val intialArtists = StateLibrary.instance.getArtists();
+                val intialArtists = StateLibrary.instance.getArtists(ArtistOrdering.Alphabethic);
                 Logger.i(TAG, "Initial album count: " + intialArtists.size);
 
                 setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));

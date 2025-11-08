@@ -100,8 +100,8 @@ class StateLibrary {
         return Album.getAlbum(id);
     }
 
-    fun getArtists(): List<Artist> {
-        return Artist.getArtists();
+    fun getArtists(ordering: ArtistOrdering): List<Artist> {
+        return Artist.getArtists(ordering);
     }
     fun getArtist(str: String): Artist? {
         val idLong = str.toLongOrNull();
@@ -114,8 +114,9 @@ class StateLibrary {
     }
 
     fun getVideos(buckets: List<String>? = null): IPager<IPlatformContent> {
+        var query = if(buckets != null) "${MediaStore.Video.Media.BUCKET_DISPLAY_NAME} IN " + "(" + buckets.map { "'${it}'" }.joinToString(",") + ")" else null;
         val cursor = StateApp.instance.contextOrNull?.contentResolver?.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, PROJECTION_VIDEO,
-            if(buckets != null) "${MediaStore.Video.Media.BUCKET_DISPLAY_NAME} IN " + "(" + buckets.map { "'${it}'" }.joinToString(",") + ")" else null,
+            query,
             null,
             MediaStore.Video.Media.DATE_ADDED + " DESC") ?: return EmptyPager();
         cursor.moveToFirst();
@@ -133,6 +134,16 @@ class StateLibrary {
             }
             return@AdhocPager list;
         }, list);
+    }
+    fun getRecentVideos(buckets: List<String>? = null, count: Int = 20): List<IPlatformVideo> {
+        val videoPager = getVideos(buckets);
+        val items = mutableListOf<IPlatformVideo>();
+        while(videoPager.getResults().size > 0 && items.size < count) {
+            items.addAll(videoPager.getResults().filter { it is IPlatformVideo }.map { it as IPlatformVideo });
+            if(videoPager.hasMorePages())
+                videoPager.nextPage();
+        }
+        return items;
     }
 
     private var _cacheBucketNames: List<Bucket>? = null;
@@ -363,6 +374,12 @@ class StateLibrary {
 
 class Bucket(val id: Long, val name: String);
 
+
+enum class ArtistOrdering {
+    Alphabethic,
+    TrackCount,
+    AlbumCount
+}
 class Artist {
     val id: String;
     val name: String;
@@ -424,9 +441,18 @@ class Artist {
                 return null;
             return Artist.fromCursor(cursor);
         }
-        fun getArtists(): List<Artist> {
-            val cursor = StateApp.instance.contextOrNull?.contentResolver?.query(Artists.EXTERNAL_CONTENT_URI, PROJECTION, null, null,
-                Artists.ARTIST + " ASC") ?: return listOf();
+        fun getArtists(ordering: ArtistOrdering = ArtistOrdering.Alphabethic): List<Artist> {
+            val ordering = when(ordering) {
+                ArtistOrdering.Alphabethic -> Artists.ARTIST + " ASC";
+                ArtistOrdering.AlbumCount -> Artists.NUMBER_OF_ALBUMS + " DESC";
+                ArtistOrdering.TrackCount -> Artists.NUMBER_OF_TRACKS + " DESC";
+                else -> null
+            }
+
+            val cursor = StateApp.instance.contextOrNull?.contentResolver?.query(Artists.EXTERNAL_CONTENT_URI, PROJECTION,
+                null,
+                null,
+                ordering) ?: return listOf();
             cursor.moveToFirst();
             val list = mutableListOf<Artist>()
             while(!cursor.isAfterLast) {

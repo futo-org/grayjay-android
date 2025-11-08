@@ -6,10 +6,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginTop="5dp"
-    android:layout_marginBottom="5dp"
+    android:layout_marginTop="0dp"
+    android:layout_marginBottom="0dp"
     android:id="@+id/root"
-    android:clickable="true">
+    android:clickable="true"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="10dp"
+    android:paddingTop="10dp">
 
     <TextView
         android:id="@+id/text_name"
@@ -19,8 +23,8 @@
         android:textSize="13dp"
         android:textColor="@color/white"
         android:fontFamily="@font/inter_light"
-        tools:text="Legendary grant recipient: Marvin Wißfeld Very Long Title That is Long"
-        android:maxLines="2"
+        tools:text="Example Artist"
+        android:maxLines="1"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -55,4 +59,12 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginEnd="10dp"/> -->
+
+    <View
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#181818" />
 </androidx.constraintlayout.widget.ConstraintLayout>

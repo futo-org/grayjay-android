@@ -951,7 +951,7 @@ class Settings : FragmentedStorageFileJson() {
     class Backup {
         @Serializable(with = OffsetDateTimeSerializer::class)
         var lastAutoBackupTime: OffsetDateTime = OffsetDateTime.MIN;
-        var didAskAutoBackup: Boolean = false;
+        var didAskAutoBackup: Boolean = true;
         var autoBackupPassword: String? = null;
         fun shouldAutomaticBackup() = autoBackupPassword != null;
 

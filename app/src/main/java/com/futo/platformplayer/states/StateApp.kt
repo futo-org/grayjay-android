@@ -593,7 +593,9 @@ class StateApp {
         scheduleBackgroundWork(context, interval != 0, interval);
 
         Logger.i(TAG, "MainApp Started: Initialize [AutoBackup]");
+        Settings.instance.backup.didAskAutoBackup = true; //Some users have issues with it
         if(!Settings.instance.backup.didAskAutoBackup && !Settings.instance.backup.shouldAutomaticBackup()) {
+            /*
             StateAnnouncement.instance.registerAnnouncement("backup", "Set Automatic Backup", "Configure daily backups of your data to restore in case of catastrophic failure.", AnnouncementType.SESSION, null, null, "Configure", {
                 if(context is IWithResultLauncher && !Settings.instance.storage.isStorageMainValid(context)) {
                     UIDialogs.toast("Missing general directory");
@@ -610,6 +612,7 @@ class StateApp {
                 Settings.instance.backup.didAskAutoBackup = true;
                 Settings.instance.save();
             });
+            */
         }
         else if(Settings.instance.backup.didAskAutoBackup && Settings.instance.backup.shouldAutomaticBackup() && !Settings.instance.storage.isStorageMainValid(context)) {
             if(context is IWithResultLauncher) {
