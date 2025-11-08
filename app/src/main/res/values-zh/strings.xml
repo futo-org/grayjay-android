@@ -682,6 +682,7 @@
     <string-array name="feed_style">
         <item>预览</item>
         <item>列表</item>
+        <item>辅助功能</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>无</item>

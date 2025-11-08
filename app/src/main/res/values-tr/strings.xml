@@ -974,6 +974,7 @@
     <string-array name="feed_style">
         <item>Önizle</item>
         <item>Listele</item>
+        <item>Erişilebilirlik</item>
     </string-array>
     <string-array name="app_languages">
         <item>Sistem</item>

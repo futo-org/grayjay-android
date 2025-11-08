@@ -692,6 +692,7 @@
     <string-array name="feed_style">
         <item>Vista Previa</item>
         <item>Lista</item>
+        <item>Accesibilidad</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Ninguno</item>
