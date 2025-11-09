@@ -12,6 +12,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.LinearLayout.GONE
 import android.widget.LinearLayout.VISIBLE
 import android.widget.Spinner
@@ -37,6 +38,7 @@ import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.LibraryTypeHeaderView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.SubscriptionAdapter
@@ -80,14 +82,27 @@ class LibraryArtistsFragment : MainFragment() {
     class FragView : FeedView<LibraryArtistsFragment, Artist, Artist, IPager<Artist>, ArtistViewHolder> {
         override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
 
-        constructor(fragment: LibraryArtistsFragment, inflater: LayoutInflater) : super(fragment, inflater)
+        val libraryTypeHeader: LibraryTypeHeaderView;
+
+        constructor(fragment: LibraryArtistsFragment, inflater: LayoutInflater) : super(fragment, inflater) {
+            libraryTypeHeader = LibraryTypeHeaderView(context);
+            libraryTypeHeader.setSelectedType(LibraryTypeHeaderView.SelectedType.Artists);
+            libraryTypeHeader.setMetadata("");
+
+            libraryTypeHeader.onSelectedChanged.subscribe {
+                when(it) {
+                    LibraryTypeHeaderView.SelectedType.Albums -> fragment.navigate<LibraryAlbumsFragment>();
+                    else -> {}
+                }
+            }
+
+            _toolbarContentView.addView(libraryTypeHeader);
+        }
 
         fun onShown() {
-            val intialArtists = StateLibrary.instance.getArtists(ArtistOrdering.Alphabethic);
-            Logger.i(TAG, "Initial album count: " + intialArtists.size);
-
-            setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));
+            reload();
         }
+
 
         override fun reload() {
             try {
@@ -95,6 +110,7 @@ class LibraryArtistsFragment : MainFragment() {
                 val intialArtists = StateLibrary.instance.getArtists(ArtistOrdering.Alphabethic);
                 Logger.i(TAG, "Initial album count: " + intialArtists.size);
 
+                libraryTypeHeader.setMetadata("${intialArtists.size} artists");
                 setPager(AdhocPager<Artist>({ listOf(); }, intialArtists));
             }
             finally {
@@ -170,7 +186,13 @@ class LibraryArtistsFragment : MainFragment() {
             */
 
             _textName.text = artist.name;
-            _textMetadata.text = artist.countTracks?.let { "${it} tracks" } ?: "";
+
+            val metaComps = listOf(
+                artist.countTracks?.let { "${it} tracks" },
+                artist.countAlbums?.let { "${it} albums" }
+            ).filterNotNull();
+
+            _textMetadata.text = metaComps.joinToString(", ");
         }
 
     }

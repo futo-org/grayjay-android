@@ -51,6 +51,7 @@ import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import com.futo.platformplayer.views.adapters.viewholders.AlbumTileViewHolder
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
@@ -518,7 +519,7 @@ class LibraryArtistFragment : MainFragment() {
             _lastArtist = artist;
         }
     }
-    class ArtistAlbumsView : FeedView<LibraryArtistFragment, Album, Album, IPager<Album>, AlbumViewHolder> {
+    class ArtistAlbumsView : FeedView<LibraryArtistFragment, Album, Album, IPager<Album>, AlbumTileViewHolder> {
         override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
 
         constructor(fragment: LibraryArtistFragment, inflater: LayoutInflater) : super(fragment, inflater)
@@ -533,12 +534,13 @@ class LibraryArtistFragment : MainFragment() {
             setPager(AdhocPager({ listOf() }, initialAlbums));
         }
 
-        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumViewHolder> {
+        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumTileViewHolder> {
             return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 childCountGetter = { dataset.size },
                 childViewHolderBinder = { viewHolder, position -> viewHolder.bind(dataset[position]); },
                 childViewHolderFactory = { viewGroup, _ ->
-                    val holder = AlbumViewHolder(viewGroup);
+                    val holder = AlbumTileViewHolder(viewGroup);
+                    holder.setAutoSize(resources.displayMetrics.widthPixels / resources.displayMetrics.density)
                     holder.onClick.subscribe { c -> fragment.navigate<LibraryAlbumFragment>(c) };
                     return@InsertedViewAdapterWithLoader holder;
                 }
@@ -548,7 +550,7 @@ class LibraryArtistFragment : MainFragment() {
         override fun updateSpanCount(){ }
 
         override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager {
-            val glmResults = GridLayoutManager(context, 1)
+            val glmResults = GridLayoutManager(context, AlbumTileViewHolder.getAutoSizeColumns(resources.displayMetrics.widthPixels / resources.displayMetrics.density))
 
             _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
                 rightMargin = TypedValue.applyDimension(

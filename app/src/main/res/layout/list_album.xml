@@ -6,8 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginTop="5dp"
-    android:layout_marginBottom="5dp"
     android:id="@+id/root"
     android:clickable="true">
 
@@ -33,6 +31,7 @@
         android:fontFamily="@font/inter_light"
         tools:text="Legendary grant recipient: Marvin Wißfeld Very Long Title That is Long"
         android:maxLines="2"
+        android:layout_marginTop="5dp"
         app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@id/button_trash"
@@ -47,6 +46,7 @@
         android:textSize="10dp"
         android:textColor="@color/gray_e0"
         android:fontFamily="@font/inter_extra_light"
+        android:layout_marginBottom="5dp"
         tools:text="3 videos"
         android:maxLines="1"
         app:layout_constraintTop_toBottomOf="@id/text_name"

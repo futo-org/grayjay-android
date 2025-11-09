@@ -36,9 +36,11 @@ import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.views.FeedStyle
+import com.futo.platformplayer.views.LibraryTypeHeaderView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.SubscriptionAdapter
+import com.futo.platformplayer.views.adapters.viewholders.AlbumTileViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.SelectablePlaylist
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
@@ -75,24 +77,41 @@ class LibraryAlbumsFragment : MainFragment() {
         fun newInstance() = LibraryAlbumsFragment().apply {}
     }
 
-    class FragView : FeedView<LibraryAlbumsFragment, Album, Album, IPager<Album>, AlbumViewHolder> {
+    class FragView : FeedView<LibraryAlbumsFragment, Album, Album, IPager<Album>, AlbumTileViewHolder> {
         override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
 
-        constructor(fragment: LibraryAlbumsFragment, inflater: LayoutInflater) : super(fragment, inflater)
+        val libraryTypeHeader: LibraryTypeHeaderView;
+
+        constructor(fragment: LibraryAlbumsFragment, inflater: LayoutInflater) : super(fragment, inflater) {
+            libraryTypeHeader = LibraryTypeHeaderView(context);
+            libraryTypeHeader.setSelectedType(LibraryTypeHeaderView.SelectedType.Albums);
+            libraryTypeHeader.setMetadata("");
+
+            libraryTypeHeader.onSelectedChanged.subscribe {
+                when(it) {
+                    LibraryTypeHeaderView.SelectedType.Artists -> fragment.navigate<LibraryArtistsFragment>();
+                    else -> {}
+                }
+            }
+
+            _toolbarContentView.addView(libraryTypeHeader);
+        }
 
         fun onShown() {
             val initialAlbums = StateLibrary.instance.getAlbums();
             Logger.i(TAG, "Initial album count: " + initialAlbums.size);
 
+            libraryTypeHeader.setMetadata("${initialAlbums.size} albums");
             setPager(AdhocPager<Album>({ listOf(); }, initialAlbums));
         }
 
-        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumViewHolder> {
+        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumTileViewHolder> {
             return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 childCountGetter = { dataset.size },
                 childViewHolderBinder = { viewHolder, position -> viewHolder.bind(dataset[position]); },
                 childViewHolderFactory = { viewGroup, _ ->
-                    val holder = AlbumViewHolder(viewGroup);
+                    val holder = AlbumTileViewHolder(viewGroup);
+                    holder.setAutoSize(resources.displayMetrics.widthPixels / resources.displayMetrics.density)
                     holder.onClick.subscribe { c -> fragment.navigate<LibraryAlbumFragment>(c) };
                     return@InsertedViewAdapterWithLoader holder;
                 }
@@ -102,12 +121,12 @@ class LibraryAlbumsFragment : MainFragment() {
         override fun updateSpanCount(){ }
 
         override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager {
-            val glmResults = GridLayoutManager(context, 1)
+            val glmResults = GridLayoutManager(context, AlbumTileViewHolder.getAutoSizeColumns(resources.displayMetrics.widthPixels / resources.displayMetrics.density))
 
             _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
-                rightMargin = TypedValue.applyDimension(
+                leftMargin = TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_DIP,
-                    8.0f,
+                    3f,
                     context.resources.displayMetrics
                 ).toInt()
             }
