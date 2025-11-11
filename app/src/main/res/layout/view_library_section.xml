@@ -18,7 +18,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginLeft="10dp"
-        android:textSize="20sp"
+        android:textSize="17sp"
         android:text="Albums" />
     <ImageView
         android:id="@+id/image_nav"

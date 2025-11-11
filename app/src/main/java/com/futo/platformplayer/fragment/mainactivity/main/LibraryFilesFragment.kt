@@ -18,12 +18,14 @@ import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.fragment.mainactivity.topbar.FilesTopBarFragment
 import com.futo.platformplayer.states.FileEntry
 import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import com.futo.platformplayer.views.adapters.viewholders.FileViewHolder
 import com.futo.platformplayer.views.buttons.BigButton
 
 class LibraryFilesFragment : MainFragment() {
@@ -46,7 +48,7 @@ class LibraryFilesFragment : MainFragment() {
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack);
-        view?.onShown();
+        view?.onShown(parameter);
     }
 
     override fun onDestroyMainView() {
@@ -65,30 +67,51 @@ class LibraryFilesFragment : MainFragment() {
         var buttonUp: BigButton? = null;
         var buttonAdd: BigButton? = null;
 
+        private var root: FileEntry? = null;
+
         constructor(fragment: LibraryFilesFragment, inflater: LayoutInflater) : super(fragment, inflater) {
         }
 
-        fun onShown() {
+        fun onShown(parameter: Any? = null) {
+            this.root = if(parameter is FileEntry) parameter else null;
             loadTop();
         }
         fun loadTop() {
-            val initialDirectories = StateLibrary.instance.getFileDirectories();
-            if(initialDirectories.size == 0) {
-                setEmptyPager(true);
-                setPager(EmptyPager());
+            var initialDirectories = listOf<FileEntry>();
+            if(root == null) {
+                initialDirectories = StateLibrary.instance.getFileDirectories();
+                if (initialDirectories.size == 0) {
+                    setEmptyPager(true);
+                    setPager(EmptyPager());
+                    buttonAdd?.let {
+                        it.isVisible = false;
+                    }
+                    buttonUp?.let {
+                        it.isVisible = false;
+                    }
+                    return;
+                } else
+                    setEmptyPager(false);
+            }
+            else {
                 buttonAdd?.let {
                     it.isVisible = false;
                 }
                 buttonUp?.let {
                     it.isVisible = false;
                 }
-                return;
+                initialDirectories = root?.getSubFiles() ?: listOf();
             }
-            else
-                setEmptyPager(false);
             navStack.clear();
-            navStack.add(FileStack("", initialDirectories));
+            val entry = FileStack("", initialDirectories);
+            navStack.add(entry);
             openDirectory(navStack.last());
+            fragment.topBar?.let {
+                if(it is FilesTopBarFragment) {
+                    it.setUpNavigate(null);
+                    it.setTitle(entry);
+                }
+            }
         }
         fun leaveDirectory() {
             if(navStack.size > 1) {
@@ -101,6 +124,12 @@ class LibraryFilesFragment : MainFragment() {
             if(addToStack)
                 navStack.add(stack);
 
+            fragment.topBar?.let {
+                if(it is FilesTopBarFragment) {
+                    it.setTitle(stack);
+                }
+            }
+
             buttonAdd?.let {
                 it.isVisible = navStack.size < 2
             }
@@ -109,6 +138,21 @@ class LibraryFilesFragment : MainFragment() {
             }
             setPager(AdhocPager<FileEntry>({ listOf(); }, stack.files));
             setLoading(false);
+
+            fragment.topBar?.let {
+                if(it is FilesTopBarFragment) {
+                    if(navStack.size > 1)
+                        it.setUpNavigate{
+                          leaveDirectory();
+                        };
+                    else it.setUpNavigate(null);
+                    it.setTitle(stack);
+                }
+            }
+        }
+
+        fun setBack() {
+            fragment.topBar?.view
         }
 
         override fun getEmptyPagerView(): View? {
@@ -116,14 +160,15 @@ class LibraryFilesFragment : MainFragment() {
                 "To see files in Grayjay you have to add directories to view",
                 R.drawable.ic_library, listOf(
                     BigButton(context, "Add Directory", "Select a directory to add", R.drawable.ic_add, {
-                        StateLibrary.instance.addFileDirectory {
+                        StateLibrary.instance.addFileDirectory({
                             loadTop();
-                        };
+                        }, true);
                     })
                 ))
         }
 
         override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<FileEntry>): InsertedViewAdapterWithLoader<FileViewHolder> {
+            /*
             val buttonUp = BigButton(fragment.requireContext(), "Go up", "Go up a directory", R.drawable.ic_move_up) {
                 if(navStack.size > 1)
                     leaveDirectory();
@@ -133,9 +178,10 @@ class LibraryFilesFragment : MainFragment() {
                     loadTop();
                 };
             }
-            this.buttonUp = buttonUp;
-            this.buttonAdd = buttonAdd;
-            return InsertedViewAdapterWithLoader(context, arrayListOf(buttonUp), arrayListOf(buttonAdd),
+            */
+            //this.buttonUp = buttonUp;
+            //this.buttonAdd = buttonAdd;
+            return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
                 childCountGetter = { dataset.size },
                 childViewHolderBinder = { viewHolder, position -> viewHolder.bind(dataset[position]); },
                 childViewHolderFactory = { viewGroup, _ ->
@@ -184,52 +230,5 @@ class LibraryFilesFragment : MainFragment() {
         val path: String,
         val files: List<FileEntry>
     )
-
-    class FileViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<FileEntry>(
-        LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_file,
-            _viewGroup, false)) {
-
-        val onClick = Event1<FileEntry?>();
-        val onDelete = Event1<FileEntry?>();
-
-        protected var _file: FileEntry? = null;
-        protected val _imageThumbnail: ImageView
-        protected val _buttonDelete: ImageButton;
-        protected val _textName: TextView
-        protected val _textMetadata: TextView
-
-        init {
-            _imageThumbnail = _view.findViewById(R.id.image_thumbnail);
-            _textName = _view.findViewById(R.id.text_name);
-            _textMetadata = _view.findViewById(R.id.text_metadata);
-            _buttonDelete = _view.findViewById(R.id.button_delete);
-
-            _view.setOnClickListener { onClick.emit(_file) };
-            _buttonDelete.setOnClickListener { onDelete.emit(_file) }
-        }
-
-
-        override fun bind(file: FileEntry) {
-            _file = file;
-            _imageThumbnail?.let {
-                if(file.isDirectory)
-                    it.setImageResource(R.drawable.ic_library);
-                else {
-                    Glide.with(it)
-                        .load(file.thumbnail)
-                        .placeholder(R.drawable.placeholder_channel_thumbnail)
-                        .into(it)
-                }
-            };
-            _buttonDelete.isVisible = file.removable;
-
-            _textName.text = file.name;
-            if(file.isDirectory)
-                _textMetadata.text = "Directory";
-            else
-                _textMetadata.text = "";
-        }
-
-    }
 
 }

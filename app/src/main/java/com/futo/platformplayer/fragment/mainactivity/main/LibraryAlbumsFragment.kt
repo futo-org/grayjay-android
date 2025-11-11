@@ -95,6 +95,7 @@ class LibraryAlbumsFragment : MainFragment() {
             }
 
             _toolbarContentView.addView(libraryTypeHeader);
+            disableRefreshLayout();
         }
 
         fun onShown() {
@@ -103,6 +104,11 @@ class LibraryAlbumsFragment : MainFragment() {
 
             libraryTypeHeader.setMetadata("${initialAlbums.size} albums");
             setPager(AdhocPager<Album>({ listOf(); }, initialAlbums));
+        }
+
+        override fun reload() {
+            super.reload();
+            finishRefreshLayoutLoader();
         }
 
         override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<Album>): InsertedViewAdapterWithLoader<AlbumTileViewHolder> {

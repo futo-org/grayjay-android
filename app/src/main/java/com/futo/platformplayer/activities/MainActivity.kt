@@ -83,6 +83,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment.St
 import com.futo.platformplayer.fragment.mainactivity.main.WatchLaterFragment
 import com.futo.platformplayer.fragment.mainactivity.main.WebDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.AddTopBarFragment
+import com.futo.platformplayer.fragment.mainactivity.topbar.FilesTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.GeneralTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.ImportTopBarFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
@@ -154,6 +155,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragTopBarNavigation: NavigationTopBarFragment;
     lateinit var _fragTopBarImport: ImportTopBarFragment;
     lateinit var _fragTopBarAdd: AddTopBarFragment;
+    lateinit var _fragTopBarFiles: FilesTopBarFragment;
 
     //Frags BotBar
     lateinit var _fragBotBarMenu: MenuBottomBarFragment;
@@ -332,6 +334,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragTopBarNavigation = NavigationTopBarFragment.newInstance();
         _fragTopBarImport = ImportTopBarFragment.newInstance();
         _fragTopBarAdd = AddTopBarFragment.newInstance();
+        _fragTopBarFiles = FilesTopBarFragment.newInstance();
 
         //BotBars
         _fragBotBarMenu = MenuBottomBarFragment.newInstance();
@@ -508,7 +511,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryArtists.topBar = _fragTopBarNavigation;
         _fragLibraryArtist.topBar = _fragTopBarNavigation;
         _fragLibraryVideos.topBar = _fragTopBarNavigation;
-        _fragLibraryFiles.topBar = _fragTopBarNavigation;
+        _fragLibraryFiles.topBar = _fragTopBarFiles;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -1288,6 +1291,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             VideoDetailFragment::class -> _fragVideoDetail as T;
             MenuBottomBarFragment::class -> _fragBotBarMenu as T;
             GeneralTopBarFragment::class -> _fragTopBarGeneral as T;
+            FilesTopBarFragment::class -> _fragTopBarFiles as T;
             SearchTopBarFragment::class -> _fragTopBarSearch as T;
             CreatorsFragment::class -> _fragMainSubscriptions as T;
             CommentsFragment::class -> _fragMainComments as T;

@@ -97,6 +97,7 @@ class LibraryArtistsFragment : MainFragment() {
             }
 
             _toolbarContentView.addView(libraryTypeHeader);
+            disableRefreshLayout();
         }
 
         fun onShown() {

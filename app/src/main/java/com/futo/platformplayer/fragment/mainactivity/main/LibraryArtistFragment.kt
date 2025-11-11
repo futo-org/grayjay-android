@@ -52,6 +52,7 @@ import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.viewholders.AlbumTileViewHolder
+import com.futo.platformplayer.views.adapters.viewholders.TrackViewHolder
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
@@ -125,7 +126,7 @@ class LibraryArtistFragment : MainFragment() {
         private val _onPageChangeCallback = object : ViewPager2.OnPageChangeCallback() {}
 
         init {
-            inflater.inflate(R.layout.fragment_channel, this)
+            inflater.inflate(R.layout.fragment_artist, this)
 
             val tabs: TabLayout = findViewById(R.id.tabs)
             val viewPager: ViewPager2 = findViewById(R.id.view_pager)
@@ -339,7 +340,7 @@ class LibraryArtistFragment : MainFragment() {
             _buttonSubscriptionSettings.visibility =
                 if (_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE
             _textChannel.text = channel.name
-            _textChannelSub.text = ""
+            _textChannelSub.text = "${channel.countTracks} songs, ${channel.countAlbums} albums";
 
             var supportsPlaylists = false;
             val playlistPosition = 1
@@ -474,18 +475,64 @@ class LibraryArtistFragment : MainFragment() {
             _lastArtist = artist;
         }
     }
-    class ArtistContentView : ContentFeedView<LibraryArtistFragment> {
+    class ArtistContentView : FeedView<LibraryArtistFragment, IPlatformContent, IPlatformVideo, IPager<IPlatformContent>, TrackViewHolder> {
         override val feedStyle: FeedStyle = FeedStyle.THUMBNAIL; //R.layout.list_creator;
+
+        protected var _artist: Artist? = null;
 
         constructor(fragment: LibraryArtistFragment, inflater: LayoutInflater) : super(fragment, inflater) {
 
         }
 
         fun setArtist(artist: Artist) {
+            this._artist = artist;
             val tracks = artist.getAudioTracks();
             if(tracks.getResults().isEmpty())
                 UIDialogs.appToast("No tracks found");
             setPager(tracks);
+        }
+
+        override fun filterResults(results: List<IPlatformContent>): List<IPlatformVideo> {
+            return results.filter { it is IPlatformVideo }.map { it as IPlatformVideo };
+        }
+
+        override fun createAdapter(recyclerResults: RecyclerView, context: Context, dataset: ArrayList<IPlatformVideo>): InsertedViewAdapterWithLoader<TrackViewHolder> {
+            return InsertedViewAdapterWithLoader(context, arrayListOf(), arrayListOf(),
+                childCountGetter = { dataset.size },
+                childViewHolderBinder = { viewHolder, position -> viewHolder.bind(dataset[position]); },
+                childViewHolderFactory = { viewGroup, _ ->
+                    val holder = TrackViewHolder(viewGroup);
+                    holder.onClick.subscribe { c ->
+
+                        val playlist = _artist?.toPlaylist();
+                        if (playlist != null) {
+                            val index = playlist.videos.indexOf(c);
+                            if (index == -1)
+                                return@subscribe;
+
+                            StatePlayer.instance.setPlaylist(playlist, index, true);
+                        }
+                    };
+                    holder.onOptions.subscribe {
+                        if(it is IPlatformVideo)
+                            UISlideOverlays.showVideoOptionsOverlay(it, _overlayContainer);
+                    }
+                    return@InsertedViewAdapterWithLoader holder;
+                }
+            );
+        }
+
+        override fun createLayoutManager(recyclerResults: RecyclerView, context: Context): GridLayoutManager {
+            val glmResults = GridLayoutManager(context, 1)
+
+            _swipeRefresh.layoutParams = (_swipeRefresh.layoutParams as MarginLayoutParams?)?.apply {
+                rightMargin = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    8.0f,
+                    context.resources.displayMetrics
+                ).toInt()
+            }
+            return glmResults
         }
 
         override fun updateSpanCount(){ }

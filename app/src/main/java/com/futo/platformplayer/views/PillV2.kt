@@ -7,6 +7,8 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.models.ImageVariable
+import com.futo.platformplayer.views.others.ToggleTagView
 
 class PillV2: FrameLayout {
 
@@ -16,6 +18,26 @@ class PillV2: FrameLayout {
     var isToggled: Boolean = false;
 
     val onClick = Event1<Boolean>();
+
+    constructor(context: Context, name: String, isActive: Boolean = false, action: (PillV2, Boolean)->Unit, actionLong: ((PillV2, Boolean)->Unit)? = null): super(context) {
+        inflate(context, R.layout.view_tag_v2, this);
+        root = findViewById(R.id.root);
+        text = findViewById(R.id.text_tag);
+
+        text.text = name;
+        setIsEnabled(isActive);
+
+        setOnClickListener {
+            setIsEnabled(!isToggled);
+            onClick.emit(isToggled);
+            action(this, isToggled);
+        }
+        if(actionLong != null)
+            setOnLongClickListener {
+                actionLong(this, this.isToggled);
+                return@setOnLongClickListener true;
+            }
+    }
 
     constructor(context: Context, attr: AttributeSet? = null) : super(context, attr) {
         inflate(context, R.layout.view_tag_v2, this);

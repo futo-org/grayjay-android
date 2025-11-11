@@ -90,6 +90,7 @@ class LibraryVideosFragment : MainFragment() {
 
         constructor(fragment: LibraryVideosFragment, inflater: LayoutInflater) : super(fragment, inflater) {
             initializeToolbarContent();
+            disableRefreshLayout();
         }
 
         fun onShown() {

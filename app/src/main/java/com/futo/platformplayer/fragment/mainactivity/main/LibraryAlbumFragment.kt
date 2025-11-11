@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.UISlideOverlays
@@ -12,6 +15,8 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.dp
+import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.states.Album
 import com.futo.platformplayer.states.StateLibrary
 import com.futo.platformplayer.states.StatePlayer
@@ -76,6 +81,11 @@ class LibraryAlbumFragment : MainFragment() {
                     StatePlayer.instance.setPlaylist(playlist, focus = true, shuffle = true);
                 }
             }
+
+            /*
+            _feedRoot.updateLayoutParams<LinearLayout.LayoutParams> {
+                this.setMargins(0,-50.dp(resources),0,0)
+            } */
         }
 
         fun onShown(parameter: Any?) {

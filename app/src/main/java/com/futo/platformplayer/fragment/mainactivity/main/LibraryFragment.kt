@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -37,6 +38,7 @@ import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapter
 import com.futo.platformplayer.views.adapters.viewholders.AlbumTileViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.ArtistTileViewHolder
+import com.futo.platformplayer.views.adapters.viewholders.FileViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.LocalVideoTileViewHolder
 import com.futo.platformplayer.views.buttons.BigButton
 
@@ -146,7 +148,7 @@ class LibraryFragment : MainFragment() {
 
         val recycler: RecyclerView;
 
-        val adapterFiles: AnyInsertedAdapterView<FileEntry,LibraryFilesFragment.FileViewHolder>;
+        val adapterFiles: AnyInsertedAdapterView<FileEntry, FileViewHolder>;
 
         //var metaInfo: TextView;
 
@@ -174,9 +176,9 @@ class LibraryFragment : MainFragment() {
                 this.setMargins(0,0, 0, 0);
             }
             sectionFiles.setSection("Directories") {
-                StateLibrary.instance.addFileDirectory {
+                StateLibrary.instance.addFileDirectory({
                     reloadFiles();
-                }
+                }, true)
             }
             sectionFiles.setNavIcon(R.drawable.ic_add);
             //buttonFiles = findViewById<BigButton>(R.id.button_files);
@@ -231,13 +233,15 @@ class LibraryFragment : MainFragment() {
             val videos = StateLibrary.instance.getRecentVideos(null, 20);
             adapterVideos.setData(videos);
 
-            adapterFiles = recycler.asAnyWithViews<FileEntry, LibraryFilesFragment.FileViewHolder>(
+            adapterFiles = recycler.asAnyWithViews<FileEntry, FileViewHolder>(
                 arrayListOf(
                     sectionArtists,
                     sectionAlbums,
                     sectionVideos,
                     sectionFiles
-                ), arrayListOf(), RecyclerView.VERTICAL, false, {
+                ),
+                arrayListOf(View(context).apply { this.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 20.dp(resources)) }),
+                RecyclerView.VERTICAL, false, {
                     it.onClick.subscribe {
                         if(it != null)
                             fragment.navigate<LibraryFilesFragment>(it);

@@ -29,6 +29,7 @@ import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.Album.Companion.TAG
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.toList
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -63,28 +64,48 @@ class StateLibrary {
         _files.remove(path);
         _files.save();
     }
-    fun addFileDirectory(onAdded: ((entry: FileEntry) -> Unit)? = null): Boolean {
+    fun addFileDirectory(onAdded: ((entry: FileEntry) -> Unit)? = null, skipDialog: Boolean = false): Boolean {
         if(!StateApp.instance.isMainActive)
             return false;
         val mainActivity = StateApp.instance.contextOrNull as MainActivity? ?: return false;
 
         StateApp.instance.requestDirectoryAccess(mainActivity, "Select Directory",
-            "Select a directory you would like to make accessible to Grayjay", null, {
-                if(it != null) {
-                    mainActivity.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION));
-                    try {
-                        val file = DocumentFile.fromTreeUri(mainActivity, it) ?: return@requestDirectoryAccess;
-                        val dir = FileEntry.fromFile(file);
-                        _files.add(dir.path);
-                        _files.save();
-                        onAdded?.invoke(dir);
+                "Select a directory you would like to make accessible to Grayjay", null, {
+                    if(it != null) {
+                        mainActivity.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(Intent.FLAG_GRANT_READ_URI_PERMISSION));
+                        try {
+                            val file = DocumentFile.fromTreeUri(mainActivity, it) ?: return@requestDirectoryAccess;
+                            val dir = FileEntry.fromFile(file);
+                            _files.add(dir.path);
+                            _files.save();
+                            onAdded?.invoke(dir);
+                        }
+                        catch(ex: Throwable) {
+                            Logger.e(TAG, "Something went wrong converting requested directory", ex);
+                        }
                     }
-                    catch(ex: Throwable) {
-                        Logger.e(TAG, "Something went wrong converting requested directory", ex);
-                    }
-                }
-            });
+                }, skipDialog);
         return false;
+    }
+
+
+    fun searchTracks(str: String): List<IPlatformVideo> {
+        val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+        if(resolver == null) {
+            Logger.w(TAG, "Album contentResolver not found");
+            return listOf();
+        }
+        val cursor = resolver?.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA,
+            "LOWER(" + MediaStore.Audio.Media.DISPLAY_NAME + ") LIKE ? ", arrayOf(str.trim().lowercase()),
+            null) ?: return listOf();
+        cursor.moveToFirst();
+        val list = mutableListOf<IPlatformVideo>()
+        while(!cursor.isAfterLast) {
+            list.add(StateLibrary.audioFromCursor(cursor));
+            cursor.moveToNext();
+        }
+        return list;
     }
 
     fun getAlbums(): List<Album> {
@@ -96,6 +117,10 @@ class StateLibrary {
             return getAlbum(idLong);
         return null;
     }
+    fun searchAlbums(str: String): List<Album> {
+        return Album.getAlbums("LOWER(" + MediaStore.Audio.Albums.ALBUM + ") LIKE ? ", arrayOf(str.trim().lowercase()));
+    }
+
     fun getAlbum(id: Long): Album? {
         return Album.getAlbum(id);
     }
@@ -109,6 +134,10 @@ class StateLibrary {
             return getArtist(idLong);
         return null;
     }
+    fun searchArtists(str: String): List<Artist> {
+        return Artist.getArtists(ArtistOrdering.TrackCount, "LOWER(" + MediaStore.Audio.Artists.ARTIST + ") LIKE ? ", arrayOf(str.trim().lowercase()));
+    }
+
     fun getArtist(id: Long): Artist? {
         return Artist.getArtist(id);
     }
@@ -401,6 +430,10 @@ class Artist {
         return Album.getArtistAlbums(id.toLongOrNull() ?: return listOf());
     }
 
+    fun toPlaylist(tracks: List<IPlatformVideo>? = null): Playlist {
+        return Playlist(name, tracks?.map { SerializedPlatformVideo.fromVideo(it) } ?: getAudioTracks().toList().filter { it is IPlatformVideo }.map { SerializedPlatformVideo.fromVideo(it as IPlatformVideo) })
+    }
+
     fun getAudioTracks(): IPager<IPlatformContent> {
         val idLong = id.toLongOrNull() ?: return EmptyPager();
         return AdhocPager({ listOf() }, getTracksPager(idLong));
@@ -441,7 +474,7 @@ class Artist {
                 return null;
             return Artist.fromCursor(cursor);
         }
-        fun getArtists(ordering: ArtistOrdering = ArtistOrdering.Alphabethic): List<Artist> {
+        fun getArtists(ordering: ArtistOrdering = ArtistOrdering.Alphabethic, query: String? = null, args: Array<String>? = null): List<Artist> {
             val ordering = when(ordering) {
                 ArtistOrdering.Alphabethic -> Artists.ARTIST + " ASC";
                 ArtistOrdering.AlbumCount -> Artists.NUMBER_OF_ALBUMS + " DESC";
@@ -450,8 +483,8 @@ class Artist {
             }
 
             val cursor = StateApp.instance.contextOrNull?.contentResolver?.query(Artists.EXTERNAL_CONTENT_URI, PROJECTION,
-                null,
-                null,
+                query,
+                args,
                 ordering) ?: return listOf();
             cursor.moveToFirst();
             val list = mutableListOf<Artist>()
@@ -557,14 +590,14 @@ class Album {
                 return null;
             return fromCursor(cursor);
         }
-        fun getAlbums(): List<Album> {
+        fun getAlbums(query: String? = null, args: Array<String>? = null): List<Album> {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
             if(resolver == null) {
                 Logger.w(TAG, "Album contentResolver not found");
                 return listOf();
             }
             val cursor = resolver?.query(
-                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, null, null,
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, query, args,
                 MediaStore.Audio.Albums.ALBUM + " ASC") ?: return listOf();
             cursor.moveToFirst();
             val list = mutableListOf<Album>()
