@@ -90,6 +90,8 @@ class StateLibrary {
 
 
     fun searchTracks(str: String): List<IPlatformVideo> {
+        if(str.isNullOrBlank())
+            return listOf();
         val resolver =  StateApp.instance.contextOrNull?.contentResolver;
         if(resolver == null) {
             Logger.w(TAG, "Album contentResolver not found");
@@ -97,7 +99,7 @@ class StateLibrary {
         }
         val cursor = resolver?.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA,
-            "LOWER(" + MediaStore.Audio.Media.DISPLAY_NAME + ") LIKE ? ", arrayOf(str.trim().lowercase()),
+            "LOWER(" + MediaStore.Audio.Media.DISPLAY_NAME + ") LIKE ? ", arrayOf("%" + str.trim().lowercase() + "%"),
             null) ?: return listOf();
         cursor.moveToFirst();
         val list = mutableListOf<IPlatformVideo>()
@@ -118,7 +120,9 @@ class StateLibrary {
         return null;
     }
     fun searchAlbums(str: String): List<Album> {
-        return Album.getAlbums("LOWER(" + MediaStore.Audio.Albums.ALBUM + ") LIKE ? ", arrayOf(str.trim().lowercase()));
+        if(str.isNullOrBlank())
+            return listOf();
+        return Album.getAlbums("LOWER(" + MediaStore.Audio.Albums.ALBUM + ") LIKE ? ", arrayOf("%" + str.trim().lowercase() + "%"));
     }
 
     fun getAlbum(id: Long): Album? {
@@ -135,7 +139,9 @@ class StateLibrary {
         return null;
     }
     fun searchArtists(str: String): List<Artist> {
-        return Artist.getArtists(ArtistOrdering.TrackCount, "LOWER(" + MediaStore.Audio.Artists.ARTIST + ") LIKE ? ", arrayOf(str.trim().lowercase()));
+        if(str.isNullOrBlank())
+            return listOf();
+        return Artist.getArtists(ArtistOrdering.TrackCount, "LOWER(" + MediaStore.Audio.Artists.ARTIST + ") LIKE ? ", arrayOf("%" + str.trim().lowercase() + "%"));
     }
 
     fun getArtist(id: Long): Artist? {

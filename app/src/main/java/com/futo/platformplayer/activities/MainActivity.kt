@@ -63,6 +63,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.LibraryArtistFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryArtistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryFilesFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibrarySearchFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryVideosFragment
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistFragment
@@ -194,6 +195,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragLibraryArtists: LibraryArtistsFragment;
     lateinit var _fragLibraryArtist: LibraryArtistFragment;
     lateinit var _fragLibraryVideos: LibraryVideosFragment;
+    lateinit var _fragLibrarySearch: LibrarySearchFragment;
     lateinit var _fragLibraryFiles: LibraryFilesFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
@@ -374,6 +376,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryArtist = LibraryArtistFragment.newInstance();
         _fragLibraryVideos = LibraryVideosFragment.newInstance();
         _fragLibraryFiles = LibraryFilesFragment.newInstance();
+        _fragLibrarySearch = LibrarySearchFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -512,6 +515,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryArtist.topBar = _fragTopBarNavigation;
         _fragLibraryVideos.topBar = _fragTopBarNavigation;
         _fragLibraryFiles.topBar = _fragTopBarFiles;
+        _fragLibrarySearch.topBar = _fragTopBarSearch;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -1323,6 +1327,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             LibraryArtistFragment::class -> _fragLibraryArtist as T;
             LibraryVideosFragment::class -> _fragLibraryVideos as T;
             LibraryFilesFragment::class -> _fragLibraryFiles as T;
+            LibrarySearchFragment::class -> _fragLibrarySearch as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }

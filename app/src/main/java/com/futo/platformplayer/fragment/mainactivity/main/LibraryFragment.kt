@@ -160,7 +160,7 @@ class LibraryFragment : MainFragment() {
             this.fragment = fragment;
             recycler = findViewById(R.id.recycler);
             sectionArtists = LibrarySection(context)//findViewById<LibrarySection>(R.id.section_artists);
-            sectionArtists.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 155.dp(resources)).apply {
+            sectionArtists.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 140.dp(resources)).apply {
                 this.setMargins(0,10.dp(resources), 0, 0);
             }
             sectionAlbums = LibrarySection(context)//findViewById(R.id.section_albums);

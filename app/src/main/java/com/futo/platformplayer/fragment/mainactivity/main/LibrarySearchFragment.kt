@@ -106,22 +106,26 @@ class LibrarySearchFragment : MainFragment() {
         val pillSongs: PillV2;
         val pills: List<PillV2>;
 
+        val textMetadata: TextView;
+
         val recycler: RecyclerView;
 
         val adapterArtists: AnyAdapterView<Artist, LibraryArtistsFragment.ArtistViewHolder>;
         val adapterSongs: AnyAdapterView<IPlatformContent, TrackViewHolder>;
-        val adapterAlbums: AnyAdapterView<Album, AlbumTileViewHolder>;
+        val adapterAlbums: AnyAdapterView<Album, LibraryAlbumsFragment.AlbumViewHolder>;
 
 
 
         constructor(fragment: LibrarySearchFragment) : super(fragment.requireContext()) {
-            inflate(context, R.layout.fragview_library, this);
+            inflate(context, R.layout.fragview_library_search, this);
             this.fragment = fragment;
 
             pillArtist = findViewById(R.id.pill_artist);
             pillAlbums = findViewById(R.id.pill_albums);
             pillSongs = findViewById(R.id.pill_songs);
             pills = listOf(pillArtist, pillAlbums, pillSongs);
+
+            textMetadata = findViewById(R.id.text_metadata);
 
             pillArtist.onClick.subscribe {
                 pills.forEach { it.setIsEnabled(false) };
@@ -146,7 +150,7 @@ class LibrarySearchFragment : MainFragment() {
                         fragment.navigate<LibraryArtistFragment>(it);
                 }
             });
-            adapterAlbums = recycler.asAny<Album, AlbumTileViewHolder>(RecyclerView.VERTICAL, false, {
+            adapterAlbums = recycler.asAny<Album, LibraryAlbumsFragment.AlbumViewHolder>(RecyclerView.VERTICAL, false, {
                 it.onClick.subscribe {
                     if(it != null)
                         fragment.navigate<LibraryAlbumFragment>(it);
@@ -173,38 +177,57 @@ class LibrarySearchFragment : MainFragment() {
 
         fun loadArtists(){
             recycler.adapter = adapterArtists.adapter.adapter;
+            fragment.topBar?.let {
+                if(it is SearchTopBarFragment)
+                    search(it.getSearchText());
+            }
         }
         fun loadAlbums() {
             recycler.adapter = adapterAlbums.adapter.adapter;
+            fragment.topBar?.let {
+                if(it is SearchTopBarFragment)
+                    search(it.getSearchText());
+            }
         }
         fun loadSongs() {
             recycler.adapter = adapterSongs.adapter.adapter;
+            fragment.topBar?.let {
+                if(it is SearchTopBarFragment)
+                    search(it.getSearchText());
+            }
         }
 
         fun search(str: String) {
             if(recycler.adapter == adapterArtists.adapter.adapter) {
-                if(str.isNullOrBlank())
-                    adapterArtists.adapter.setData(listOf());
-                else
-                    adapterArtists.setData(StateLibrary.instance.searchArtists(str));
+                val data = if(!str.isNullOrBlank())
+                    StateLibrary.instance.searchArtists(str)
+                else listOf();
+                adapterArtists.setData(data);
+                textMetadata.text = "${data.size} artists";
             }
             else if(recycler.adapter == adapterAlbums.adapter.adapter) {
-                if(str.isNullOrBlank())
-                    adapterAlbums.adapter.setData(listOf());
-                else
-                    adapterAlbums.setData(StateLibrary.instance.searchAlbums(str));
+                val data = if(!str.isNullOrBlank())
+                    StateLibrary.instance.searchAlbums(str)
+                else listOf();
+                adapterAlbums.setData(data);
+                textMetadata.text = "${data.size} albums";
             }
             else if(recycler.adapter == adapterSongs.adapter.adapter) {
-                if(str.isNullOrBlank())
-                    adapterSongs.adapter.setData(listOf());
-                else
-                    adapterSongs.setData(StateLibrary.instance.searchTracks(str));
+                val data = if(!str.isNullOrBlank())
+                    StateLibrary.instance.searchTracks(str)
+                else listOf();
+
+                adapterSongs.setData(data);
+                textMetadata.text = "${data.size} songs";
             }
         }
 
 
         fun onShown() {
-
+            fragment.topBar?.let {
+                if(it is SearchTopBarFragment)
+                    it.focus();
+            }
         }
     }
 }

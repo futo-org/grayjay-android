@@ -120,8 +120,8 @@ class LibraryAlbumFragment : MainFragment() {
                     holder.onClick.subscribe { c ->
 
                         val playlist = _album?.toPlaylist(_tracks);
+                        val index = playlist?.videos?.indexOfFirst { it.name == c.name } ?: -1;
                         if (playlist != null) {
-                            val index = playlist.videos.indexOf(c);
                             if (index == -1)
                                 return@subscribe;
 
