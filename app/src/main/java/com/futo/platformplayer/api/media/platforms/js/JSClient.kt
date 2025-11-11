@@ -103,7 +103,7 @@ open class JSClient : IPlatformClient {
 
     override val id: String get() = config.id;
     override val name: String get() = config.name;
-    override val icon: ImageVariable;
+    override val icon: ImageVariable get() = StatePlatform.instance.getPlatformIcon(config.id) ?: ImageVariable(config.absoluteIconUrl, null, null)
     override var capabilities: PlatformClientCapabilities = PlatformClientCapabilities();
 
     private var _busyAction = "";
@@ -147,7 +147,6 @@ open class JSClient : IPlatformClient {
     constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String? = null) {
         this._context = context;
         this.config = descriptor.config;
-        icon = StatePlatform.instance.getPlatformIcon(config.id) ?: ImageVariable(config.absoluteIconUrl, null, null);
         this.descriptor = descriptor;
         _injectedSaveState = saveState;
         _auth = descriptor.getAuth();
@@ -178,7 +177,6 @@ open class JSClient : IPlatformClient {
     constructor(context: Context, descriptor: SourcePluginDescriptor, saveState: String?, script: String, withoutCredentials: Boolean = false) {
         this._context = context;
         this.config = descriptor.config;
-        icon = StatePlatform.instance.getPlatformIcon(config.id) ?: ImageVariable(config.absoluteIconUrl, null, null);
         this.descriptor = descriptor;
         _injectedSaveState = saveState;
         if(!withoutCredentials)

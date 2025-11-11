@@ -16,51 +16,49 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-open class JSContent : IPlatformContent, IPluginSourced {
-    protected val _pluginConfig: SourcePluginConfig;
-    protected val _content : V8ValueObject;
+open class JSContent(
+    protected val _pluginConfig: SourcePluginConfig,
+    protected val _content: V8ValueObject
+) : IPlatformContent, IPluginSourced {
 
-    protected val _hasGetDetails: Boolean;
+    override val contentType: ContentType = ContentType.UNKNOWN
 
-    override val contentType: ContentType get() = ContentType.UNKNOWN;
+    protected val _hasGetDetails: Boolean = _content.has("getDetails")
 
-    override val id: PlatformID;
-    override val name: String;
-    override val author: PlatformAuthorLink;
-    override val datetime: OffsetDateTime?;
+    override val id: PlatformID =
+        PlatformID.fromV8(_pluginConfig, _content.getOrThrow(_pluginConfig, "id", CTX))
 
-    override val url: String;
-    override val shareUrl: String;
+    override val name: String =
+        HtmlCompat.fromHtml(
+            _content.getOrThrow<String>(_pluginConfig, "name", CTX).decodeUnicode(),
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        ).toString()
 
-    override val sourceConfig: SourcePluginConfig get() = _pluginConfig;
+    override val author: PlatformAuthorLink =
+        _content.getOrDefault<V8ValueObject>(_pluginConfig, "author", CTX, null)
+            ?.let { PlatformAuthorLink.fromV8(_pluginConfig, it) }
+            ?: PlatformAuthorLink.UNKNOWN
 
-    constructor(config: SourcePluginConfig, obj: V8ValueObject) {
-        _pluginConfig = config;
-        _content = obj;
+    private val _epoch: Long? =
+        _content.getOrDefault<Long>(_pluginConfig, "datetime", CTX, null)?.toLong()
 
-        val contextName = "PlatformContent";
+    override val datetime: OffsetDateTime? =
+        _epoch?.takeIf { it != 0L }?.let {
+            OffsetDateTime.of(LocalDateTime.ofEpochSecond(it, 0, ZoneOffset.UTC), ZoneOffset.UTC)
+        }
 
-        id = PlatformID.fromV8(_pluginConfig, _content.getOrThrow(config, "id", contextName));
-        name = HtmlCompat.fromHtml(_content.getOrThrow<String>(config, "name", contextName).decodeUnicode(), HtmlCompat.FROM_HTML_MODE_LEGACY).toString();
+    override val url: String =
+        _content.getOrThrow<String>(_pluginConfig, "url", CTX)
 
-        val authorObj = _content.getOrDefault<V8ValueObject>(config, "author", contextName, null);
-        if(authorObj != null)
-            author = PlatformAuthorLink.fromV8(_pluginConfig, authorObj);
-        else
-            author = PlatformAuthorLink.UNKNOWN;
+    override val shareUrl: String =
+        _content.getOrDefault<String>(_pluginConfig, "shareUrl", CTX, null) ?: url
 
-        val datetimeInt = _content.getOrDefault<Int>(config, "datetime", contextName, null)?.toLong();
-        if(datetimeInt == null || datetimeInt == 0.toLong())
-            datetime = null;
-        else
-            datetime = OffsetDateTime.of(LocalDateTime.ofEpochSecond(datetimeInt, 0, ZoneOffset.UTC), ZoneOffset.UTC);
-        url = _content.getOrThrow(config, "url", contextName);
-        shareUrl = _content.getOrDefault<String>(config, "shareUrl", contextName, null) ?: url;
+    override val sourceConfig: SourcePluginConfig
+        get() = _pluginConfig
 
-        _hasGetDetails = _content.has("getDetails");
-    }
+    fun getUnderlyingObject(): V8ValueObject? = _content
 
-    fun getUnderlyingObject(): V8ValueObject? {
-        return _content;
+    companion object {
+        private const val CTX = "PlatformContent"
     }
 }

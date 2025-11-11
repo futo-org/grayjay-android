@@ -6,14 +6,16 @@ import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.getOrDefault
 
-open class JSPlaylist : JSContent, IPlatformPlaylist {
-    override val contentType: ContentType get() = ContentType.PLAYLIST;
-    override val thumbnail: String?;
-    override val videoCount: Int;
+open class JSPlaylist(
+    config: SourcePluginConfig,
+    obj: V8ValueObject
+) : JSContent(config, obj), IPlatformPlaylist {
 
-    constructor(config: SourcePluginConfig, obj: V8ValueObject) : super(config, obj) {
-        val contextName = "Playlist";
-        thumbnail = obj.getOrDefault(config, "thumbnail", contextName, null);
-        videoCount = obj.getOrDefault(config, "videoCount", contextName, -1)!!;
-    }
+    override val contentType: ContentType = ContentType.PLAYLIST
+
+    override val thumbnail: String? =
+        _content.getOrDefault<String>(_pluginConfig, "thumbnail", "Playlist", null)
+
+    override val videoCount: Int =
+        _content.getOrDefault<Int>(_pluginConfig, "videoCount", "Playlist", null)?.toInt() ?: -1
 }

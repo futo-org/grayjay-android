@@ -408,6 +408,10 @@ class Settings : FragmentedStorageFileJson() {
                 else -> null
             }
         }
+
+        @FormField(R.string.sticky_subtitles, FieldForm.TOGGLE, R.string.sticky_subtitles_description, -1)
+        var stickySubtitles: Boolean = true;
+
         @FormField(R.string.prefer_original_audio, FieldForm.TOGGLE, R.string.prefer_original_audio_description, -1)
         var preferOriginalAudio: Boolean = true;
 

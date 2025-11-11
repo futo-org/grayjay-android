@@ -4,6 +4,8 @@ import android.content.Context
 import com.caoccao.javet.exceptions.JavetCompilationException
 import com.caoccao.javet.exceptions.JavetException
 import com.caoccao.javet.exceptions.JavetExecutionException
+import com.caoccao.javet.interfaces.IJavetEntityError
+import com.caoccao.javet.interfaces.IJavetEntityMap
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.V8Runtime
 import com.caoccao.javet.values.V8Value
@@ -409,6 +411,12 @@ class V8Plugin {
             return _runtimeMap.getOrDefault(runtime, null);
         }
 
+        private fun ctxString(ctx: Any?, key: String): String? = when (ctx) {
+            is Map<*, *> -> ctx[key]?.toString()
+            is V8ValueObject -> if (ctx.has(key)) ctx.getString(key) else null
+            else -> null
+        }
+
         fun <T: Any?> catchScriptErrors(config: IV8PluginConfig, context: String, code: String? = null, handle: ()->T): T {
             var codeStripped = code;
             if(codeStripped != null) { //TODO: Improve code stripped
@@ -442,37 +450,6 @@ class V8Plugin {
                 throw ScriptCompilationException(config, "Compilation: [${context}]: ${scriptEx.message}\n(${scriptEx.scriptingError.lineNumber})[${scriptEx.scriptingError.startColumn}-${scriptEx.scriptingError.endColumn}]: ${scriptEx.scriptingError.sourceLine}", null, codeStripped);
             }
             catch(executeEx: JavetExecutionException) {
-                val obj = executeEx.scriptingError?.context
-                if(obj != null && obj.containsKey("plugin_type") == true) {
-                    val pluginType = obj["plugin_type"].toString();
-
-                    //Captcha
-                    if (pluginType == "CaptchaRequiredException") {
-                        throw ScriptCaptchaRequiredException(config,
-                            obj["url"]?.toString(),
-                            obj["body"]?.toString(),
-                            executeEx, executeEx.scriptingError?.stack, codeStripped);
-                    }
-
-                    //Reload Required
-                    if (pluginType == "ReloadRequiredException") {
-                        throw ScriptReloadRequiredException(config,
-                            obj["msg"]?.toString(),
-                            obj["reloadData"]?.toString(),
-                            executeEx, executeEx.scriptingError?.stack, codeStripped);
-                    }
-
-                    //Others
-                    throwExceptionFromV8(
-                        config,
-                        pluginType,
-                        (extractJSExceptionMessage(executeEx) ?: ""),
-                        executeEx,
-                        executeEx.scriptingError?.stack,
-                        codeStripped
-                    );
-                }
-                /* //Required for newer V8 versions
                 if(executeEx.scriptingError?.context is IJavetEntityError) {
                     val obj = executeEx.scriptingError?.context as IJavetEntityError
                     if(obj.context.containsKey("plugin_type") == true) {
@@ -506,7 +483,6 @@ class V8Plugin {
                     }
 
                 }
-                */
                 throw ScriptExecutionException(config, extractJSExceptionMessage(executeEx) ?: "", null, executeEx.scriptingError?.stack, codeStripped);
             }
             catch(ex: Exception) {

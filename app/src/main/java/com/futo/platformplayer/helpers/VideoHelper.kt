@@ -19,6 +19,8 @@ import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSour
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IWidevineSource
+import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
@@ -132,6 +134,62 @@ class VideoHelper {
                 }
             }
             return bestSource;
+        }
+
+        fun selectBestSubtitleSource(sources: Iterable<ISubtitleSource>, preferredLanguage: String?): ISubtitleSource? {
+            if (preferredLanguage.isNullOrBlank()) return null
+
+            val prefTag = normalizeTag(preferredLanguage)
+            val prefPrimary = primarySubtag(prefTag) ?: return null
+
+            var best: ISubtitleSource? = null
+            var bestKey: Quad<Int, Int, String, String>? = null
+
+            for (src in sources) {
+                val raw = src.language ?: continue
+                val tag = normalizeTag(raw)
+                val primary = primarySubtag(tag) ?: continue
+
+                val score = when {
+                    tag.equals(prefTag, ignoreCase = true) -> 0
+                    primary.equals(prefPrimary, ignoreCase = true) && findRegion(tag) == null -> 1
+                    primary.equals(prefPrimary, ignoreCase = true) -> 2
+                    else -> 3
+                }
+                if (score >= 3) continue
+
+                val key = Quad(score, src.name.length, tag.lowercase(), src.name)
+                if (bestKey == null || key < bestKey!!) {
+                    bestKey = key
+                    best = src
+                }
+            }
+            return best
+        }
+
+        private fun normalizeTag(tag: String): String = tag.trim().replace('_', '-')
+        private fun primarySubtag(tag: String): String? = tag.split('-').firstOrNull { it.isNotBlank() }?.lowercase()
+
+        private fun findRegion(tag: String): String? {
+            val parts = tag.split('-').drop(1) // skip primary language
+            for (p in parts) {
+                val isAlpha2 = p.length == 2 && p[0].isLetter() && p[1].isLetter()
+                val isNumeric3 = p.length == 3 && p.all { it.isDigit() }
+                if (isAlpha2 || isNumeric3) return p.uppercase()
+            }
+            return null
+        }
+
+        private data class Quad<A : Comparable<A>, B : Comparable<B>, C : Comparable<C>, D : Comparable<D>>(
+            val a: A, val b: B, val c: C, val d: D
+        ) : Comparable<Quad<A, B, C, D>> {
+            override fun compareTo(other: Quad<A, B, C, D>): Int =
+                when {
+                    a != other.a -> a.compareTo(other.a)
+                    b != other.b -> b.compareTo(other.b)
+                    c != other.c -> c.compareTo(other.c)
+                    else -> d.compareTo(other.d)
+                }
         }
 
         @OptIn(UnstableApi::class)

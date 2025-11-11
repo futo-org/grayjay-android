@@ -23,17 +23,22 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.states.StateDeveloper
 
-open class JSArticle : JSContent, IPlatformArticle, IPluginSourced {
-    final override val contentType: ContentType get() = ContentType.ARTICLE;
+open class JSArticle(
+    config: SourcePluginConfig,
+    obj: V8ValueObject
+) : JSContent(config, obj), IPlatformArticle, IPluginSourced {
 
-    override val summary: String;
-    override val thumbnails: Thumbnails?;
+    final override val contentType: ContentType = ContentType.ARTICLE
 
-    constructor(config: SourcePluginConfig, obj: V8ValueObject): super(config, obj) {
-        val contextName = "PlatformArticle";
+    override val summary: String =
+        obj.getOrDefault<String>(config, "summary", "PlatformArticle", "") ?: ""
 
-        summary = _content.getOrDefault(config, "summary", contextName, "") ?: "";
-        thumbnails = Thumbnails.fromV8(config, _content.getOrThrow(config, "thumbnails", contextName));
-
-    }
+    override val thumbnails: Thumbnails? =
+        if (obj.has("thumbnails"))
+            Thumbnails.fromV8(
+                config,
+                obj.getOrThrow<V8ValueObject>(config, "thumbnails", "PlatformArticle")
+            )
+        else
+            null
 }
