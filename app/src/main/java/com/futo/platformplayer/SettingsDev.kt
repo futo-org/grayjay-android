@@ -8,9 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
-import com.futo.platformplayer.activities.DeveloperActivity
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -20,6 +18,8 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.fragment.mainactivity.main.DeveloperFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.states.StateAnnouncement
@@ -97,10 +97,10 @@ class SettingsDev : FragmentedStorageFileJson() {
         fun subscriptionsCache5000() {
             Logger.i("SettingsDev", "Started caching 5000 sub items");
             UIDialogs.toast(
-                SettingsActivity.getActivity()!!,
+                StateApp.instance.activity!!,
                 "Started caching 5000 sub items"
             );
-            val button = DeveloperActivity.getActivity()?.getField("subscription_cache_button");
+            val button = DeveloperFragment.currentView?.getField("subscription_cache_button");
             if(button is ButtonField)
                 button.setButtonEnabled(false);
             StateApp.instance.scope.launch(Dispatchers.IO) {
@@ -121,7 +121,7 @@ class SettingsDev : FragmentedStorageFileJson() {
                                 val diff = System.currentTimeMillis() - lastToast;
                                 lastToast = System.currentTimeMillis();
                                 UIDialogs.toast(
-                                    SettingsActivity.getActivity()!!,
+                                    StateApp.instance.activity!!,
                                     "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
                                 );
                             }
@@ -130,7 +130,7 @@ class SettingsDev : FragmentedStorageFileJson() {
 
                     withContext(Dispatchers.Main) {
                         UIDialogs.toast(
-                            SettingsActivity.getActivity()!!,
+                            StateApp.instance.activity!!,
                             "FINISHED Page: ${page}, Total: ${total}"
                         );
                     }
@@ -152,10 +152,10 @@ class SettingsDev : FragmentedStorageFileJson() {
         fun historyCache100() {
             Logger.i("SettingsDev", "Started caching 100 history items (from home)");
             UIDialogs.toast(
-                SettingsActivity.getActivity()!!,
+                StateApp.instance.activity!!,
                 "Started caching 100 history items (from home)"
             );
-            val button = DeveloperActivity.getActivity()?.getField("history_cache_button");
+            val button = DeveloperFragment.currentView?.getField("history_cache_button");
             if(button is ButtonField)
                 button.setButtonEnabled(false);
             StateApp.instance.scope.launch(Dispatchers.IO) {
@@ -186,7 +186,7 @@ class SettingsDev : FragmentedStorageFileJson() {
                                 val diff = System.currentTimeMillis() - lastToast;
                                 lastToast = System.currentTimeMillis();
                                 UIDialogs.toast(
-                                    SettingsActivity.getActivity()!!,
+                                    StateApp.instance.activity!!,
                                     "Page: ${page}, Total: ${total}, Speed: ${diff}ms"
                                 );
                             }
@@ -195,7 +195,7 @@ class SettingsDev : FragmentedStorageFileJson() {
 
                     withContext(Dispatchers.Main) {
                         UIDialogs.toast(
-                            SettingsActivity.getActivity()!!,
+                            StateApp.instance.activity!!,
                             "FINISHED Page: ${page}, Total: ${total}"
                         );
                     }
@@ -235,9 +235,9 @@ class SettingsDev : FragmentedStorageFileJson() {
     @FormField(R.string.test_background_worker, FieldForm.BUTTON,
         R.string.test_background_worker_description, 4)
     fun triggerBackgroundUpdate() {
-        val act = SettingsActivity.getActivity()!!;
+        val act = StateApp.instance.activity!!;
         try {
-            UIDialogs.toast(SettingsActivity.getActivity()!!, "Starting test background worker");
+            UIDialogs.toast(StateApp.instance.activity!!, "Starting test background worker");
 
             val wm = WorkManager.getInstance(act);
             val req = OneTimeWorkRequestBuilder<BackgroundWorker>()
@@ -251,9 +251,9 @@ class SettingsDev : FragmentedStorageFileJson() {
     @FormField(R.string.clear_channel_cache, FieldForm.BUTTON,
         R.string.test_background_worker_description, 4)
     fun clearChannelContentCache() {
-        UIDialogs.toast(SettingsActivity.getActivity()!!, "Clearing cache");
+        UIDialogs.toast(StateApp.instance.activity!!, "Clearing cache");
         StateCache.instance.clearToday();
-        UIDialogs.toast(SettingsActivity.getActivity()!!, "Cleared");
+        UIDialogs.toast(StateApp.instance.activity!!, "Cleared");
     }
 
 

@@ -20,7 +20,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.MainActivityFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*

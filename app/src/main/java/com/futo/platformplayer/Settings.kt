@@ -10,11 +10,11 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.ManageTabsActivity
 import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.activities.PolycentricProfileActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.activities.SyncHomeActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.fragment.mainactivity.bottombar.MenuBottomBarFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.FlexibleBooleanSerializer
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.OffsetDateTime
@@ -64,7 +63,7 @@ class Settings : FragmentedStorageFileJson() {
     @FormField(R.string.sync_grayjay, FieldForm.BUTTON, R.string.sync_grayjay_description, -8)
     @FormFieldButton(R.drawable.ic_update)
     fun syncGrayjay() {
-        SettingsActivity.getActivity()?.let {
+        StateApp?.instance?.activity?.let {
             it.startActivity(Intent(it, SyncHomeActivity::class.java))
         }
     }
@@ -73,7 +72,7 @@ class Settings : FragmentedStorageFileJson() {
     @FormField(R.string.manage_polycentric_identity, FieldForm.BUTTON, R.string.manage_your_polycentric_identity, -7)
     @FormFieldButton(R.drawable.ic_person)
     fun managePolycentricIdentity() {
-        SettingsActivity.getActivity()?.let {
+        StateApp?.instance?.activity?.let {
             if (StatePolycentric.instance.enabled) {
                 if (StatePolycentric.instance.processHandle != null) {
                     it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
@@ -91,7 +90,7 @@ class Settings : FragmentedStorageFileJson() {
     fun openFAQ() {
         try {
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(Settings.URL_FAQ))
-            SettingsActivity.getActivity()?.startActivity(browserIntent);
+            StateApp?.instance?.activity?.startActivity(browserIntent);
         } catch (e: Throwable) {
             //Ignored
         }
@@ -101,7 +100,7 @@ class Settings : FragmentedStorageFileJson() {
     fun openIssues() {
         try {
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/futo-org/grayjay-android/issues"))
-            SettingsActivity.getActivity()?.startActivity(browserIntent);
+            StateApp?.instance?.activity?.startActivity(browserIntent);
         } catch (e: Throwable) {
             //Ignored
         }
@@ -132,7 +131,7 @@ class Settings : FragmentedStorageFileJson() {
     @FormFieldButton(R.drawable.ic_tabs)
     fun manageTabs() {
         try {
-            SettingsActivity.getActivity()?.let {
+            StateApp?.instance?.activity?.let {
                 it.startActivity(Intent(it, ManageTabsActivity::class.java));
             }
         } catch (e: Throwable) {
@@ -145,7 +144,7 @@ class Settings : FragmentedStorageFileJson() {
     @FormField(R.string.import_data, FieldForm.BUTTON, R.string.import_data_description, -3)
     @FormFieldButton(R.drawable.ic_move_up)
     fun import() {
-        val act = SettingsActivity.getActivity() ?: return;
+        val act = StateApp.instance.activity ?: return;
         val intent = MainActivity.getImportOptionsIntent(act);
         act.startActivity(intent);
     }
@@ -154,7 +153,7 @@ class Settings : FragmentedStorageFileJson() {
     @FormFieldButton(R.drawable.ic_link)
     fun manageLinks() {
         try {
-            SettingsActivity.getActivity()?.let { UIDialogs.showUrlHandlingPrompt(it) }
+            StateApp.instance.activity?.let { UIDialogs.showUrlHandlingPrompt(it) }
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to show url handling prompt", e)
         }
@@ -163,7 +162,7 @@ class Settings : FragmentedStorageFileJson() {
     /*@FormField(R.string.disable_battery_optimization, FieldForm.BUTTON, R.string.click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions, -1)
     @FormFieldButton(R.drawable.battery_full_24px)
     fun ignoreBatteryOptimization() {
-        SettingsActivity.getActivity()?.let {
+        StateApp.instance.activity?.let {
             val intent = Intent()
             val packageName = it.packageName
             val pm = it.getSystemService(POWER_SERVICE) as PowerManager;
@@ -244,7 +243,7 @@ class Settings : FragmentedStorageFileJson() {
         fun clearHidden() {
             StateMeta.instance.removeAllHiddenCreators();
             StateMeta.instance.removeAllHiddenVideos();
-            SettingsActivity.getActivity()?.let {
+            StateApp.instance.activity?.let {
                 UIDialogs.toast(it, "Creators and videos should show up again");
             }
         }
@@ -374,9 +373,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.clear_channel_cache, FieldForm.BUTTON, R.string.clear_channel_cache_description, 16)
         fun clearChannelCache() {
-            UIDialogs.toast(SettingsActivity.getActivity()!!, "Started clearing..");
+            UIDialogs.toast(StateApp.instance.activity!!, "Started clearing..");
             StateCache.instance.clear();
-            UIDialogs.toast(SettingsActivity.getActivity()!!, "Finished clearing");
+            UIDialogs.toast(StateApp.instance.activity!!, "Finished clearing");
         }
     }
 
@@ -760,7 +759,7 @@ class Settings : FragmentedStorageFileJson() {
                 try {
                     if (!Logger.submitLogs()) {
                         withContext(Dispatchers.Main) {
-                            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, it.getString(R.string.please_enable_logging_to_submit_logs)) }
+                            StateApp.instance.activity?.let { UIDialogs.toast(it, it.getString(R.string.please_enable_logging_to_submit_logs)) }
                         }
                     }
                 } catch (e: Throwable) {
@@ -777,7 +776,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.reset_announcements, FieldForm.BUTTON, R.string.reset_hidden_announcements, 1)
         fun resetAnnouncements() {
             StateAnnouncement.instance.resetAnnouncements();
-            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, it.getString(R.string.announcements_reset)); };
+            StateApp.instance.activity?.let { UIDialogs.toast(it, it.getString(R.string.announcements_reset)); };
         }
     }
 
@@ -845,13 +844,13 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.change_external_general_directory, FieldForm.BUTTON, R.string.change_the_external_directory_for_general_files, 3)
         fun changeStorageGeneral() {
-            SettingsActivity.getActivity()?.let {
+            StateApp.instance.activity?.let {
                 StateApp.instance.changeExternalGeneralDirectory(it);
             }
         }
         @FormField(R.string.change_external_downloads_directory, FieldForm.BUTTON, R.string.change_the_external_storage_for_download_files, 4)
         fun changeStorageDownload() {
-            SettingsActivity.getActivity()?.let {
+            StateApp.instance.activity?.let {
                 StateApp.instance.changeExternalDownloadDirectory(it);
             }
         }
@@ -860,7 +859,7 @@ class Settings : FragmentedStorageFileJson() {
         fun clearStorageDownload() {
             Settings.instance.storage.storage_download = null;
             Settings.instance.save();
-            SettingsActivity.getActivity()?.let { UIDialogs.toast(it, "Cleared download storage directory") };
+            StateApp.instance.activity?.let { UIDialogs.toast(it, "Cleared download storage directory") };
         }
     }
 
@@ -897,13 +896,13 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.manual_check, FieldForm.BUTTON, R.string.manually_check_for_updates, 3)
         fun manualCheck() {
             if (!BuildConfig.IS_PLAYSTORE_BUILD) {
-                SettingsActivity.getActivity()?.let {
+                StateApp.instance.activity?.let {
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                         StateUpdate.instance.checkForUpdates(it, true)
                     }
                 }
             } else {
-                SettingsActivity.getActivity()?.let {
+                StateApp.instance.activity?.let {
                     try {
                         it.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${it.packageName}")))
                     } catch (e: ActivityNotFoundException) {
@@ -915,7 +914,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.view_changelog, FieldForm.BUTTON, R.string.review_the_current_and_past_changelogs, 4)
         fun viewChangelog() {
-            SettingsActivity.getActivity()?.let {
+            StateApp.instance.activity?.let {
                 UIDialogs.toast(it.getString(R.string.retrieving_changelog));
 
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
@@ -964,13 +963,13 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.set_automatic_backup, FieldForm.BUTTON, R.string.configure_daily_backup_in_case_of_catastrophic_failure, 1)
         fun configureAutomaticBackup() {
-            UIDialogs.showAutomaticBackupDialog(SettingsActivity.getActivity()!!, autoBackupPassword != null) {
-                SettingsActivity.getActivity()?.reloadSettings();
+            UIDialogs.showAutomaticBackupDialog(StateApp.instance.activity!!, autoBackupPassword != null) {
+                SettingsFragment.currentView?.reloadSettings();
             };
         }
         @FormField(R.string.restore_automatic_backup, FieldForm.BUTTON, R.string.restore_a_previous_automatic_backup, 2)
         fun restoreAutomaticBackup() {
-            val activity = SettingsActivity.getActivity()!!
+            val activity = StateApp.instance.activity!!
 
             if(!StateBackup.hasAutomaticBackup())
                 UIDialogs.toast(activity, activity.getString(R.string.you_don_t_have_any_automatic_backups), false);
@@ -981,8 +980,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.export_data, FieldForm.BUTTON, R.string.creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay, 3)
         fun export() {
-            val activity = SettingsActivity.getActivity() ?: return;
-            UISlideOverlays.showOverlay(activity.overlay, "Select export type", null, {},
+            val activity = StateApp.instance.activity ?: return;
+            val fragView = SettingsFragment.currentView ?: return;
+            UISlideOverlays.showOverlay(fragView.overlay, "Select export type", null, {},
                 SlideUpMenuItem(activity, R.drawable.ic_share, "Share", "", tag = null, call = {
                     StateBackup.shareExternalBackup();
                 }),
@@ -998,11 +998,11 @@ class Settings : FragmentedStorageFileJson() {
     @Serializable
     class Payment {
         @FormField(R.string.payment_status, FieldForm.READONLYTEXT, -1, 1)
-        val paymentStatus: String get() = SettingsActivity.getActivity()?.let { if (StatePayment.instance.hasPaid) it.getString(R.string.paid) else it.getString(R.string.not_paid); } ?: "Unknown";
+        val paymentStatus: String get() = StateApp.instance.activity?.let { if (StatePayment.instance.hasPaid) it.getString(R.string.paid) else it.getString(R.string.not_paid); } ?: "Unknown";
 
         @FormField(R.string.license_status, FieldForm.BUTTON, R.string.view_license_status, 2)
         fun viewLicenseStatus() {
-            SettingsActivity.getActivity()?.let {
+            StateApp.instance.activity?.let {
                 try {
                     if (StatePayment.instance.hasPaid) {
                         val paymentKey = StatePayment.instance.getPaymentKey()
@@ -1018,12 +1018,12 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.clear_payment, FieldForm.BUTTON, R.string.deletes_license_keys_from_app, 3)
         fun clearPayment() {
-            SettingsActivity.getActivity()?.let { context ->
+            StateApp.instance.activity?.let { context ->
                 UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete your license?", {
                     StatePayment.instance.clearLicenses();
-                    SettingsActivity.getActivity()?.let {
+                    StateApp.instance.activity?.let {
                         UIDialogs.toast(it, it.getString(R.string.licenses_cleared_might_require_app_restart));
-                        it.reloadSettings();
+                        SettingsFragment.currentView?.reloadSettings();
                     }
                 })
             }
@@ -1120,7 +1120,7 @@ class Settings : FragmentedStorageFileJson() {
         @AdvancedField
         @FormField(R.string.configure_sync_server, FieldForm.BUTTON, R.string.configure_sync_server_description, 7)
         fun configureSyncServer() {
-            SettingsActivity.getActivity()?.let { context ->
+            StateApp.instance.activity?.let { context ->
                 UIDialogs.showDialog(context, R.drawable.device_sync, false,
                     "Enter the url to your relay server",
                     "Using your own relay server requires a proper setup with portforwarding.\nUse at your own risk.",
@@ -1131,13 +1131,13 @@ class Settings : FragmentedStorageFileJson() {
                         UIDialogs.Action("Reset", {
                             syncServerUrl = null;
                             instance.save();
-                            context.reloadSettings();
+                            SettingsFragment.currentView?.reloadSettings();
                             UIDialogs.toast("Sync server changes require a restart");
                         }, UIDialogs.ActionStyle.ACCENT),
                         UIDialogs.Action.withInput("Configure", {
                             syncServerUrl = it?.text
                             instance.save();
-                            context.reloadSettings();
+                            SettingsFragment.currentView?.reloadSettings();
                             UIDialogs.toast("Sync server changes require a restart");
                         }, UIDialogs.ActionStyle.PRIMARY),
                     )

@@ -28,8 +28,6 @@ import com.futo.platformplayer.UIDialogs.Companion.showDialog
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
-import com.futo.platformplayer.activities.SettingsActivity.Companion.settingsActivityClosed
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -38,6 +36,7 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
@@ -163,6 +162,12 @@ class StateApp {
         val thisContext = contextOrNull
             ?: throw IllegalStateException("Attempted to use a global context while MainActivity is no longer available");
         return thisContext;
+    }
+    val activity: MainActivity? get() {
+        val context = contextOrNull;
+        if(context is MainActivity)
+            return context;
+        return null;
     }
 
     private var _mainId: String? = null;
@@ -475,7 +480,7 @@ class StateApp {
             StateSync.instance.start(context)
         }
 
-        settingsActivityClosed.subscribe {
+        SettingsFragment.onClosed.subscribe {
             if (Settings.instance.synchronization.enabled) {
                 StateSync.instance.start(context)
             } else {
@@ -487,7 +492,7 @@ class StateApp {
             scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     if (!it.isNullOrEmpty()) {
-                        (SettingsActivity.getActivity() ?: contextOrNull)?.let { c ->
+                        (StateApp.instance.activity ?: contextOrNull)?.let { c ->
                             val okButtonAction = Action(c.getString(R.string.ok), {}, ActionStyle.PRIMARY)
                             val copyButtonAction = Action(c.getString(R.string.copy), {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
