@@ -52,6 +52,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.CommentsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ContentSearchResultsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.CreatorSearchResultsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.CreatorsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.DeveloperFragment
 import com.futo.platformplayer.fragment.mainactivity.main.DownloadsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HistoryFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
@@ -71,6 +72,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsF
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PostDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.RemotePlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ShortsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
@@ -197,6 +199,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragLibraryVideos: LibraryVideosFragment;
     lateinit var _fragLibrarySearch: LibrarySearchFragment;
     lateinit var _fragLibraryFiles: LibraryFilesFragment;
+    lateinit var _fragSettings: SettingsFragment;
+    lateinit var _fragDeveloper: DeveloperFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
 
@@ -237,6 +241,17 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 UIDialogs.toast(this, "Failed to handle URL: ${e.message}")
             }
         }
+    }
+    private val _notifPermission = "android.permission.POST_NOTIFICATIONS";
+    private val _notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted)
+            UIDialogs.toast(this, "Notification permission granted");
+        else
+            UIDialogs.toast(this, "Notification permission denied");
+    };
+
+    fun requestNotificationPermissions() {
+        _notificationPermissionLauncher?.launch(_notifPermission);
     }
 
     val mainId = UUID.randomUUID().toString().substring(0, 5)
@@ -377,6 +392,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryVideos = LibraryVideosFragment.newInstance();
         _fragLibraryFiles = LibraryFilesFragment.newInstance();
         _fragLibrarySearch = LibrarySearchFragment.newInstance();
+        _fragSettings = SettingsFragment.newInstance();
+        _fragDeveloper = DeveloperFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -516,6 +533,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryVideos.topBar = _fragTopBarNavigation;
         _fragLibraryFiles.topBar = _fragTopBarFiles;
         _fragLibrarySearch.topBar = _fragTopBarSearch;
+        _fragSettings.topBar = _fragTopBarNavigation;
+        _fragDeveloper.topBar = _fragTopBarNavigation;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -1324,6 +1343,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             LibraryVideosFragment::class -> _fragLibraryVideos as T;
             LibraryFilesFragment::class -> _fragLibraryFiles as T;
             LibrarySearchFragment::class -> _fragLibrarySearch as T;
+            SettingsFragment:: class -> _fragSettings as T;
+            DeveloperFragment::class -> _fragDeveloper as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }
