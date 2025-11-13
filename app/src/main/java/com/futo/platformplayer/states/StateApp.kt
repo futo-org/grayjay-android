@@ -52,6 +52,7 @@ import com.futo.polycentric.core.toBase64Url
 import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
@@ -181,6 +182,9 @@ class StateApp {
     private var _lastMeteredState: Boolean = false;
     private var _connectivityManager: ConnectivityManager? = null;
     private var _lastNetworkState: NetworkState = NetworkState.UNKNOWN;
+    private var _lastConnectivityChange: OffsetDateTime? = null;
+    val lastConnectivityChange
+        get() = _lastConnectivityChange;
 
     //Logging
     private var _fileLogConsumer: FileLogConsumer? = null;
@@ -894,8 +898,11 @@ class StateApp {
                 val beforeMeteredState = _lastMeteredState;
                 _lastNetworkState = getCurrentNetworkState();
                 _lastMeteredState = isCurrentMetered();
-                if(beforeNetworkState != _lastNetworkState || beforeMeteredState != _lastMeteredState)
+                if(beforeNetworkState != _lastNetworkState || beforeMeteredState != _lastMeteredState) {
                     Logger.i(TAG, "Network capabilities changed (State: ${_lastNetworkState}, Metered: ${_lastMeteredState})");
+                    _lastConnectivityChange = OffsetDateTime.now();
+                }
+
             } catch(ex: Throwable) {
                 Logger.w(TAG, "Failed to update network state", ex);
             }
