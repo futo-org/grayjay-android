@@ -914,6 +914,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, preferredLanguage);
     }
 
+    fun getPreferredSubtitleSource(video: IPlatformVideoDetails, preferredLanguage: String?): ISubtitleSource? {
+        return VideoHelper.selectBestSubtitleSource(video.subtitles, preferredLanguage);
+    }
+
     @OptIn(UnstableApi::class)
     private fun loadSelectedSources(play: Boolean, resume: Boolean): Boolean {
         val sourceVideo = if(!isAudioMode || _lastAudioMediaSource == null) _lastVideoMediaSource else null;

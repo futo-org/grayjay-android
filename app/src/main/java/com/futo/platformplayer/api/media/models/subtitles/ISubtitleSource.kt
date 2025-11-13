@@ -7,6 +7,7 @@ interface ISubtitleSource {
     val url: String?;
     val format: String?;
     val hasFetch: Boolean;
+    val language: String?
 
     fun getSubtitles(): String?;
 

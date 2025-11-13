@@ -60,6 +60,10 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
             if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
                 onPlaybackStateChanged.emit(player.playbackState)
             }
+
+            if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED)) {
+                onPlayChanged.emit(player.isPlaying)
+            }
         }
     }
 

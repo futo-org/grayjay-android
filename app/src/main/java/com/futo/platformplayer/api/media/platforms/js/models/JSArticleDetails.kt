@@ -24,36 +24,37 @@ import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.states.StateDeveloper
 
-open class JSArticleDetails : JSContent, IPlatformArticleDetails, IPluginSourced, IPlatformContentDetails {
-    final override val contentType: ContentType get() = ContentType.ARTICLE;
+open class JSArticleDetails(
+    private val client: JSClient,
+    obj: V8ValueObject
+) : JSContent(client.config, obj), IPlatformArticleDetails, IPluginSourced, IPlatformContentDetails {
 
-    private val _hasGetComments: Boolean;
-    private val _hasGetContentRecommendations: Boolean;
+    final override val contentType: ContentType = ContentType.ARTICLE
 
-    override val rating: IRating;
+    private val _hasGetComments: Boolean = _content.has("getComments")
+    private val _hasGetContentRecommendations: Boolean = _content.has("getContentRecommendations")
 
-    override val summary: String;
-    override val thumbnails: Thumbnails?;
-    override val segments: List<IJSArticleSegment>;
+    override val rating: IRating =
+        obj.getOrDefault<V8ValueObject>(client.config, "rating", "PlatformArticle", null)
+            ?.let { IRating.fromV8(client.config, it, "PlatformArticle") }
+            ?: RatingLikes(0)
 
-    constructor(client: JSClient, obj: V8ValueObject): super(client.config, obj) {
-        val contextName = "PlatformArticle";
+    override val summary: String =
+        _content.getOrThrow(client.config, "summary", "PlatformArticle")
 
-        rating = obj.getOrDefault<V8ValueObject>(client.config, "rating", contextName, null)?.let { IRating.fromV8(client.config, it, contextName) } ?: RatingLikes(0);
-        summary = _content.getOrThrow(client.config, "summary", contextName);
-        if(_content.has("thumbnails"))
-            thumbnails = Thumbnails.fromV8(client.config, _content.getOrThrow(client.config, "thumbnails", contextName));
+    override val thumbnails: Thumbnails? =
+        if (_content.has("thumbnails"))
+            Thumbnails.fromV8(
+                client.config,
+                _content.getOrThrow(client.config, "thumbnails", "PlatformArticle")
+            )
         else
-            thumbnails = null;
+            null
 
-
-        segments = (obj.getOrThrowNullableList<V8ValueObject>(client.config, "segments", contextName)
-            ?.map { fromV8Segment(client, it) }
-            ?.filterNotNull() ?: listOf());
-
-        _hasGetComments = _content.has("getComments");
-        _hasGetContentRecommendations = _content.has("getContentRecommendations");
-    }
+    override val segments: List<IJSArticleSegment> =
+        obj.getOrThrowNullableList<V8ValueObject>(client.config, "segments", "PlatformArticle")
+            ?.mapNotNull { fromV8Segment(client, it) }
+            ?: emptyList()
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {
         if(!_hasGetComments || _content.isClosed)

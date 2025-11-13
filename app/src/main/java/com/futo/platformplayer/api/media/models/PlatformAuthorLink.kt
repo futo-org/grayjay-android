@@ -54,14 +54,16 @@ interface IPlatformChannelContent : IPlatformContent {
     val subscribers: Long?
 }
 
-open class JSChannelContent : JSContent, IPlatformChannelContent {
-    override val contentType: ContentType get() = ContentType.CHANNEL
-    override val thumbnail: String?
-    override val subscribers: Long?
+open class JSChannelContent(
+    config: SourcePluginConfig,
+    obj: V8ValueObject
+) : JSContent(config, obj), IPlatformChannelContent {
 
-    constructor(config: SourcePluginConfig, obj: V8ValueObject) : super(config, obj) {
-        val contextName = "Channel";
-        thumbnail = obj.getOrDefault<String>(config, "thumbnail", contextName, null)
-        subscribers = if(obj.has("subscribers")) obj.getOrThrow(config,"subscribers", contextName) else null
-    }
+    final override val contentType: ContentType = ContentType.CHANNEL
+
+    override val thumbnail: String? =
+        _content.getOrDefault<String>(_pluginConfig, "thumbnail", "Channel", null)
+
+    override val subscribers: Long? =
+        _content.getOrDefault<Long>(_pluginConfig, "subscribers", "Channel", null)?.toLong()
 }

@@ -31,42 +31,52 @@ interface IJSDashManifestRawSource {
     fun generateAsync(scope: CoroutineScope): Deferred<String?>;
     fun generate(): String?;
 }
-open class JSDashManifestRawSource: JSSource, IVideoSource, IJSDashManifestRawSource, IStreamMetaDataSource {
-    override val container : String;
-    override val name : String;
-    override val width: Int;
-    override val height: Int;
-    override val codec: String;
-    override val bitrate: Int?;
-    override val duration: Long;
-    override val priority: Boolean;
+open class JSDashManifestRawSource(
+    plugin: JSClient,
+    obj: V8ValueObject
+) : JSSource(TYPE_DASH_RAW, plugin, obj), IVideoSource, IJSDashManifestRawSource, IStreamMetaDataSource {
 
-    val url: String?;
-    override var manifest: String?;
+    private val ctx = "DashRawSource"
+    private val cfg = plugin.config
 
-    override val hasGenerate: Boolean;
-    val canMerge: Boolean;
+    override val container: String =
+        _obj.getOrDefault<String>(cfg, "container", ctx, null) ?: "application/dash+xml"
 
-    override var streamMetaData: StreamMetaData? = null;
+    override val name: String =
+        _obj.getOrThrow<String>(cfg, "name", ctx)
 
-    constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH_RAW, plugin, obj) {
-        val contextName = "DashRawSource";
-        val config = plugin.config;
-        name = _obj.getOrThrow(config, "name", contextName);
-        url = _obj.getOrThrow(config, "url", contextName);
-        container = _obj.getOrDefault<String>(config, "container", contextName, null) ?: "application/dash+xml";
-        manifest = _obj.getOrDefault<String>(config, "manifest", contextName, null);
-        width = _obj.getOrDefault(config, "width", contextName, 0) ?: 0;
-        height = _obj.getOrDefault(config, "height", contextName, 0) ?: 0;
-        codec = _obj.getOrDefault(config, "codec", contextName, "") ?: "";
-        bitrate = _obj.getOrDefault(config, "bitrate", contextName, 0) ?: 0;
-        duration = _obj.getOrDefault(config, "duration", contextName, 0) ?: 0;
-        priority = _obj.getOrDefault(config, "priority", contextName, false) ?: false;
-        canMerge = _obj.getOrDefault(config, "canMerge", contextName, false) ?: false;
-        hasGenerate = _obj.has("generate");
-    }
+    override val width: Int =
+        _obj.getOrDefault<Int>(cfg, "width", ctx, null)?.toInt() ?: 0
 
-    private var _pregenerate: V8Deferred<String?>? = null;
+    override val height: Int =
+        _obj.getOrDefault<Int>(cfg, "height", ctx, null)?.toInt() ?: 0
+
+    override val codec: String =
+        _obj.getOrDefault<String>(cfg, "codec", ctx, "") ?: ""
+
+    override val bitrate: Int? =
+        _obj.getOrDefault<Int>(cfg, "bitrate", ctx, null)?.toInt()
+
+    override val duration: Long =
+        _obj.getOrDefault<Long>(cfg, "duration", ctx, 0)?.toLong() ?: 0L
+
+    override val priority: Boolean =
+        _obj.getOrDefault<Boolean>(cfg, "priority", ctx, false) ?: false
+
+    val url: String? =
+        _obj.getOrDefault<String>(cfg, "url", ctx, null)
+
+    override var manifest: String? =
+        _obj.getOrDefault<String>(cfg, "manifest", ctx, null)
+
+    override val hasGenerate: Boolean = _obj.has("generate")
+
+    val canMerge: Boolean =
+        _obj.getOrDefault<Boolean>(cfg, "canMerge", ctx, false) ?: false
+
+    override var streamMetaData: StreamMetaData? = null
+
+    private var _pregenerate: V8Deferred<String?>? = null
     fun pregenerateAsync(scope: CoroutineScope): V8Deferred<String?>? {
         _pregenerate = generateAsync(scope);
         return _pregenerate;

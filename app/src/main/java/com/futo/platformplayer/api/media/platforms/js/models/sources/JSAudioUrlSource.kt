@@ -8,43 +8,44 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
-open class JSAudioUrlSource : IAudioUrlSource, JSSource {
-    override val name: String;
-    override val bitrate : Int;
-    override val container : String;
-    override val codec: String;
-    private val url : String;
+open class JSAudioUrlSource(
+    plugin: JSClient,
+    obj: V8ValueObject
+) : JSSource(TYPE_AUDIOURL, plugin, obj), IAudioUrlSource {
 
-    override val language: String;
+    private val ctx = "AudioUrlSource"
+    private val cfg = plugin.config
 
-    override val duration: Long?;
+    override val bitrate: Int =
+        _obj.getOrThrow<Int>(cfg, "bitrate", ctx)
 
-    override var priority: Boolean = false;
+    override val container: String =
+        _obj.getOrThrow<String>(cfg, "container", ctx)
 
-    override var original: Boolean = false;
+    override val codec: String =
+        _obj.getOrThrow<String>(cfg, "codec", ctx)
 
-    constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_AUDIOURL, plugin, obj) {
-        val contextName = "AudioUrlSource";
-        val config = plugin.config;
+    private val url: String =
+        _obj.getOrThrow<String>(cfg, "url", ctx)
 
-        bitrate = _obj.getOrThrow(config, "bitrate", contextName);
-        container = _obj.getOrThrow(config, "container", contextName);
-        codec = _obj.getOrThrow(config, "codec", contextName);
-        url = _obj.getOrThrow(config, "url", contextName);
-        language = _obj.getOrThrow(config, "language", contextName);
-        duration = _obj.getOrDefault(config, "duration", contextName, null);
+    override val language: String =
+        _obj.getOrThrow<String>(cfg, "language", ctx)
 
-        name = _obj.getOrDefault(config, "name", contextName, "${container} ${bitrate}") ?: "${container} ${bitrate}";
+    override val duration: Long? =
+        _obj.getOrDefault<Long>(cfg, "duration", ctx, null)?.toLong()
 
-        priority = if(_obj.has("priority")) obj.getOrThrow(config, "priority", contextName) else false;
-        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
-    }
+    override val name: String =
+        _obj.getOrDefault<String>(cfg, "name", ctx, null)
+            ?: "$container $bitrate"
 
-    override fun getAudioUrl() : String {
-        return url;
-    }
+    override var priority: Boolean =
+        if (_obj.has("priority")) _obj.getOrThrow<Boolean>(cfg, "priority", ctx) else false
 
-    override fun toString(): String {
-        return "(name=$name, container=$container, bitrate=$bitrate, codec=$codec, url=$url, language=$language, duration=$duration)";
-    }
+    override var original: Boolean =
+        if (_obj.has("original")) _obj.getOrThrow<Boolean>(cfg, "original", ctx) else false
+
+    override fun getAudioUrl(): String = url
+
+    override fun toString(): String =
+        "(name=$name, container=$container, bitrate=$bitrate, codec=$codec, url=$url, language=$language, duration=$duration)"
 }

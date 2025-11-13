@@ -9,13 +9,15 @@ class LocalSubtitleSource : ISubtitleSource {
     override val name: String;
     override val url: String?;
     override val format: String?;
+    override val language: String?
     override val hasFetch: Boolean get() = false;
 
     val filePath: String;
 
-    constructor(name: String, format: String?, filePath: String) {
+    constructor(name: String, language: String?, format: String?, filePath: String) {
         this.name = name;
         this.format = format;
+        this.language = language
         this.filePath = filePath;
         this.url = Uri.fromFile(File(filePath)).toString();
     }
@@ -32,6 +34,7 @@ class LocalSubtitleSource : ISubtitleSource {
         fun fromSource(source: SubtitleRawSource, path: String): LocalSubtitleSource {
             return LocalSubtitleSource(
                 source.name,
+                source.language,
                 source.format,
                 path
             );

@@ -5,42 +5,47 @@ import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 
-open class JSVideoUrlSource : IVideoUrlSource, JSSource {
-    override val width : Int;
-    override val height : Int;
-    override val container : String;
-    override val codec: String;
-    override val name : String;
-    override val bitrate : Int;
-    override val duration: Long;
-    private val url : String;
+open class JSVideoUrlSource(
+    plugin: JSClient,
+    obj: V8ValueObject
+) : JSSource(TYPE_VIDEOURL, plugin, obj), IVideoUrlSource {
 
-    override var priority: Boolean = false;
+    private val ctx = "JSVideoUrlSource"
+    private val cfg = plugin.config
 
-    constructor(plugin: JSClient, obj: V8ValueObject): super(TYPE_VIDEOURL, plugin, obj) {
-        val contextName = "JSVideoUrlSource";
-        val config = plugin.config;
+    override val width: Int =
+        _obj.getOrThrow<Int>(cfg, "width", ctx)
 
-        width = _obj.getOrThrow(config, "width", contextName);
-        height = _obj.getOrThrow(config, "height", contextName);
-        container = _obj.getOrThrow(config, "container", contextName);
-        codec = _obj.getOrThrow(config, "codec", contextName);
-        name = _obj.getOrThrow(config, "name", contextName);
-        bitrate = _obj.getOrThrow(config, "bitrate", contextName);
-        duration = _obj.getOrThrow<Int>(config, "duration", contextName).toLong();
-        url = _obj.getOrThrow(config, "url", contextName);
+    override val height: Int =
+        _obj.getOrThrow<Int>(cfg, "height", ctx)
 
-        priority = obj.getOrNull(config, "priority", contextName) ?: false;
-    }
+    override val container: String =
+        _obj.getOrThrow<String>(cfg, "container", ctx)
 
-    override fun getVideoUrl() : String {
-        return url;
-    }
+    override val codec: String =
+        _obj.getOrThrow<String>(cfg, "codec", ctx)
 
-    override fun toString(): String {
-        return "(width=$width, height=$height, container=$container, codec=$codec, name=$name, bitrate=$bitrate, duration=$duration, url=$url)"
-    }
+    override val name: String =
+        _obj.getOrThrow<String>(cfg, "name", ctx)
+
+    override val bitrate: Int =
+        _obj.getOrThrow<Int>(cfg, "bitrate", ctx)
+
+    override val duration: Long =
+        _obj.getOrThrow<Long>(cfg, "duration", ctx)
+
+    private val url: String =
+        _obj.getOrThrow<String>(cfg, "url", ctx)
+
+    override var priority: Boolean =
+        _obj.getOrDefault<Boolean>(cfg, "priority", ctx, false) ?: false
+
+    override fun getVideoUrl(): String = url
+
+    override fun toString(): String =
+        "(width=$width, height=$height, container=$container, codec=$codec, name=$name, bitrate=$bitrate, duration=$duration, url=$url)"
 }

@@ -1,6 +1,11 @@
 package com.futo.platformplayer.views.adapters
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -11,6 +16,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -97,6 +103,15 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
+        _layoutComment.setOnLongClickListener {
+            val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val text = comment?.message.orEmpty()
+            val clip = ClipData.newPlainText("Comment", text)
+            clipboard.setPrimaryClip(clip)
+            UIDialogs.toast(viewGroup.context, "Copied", false)
+            true
+        }
+
         _creatorThumbnail.onClick.subscribe {
             val c = comment ?: return@subscribe;
             onAuthorClick.emit(c);
@@ -120,7 +135,7 @@ class CommentViewHolder : ViewHolder {
             onDelete.emit(c);
         }
 
-        _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
+        _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context)
     }
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {

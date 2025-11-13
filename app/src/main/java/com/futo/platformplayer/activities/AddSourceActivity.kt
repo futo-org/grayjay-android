@@ -107,10 +107,9 @@ class AddSourceActivity : AppCompatActivity() {
         onNewIntent(intent);
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        var url = intent?.dataString;
-
+        var url = intent.dataString;
         if(url == null)
             UIDialogs.showDialog(this, R.drawable.ic_error, getString(R.string.no_valid_url_provided), null, null,
                 0, UIDialogs.Action(getString(R.string.ok), { finish() }, UIDialogs.ActionStyle.PRIMARY));
