@@ -142,6 +142,10 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 moreOverlay.visibility = VISIBLE
                 val animations = arrayListOf<Animator>()
                 animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 0.0f, 1.0f).setDuration(duration))
+                _bottomButtons.find { it.definition.id == 99 }?.let {
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 0.4f, 1.0f)
+                        .setDuration(duration));
+                }
 
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
@@ -157,7 +161,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 animatorSet.start()
             } else {
                 val animations = arrayListOf<Animator>()
-                animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f).setDuration(duration))
+                animations
+                    .add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f)
+                    .setDuration(duration))
+                _bottomButtons.find { it.definition.id == 99 }?.let {
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 1.0f, 0.4f)
+                        .setDuration(duration));
+                }
 
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
@@ -259,7 +269,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             for(button in _bottomButtons.toList())
                 button.updateActive(_fragment);
             for(button in _moreButtons.toList())
-                button.updateActive(_fragment);
+                button.updateActive(_fragment, true);
         }
 
         override fun onConfigurationChanged(newConfig: Configuration?) {
@@ -353,7 +363,14 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 this.definition = def;
 
                 _buttonImage = findViewById(R.id.image_button);
-                _buttonImage.setImageResource(if (def.isActive(fragment)) def.iconActive else def.icon);
+                //_buttonImage.setImageResource(if (def.isActive(fragment)) def.iconActive else def.icon);
+                _buttonImage.setImageResource(definition.iconActive);
+                if(definition.isActive(fragment) || isMore) {
+                    this.alpha = 1f;
+                }
+                else {
+                    this.alpha = 0.4f;
+                }
 
                 _textButton = findViewById(R.id.text_button);
                 _textButton.text = resources.getString(def.string);
@@ -364,8 +381,16 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             }
 
-            fun updateActive(fragment: MenuBottomBarFragment) {
-                _buttonImage.setImageResource(if (definition.isActive(fragment)) definition.iconActive else definition.icon);
+            fun updateActive(fragment: MenuBottomBarFragment, isMore: Boolean = false, overrideValue: Boolean? = null) {
+                //_buttonImage.setImageResource(if (definition.isActive(fragment)) definition.iconActive else definition.icon);
+                _buttonImage.setImageResource(definition.iconActive);
+                val isActive = overrideValue ?: definition.isActive(fragment) || isMore
+                if(isActive) {
+                    this.alpha = 1f;
+                }
+                else {
+                    this.alpha = 0.4f;
+                }
             }
         }
     }
