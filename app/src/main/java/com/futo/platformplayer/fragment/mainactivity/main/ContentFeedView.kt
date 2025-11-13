@@ -64,7 +64,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         player.modifyState("ThumbnailPlayer") { state -> state.muted = true };
         _exoPlayer = player;
 
-        return PreviewContentListAdapter(fragment.lifecycleScope, context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(), arrayListOf(), shouldShowTimeBar).apply {
+        return PreviewContentListAdapter(fragment.lifecycleScope, context, feedStyle ?: FeedStyle.THUMBNAIL, dataset, player, _previewsEnabled, arrayListOf(), arrayListOf(), shouldShowTimeBar).apply {
             attachAdapterEvents(this);
         }
     }

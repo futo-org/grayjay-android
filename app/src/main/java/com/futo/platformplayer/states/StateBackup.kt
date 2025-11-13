@@ -9,7 +9,6 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
@@ -157,8 +156,8 @@ class StateBackup {
                 }
                 catch (exSec: FileNotFoundException) {
                     Logger.e(TAG, "Failed to access backup file", exSec);
-                    val activity = if(SettingsActivity.getActivity() != null)
-                        SettingsActivity.getActivity();
+                    val activity = if(StateApp.instance.activity != null)
+                        StateApp.instance.activity
                     else if(StateApp.instance.isMainActive)
                         StateApp.instance.contextOrNull;
                     else null;
@@ -226,7 +225,7 @@ class StateBackup {
             StateApp.instance.contextOrNull?.let {
                 val uri = FileProvider.getUriForFile(it, it.resources.getString(R.string.authority), exportFile);
 
-                val activity = SettingsActivity.getActivity() ?: return@let;
+                val activity = StateApp.instance.activity ?: return@let;
                 activity.startActivity(
                     ShareCompat.IntentBuilder(activity)
                         .setType("application/zip")

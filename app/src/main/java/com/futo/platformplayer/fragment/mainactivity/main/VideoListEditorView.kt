@@ -20,6 +20,7 @@ import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.images.GlideHelper
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlaylists
@@ -194,22 +195,35 @@ abstract class VideoListEditorView : LinearLayout {
         _textMetadata.text = parts.joinToString(" • ");
     }
 
-    protected fun setVideos(videos: List<IPlatformVideo>?, canEdit: Boolean) {
-        if (videos != null && videos.isNotEmpty()) {
-            val video = videos.first();
+    protected fun setVideos(videos: List<IPlatformVideo>?, canEdit: Boolean, thumbnail: String? = null) {
+        if(thumbnail != null) {
             _imagePlaylistThumbnail.let {
                 Glide.with(it)
-                    .load(video.thumbnails.getHQThumbnail())
+                    .load(thumbnail)
                     .placeholder(R.drawable.placeholder_video_thumbnail)
                     .crossfade()
                     .into(it);
-            };
-        } else {
-            _textMetadata.text = "0 " + context.getString(R.string.videos);
-            Glide.with(_imagePlaylistThumbnail)
-                .load(R.drawable.placeholder_video_thumbnail)
-                .into(_imagePlaylistThumbnail)
+            }
         }
+        else {
+            if (videos != null && videos.isNotEmpty()) {
+                val video = videos.first();
+                _imagePlaylistThumbnail.let {
+                    Glide.with(it)
+                        .load(video.thumbnails.getHQThumbnail())
+                        .placeholder(R.drawable.placeholder_video_thumbnail)
+                        .crossfade()
+                        .into(it);
+                };
+            } else {
+                Glide.with(_imagePlaylistThumbnail)
+                    .load(R.drawable.placeholder_video_thumbnail)
+                    .into(_imagePlaylistThumbnail)
+            }
+        }
+        if(videos == null || videos.isEmpty())
+            _textMetadata.text = "0 " + context.getString(R.string.videos);
+
         _loadedVideos = videos;
         _loadedVideosCanEdit = canEdit;
         _videoListEditorView.setVideos(videos, canEdit);

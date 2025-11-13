@@ -9,6 +9,8 @@ import android.widget.ImageView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.fragment.mainactivity.main.CreatorsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibraryFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LibrarySearchFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
@@ -46,6 +48,8 @@ class GeneralTopBarFragment : TopFragment() {
                 navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.CREATOR));
             } else if (currentMain is PlaylistsFragment || currentMain is PlaylistFragment) {
                 navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.PLAYLIST));
+            } else if (currentMain is LibraryFragment) {
+                navigate<LibrarySearchFragment>();
             } else {
                 navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.VIDEO));
             }

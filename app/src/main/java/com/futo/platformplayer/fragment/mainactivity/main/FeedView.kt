@@ -39,6 +39,7 @@ import java.time.OffsetDateTime
 import kotlin.math.max
 
 abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : LinearLayout where TPager : IPager<TResult>, TViewHolder : RecyclerView.ViewHolder, TFragment : MainFragment {
+    protected val _feedRoot: FrameLayout;
     protected val  _recyclerResults: RecyclerView;
     protected val _overlayContainer: FrameLayout;
     protected val _swipeRefresh: SwipeRefreshLayout;
@@ -67,7 +68,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private var _sortByOptions: List<String>? = null;
     private var _activeTags: List<String>? = null;
 
-    private var _nextPageHandler: TaskHandler<TPager, List<TResult>>;
+    private var _nextPageHandler: TaskHandler<TPager, Pair<TPager, List<TResult>>>;
     val recyclerData: RecyclerData<InsertedViewAdapterWithLoader<TViewHolder>, GridLayoutManager, TPager, TResult, TConverted, InsertedViewHolder<TViewHolder>>;
 
     val fragment: TFragment;
@@ -80,6 +81,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         this.fragment = fragment;
         inflater.inflate(R.layout.fragment_feed, this);
 
+        _feedRoot = findViewById(R.id.feed_root);
         _textCentered = findViewById(R.id.text_centered);
         _emptyPagerContainer = findViewById(R.id.empty_pager_container);
         _progressBar = findViewById(R.id.progress_bar);
@@ -135,23 +137,27 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
 
-        _nextPageHandler = TaskHandler<TPager, List<TResult>>({fragment.lifecycleScope}, {
+        _nextPageHandler = TaskHandler<TPager, Pair<TPager, List<TResult>>>({fragment.lifecycleScope}, {
             if (it is IAsyncPager<*>)
                 it.nextPageAsync();
             else
                 it.nextPage();
 
             processPagerExceptions(it);
-            return@TaskHandler it.getResults();
+            return@TaskHandler Pair(it, it.getResults());
         }).success {
+            val pager = it.first;
+            val results = it.second
+
             setLoading(false);
 
             val posBefore = recyclerData.results.size;
-            val filteredResults = filterResults(it);
+            val filteredResults = filterResults(results);
             recyclerData.results.addAll(filteredResults);
-            recyclerData.resultsUnfiltered.addAll(it);
+            recyclerData.resultsUnfiltered.addAll(results);
             recyclerData.adapter.notifyItemRangeInserted(recyclerData.adapter.childToParentPosition(posBefore), filteredResults.size);
-            ensureEnoughContentVisible(filteredResults)
+            if(pager.hasMorePages())
+                ensureEnoughContentVisible(filteredResults)
         }.exception<Throwable> {
             Logger.w(TAG, "Failed to load next page.", it);
             UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_next_page), it, {
@@ -389,6 +395,9 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
     protected fun finishRefreshLayoutLoader() {
         _swipeRefresh.isRefreshing = false;
+    }
+    protected fun disableRefreshLayout() {
+        _swipeRefresh.isEnabled = false;
     }
 
     fun clearResults(){

@@ -28,6 +28,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.local.LocalClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
@@ -75,6 +76,7 @@ class StatePlatform {
     private val _cache : LruCache<String, CachedPlatformContent> = LruCache<String, CachedPlatformContent>(VIDEO_CACHE);
 
     //Clients
+    private val _localClient = LocalClient();
     private val _enabledClientsPersistent = FragmentedStorage.get<StringArrayStorage>("enabledClients");
     private val _platformOrderPersistent = FragmentedStorage.get<StringArrayStorage>("platformOrder");
     private val _clientsLock = Object();
@@ -117,6 +119,7 @@ class StatePlatform {
                 _enabledClients.find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) }?.let {
                     _mainClientPool.getClientPooled(it).getContentDetails(url)
                 }
+                    ?: (if(_localClient.isContentDetailsUrl(url)) _localClient.getContentDetails(url) else null)
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
             }
             else {
@@ -124,6 +127,7 @@ class StatePlatform {
                 _enabledClients.find { _instantClientPool.getClientPooled(it).isContentDetailsUrl(url) }?.let {
                     _privateClientPool.getClientPooled(it).getContentDetails(url)
                 }
+                    ?: (if(_localClient.isContentDetailsUrl(url)) _localClient.getContentDetails(url) else null)
                     ?: throw NoPlatformClientException("No client enabled that supports this url ($url)");
             }
         },

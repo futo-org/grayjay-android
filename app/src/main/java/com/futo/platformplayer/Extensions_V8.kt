@@ -8,6 +8,7 @@ import com.caoccao.javet.values.reference.V8ValueError
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.caoccao.javet.values.reference.V8ValuePromise
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.engine.exceptions.ScriptExecutionException
@@ -387,4 +388,15 @@ suspend fun <T> Deferred<T>.awaitCancelConverted(): T {
         }
         throw ex;
     }
+}
+
+fun <T> IPager<T>.toList(): List<T> {
+    val list = this.getResults().toMutableList();
+
+    while(this.hasMorePages()) {
+        this.nextPage();
+        list.addAll(this.getResults());
+    }
+
+    return list.toList();
 }

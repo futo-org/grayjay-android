@@ -29,7 +29,6 @@ class GlideHelper {
                 req.into(this);
         }
 
-
         fun RequestBuilder<Drawable>.crossfade(): RequestBuilder<Drawable> {
             return this.transition(DrawableTransitionOptions.withCrossFade());
         }

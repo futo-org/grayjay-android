@@ -20,7 +20,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.MainActivityFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*
@@ -143,6 +142,10 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 moreOverlay.visibility = VISIBLE
                 val animations = arrayListOf<Animator>()
                 animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 0.0f, 1.0f).setDuration(duration))
+                _bottomButtons.find { it.definition.id == 99 }?.let {
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 0.4f, 1.0f)
+                        .setDuration(duration));
+                }
 
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
@@ -158,7 +161,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 animatorSet.start()
             } else {
                 val animations = arrayListOf<Animator>()
-                animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f).setDuration(duration))
+                animations
+                    .add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f)
+                    .setDuration(duration))
+                _bottomButtons.find { it.definition.id == 99 }?.let {
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 1.0f, 0.4f)
+                        .setDuration(duration));
+                }
 
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
@@ -260,7 +269,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             for(button in _bottomButtons.toList())
                 button.updateActive(_fragment);
             for(button in _moreButtons.toList())
-                button.updateActive(_fragment);
+                button.updateActive(_fragment, true);
         }
 
         override fun onConfigurationChanged(newConfig: Configuration?) {
@@ -354,7 +363,14 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 this.definition = def;
 
                 _buttonImage = findViewById(R.id.image_button);
-                _buttonImage.setImageResource(if (def.isActive(fragment)) def.iconActive else def.icon);
+                //_buttonImage.setImageResource(if (def.isActive(fragment)) def.iconActive else def.icon);
+                _buttonImage.setImageResource(definition.iconActive);
+                if(definition.isActive(fragment) || isMore) {
+                    this.alpha = 1f;
+                }
+                else {
+                    this.alpha = 0.4f;
+                }
 
                 _textButton = findViewById(R.id.text_button);
                 _textButton.text = resources.getString(def.string);
@@ -365,8 +381,16 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             }
 
-            fun updateActive(fragment: MenuBottomBarFragment) {
-                _buttonImage.setImageResource(if (definition.isActive(fragment)) definition.iconActive else definition.icon);
+            fun updateActive(fragment: MenuBottomBarFragment, isMore: Boolean = false, overrideValue: Boolean? = null) {
+                //_buttonImage.setImageResource(if (definition.isActive(fragment)) definition.iconActive else definition.icon);
+                _buttonImage.setImageResource(definition.iconActive);
+                val isActive = overrideValue ?: definition.isActive(fragment) || isMore
+                if(isActive) {
+                    this.alpha = 1f;
+                }
+                else {
+                    this.alpha = 0.4f;
+                }
             }
         }
     }
@@ -389,6 +413,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             }),
             ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>(withHistory = false) }),
+            ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigate<LibraryFragment>(withHistory = false) }),
             ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>(withHistory = false) }),
             ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>(withHistory = false) }),
             ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>(withHistory = false) }),
@@ -399,6 +424,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>(withHistory = false) }),
             ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>(withHistory = false) }),
             ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { false }, {
+                it.navigate<SettingsFragment>();
+                /*
                 val c = it.context ?: return@ButtonDefinition;
                 Logger.i(TAG, "settings preventPictureInPicture()");
                 it.requireFragment<VideoDetailFragment>().preventPictureInPicture();
@@ -406,7 +433,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 c.startActivity(intent);
                 if (c is Activity) {
                     c.overridePendingTransition(R.anim.slide_in_up, R.anim.slide_darken);
-                }
+                }*/
             }),
             ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = true, { false }, {
                 UIDialogs.showDialog(it.context ?: return@ButtonDefinition, R.drawable.ic_disabled_visible_purple, "Privacy Mode",

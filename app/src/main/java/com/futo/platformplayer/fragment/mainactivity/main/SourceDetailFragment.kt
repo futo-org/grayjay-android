@@ -1,5 +1,8 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.net.Uri
@@ -32,9 +35,11 @@ import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.buttons.BigButtonGroup
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.sources.SourceHeaderView
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 class SourceDetailFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -415,11 +420,39 @@ class SourceDetailFragment : MainFragment() {
             }
 
             val advancedButtons = BigButtonGroup(c, "Advanced",
+                BigButton(c, "Reset Settings", "Resets the settings to their default (deleting existing settings)", R.drawable.ic_refresh) {
+                        _config?.let {
+                            StatePlugins.instance.setPluginSettings(it.id, hashMapOf());
+                            loadConfig(it)
+                        }
+                    },
+                BigButton(c, "Share Settings", "Shares the settings of this plugin as json, mostly used for bug reporting", R.drawable.ic_code) {
+
+                    val structure = Json { this.prettyPrint = true; this.prettyPrintIndent = "   " }
+                        .encodeToString(_settings);
+                    fragment.startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND;
+                        putExtra(Intent.EXTRA_TEXT, structure);
+                        type = "text/plain";
+                    }, null));
+                    /*
+
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Settings Json", structure)
+                    clipboard.setPrimaryClip(clip)
+                    UIDialogs.toast(context, "Copied", false);
+                    */
+                }.apply {
+                    this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                    };
+                } ,
+                /*
                 BigButton(c, "Edit Code", "Modify the source of this plugin", R.drawable.ic_code) {
 
                 }.apply {
                     this.alpha = 0.5f;
-                },
+                },*/
                 if(isEmbedded) BigButton(c, "Reinstall", "Modify the source of this plugin", R.drawable.ic_refresh) {
                     val embeddedConfig = StatePlugins.instance.getEmbeddedPluginConfigFromID(context, config.id);
 

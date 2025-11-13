@@ -23,6 +23,18 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">16dp</item>
     </style>
+    <style name="roundedCorners_30dp" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">30dp</item>
+    </style>
+    <style name="roundedCorners_33dp" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">33dp</item>
+    </style>
+    <style name="roundedCorners_25dp" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">25dp</item>
+    </style>
     <style name="roundedCorners_40dp" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">40dp</item>

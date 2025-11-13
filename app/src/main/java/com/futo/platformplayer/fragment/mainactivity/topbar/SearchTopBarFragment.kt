@@ -18,6 +18,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.fragment.mainactivity.main.LibrarySearchFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SuggestionsFragmentData
 import com.futo.platformplayer.logging.Logger
@@ -112,7 +113,10 @@ class SearchTopBarFragment : TopFragment() {
     }
     fun clear() {
         _editSearch?.text?.clear();
-        if (currentMain !is SuggestionsFragment) {
+        if(currentMain is LibrarySearchFragment) {
+            onSearch.emit("");
+        }
+        else if (currentMain !is SuggestionsFragment) {
             navigate<SuggestionsFragment>(SuggestionsFragmentData("", _searchType), false);
         } else {
             onSearch.emit("");
@@ -188,6 +192,12 @@ class SearchTopBarFragment : TopFragment() {
 
     fun setFilterButtonVisible(visible: Boolean) {
         _buttonFilter?.visibility = if (visible) View.VISIBLE else View.GONE;
+    }
+
+    fun getSearchText(): String {
+        return _editSearch?.let {
+            it.text.toString();
+        } ?: "";
     }
 
     private fun onDone() {

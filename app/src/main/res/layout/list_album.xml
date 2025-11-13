@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginBottom="10dp"
+    android:id="@+id/root"
+    android:clickable="true">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/image_thumbnail"
+        android:layout_height="50dp"
+        android:layout_width="50dp"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/roundedCorners_4dp"
+        app:srcCompat="@drawable/placeholder_video_thumbnail"
+        android:background="@drawable/video_thumbnail_outline"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:id="@+id/text_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:textSize="13dp"
+        android:textColor="@color/white"
+        android:fontFamily="@font/inter_light"
+        tools:text="Legendary grant recipient: Marvin Wißfeld Very Long Title That is Long"
+        android:maxLines="2"
+        android:layout_marginTop="5dp"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintBottom_toTopOf="@id/text_metadata"
+        android:layout_marginStart="15dp" />
+
+    <TextView
+        android:id="@+id/text_metadata"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:textSize="10dp"
+        android:textColor="@color/gray_e0"
+        android:fontFamily="@font/inter_extra_light"
+        android:layout_marginBottom="5dp"
+        tools:text="3 videos"
+        android:maxLines="1"
+        app:layout_constraintTop_toBottomOf="@id/text_name"
+        app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
+        app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="15dp" />
+
+    <!--
+    <ImageButton
+        android:id="@+id/button_play"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        app:srcCompat="@drawable/ic_play_white_nopad"
+        android:scaleType="fitCenter"
+        android:padding="8dp"
+        app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="10dp"/> -->
+</androidx.constraintlayout.widget.ConstraintLayout>
