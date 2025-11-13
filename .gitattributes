@@ -1,2 +1,6 @@
 aar/* filter=lfs diff=lfs merge=lfs -text
 app/aar/* filter=lfs diff=lfs merge=lfs -text
+app/src/main/jniLibs/arm64-v8a filter=lfs diff=lfs merge=lfs -text
+app/src/main/jniLibs/armeabi-v7a filter=lfs diff=lfs merge=lfs -text
+app/src/main/jniLibs/x86 filter=lfs diff=lfs merge=lfs -text
+app/src/main/jniLibs/x86_64 filter=lfs diff=lfs merge=lfs -text

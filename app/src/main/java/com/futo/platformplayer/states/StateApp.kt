@@ -20,6 +20,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.work.*
+import com.curlbind.Libcurl
 import com.futo.platformplayer.*
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs.Action
@@ -381,6 +382,16 @@ class StateApp {
     fun mainAppStarting(context: Context) {
         Logger.i(TAG, "MainApp Starting");
         initializeFiles(true);
+
+        _scope?.launch(Dispatchers.IO) {
+            try {
+                val caFile = AppCaUpdater.ensureCaBundle(context)
+                Libcurl.setDefaultCAPath(caFile.absolutePath)
+            } catch (t: Throwable) {
+                val fallback = File(context.noBackupFilesDir, "curl-ca-bundle.pem")
+                if (fallback.exists()) Libcurl.setDefaultCAPath(fallback.absolutePath)
+            }
+        }
 
         if(Settings.instance.other.polycentricLocalCache) {
             Logger.i(TAG, "Initialize Polycentric Disk Cache")

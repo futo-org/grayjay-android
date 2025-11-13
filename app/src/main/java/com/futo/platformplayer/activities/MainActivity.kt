@@ -33,6 +33,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
+import com.curlbind.Libcurl
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.RootInsetsController
@@ -275,6 +276,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
         Logger.w(TAG, "MainActivity Starting [$mainId]");
+
         StateApp.instance.setGlobalContext(this, lifecycleScope, mainId);
         StateApp.instance.mainAppStarting(this);
 
