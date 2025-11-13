@@ -20,6 +20,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.work.*
+import com.curlbind.Libcurl
 import com.futo.platformplayer.*
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs.Action
@@ -28,8 +29,6 @@ import com.futo.platformplayer.UIDialogs.Companion.showDialog
 import com.futo.platformplayer.activities.CaptchaActivity
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
-import com.futo.platformplayer.activities.SettingsActivity.Companion.settingsActivityClosed
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.background.BackgroundWorker
@@ -38,6 +37,7 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
@@ -53,6 +53,7 @@ import com.futo.polycentric.core.toBase64Url
 import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
@@ -79,6 +80,9 @@ class StateApp {
         privateMode = value;
         privateModeChanged.emit(privateMode);
     }
+
+    var hasMediaStoreAudioPermission: Boolean = false;
+    var hasMediaStoreVideoPermission: Boolean = false;
 
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
         val generalUri = Settings.instance.storage.getStorageGeneralUri();
@@ -161,6 +165,12 @@ class StateApp {
             ?: throw IllegalStateException("Attempted to use a global context while MainActivity is no longer available");
         return thisContext;
     }
+    val activity: MainActivity? get() {
+        val context = contextOrNull;
+        if(context is MainActivity)
+            return context;
+        return null;
+    }
 
     private var _mainId: String? = null;
 
@@ -173,6 +183,9 @@ class StateApp {
     private var _lastMeteredState: Boolean = false;
     private var _connectivityManager: ConnectivityManager? = null;
     private var _lastNetworkState: NetworkState = NetworkState.UNKNOWN;
+    private var _lastConnectivityChange: OffsetDateTime? = null;
+    val lastConnectivityChange
+        get() = _lastConnectivityChange;
 
     //Logging
     private var _fileLogConsumer: FileLogConsumer? = null;
@@ -276,29 +289,52 @@ class StateApp {
             };
         }
     }
-    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit)
+    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit) {
+        return requestDirectoryAccess(activity, name, purpose, path, handle, false);
+    }
+    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit, skipDialog: Boolean = false)
     {
         if(activity is Context)
         {
-            UIDialogs.showDialog(activity, R.drawable.ic_security, "Directory required for\n${name}", "Please select a directory for ${name}.\n${purpose}".trim(), null, 0,
-                UIDialogs.Action("Cancel", {}),
-                UIDialogs.Action("Ok", {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                    if(path != null)
-                        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
-                    intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                        .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+            if(skipDialog) {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                if(path != null)
+                    intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+                intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                    .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
 
-                    activity.launchForResult(intent, 99) {
-                        if(it.resultCode == Activity.RESULT_OK) {
-                            handle(it.data?.data);
-                        }
-                        else
-                            UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
-                    };
-                }, UIDialogs.ActionStyle.PRIMARY));
+                activity.launchForResult(intent, 99) {
+                    if(it.resultCode == Activity.RESULT_OK) {
+                        handle(it.data?.data);
+                    }
+                    else
+                        UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
+                };
+            }
+            else {
+                UIDialogs.showDialog(activity, R.drawable.ic_security, "Directory required for\n${name}", "Please select a directory for ${name}.\n${purpose}".trim(), null, 0,
+                    UIDialogs.Action("Cancel", {}),
+                    UIDialogs.Action("Ok", {
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                        if(path != null)
+                            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+                        intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                            .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+
+                        activity.launchForResult(intent, 99) {
+                            if(it.resultCode == Activity.RESULT_OK) {
+                                handle(it.data?.data);
+                            }
+                            else
+                                UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
+                        };
+                    }, UIDialogs.ActionStyle.PRIMARY));
+            }
+
         }
     }
 
@@ -382,6 +418,16 @@ class StateApp {
         Logger.i(TAG, "MainApp Starting");
         initializeFiles(true);
 
+        _scope?.launch(Dispatchers.IO) {
+            try {
+                val caFile = AppCaUpdater.ensureCaBundle(context)
+                Libcurl.setDefaultCAPath(caFile.absolutePath)
+            } catch (t: Throwable) {
+                val fallback = File(context.noBackupFilesDir, "curl-ca-bundle.pem")
+                if (fallback.exists()) Libcurl.setDefaultCAPath(fallback.absolutePath)
+            }
+        }
+
         if(Settings.instance.other.polycentricLocalCache) {
             Logger.i(TAG, "Initialize Polycentric Disk Cache")
             _cacheDirectory?.let { ApiMethods.initCache(it) };
@@ -449,7 +495,7 @@ class StateApp {
             StateSync.instance.start(context)
         }
 
-        settingsActivityClosed.subscribe {
+        SettingsFragment.onClosed.subscribe {
             if (Settings.instance.synchronization.enabled) {
                 StateSync.instance.start(context)
             } else {
@@ -461,7 +507,7 @@ class StateApp {
             scopeOrNull?.launch(Dispatchers.Main) {
                 try {
                     if (!it.isNullOrEmpty()) {
-                        (SettingsActivity.getActivity() ?: contextOrNull)?.let { c ->
+                        (StateApp.instance.activity ?: contextOrNull)?.let { c ->
                             val okButtonAction = Action(c.getString(R.string.ok), {}, ActionStyle.PRIMARY)
                             val copyButtonAction = Action(c.getString(R.string.copy), {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -590,7 +636,9 @@ class StateApp {
         scheduleBackgroundWork(context, interval != 0, interval);
 
         Logger.i(TAG, "MainApp Started: Initialize [AutoBackup]");
+        Settings.instance.backup.didAskAutoBackup = true; //Some users have issues with it
         if(!Settings.instance.backup.didAskAutoBackup && !Settings.instance.backup.shouldAutomaticBackup()) {
+            /*
             StateAnnouncement.instance.registerAnnouncement("backup", "Set Automatic Backup", "Configure daily backups of your data to restore in case of catastrophic failure.", AnnouncementType.SESSION, null, null, "Configure", {
                 if(context is IWithResultLauncher && !Settings.instance.storage.isStorageMainValid(context)) {
                     UIDialogs.toast("Missing general directory");
@@ -607,6 +655,7 @@ class StateApp {
                 Settings.instance.backup.didAskAutoBackup = true;
                 Settings.instance.save();
             });
+            */
         }
         else if(Settings.instance.backup.didAskAutoBackup && Settings.instance.backup.shouldAutomaticBackup() && !Settings.instance.storage.isStorageMainValid(context)) {
             if(context is IWithResultLauncher) {
@@ -860,8 +909,11 @@ class StateApp {
                 val beforeMeteredState = _lastMeteredState;
                 _lastNetworkState = getCurrentNetworkState();
                 _lastMeteredState = isCurrentMetered();
-                if(beforeNetworkState != _lastNetworkState || beforeMeteredState != _lastMeteredState)
+                if(beforeNetworkState != _lastNetworkState || beforeMeteredState != _lastMeteredState) {
                     Logger.i(TAG, "Network capabilities changed (State: ${_lastNetworkState}, Metered: ${_lastMeteredState})");
+                    _lastConnectivityChange = OffsetDateTime.now();
+                }
+
             } catch(ex: Throwable) {
                 Logger.w(TAG, "Failed to update network state", ex);
             }

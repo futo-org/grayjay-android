@@ -55,7 +55,7 @@ class PackageDOMParser : V8Package {
         }
         @V8Property
         fun lastChild(): DOMNode? {
-            val result = _element.firstElementChild()?.let { DOMNode(_package, it) };
+            val result = _element.lastElementChild()?.let { DOMNode(_package, it) };
             if(result != null)
                 _children.add(result);
             return result;

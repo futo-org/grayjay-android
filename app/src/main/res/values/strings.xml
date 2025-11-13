@@ -73,6 +73,7 @@
     <string name="share">Share</string>
     <string name="view_all">View all</string>
     <string name="creators">Creators</string>
+    <string name="library">Library</string>
     <string name="enabled">Enabled</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="keep_screen_on_while_casting">Keep screen on while casting</string>
