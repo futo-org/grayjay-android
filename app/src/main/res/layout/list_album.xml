@@ -36,7 +36,7 @@
         android:layout_marginTop="5dp"
         app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintRight_toLeftOf="parent"
         app:layout_constraintBottom_toTopOf="@id/text_metadata"
         android:layout_marginStart="15dp" />
 
@@ -53,7 +53,7 @@
         android:maxLines="1"
         app:layout_constraintTop_toBottomOf="@id/text_name"
         app:layout_constraintLeft_toRightOf="@id/image_thumbnail"
-        app:layout_constraintRight_toLeftOf="@id/button_trash"
+        app:layout_constraintRight_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="15dp" />
 
