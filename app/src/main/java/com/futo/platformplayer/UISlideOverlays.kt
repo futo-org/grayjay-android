@@ -14,7 +14,6 @@ import androidx.media3.exoplayer.hls.playlist.HlsMediaPlaylist
 import androidx.media3.exoplayer.hls.playlist.HlsMultivariantPlaylist
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.ResultCapabilities
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -74,6 +73,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import androidx.core.net.toUri
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 
 class UISlideOverlays {
     companion object {
@@ -331,15 +331,9 @@ class UISlideOverlays {
                                             0,
                                             UIDialogs.Action("Cancel", {}),
                                             UIDialogs.Action("Configure", {
-                                                val intent = Intent(
-                                                    mainContext,
-                                                    SettingsActivity::class.java
-                                                );
-                                                intent.putExtra(
-                                                    "query",
-                                                    mainContext.getString(R.string.background_update)
-                                                );
-                                                mainContext.startActivity(intent);
+                                                StateApp.instance.activity?.let {
+                                                    it.navigate(it.getFragment<SettingsFragment>(), mainContext.getString(R.string.background_update))
+                                                }
                                             }, UIDialogs.ActionStyle.PRIMARY)
                                         );
                                     }

@@ -24,7 +24,6 @@ import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.activities.SettingsActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.casting.StateCasting
@@ -401,9 +400,10 @@ class VideoDetailFragment() : MainFragment() {
         _loadUrlOnCreate?.let { _viewDetail?.setVideo(it.url, it.timeSeconds, it.playWhenReady) };
         maximizeVideoDetail();
 
+        /*
         SettingsActivity.settingsActivityClosed.subscribe(this) {
             updateOrientation()
-        }
+        } */
 
         StatePlayer.instance.onRotationLockChanged.subscribe(this) {
             updateOrientation()
@@ -547,7 +547,7 @@ class VideoDetailFragment() : MainFragment() {
         super.onDestroyMainView();
         Logger.v(TAG, "onDestroyMainView");
 
-        SettingsActivity.settingsActivityClosed.remove(this)
+        //SettingsActivity.settingsActivityClosed.remove(this)
         StatePlayer.instance.onRotationLockChanged.remove(this)
 
         _landscapeOrientationListener?.disableListener()
