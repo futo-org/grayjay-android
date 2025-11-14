@@ -245,5 +245,9 @@
             android:name=".activities.PolycentricModerationActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".activities.QRCodeFullscreenActivity"
+            android:screenOrientation="sensorPortrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBar" />
     </application>
 </manifest>
