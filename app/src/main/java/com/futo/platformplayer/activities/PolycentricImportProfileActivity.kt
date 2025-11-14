@@ -30,117 +30,168 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import userpackage.Protocol
 import userpackage.Protocol.ExportBundle
-import java.io.ByteArrayInputStream
-import java.util.zip.GZIPInputStream
 
 class PolycentricImportProfileActivity : AppCompatActivity() {
-    private lateinit var _buttonHelp: ImageButton;
-    private lateinit var _buttonScanProfile: LinearLayout;
-    private lateinit var _buttonImportProfile: LinearLayout;
-    private lateinit var _editProfile: EditText;
-    private lateinit var _loaderOverlay: LoaderOverlay;
+    private lateinit var _buttonHelp: ImageButton
+    private lateinit var _buttonScanProfile: LinearLayout
+    private lateinit var _buttonImportFile: LinearLayout
+    private lateinit var _buttonImportProfile: LinearLayout
+    private lateinit var _editProfile: EditText
+    private lateinit var _loaderOverlay: LoaderOverlay
 
-    private val _qrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
-        scanResult?.let {
-            if (it.contents != null) {
-                val scannedUrl = it.contents
-                import(scannedUrl)
+    private val _qrCodeResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val scanResult =
+                        IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+                scanResult?.let {
+                    if (it.contents != null) {
+                        val scannedUrl = it.contents
+                        import(scannedUrl)
+                    }
+                }
             }
-        }
-    }
+
+    private val _filePickerLauncher =
+            registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                uri?.let { fileUri ->
+                    try {
+                        // Check file size before reading
+                        val fileSize =
+                                contentResolver.openFileDescriptor(fileUri, "r")?.statSize ?: 0
+                        val maxFileSize = 10 * 1024 * 1024 // 10MB limit
+
+                        if (fileSize > maxFileSize) {
+                            UIDialogs.toast(this, "File too large. Maximum size is 10MB.")
+                            return@let
+                        }
+
+                        if (fileSize == 0L) {
+                            UIDialogs.toast(this, "Selected file is empty.")
+                            return@let
+                        }
+
+                        val content =
+                                contentResolver
+                                        .openInputStream(fileUri)
+                                        ?.bufferedReader()
+                                        ?.readText()
+                        content?.let { fileContent ->
+                            val trimmedContent = fileContent.trim()
+
+                            // Check if content is empty after trimming
+                            if (trimmedContent.isEmpty()) {
+                                UIDialogs.toast(this, "Selected file contains no data.")
+                                return@let
+                            }
+
+                            // Check if content looks like a valid polycentric URL
+                            if (!trimmedContent.startsWith("polycentric://")) {
+                                UIDialogs.toast(
+                                        this,
+                                        "Selected file does not contain a valid polycentric profile URL."
+                                )
+                                return@let
+                            }
+
+                            import(trimmedContent)
+                        }
+                                ?: run { UIDialogs.toast(this, "Could not read file content.") }
+                    } catch (e: SecurityException) {
+                        Logger.e(TAG, "Security exception reading file", e)
+                        UIDialogs.toast(this, "Permission denied to read file.")
+                    } catch (e: OutOfMemoryError) {
+                        Logger.e(TAG, "Out of memory reading file", e)
+                        UIDialogs.toast(this, "File too large to process.")
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "Failed to read file", e)
+                        UIDialogs.toast(this, "Failed to read file: ${e.message}")
+                    }
+                }
+            }
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_polycentric_import_profile);
-        setNavigationBarColorAndIcons();
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_polycentric_import_profile)
+        setNavigationBarColorAndIcons()
 
-        _buttonHelp = findViewById(R.id.button_help);
-        _buttonScanProfile = findViewById(R.id.button_scan_profile);
-        _buttonImportProfile = findViewById(R.id.button_import_profile);
-        _loaderOverlay = findViewById(R.id.loader_overlay);
-        _editProfile = findViewById(R.id.edit_profile);
-        findViewById<ImageButton>(R.id.button_back).setOnClickListener {
-            finish();
-        };
+        _buttonHelp = findViewById(R.id.button_help)
+        _buttonScanProfile = findViewById(R.id.button_scan_profile)
+        _buttonImportFile = findViewById(R.id.button_import_file)
+        _buttonImportProfile = findViewById(R.id.button_import_profile)
+        _loaderOverlay = findViewById(R.id.loader_overlay)
+        _editProfile = findViewById(R.id.edit_profile)
+        findViewById<ImageButton>(R.id.button_back).setOnClickListener { finish() }
 
         _buttonHelp.setOnClickListener {
-            startActivity(Intent(this, PolycentricWhyActivity::class.java));
-        };
+            startActivity(Intent(this, PolycentricWhyActivity::class.java))
+        }
 
         _buttonScanProfile.setOnClickListener {
             val integrator = IntentIntegrator(this)
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
             integrator.setPrompt(getString(R.string.scan_a_qr_code))
-            integrator.setOrientationLocked(true);
+            integrator.setOrientationLocked(true)
             integrator.setCameraId(0)
             integrator.setBeepEnabled(false)
             integrator.setBarcodeImageEnabled(true)
-            integrator.setCaptureActivity(QRCaptureActivity::class.java);
+            integrator.setCaptureActivity(QRCaptureActivity::class.java)
             _qrCodeResultLauncher.launch(integrator.createScanIntent())
-        };
+        }
+
+        _buttonImportFile.setOnClickListener { _filePickerLauncher.launch("text/plain") }
 
         _buttonImportProfile.setOnClickListener {
             if (_editProfile.text.isEmpty()) {
-                UIDialogs.toast(this, getString(R.string.text_field_does_not_contain_any_data));
-                return@setOnClickListener;
+                UIDialogs.toast(this, getString(R.string.text_field_does_not_contain_any_data))
+                return@setOnClickListener
             }
 
-            import(_editProfile.text.toString());
-        };
+            import(_editProfile.text.toString())
+        }
 
-        val url = intent.getStringExtra("url");
+        val url = intent.getStringExtra("url")
         if (url != null) {
-            import(url);
+            import(url)
         }
     }
 
     private fun import(url: String) {
         if (!url.startsWith("polycentric://")) {
-            UIDialogs.toast(this, getString(R.string.not_a_valid_url));
-            return;
+            UIDialogs.toast(this, getString(R.string.not_a_valid_url))
+            return
         }
 
         _loaderOverlay.show()
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val data = url.substring("polycentric://".length).base64UrlToByteArray();
-
-                // Try to parse as regular data first, if it fails, try decompressing
-                val urlInfo = try {
-                    Protocol.URLInfo.parseFrom(data)
-                } catch (e: Exception) {
-                    // If parsing fails, try to decompress the data
-                    try {
-                        val decompressedData = decompressData(data)
-                        Protocol.URLInfo.parseFrom(decompressedData)
-                    } catch (decompressException: Exception) {
-                        throw Exception("Failed to parse URL data: ${e.message}")
-                    }
-                }
+                val data = url.substring("polycentric://".length).base64UrlToByteArray()
+                val urlInfo = Protocol.URLInfo.parseFrom(data)
 
                 if (urlInfo.urlType != 3L) {
                     throw Exception("Expected urlInfo struct of type ExportBundle")
                 }
 
-                val exportBundle = ExportBundle.parseFrom(urlInfo.body);
-                val keyPair = KeyPair.fromProto(exportBundle.keyPair);
+                val exportBundle = ExportBundle.parseFrom(urlInfo.body)
+                val keyPair = KeyPair.fromProto(exportBundle.keyPair)
 
-                val existingProcessSecret = Store.instance.getProcessSecret(keyPair.publicKey);
+                val existingProcessSecret = Store.instance.getProcessSecret(keyPair.publicKey)
                 if (existingProcessSecret != null) {
                     withContext(Dispatchers.Main) {
-                        UIDialogs.toast(this@PolycentricImportProfileActivity, getString(R.string.this_profile_is_already_imported));
+                        UIDialogs.toast(
+                                this@PolycentricImportProfileActivity,
+                                getString(R.string.this_profile_is_already_imported)
+                        )
                     }
-                    return@launch;
+                    return@launch
                 }
 
-                val processSecret = ProcessSecret(keyPair, Process.random());
-                Store.instance.addProcessSecret(processSecret);
+                val processSecret = ProcessSecret(keyPair, Process.random())
+                Store.instance.addProcessSecret(processSecret)
 
                 try {
                     PolycentricStorage.instance.addProcessSecret(processSecret)
@@ -148,52 +199,43 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
                     Logger.e(TAG, "Failed to save process secret to secret storage.", e)
                 }
 
-                val processHandle = processSecret.toProcessHandle();
+                val processHandle = processSecret.toProcessHandle()
 
                 for (e in exportBundle.events.eventsList) {
                     try {
-                        val se = SignedEvent.fromProto(e);
-                        Store.instance.putSignedEvent(se);
+                        val se = SignedEvent.fromProto(e)
+                        Store.instance.putSignedEvent(se)
                     } catch (e: Throwable) {
-                        Logger.w(TAG, "Ignored invalid event", e);
+                        Logger.w(TAG, "Ignored invalid event", e)
                     }
                 }
 
-                StatePolycentric.instance.setProcessHandle(processHandle);
-                processHandle.fullyBackfillClient(ApiMethods.SERVER);
+                StatePolycentric.instance.setProcessHandle(processHandle)
+                processHandle.fullyBackfillClient(ApiMethods.SERVER)
                 withContext(Dispatchers.Main) {
-                    startActivity(Intent(this@PolycentricImportProfileActivity, PolycentricProfileActivity::class.java));
-                    finish();
+                    startActivity(
+                            Intent(
+                                    this@PolycentricImportProfileActivity,
+                                    PolycentricProfileActivity::class.java
+                            )
+                    )
+                    finish()
                 }
             } catch (e: Throwable) {
-                Logger.w(TAG, "Failed to import profile", e);
+                Logger.w(TAG, "Failed to import profile", e)
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(this@PolycentricImportProfileActivity, getString(R.string.failed_to_import_profile) + " '${e.message}'");
+                    UIDialogs.toast(
+                            this@PolycentricImportProfileActivity,
+                            getString(R.string.failed_to_import_profile) + " '${e.message}'"
+                    )
                 }
             } finally {
-                withContext(Dispatchers.Main) {
-                    _loaderOverlay.hide();
-                }
+                withContext(Dispatchers.Main) { _loaderOverlay.hide() }
             }
         }
-    }
-
-    private fun decompressData(data: ByteArray): ByteArray {
-        val inputStream = ByteArrayInputStream(data)
-        val outputStream = java.io.ByteArrayOutputStream()
-
-        GZIPInputStream(inputStream).use { gzip ->
-            val buffer = ByteArray(8192) // 8KB buffer
-            var bytesRead: Int
-            while (gzip.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-            }
-        }
-
-        return outputStream.toByteArray()
     }
 
     companion object {
-        private const val TAG = "PolycentricImportProfileActivity";
+        private const val TAG = "PolycentricImportProfileActivity"
     }
 }

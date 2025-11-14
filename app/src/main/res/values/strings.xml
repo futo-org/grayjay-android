@@ -1179,6 +1179,7 @@
     <string name="qr_code_too_large_use_file_export">Export to file or copy backup code</string>
     <string name="tap_qr_code_for_fullscreen">Tap QR code for fullscreen view</string>
     <string name="export_to_file">Export to File</string>
+    <string name="import_from_file">Import from File</string>
     <string name="save_profile_to_file_for_sharing">Save profile to file for sharing</string>
     <string name="profile_saved_successfully">Profile saved successfully</string>
 </resources>
