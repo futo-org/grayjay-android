@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
 import android.webkit.MimeTypeMap
+import androidx.core.database.getStringOrNull
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -185,29 +186,39 @@ class StateLibrary {
     fun getVideoBucketNames(): List<Bucket> {
         if(_cacheBucketNames != null)
             return _cacheBucketNames ?: listOf();
-        val cur: Cursor = StateApp.instance.contextOrNull?.contentResolver?.query(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, arrayOf(
-                MediaStore.Video.Media.BUCKET_ID,
-                MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
-            ), null, null, null
-        ) ?: return listOf();
+        try {
+            val cur: Cursor = StateApp.instance.contextOrNull?.contentResolver?.query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, arrayOf(
+                    MediaStore.Video.Media.BUCKET_ID,
+                    MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+                ), null, null, null
+            ) ?: return listOf();
 
-        val buckets = mutableListOf<Bucket>();
-        val list = HashSet<Long>();
-        if (cur.moveToFirst()) {
-            var id: Long;
-            var bucket: String
-            do {
-                id = cur.getLong(0);
-                bucket = cur.getString(1)
-                if(!list.contains(id)) {
-                    list.add(id);
-                    buckets.add(Bucket(id, bucket));
-                }
-            } while (cur.moveToNext())
+            val buckets = mutableListOf<Bucket>();
+            val list = HashSet<Long>();
+            if (cur.moveToFirst()) {
+                var id: Long;
+                var bucket: String
+                do {
+                    try {
+                        id = cur.getLong(0);
+                        bucket = cur.getStringOrNull(1) ?: continue;
+                        if (!list.contains(id)) {
+                            list.add(id);
+                            buckets.add(Bucket(id, bucket));
+                        }
+                    } catch (ex: Throwable) {
+                        Logger.e(TAG, "Failed to parse bucket due to ${ex.message}", ex);
+                    }
+                } while (cur.moveToNext())
+            }
+            _cacheBucketNames = buckets.toList()
+            return _cacheBucketNames ?: listOf();
         }
-        _cacheBucketNames = buckets.toList()
-        return _cacheBucketNames ?: listOf();
+        catch(ex: Throwable) {
+            Logger.e(TAG, "Buckets loading failed, returning empty");
+            return listOf();
+        }
     }
 
 
