@@ -365,7 +365,7 @@ class StateBackup {
                                                                 }
                                                                 val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
                                                                 if(hist != null)
-                                                                    StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false);
+                                                                    StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false, histObj.playlistId);
                                                             }
                                                             catch(ex: Throwable) {
                                                                 Logger.e(TAG, "Failed to import subscription group", ex);

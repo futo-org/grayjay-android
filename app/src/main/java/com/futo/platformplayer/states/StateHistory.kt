@@ -65,7 +65,7 @@ class StateHistory {
     }
 
     private var _lastHistoryBroadcast = "";
-    fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L, date: OffsetDateTime? = null, isUserAction: Boolean = false): Long {
+    fun updateHistoryPosition(liveObj: IPlatformVideo, index: DBHistory.Index, updateExisting: Boolean, position: Long = -1L, date: OffsetDateTime? = null, isUserAction: Boolean = false, playlistId: String? = null): Long {
         val pos = if(position < 0) 0 else position;
         val historyVideo = index.obj;
 
@@ -86,6 +86,7 @@ class StateHistory {
 
                 historyVideo.position = pos;
                 historyVideo.date = date ?: OffsetDateTime.now();
+                historyVideo.playlistId = playlistId
                 _historyDBStore.update(index.id!!, historyVideo);
                 onHistoricVideoChanged.emit(liveObj, pos);
 
@@ -157,7 +158,7 @@ class StateHistory {
                 UIDialogs.toast("History item null?\nNo history tracking..");
         }
         else if(create) {
-            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, watchDate ?: OffsetDateTime.now());
+            val newHistItem = HistoryVideo(SerializedPlatformVideo.fromVideo(video), 0, watchDate ?: OffsetDateTime.now(), StatePlayer.instance.playlistId);
             val id = _historyDBStore.insert(newHistItem);
             result = _historyDBStore.getOrNull(id);
             if(result == null)

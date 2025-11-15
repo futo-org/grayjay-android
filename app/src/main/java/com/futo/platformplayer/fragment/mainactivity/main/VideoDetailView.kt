@@ -1777,7 +1777,8 @@ class VideoDetailView : ConstraintLayout {
                         false,
                         (toResume.toFloat() / 1000.0f).toLong(),
                         null,
-                        true
+                        true,
+                        StatePlayer.instance.playlistId
                     );
                     Logger.i(
                         TAG,
@@ -3095,7 +3096,7 @@ class VideoDetailView : ConstraintLayout {
             if (v !is TutorialFragment.TutorialVideo) {
                 fragment.lifecycleScope.launch(Dispatchers.IO) {
                     val history = getHistoryIndex(v) ?: return@launch;
-                    StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong(), null, true);
+                    StateHistory.instance.updateHistoryPosition(v, history, true, (positionMilliseconds.toFloat() / 1000.0f).toLong(), null, true, StatePlayer.instance.playlistId);
                 }
             }
             _lastPositionSaveTime = currentTime;

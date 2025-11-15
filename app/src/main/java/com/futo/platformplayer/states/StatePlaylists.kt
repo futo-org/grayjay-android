@@ -200,10 +200,10 @@ class StatePlaylists {
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
-        return playlistStore.queryItem { it.maxByOrNull { x -> x.datePlayed } };
+        return playlistStore.queryItem { it.filter { x -> x.id != StatePlaylists.LAST_QUEUE_PLAYLIST_ID }.maxByOrNull { x -> x.datePlayed } };
     }
     fun getLastUpdatedPlaylist() : Playlist? {
-        return playlistStore.queryItem { it.maxByOrNull { x -> x.dateUpdate } };
+        return playlistStore.queryItem { it.filter { x -> x.id != StatePlaylists.LAST_QUEUE_PLAYLIST_ID }.maxByOrNull { x -> x.dateUpdate } };
     }
 
     fun getPlaylists() : List<Playlist> {

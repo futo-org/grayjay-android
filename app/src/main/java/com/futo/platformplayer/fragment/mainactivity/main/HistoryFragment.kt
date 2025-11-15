@@ -26,6 +26,7 @@ import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
+import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.views.ToggleBar
 import com.futo.platformplayer.views.adapters.HistoryListViewHolder
@@ -243,12 +244,23 @@ class HistoryFragment : MainFragment() {
                 return;
             }
 
-            val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager;
             val diff = v.video.duration - v.position;
             val vid: Any = if (diff > 5) { v.video.withTimestamp(v.position) } else { v.video };
-            StatePlayer.instance.clearQueue();
-            _fragment.navigate<VideoDetailFragment>(vid).maximizeVideoDetail();
+
+            val playlistId = v.playlistId
+            val playlist = playlistId?.let { StatePlaylists.instance.getPlaylist(it) }
+            val playlistIndex = playlist?.videos?.indexOfFirst { it.url == v.video.url }
+            if (playlist != null && playlistIndex != null && playlistIndex >= 0) {
+                _fragment.navigate<VideoDetailFragment>(vid).maximizeVideoDetail();
+                StatePlayer.instance.setPlaylist(playlist, playlistIndex)
+
+            } else {
+                StatePlayer.instance.clearQueue();
+                _fragment.navigate<VideoDetailFragment>(vid).maximizeVideoDetail();
+            }
+
             _editSearch.clearFocus();
+            val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager;
             inputMethodManager.hideSoftInputFromWindow(_editSearch.windowToken, 0);
 
             _fragment.lifecycleScope.launch(Dispatchers.Main) {

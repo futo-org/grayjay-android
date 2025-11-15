@@ -14,15 +14,17 @@ import java.time.ZoneOffset
 class HistoryVideo {
     var video: SerializedPlatformVideo;
     var position: Long;
+    var playlistId: String? = null
 
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
     var date: OffsetDateTime;
 
 
-    constructor(video: SerializedPlatformVideo, position: Long, date: OffsetDateTime) {
+    constructor(video: SerializedPlatformVideo, position: Long, date: OffsetDateTime, playlistId: String?) {
         this.video = video;
         this.position = position;
         this.date = date;
+        this.playlistId = playlistId
     }
 
 
@@ -59,7 +61,7 @@ class HistoryVideo {
                 viewCount = -1
             );
 
-            return HistoryVideo(video, position, OffsetDateTime.of(LocalDateTime.ofEpochSecond(dateSec, 0, ZoneOffset.UTC), ZoneOffset.UTC));
+            return HistoryVideo(video, position, OffsetDateTime.of(LocalDateTime.ofEpochSecond(dateSec, 0, ZoneOffset.UTC), ZoneOffset.UTC), null);
         }
     }
 }
