@@ -1354,6 +1354,7 @@ class VideoDetailView : ConstraintLayout {
 
         _minimize_title.text = video.name;
         _minimize_meta.text = video.author.name;
+        StatePlayer.instance.setCurrentlyPlaying(video);
 
         val subTitleSegments : ArrayList<String> = ArrayList();
         if(video.viewCount > 0)

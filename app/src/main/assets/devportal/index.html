@@ -1025,18 +1025,21 @@
 
 				let settingsToUse = __DEV_SETTINGS ?? {};
 				if (true) {
-					for (let setting of this.Plugin?.currentPlugin?.settings) {
-						if (typeof settingsToUse[setting.variable] == "undefined") {
-							switch (setting?.type?.toLowerCase()) {
-								case "boolean":
-									settingsToUse[setting.variable] = setting.default === 'true';
-									break;
-								case "dropdown":
-									let dropDownIndex = parseInt(setting.default);
-									if (dropDownIndex) {
-										settingsToUse[setting.variable] = setting.options[dropDownIndex];
-									}
-									break;
+                    const settings = this.Plugin?.currentPlugin?.settings;
+                    if (settings) {
+                    	for (let setting of settings) {
+							if (typeof settingsToUse[setting.variable] == "undefined") {
+								switch (setting?.type?.toLowerCase()) {
+									case "boolean":
+										settingsToUse[setting.variable] = setting.default === 'true';
+										break;
+									case "dropdown":
+										let dropDownIndex = parseInt(setting.default);
+										if (dropDownIndex) {
+											settingsToUse[setting.variable] = setting.options[dropDownIndex];
+										}
+										break;
+								}
 							}
 						}
 					}

@@ -111,10 +111,10 @@ class StatePlayer {
     val onPlayerOpened = Event0();
     val onPlayerClosed = Event0();
 
-    var currentVideo: IPlatformVideoDetails? = null
+    var currentVideo: IPlatformVideo? = null
         private set;
 
-    fun setCurrentlyPlaying(video: IPlatformVideoDetails?) {
+    fun setCurrentlyPlaying(video: IPlatformVideo?) {
         currentVideo = video;
     }
 
