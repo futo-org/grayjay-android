@@ -114,6 +114,12 @@ class StatePlayer {
     var currentVideo: IPlatformVideo? = null
         private set;
 
+    init {
+        onQueueChanged.subscribe {
+            updateLastQueue()
+        }
+    }
+
     fun setCurrentlyPlaying(video: IPlatformVideo?) {
         currentVideo = video;
     }
@@ -382,6 +388,22 @@ class StatePlayer {
         onQueueChanged.emit(true);
         if(playNow) {
             setQueuePosition(video);
+        }
+    }
+
+    fun updateLastQueue() {
+        val queueVideos = synchronized(_queue) {
+            if (!_queue.isEmpty()) {
+                return@synchronized _queue.map { SerializedPlatformVideo.fromVideo(it) }.toList()
+            }
+
+            return@synchronized null
+        }
+
+        if (queueVideos != null) {
+            val playlist = Playlist("Last Queue", queueVideos);
+            playlist.id = StatePlaylists.LAST_QUEUE_PLAYLIST_ID
+            StatePlaylists.instance.createOrUpdatePlaylist(playlist, isUserInteraction = false)
         }
     }
     fun setQueuePosition(video: IPlatformVideo) {
