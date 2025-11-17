@@ -388,9 +388,10 @@ class StatePlayer {
         }
 
         if (queueVideos != null) {
-            val playlist = Playlist("Last Queue", queueVideos);
-            playlist.id = StatePlaylists.LAST_QUEUE_PLAYLIST_ID
-            StatePlaylists.instance.createOrUpdatePlaylist(playlist, isUserInteraction = false)
+            val playlist = StatePlaylists.instance.getPlaylist(StatePlaylists.LAST_QUEUE_PLAYLIST_ID) ?: Playlist("Last Queue", queueVideos).apply {
+                id = StatePlaylists.LAST_QUEUE_PLAYLIST_ID
+            }
+            StatePlaylists.instance.createOrUpdatePlaylist(playlist)
         }
     }
     fun setQueuePosition(video: IPlatformVideo) {
