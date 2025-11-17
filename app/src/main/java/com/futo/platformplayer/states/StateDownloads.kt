@@ -543,7 +543,9 @@ class StateDownloads {
                     val file = export.export(context, { progress ->
                         val now = System.currentTimeMillis();
                         if (lastNotifyTime == -1L || now - lastNotifyTime > 100) {
-                            it.setProgress(progress);
+                            StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                                it.setProgress(progress);
+                            }
                             lastNotifyTime = now;
                         }
                     }, null);

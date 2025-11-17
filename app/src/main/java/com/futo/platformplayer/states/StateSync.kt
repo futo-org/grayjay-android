@@ -463,7 +463,7 @@ class StateSync {
                 for(video in history){
                     val hist = StateHistory.instance.getHistoryByVideo(video.video, true, video.date);
                     if(hist != null)
-                        StateHistory.instance.updateHistoryPosition(video.video, hist, true, video.position, video.date)
+                        StateHistory.instance.updateHistoryPosition(video.video, hist, true, video.position, video.date, false, video.playlistId)
                     if(lastHistory < video.date)
                         lastHistory = video.date;
                 }

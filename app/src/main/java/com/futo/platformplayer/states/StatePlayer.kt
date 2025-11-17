@@ -114,6 +114,15 @@ class StatePlayer {
     var currentVideo: IPlatformVideo? = null
         private set;
 
+    private var _currentPlaylistId: String? = null
+    val playlistId: String? get() = if (_queueType == TYPE_PLAYLIST) _currentPlaylistId else null
+
+    init {
+        onQueueChanged.subscribe {
+            updateLastQueue()
+        }
+    }
+
     fun setCurrentlyPlaying(video: IPlatformVideo?) {
         currentVideo = video;
     }
@@ -269,23 +278,6 @@ class StatePlayer {
         }
         onQueueChanged.emit(true);
     }
-    fun setPlaylist(playlist: IPlatformPlaylistDetails, toPlayIndex: Int = 0, focus: Boolean = false, shuffle: Boolean = false) {
-        synchronized(_queue) {
-            _queue.clear();
-            setQueueType(TYPE_PLAYLIST);
-            _queueName = playlist.name;
-            _queue.addAll(playlist.contents.getResults());
-            queueFocused = focus;
-            queueShuffle = shuffle;
-            if (shuffle) {
-                createShuffledQueue();
-            }
-            _queuePosition = toPlayIndex;
-        }
-        playlist.id.value?.let { StatePlaylists.instance.didPlay(it); };
-
-        onQueueChanged.emit(true);
-    }
     fun setPlaylist(playlist: Playlist, toPlayIndex: Int = 0, focus: Boolean = false, shuffle: Boolean = false) {
         synchronized(_queue) {
             _queue.clear();
@@ -299,6 +291,7 @@ class StatePlayer {
             }
             _queuePosition = toPlayIndex;
         }
+        _currentPlaylistId = playlist.id
         StatePlaylists.instance.didPlay(playlist.id);
 
         onQueueChanged.emit(true);
@@ -382,6 +375,23 @@ class StatePlayer {
         onQueueChanged.emit(true);
         if(playNow) {
             setQueuePosition(video);
+        }
+    }
+
+    fun updateLastQueue() {
+        val queueVideos = synchronized(_queue) {
+            if (!_queue.isEmpty()) {
+                return@synchronized _queue.map { SerializedPlatformVideo.fromVideo(it) }.toList()
+            }
+
+            return@synchronized null
+        }
+
+        if (queueVideos != null) {
+            val playlist = StatePlaylists.instance.getPlaylist(StatePlaylists.LAST_QUEUE_PLAYLIST_ID) ?: Playlist("Last Queue", queueVideos).apply {
+                id = StatePlaylists.LAST_QUEUE_PLAYLIST_ID
+            }
+            StatePlaylists.instance.createOrUpdatePlaylist(playlist)
         }
     }
     fun setQueuePosition(video: IPlatformVideo) {

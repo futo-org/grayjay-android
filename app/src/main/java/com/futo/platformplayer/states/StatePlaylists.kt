@@ -200,10 +200,10 @@ class StatePlaylists {
     }
 
     fun getLastPlayedPlaylist() : Playlist? {
-        return playlistStore.queryItem { it.maxByOrNull { x -> x.datePlayed } };
+        return playlistStore.queryItem { it.filter { x -> x.id != StatePlaylists.LAST_QUEUE_PLAYLIST_ID }.maxByOrNull { x -> x.datePlayed } };
     }
     fun getLastUpdatedPlaylist() : Playlist? {
-        return playlistStore.queryItem { it.maxByOrNull { x -> x.dateUpdate } };
+        return playlistStore.queryItem { it.filter { x -> x.id != StatePlaylists.LAST_QUEUE_PLAYLIST_ID }.maxByOrNull { x -> x.dateUpdate } };
     }
 
     fun getPlaylists() : List<Playlist> {
@@ -394,6 +394,7 @@ class StatePlaylists {
 
     companion object {
         val TAG = "StatePlaylists";
+        val LAST_QUEUE_PLAYLIST_ID = "a70a3287-45dd-4227-832c-6ecde7fb1bf6"
         private var _instance : StatePlaylists? = null;
         private var _lockObject = Object()
         val instance : StatePlaylists
