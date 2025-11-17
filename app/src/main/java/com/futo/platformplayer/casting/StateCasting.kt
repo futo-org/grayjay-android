@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.http.server.handlers.HttpConstantHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFileHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFunctionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpProxyHandler
+import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
@@ -295,20 +296,63 @@ abstract class StateCasting {
                 val url = getLocalUrl(ad);
                 val id = UUID.randomUUID();
 
+
                 if (videoSource is IVideoUrlSource) {
-                    val videoPath = "/video-${id}"
-                    val videoUrl = if(proxyStreams) url + videoPath else videoSource.getVideoUrl();
-                    Logger.i(TAG, "Casting as singular video");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
+                    val videoPath = "/video-$id"
+                    val upstreamUrl = videoSource.getVideoUrl()
+                    val videoUrl = if (proxyStreams) url + videoPath else upstreamUrl
+                    val jsReqMod = (videoSource as? JSSource)?.getRequestModifier()
+
+                    if (proxyStreams) {
+                        _castServer.addHandlerWithAllowAllOptions(
+                            HttpProxyHandler("GET", videoPath, upstreamUrl, true)
+                                .withIRequestModifier(jsReqMod)
+                                .withInjectedHost()
+                                .withHeader("Access-Control-Allow-Origin", "*"),
+                            true
+                        ).withTag("castSingular")
+                    }
+
+                    Logger.i(TAG, "Casting as singular video (proxy=$proxyStreams, url=$videoUrl)")
+                    ad.loadVideo(
+                        if (video.isLive) "LIVE" else "BUFFERED",
+                        videoSource.container,
+                        videoUrl,
+                        resumePosition,
+                        video.duration.toDouble(),
+                        speed,
+                        metadataFromVideo(video)
+                    )
                 } else if (audioSource is IAudioUrlSource) {
-                    val audioPath = "/audio-${id}"
-                    val audioUrl = if(proxyStreams) url + audioPath else audioSource.getAudioUrl();
-                    Logger.i(TAG, "Casting as singular audio");
-                    ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
+                    val audioPath = "/audio-$id"
+                    val upstreamUrl = audioSource.getAudioUrl()
+                    val audioUrl = if (proxyStreams) url + audioPath else upstreamUrl
+                    val jsReqMod = (audioSource as? JSSource)?.getRequestModifier()
+
+                    if (proxyStreams) {
+                        _castServer.addHandlerWithAllowAllOptions(
+                            HttpProxyHandler("GET", audioPath, upstreamUrl, true)
+                                .withIRequestModifier(jsReqMod)
+                                .withInjectedHost()
+                                .withHeader("Access-Control-Allow-Origin", "*"),
+                            true
+                        ).withTag("castSingular")
+                    }
+
+                    Logger.i(TAG, "Casting as singular audio (proxy=$proxyStreams, url=$audioUrl)")
+                    ad.loadVideo(
+                        if (video.isLive) "LIVE" else "BUFFERED",
+                        audioSource.container,
+                        audioUrl,
+                        resumePosition,
+                        video.duration.toDouble(),
+                        speed,
+                        metadataFromVideo(video)
+                    )
                 } else if (videoSource is IHLSManifestSource) {
                     if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
                         Logger.i(TAG, "Casting as proxied HLS");
-                        castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed);
+                        castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed, (videoSource as JSSource?)?.getRequestModifier());
                     } else {
                         Logger.i(TAG, "Casting as non-proxied HLS");
                         ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
@@ -316,7 +360,7 @@ abstract class StateCasting {
                 } else if (audioSource is IHLSManifestAudioSource) {
                     if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
                         Logger.i(TAG, "Casting as proxied audio HLS");
-                        castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed);
+                        castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed, (audioSource as JSSource?)?.getRequestModifier());
                     } else {
                         Logger.i(TAG, "Casting as non-proxied audio HLS");
                         ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
@@ -345,6 +389,11 @@ abstract class StateCasting {
 
             return@withContext true;
         }
+    }
+
+    private fun HttpProxyHandler.withIRequestModifier(requestModifier: IRequestModifier?): HttpProxyHandler {
+        if (requestModifier == null) return this
+        return withRequestModifier { url, headers -> requestModifier.modifyRequest(url, headers) }
     }
 
     fun resumeVideo(): Boolean {
@@ -665,7 +714,8 @@ abstract class StateCasting {
         sourceUrl: String,
         codec: String?,
         resumePosition: Double,
-        speed: Double?
+        speed: Double?,
+        requestModifier: IRequestModifier?
     ): List<String> {
         _castServer.removeAllHandlers("castProxiedHlsMaster")
 
@@ -686,7 +736,9 @@ abstract class StateCasting {
                 val headers = masterContext.headers.clone()
                 headers["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                val masterPlaylistResponse = _client.get(sourceUrl)
+                val req = requestModifier?.modifyRequest(sourceUrl, mapOf())
+                val masterPlaylistResponse = _client.get(req?.url ?: sourceUrl, (req?.headers ?: mapOf()).toMutableMap())
+
                 check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
 
                 val masterPlaylistContent = masterPlaylistResponse.body?.string()
@@ -706,7 +758,7 @@ abstract class StateCasting {
                         val variantPlaylist =
                             HLS.parseVariantPlaylist(masterPlaylistContent, sourceUrl)
                         val proxiedVariantPlaylist =
-                            proxyVariantPlaylist(url, id, variantPlaylist, video.isLive)
+                            proxyVariantPlaylist(url, id, variantPlaylist,  video.isLive, requestModifier)
                         val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
                         masterContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
                         return@HttpFunctionHandler
@@ -747,7 +799,7 @@ abstract class StateCasting {
                             val variantPlaylist =
                                 HLS.parseVariantPlaylist(vpContent, variantPlaylistRef.url)
                             val proxiedVariantPlaylist =
-                                proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive)
+                                proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive, requestModifier)
                             val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
                             vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
                         }.withHeader("Access-Control-Allow-Origin", "*"), true
@@ -784,7 +836,7 @@ abstract class StateCasting {
                                 val variantPlaylist =
                                     HLS.parseVariantPlaylist(vpContent, mediaRendition.uri)
                                 val proxiedVariantPlaylist = proxyVariantPlaylist(
-                                    url, playlistId, variantPlaylist, video.isLive
+                                    url, playlistId, variantPlaylist, video.isLive, requestModifier
                                 )
                                 val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
                                 vpContext.respondCode(200, vpHeaders, proxiedVariantPlaylist_m3u8);
@@ -826,13 +878,13 @@ abstract class StateCasting {
         return listOf(hlsUrl);
     }
 
-    private fun proxyVariantPlaylist(url: String, playlistId: UUID, variantPlaylist: HLS.VariantPlaylist, isLive: Boolean, proxySegments: Boolean = true): HLS.VariantPlaylist {
+    private fun proxyVariantPlaylist(url: String, playlistId: UUID, variantPlaylist: HLS.VariantPlaylist, isLive: Boolean, requestModifier: IRequestModifier?, proxySegments: Boolean = true): HLS.VariantPlaylist {
         val newSegments = arrayListOf<HLS.Segment>()
 
         if (proxySegments) {
             variantPlaylist.segments.forEachIndexed { index, segment ->
                 val sequenceNumber = (variantPlaylist.mediaSequence ?: 0) + index.toLong()
-                newSegments.add(proxySegment(url, playlistId, segment, sequenceNumber))
+                newSegments.add(proxySegment(url, playlistId, segment, sequenceNumber, requestModifier))
             }
         } else {
             newSegments.addAll(variantPlaylist.segments)
@@ -850,7 +902,7 @@ abstract class StateCasting {
         )
     }
 
-    private fun proxySegment(url: String, playlistId: UUID, segment: HLS.Segment, index: Long): HLS.Segment {
+    private fun proxySegment(url: String, playlistId: UUID, segment: HLS.Segment, index: Long, requestModifier: IRequestModifier?): HLS.Segment {
         if (segment is HLS.MediaSegment) {
             val newSegmentPath = "/hls-playlist-${playlistId}-segment-${index}"
             val newSegmentUrl = url + newSegmentPath;
@@ -858,6 +910,7 @@ abstract class StateCasting {
             if (_castServer.getHandler("GET", newSegmentPath) == null) {
                 _castServer.addHandlerWithAllowAllOptions(
                     HttpProxyHandler("GET", newSegmentPath, segment.uri, true)
+                        .withIRequestModifier(requestModifier)
                         .withInjectedHost()
                         .withHeader("Access-Control-Allow-Origin", "*"), true
                 ).withTag("castProxiedHlsVariant")

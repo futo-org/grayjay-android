@@ -5,6 +5,7 @@ import android.util.Log
 import com.futo.platformplayer.api.http.server.HttpContext
 import com.futo.platformplayer.api.http.server.HttpHeaders
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.modifier.IRequest
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.parsers.HttpResponseParser
 import com.futo.platformplayer.readLine
@@ -27,6 +28,7 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
     private var _injectReferer = false;
 
     private val _client = ManagedHttpClient();
+    private var _requestModifier: ((String, Map<String, String>) -> IRequest)? = null;
 
     override fun handle(context: HttpContext) {
         if (useTcp) {
@@ -43,21 +45,33 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
         for (injectHeader in _injectRequestHeader)
             proxyHeaders[injectHeader.first] = injectHeader.second;
 
-        val parsed = Uri.parse(targetUrl);
+        val req = _requestModifier?.invoke(targetUrl, proxyHeaders)
+        var url = targetUrl
+        if (req != null) {
+            req.url?.let {
+                url = it
+            }
+            req.headers.let {
+                proxyHeaders.clear()
+                proxyHeaders.putAll(it)
+            }
+        }
+
+        val parsed = Uri.parse(url);
         if(_injectHost)
             proxyHeaders.put("Host", parsed.host!!);
         if(_injectReferer)
-            proxyHeaders.put("Referer", targetUrl);
+            proxyHeaders.put("Referer", url);
 
         val useMethod = if (method == "inherit") context.method else method;
-        Logger.i(TAG, "handleWithOkHttp Proxied Request ${useMethod}: ${targetUrl}");
+        Logger.i(TAG, "handleWithOkHttp Proxied Request ${useMethod}: ${url}");
         Logger.i(TAG, "handleWithOkHttp Headers:" + proxyHeaders.map { "${it.key}: ${it.value}" }.joinToString("\n"));
 
         val resp = when (useMethod) {
-            "GET" -> _client.get(targetUrl, proxyHeaders);
-            "POST" -> _client.post(targetUrl, content ?: "", proxyHeaders);
-            "HEAD" -> _client.head(targetUrl, proxyHeaders)
-            else -> _client.requestMethod(useMethod, targetUrl, proxyHeaders);
+            "GET" -> _client.get(url, proxyHeaders);
+            "POST" -> _client.post(url, content ?: "", proxyHeaders);
+            "HEAD" -> _client.head(url, proxyHeaders)
+            else -> _client.requestMethod(useMethod, url, proxyHeaders);
         };
 
         Logger.i(TAG, "Proxied Response [${resp.code}]");
@@ -91,11 +105,23 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
         for (injectHeader in _injectRequestHeader)
             proxyHeaders[injectHeader.first] = injectHeader.second;
 
-        val parsed = Uri.parse(targetUrl);
+        val req = _requestModifier?.invoke(targetUrl, proxyHeaders)
+        var url = targetUrl
+        if (req != null) {
+            req.url?.let {
+                url = it
+            }
+            req.headers.let {
+                proxyHeaders.clear()
+                proxyHeaders.putAll(it)
+            }
+        }
+
+        val parsed = Uri.parse(url);
         if(_injectHost)
             proxyHeaders.put("Host", parsed.host!!);
         if(_injectReferer)
-            proxyHeaders.put("Referer", targetUrl);
+            proxyHeaders.put("Referer", url);
 
         val useMethod = if (method == "inherit") context.method else method;
         Logger.i(TAG, "handleWithTcp Proxied Request ${useMethod}: ${parsed}");
@@ -240,6 +266,10 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
     fun withInjectedReferer() : HttpProxyHandler {
         _injectReferer = true;
         _ignoreRequestHeaders.add("referer");
+        return this;
+    }
+    fun withRequestModifier(modifier: (String, Map<String, String>) -> IRequest) : HttpProxyHandler {
+        _requestModifier = modifier;
         return this;
     }
 
