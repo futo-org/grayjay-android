@@ -143,7 +143,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 val animations = arrayListOf<Animator>()
                 animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 0.0f, 1.0f).setDuration(duration))
                 _bottomButtons.find { it.definition.id == 99 }?.let {
-                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 0.4f, 1.0f)
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 0.5f, 1.0f)
                         .setDuration(duration));
                 }
 
@@ -165,7 +165,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     .add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f)
                     .setDuration(duration))
                 _bottomButtons.find { it.definition.id == 99 }?.let {
-                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 1.0f, 0.4f)
+                    animations.add(ObjectAnimator.ofFloat(it, "alpha", 1.0f, 0.5f)
                         .setDuration(duration));
                 }
 
@@ -369,7 +369,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     this.alpha = 1f;
                 }
                 else {
-                    this.alpha = 0.4f;
+                    this.alpha = 0.5f;
                 }
 
                 _textButton = findViewById(R.id.text_button);
@@ -389,7 +389,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     this.alpha = 1f;
                 }
                 else {
-                    this.alpha = 0.4f;
+                    this.alpha = 0.5f;
                 }
             }
         }

@@ -102,13 +102,15 @@ class StateLibrary {
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA,
             "LOWER(" + MediaStore.Audio.Media.DISPLAY_NAME + ") LIKE ? ", arrayOf("%" + str.trim().lowercase() + "%"),
             null) ?: return listOf();
-        cursor.moveToFirst();
-        val list = mutableListOf<IPlatformVideo>()
-        while(!cursor.isAfterLast) {
-            list.add(StateLibrary.audioFromCursor(cursor));
-            cursor.moveToNext();
+        return cursor.use {
+            cursor.moveToFirst();
+            val list = mutableListOf<IPlatformVideo>()
+            while(!cursor.isAfterLast) {
+                list.add(StateLibrary.audioFromCursor(cursor));
+                cursor.moveToNext();
+            }
+            return@use list;
         }
-        return list;
     }
 
     fun getAlbums(): List<Album> {
@@ -155,21 +157,23 @@ class StateLibrary {
             query,
             null,
             MediaStore.Video.Media.DATE_ADDED + " DESC") ?: return EmptyPager();
-        cursor.moveToFirst();
-        val list = mutableListOf<IPlatformVideo>()
-        while(!cursor.isAfterLast && list.size < 10) {
-            list.add(videoFromCursor(cursor));
-            cursor.moveToNext();
-        }
-
-        return AdhocPager<IPlatformContent>({
-            val list = mutableListOf<IPlatformContent>()
+        return cursor.use {
+            cursor.moveToFirst();
+            val list = mutableListOf<IPlatformVideo>()
             while(!cursor.isAfterLast && list.size < 10) {
                 list.add(videoFromCursor(cursor));
                 cursor.moveToNext();
             }
-            return@AdhocPager list;
-        }, list);
+
+            return@use AdhocPager<IPlatformContent>({
+                val list = mutableListOf<IPlatformContent>()
+                while(!cursor.isAfterLast && list.size < 10) {
+                    list.add(videoFromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@AdhocPager list;
+            }, list);
+        }
     }
     fun getRecentVideos(buckets: List<String>? = null, count: Int = 20): List<IPlatformVideo> {
         val videoPager = getVideos(buckets);
@@ -194,26 +198,28 @@ class StateLibrary {
                 ), null, null, null
             ) ?: return listOf();
 
-            val buckets = mutableListOf<Bucket>();
-            val list = HashSet<Long>();
-            if (cur.moveToFirst()) {
-                var id: Long;
-                var bucket: String
-                do {
-                    try {
-                        id = cur.getLong(0);
-                        bucket = cur.getStringOrNull(1) ?: continue;
-                        if (!list.contains(id)) {
-                            list.add(id);
-                            buckets.add(Bucket(id, bucket));
+            return cur.use {
+                val buckets = mutableListOf<Bucket>();
+                val list = HashSet<Long>();
+                if (cur.moveToFirst()) {
+                    var id: Long;
+                    var bucket: String
+                    do {
+                        try {
+                            id = cur.getLong(0);
+                            bucket = cur.getStringOrNull(1) ?: continue;
+                            if (!list.contains(id)) {
+                                list.add(id);
+                                buckets.add(Bucket(id, bucket));
+                            }
+                        } catch (ex: Throwable) {
+                            Logger.e(TAG, "Failed to parse bucket due to ${ex.message}", ex);
                         }
-                    } catch (ex: Throwable) {
-                        Logger.e(TAG, "Failed to parse bucket due to ${ex.message}", ex);
-                    }
-                } while (cur.moveToNext())
+                    } while (cur.moveToNext())
+                }
+                _cacheBucketNames = buckets.toList()
+                return@use _cacheBucketNames ?: listOf();
             }
-            _cacheBucketNames = buckets.toList()
-            return _cacheBucketNames ?: listOf();
         }
         catch(ex: Throwable) {
             Logger.e(TAG, "Buckets loading failed, returning empty");
@@ -286,10 +292,12 @@ class StateLibrary {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA, "${MediaStore.Audio.Media._ID} = ?", arrayOf(id.toString()),
                 null) ?: return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return audioFromCursor(cursor);
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return@use null;
+                return@use audioFromCursor(cursor);
+            }
         }
         fun findAudioByName(name: String): IPlatformContentDetails? {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -300,10 +308,12 @@ class StateLibrary {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA, "${MediaStore.Audio.Media.DISPLAY_NAME} = ?", arrayOf(name),
                 null) ?: return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return audioFromCursor(cursor);
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return null;
+                return@use audioFromCursor(cursor);
+            }
         }
         fun getVideoTrack(url: String): IPlatformContentDetails? {
             val uri = Uri.parse(url);
@@ -319,10 +329,12 @@ class StateLibrary {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_VIDEO, "${MediaStore.Video.Media._ID} = ?", arrayOf(id.toString()),
                 null) ?: return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return videoFromCursor(cursor);
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return@use null;
+                return@use videoFromCursor(cursor);
+            }
         }
         fun findVideoByName(name: String): IPlatformContentDetails? {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -333,10 +345,12 @@ class StateLibrary {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_VIDEO, "${MediaStore.Video.Media.DISPLAY_NAME} = ?", arrayOf(name),
                 null) ?: return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return videoFromCursor(cursor);
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return@use null;
+                return@use videoFromCursor(cursor);
+            }
         }
 
         fun audioFromCursor(cursor: Cursor): IPlatformVideoDetails {
@@ -484,12 +498,13 @@ class Artist {
             val cursor = resolver.query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
                 Artist.PROJECTION,
                 "${MediaStore.Audio.Artists._ID} = ?",
-                arrayOf(id.toString()), null) ?:
-            return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return Artist.fromCursor(cursor);
+                arrayOf(id.toString()), null) ?: return null;
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return@use null;
+                return@use Artist.fromCursor(cursor);
+            }
         }
         fun getArtists(ordering: ArtistOrdering = ArtistOrdering.Alphabethic, query: String? = null, args: Array<String>? = null): List<Artist> {
             val ordering = when(ordering) {
@@ -503,13 +518,15 @@ class Artist {
                 query,
                 args,
                 ordering) ?: return listOf();
-            cursor.moveToFirst();
-            val list = mutableListOf<Artist>()
-            while(!cursor.isAfterLast) {
-                list.add(fromCursor(cursor));
-                cursor.moveToNext();
+            return cursor.use {
+                cursor.moveToFirst();
+                val list = mutableListOf<Artist>()
+                while(!cursor.isAfterLast) {
+                    list.add(fromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@use list;
             }
-            return list;
         }
 
         fun getTracksPager(artistId: Long): List<IPlatformVideo> {
@@ -521,13 +538,15 @@ class Artist {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf(artistId.toString()),
                 null) ?: return listOf();
-            cursor.moveToFirst();
-            val list = mutableListOf<IPlatformVideo>()
-            while(!cursor.isAfterLast) {
-                list.add(StateLibrary.audioFromCursor(cursor));
-                cursor.moveToNext();
+            return cursor.use {
+                cursor.moveToFirst();
+                val list = mutableListOf<IPlatformVideo>()
+                while(!cursor.isAfterLast) {
+                    list.add(StateLibrary.audioFromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@use list;
             }
-            return list;
         }
     }
 }
@@ -583,13 +602,15 @@ class Album {
             val cursor = resolver?.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, StateLibrary.PROJECTION_MEDIA, "${MediaStore.Audio.Media.ALBUM_ID} = ?", arrayOf(albumId.toString()),
                 null) ?: return listOf();
-            cursor.moveToFirst();
-            val list = mutableListOf<IPlatformVideo>()
-            while(!cursor.isAfterLast) {
-                list.add(StateLibrary.audioFromCursor(cursor));
-                cursor.moveToNext();
+            return cursor.use {
+                cursor.moveToFirst();
+                val list = mutableListOf<IPlatformVideo>()
+                while(!cursor.isAfterLast) {
+                    list.add(StateLibrary.audioFromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@use list;
             }
-            return list;
         }
         fun getAlbum(id: Long): Album? {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -600,12 +621,13 @@ class Album {
             val cursor = resolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
                 PROJECTION,
                 "${MediaStore.Audio.Albums.ALBUM_ID} = ?",
-                arrayOf(id.toString()), null) ?:
-                return null;
-            cursor.moveToFirst();
-            if(cursor.isAfterLast)
-                return null;
-            return fromCursor(cursor);
+                arrayOf(id.toString()), null) ?: return null;
+            return cursor.use {
+                cursor.moveToFirst();
+                if(cursor.isAfterLast)
+                    return@use null;
+                return@use fromCursor(cursor);
+            }
         }
         fun getAlbums(query: String? = null, args: Array<String>? = null): List<Album> {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -616,13 +638,15 @@ class Album {
             val cursor = resolver?.query(
                 MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, query, args,
                 MediaStore.Audio.Albums.ALBUM + " ASC") ?: return listOf();
-            cursor.moveToFirst();
-            val list = mutableListOf<Album>()
-            while(!cursor.isAfterLast) {
-                list.add(fromCursor(cursor));
-                cursor.moveToNext();
+            return cursor.use {
+                cursor.moveToFirst();
+                val list = mutableListOf<Album>()
+                while(!cursor.isAfterLast) {
+                    list.add(fromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@use list;
             }
-            return list;
         }
         fun getArtistAlbums(artistId: Long): List<Album> {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -633,13 +657,15 @@ class Album {
             val cursor = resolver?.query(
                 MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf(artistId.toString()),
                 MediaStore.Audio.Albums.ALBUM + " ASC") ?: return listOf();
-            cursor.moveToFirst();
-            val list = mutableListOf<Album>()
-            while(!cursor.isAfterLast) {
-                list.add(fromCursor(cursor));
-                cursor.moveToNext();
+            return cursor.use {
+                cursor.moveToFirst();
+                val list = mutableListOf<Album>()
+                while(!cursor.isAfterLast) {
+                    list.add(fromCursor(cursor));
+                    cursor.moveToNext();
+                }
+                return@use list;
             }
-            return list;
         }
     }
 }

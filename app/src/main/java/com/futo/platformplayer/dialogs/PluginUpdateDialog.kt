@@ -187,9 +187,16 @@ class PluginUpdateDialog : AlertDialog {
         val scope = StateApp.instance.scopeOrNull;
         scope?.launch(Dispatchers.IO) {
             try {
+                withContext(Dispatchers.Main) {
+                    _textProgres.setText("Loading current script file...");
+                }
                 val client = ManagedHttpClient();
+                client.setTimeout(10000);
                 val script = StatePlugins.instance.getScript(_oldConfig.id) ?: "";
 
+                withContext(Dispatchers.Main) {
+                    _textProgres.setText("Requesting new script file...");
+                }
                 val newScript = client.get(_newConfig.absoluteScriptUrl)?.body?.string();
                 if(newScript.isNullOrEmpty())
                     throw IllegalStateException("No script found");
