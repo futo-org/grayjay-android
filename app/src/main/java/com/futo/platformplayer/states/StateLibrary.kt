@@ -174,6 +174,7 @@ class StateLibrary {
                     list.add(videoFromCursor(cursor));
                     cursor.moveToNext();
                 }
+                Logger.i(TAG, "Videos nextPage: ${list.size}")
                 return@AdhocPager list;
             }, list);
         //}

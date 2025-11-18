@@ -319,8 +319,7 @@ class LibraryArtistFragment : MainFragment() {
 
             _fragment.topBar?.onShown(channel)
 
-            val buttons = arrayListOf(Pair(R.drawable.ic_playlist_add) {
-            })
+            val buttons = arrayListOf<Pair<Int, ()->Unit>>();
 
             _fragment.lifecycleScope.launch(Dispatchers.IO) {
                 val plugin = StatePlatform.instance.getChannelClientOrNull(channel.contentUrl ?: return@launch)
@@ -337,8 +336,7 @@ class LibraryArtistFragment : MainFragment() {
             }
 
             _buttonSubscribe.visibility = GONE;
-            _buttonSubscriptionSettings.visibility =
-                if (_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE
+            _buttonSubscriptionSettings.visibility = View.GONE
             _textChannel.text = channel.name
             _textChannelSub.text = "${channel.countTracks} songs, ${channel.countAlbums} albums";
 
