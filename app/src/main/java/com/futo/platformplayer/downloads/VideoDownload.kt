@@ -483,7 +483,7 @@ class VideoDownload {
 
                 if(actualVideoSource is IVideoUrlSource)
                     videoFileSize = when (videoSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                         else -> downloadFileSource("Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
@@ -523,7 +523,7 @@ class VideoDownload {
 
                 if(actualAudioSource is IAudioUrlSource)
                     audioFileSize = when (audioSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                         else -> downloadFileSource("Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
@@ -585,15 +585,23 @@ class VideoDownload {
         return cipher.doFinal(encryptedSegment)
     }
 
-    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, source: JSSource?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
 
         var downloadedTotalLength = 0L
 
+        val modifier = if (source is JSSource && source.hasRequestModifier)
+            source.getRequestModifier();
+        else
+            null;
+
         val segmentFiles = arrayListOf<File>()
         try {
-            val response = client.get(hlsUrl)
+            val modified = modifier?.modifyRequest(hlsUrl, mapOf());
+
+            val response = client.get(modified?.url ?: hlsUrl, modified?.headers?.toMutableMap() ?: mutableMapOf())
+
             check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
 
             val vpContent = response.body?.string()
@@ -601,7 +609,8 @@ class VideoDownload {
 
             val variantPlaylist = HLS.parseVariantPlaylist(vpContent, hlsUrl)
             val decryptionInfo: DecryptionInfo? = if (variantPlaylist.decryptionInfo != null) {
-                val keyResponse = client.get(variantPlaylist.decryptionInfo.keyUrl)
+                val modifiedDecryptionRequest = modifier?.modifyRequest(variantPlaylist.decryptionInfo.keyUrl, mapOf());
+                val keyResponse = client.get(modifiedDecryptionRequest?.url ?: variantPlaylist.decryptionInfo.keyUrl, modifiedDecryptionRequest?.headers?.toMutableMap() ?: mutableMapOf())
                 check(keyResponse.isOk) { "HLS request failed for decryption key: ${keyResponse.code}" }
                 DecryptionInfo(keyResponse.body!!.bytes(), variantPlaylist.decryptionInfo.iv?.hexStringToByteArray())
             } else {
@@ -619,7 +628,7 @@ class VideoDownload {
                 try {
                     segmentFiles.add(segmentFile)
 
-                    val segmentLength = downloadSource_Sequential(client, null, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
+                    val segmentLength = downloadSource_Sequential(client, modifier, outputStream, segment.uri, if (index == 0) null else decryptionInfo, index) { segmentLength, totalRead, lastSpeed ->
                         val averageSegmentLength = if (index == 0) segmentLength else downloadedTotalLength / index
                         val expectedTotalLength = averageSegmentLength * (variantPlaylist.segments.size - 1) + segmentLength
                         onProgress(expectedTotalLength, downloadedTotalLength + totalRead, lastSpeed)
@@ -720,6 +729,11 @@ class VideoDownload {
                 source.getRequestExecutor();
             else
                 null;
+
+            val modifier = if (source is JSSource && source.hasRequestModifier)
+                source.getRequestModifier();
+            else
+                null;
             val speedTracker = SpeedTracker(1000);
 
             Logger.i(TAG, "Download $name Dash, CueCount: " + foundCues.count().toString());
@@ -731,12 +745,14 @@ class VideoDownload {
                 val t = cue.groupValues[1];
                 val d = cue.groupValues[2];
 
+
                 val url = foundTemplateUrl.replace("\$Number\$", (indexCounter).toString());
+                val modified = modifier?.modifyRequest(url, mapOf());
 
                 val data = if(executor != null)
-                    executor.executeRequest("GET", url, null, mapOf());
+                    executor.executeRequest("GET", modified?.url ?: url, null, modified?.headers ?: mapOf());
                 else {
-                    val resp = client.get(url, mutableMapOf());
+                    val resp = client.get(modified?.url ?: url, modified?.headers?.toMutableMap() ?: mutableMapOf());
                     if(!resp.isOk)
                         throw IllegalStateException("Dash request failed for index " + indexCounter.toString() + ", with code: " + resp.code.toString());
                     resp.body!!.bytes()
@@ -796,7 +812,7 @@ class VideoDownload {
                 Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
                 sourceLength = head["content-length"]!!.toLong();
                 onProgress(sourceLength, 0, 0);
-                downloadSource_Ranges(name, client, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
+                downloadSource_Ranges(name, client, modifier, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
             }
             else {
                 Logger.i(TAG, "Download $name Sequential");
@@ -1003,7 +1019,7 @@ class VideoDownload {
         onProgress(sourceLength, totalRead, 0)
         return sourceLength
     }*/
-    private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit) {
+    private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, modifier: IRequestModifier?, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit) {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -1022,7 +1038,7 @@ class VideoDownload {
 
             Logger.i(TAG, "Download ${name} Batch #${reqCount} [${concurrency}] (${lastSpeed.toHumanBytesSpeed()})");
 
-            val byteRangeResults = requestByteRangeParallel(client, pool, url, sourceLength, concurrency, totalRead,
+            val byteRangeResults = requestByteRangeParallel(client, pool, modifier, url, sourceLength, concurrency, totalRead,
                 rangeSize, 1024 * 64);
 
             for(byteRange in byteRangeResults) {
@@ -1053,7 +1069,7 @@ class VideoDownload {
         onProgress(sourceLength, totalRead, 0);
     }
 
-    private fun requestByteRangeParallel(client: ManagedHttpClient, pool: ForkJoinPool, url: String, totalLength: Long, concurrency: Int, rangePosition: Long, rangeSize: Int, rangeVariance: Int = -1): List<Triple<ByteArray, Long, Long>> {
+    private fun requestByteRangeParallel(client: ManagedHttpClient, pool: ForkJoinPool, modifier: IRequestModifier?, url: String, totalLength: Long, concurrency: Int, rangePosition: Long, rangeSize: Int, rangeVariance: Int = -1): List<Triple<ByteArray, Long, Long>> {
         val tasks = mutableListOf<ForkJoinTask<Triple<ByteArray, Long, Long>>>();
         var readPosition = rangePosition;
         for(i in 0 until concurrency) {
@@ -1067,21 +1083,25 @@ class VideoDownload {
             else readPosition + toRead;
 
             tasks.add(pool.submit<Triple<ByteArray, Long, Long>> {
-                return@submit requestByteRange(client, url, rangeStart, rangeEnd);
+                return@submit requestByteRange(client, modifier, url, rangeStart, rangeEnd);
             });
             readPosition = rangeEnd + 1;
         }
 
         return tasks.map { it.get() };
     }
-    private fun requestByteRange(client: ManagedHttpClient, url: String, rangeStart: Long, rangeEnd: Long): Triple<ByteArray, Long, Long> {
+    private fun requestByteRange(client: ManagedHttpClient, modifier: IRequestModifier?, url: String, rangeStart: Long, rangeEnd: Long): Triple<ByteArray, Long, Long> {
         var retryCount = 0
-        var lastException: Throwable? = null
+        var lastException: Throwable? = null;
+
+        val headers = mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}"));
+        val modified = modifier?.modifyRequest(url, headers);
 
         while (retryCount <= 3) {
             try {
                 val toRead = rangeEnd - rangeStart;
-                val req = client.get(url, mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}")));
+
+                val req = client.get(modified?.url ?: url, modified?.headers?.toMutableMap() ?: headers);
                 if (!req.isOk) {
                     val bodyString = req.body?.string()
                     req.body?.close()
