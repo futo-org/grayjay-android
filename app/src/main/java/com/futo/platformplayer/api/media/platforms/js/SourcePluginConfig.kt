@@ -23,7 +23,7 @@ class SourcePluginConfig(
     //Script
     val repositoryUrl: String? = null,
     val scriptUrl: String = "",
-    val version: Int = -1,
+    var version: Int = -1,
 
     val iconUrl: String? = null,
     var id: String = UUID.randomUUID().toString(),

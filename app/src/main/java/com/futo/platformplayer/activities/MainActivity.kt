@@ -66,6 +66,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.LibraryFilesFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibrarySearchFragment
 import com.futo.platformplayer.fragment.mainactivity.main.LibraryVideosFragment
+import com.futo.platformplayer.fragment.mainactivity.main.LoginFragment
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsFragment
@@ -201,6 +202,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragLibraryFiles: LibraryFilesFragment;
     lateinit var _fragSettings: SettingsFragment;
     lateinit var _fragDeveloper: DeveloperFragment;
+    lateinit var _fragLogin: LoginFragment;
 
     lateinit var _fragBrowser: BrowserFragment;
 
@@ -395,6 +397,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibrarySearch = LibrarySearchFragment.newInstance();
         _fragSettings = SettingsFragment.newInstance();
         _fragDeveloper = DeveloperFragment.newInstance();
+        _fragLogin = LoginFragment.newInstance();
 
         _fragBrowser = BrowserFragment.newInstance();
 
@@ -1199,6 +1202,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    inline fun <reified T : Fragment> navigate(parameter: Any? = null, withHistory: Boolean = true, isBack: Boolean = false) {
+        val segment = getFragment<T>();
+        navigate(segment as MainFragment, parameter, withHistory, isBack);
+    }
+
     /**
      * Navigate takes a MainFragment, and makes them the current main visible view
      * A parameter can be provided which becomes available in the onShow of said fragment
@@ -1346,6 +1354,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             LibrarySearchFragment::class -> _fragLibrarySearch as T;
             SettingsFragment:: class -> _fragSettings as T;
             DeveloperFragment::class -> _fragDeveloper as T;
+            LoginFragment::class -> _fragLogin as T;
             else -> throw IllegalArgumentException("Fragment type ${T::class.java.name} is not available in MainActivity");
         }
     }

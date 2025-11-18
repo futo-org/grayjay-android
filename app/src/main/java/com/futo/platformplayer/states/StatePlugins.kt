@@ -11,6 +11,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourceAuth
 import com.futo.platformplayer.api.media.platforms.js.SourceCaptchaData
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
+import com.futo.platformplayer.fragment.mainactivity.main.LoginFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment.Companion
 import com.futo.platformplayer.logging.Logger
@@ -167,7 +168,7 @@ class StatePlugins {
         if(config.authentication == null)
             return false;
 
-        LoginActivity.showLogin(context, config) {
+        LoginFragment.showLogin(config) {//LoginActivity.showLogin(context, config) {
             try {
                 StatePlugins.instance.setPluginAuth(config.id, it);
             } catch (e: Throwable) {
@@ -300,6 +301,7 @@ class StatePlugins {
                 StateAssets.readAssetBinRelative(context, assetConfigPath, config.iconUrl);
             else null;
 
+            //config.version = config.version - 1;
             createPlugin(config, script, icon, true);
             return true;
         }
@@ -317,6 +319,15 @@ class StatePlugins {
            installPlugins(context, scope, sourceUrls.drop(1), handler);
         }
     }
+    fun requestConfig(sourceUrl: String): SourcePluginConfig {
+        val configResp = ManagedHttpClient().get(sourceUrl);
+        if(!configResp.isOk)
+            throw IllegalStateException("Failed request with ${configResp.code}");
+        val configJson = configResp.body?.string();
+        if(configJson.isNullOrEmpty())
+            throw IllegalStateException("No response");
+        return SourcePluginConfig.fromJson(configJson, sourceUrl);
+    }
     fun installPlugin(context: Context, scope: CoroutineScope, sourceUrl: String, handler: ((Boolean) -> Unit)? = null) {
         scope.launch(Dispatchers.IO) {
             val client = ManagedHttpClient();
@@ -329,6 +340,7 @@ class StatePlugins {
                 if(configJson.isNullOrEmpty())
                     throw IllegalStateException("No response");
                 config = SourcePluginConfig.fromJson(configJson, sourceUrl);
+                //config.version = config.version - 1;
             }
             catch(ex: SerializationException) {
                 Logger.e(TAG, "Failed decode config", ex);
@@ -642,6 +654,9 @@ class StatePlugins {
         val descriptor = getPlugin(id) ?: throw IllegalArgumentException("Plugin [${id}] does not exist");
         descriptor.updateAuth(auth);
         _plugins.save(descriptor);
+
+        if(auth != null)
+            UIDialogs.appToast("Plugin ${descriptor?.config?.name} logged in");
     }
 
     @Serializable

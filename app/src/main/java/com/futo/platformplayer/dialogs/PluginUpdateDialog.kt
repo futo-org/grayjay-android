@@ -48,6 +48,7 @@ class PluginUpdateDialog : AlertDialog {
 
     private lateinit var _buttonCancel1: Button;
     private lateinit var _buttonCancel2: Button;
+    private lateinit var _buttonAlways: LinearLayout;
     private lateinit var _buttonUpdate: LinearLayout;
 
     private lateinit var _buttonOk: LinearLayout;
@@ -58,6 +59,7 @@ class PluginUpdateDialog : AlertDialog {
     private lateinit var _textProgres: TextView;
     private lateinit var _textError: TextView;
     private lateinit var _textResult: TextView;
+    private lateinit var _textChangelogResult: TextView;
 
     private lateinit var _uiChoiceTop: FrameLayout;
     private lateinit var _uiProgressTop: FrameLayout;
@@ -89,6 +91,7 @@ class PluginUpdateDialog : AlertDialog {
 
         _buttonCancel1 = findViewById(R.id.button_cancel_1);
         _buttonCancel2 = findViewById(R.id.button_cancel_2);
+        _buttonAlways = findViewById(R.id.button_always);
         _buttonUpdate = findViewById(R.id.button_update);
 
         _buttonOk = findViewById(R.id.button_ok);
@@ -99,6 +102,7 @@ class PluginUpdateDialog : AlertDialog {
         _textProgres = findViewById(R.id.text_progress);
         _textError = findViewById(R.id.text_error);
         _textResult = findViewById(R.id.text_result);
+        _textChangelogResult = findViewById(R.id.text_changelog_result);
 
         _uiChoiceTop = findViewById(R.id.dialog_ui_choice_top);
         _uiProgressTop = findViewById(R.id.dialog_ui_progress_top);
@@ -119,17 +123,24 @@ class PluginUpdateDialog : AlertDialog {
                 val changelog = _newConfig.changelog!![changelogVersion]!!;
                 if(changelog.size > 1) {
                     _textChangelog.text = "Changelog (${_newConfig.version})\n" + changelog.map { " - " + it.trim() }.joinToString("\n");
+                    _textChangelogResult.text = _textChangelog.text;
                 }
                 else if(changelog.size == 1) {
                     _textChangelog.text = "Changelog (${_newConfig.version})\n" + changelog[0].trim();
+                    _textChangelogResult.text = _textChangelog.text;
                 }
-                else
+                else {
                     _textChangelog.visibility = View.GONE;
-            } else
-                _textChangelog.visibility = View.GONE;
+                    _textChangelogResult.visibility = View.GONE;
+                }
+            } else {
+                    _textChangelog.visibility = View.GONE;
+                    _textChangelogResult.visibility = View.GONE;
+            }
         }
         catch(ex: Throwable) {
             _textChangelog.visibility = View.GONE;
+            _textChangelogResult.visibility = View.GONE;
             Logger.e(TAG, "Invalid changelog? ", ex);
         }
 
@@ -142,6 +153,18 @@ class PluginUpdateDialog : AlertDialog {
         _buttonUpdate.setOnClickListener {
             if (_isUpdating)
                 return@setOnClickListener;
+            _isUpdating = true;
+            update();
+        };
+        _buttonAlways.setOnClickListener {
+            if (_isUpdating)
+                return@setOnClickListener;
+            val plugin = StatePlugins.instance.getPlugin(_oldConfig.id);
+            if(plugin != null) {
+                plugin.appSettings.automaticUpdate = true;
+                StatePlugins.instance.savePlugin(_oldConfig.id);
+                UIDialogs.appToast("Automatic update enabled, can be disabled in plugin settings");
+            }
             _isUpdating = true;
             update();
         };
@@ -158,7 +181,8 @@ class PluginUpdateDialog : AlertDialog {
                 if (_isUpdating)
                     return;
                 _isUpdating = true;
-                update();
+
+                update(true);
             }
         }
     }
@@ -167,7 +191,7 @@ class PluginUpdateDialog : AlertDialog {
         super.dismiss();
     }
 
-    private fun update() {
+    private fun update(automatic: Boolean = false) {
         _uiChoiceTop.visibility = View.GONE;
         _uiRiskTop.visibility = View.GONE;
         _uiChoiceBot.visibility = View.GONE;

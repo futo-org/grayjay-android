@@ -18,6 +18,7 @@ import com.futo.platformplayer.engine.dev.V8RemoteObject
 import com.futo.platformplayer.engine.dev.V8RemoteObject.Companion.gsonStandard
 import com.futo.platformplayer.engine.dev.V8RemoteObject.Companion.serialize
 import com.futo.platformplayer.engine.packages.PackageHttp
+import com.futo.platformplayer.fragment.mainactivity.main.LoginFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateAssets
@@ -268,11 +269,15 @@ class DeveloperEndpoints(private val context: Context) {
                 context.respondCode(403, "This plugin doesn't support auth");
                 return;
             }
+            LoginFragment.showLogin(config){
+                _testPluginVariables.clear();
+                _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, null, config), JSHttpClient(null, it, null, config));
+            };
+            /*
             LoginActivity.showLogin(StateApp.instance.context, config) {
                 _testPluginVariables.clear();
                 _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, null, config), JSHttpClient(null, it, null, config));
-
-            };
+            }; */
             context.respondCode(200, "Login started");
         }
         catch(ex: Throwable) {

@@ -453,7 +453,7 @@ class SourceDetailFragment : MainFragment() {
                 }.apply {
                     this.alpha = 0.5f;
                 },*/
-                if(isEmbedded) BigButton(c, "Reinstall", "Modify the source of this plugin", R.drawable.ic_refresh) {
+                if(isEmbedded) BigButton(c, "Reinstall", "Reinstall the original version that was embedded with this version of Grayjay", R.drawable.ic_refresh) {
                     val embeddedConfig = StatePlugins.instance.getEmbeddedPluginConfigFromID(context, config.id);
 
                     UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, "Are you sure you want to downgrade (${config.version}=>${embeddedConfig?.version})?",
@@ -467,7 +467,29 @@ class SourceDetailFragment : MainFragment() {
                     this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                         setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
                     };
-                } else null
+                } else
+                    BigButton(c, "Reinstall", "Reinstall the current version from the remote repository", R.drawable.ic_refresh) {
+                        var newConfig: SourcePluginConfig? = null;
+                        try {
+                            newConfig = StatePlugins.instance.requestConfig(config?.sourceUrl ?: throw IllegalArgumentException("No config"));
+                        }
+                        catch(ex: Throwable) {
+                            Logger.e(TAG, "Failed to fetch new plugin config", ex);
+                        }
+                        UIDialogs.showDialog(context, R.drawable.ic_warning_yellow, "Are you sure you want to downgrade (${config.version}=>)?",
+                            "This will revert the plugin back to the originally embedded version.\nVersion change: ${config.version}=>${newConfig?.version}", null,
+                            0, UIDialogs.Action("Cancel", {}), UIDialogs.Action("Reinstall", {
+                                val url = config.sourceUrl ?: return@Action;
+                                StatePlugins.instance.installPlugin(context, fragment.lifecycleScope, url) {
+                                    reloadSource(config.id);
+                                    UIDialogs.toast(context, "Plugin reinstalled, may require refresh");
+                                }
+                            }, UIDialogs.ActionStyle.DANGEROUS));
+                    }.apply {
+                        this.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
+                        };
+                    }
             )
 
             _sourceAdvancedButtons.removeAllViews();
@@ -486,7 +508,7 @@ class SourceDetailFragment : MainFragment() {
                     config.authentication.loginWarning, null, 0,
                     UIDialogs.Action("Cancel", {}, UIDialogs.ActionStyle.NONE),
                     UIDialogs.Action("Login", {
-                        LoginActivity.showLogin(StateApp.instance.context, config) {
+                        LoginFragment.showLogin(config) {//LoginActivity.showLogin(StateApp.instance.context, config) {
                             try {
                                 StatePlugins.instance.setPluginAuth(config.id, it);
                                 reloadSource(config.id);
@@ -500,7 +522,7 @@ class SourceDetailFragment : MainFragment() {
                     }, UIDialogs.ActionStyle.PRIMARY))
             }
             else
-                LoginActivity.showLogin(StateApp.instance.context, config) {
+                LoginFragment.showLogin(config) {//LoginActivity.showLogin(StateApp.instance.context, config) {
                     try {
                         StatePlugins.instance.setPluginAuth(config.id, it);
                         reloadSource(config.id);

@@ -157,7 +157,9 @@ class StateLibrary {
             query,
             null,
             MediaStore.Video.Media.DATE_ADDED + " DESC") ?: return EmptyPager();
-        return cursor.use {
+
+        //Ongoing usage of cursor..todo disposal
+        //return cursor.use {
             cursor.moveToFirst();
             val list = mutableListOf<IPlatformVideo>()
             while(!cursor.isAfterLast && list.size < 10) {
@@ -165,7 +167,7 @@ class StateLibrary {
                 cursor.moveToNext();
             }
 
-            return@use AdhocPager<IPlatformContent>({
+            return AdhocPager<IPlatformContent>({
                 val list = mutableListOf<IPlatformContent>()
                 while(!cursor.isAfterLast && list.size < 10) {
                     list.add(videoFromCursor(cursor));
@@ -173,7 +175,7 @@ class StateLibrary {
                 }
                 return@AdhocPager list;
             }, list);
-        }
+        //}
     }
     fun getRecentVideos(buckets: List<String>? = null, count: Int = 20): List<IPlatformVideo> {
         val videoPager = getVideos(buckets);

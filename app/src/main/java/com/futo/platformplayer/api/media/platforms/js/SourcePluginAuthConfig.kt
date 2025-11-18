@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media.platforms.js
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import java.util.Dictionary
 
 @Serializable
@@ -27,7 +28,7 @@ class SourcePluginAuthConfig(
         val details: String? = null,
         val once: Boolean? = true
     ) {
-        @Contextual
+        @Transient
         private var _regex: Regex? = null;
 
         fun getRegex(): Regex {
