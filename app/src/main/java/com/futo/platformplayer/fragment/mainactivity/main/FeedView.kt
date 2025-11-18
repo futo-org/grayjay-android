@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -39,7 +40,7 @@ import java.time.OffsetDateTime
 import kotlin.math.max
 
 abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : LinearLayout where TPager : IPager<TResult>, TViewHolder : RecyclerView.ViewHolder, TFragment : MainFragment {
-    protected val _feedRoot: FrameLayout;
+    protected val _feedRoot: ConstraintLayout;
     protected val  _recyclerResults: RecyclerView;
     protected val _overlayContainer: FrameLayout;
     protected val _swipeRefresh: SwipeRefreshLayout;
@@ -52,6 +53,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private val _emptyPagerContainer: FrameLayout;
 
     protected val _toolbarContentView: LinearLayout;
+    protected val _bottomContentView: LinearLayout;
 
     private var _loading: Boolean = true;
 
@@ -136,6 +138,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         setActiveTags(null);
 
         _toolbarContentView = findViewById(R.id.container_toolbar_content);
+        _bottomContentView = findViewById(R.id.container_bottom);
 
         _nextPageHandler = TaskHandler<TPager, Pair<TPager, List<TResult>>>({fragment.lifecycleScope}, {
             if (it is IAsyncPager<*>)

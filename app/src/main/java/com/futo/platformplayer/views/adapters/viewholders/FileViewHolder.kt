@@ -42,11 +42,11 @@ class FileViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHold
         _file = file;
         _imageThumbnail?.let {
             if(file.isDirectory)
-                it.setImageResource(R.drawable.ic_library);
+                it.setImageResource(R.drawable.ic_folder);
             else {
                 Glide.with(it)
                     .load(file.thumbnail)
-                    .placeholder(R.drawable.ic_music)
+                    .placeholder(R.drawable.ic_song)
                     .into(it)
             }
         };

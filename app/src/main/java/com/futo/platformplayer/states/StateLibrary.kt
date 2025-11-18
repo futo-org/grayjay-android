@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
 import android.webkit.MimeTypeMap
+import androidx.collection.emptyLongSet
 import androidx.core.database.getStringOrNull
 import androidx.core.net.toFile
 import androidx.core.net.toUri
@@ -243,11 +244,12 @@ class StateLibrary {
             MediaStore.Audio.Media._ID, //0
             MediaStore.Audio.Media.DISPLAY_NAME, //1
             MediaStore.Audio.Media.ARTIST, //2
-            MediaStore.Audio.Media.ALBUM_ID, //3
-            MediaStore.Audio.Media.DURATION, //4
-            MediaStore.Audio.Media.DATE_ADDED, //5
-            MediaStore.Audio.Media.MIME_TYPE, //6
-            MediaStore.Audio.Media.BUCKET_DISPLAY_NAME //7
+            MediaStore.Audio.Media.ARTIST_ID, //3
+            MediaStore.Audio.Media.ALBUM_ID, //4
+            MediaStore.Audio.Media.DURATION, //5
+            MediaStore.Audio.Media.DATE_ADDED, //6
+            MediaStore.Audio.Media.MIME_TYPE, //7
+            MediaStore.Audio.Media.BUCKET_DISPLAY_NAME //8
         );
 
         fun getDocumentTrack(url: String): IPlatformContentDetails? {
@@ -359,17 +361,25 @@ class StateLibrary {
             val id = cursor.getString(0);
             val displayName = cursor.getString(1);
             val author = cursor.getString(2);
-            val albumId = cursor.getLong(3);
-            val duration = cursor.getLong(4).let { if(it > 0) it / 1000 else 0 };
-            val date = cursor.getLong(5);
-            val contentType = cursor.getString(6);
-            val category = cursor.getString(7);
+            val authorId = cursor.getStringOrNull(3);
+            val albumId = cursor.getLong(4);
+            val duration = cursor.getLong(5).let { if(it > 0) it / 1000 else 0 };
+            val date = cursor.getLong(6);
+            val contentType = cursor.getString(7);
+            val category = cursor.getString(8);
 
             val idLong = id.toLongOrNull();
             val contentUrl = if(idLong != null )
                 ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, idLong).toString();
             else
                 "";
+
+            val authorIdLong = authorId?.toLongOrNull();
+            val authorUrl = if(authorIdLong != null)
+                ContentUris.withAppendedId(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, authorIdLong).toString();
+            else
+                "";
+
 
             val albumContentUrl = if(albumId > 0)
                 ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)?.toString()
@@ -380,7 +390,10 @@ class StateLibrary {
             else null;
 
             val authorObj = if(!author.isNullOrBlank())
-                PlatformAuthorLink(PlatformID.NONE, author, "", null, null)
+                PlatformAuthorLink(
+                    if(authorId != null) PlatformID("LOCAL", authorId) else PlatformID.NONE,
+                    author,
+                    authorUrl, null, null)
             else PlatformAuthorLink.UNKNOWN;
 
             return LocalVideoDetails(

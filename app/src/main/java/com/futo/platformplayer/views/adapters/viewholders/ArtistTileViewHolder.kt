@@ -40,10 +40,10 @@ class ArtistTileViewHolder(val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder
             if (artist.thumbnail != null)
                 Glide.with(it)
                     .load(artist.thumbnail)
-                    .placeholder(R.drawable.unknown_music)
+                    .placeholder(R.drawable.ic_artist)
                     .into(it)
             else
-                Glide.with(it).load(R.drawable.unknown_music).into(it);
+                Glide.with(it).load(R.drawable.ic_artist).into(it);
         };
 
         _textName.text = artist.name;

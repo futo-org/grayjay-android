@@ -506,7 +506,10 @@ class LibraryArtistFragment : MainFragment() {
 
                         val playlist = _artist?.toPlaylist();
                         if (playlist != null) {
-                            val index = playlist.videos.indexOf(c);
+                            val sameVideo = playlist.videos.find { it.name == c.name };
+                            val index = sameVideo?.let {
+                                playlist.videos.indexOf(sameVideo)
+                            } ?: -1;
                             if (index == -1)
                                 return@subscribe;
 

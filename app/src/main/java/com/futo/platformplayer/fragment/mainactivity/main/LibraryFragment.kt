@@ -93,14 +93,18 @@ class LibraryFragment : MainFragment() {
                 UIDialogs.showDialog(requireContext(), R.drawable.ic_library,
                     "Music permissions", "We require permissions to see your on-device music, denying this will hide the option to see local music.", null, 1,
                     UIDialogs.Action("Ok", {
-                        permissionReqAudio.launch(android.Manifest.permission.READ_MEDIA_AUDIO);
+                        StateApp?.instance?.activity?.requestPermissionAudio {
+                            setPermissionResultAudio(it);
+                        }
                     }, UIDialogs.ActionStyle.PRIMARY),
                     UIDialogs.Action("Cancel", {
 
                     }, UIDialogs.ActionStyle.NONE));
             }
             else -> {
-                permissionReqAudio.launch(android.Manifest.permission.READ_MEDIA_AUDIO);
+                StateApp?.instance?.activity?.requestPermissionAudio {
+                    setPermissionResultAudio(it);
+                }
             }
         }
     }
@@ -113,24 +117,22 @@ class LibraryFragment : MainFragment() {
                 UIDialogs.showDialog(requireContext(), R.drawable.ic_library, false,
                     "Videos permissions", "We require permissions to see your on-device videos, denying this will hide the option to see local videos.", null, 1,
                     UIDialogs.Action("Ok", {
-                        permissionReqVideo.launch(android.Manifest.permission.READ_MEDIA_VIDEO);
+                        StateApp?.instance?.activity?.requestPermissionVideo {
+                            setPermissionResultVideo(it);
+                        }
                     }, UIDialogs.ActionStyle.PRIMARY),
                     UIDialogs.Action("Cancel", {
 
                     }, UIDialogs.ActionStyle.NONE));
             }
             else -> {
-                permissionReqVideo.launch(android.Manifest.permission.READ_MEDIA_VIDEO);
+                StateApp?.instance?.activity?.requestPermissionVideo {
+                    setPermissionResultVideo(it);
+                }
             }
         }
     }
 
-    val permissionReqAudio = registerForActivityResult(ActivityResultContracts.RequestPermission(), { isGranted ->
-        setPermissionResultAudio(isGranted);
-    });
-    val permissionReqVideo = registerForActivityResult(ActivityResultContracts.RequestPermission(), { isGranted ->
-        setPermissionResultVideo(isGranted);
-    });
 
     companion object {
         fun newInstance() = LibraryFragment().apply {}
@@ -292,6 +294,7 @@ class LibraryFragment : MainFragment() {
         }
 
         fun onShown() {
+            UIDialogs.appToast("Library is in alpha\nImprovements are coming to local media playback.")
         }
     }
 }
