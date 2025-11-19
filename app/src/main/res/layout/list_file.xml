@@ -10,7 +10,7 @@
     android:layout_marginBottom="5dp"
     android:layout_marginLeft="10dp"
     android:layout_marginRight="10dp"
-    android:background="@drawable/background_16_round_4dp"
+    android:background="@drawable/background_1b_round_6dp"
     android:id="@+id/root"
     android:clickable="true">
 
@@ -23,12 +23,10 @@
         android:layout_marginLeft="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:background="@drawable/background_1b_round_6dp">
+        app:layout_constraintLeft_toLeftOf="parent">
 
         <ImageView
             android:id="@+id/image_thumbnail"
-            android:alpha="0.4"
             android:layout_height="34dp"
             android:layout_width="34dp"
             android:scaleType="centerCrop"

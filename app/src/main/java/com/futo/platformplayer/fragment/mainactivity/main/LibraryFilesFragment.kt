@@ -8,25 +8,32 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
+import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.structures.AdhocPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.fragment.mainactivity.topbar.FilesTopBarFragment
+import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.FileEntry
 import com.futo.platformplayer.states.StateLibrary
+import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.viewholders.FileViewHolder
 import com.futo.platformplayer.views.buttons.BigButton
+import com.futo.platformplayer.views.buttons.ButtonsContainer
 
 class LibraryFilesFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -70,6 +77,7 @@ class LibraryFilesFragment : MainFragment() {
         private var root: FileEntry? = null;
 
         constructor(fragment: LibraryFilesFragment, inflater: LayoutInflater) : super(fragment, inflater) {
+            disableRefreshLayout();
         }
 
         fun onShown(parameter: Any? = null) {
@@ -138,6 +146,27 @@ class LibraryFilesFragment : MainFragment() {
             }
             setPager(AdhocPager<FileEntry>({ listOf(); }, stack.files));
             setLoading(false);
+
+            val allSongs = stack.files.filter { !it.isDirectory };
+            if(allSongs.any()) {
+                _bottomContentView.addView(ButtonsContainer(context,
+                    listOf(
+                        ButtonsContainer.Button("Play All", R.drawable.background_button_primary) {
+                            StatePlayer.instance.setPlaylist(Playlist(stack.path.toUri().lastPathSegment ?: "", allSongs.map {
+                                SerializedPlatformVideo.fromVideo(LocalVideoDetails.fromContent(it.path))
+                            }), focus = true, shuffle = false)
+                        },
+                        ButtonsContainer.Button("Shuffle", R.drawable.background_button_accent) {
+                            StatePlayer.instance.setPlaylist(Playlist(stack.path.toUri().lastPathSegment ?: "", allSongs.map {
+                                SerializedPlatformVideo.fromVideo(LocalVideoDetails.fromContent(it.path))
+                            }), focus = true, shuffle = true)
+                        }
+                    )).apply {
+                        this.layoutParams = LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+                })
+            }
+            else
+                _bottomContentView.removeAllViews();
 
             fragment.topBar?.let {
                 if(it is FilesTopBarFragment) {

@@ -12,5 +12,6 @@ data class Telemetry(
     val brand: String,
     val manufacturer: String,
     val model: String,
-    val sdkVersion: Int
+    val sdkVersion: Int,
+    val plugins: List<String>? = null
 ) { }

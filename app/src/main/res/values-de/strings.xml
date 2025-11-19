@@ -395,6 +395,7 @@
     <string name="unhandled_exception_in_vs">Unbehandelte Ausnahme in VS</string>
     <string name="send_exception_to_developers">Ausnahme an Entwickler senden…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Ihr Lizenzschlüssel wurde festgelegt!\nEin Neustart der App könnte erforderlich sein.</string>
+    <string name="qr_code_too_large_use_text_below">QR-Code zu groß. Verwenden Sie den Text unten, um Ihr Profil zu teilen.</string>
     <string name="invalid_license_format">Ungültiges Lizenzformat</string>
     <string name="unknown_content_format">Unbekanntes Inhaltsformat</string>
     <string name="unknown_file_format">Unbekanntes Dateiformat</string>

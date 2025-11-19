@@ -18,7 +18,7 @@ class PillButton : LinearLayout {
     val onClick = Event0();
     private var _isLoading = false;
 
-    constructor(context : Context, attrs : AttributeSet) : super(context, attrs) {
+    constructor(context : Context, attrs : AttributeSet?) : super(context, attrs) {
         LayoutInflater.from(context).inflate(R.layout.pill_button, this, true);
         icon = findViewById(R.id.pill_icon);
         text = findViewById(R.id.pill_text);

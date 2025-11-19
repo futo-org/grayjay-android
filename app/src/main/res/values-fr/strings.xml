@@ -411,6 +411,7 @@
     <string name="unhandled_exception_in_vs">Exception non gérée dans VS</string>
     <string name="send_exception_to_developers">Envoyer l\'exception aux développeurs…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Votre clé de licence a été définie !\nUn redémarrage de l\'application peut être nécessaire.</string>
+    <string name="qr_code_too_large_use_text_below">Code QR trop volumineux. Utilisez le texte ci-dessous pour partager votre profil.</string>
     <string name="invalid_license_format">Format de licence invalide</string>
     <string name="unknown_content_format">Format de contenu inconnu</string>
     <string name="unknown_file_format">Format de fichier inconnu</string>

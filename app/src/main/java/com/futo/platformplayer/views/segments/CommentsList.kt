@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
@@ -223,6 +224,12 @@ class CommentsList : ConstraintLayout {
         _adapterComments.notifyDataSetChanged();
         _commentsPager = pager;
         onCommentsLoaded.emit(_comments.size);
+    }
+    fun clearComments() {
+        _comments.clear();
+        _adapterComments.notifyDataSetChanged();
+        _commentsPager = EmptyPager();
+        onCommentsLoaded.emit(0);
     }
 
     fun load(readonly: Boolean, loader: suspend () -> IPager<IPlatformComment>) {

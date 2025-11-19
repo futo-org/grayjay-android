@@ -252,6 +252,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             UIDialogs.toast(this, "Notification permission denied");
     };
 
+
+
     fun requestNotificationPermissions() {
         _notificationPermissionLauncher?.launch(_notifPermission);
     }
@@ -1377,6 +1379,23 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             0, 0, 0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingBottom, resources.displayMetrics)
                 .toInt()
         );
+    }
+
+    var _callbackPermissionAudio: ((Boolean)->Unit)? = null;
+    var _callbackPermissionVideo: ((Boolean)->Unit)? = null;
+    val permissionReqAudio = registerForActivityResult(ActivityResultContracts.RequestPermission(), { isGranted ->
+        _callbackPermissionAudio?.invoke(isGranted);
+    });
+    val permissionReqVideo = registerForActivityResult(ActivityResultContracts.RequestPermission(), { isGranted ->
+        _callbackPermissionVideo?.invoke(isGranted);
+    });
+    fun requestPermissionAudio(cb: ((Boolean)->Unit)? = null) {
+        _callbackPermissionAudio = cb;
+        permissionReqAudio.launch(android.Manifest.permission.READ_MEDIA_AUDIO);
+    }
+    fun requestPermissionVideo(cb: ((Boolean)->Unit)? = null) {
+        _callbackPermissionVideo = cb;
+        permissionReqVideo.launch(android.Manifest.permission.READ_MEDIA_VIDEO);
     }
 
 

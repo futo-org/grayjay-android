@@ -407,6 +407,7 @@
     <string name="unhandled_exception_in_vs">Необработанное исключение в VS</string>
     <string name="send_exception_to_developers">Отправить исключение разработчикам…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Ваш лицензионный ключ установлен!\nМожет потребоваться перезагрузка приложения.</string>
+    <string name="qr_code_too_large_use_text_below">QR-код слишком большой. Используйте текст ниже, чтобы поделиться своим профилем.</string>
     <string name="invalid_license_format">Неверный формат лицензии</string>
     <string name="unknown_content_format">Неизвестный формат содержимого</string>
     <string name="unknown_file_format">Неизвестный формат файла</string>

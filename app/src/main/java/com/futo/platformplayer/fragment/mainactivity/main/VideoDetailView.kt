@@ -55,6 +55,7 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
+import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
@@ -77,6 +78,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -175,6 +177,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -562,6 +565,18 @@ class VideoDetailView : ConstraintLayout {
         _channelButton.setOnClickListener {
             if (video is TutorialFragment.TutorialVideo) {
                 return@setOnClickListener
+            }
+            if(video is LocalVideoDetails) {
+                video?.author?.let {
+                    if(it.url.startsWith("content://media/external/audio/artists")) {
+                        fragment.navigate<LibraryArtistFragment>(it.url);
+                        fragment.lifecycleScope.launch {
+                            delay(100);
+                            fragment.minimizeVideoDetail();
+                        };
+                    }
+                }
+                return@setOnClickListener;
             }
 
             (video?.author ?: _searchVideo?.author)?.let {
@@ -1035,7 +1050,7 @@ class VideoDetailView : ConstraintLayout {
                 _slideUpOverlay?.hide();
             }
             else null,
-            if(!isLimitedVersion && !(video?.isLive ?: false))
+            if(!isLimitedVersion && !(video?.isLive ?: false) && !(video is LocalVideoDetails))
                 RoundButton(context, R.drawable.ic_download, context.getString(R.string.download), TAG_DOWNLOAD) {
                     video?.let {
                         _slideUpOverlay = UISlideOverlays.showDownloadVideoOverlay(it, _overlayContainer, context.contentResolver);
@@ -1058,15 +1073,16 @@ class VideoDetailView : ConstraintLayout {
                     _slideUpOverlay?.hide();
                 }
             else null,
-            RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
+            if(!(video is LocalVideoDetails))
+                RoundButton(context, R.drawable.ic_export, context.getString(R.string.page), TAG_OPEN) {
                 video?.let {
                     val url = video?.shareUrl ?: _searchVideo?.shareUrl ?: _url;
                     fragment.navigate<BrowserFragment>(url);
                     fragment.minimizeVideoDetail();
                 };
                 _slideUpOverlay?.hide();
-            },
-            if (StateSync.instance.hasAuthorizedDevice()) {
+            } else null,
+            if (StateSync.instance.hasAuthorizedDevice() && !(video is LocalVideoDetails)) {
                 RoundButton(context, R.drawable.ic_device, context.getString(R.string.send_to_device), TAG_SEND_TO_DEVICE) {
                     val devices = StateSync.instance.getAuthorizedSessions();
                     val videoToSend = video ?: return@RoundButton;
@@ -1089,10 +1105,11 @@ class VideoDetailView : ConstraintLayout {
                         })
                     }
                 }} else null,
-            RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
+            if(!(video is LocalVideoDetails))
+                RoundButton(context, R.drawable.ic_refresh, context.getString(R.string.reload), "Reload") {
                 reloadVideo();
                 _slideUpOverlay?.hide();
-            }).filterNotNull();
+            } else null).filterNotNull();
         if(!_buttonPinStore.getAllValues().any())
             _buttonPins.setButtons(*(buttons + listOf(_buttonMore)).toTypedArray());
         else {
@@ -1624,7 +1641,9 @@ class VideoDetailView : ConstraintLayout {
 
         _buttonSubscribe.setSubscribeChannel(video.author.url);
         setDescription(video.description.fixHtmlLinks());
-        _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
+        _creatorThumbnail.setThumbnail(video.author.thumbnail, false,
+            video is LocalVideoDetails
+        );
         setPolycentricProfile(null, animate = false);
         _taskLoadPolycentricProfile.run(video.author.id);
 
@@ -1652,7 +1671,7 @@ class VideoDetailView : ConstraintLayout {
 
         _rating.visibility = View.GONE;
 
-        if (StatePolycentric.instance.enabled) {
+        if (StatePolycentric.instance.enabled && !(video is LocalVideoDetails)) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val queryReferencesResponse = ApiMethods.getQueryReferences(
@@ -1811,17 +1830,19 @@ class VideoDetailView : ConstraintLayout {
         _player.updateNextPrevious();
         updateMoreButtons();
 
-        if (videoDetail is TutorialFragment.TutorialVideo) {
+        if (videoDetail is TutorialFragment.TutorialVideo || videoDetail is LocalVideoDetails) {
             _buttonSubscribe.visibility = View.GONE
-            _buttonMore.visibility = View.GONE
-            _buttonPins.visibility = View.GONE
+            _buttonMore.visibility = if(videoDetail is LocalVideoDetails) View.VISIBLE else View.GONE;
+            _buttonPins.visibility = if(videoDetail is LocalVideoDetails) View.VISIBLE else View.GONE;
             _layoutRating.visibility = View.GONE
+            _rating.visibility = View.GONE;
             _layoutChangeBottomSection.visibility = View.GONE
         } else {
             _buttonSubscribe.visibility = View.VISIBLE
             _buttonMore.visibility = View.VISIBLE
             _buttonPins.visibility = View.VISIBLE
             _layoutRating.visibility = View.VISIBLE
+            _rating.visibility = View.VISIBLE;
             _layoutChangeBottomSection.visibility = View.VISIBLE
         }
 
@@ -2685,7 +2706,11 @@ class VideoDetailView : ConstraintLayout {
     private fun fetchComments() {
         Logger.i(TAG, "fetchComments")
         video?.let {
-            _commentsList.load(true) { StatePlatform.instance.getComments(it); };
+            if(video is LocalVideoDetails) {
+                _commentsList.clearComments();
+            }
+            else
+                _commentsList.load(true) { StatePlatform.instance.getComments(it); };
         }
     }
     private fun fetchPolycentricComments() {
@@ -2972,6 +2997,7 @@ class VideoDetailView : ConstraintLayout {
                     }
 
                     onChannelClicked.subscribe {
+                        Logger.i(TAG, "Opening channel url: ${it.url}");
                         if(it.url.isNotBlank()) {
                             fragment.minimizeVideoDetail()
                             fragment.navigate<ChannelFragment>(it)

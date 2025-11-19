@@ -54,9 +54,14 @@ class CreatorThumbnail : ConstraintLayout {
         setNewActivity(false);
     }
 
-    fun setThumbnail(url: String?, animate: Boolean) {
+    fun setThumbnail(url: String?, animate: Boolean, isArtist: Boolean = false) {
         if (url == null) {
-            clear();
+            if(isArtist) {
+                _imageChannelThumbnail.setImageResource(R.drawable.ic_artist);
+                _imageChannelThumbnail.visibility = View.VISIBLE;
+            }
+            else
+                clear();
             return;
         }
 
@@ -78,18 +83,21 @@ class CreatorThumbnail : ConstraintLayout {
         } else {
             setHarborAvailable(false, animate, null);
         }
+        var placeholder = R.drawable.placeholder_channel_thumbnail;
+        if(url.startsWith("content://") || isArtist)
+            placeholder = R.drawable.ic_artist;
 
         if (animate) {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
-                .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .placeholder(placeholder)
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .crossfade()
                 .into(_imageChannelThumbnail)
         } else {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
-                .placeholder(R.drawable.placeholder_channel_thumbnail)
+                .placeholder(placeholder)
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .into(_imageChannelThumbnail);
         }
