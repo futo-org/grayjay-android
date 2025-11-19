@@ -29,14 +29,25 @@ class HLS {
             val mediaRenditions = mutableListOf<MediaRendition>()
             val sessionDataList = mutableListOf<SessionData>()
             var independentSegments = false
+            var version: Int? = null
+            var mediaSequence: Long? = null
+            val unhandled = mutableListOf<String>()
 
-            masterPlaylistContent.lines().forEachIndexed { index, line ->
+            val lines = masterPlaylistContent.lines()
+            lines.forEachIndexed { index, line ->
                 when {
+                    line.startsWith("#EXT-X-VERSION:") -> {
+                        version = line.substringAfter(":").toIntOrNull()
+                    }
+
+                    line.startsWith("#EXT-X-MEDIA-SEQUENCE:") -> {
+                        mediaSequence = line.substringAfter(":").toLongOrNull()
+                    }
+
                     line.startsWith("#EXT-X-STREAM-INF") -> {
-                        val nextLine = masterPlaylistContent.lines().getOrNull(index + 1)
+                        val nextLine = lines.getOrNull(index + 1)
                             ?: throw Exception("Expected URI following #EXT-X-STREAM-INF, found none")
                         val url = resolveUrl(baseUrl, nextLine)
-
                         variantPlaylists.add(VariantPlaylistReference(url, parseStreamInfo(line)))
                     }
 
@@ -52,10 +63,14 @@ class HLS {
                         val sessionData = parseSessionData(line)
                         sessionDataList.add(sessionData)
                     }
+
+                    else -> {
+                        unhandled.add(line)
+                    }
                 }
             }
 
-            return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments)
+            return MasterPlaylist(variantPlaylists, mediaRenditions, sessionDataList, independentSegments, version = version, mediaSequence = mediaSequence, unhandled = unhandled)
         }
 
         fun mediaRenditionToVariant(rendition: MediaRendition): HLSVariantAudioUrlSource? {
@@ -83,62 +98,189 @@ class HLS {
             return HLSVariantVideoUrlSource(suffix, width ?: 0, height ?: 0, "application/vnd.apple.mpegurl", reference.streamInfo.codecs ?: "", reference.streamInfo.bandwidth, 0, false, reference.url)
         }
 
+        private fun parseByteRange(value: String): Pair<Long, Long> {
+            val trimmed = value.trim()
+            require(trimmed.isNotEmpty()) { "Empty BYTERANGE value" }
+
+            val parts = trimmed.split('@')
+            val length = parts[0].toLong()
+            require(length >= 0) { "Invalid BYTERANGE length '$value'" }
+
+            val start = if (parts.size > 1) {
+                val s = parts[1].toLong()
+                require(s >= 0) { "Invalid BYTERANGE offset '$value'" }
+                s
+            } else {
+                -1L
+            }
+
+            return length to start
+        }
+
+
+        private fun parseAttributes(content: String): Map<String, String> {
+            val index = content.indexOf(':')
+            if (index < 0 || index == content.length - 1) return emptyMap()
+
+            val attributes = mutableMapOf<String, String>()
+            val maybeAttributePairs = content.substring(index + 1).splitToSequence(',')
+
+            var currentPair = StringBuilder()
+            for (pair in maybeAttributePairs) {
+                currentPair.append(pair)
+                if (currentPair.count { it == '\"' } % 2 == 0) {
+                    val full = currentPair.toString()
+                    val key = full.substringBefore("=")
+                    val value = full.substringAfter("=")
+                    attributes[key.trim()] = value.trim().removeSurrounding("\"")
+                    currentPair = StringBuilder()
+                } else {
+                    currentPair.append(',')
+                }
+            }
+
+            return attributes
+        }
+
         fun parseVariantPlaylist(content: String, sourceUrl: String): VariantPlaylist {
+            val baseUrl = URI(sourceUrl).resolve("./").toString()
             val lines = content.lines()
-            val version = lines.find { it.startsWith("#EXT-X-VERSION:") }?.substringAfter(":")?.toIntOrNull()
-            val targetDuration = lines.find { it.startsWith("#EXT-X-TARGETDURATION:") }?.substringAfter(":")?.toIntOrNull()
-            val mediaSequence = lines.find { it.startsWith("#EXT-X-MEDIA-SEQUENCE:") }?.substringAfter(":")?.toLongOrNull()
-            val discontinuitySequence = lines.find { it.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") }?.substringAfter(":")?.toIntOrNull()
-            val programDateTime = lines.find { it.startsWith("#EXT-X-PROGRAM-DATE-TIME:") }?.substringAfter(":")?.let {
-                ZonedDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME)
-            }
-            val playlistType = lines.find { it.startsWith("#EXT-X-PLAYLIST-TYPE:") }?.substringAfter(":")
-            val streamInfo = lines.find { it.startsWith("#EXT-X-STREAM-INF:") }?.let { parseStreamInfo(it) }
 
-            val keyInfo =
-                lines.find { it.startsWith("#EXT-X-KEY:") }?.substringAfter(":")?.split(",")
-
-            val key = keyInfo?.find { it.startsWith("URI=") }?.substringAfter("=")?.trim('"')
-            val iv =
-                keyInfo?.find { it.startsWith("IV=") }?.substringAfter("=")?.substringAfter("x")
-
-            val decryptionInfo: DecryptionInfo? = key?.let { k ->
-                DecryptionInfo(k, iv)
-            }
-
-            val initSegment =
-                lines.find { it.startsWith("#EXT-X-MAP:") }?.substringAfter(":")?.split(",")?.get(0)
-                    ?.substringAfter("=")?.trim('"')
+            var version: Int? = null
+            var targetDuration: Int? = null
+            var mediaSequence: Long? = null
+            var discontinuitySequence: Int? = null
+            var programDateTime: ZonedDateTime? = null
+            var playlistType: String? = null
+            var streamInfo: StreamInfo? = null
+            var decryptionInfo: DecryptionInfo? = null
+            var mapUrl: String? = null
+            var mapBytesStart: Long = -1
+            var mapBytesLength: Long = -1
             val segments = mutableListOf<Segment>()
-            if (initSegment != null) {
-                segments.add(MediaSegment(0.0, resolveUrl(sourceUrl, initSegment)))
-            }
+            val unhandled = mutableListOf<String>()
 
             var currentSegment: MediaSegment? = null
-            lines.forEach { line ->
+
+            for (rawLine in lines) {
+                val line = rawLine.trim()
+                if (line.isEmpty()) continue
+
                 when {
+                    line.startsWith("#EXT-X-VERSION:") -> {
+                        version = line.substringAfter(":").toIntOrNull()
+                    }
+
+                    line.startsWith("#EXT-X-TARGETDURATION:") -> {
+                        targetDuration = line.substringAfter(":").toIntOrNull()
+                    }
+
+                    line.startsWith("#EXT-X-MEDIA-SEQUENCE:") -> {
+                        mediaSequence = line.substringAfter(":").toLongOrNull()
+                    }
+
+                    line.startsWith("#EXT-X-DISCONTINUITY-SEQUENCE:") -> {
+                        discontinuitySequence = line.substringAfter(":").toIntOrNull()
+                    }
+
+                    line.startsWith("#EXT-X-PROGRAM-DATE-TIME:") -> {
+                        programDateTime = ZonedDateTime.parse(
+                            line.substringAfter(":"),
+                            DateTimeFormatter.ISO_DATE_TIME
+                        )
+                    }
+
+                    line.startsWith("#EXT-X-PLAYLIST-TYPE:") -> {
+                        playlistType = line.substringAfter(":")
+                    }
+
+                    line.startsWith("#EXT-X-STREAM-INF:") -> {
+                        streamInfo = parseStreamInfo(line)
+                    }
+
+                    line.startsWith("#EXT-X-KEY:") -> {
+                        val attrs = parseAttributes(line)
+                        val method = attrs["METHOD"]?.ifEmpty { "AES-128" } ?: "AES-128"
+                        val keyUri = attrs["URI"]?.removeSurrounding("\"")
+                        val keyUrl = keyUri?.let { resolveUrl(baseUrl, it) }
+                        val ivRaw = attrs["IV"]
+                        val iv = ivRaw
+                            ?.removePrefix("0x")
+                            ?.removePrefix("0X")
+                        val keyFormat = attrs["KEYFORMAT"]
+                        val keyFormatVersions = attrs["KEYFORMATVERSIONS"]
+                        decryptionInfo = DecryptionInfo(method, keyUrl, iv, keyFormat, keyFormatVersions)
+                    }
+
+                    line.startsWith("#EXT-X-MAP:") -> {
+                        val attrs = parseAttributes(line)
+                        attrs["URI"]?.let { uri ->
+                            mapUrl = resolveUrl(baseUrl, uri)
+                        }
+                        attrs["BYTERANGE"]?.let { br ->
+                            val (len, start) = parseByteRange(br)
+                            mapBytesLength = len
+                            mapBytesStart = start
+                        }
+                    }
+
                     line.startsWith("#EXTINF:") -> {
-                        val duration = line.substringAfter(":").substringBefore(",").toDoubleOrNull()
-                            ?: throw Exception("Invalid segment duration format")
+                        val durationText = line.substringAfter(":").substringBefore(",")
+                        val duration = durationText.toDoubleOrNull()
+                            ?: throw IllegalArgumentException("Invalid segment duration: '$line'")
                         currentSegment = MediaSegment(duration = duration)
                     }
+
                     line == "#EXT-X-DISCONTINUITY" -> {
                         segments.add(DiscontinuitySegment())
                     }
-                    line =="#EXT-X-ENDLIST" -> {
+
+                    line == "#EXT-X-ENDLIST" -> {
                         segments.add(EndListSegment())
                     }
-                    else -> {
+
+                    currentSegment != null && line.startsWith("#EXT-X-BYTERANGE:") -> {
+                        val br = line.substringAfter(":").trim()
+                        val (len, start) = parseByteRange(br)
+                        currentSegment!!.bytesLength = len
+                        currentSegment!!.bytesStart = start
+                    }
+
+                    currentSegment != null && line.startsWith("#") -> {
+                        currentSegment!!.unhandled.add(line)
+                    }
+
+                    !line.startsWith("#") -> {
                         currentSegment?.let {
-                            it.uri = resolveUrl(sourceUrl, line)
+                            it.uri = resolveUrl(baseUrl, line)
                             segments.add(it)
+                            currentSegment = null
+                        } ?: run {
+                            unhandled.add(line)
                         }
-                        currentSegment = null
+                    }
+
+                    else -> {
+                        unhandled.add(line)
                     }
                 }
             }
 
-            return VariantPlaylist(version, targetDuration, mediaSequence, discontinuitySequence, programDateTime, playlistType, streamInfo, segments, decryptionInfo)
+            return VariantPlaylist(
+                version = version,
+                targetDuration = targetDuration,
+                mediaSequence = mediaSequence,
+                discontinuitySequence = discontinuitySequence,
+                programDateTime = programDateTime,
+                playlistType = playlistType,
+                streamInfo = streamInfo,
+                segments = segments,
+                decryptionInfo = decryptionInfo,
+                mapUrl = mapUrl,
+                mapBytesStart = mapBytesStart,
+                mapBytesLength = mapBytesLength,
+                unhandled = unhandled
+            )
         }
 
         fun parseAndGetVideoSources(source: Any, content: String, url: String): List<HLSVariantVideoUrlSource> {
@@ -230,26 +372,6 @@ class HLS {
             val dataId = attributes["DATA-ID"]!!
             val value = attributes["VALUE"]!!
             return SessionData(dataId, value)
-        }
-
-        private fun parseAttributes(content: String): Map<String, String> {
-            val attributes = mutableMapOf<String, String>()
-            val maybeAttributePairs = content.substringAfter(":").splitToSequence(',')
-
-            var currentPair = StringBuilder()
-            for (pair in maybeAttributePairs) {
-                currentPair.append(pair)
-                if (currentPair.count { it == '\"' } % 2 == 0) {  // Check if the number of quotes is even
-                    val key = currentPair.toString().substringBefore("=")
-                    val value = currentPair.toString().substringAfter("=")
-                    attributes[key.trim()] = value.trim().removeSurrounding("\"")
-                    currentPair = StringBuilder()  // Reset for the next attribute
-                } else {
-                    currentPair.append(',')  // Continue building the current attribute pair
-                }
-            }
-
-            return attributes
         }
 
         private val _quoteList = listOf("GROUP-ID", "NAME", "URI", "CODECS", "AUDIO", "VIDEO")
@@ -345,11 +467,22 @@ class HLS {
         val variantPlaylistsRefs: List<VariantPlaylistReference>,
         val mediaRenditions: List<MediaRendition>,
         val sessionDataList: List<SessionData>,
-        val independentSegments: Boolean
+        val independentSegments: Boolean,
+        val version: Int? = null,
+        val mediaSequence: Long? = null,
+        val unhandled: List<String> = emptyList()
     ) {
         fun buildM3U8(): String {
             val builder = StringBuilder()
             builder.append("#EXTM3U\n")
+
+            version?.let {
+                builder.append("#EXT-X-VERSION:$it\n")
+            }
+            mediaSequence?.let {
+                builder.append("#EXT-X-MEDIA-SEQUENCE:$it\n")
+            }
+
             if (independentSegments) {
                 builder.append("#EXT-X-INDEPENDENT-SEGMENTS\n")
             }
@@ -404,9 +537,15 @@ class HLS {
     }
 
     data class DecryptionInfo(
-        val keyUrl: String,
-        val iv: String?
-    )
+        val method: String,
+        val keyUrl: String?,
+        val iv: String?,
+        val keyFormat: String?,
+        val keyFormatVersions: String?
+    ) {
+        val isEncrypted: Boolean
+            get() = !method.equals("NONE", ignoreCase = true)
+    }
 
     data class VariantPlaylist(
         val version: Int?,
@@ -417,7 +556,11 @@ class HLS {
         val playlistType: String?,
         val streamInfo: StreamInfo?,
         val segments: List<Segment>,
-        val decryptionInfo: DecryptionInfo? = null
+        val decryptionInfo: DecryptionInfo? = null,
+        val mapUrl: String? = null,
+        val mapBytesStart: Long = -1,
+        val mapBytesLength: Long = -1,
+        val unhandled: List<String> = emptyList()
     ) {
         fun buildM3U8(): String = buildString {
             append("#EXTM3U\n")
@@ -426,8 +569,49 @@ class HLS {
             mediaSequence?.let { append("#EXT-X-MEDIA-SEQUENCE:$it\n") }
             discontinuitySequence?.let { append("#EXT-X-DISCONTINUITY-SEQUENCE:$it\n") }
             playlistType?.let { append("#EXT-X-PLAYLIST-TYPE:$it\n") }
-            programDateTime?.let { append("#EXT-X-PROGRAM-DATE-TIME:${it.format(DateTimeFormatter.ISO_DATE_TIME)}\n") }
+            programDateTime?.let {
+                append(
+                    "#EXT-X-PROGRAM-DATE-TIME:${
+                        it.withZoneSameInstant(java.time.ZoneOffset.UTC)
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+                    }\n"
+                )
+            }
             streamInfo?.let { append(it.toM3U8Line()) }
+
+            decryptionInfo?.let { dec ->
+                val sb = StringBuilder()
+                sb.append("#EXT-X-KEY:METHOD=").append(dec.method)
+                if (!dec.method.equals("NONE", ignoreCase = true)) {
+                    dec.keyUrl?.let { url ->
+                        sb.append(",URI=\"").append(url).append("\"")
+                    }
+                    dec.iv?.let { iv ->
+                        sb.append(",IV=0x").append(iv)
+                    }
+                    dec.keyFormat?.let { kf ->
+                        sb.append(",KEYFORMAT=\"").append(kf).append("\"")
+                    }
+                    dec.keyFormatVersions?.let { kfv ->
+                        sb.append(",KEYFORMATVERSIONS=\"").append(kfv).append("\"")
+                    }
+                }
+                append(sb.append("\n").toString())
+            }
+
+            if (!mapUrl.isNullOrEmpty()) {
+                val sb = StringBuilder()
+                sb.append("#EXT-X-MAP:URI=\"").append(mapUrl).append("\"")
+                if (mapBytesLength > 0) {
+                    if (mapBytesStart >= 0) {
+                        sb.append(",BYTERANGE=\"").append(mapBytesLength)
+                            .append("@").append(mapBytesStart).append("\"")
+                    } else {
+                        sb.append(",BYTERANGE=\"").append(mapBytesLength).append("\"")
+                    }
+                }
+                append(sb.append("\n").toString())
+            }
 
             segments.forEach { segment ->
                 append(segment.toM3U8Line())
@@ -439,13 +623,25 @@ class HLS {
         abstract fun toM3U8Line(): String
     }
 
-    data class MediaSegment (
+    data class MediaSegment(
         val duration: Double,
-        var uri: String = ""
+        var uri: String = "",
+        var bytesStart: Long = -1,
+        var bytesLength: Long = -1,
+        val unhandled: MutableList<String> = mutableListOf()
     ) : Segment() {
         override fun toM3U8Line(): String = buildString {
             append("#EXTINF:${duration},\n")
-            append(uri + "\n")
+
+            if (bytesLength > 0) {
+                if (bytesStart >= 0) {
+                    append("#EXT-X-BYTERANGE:${bytesLength}@${bytesStart}\n")
+                } else {
+                    append("#EXT-X-BYTERANGE:${bytesLength}\n")
+                }
+            }
+
+            append(uri).append("\n")
         }
     }
 
