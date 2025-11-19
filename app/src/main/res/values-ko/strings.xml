@@ -410,6 +410,7 @@
     <string name="unhandled_exception_in_vs">VS에서 처리되지 않은 예외</string>
     <string name="send_exception_to_developers">개발자에게 예외를 보냅니다…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">라이선스 키가 설정되었습니다!\n앱을 다시 시작해야 할 수 있습니다.</string>
+    <string name="qr_code_too_large_use_text_below">QR 코드가 너무 큽니다. 아래 텍스트를 사용하여 프로필을 공유하세요.</string>
     <string name="invalid_license_format">잘못된 라이선스 형식</string>
     <string name="unknown_content_format">알 수 없는 콘텐츠 형식</string>
     <string name="unknown_file_format">알 수 없는 파일 형식</string>

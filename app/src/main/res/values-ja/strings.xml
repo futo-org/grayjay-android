@@ -374,6 +374,7 @@
     <string name="unhandled_exception_in_vs">VSで未処理の例外</string>
     <string name="send_exception_to_developers">開発者に例外を送信…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">ライセンスキーが設定されました！\nアプリを再起動する可能性があります。</string>
+    <string name="qr_code_too_large_use_text_below">QRコードが大きすぎます。下のテキストを使用してプロフィールを共有してください。</string>
     <string name="invalid_license_format">無効なライセンス形式</string>
     <string name="unknown_content_format">不明なコンテンツ形式</string>
     <string name="unknown_file_format">不明なファイル形式</string>

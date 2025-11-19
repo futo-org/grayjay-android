@@ -646,6 +646,7 @@
     <string name="unhandled_exception_in_vs">Unhandled exception in VS</string>
     <string name="send_exception_to_developers">Send exception to developers…</string>
     <string name="your_license_key_has_been_set_an_app_restart_might_be_required">Your license key has been set!\nAn app restart might be required.</string>
+    <string name="qr_code_too_large_use_text_below">QR code too large. Use the text below to share your profile.</string>
     <string name="invalid_license_format">Invalid license format</string>
     <string name="unknown_content_format">Unknown content format</string>
     <string name="unknown_file_format">Unknown file format</string>
@@ -1175,4 +1176,10 @@
         <item>1500</item>
         <item>2000</item>
     </string-array>
+    <string name="qr_code_too_large_use_file_export">Export to file or copy backup code</string>
+    <string name="tap_qr_code_for_fullscreen">Tap QR code for fullscreen view</string>
+    <string name="export_to_file">Export to File</string>
+    <string name="import_from_file">Import from File</string>
+    <string name="save_profile_to_file_for_sharing">Save profile to file for sharing</string>
+    <string name="profile_saved_successfully">Profile saved successfully</string>
 </resources>
