@@ -271,7 +271,7 @@ class GestureControlView : LinearLayout {
                     return false;
                 }
 
-                val centerArea = 0.2
+                val centerArea = if (height != 0) 0.33f + (0.20f - 0.33f) * (((width.toFloat() / height.toFloat()) - 1f) / ((20f / 9f) - 1f)).coerceIn(0f, 1f) else 0.2f
                 val rewindArea = (1 - centerArea) / 2
                 val forwardArea = rewindArea
                 assert(abs(centerArea + rewindArea + forwardArea - 1) < 0.01)
