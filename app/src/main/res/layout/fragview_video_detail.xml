@@ -32,7 +32,7 @@
         <com.futo.platformplayer.views.casting.CastView
             android:id="@+id/videodetail_cast"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="300dp"
             android:background="@color/transparent"
             android:visibility="gone"
             android:elevation="4dp"
