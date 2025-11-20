@@ -923,7 +923,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     @OptIn(UnstableApi::class)
     private fun loadSelectedSources(play: Boolean, resume: Boolean): Boolean {
-        val sourceVideo = if(!isAudioMode || _lastAudioMediaSource == null) _lastVideoMediaSource else null;
+        val sourceVideo = _lastVideoMediaSource;
         val sourceAudio = _lastAudioMediaSource;
         val sourceSubs = _lastSubtitleMediaSource;
 
