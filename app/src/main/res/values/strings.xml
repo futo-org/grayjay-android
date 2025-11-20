@@ -954,6 +954,9 @@
         <item>1.75</item>
         <item>2.0</item>
         <item>2.25</item>
+        <item>2.5</item>
+        <item>2.75</item>
+        <item>3.0</item>
     </string-array>
     <string-array name="preferred_quality_array">
         <item>Automatic (720p)</item>

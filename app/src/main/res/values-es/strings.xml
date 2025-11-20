@@ -610,17 +610,6 @@
         <item>Recomendaciones</item>
         <item>Suscripciones</item>
     </string-array>
-    <string-array name="playback_speeds">
-        <item>0.25</item>
-        <item>0.5</item>
-        <item>0.75</item>
-        <item>1.0</item>
-        <item>1.25</item>
-        <item>1.5</item>
-        <item>1.75</item>
-        <item>2.0</item>
-        <item>2.25</item>
-    </string-array>
     <string-array name="preferred_quality_array">
         <item>Automático (720p)</item>
         <item>2160p</item>

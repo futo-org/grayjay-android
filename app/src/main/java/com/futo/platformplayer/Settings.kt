@@ -429,6 +429,9 @@ class Settings : FragmentedStorageFileJson() {
             6 -> 1.75f;
             7 -> 2.0f;
             8 -> 2.25f;
+            9 -> 2.5f;
+            10 -> 2.75f;
+            11 -> 3.0f;
             else -> 1.0f;
         };
 
