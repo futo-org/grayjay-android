@@ -1,6 +1,7 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
@@ -388,7 +389,11 @@ class StatePlayer {
         }
 
         if (queueVideos != null) {
-            val playlist = StatePlaylists.instance.getPlaylist(StatePlaylists.LAST_QUEUE_PLAYLIST_ID) ?: Playlist("Last Queue", queueVideos).apply {
+            Logger.i(TAG, "Update last queue: ${queueVideos.size} videos.")
+            val playlist = StatePlaylists.instance.getPlaylist(StatePlaylists.LAST_QUEUE_PLAYLIST_ID)?.apply {
+                videos.clear()
+                videos.addAll(queueVideos)
+            } ?: Playlist("Last Queue", queueVideos).apply {
                 id = StatePlaylists.LAST_QUEUE_PLAYLIST_ID
             }
             StatePlaylists.instance.createOrUpdatePlaylist(playlist)
