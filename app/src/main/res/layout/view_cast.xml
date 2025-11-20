@@ -6,15 +6,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="bottom"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/black">
 
     <ImageView
         android:id="@+id/image_thumbnail"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         app:srcCompat="@drawable/placeholder_video_thumbnail"
-        android:layout_marginBottom="7dp"/>
+        android:layout_marginBottom="7dp" />
 
     <FrameLayout
         android:id="@+id/layout_background"
