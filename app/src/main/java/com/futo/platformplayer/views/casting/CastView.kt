@@ -119,6 +119,15 @@ class CastView : ConstraintLayout {
                 Logger.e(TAG, "Failed to change playback speed to previous hold playback speed: $e")
             }
         }
+        _gestureControlView.onTogglePlayPause.subscribe {
+            StateCasting.instance.activeDevice?.let { d ->
+                if (d.isPlaying) {
+                    d.pausePlayback()
+                } else {
+                    d.resumePlayback()
+                }
+            }
+        }
 
         _gestureControlView.onSeek.subscribe {
             val d = StateCasting.instance.activeDevice ?: return@subscribe;

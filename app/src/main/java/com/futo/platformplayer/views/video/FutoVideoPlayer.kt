@@ -285,6 +285,15 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 player.play()
             }
         }
+        gestureControl.onTogglePlayPause.subscribe {
+            exoPlayer?.player?.let { player ->
+                if (player.playWhenReady) {
+                    player.pause()
+                } else {
+                    player.play()
+                }
+            }
+        }
         gestureControl.onSpeedHoldEnd.subscribe {
             exoPlayer?.player?.let { player ->
                 if (!_speedHoldWasPlaying) player.pause()

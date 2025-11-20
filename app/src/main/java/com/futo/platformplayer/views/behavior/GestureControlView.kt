@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.abs
 
 
 class GestureControlView : LinearLayout {
@@ -114,6 +115,7 @@ class GestureControlView : LinearLayout {
     val onZoom = Event1<Float>();
     val onSoundAdjusted = Event1<Float>();
     val onToggleFullscreen = Event0();
+    val onTogglePlayPause = Event0();
     val onSpeedHoldStart = Event0()
     val onSpeedHoldEnd = Event0()
 
@@ -269,8 +271,19 @@ class GestureControlView : LinearLayout {
                     return false;
                 }
 
-                val rewinding = (ev.x / width) < 0.5;
-                startFastForward(rewinding);
+                val centerArea = 0.2
+                val rewindArea = (1 - centerArea) / 2
+                val forwardArea = rewindArea
+                assert(abs(centerArea + rewindArea + forwardArea - 1) < 0.01)
+
+                val xfrac = ev.x / width
+                if (xfrac <= rewindArea) {
+                    startFastForward(true)
+                } else if (xfrac >= 1 - forwardArea) {
+                    startFastForward(false)
+                } else {
+                    onTogglePlayPause.emit()
+                }
                 return true;
             }
 
