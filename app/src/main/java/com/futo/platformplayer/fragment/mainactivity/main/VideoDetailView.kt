@@ -640,6 +640,11 @@ class VideoDetailView : ConstraintLayout {
         }
         _player.onSourceChanged.subscribe(::onSourceChanged);
         _player.onSourceEnded.subscribe {
+            if (_isCasting) {
+                Logger.i(TAG, "Ignoring onSourceEnded because casting is active")
+                return@subscribe
+            }
+
             if (!fragment.isInPictureInPicture) {
                 _player.gestureControl.showControls(false);
             }
