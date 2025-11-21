@@ -719,6 +719,7 @@ class VideoDetailView : ConstraintLayout {
 
                     val v = video;
                     if (!it && v != null && v.duration - activeDevice.time.toLong() < 2L) {
+                        Log.i(TAG, "Next video (loop?)")
                         nextVideo();
                     }
                 }
@@ -1344,7 +1345,22 @@ class VideoDetailView : ConstraintLayout {
             return;
         //Loop workaround
         if(bypassSameVideoCheck && this.video?.url == video.url && StatePlayer.instance.loopVideo) {
-            _player.seekTo(0);
+            Log.i(TAG, "Loop")
+            if (_isCasting) {
+                Log.i(TAG, "Loop casting")
+                StateCasting.instance.activeDevice?.seekTo(0.0)
+                fragment.lifecycleScope.launch(Dispatchers.IO) {
+                     try {
+                         delay(300)
+                         StateCasting.instance.activeDevice?.resumePlayback()
+                     } catch (e: Throwable) {
+                        Log.e(TAG, "Failed to resume", e)
+                     }
+                }
+            } else {
+                Log.i(TAG, "Loop player")
+                _player.seekTo(0);
+            }
             return;
         }
 
@@ -1372,6 +1388,7 @@ class VideoDetailView : ConstraintLayout {
         _minimize_title.text = video.name;
         _minimize_meta.text = video.author.name;
         StatePlayer.instance.setCurrentlyPlaying(video);
+        Log.i(TAG, "setCurrentlyPlaying (setVideoOverview) ${video.url} (${video.name})")
 
         val subTitleSegments : ArrayList<String> = ArrayList();
         if(video.viewCount > 0)
@@ -1809,6 +1826,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         StatePlayer.instance.startOrUpdateMediaSession(context, video);
+        Log.i(TAG, "setCurrentlyPlaying (nextVideo) ${video.url} (${video.name})")
         StatePlayer.instance.setCurrentlyPlaying(video);
 
         _liveChat?.stop();
@@ -2309,6 +2327,8 @@ class VideoDetailView : ConstraintLayout {
         checkAndRemoveWatchLater();
 
         var next = StatePlayer.instance.nextQueueItem(withoutRemoval || _player.duration < 100 || (_player.position.toFloat() / _player.duration) < 0.9, bypassVideoLoop);
+        Log.i(TAG, "next queue item ${next?.url} (${next?.name})")
+
         val autoplayVideo = _autoplayVideo
         if (next == null && autoplayVideo != null && StatePlayer.instance.autoplay) {
             Logger.i(TAG, "Found autoplay video!")
@@ -2321,11 +2341,14 @@ class VideoDetailView : ConstraintLayout {
         if(next == null && forceLoop)
             next = StatePlayer.instance.restartQueue();
         if(next != null) {
+            Logger.i(TAG, "Set video overview (next = ${next.url} (${next.name}))")
             setVideoOverview(next, true, 0, true);
             return true;
         }
-        else
+        else {
+            Log.i(TAG, "setCurrentlyPlaying (nextVideo) null")
             StatePlayer.instance.setCurrentlyPlaying(null);
+        }
         return false;
     }
 

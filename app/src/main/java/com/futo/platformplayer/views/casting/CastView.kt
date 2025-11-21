@@ -13,6 +13,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.TimeBar
@@ -43,6 +44,7 @@ class CastView : ConstraintLayout {
     private val _buttonSettings: ImageButton;
     private val _buttonLoop: ImageButton;
     private val _buttonPlay: ImageButton;
+    private val _buttonAutoplay: ImageButton;
     private val _buttonPrevious: ImageButton;
     private val _buttonNext: ImageButton;
     private val _buttonPause: ImageButton;
@@ -78,6 +80,7 @@ class CastView : ConstraintLayout {
         _buttonMinimize = findViewById(R.id.button_minimize);
         _buttonSettings = findViewById(R.id.button_settings);
         _buttonLoop = findViewById(R.id.button_loop);
+        _buttonAutoplay = findViewById(R.id.button_autoplay);
         _buttonPlay = findViewById(R.id.button_play);
         _buttonPrevious = findViewById(R.id.button_previous);
         _buttonNext = findViewById(R.id.button_next);
@@ -178,6 +181,17 @@ class CastView : ConstraintLayout {
         updateNextPrevious();
         _buttonPrevious.setOnClickListener { onPrevious.emit() };
         _buttonNext.setOnClickListener { onNext.emit() };
+
+        _buttonAutoplay.setOnClickListener {
+            StatePlayer.instance.autoplay = !StatePlayer.instance.autoplay;
+            updateAutoplayButton()
+        }
+        updateAutoplayButton()
+    }
+
+    private fun updateAutoplayButton() {
+        _buttonAutoplay.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
+        _buttonAutoplay.setColorFilter(ContextCompat.getColor(context, if (StatePlayer.instance.autoplay) com.futo.futopay.R.color.primary else R.color.white))
     }
 
     private fun updateCurrentChapter(chaptPos: Long, isScrub: Boolean = false): Boolean {

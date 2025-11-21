@@ -125,6 +125,7 @@ class StatePlayer {
     }
 
     fun setCurrentlyPlaying(video: IPlatformVideo?) {
+        Log.i(TAG, "setCurrentlyPlaying ${video?.url} (${video?.name})")
         currentVideo = video;
     }
 
@@ -135,6 +136,7 @@ class StatePlayer {
         onPlayerOpened.emit();
     }
     fun setPlayerClosed() {
+        Log.i(TAG, "setCurrentlyPlaying (setPlayerClosed) null")
         setCurrentlyPlaying(null);
         isOpen = false;
         clearQueue();

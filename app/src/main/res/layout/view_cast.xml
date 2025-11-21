@@ -47,6 +47,17 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent">
+
+        <ImageButton
+            android:id="@+id/button_autoplay"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:contentDescription="@string/cd_button_autoplay"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/autoplay_24px" />
+
         <com.futo.platformplayer.views.casting.CastButton
             android:id="@+id/button_cast"
             android:layout_width="50dp"
