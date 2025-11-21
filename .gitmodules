@@ -64,12 +64,6 @@
 [submodule "app/src/stable/assets/sources/bilibili"]
 	path = app/src/stable/assets/sources/bilibili
 	url = ../plugins/bilibili.git
-[submodule "app/src/stable/assets/sources/spotify"]
-	path = app/src/stable/assets/sources/spotify
-	url = ../plugins/spotify.git
-[submodule "app/src/unstable/assets/sources/spotify"]
-	path = app/src/unstable/assets/sources/spotify
-	url = ../plugins/spotify.git
 [submodule "app/src/stable/assets/sources/bitchute"]
 	path = app/src/stable/assets/sources/bitchute
 	url = ../plugins/bitchute.git
