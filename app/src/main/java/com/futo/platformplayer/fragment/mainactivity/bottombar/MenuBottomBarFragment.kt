@@ -79,8 +79,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private val _subscribedActivity: MainActivity?;
 
         private val _containerMoreHeader: ConstraintLayout;
-        private val _toggleAirplaneMode: RoundButton;
-        private val _togglePrivacy: RoundButton;
+        private val _toggleAirplaneMode: LinearLayout;
+        private val _togglePrivacy: LinearLayout;
 
         private var _overlayMore: FrameLayout;
         private var _overlayMoreBackground: FrameLayout;
@@ -106,32 +106,46 @@ class MenuBottomBarFragment : MainActivityFragment() {
             inflater.inflate(R.layout.fragment_overview_bottom_bar, this);
 
             _containerMoreHeader = findViewById(R.id.container_more_options);
-            _toggleAirplaneMode = findViewById(R.id.toggle_airplane);
-            _togglePrivacy = findViewById(R.id.toggle_privacy);
+            _toggleAirplaneMode = findViewById(R.id.container_toggle_airplane);
+            _togglePrivacy = findViewById(R.id.container_toggle_privacy);
 
-            _toggleAirplaneMode.visibility = GONE;
-            _toggleAirplaneMode.icon.setImageResource(R.drawable.ic_library);
-            _toggleAirplaneMode.onClick.subscribe {
-                if(StateApp.instance.privateMode) {
-                    _togglePrivacy.icon.setImageResource(R.drawable.ic_disabled_visible);
-                    //StateApp.instance.setPrivacyMode(false);
+            StateApp.instance.airplaneModeChanged.subscribe {
+                if(!StateApp.instance.airplaneMode)
+                    _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle)
+                else
+                    _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            }
+            if(!StateApp.instance.airplaneMode)
+                _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle)
+            else
+                _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            _toggleAirplaneMode.setOnClickListener {
+                if(StateApp.instance.airplaneMode) {
+                    StateApp.instance.setAirMode(false);
                     UIDialogs.appToast("Airplane mode disabled");
                 }
                 else {
-                    _togglePrivacy.icon.setImageResource(R.drawable.ic_disabled_visible_purple);
-                    //StateApp.instance.setPrivacyMode(true);
+                    StateApp.instance.setAirMode(true);
                     UIDialogs.appToast("Airplane mode enabled");
                 }
             }
-            _togglePrivacy.icon.setImageResource(R.drawable.ic_disabled_visible)
-            _togglePrivacy.onClick.subscribe {
+
+            StateApp.instance.privateModeChanged.subscribe {
+                if(!StateApp.instance.privateMode)
+                    _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle)
+                else
+                    _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            }
+            if(!StateApp.instance.privateMode)
+                _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle)
+            else
+                _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            _togglePrivacy.setOnClickListener {
                 if(StateApp.instance.privateMode) {
-                    _togglePrivacy.icon.setImageResource(R.drawable.ic_disabled_visible);
                     StateApp.instance.setPrivacyMode(false);
                     UIDialogs.appToast("Privacy mode disabled");
                 }
                 else {
-                    _togglePrivacy.icon.setImageResource(R.drawable.ic_disabled_visible_purple);
                     StateApp.instance.setPrivacyMode(true);
                     UIDialogs.appToast("Privacy mode enabled");
                 }
@@ -152,7 +166,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     setMoreVisible(false);
                 }
             })
-            val layoutManager = GridLayoutManager(context, columns);
+            val layoutManager = GridLayoutManager(context, columns, GridLayoutManager.VERTICAL, true);
             _layoutMoreButtons.layoutManager = layoutManager;
 
             _overlayMoreBackground.setOnClickListener { setMoreVisible(false); };
@@ -472,12 +486,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
             fun setWidth(dp: Int) {
                 root.updateLayoutParams {
-                    this.width = (dp - 12).dp(_viewGroup.context.resources);
-                    this.height = (dp - 12).dp(_viewGroup.context.resources);
+                    this.width = (dp - 6).dp(_viewGroup.context.resources);
+                    this.height = (dp - 6).dp(_viewGroup.context.resources);
                 }
                 imageIcon.updateLayoutParams {
-                    this.width = (dp - 46).dp(_viewGroup.context.resources);
-                    this.height = (dp - 46).dp(_viewGroup.context.resources);
+                    this.width = (dp - 54).dp(_viewGroup.context.resources);
+                    this.height = (dp - 54).dp(_viewGroup.context.resources);
                 }
             }
 
