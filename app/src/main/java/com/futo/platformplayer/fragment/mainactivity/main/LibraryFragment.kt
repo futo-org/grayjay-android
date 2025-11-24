@@ -380,7 +380,14 @@ class LibraryFragment : MainFragment() {
         }
 
         fun onShown() {
+            if(didShowAlpha)
+               return;
+            didShowAlpha = true;
             UIDialogs.appToast("Library is in alpha\nImprovements are coming to local media playback.")
         }
+        companion object {
+            var didShowAlpha: Boolean = false;
+        }
     }
+
 }
