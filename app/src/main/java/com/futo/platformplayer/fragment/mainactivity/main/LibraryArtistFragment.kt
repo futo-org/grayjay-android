@@ -14,6 +14,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
@@ -22,6 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
@@ -359,7 +361,21 @@ class LibraryArtistFragment : MainFragment() {
             (_viewPager.adapter as ArtistViewPagerAdapter).artist = channel
 
 
-            _viewPager.adapter!!.notifyDataSetChanged()
+            _viewPager.adapter!!.notifyDataSetChanged();
+
+            val artistThumbnail = channel.getThumbnailOrAlbum();
+            if(artistThumbnail != null) {
+                _creatorThumbnail.isVisible = true;
+                _creatorThumbnail.setThumbnail(channel.getThumbnailOrAlbum(), true, true);
+                Glide.with(_imageBanner)
+                    .load(artistThumbnail)
+                    .into(_imageBanner);
+            }
+            else {
+                _creatorThumbnail.isVisible = false;
+                Glide.with(_imageBanner).clear(_imageBanner);
+            }
+
 
             this.channel = channel
         }

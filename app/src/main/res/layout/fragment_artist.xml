@@ -60,7 +60,7 @@
                         <com.futo.platformplayer.views.others.CreatorThumbnail
                             android:id="@+id/creator_thumbnail"
                             android:background="@drawable/rounded_outline"
-                            android:layout_width="1dp"
+                            android:layout_width="35dp"
                             android:layout_height="35dp"
                             android:contentDescription="@string/cd_creator_thumbnail"
                             android:layout_marginStart="8dp"

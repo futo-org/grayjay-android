@@ -37,9 +37,10 @@ class ArtistTileViewHolder(val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder
     override fun bind(artist: Artist) {
         _artist = artist;
         _imageThumbnail?.let {
-            if (artist.thumbnail != null)
+            val thumbnail = artist.getThumbnailOrAlbum();
+            if (thumbnail != null)
                 Glide.with(it)
-                    .load(artist.thumbnail)
+                    .load(thumbnail)
                     .placeholder(R.drawable.ic_artist)
                     .into(it)
             else

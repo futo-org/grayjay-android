@@ -37,6 +37,8 @@ import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 
 class StateLibrary {
@@ -488,12 +490,30 @@ class Artist {
         return AdhocPager({ listOf() }, getTracksPager(idLong));
     }
 
+    fun getThumbnailOrAlbum(): String? {
+        return thumbnail ?: tryGetArtistThumbnail(id.toLongOrNull());
+    }
+
     companion object {
         val ID_UNKNOWN = "UNKNOWN";
         val PROJECTION: Array<String> = arrayOf(Artists._ID,
             Artists.ARTIST,
             Artists.NUMBER_OF_TRACKS,
             Artists.NUMBER_OF_ALBUMS);
+
+        val thumbnailCache = ConcurrentHashMap<Long, String>();
+
+        fun tryGetArtistThumbnail(artistId: Long?): String? {
+            if(artistId == null)
+                return null;
+            if(thumbnailCache.containsKey(artistId))
+                return thumbnailCache.get(artistId);
+            else {
+                val album = Album.getArtistAlbumWithThumbnail(artistId);
+                thumbnailCache.put(artistId, album?.thumbnail ?: "");
+                return album?.thumbnail;
+            }
+        }
 
         fun fromCursor(cursor: Cursor): Artist {
             val id = cursor.getString(0);
@@ -540,8 +560,11 @@ class Artist {
                 cursor.moveToFirst();
                 val list = mutableListOf<Artist>()
                 while(!cursor.isAfterLast) {
-                    list.add(fromCursor(cursor));
+                    val artist = fromCursor(cursor);
                     cursor.moveToNext();
+                    if(artist.name == "<unknown>")
+                        continue; //TODO: Better way of detecting unknown?
+                    list.add(artist);
                 }
                 return@use list;
             }
@@ -683,6 +706,26 @@ class Album {
                     cursor.moveToNext();
                 }
                 return@use list;
+            }
+        }
+        fun getArtistAlbumWithThumbnail(artistId: Long): Album? {
+            val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+            if(resolver == null) {
+                Logger.w(TAG, "Album contentResolver not found");
+                return null;
+            }
+            val cursor = resolver?.query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf(artistId.toString()),
+                MediaStore.Audio.Albums.ALBUM + " ASC") ?: return null;
+            return cursor.use {
+                cursor.moveToFirst();
+                while(!cursor.isAfterLast) {
+                    val album = fromCursor(cursor);
+                    if(album.thumbnail != null)
+                        return album
+                    cursor.moveToNext();
+                }
+                return@use null;
             }
         }
     }
