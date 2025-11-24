@@ -193,7 +193,7 @@ class StateLibrary {
 
     private var _cacheBucketNames: List<Bucket>? = null;
     fun getVideoBucketNames(): List<Bucket> {
-        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
             return listOf();
         if(_cacheBucketNames != null)
             return _cacheBucketNames ?: listOf();

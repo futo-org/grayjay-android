@@ -274,7 +274,7 @@ class LibraryFragment : MainFragment() {
                         -1
                     );
             }
-            else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionAlbums.isVisible = false;
             }
             else {
@@ -291,7 +291,7 @@ class LibraryFragment : MainFragment() {
                 if (albums.size == 0)
                     sectionAlbums.setEmpty("No albums", "No albums were found on your device", -1);
             }
-            else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionArtists.isVisible = false;
             }
             else {
@@ -308,7 +308,7 @@ class LibraryFragment : MainFragment() {
                 if (videos.size == 0)
                     sectionVideos.setEmpty("No videos", "No videos were found on your device", -1);
             }
-            else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionVideos.isVisible = false;
             }
             else {
