@@ -254,6 +254,76 @@ class JSHttpClient : ManagedHttpClient {
 
         return resp;
     }
+    fun processRequest(method: String, responseCode: Int, url: Uri, headers: Map<String, List<String>>) {
+        if(doUpdateCookies) {
+            val domain = url.host?.lowercase() ?: return;
+            val domainParts = domain.split(".");
+            val defaultCookieDomain =
+                "." + domainParts.drop(domainParts.size - 2).joinToString(".");
+            for (header in headers) {
+                if(header.key.lowercase() == "set-cookie") {
+                    var domainToUse = domain;
+                    val cookie = cookieStringToPair(header.value.first());
+                    var cookieValue = cookie.second;
+
+                    if (cookie.first.isNotEmpty() && cookie.second.isNotEmpty()) {
+                        val cookieParts = cookie.second.split(";");
+                        if (cookieParts.size == 0)
+                            continue;
+                        cookieValue = cookieParts[0].trim();
+
+                        val cookieVariables = cookieParts.drop(1).map {
+                            val splitIndex = it.indexOf("=");
+                            if (splitIndex < 0)
+                                return@map Pair(it.trim().lowercase(), "");
+                            return@map Pair<String, String>(
+                                it.substring(0, splitIndex).lowercase().trim(),
+                                it.substring(splitIndex + 1).trim()
+                            );
+                        }.toMap();
+                        domainToUse = if (cookieVariables.containsKey("domain"))
+                            cookieVariables["domain"]!!.lowercase();
+                        else defaultCookieDomain;
+                        //TODO: Make sure this has no negative effect besides apply cookies to root domain
+                        if(!domainToUse.startsWith("."))
+                            domainToUse = ".${domainToUse}";
+                    }
+
+                    if ((_auth != null || _currentCookieMap.isNotEmpty())) {
+                        val cookieMap = if (_currentCookieMap.containsKey(domainToUse))
+                            _currentCookieMap[domainToUse]!!;
+                        else {
+                            val newMap = hashMapOf<String, String>();
+                            _currentCookieMap[domainToUse] = newMap
+                            newMap;
+                        }
+                        if (cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                            cookieMap[cookie.first] = cookieValue;
+                    }
+                    else {
+                        val cookieMap = if (_otherCookieMap.containsKey(domainToUse))
+                            _otherCookieMap[domainToUse]!!;
+                        else {
+                            val newMap = hashMapOf<String, String>();
+                            _otherCookieMap[domainToUse] = newMap
+                            newMap;
+                        }
+                        if (cookieMap.containsKey(cookie.first) || doAllowNewCookies)
+                            cookieMap[cookie.first] = cookieValue;
+                    }
+                }
+            }
+        }
+
+        if(_jsClient is DevJSClient) {
+            //val peekBody = resp.peekBody(1000 * 1000).string();
+            StateDeveloper.instance.addDevHttpExchange(
+                StateDeveloper.DevHttpExchange(
+                    StateDeveloper.DevHttpRequest(method, url.toString(), mapOf(*headers.map { Pair(it.key, it.value.joinToString(";")) }.toTypedArray()), ""),
+                    StateDeveloper.DevHttpRequest("RESP", url.toString(), mapOf(*headers.map { Pair(it.key, it.value.joinToString(";")) }.toTypedArray()), "", responseCode)
+                ));
+        }
+    }
 
     private fun cookieStringToPair(cookie: String): Pair<String, String> {
         val cookieKey = cookie.substring(0, cookie.indexOf("="));
