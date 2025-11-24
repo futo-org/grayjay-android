@@ -53,4 +53,8 @@ class LibrarySection: ConstraintLayout {
         recycler.isVisible = false;
         noContent.setText(title, txt, iconId);
     }
+    fun clearEmpty() {
+        noContent.isVisible = false;
+        recycler.isVisible = true;
+    }
 }

@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.collection.emptyLongSet
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -273,6 +274,8 @@ class LibraryFragment : MainFragment() {
                         "No artists were found on your device",
                         -1
                     );
+                else
+                    sectionArtists.clearEmpty();
             }
             else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionAlbums.isVisible = false;
@@ -290,6 +293,8 @@ class LibraryFragment : MainFragment() {
                 adapterAlbums.setData(albums);
                 if (albums.size == 0)
                     sectionAlbums.setEmpty("No albums", "No albums were found on your device", -1);
+                else
+                    sectionAlbums.clearEmpty();
             }
             else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionArtists.isVisible = false;
@@ -307,6 +312,8 @@ class LibraryFragment : MainFragment() {
                 adapterVideos.setData(videos);
                 if (videos.size == 0)
                     sectionVideos.setEmpty("No videos", "No videos were found on your device", -1);
+                else
+                    sectionVideos.clearEmpty();
             }
             else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 sectionVideos.isVisible = false;

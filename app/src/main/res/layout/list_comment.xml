@@ -96,16 +96,6 @@
             android:layout_marginTop="8dp"
             android:gravity="center_vertical">
 
-            <ImageView
-                android:id="@+id/image_copy"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@string/copy"
-                app:srcCompat="@drawable/ic_copy"
-                app:tint="@color/white"
-                android:background="@drawable/background_pill"
-                android:layout_marginStart="9dp" />
-
             <com.futo.platformplayer.views.pills.PillRatingLikesDislikes
                 android:id="@+id/rating"
                 android:layout_width="wrap_content"
@@ -160,6 +150,15 @@
                     android:textColor="@color/white"
                     android:textSize="13dp" />
             </LinearLayout>
+
+            <com.futo.platformplayer.views.pills.PillButton
+                android:id="@+id/image_copy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:pillIcon="@drawable/ic_copy"
+                app:pillText=""
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="0dp"/>
             <com.futo.platformplayer.views.pills.PillButton
                 android:id="@+id/button_replies"
                 android:layout_width="wrap_content"
@@ -167,7 +166,7 @@
                 android:contentDescription="@string/cd_button_replies"
                 app:pillIcon="@drawable/ic_forum"
                 app:pillText="55 Replies"
-                android:layout_marginStart="15dp" />
+                android:layout_marginStart="2dp" />
 
             <Space android:layout_width="0dp"
                 android:layout_height="match_parent"
