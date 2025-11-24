@@ -13,13 +13,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.mainactivity.MainActivityFragment
 import com.futo.platformplayer.fragment.mainactivity.main.*
@@ -27,6 +32,10 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePayment
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.views.AnyAdapterView
+import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
+import com.futo.platformplayer.views.adapters.AnyAdapter
+import com.futo.platformplayer.views.pills.RoundButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.floor
@@ -69,9 +78,15 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private val _inflater: LayoutInflater;
         private val _subscribedActivity: MainActivity?;
 
+        private val _containerMoreHeader: ConstraintLayout;
+        private val _toggleAirplaneMode: LinearLayout;
+        private val _togglePrivacy: LinearLayout;
+
         private var _overlayMore: FrameLayout;
         private var _overlayMoreBackground: FrameLayout;
-        private var _layoutMoreButtons: LinearLayout;
+        private var _layoutMoreButtons: RecyclerView;
+        private val _layoutMoreButtonItems = arrayListOf<MenuButtonItem>();
+        private var _layoutMoreButtonsAdapter: AnyAdapterView<MenuButtonItem, MenuButtonItemViewHolder>;
         private var _layoutBottomBarButtons: LinearLayout;
 
         private var _moreVisible = false;
@@ -90,10 +105,69 @@ class MenuBottomBarFragment : MainActivityFragment() {
             _inflater = inflater;
             inflater.inflate(R.layout.fragment_overview_bottom_bar, this);
 
+            _containerMoreHeader = findViewById(R.id.container_more_options);
+            _toggleAirplaneMode = findViewById(R.id.container_toggle_airplane);
+            _togglePrivacy = findViewById(R.id.container_toggle_privacy);
+
+            StateApp.instance.airplaneModeChanged.subscribe {
+                if(!StateApp.instance.airplaneMode)
+                    _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle)
+                else
+                    _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            }
+            if(!StateApp.instance.airplaneMode)
+                _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle)
+            else
+                _toggleAirplaneMode.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            _toggleAirplaneMode.setOnClickListener {
+                if(StateApp.instance.airplaneMode) {
+                    StateApp.instance.setAirMode(false);
+                    UIDialogs.appToast("Airplane mode disabled");
+                }
+                else {
+                    StateApp.instance.setAirMode(true);
+                    UIDialogs.appToast("Airplane mode enabled");
+                }
+            }
+
+            StateApp.instance.privateModeChanged.subscribe {
+                if(!StateApp.instance.privateMode)
+                    _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle)
+                else
+                    _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            }
+            if(!StateApp.instance.privateMode)
+                _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle)
+            else
+                _togglePrivacy.setBackgroundResource(R.drawable.background_menu_toggle_active)
+            _togglePrivacy.setOnClickListener {
+                if(StateApp.instance.privateMode) {
+                    StateApp.instance.setPrivacyMode(false);
+                    UIDialogs.appToast("Privacy mode disabled");
+                }
+                else {
+                    StateApp.instance.setPrivacyMode(true);
+                    UIDialogs.appToast("Privacy mode enabled");
+                }
+            }
+
             _overlayMore = findViewById(R.id.more_overlay);
             _overlayMoreBackground = findViewById(R.id.more_overlay_background);
             _layoutMoreButtons = findViewById(R.id.more_menu_buttons);
-            _layoutBottomBarButtons = findViewById(R.id.bottom_bar_buttons)
+            _layoutBottomBarButtons = findViewById(R.id.bottom_bar_buttons);
+
+            val totalWidthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density;
+            val columns = MenuButtonItemViewHolder.getAutoSizeColumns(totalWidthDp);
+            _layoutMoreButtonsAdapter = _layoutMoreButtons.asAny<MenuButtonItem, MenuButtonItemViewHolder>(_layoutMoreButtonItems,
+                RecyclerView.VERTICAL, false, { button ->
+                button.setAutoSize(totalWidthDp);
+                button.parentFragment = this@MenuBottomBarView._fragment;
+                button.onClick.subscribe {
+                    setMoreVisible(false);
+                }
+            })
+            val layoutManager = GridLayoutManager(context, columns, GridLayoutManager.VERTICAL, true);
+            _layoutMoreButtons.layoutManager = layoutManager;
 
             _overlayMoreBackground.setOnClickListener { setMoreVisible(false); };
 
@@ -120,6 +194,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
         }
 
         private fun setMoreVisible(visible: Boolean) {
+
+            //TODO: issues with these bools
             if (_moreVisibleAnimating) {
                 return
             }
@@ -128,9 +204,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 return
             }
 
+
+/*
             val height = _moreButtons.firstOrNull()?.let {
                 it.height.toFloat() + (it.layoutParams as MarginLayoutParams).bottomMargin
             } ?: return
+            */
 
             _moreVisibleAnimating = true
             val moreOverlayBackground = _overlayMoreBackground
@@ -142,14 +221,17 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 moreOverlay.visibility = VISIBLE
                 val animations = arrayListOf<Animator>()
                 animations.add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 0.0f, 1.0f).setDuration(duration))
+                animations.add(ObjectAnimator.ofFloat(_layoutMoreButtons, "alpha", 0.0f, 1.0f).setDuration(duration))
+                animations.add(ObjectAnimator.ofFloat(_containerMoreHeader, "alpha", 0.0f, 1.0f).setDuration(duration))
                 _bottomButtons.find { it.definition.id == 99 }?.let {
                     animations.add(ObjectAnimator.ofFloat(it, "alpha", 0.5f, 1.0f)
                         .setDuration(duration));
                 }
 
+                animations.add(ObjectAnimator.ofFloat(_layoutMoreButtons, "translationY", resources.displayMetrics.heightPixels.toFloat(), 0.0f).setDuration(duration))
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
-                    animations.add(ObjectAnimator.ofFloat(button, "translationY", height * staggerFactor * (i + 1), 0.0f).setDuration(duration))
+                    //animations.add(ObjectAnimator.ofFloat(button, "translationY", height * staggerFactor * (i + 1), 0.0f).setDuration(duration))
                 }
 
                 val animatorSet = AnimatorSet()
@@ -164,14 +246,21 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 animations
                     .add(ObjectAnimator.ofFloat(moreOverlayBackground, "alpha", 1.0f, 0.0f)
                     .setDuration(duration))
+                animations
+                    .add(ObjectAnimator.ofFloat(_layoutMoreButtons, "alpha", 1.0f, 0.0f)
+                        .setDuration(duration))
+                animations
+                    .add(ObjectAnimator.ofFloat(_containerMoreHeader, "alpha", 1.0f, 0.0f)
+                        .setDuration(duration))
                 _bottomButtons.find { it.definition.id == 99 }?.let {
                     animations.add(ObjectAnimator.ofFloat(it, "alpha", 1.0f, 0.5f)
                         .setDuration(duration));
                 }
 
+                animations.add(ObjectAnimator.ofFloat(_layoutMoreButtons, "translationY", 0.0f, resources.displayMetrics.heightPixels.toFloat()).setDuration(duration))
                 for ((index, button) in _moreButtons.withIndex()) {
                     val i = _moreButtons.size - index
-                    animations.add(ObjectAnimator.ofFloat(button, "translationY", 0.0f, height * staggerFactor * (i + 1)).setDuration(duration))
+                    //animations.add(ObjectAnimator.ofFloat(button, "translationY", 0.0f, height * staggerFactor * (i + 1)).setDuration(duration))
                 }
 
                 val animatorSet = AnimatorSet()
@@ -183,11 +272,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 animatorSet.playTogether(animations)
                 animatorSet.start()
             }
+
         }
 
         private fun updateBottomMenuButtons(buttons: MutableList<ButtonDefinition>, hasMore: Boolean) {
             if (hasMore) {
-                buttons.add(ButtonDefinition(99, R.drawable.ic_more, R.drawable.ic_more, R.string.more, canToggle = false, { false }, { setMoreVisible(true) }))
+                buttons.add(ButtonDefinition(99, R.drawable.ic_more, R.drawable.ic_more, R.string.more, canToggle = false, { false }, { setMoreVisible(!_moreVisible) }))
             }
 
             _bottomButtons.clear();
@@ -252,7 +342,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 insertedButtons++;
             }
 
+            val newButtons = mutableListOf<MenuButtonItem>();
             for (data in buttons) {
+                /*
                 val button = MenuButton(context, data, _fragment, true);
                 button.setOnClickListener {
                     updateMenuIcons()
@@ -262,7 +354,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
                 _moreButtons.add(button);
                 _layoutMoreButtons.addView(button);
+                */
+                val buttonItem = MenuButtonItem(data);
+                newButtons.add(buttonItem);
             }
+            _layoutMoreButtonsAdapter.setData(newButtons);
+            _layoutMoreButtonsAdapter.notifyContentChanged();
         }
 
         private fun updateMenuIcons() {
@@ -350,6 +447,71 @@ class MenuBottomBarFragment : MainActivityFragment() {
         }
 
 
+        class MenuButtonItem(val def: ButtonDefinition);
+        class MenuButtonItemViewHolder(private val _viewGroup: ViewGroup): AnyAdapter.AnyViewHolder<MenuButtonItem>(
+            LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_menu_tile,
+                _viewGroup, false)) {
+
+            val onClick = Event1<MenuButtonItem>();
+
+            val root: ConstraintLayout;
+            val imageIcon: ImageView;
+            val textName: TextView;
+
+
+            var button: MenuButtonItem? = null;
+
+            var parentFragment: MenuBottomBarFragment? = null;
+
+            init {
+                root = _view.findViewById(R.id.root);
+                imageIcon = _view.findViewById(R.id.image_icon);
+                textName = _view.findViewById(R.id.text_name);
+
+                root.setOnClickListener {
+                    button?.let {
+                        it.def.action(parentFragment ?: return@let);
+                        onClick.emit(it);
+                    }
+                }
+            }
+
+
+            override fun bind(value: MenuButtonItem) {
+                button = value;
+                textName.text = _view.context.getString(value.def.string);
+                imageIcon.setImageResource(value.def.iconActive);
+            }
+
+
+            fun setWidth(dp: Int) {
+                root.updateLayoutParams {
+                    this.width = (dp - 6).dp(_viewGroup.context.resources);
+                    this.height = (dp - 6).dp(_viewGroup.context.resources);
+                }
+                imageIcon.updateLayoutParams {
+                    this.width = (dp - 54).dp(_viewGroup.context.resources);
+                    this.height = (dp - 54).dp(_viewGroup.context.resources);
+                }
+            }
+
+            fun setAutoSize(totalWidth: Float) {
+                val dpWidth = totalWidth;
+                val columns = Math.max(((dpWidth) / viewWidthDp).toInt(), 1);
+                val remainder = dpWidth - columns * viewWidthDp;
+                val targetSize = viewWidthDp + (remainder / columns).toInt();
+                setWidth(targetSize);
+            }
+
+            companion object {
+                val viewWidthDp = 90;
+                fun getAutoSizeColumns(totalWidth: Float): Int {
+                    val dpWidth = totalWidth;
+                    val columns = Math.max(((dpWidth) / viewWidthDp).toInt(), 1);
+                    return columns;
+                }
+            }
+        }
         class MenuButton: LinearLayout {
             val definition: ButtonDefinition;
 
