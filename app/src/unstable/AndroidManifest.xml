@@ -37,6 +37,7 @@
                 <data android:host="kick.com" />
                 <data android:host="nebula.tv" />
                 <data android:host="odysee.com" />
+                <data android:host="www.odysee.com" />
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
@@ -67,6 +68,7 @@
                 <data android:host="kick.com" />
                 <data android:host="nebula.tv" />
                 <data android:host="odysee.com" />
+                <data android:host="www.odysee.com" />
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
