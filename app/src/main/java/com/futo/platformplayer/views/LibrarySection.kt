@@ -22,13 +22,14 @@ class LibrarySection: ConstraintLayout {
     val imageNavigate: ImageView;
     val recycler: RecyclerView;
 
+    val noContent: NoResultsView;
 
     constructor(context: Context, attr: AttributeSet? = null) : super(context, attr) {
         inflate(context, R.layout.view_library_section, this);
         textName = findViewById(R.id.text_label)
         imageNavigate = findViewById(R.id.image_nav)
         recycler = findViewById(R.id.recycler_collection);
-
+        noContent = findViewById(R.id.container_no_content);
     }
 
     fun setNavIcon(resId: Int) {
@@ -45,5 +46,11 @@ class LibrarySection: ConstraintLayout {
     inline fun setSection(title: String, crossinline onOpen: (()->Unit)) {
         textName.text = title;
         imageNavigate.setOnClickListener { onOpen.invoke() };
+    }
+
+    fun setEmpty(title: String, txt: String, iconId: Int) {
+        noContent.isVisible = true;
+        recycler.isVisible = false;
+        noContent.setText(title, txt, iconId);
     }
 }

@@ -86,6 +86,7 @@ class LibraryFilesFragment : MainFragment() {
         }
         fun loadTop() {
             var initialDirectories = listOf<FileEntry>();
+            var path = "";
             if(root == null) {
                 initialDirectories = StateLibrary.instance.getFileDirectories();
                 if (initialDirectories.size == 0) {
@@ -109,9 +110,10 @@ class LibraryFilesFragment : MainFragment() {
                     it.isVisible = false;
                 }
                 initialDirectories = root?.getSubFiles() ?: listOf();
+                path = root?.path ?: "";
             }
             navStack.clear();
-            val entry = FileStack("", initialDirectories);
+            val entry = FileStack(path, initialDirectories);
             navStack.add(entry);
             openDirectory(navStack.last());
             fragment.topBar?.let {

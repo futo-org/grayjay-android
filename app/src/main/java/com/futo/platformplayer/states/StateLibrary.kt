@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
 import android.webkit.MimeTypeMap
@@ -192,6 +193,8 @@ class StateLibrary {
 
     private var _cacheBucketNames: List<Bucket>? = null;
     fun getVideoBucketNames(): List<Bucket> {
+        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+            return listOf();
         if(_cacheBucketNames != null)
             return _cacheBucketNames ?: listOf();
         try {
@@ -236,7 +239,6 @@ class StateLibrary {
         val PROJECTION_VIDEO = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.AUTHOR,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.MIME_TYPE,
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME
@@ -406,10 +408,10 @@ class StateLibrary {
         fun videoFromCursor(cursor: Cursor): IPlatformVideoDetails {
             val id = cursor.getString(0);
             val displayName = cursor.getString(1);
-            val author = cursor.getString(2);
-            val date = cursor.getLong(3);
-            val contentType = cursor.getString(4);
-            val category = cursor.getString(5);
+            val author = null;//cursor.getString(2);
+            val date = cursor.getLong(2);
+            val contentType = cursor.getString(3);
+            val category = cursor.getString(4);
 
             val idLong = id.toLongOrNull();
             val contentUrl = if(idLong != null )

@@ -8,6 +8,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
@@ -108,6 +110,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
             _containerMoreHeader = findViewById(R.id.container_more_options);
             _toggleAirplaneMode = findViewById(R.id.container_toggle_airplane);
             _togglePrivacy = findViewById(R.id.container_toggle_privacy);
+
+            _toggleAirplaneMode.isVisible = false //TODO: Remove when airplane mode implemented
 
             StateApp.instance.airplaneModeChanged.subscribe {
                 if(!StateApp.instance.airplaneMode)
@@ -575,7 +579,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             }),
             ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>(withHistory = false) }),
-            ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigate<LibraryFragment>(withHistory = false) }),
+            //if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P)
+                ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigate<LibraryFragment>(withHistory = false) })
+            ,//else null,
             ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>(withHistory = false) }),
             ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>(withHistory = false) }),
             ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>(withHistory = false) }),
@@ -613,7 +619,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             //96 is reserved for privacy button
             //98 is reserved for buy button
             //99 is reserved for more button
-        );
+        ).filterNotNull();
     }
 
     data class ButtonDefinition(
