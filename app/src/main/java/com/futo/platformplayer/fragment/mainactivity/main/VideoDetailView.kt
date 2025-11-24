@@ -1753,7 +1753,9 @@ class VideoDetailView : ConstraintLayout {
                     }
                 } catch (e: Throwable) {
                     Logger.e(TAG, "Failed to get polycentric likes/dislikes.", e);
-                    _rating.visibility = View.GONE;
+                    fragment.lifecycleScope.launch(Dispatchers.Main) {
+                        _rating.visibility = View.GONE;
+                    }
                 }
             }
         }
