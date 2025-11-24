@@ -51,6 +51,15 @@ class PackageHttpImp : V8Package {
         Logger.w(TAG, "PackageHttpImp Cleaning up")
     }
 
+    @V8Function
+    fun socket(
+        url: String,
+        headers: MutableMap<String, String>? = null,
+        useAuth: Boolean = false
+    ): Any {
+        throw NotImplementedError("WebSocket is not supported by the curl-impersonate HTTP implementation.")
+    }
+
     private fun <T, R> autoParallelPool(
         data: List<T>,
         parallelism: Int,
@@ -116,12 +125,29 @@ class PackageHttpImp : V8Package {
         useAuth: Boolean = false,
         bytesResult: Boolean = false
     ): IBridgeHttpResponse {
+        return request(method, url, headers, useAuth, bytesResult, null)
+    }
+
+    @V8Function
+    fun request(
+        method: String,
+        url: String,
+        headers: MutableMap<String, String>,
+        useAuth: Boolean,
+        bytesResult: Boolean,
+        options: MutableMap<String, Any?>?
+    ): IBridgeHttpResponse {
         val client = if (useAuth) _packageClientAuth else _packageClient
+        val parsed = parseRequestOptions(options)
+        val returnType = if (bytesResult) ReturnType.BYTES else ReturnType.STRING
         return client.requestInternal(
             method,
             url,
             headers,
-            if (bytesResult) ReturnType.BYTES else ReturnType.STRING
+            returnType,
+            parsed.impersonateTarget,
+            parsed.useBuiltInHeaders,
+            parsed.timeoutMs
         )
     }
 
@@ -129,19 +155,88 @@ class PackageHttpImp : V8Package {
     fun requestWithBody(
         method: String,
         url: String,
-        body: String,
+        body: Any,
         headers: MutableMap<String, String> = HashMap(),
         useAuth: Boolean = false,
         bytesResult: Boolean = false
     ): IBridgeHttpResponse {
+        return requestWithBody(method, url, body, headers, useAuth, bytesResult, null)
+    }
+
+    @V8Function
+    fun requestWithBody(
+        method: String,
+        url: String,
+        body: Any,
+        headers: MutableMap<String, String>,
+        useAuth: Boolean,
+        bytesResult: Boolean,
+        options: MutableMap<String, Any?>?
+    ): IBridgeHttpResponse {
         val client = if (useAuth) _packageClientAuth else _packageClient
-        return client.requestWithBodyInternal(
-            method,
-            url,
-            body,
-            headers,
-            if (bytesResult) ReturnType.BYTES else ReturnType.STRING
-        )
+        val parsed = parseRequestOptions(options)
+        val returnType = if (bytesResult) ReturnType.BYTES else ReturnType.STRING
+
+        return when (body) {
+            is V8ValueString ->
+                client.requestWithBodyInternal(
+                    method,
+                    url,
+                    body.value,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
+            is String ->
+                client.requestWithBodyInternal(
+                    method,
+                    url,
+                    body,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
+            is V8ValueTypedArray ->
+                client.requestWithBodyInternal(
+                    method,
+                    url,
+                    body.toBytes(),
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
+            is ByteArray ->
+                client.requestWithBodyInternal(
+                    method,
+                    url,
+                    body,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
+            is ArrayList<*> ->
+                client.requestWithBodyInternal(
+                    method,
+                    url,
+                    body.map { (it as Double).toInt().toByte() }.toByteArray(),
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
+            else -> throw NotImplementedError(
+                "Body type ${body?.javaClass?.name} not implemented for requestWithBody"
+            )
+        }
     }
 
     @V8Function
@@ -151,11 +246,26 @@ class PackageHttpImp : V8Package {
         useAuth: Boolean = false,
         useByteResponse: Boolean = false
     ): IBridgeHttpResponse {
+        return GET(url, headers, useAuth, useByteResponse, null)
+    }
+
+    @V8Function
+    fun GET(
+        url: String,
+        headers: MutableMap<String, String>,
+        useAuth: Boolean,
+        useByteResponse: Boolean,
+        options: MutableMap<String, Any?>?
+    ): IBridgeHttpResponse {
         val client = if (useAuth) _packageClientAuth else _packageClient
+        val parsed = parseRequestOptions(options)
         return client.GETInternal(
             url,
             headers,
-            if (useByteResponse) ReturnType.BYTES else ReturnType.STRING
+            if (useByteResponse) ReturnType.BYTES else ReturnType.STRING,
+            parsed.impersonateTarget,
+            parsed.useBuiltInHeaders,
+            parsed.timeoutMs
         )
     }
 
@@ -167,25 +277,76 @@ class PackageHttpImp : V8Package {
         useAuth: Boolean = false,
         useByteResponse: Boolean = false
     ): IBridgeHttpResponse {
+        return POST(url, body, headers, useAuth, useByteResponse, null)
+    }
+
+    @V8Function
+    fun POST(
+        url: String,
+        body: Any,
+        headers: MutableMap<String, String>,
+        useAuth: Boolean,
+        useByteResponse: Boolean,
+        options: MutableMap<String, Any?>?
+    ): IBridgeHttpResponse {
         val client = if (useAuth) _packageClientAuth else _packageClient
+        val parsed = parseRequestOptions(options)
+        val returnType = if (useByteResponse) ReturnType.BYTES else ReturnType.STRING
 
         return when (body) {
             is V8ValueString ->
-                client.POSTInternal(url, body.value, headers, if (useByteResponse) ReturnType.BYTES else ReturnType.STRING)
+                client.POSTInternal(
+                    url,
+                    body.value,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
             is String ->
-                client.POSTInternal(url, body, headers, if (useByteResponse) ReturnType.BYTES else ReturnType.STRING)
+                client.POSTInternal(
+                    url,
+                    body,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
             is V8ValueTypedArray ->
-                client.POSTInternal(url, body.toBytes(), headers, if (useByteResponse) ReturnType.BYTES else ReturnType.STRING)
+                client.POSTInternal(
+                    url,
+                    body.toBytes(),
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
             is ByteArray ->
-                client.POSTInternal(url, body, headers, if (useByteResponse) ReturnType.BYTES else ReturnType.STRING)
+                client.POSTInternal(
+                    url,
+                    body,
+                    headers,
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
+                )
             is ArrayList<*> ->
                 client.POSTInternal(
                     url,
                     body.map { (it as Double).toInt().toByte() }.toByteArray(),
                     headers,
-                    if (useByteResponse) ReturnType.BYTES else ReturnType.STRING
+                    returnType,
+                    parsed.impersonateTarget,
+                    parsed.useBuiltInHeaders,
+                    parsed.timeoutMs
                 )
-            else -> throw NotImplementedError("Body type ${body?.javaClass?.name} not implemented for POST")
+            else -> throw NotImplementedError(
+                "Body type ${body?.javaClass?.name} not implemented for POST"
+            )
         }
     }
 
@@ -261,7 +422,19 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useAuth: Boolean = false
         ): BatchBuilder {
-            return clientRequest(_package.getDefaultClient(useAuth).clientId(), method, url, headers)
+            return request(method, url, headers, useAuth, null)
+        }
+
+        @V8Function
+        fun request(
+            method: String,
+            url: String,
+            headers: MutableMap<String, String>,
+            useAuth: Boolean,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder {
+            val clientId = _package.getDefaultClient(useAuth).clientId()
+            return clientRequest(clientId, method, url, headers, options)
         }
 
         @V8Function
@@ -272,7 +445,20 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useAuth: Boolean = false
         ): BatchBuilder {
-            return clientRequestWithBody(_package.getDefaultClient(useAuth).clientId(), method, url, body, headers)
+            return requestWithBody(method, url, body, headers, useAuth, null)
+        }
+
+        @V8Function
+        fun requestWithBody(
+            method: String,
+            url: String,
+            body: String,
+            headers: MutableMap<String, String>,
+            useAuth: Boolean,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder {
+            val clientId = _package.getDefaultClient(useAuth).clientId()
+            return clientRequestWithBody(clientId, method, url, body, headers, options)
         }
 
         @V8Function
@@ -281,7 +467,16 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useAuth: Boolean = false
         ): BatchBuilder =
-            clientGET(_package.getDefaultClient(useAuth).clientId(), url, headers)
+            GET(url, headers, useAuth, null)
+
+        @V8Function
+        fun GET(
+            url: String,
+            headers: MutableMap<String, String>,
+            useAuth: Boolean,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder =
+            clientGET(_package.getDefaultClient(useAuth).clientId(), url, headers, options)
 
         @V8Function
         fun POST(
@@ -290,7 +485,17 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useAuth: Boolean = false
         ): BatchBuilder =
-            clientPOST(_package.getDefaultClient(useAuth).clientId(), url, body, headers)
+            POST(url, body, headers, useAuth, null)
+
+        @V8Function
+        fun POST(
+            url: String,
+            body: String,
+            headers: MutableMap<String, String>,
+            useAuth: Boolean,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder =
+            clientPOST(_package.getDefaultClient(useAuth).clientId(), url, body, headers, options)
 
         @V8Function
         fun DUMMY(): BatchBuilder {
@@ -310,7 +515,37 @@ class PackageHttpImp : V8Package {
             url: String,
             headers: MutableMap<String, String> = HashMap()
         ): BatchBuilder {
-            _reqs.add(Pair(_package.getClient(clientId), RequestDescriptor(method, url, headers)))
+            return clientRequest(clientId, method, url, headers, null)
+        }
+
+        @V8Function
+        fun clientRequest(
+            clientId: String?,
+            method: String,
+            url: String,
+            headers: MutableMap<String, String>,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val respType =
+                if ((options?.get("useByteResponses") as? Boolean) == true) ReturnType.BYTES else ReturnType.STRING
+
+            _reqs.add(
+                Pair(
+                    _package.getClient(clientId),
+                    RequestDescriptor(
+                        method = method,
+                        url = url,
+                        headers = headers,
+                        body = null,
+                        contentType = null,
+                        respType = respType,
+                        impersonateTarget = opts.impersonateTarget,
+                        useBuiltInHeaders = opts.useBuiltInHeaders,
+                        timeoutMs = opts.timeoutMs
+                    )
+                )
+            )
             return BatchBuilder(_package, _reqs)
         }
 
@@ -322,10 +557,36 @@ class PackageHttpImp : V8Package {
             body: String,
             headers: MutableMap<String, String> = HashMap()
         ): BatchBuilder {
+            return clientRequestWithBody(clientId, method, url, body, headers, null)
+        }
+
+        @V8Function
+        fun clientRequestWithBody(
+            clientId: String?,
+            method: String,
+            url: String,
+            body: String,
+            headers: MutableMap<String, String>,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val respType =
+                if ((options?.get("useByteResponses") as? Boolean) == true) ReturnType.BYTES else ReturnType.STRING
+
             _reqs.add(
                 Pair(
                     _package.getClient(clientId),
-                    RequestDescriptor(method, url, headers, body)
+                    RequestDescriptor(
+                        method = method,
+                        url = url,
+                        headers = headers,
+                        body = body,
+                        contentType = null,
+                        respType = respType,
+                        impersonateTarget = opts.impersonateTarget,
+                        useBuiltInHeaders = opts.useBuiltInHeaders,
+                        timeoutMs = opts.timeoutMs
+                    )
                 )
             )
             return BatchBuilder(_package, _reqs)
@@ -340,6 +601,15 @@ class PackageHttpImp : V8Package {
             clientRequest(clientId, "GET", url, headers)
 
         @V8Function
+        fun clientGET(
+            clientId: String?,
+            url: String,
+            headers: MutableMap<String, String>,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder =
+            clientRequest(clientId, "GET", url, headers, options)
+
+        @V8Function
         fun clientPOST(
             clientId: String?,
             url: String,
@@ -349,25 +619,45 @@ class PackageHttpImp : V8Package {
             clientRequestWithBody(clientId, "POST", url, body, headers)
 
         @V8Function
+        fun clientPOST(
+            clientId: String?,
+            url: String,
+            body: String,
+            headers: MutableMap<String, String>,
+            options: MutableMap<String, Any?>?
+        ): BatchBuilder =
+            clientRequestWithBody(clientId, "POST", url, body, headers, options)
+
+        @V8Function
         fun execute(): List<IBridgeHttpResponse?> {
-            return _package.autoParallelPool(_reqs, -1) {
-                if (it.second.method == "DUMMY") {
+            return _package.autoParallelPool(_reqs, -1) { pair ->
+                val client = pair.first
+                val descriptor = pair.second
+
+                if (descriptor.method == "DUMMY") {
                     return@autoParallelPool null
                 }
-                if (it.second.body != null) {
-                    it.first.requestWithBodyInternal(
-                        it.second.method,
-                        it.second.url,
-                        it.second.body!!,
-                        it.second.headers,
-                        it.second.respType
+
+                if (descriptor.body != null) {
+                    client.requestWithBodyInternal(
+                        descriptor.method,
+                        descriptor.url,
+                        descriptor.body,
+                        descriptor.headers,
+                        descriptor.respType,
+                        descriptor.impersonateTarget,
+                        descriptor.useBuiltInHeaders,
+                        descriptor.timeoutMs
                     )
                 } else {
-                    it.first.requestInternal(
-                        it.second.method,
-                        it.second.url,
-                        it.second.headers,
-                        it.second.respType
+                    client.requestInternal(
+                        descriptor.method,
+                        descriptor.url,
+                        descriptor.headers,
+                        descriptor.respType,
+                        descriptor.impersonateTarget,
+                        descriptor.useBuiltInHeaders,
+                        descriptor.timeoutMs
                     )
                 }
             }.map {
@@ -401,7 +691,10 @@ class PackageHttpImp : V8Package {
         private var sendCookies: Boolean = true
 
         @Volatile
-        private var persistCookies: Boolean = true
+        private var updateCookies: Boolean = true
+
+        @Volatile
+        private var allowNewCookies: Boolean = true
 
         @Volatile
         private var cookieJarPath: String? = null
@@ -449,17 +742,27 @@ class PackageHttpImp : V8Package {
 
         @V8Function
         fun setDoUpdateCookies(update: Boolean) {
-            persistCookies = update
+            updateCookies = update
         }
 
         @V8Function
         fun setDoAllowNewCookies(allow: Boolean) {
-            persistCookies = allow
+            allowNewCookies = allow
         }
 
         @V8Function
         fun setTimeout(timeoutMs: Int) {
             this.timeoutMs = timeoutMs
+        }
+
+        @V8Function
+        fun setDefaultImpersonateTarget(target: String) {
+            impersonateTarget = target
+        }
+
+        @V8Function
+        fun setUseBuiltInHeaders(enable: Boolean) {
+            useBuiltInHeaders = enable
         }
 
         @V8Function
@@ -469,21 +772,48 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useBytes: Boolean = false
         ): IBridgeHttpResponse =
-            requestInternal(method, url, headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+            request(method, url, headers, useBytes, null)
+
+        @V8Function
+        fun request(
+            method: String,
+            url: String,
+            headers: MutableMap<String, String>,
+            useBytes: Boolean,
+            options: MutableMap<String, Any?>?
+        ): IBridgeHttpResponse {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val returnType = if (useBytes) ReturnType.BYTES else ReturnType.STRING
+            return requestInternal(
+                method,
+                url,
+                headers,
+                returnType,
+                opts.impersonateTarget,
+                opts.useBuiltInHeaders,
+                opts.timeoutMs
+            )
+        }
 
         fun requestInternal(
             method: String,
             url: String,
             headers: MutableMap<String, String> = HashMap(),
-            returnType: ReturnType
+            returnType: ReturnType,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): IBridgeHttpResponse {
-            applyDefaultHeaders(headers)
-            return logExceptions {
-                catchHttp {
-                    val resp = performCurl(method, url, headers, null)
-                    responseToBridge(resp, returnType)
-                }
-            }
+            return executeRequest(
+                method,
+                url,
+                headers,
+                null,
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
         }
 
         @V8Function
@@ -494,28 +824,73 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useBytes: Boolean = false
         ): IBridgeHttpResponse =
-            requestWithBodyInternal(
+            requestWithBody(method, url, body, headers, useBytes, null)
+
+        @V8Function
+        fun requestWithBody(
+            method: String,
+            url: String,
+            body: String,
+            headers: MutableMap<String, String>,
+            useBytes: Boolean,
+            options: MutableMap<String, Any?>?
+        ): IBridgeHttpResponse {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val returnType = if (useBytes) ReturnType.BYTES else ReturnType.STRING
+            return requestWithBodyInternal(
                 method,
                 url,
                 body,
                 headers,
-                if (useBytes) ReturnType.BYTES else ReturnType.STRING
+                returnType,
+                opts.impersonateTarget,
+                opts.useBuiltInHeaders,
+                opts.timeoutMs
             )
+        }
 
         fun requestWithBodyInternal(
             method: String,
             url: String,
             body: String,
             headers: MutableMap<String, String> = HashMap(),
-            returnType: ReturnType
+            returnType: ReturnType,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): IBridgeHttpResponse {
-            applyDefaultHeaders(headers)
-            return logExceptions {
-                catchHttp {
-                    val resp = performCurl(method, url, headers, body.toByteArray())
-                    responseToBridge(resp, returnType)
-                }
-            }
+            return executeRequest(
+                method,
+                url,
+                headers,
+                body.toByteArray(),
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
+        }
+
+        fun requestWithBodyInternal(
+            method: String,
+            url: String,
+            body: ByteArray,
+            headers: MutableMap<String, String> = HashMap(),
+            returnType: ReturnType,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
+        ): IBridgeHttpResponse {
+            return executeRequest(
+                method,
+                url,
+                headers,
+                body,
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
         }
 
         @V8Function
@@ -524,20 +899,45 @@ class PackageHttpImp : V8Package {
             headers: MutableMap<String, String> = HashMap(),
             useBytes: Boolean = false
         ): IBridgeHttpResponse =
-            GETInternal(url, headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+            GET(url, headers, useBytes, null)
+
+        @V8Function
+        fun GET(
+            url: String,
+            headers: MutableMap<String, String>,
+            useBytes: Boolean,
+            options: MutableMap<String, Any?>?
+        ): IBridgeHttpResponse {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val returnType = if (useBytes) ReturnType.BYTES else ReturnType.STRING
+            return GETInternal(
+                url,
+                headers,
+                returnType,
+                opts.impersonateTarget,
+                opts.useBuiltInHeaders,
+                opts.timeoutMs
+            )
+        }
 
         fun GETInternal(
             url: String,
             headers: MutableMap<String, String> = HashMap(),
-            returnType: ReturnType = ReturnType.STRING
+            returnType: ReturnType = ReturnType.STRING,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): IBridgeHttpResponse {
-            applyDefaultHeaders(headers)
-            return logExceptions {
-                catchHttp {
-                    val resp = performCurl("GET", url, headers, null)
-                    responseToBridge(resp, returnType)
-                }
-            }
+            return executeRequest(
+                "GET",
+                url,
+                headers,
+                null,
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
         }
 
         @V8Function
@@ -546,22 +946,70 @@ class PackageHttpImp : V8Package {
             body: Any,
             headers: MutableMap<String, String> = HashMap(),
             useBytes: Boolean = false
+        ): IBridgeHttpResponse =
+            POST(url, body, headers, useBytes, null)
+
+        @V8Function
+        fun POST(
+            url: String,
+            body: Any,
+            headers: MutableMap<String, String>,
+            useBytes: Boolean,
+            options: MutableMap<String, Any?>?
         ): IBridgeHttpResponse {
+            val opts = PackageHttpImp.parseRequestOptions(options)
+            val returnType = if (useBytes) ReturnType.BYTES else ReturnType.STRING
+
             return when (body) {
                 is V8ValueString ->
-                    POSTInternal(url, body.value, headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+                    POSTInternal(
+                        url,
+                        body.value,
+                        headers,
+                        returnType,
+                        opts.impersonateTarget,
+                        opts.useBuiltInHeaders,
+                        opts.timeoutMs
+                    )
                 is String ->
-                    POSTInternal(url, body, headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+                    POSTInternal(
+                        url,
+                        body,
+                        headers,
+                        returnType,
+                        opts.impersonateTarget,
+                        opts.useBuiltInHeaders,
+                        opts.timeoutMs
+                    )
                 is V8ValueTypedArray ->
-                    POSTInternal(url, body.toBytes(), headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+                    POSTInternal(
+                        url,
+                        body.toBytes(),
+                        headers,
+                        returnType,
+                        opts.impersonateTarget,
+                        opts.useBuiltInHeaders,
+                        opts.timeoutMs
+                    )
                 is ByteArray ->
-                    POSTInternal(url, body, headers, if (useBytes) ReturnType.BYTES else ReturnType.STRING)
+                    POSTInternal(
+                        url,
+                        body,
+                        headers,
+                        returnType,
+                        opts.impersonateTarget,
+                        opts.useBuiltInHeaders,
+                        opts.timeoutMs
+                    )
                 is ArrayList<*> ->
                     POSTInternal(
                         url,
                         body.map { (it as Double).toInt().toByte() }.toByteArray(),
                         headers,
-                        if (useBytes) ReturnType.BYTES else ReturnType.STRING
+                        returnType,
+                        opts.impersonateTarget,
+                        opts.useBuiltInHeaders,
+                        opts.timeoutMs
                     )
                 else -> throw NotImplementedError("Body type ${body?.javaClass?.name} not implemented for POST")
             }
@@ -571,53 +1019,99 @@ class PackageHttpImp : V8Package {
             url: String,
             body: String,
             headers: MutableMap<String, String> = HashMap(),
-            returnType: ReturnType = ReturnType.STRING
+            returnType: ReturnType = ReturnType.STRING,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): IBridgeHttpResponse {
-            applyDefaultHeaders(headers)
-            return logExceptions {
-                catchHttp {
-                    val resp = performCurl("POST", url, headers, body.toByteArray())
-                    responseToBridge(resp, returnType)
-                }
-            }
+            return executeRequest(
+                "POST",
+                url,
+                headers,
+                body.toByteArray(),
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
         }
 
         fun POSTInternal(
             url: String,
             body: ByteArray,
             headers: MutableMap<String, String> = HashMap(),
-            returnType: ReturnType = ReturnType.STRING
+            returnType: ReturnType = ReturnType.STRING,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): IBridgeHttpResponse {
-            applyDefaultHeaders(headers)
-            return logExceptions {
-                catchHttp {
-                    val resp = performCurl("POST", url, headers, body)
-                    responseToBridge(resp, returnType)
-                }
-            }
+            return executeRequest(
+                "POST",
+                url,
+                headers,
+                body,
+                returnType,
+                impersonateTargetOverride,
+                useBuiltInHeadersOverride,
+                timeoutMsOverride
+            )
         }
 
         private fun performCurl(
             method: String,
             url: String,
             headers: Map<String, String>,
-            bodyBytes: ByteArray?
+            bodyBytes: ByteArray?,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
         ): Libcurl.Response {
             val jar = ensureCookieJarPath()
+
+            val finalImpersonateTarget = impersonateTargetOverride ?: this.impersonateTarget
+            val finalUseBuiltInHeaders = useBuiltInHeadersOverride ?: this.useBuiltInHeaders
+            val finalTimeoutMs = timeoutMsOverride ?: this.timeoutMs
 
             val req = Libcurl.Request(
                 url = url,
                 method = method,
                 headers = headers,
                 body = bodyBytes,
-                impersonateTarget = impersonateTarget,
-                useBuiltInHeaders = useBuiltInHeaders,
-                timeoutMs = timeoutMs,
+                impersonateTarget = finalImpersonateTarget,
+                useBuiltInHeaders = finalUseBuiltInHeaders,
+                timeoutMs = finalTimeoutMs,
                 cookieJarPath = jar,
                 sendCookies = sendCookies,
-                persistCookies = persistCookies
+                persistCookies = updateCookies && allowNewCookies
             )
             return Libcurl.perform(req)
+        }
+
+        private fun executeRequest(
+            method: String,
+            url: String,
+            headers: MutableMap<String, String>,
+            bodyBytes: ByteArray?,
+            returnType: ReturnType,
+            impersonateTargetOverride: String? = null,
+            useBuiltInHeadersOverride: Boolean? = null,
+            timeoutMsOverride: Int? = null
+        ): IBridgeHttpResponse {
+            applyDefaultHeaders(headers)
+            return logExceptions {
+                catchHttp {
+                    val resp = performCurl(
+                        method,
+                        url,
+                        headers,
+                        bodyBytes,
+                        impersonateTargetOverride,
+                        useBuiltInHeadersOverride,
+                        timeoutMsOverride
+                    )
+                    responseToBridge(resp, returnType)
+                }
+            }
         }
 
         private fun responseToBridge(
@@ -754,7 +1248,10 @@ class PackageHttpImp : V8Package {
         val headers: MutableMap<String, String>,
         val body: String? = null,
         val contentType: String? = null,
-        val respType: ReturnType = ReturnType.STRING
+        val respType: ReturnType = ReturnType.STRING,
+        val impersonateTarget: String? = null,
+        val useBuiltInHeaders: Boolean? = null,
+        val timeoutMs: Int? = null
     )
 
     private fun catchHttp(handle: () -> BridgeHttpStringResponse): BridgeHttpStringResponse {
@@ -783,5 +1280,47 @@ class PackageHttpImp : V8Package {
             "content-disposition",
             "connection"
         )
+
+        internal data class RequestOptions(
+            val impersonateTarget: String? = null,
+            val useBuiltInHeaders: Boolean? = null,
+            val timeoutMs: Int? = null
+        )
+
+        internal fun parseRequestOptions(options: Map<String, Any?>?): RequestOptions {
+            if (options == null) return RequestOptions()
+
+            var impersonateTarget: String? = null
+            var useBuiltInHeaders: Boolean? = null
+            var timeoutMs: Int? = null
+
+            options["impersonateTarget"]?.let { v ->
+                val s = v as? String
+                if (!s.isNullOrBlank()) {
+                    impersonateTarget = s
+                }
+            }
+
+            options["useBuiltInHeaders"]?.let { v ->
+                if (v is Boolean) {
+                    useBuiltInHeaders = v
+                }
+            }
+
+            options["timeoutMs"]?.let { v ->
+                val n: Long? = when (v) {
+                    is Int -> v.toLong()
+                    is Long -> v
+                    is Double -> v.toLong()
+                    is Float -> v.toLong()
+                    else -> null
+                }
+                if (n != null && n > 0 && n <= Int.MAX_VALUE) {
+                    timeoutMs = n.toInt()
+                }
+            }
+
+            return RequestOptions(impersonateTarget, useBuiltInHeaders, timeoutMs)
+        }
     }
 }
