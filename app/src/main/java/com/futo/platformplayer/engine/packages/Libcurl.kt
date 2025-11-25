@@ -23,10 +23,7 @@ object Libcurl {
         var body: ByteArray? = null,
         var impersonateTarget: String = "chrome136",
         var useBuiltInHeaders: Boolean = true,
-        var timeoutMs: Int = 30_000,
-        var cookieJarPath: String? = null,
-        var sendCookies: Boolean = true,
-        var persistCookies: Boolean = true,
+        var timeoutMs: Int = 30_000
     )
 
     @Keep
@@ -119,12 +116,6 @@ object Libcurl {
             if (req.headers.isNotEmpty()) {
                 for ((k, v) in req.headers) slist = ce_slist_append(slist, "$k: $v")
                 if (slist != 0L) checkOK(ce_setopt_ptr(easy, CURLOPT.HTTPHEADER, slist))
-            }
-
-            if (req.sendCookies || req.persistCookies) {
-                val jar = (req.cookieJarPath ?: defaultCookieJarPath())
-                if (req.sendCookies) checkOK(ce_setopt_str(easy, CURLOPT.COOKIEFILE, jar))
-                if (req.persistCookies) checkOK(ce_setopt_str(easy, CURLOPT.COOKIEJAR,  jar))
             }
 
             val method = req.method
