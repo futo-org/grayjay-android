@@ -23,6 +23,7 @@ import java.util.UUID
 class JSHttpClient : ManagedHttpClient {
     private val _jsClient: JSClient?;
     private val _jsConfig: SourcePluginConfig?;
+    val config get() = _jsConfig
     private val _auth: SourceAuth?;
     private val _captcha: SourceCaptchaData?;
 

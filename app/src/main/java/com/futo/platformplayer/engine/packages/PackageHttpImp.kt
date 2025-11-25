@@ -17,6 +17,8 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.engine.exceptions.ScriptException
+import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.internal.IV8Convertable
 import com.futo.platformplayer.engine.internal.V8BindObject
 import com.futo.platformplayer.logging.Logger
@@ -1048,13 +1050,19 @@ class PackageHttpImp : V8Package {
             useBuiltInHeadersOverride: Boolean? = null,
             timeoutMsOverride: Int? = null
         ): Libcurl.Response {
+            val client = _client
+            if (client is JSHttpClient) {
+                if (!(client.config?.isUrlAllowed(url) ?: false)) {
+                    throw Exception( "Attempted to access non-whitelisted url: $url\nAdd it to your config");
+                }
+            }
+
             val finalImpersonateTarget = impersonateTargetOverride ?: this.impersonateTarget
             val finalUseBuiltInHeaders = useBuiltInHeadersOverride ?: this.useBuiltInHeaders
             val finalTimeoutMs = timeoutMsOverride ?: this.timeoutMs
 
             val uri = url.toUri()
             val headers = hs.toMutableMap()
-            val client = _client
             if (client is JSHttpClient) {
                 client.applyHeaders(uri, headers, _client.isLoggedIn, true)
             }
