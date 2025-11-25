@@ -153,8 +153,8 @@ open class JSClient : IPlatformClient {
         _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _httpClient = JSHttpClient(this, null, _captcha);
-        _httpClientAuth = JSHttpClient(this, _auth, _captcha);
+        _httpClient = JSHttpClient(this, null, _captcha, config);
+        _httpClientAuth = JSHttpClient(this, _auth, _captcha, config);
         _plugin = V8Plugin(context, descriptor.config, null, _httpClient, _httpClientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
@@ -186,8 +186,8 @@ open class JSClient : IPlatformClient {
         _captcha = descriptor.getCaptchaData();
         flags = descriptor.flags.toTypedArray();
 
-        _httpClient = JSHttpClient(this, null, _captcha);
-        _httpClientAuth = JSHttpClient(this, _auth, _captcha);
+        _httpClient = JSHttpClient(this, null, _captcha, config);
+        _httpClientAuth = JSHttpClient(this, _auth, _captcha, config);
         _plugin = V8Plugin(context, descriptor.config, script, _httpClient, _httpClientAuth);
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");

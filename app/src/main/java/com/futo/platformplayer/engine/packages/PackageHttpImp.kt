@@ -1,5 +1,7 @@
 package com.futo.platformplayer.engine.packages
 
+import android.net.Uri
+import androidx.core.net.toUri
 import com.caoccao.javet.annotations.V8Convert
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
@@ -10,9 +12,13 @@ import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueTypedArray
 import com.curlbind.Libcurl
+import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.engine.exceptions.ScriptException
+import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.internal.IV8Convertable
 import com.futo.platformplayer.engine.internal.V8BindObject
 import com.futo.platformplayer.logging.Logger
@@ -43,8 +49,8 @@ class PackageHttpImp : V8Package {
 
     constructor(plugin: V8Plugin, config: IV8PluginConfig) : super(plugin) {
         _config = config
-        _packageClient = PackageHttpClient(this, withAuth = false)
-        _packageClientAuth = PackageHttpClient(this, withAuth = true)
+        _packageClient = PackageHttpClient(this, plugin.httpClient)
+        _packageClientAuth = PackageHttpClient(this, plugin.httpClientAuth)
     }
 
     fun cleanup() {
@@ -95,7 +101,10 @@ class PackageHttpImp : V8Package {
 
     @V8Function
     fun newClient(withAuth: Boolean): PackageHttpClient {
-        val client = PackageHttpClient(this, withAuth)
+        val httpClient = if(withAuth) _plugin.httpClientAuth.clone() else _plugin.httpClient.clone();
+        if(httpClient is JSHttpClient)
+            _plugin.registerHttpClient(httpClient);
+        val client = PackageHttpClient(this, httpClient)
         client.clientId()?.let { _clients[it] = client }
         return client
     }
@@ -672,9 +681,6 @@ class PackageHttpImp : V8Package {
         @Transient
         private val _package: PackageHttpImp
 
-        @Transient
-        private val _withAuth: Boolean
-
         val parentConfig: IV8PluginConfig
             get() = _package._config
 
@@ -686,44 +692,21 @@ class PackageHttpImp : V8Package {
 
         @Volatile
         private var timeoutMs: Int = 30_000
-
-        @Volatile
-        private var sendCookies: Boolean = true
-
-        @Volatile
-        private var updateCookies: Boolean = true
-
-        @Volatile
-        private var allowNewCookies: Boolean = true
-
-        @Volatile
-        private var cookieJarPath: String? = null
-
         @Volatile
         private var impersonateTarget: String = "chrome136"
 
         @Volatile
         private var useBuiltInHeaders: Boolean = true
 
+        @Transient
+        private val _client: ManagedHttpClient;
+
         @V8Property
         fun clientId(): String? = _clientId
 
-        constructor(pack: PackageHttpImp, withAuth: Boolean) : super() {
+        constructor(pack: PackageHttpImp, baseClient: ManagedHttpClient) : super() {
             _package = pack
-            _withAuth = withAuth
-        }
-
-        private fun ensureCookieJarPath(): String {
-            val existing = cookieJarPath
-            if (existing != null) return existing
-
-            val tmp = System.getProperty("java.io.tmpdir") ?: "/data/local/tmp"
-            val safeName = parentConfig.name.replace(Regex("[^a-zA-Z0-9._-]"), "_")
-            val fileName =
-                if (_withAuth) "imphttp.$safeName.auth.cookies.txt" else "imphttp.$safeName.cookies.txt"
-            val path = if (tmp.endsWith("/")) tmp + fileName else "$tmp/$fileName"
-            cookieJarPath = path
-            return path
+            _client = baseClient
         }
 
         @V8Function
@@ -737,17 +720,18 @@ class PackageHttpImp : V8Package {
 
         @V8Function
         fun setDoApplyCookies(apply: Boolean) {
-            sendCookies = apply
+            if(_client is JSHttpClient)
+                _client.doApplyCookies = apply;
         }
-
         @V8Function
         fun setDoUpdateCookies(update: Boolean) {
-            updateCookies = update
+            if(_client is JSHttpClient)
+                _client.doUpdateCookies = update;
         }
-
         @V8Function
         fun setDoAllowNewCookies(allow: Boolean) {
-            allowNewCookies = allow
+            if(_client is JSHttpClient)
+                _client.doAllowNewCookies = allow;
         }
 
         @V8Function
@@ -1060,17 +1044,28 @@ class PackageHttpImp : V8Package {
         private fun performCurl(
             method: String,
             url: String,
-            headers: Map<String, String>,
+            hs: Map<String, String>, //TODO: Why is this not a Map<String, List<String>>
             bodyBytes: ByteArray?,
             impersonateTargetOverride: String? = null,
             useBuiltInHeadersOverride: Boolean? = null,
             timeoutMsOverride: Int? = null
         ): Libcurl.Response {
-            val jar = ensureCookieJarPath()
+            val client = _client
+            if (client is JSHttpClient) {
+                if (!(client.config?.isUrlAllowed(url) ?: false)) {
+                    throw Exception( "Attempted to access non-whitelisted url: $url\nAdd it to your config");
+                }
+            }
 
             val finalImpersonateTarget = impersonateTargetOverride ?: this.impersonateTarget
             val finalUseBuiltInHeaders = useBuiltInHeadersOverride ?: this.useBuiltInHeaders
             val finalTimeoutMs = timeoutMsOverride ?: this.timeoutMs
+
+            val uri = url.toUri()
+            val headers = hs.toMutableMap()
+            if (client is JSHttpClient) {
+                client.applyHeaders(uri, headers, _client.isLoggedIn, true)
+            }
 
             val req = Libcurl.Request(
                 url = url,
@@ -1079,12 +1074,13 @@ class PackageHttpImp : V8Package {
                 body = bodyBytes,
                 impersonateTarget = finalImpersonateTarget,
                 useBuiltInHeaders = finalUseBuiltInHeaders,
-                timeoutMs = finalTimeoutMs,
-                cookieJarPath = jar,
-                sendCookies = sendCookies,
-                persistCookies = updateCookies && allowNewCookies
+                timeoutMs = finalTimeoutMs
             )
-            return Libcurl.perform(req)
+            val resp = Libcurl.perform(req)
+            if (client is JSHttpClient) {
+                client.processRequest(method, resp.status, uri, resp.headers)
+            }
+            return resp
         }
 
         private fun executeRequest(
