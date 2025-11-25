@@ -2,6 +2,7 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.AttributeSet
@@ -11,11 +12,13 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.collection.emptyLongSet
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
@@ -34,6 +37,7 @@ import com.futo.platformplayer.views.AnyInsertedAdapterView
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithTop
 import com.futo.platformplayer.views.AnyInsertedAdapterView.Companion.asAnyWithViews
 import com.futo.platformplayer.views.LibrarySection
+import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.adapters.InsertedViewAdapter
 import com.futo.platformplayer.views.adapters.viewholders.AlbumTileViewHolder
@@ -41,6 +45,9 @@ import com.futo.platformplayer.views.adapters.viewholders.ArtistTileViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.FileViewHolder
 import com.futo.platformplayer.views.adapters.viewholders.LocalVideoTileViewHolder
 import com.futo.platformplayer.views.buttons.BigButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
 
 
 class LibraryFragment : MainFragment() {
@@ -146,11 +153,12 @@ class LibraryFragment : MainFragment() {
         var sectionAlbums: LibrarySection;
         var sectionVideos: LibrarySection;
         var sectionFiles: LibrarySection;
+        var noContent: NoResultsView;
         //var buttonFiles: BigButton;
 
         val recycler: RecyclerView;
 
-        val adapterFiles: AnyInsertedAdapterView<FileEntry, FileViewHolder>;
+        var adapterFiles: AnyInsertedAdapterView<FileEntry, FileViewHolder>? = null;
 
         //var metaInfo: TextView;
 
@@ -186,6 +194,9 @@ class LibraryFragment : MainFragment() {
             //buttonFiles = findViewById<BigButton>(R.id.button_files);
             //metaInfo = findViewById(R.id.meta_info);
 
+            noContent = NoResultsView(context, "No directories", "No directories have been added.\nAdd them using the (+) icon.", -1, listOf());
+            noContent.isVisible = false;
+
             this.allowMusic = allowMusic ?: false;
             this.allowVideo = allowVideo ?: false;
 
@@ -195,14 +206,6 @@ class LibraryFragment : MainFragment() {
                 else
                     fragment.requestPermissionMusic();
             });
-            val adapterArtists = sectionArtists.getAnyAdapter<Artist, ArtistTileViewHolder>({
-                it.onClick.subscribe {
-                    if(it != null)
-                        fragment.navigate<LibraryArtistFragment>(it);
-                }
-            });
-            val artists = StateLibrary.instance.getArtists(ArtistOrdering.TrackCount);
-            adapterArtists.setData(artists);
 
             sectionAlbums.setSection("Albums", {
                 if(this.allowMusic)
@@ -210,14 +213,6 @@ class LibraryFragment : MainFragment() {
                 else
                     fragment.requestPermissionMusic();
             });
-            val adapterAlbums = sectionAlbums.getAnyAdapter<Album, AlbumTileViewHolder>({
-                it.onClick.subscribe {
-                    if(it != null)
-                        fragment.navigate<LibraryAlbumFragment>(it);
-                }
-            });
-            val albums = StateLibrary.instance.getAlbums();
-            adapterAlbums.setData(albums);
 
 
             sectionVideos.setSection("Videos", {
@@ -226,21 +221,118 @@ class LibraryFragment : MainFragment() {
                 else
                     fragment.requestPermissionVideo();
             });
+
+            reloadLibraryUI();
+
+
+            /*
+            buttonFiles.onClick.subscribe {
+                fragment.navigate<LibraryFilesFragment>()
+            } */
+            //buttonFiles.setButtonEnabled(false);
+            setMusicPermissions(allowMusic ?: false);
+            setVideoPermissions(allowVideo ?: false);
+        }
+
+        fun reloadFiles() {
+            val files = StateLibrary.instance.getFileDirectories();
+            adapterFiles?.setData(files);
+            if(files.size == 0) {
+                noContent.isVisible = true;
+            }
+            else
+                noContent.isVisible = false;
+        }
+
+        fun reloadLibraryUI() {
+
+            val adapterAlbums = sectionAlbums.getAnyAdapter<Album, AlbumTileViewHolder>({
+                it.onClick.subscribe {
+                    if(it != null)
+                        fragment.navigate<LibraryAlbumFragment>(it);
+                }
+            });
+            val adapterArtists = sectionArtists.getAnyAdapter<Artist, ArtistTileViewHolder>({
+                it.onClick.subscribe {
+                    if(it != null)
+                        fragment.navigate<LibraryArtistFragment>(it);
+                }
+            });
             val adapterVideos = sectionVideos.getAnyAdapter<IPlatformVideo, LocalVideoTileViewHolder>({
                 it.onClick.subscribe {
                     if(it != null)
                         fragment.navigate<VideoDetailFragment>(it);
                 }
             });
-            val videos = StateLibrary.instance.getRecentVideos(null, 20);
-            adapterVideos.setData(videos);
+
+            if(this.allowMusic) {
+                val artists = StateLibrary.instance.getArtists(ArtistOrdering.TrackCount);
+                adapterArtists.setData(artists);
+                if (artists.size == 0)
+                    sectionArtists.setEmpty(
+                        "No artists",
+                        "No artists were found on your device",
+                        -1
+                    );
+                else
+                    sectionArtists.clearEmpty();
+            }
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                sectionAlbums.isVisible = false;
+            }
+            else {
+                sectionArtists.setEmpty(
+                    "No Music Permissions",
+                    "You have not granted music access permissions to Grayjay",
+                    -1
+                );
+            }
+
+            if(this.allowMusic) {
+                val albums = StateLibrary.instance.getAlbums();
+                adapterAlbums.setData(albums);
+                if (albums.size == 0)
+                    sectionAlbums.setEmpty("No albums", "No albums were found on your device", -1);
+                else
+                    sectionAlbums.clearEmpty();
+            }
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                sectionArtists.isVisible = false;
+            }
+            else {
+                sectionAlbums.setEmpty(
+                    "No Music Permissions",
+                    "You have not granted music access permissions to Grayjay",
+                    -1
+                );
+            }
+
+            if(this.allowVideo) {
+                val videos = StateLibrary.instance.getRecentVideos(null, 20);
+                adapterVideos.setData(videos);
+                if (videos.size == 0)
+                    sectionVideos.setEmpty("No videos", "No videos were found on your device", -1);
+                else
+                    sectionVideos.clearEmpty();
+            }
+            else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                sectionVideos.isVisible = false;
+            }
+            else {
+                sectionVideos.setEmpty(
+                    "No Video Permissions",
+                    "You have not granted video access permissions to Grayjay",
+                    -1
+                );
+            }
 
             adapterFiles = recycler.asAnyWithViews<FileEntry, FileViewHolder>(
                 arrayListOf(
                     sectionArtists,
                     sectionAlbums,
                     sectionVideos,
-                    sectionFiles
+                    sectionFiles,
+                    noContent
                 ),
                 arrayListOf(View(context).apply { this.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 20.dp(resources)) }),
                 RecyclerView.VERTICAL, false, {
@@ -257,22 +349,7 @@ class LibraryFragment : MainFragment() {
                 }
             );
             reloadFiles();
-
-
-            /*
-            buttonFiles.onClick.subscribe {
-                fragment.navigate<LibraryFilesFragment>()
-            } */
-            //buttonFiles.setButtonEnabled(false);
-            setMusicPermissions(allowMusic ?: false);
-            setVideoPermissions(allowVideo ?: false);
         }
-
-        fun reloadFiles() {
-            val files = StateLibrary.instance.getFileDirectories();
-            adapterFiles.setData(files);
-        }
-
 
         fun setMusicPermissions(access: Boolean) {
             allowMusic = access;
@@ -283,6 +360,10 @@ class LibraryFragment : MainFragment() {
             //    if(!allowMusic) "You did not give access to local music, so these options are disabled" else null,
             //    if(!allowVideo) "You did not give access to local videos, so these options are disabled" else null
             //).filterNotNull().joinToString("\n");
+
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                reloadLibraryUI();
+            }
         }
         fun setVideoPermissions(access: Boolean) {
             allowVideo = access;
@@ -291,10 +372,22 @@ class LibraryFragment : MainFragment() {
             //    if(!allowMusic) "You did not give access to local music, so these options are disabled" else null,
             //    if(!allowVideo) "You did not give access to local videos, so these options are disabled" else null
             //).filterNotNull().joinToString("\n");
+            // }
+
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                reloadLibraryUI();
+            }
         }
 
         fun onShown() {
+            if(didShowAlpha)
+               return;
+            didShowAlpha = true;
             UIDialogs.appToast("Library is in alpha\nImprovements are coming to local media playback.")
         }
+        companion object {
+            var didShowAlpha: Boolean = false;
+        }
     }
+
 }

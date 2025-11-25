@@ -7,11 +7,15 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.Color
+import androidx.core.view.isVisible
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.dp
 import com.futo.platformplayer.views.LoaderView
 
 class PillButton : LinearLayout {
+    val root: LinearLayout;
     val icon: ImageView;
     val text: TextView;
     val loaderView: LoaderView;
@@ -23,6 +27,7 @@ class PillButton : LinearLayout {
         icon = findViewById(R.id.pill_icon);
         text = findViewById(R.id.pill_text);
         loaderView = findViewById(R.id.loader)
+        root = findViewById<LinearLayout>(R.id.root);
 
         val attrArr = context.obtainStyledAttributes(attrs, R.styleable.PillButton, 0, 0);
         val attrIconRef = attrArr.getResourceId(R.styleable.PillButton_pillIcon, -1);
@@ -34,6 +39,13 @@ class PillButton : LinearLayout {
         val attrText = attrArr.getText(R.styleable.PillButton_pillText) ?: "";
         text.text = attrText;
 
+        if(text.text.isNullOrBlank()) {
+            val dp6 = 6.dp(resources);
+            val dp7 = 7.dp(resources);
+            val dp12 = 12.dp(resources);
+            root.setPadding(dp7, dp6, dp7, dp7)
+        }
+
         findViewById<LinearLayout>(R.id.root).setOnClickListener {
             if (_isLoading) {
                 return@setOnClickListener
@@ -41,6 +53,10 @@ class PillButton : LinearLayout {
 
             onClick.emit();
         };
+    }
+
+    fun setTransparant() {
+        root.setBackgroundColor(0);
     }
 
     fun setLoading(loading: Boolean) {

@@ -68,6 +68,20 @@ class StateApp {
 
     val sessionId = UUID.randomUUID().toString();
 
+
+    var airplaneMode: Boolean = false
+        get(){
+            return field;
+        }
+        private set(value) {
+            field = value;
+        }
+    val airplaneModeChanged = Event1<Boolean>();
+    fun setAirMode(value: Boolean) {
+        airplaneMode = value;
+        airplaneModeChanged.emit(airplaneMode);
+    }
+
     var privateMode: Boolean = false
         get(){
             return field;

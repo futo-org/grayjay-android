@@ -3,9 +3,7 @@ package com.futo.platformplayer.views.adapters
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.view.GestureDetector
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -46,7 +44,7 @@ class CommentViewHolder : ViewHolder {
     private val _imageLikeIcon: ImageView;
     private val _textLikes: TextView;
     private val _imageDislikeIcon: ImageView;
-    private val _imageCopy: ImageView;
+    private val _buttonCopy: PillButton;
     private val _textDislikes: TextView;
     private val _buttonReplies: PillButton;
     private val _layoutRating: LinearLayout;
@@ -70,7 +68,7 @@ class CommentViewHolder : ViewHolder {
         _textMetadata = itemView.findViewById(R.id.text_metadata);
         _textBody = itemView.findViewById(R.id.text_body);
         _imageLikeIcon = itemView.findViewById(R.id.image_like_icon);
-        _imageCopy = itemView.findViewById(R.id.image_copy);
+        _buttonCopy = itemView.findViewById(R.id.image_copy);
         _textLikes = itemView.findViewById(R.id.text_likes);
         _imageDislikeIcon = itemView.findViewById(R.id.image_dislike_icon);
         _textDislikes = itemView.findViewById(R.id.text_dislikes);
@@ -105,7 +103,8 @@ class CommentViewHolder : ViewHolder {
             StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
-        _imageCopy.setOnLongClickListener {
+        _buttonCopy.setTransparant()
+        _buttonCopy.onClick.subscribe {
             val clipboard = viewGroup.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val text = comment?.message.orEmpty()
             val clip = ClipData.newPlainText("Comment", text)

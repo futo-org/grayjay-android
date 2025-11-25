@@ -25,14 +25,95 @@
         </FrameLayout>
 
         <!--More Menu-->
-        <LinearLayout
-            android:id="@+id/more_menu_buttons"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="bottom|end"
-            android:gravity="end">
-        </LinearLayout>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/container_more_options"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="3dp"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="0dp"
+                app:layout_constraintBottom_toTopOf="@id/more_menu_buttons"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="15dp"
+                    android:layout_marginRight="0dp"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:id="@+id/container_toggle_airplane"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/background_menu_toggle"
+                        android:layout_marginRight="3dp"
+                        android:layout_marginLeft="3dp"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/ic_flight" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/container_toggle_privacy"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/background_menu_toggle"
+                        android:layout_marginRight="3dp"
+                        android:layout_marginLeft="3dp"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/ic_disabled_visible" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/button_close"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginRight="0dp"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/ic_close" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/more_menu_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="bottom|end"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="5dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+
+                android:gravity="end">
+            </androidx.recyclerview.widget.RecyclerView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>
 
     <LinearLayout

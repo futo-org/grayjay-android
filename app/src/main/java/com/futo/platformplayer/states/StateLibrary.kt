@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
 import android.webkit.MimeTypeMap
@@ -36,6 +37,8 @@ import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 
 class StateLibrary {
@@ -192,6 +195,8 @@ class StateLibrary {
 
     private var _cacheBucketNames: List<Bucket>? = null;
     fun getVideoBucketNames(): List<Bucket> {
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+            return listOf();
         if(_cacheBucketNames != null)
             return _cacheBucketNames ?: listOf();
         try {
@@ -236,7 +241,6 @@ class StateLibrary {
         val PROJECTION_VIDEO = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.AUTHOR,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.MIME_TYPE,
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME
@@ -406,10 +410,10 @@ class StateLibrary {
         fun videoFromCursor(cursor: Cursor): IPlatformVideoDetails {
             val id = cursor.getString(0);
             val displayName = cursor.getString(1);
-            val author = cursor.getString(2);
-            val date = cursor.getLong(3);
-            val contentType = cursor.getString(4);
-            val category = cursor.getString(5);
+            val author = null;//cursor.getString(2);
+            val date = cursor.getLong(2);
+            val contentType = cursor.getString(3);
+            val category = cursor.getString(4);
 
             val idLong = id.toLongOrNull();
             val contentUrl = if(idLong != null )
@@ -486,12 +490,30 @@ class Artist {
         return AdhocPager({ listOf() }, getTracksPager(idLong));
     }
 
+    fun getThumbnailOrAlbum(): String? {
+        return thumbnail ?: tryGetArtistThumbnail(id.toLongOrNull());
+    }
+
     companion object {
         val ID_UNKNOWN = "UNKNOWN";
         val PROJECTION: Array<String> = arrayOf(Artists._ID,
             Artists.ARTIST,
             Artists.NUMBER_OF_TRACKS,
             Artists.NUMBER_OF_ALBUMS);
+
+        val thumbnailCache = ConcurrentHashMap<Long, String>();
+
+        fun tryGetArtistThumbnail(artistId: Long?): String? {
+            if(artistId == null)
+                return null;
+            if(thumbnailCache.containsKey(artistId))
+                return thumbnailCache.get(artistId);
+            else {
+                val album = Album.getArtistAlbumWithThumbnail(artistId);
+                thumbnailCache.put(artistId, album?.thumbnail ?: "");
+                return album?.thumbnail;
+            }
+        }
 
         fun fromCursor(cursor: Cursor): Artist {
             val id = cursor.getString(0);
@@ -538,8 +560,11 @@ class Artist {
                 cursor.moveToFirst();
                 val list = mutableListOf<Artist>()
                 while(!cursor.isAfterLast) {
-                    list.add(fromCursor(cursor));
+                    val artist = fromCursor(cursor);
                     cursor.moveToNext();
+                    if(artist.name == "<unknown>")
+                        continue; //TODO: Better way of detecting unknown?
+                    list.add(artist);
                 }
                 return@use list;
             }
@@ -681,6 +706,26 @@ class Album {
                     cursor.moveToNext();
                 }
                 return@use list;
+            }
+        }
+        fun getArtistAlbumWithThumbnail(artistId: Long): Album? {
+            val resolver =  StateApp.instance.contextOrNull?.contentResolver;
+            if(resolver == null) {
+                Logger.w(TAG, "Album contentResolver not found");
+                return null;
+            }
+            val cursor = resolver?.query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, PROJECTION, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf(artistId.toString()),
+                MediaStore.Audio.Albums.ALBUM + " ASC") ?: return null;
+            return cursor.use {
+                cursor.moveToFirst();
+                while(!cursor.isAfterLast) {
+                    val album = fromCursor(cursor);
+                    if(album.thumbnail != null)
+                        return album
+                    cursor.moveToNext();
+                }
+                return@use null;
             }
         }
     }
