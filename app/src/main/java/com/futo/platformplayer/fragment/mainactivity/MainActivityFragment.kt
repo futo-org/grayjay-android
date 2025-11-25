@@ -6,7 +6,7 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 
 open class MainActivityFragment : Fragment() {
-    protected val currentMain : MainFragment
+    protected val currentMain : MainFragment?
         get() {
         isValidMainActivity();
         return (activity as MainActivity).fragCurrent;

@@ -484,7 +484,8 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         recyclerData.resultsUnfiltered.addAll(toAdd);
         recyclerData.adapter.notifyDataSetChanged();
         recyclerData.loadedFeedStyle = feedStyle;
-        ensureEnoughContentVisible(filteredResults)
+        if(pager.hasMorePages())
+            ensureEnoughContentVisible(filteredResults)
     }
 
     private fun detachPagerEvents() {

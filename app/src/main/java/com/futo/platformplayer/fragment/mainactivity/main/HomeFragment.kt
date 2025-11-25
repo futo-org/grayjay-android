@@ -365,8 +365,10 @@ class HomeFragment : MainFragment() {
             finishRefreshLayoutLoader();
             setLoading(false);
             setPager(pager);
-            if(pager.getResults().isEmpty() && !pager.hasMorePages())
+            if(pager.getResults().isEmpty() && !pager.hasMorePages()) {
+                setLoading(false);
                 setEmptyPager(true);
+            }
         }
     }
 
