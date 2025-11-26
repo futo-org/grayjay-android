@@ -211,7 +211,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     //State
     private val _queue: LinkedList<Pair<MainFragment, Any?>> = LinkedList();
-    lateinit var fragCurrent: MainFragment private set;
+    var fragCurrent: MainFragment? = null; private set;
     private var _parameterCurrent: Any? = null;
 
     var fragBeforeOverlay: MainFragment? = null; private set;
@@ -566,7 +566,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         defaultTab.action(_fragBotBarMenu);
         StateSubscriptions.instance;
 
-        fragCurrent.onShown(null, false);
+        fragCurrent?.onShown(null, false);
 
         //Other stuff
         rootView.progress = 0f;
@@ -1153,7 +1153,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         if (_fragVideoDetail.state == VideoDetailFragment.State.MAXIMIZED && _fragVideoDetail.onBackPressed())
             return;
 
-        if (!fragCurrent.onBackPressed())
+        if (!(fragCurrent?.onBackPressed() ?: true))
             closeSegment();
     }
 
@@ -1231,27 +1231,27 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 return;
             }
 
-            fragCurrent.onHide();
+            fragCurrent?.onHide();
 
             if (segment.isMainView) {
                 var transaction = supportFragmentManager.beginTransaction();
                 if (segment.topBar != null) {
-                    if (segment.topBar != fragCurrent.topBar) {
+                    if (segment.topBar != fragCurrent?.topBar) {
                         transaction = transaction
                             .show(segment.topBar as Fragment)
                             .replace(R.id.fragment_top_bar, segment.topBar as Fragment);
-                        fragCurrent.topBar?.onHide();
+                        fragCurrent?.topBar?.onHide();
                     }
-                } else if (fragCurrent.topBar != null)
-                    transaction.hide(fragCurrent.topBar as Fragment);
+                } else if (fragCurrent?.topBar != null)
+                    transaction.hide(fragCurrent?.topBar as Fragment);
 
                 transaction = transaction.replace(R.id.fragment_main, segment);
 
                 if (segment.hasBottomBar) {
-                    if (!fragCurrent.hasBottomBar)
+                    if (!(fragCurrent?.hasBottomBar ?: false))
                         transaction = transaction.show(_fragBotBarMenu);
                 } else {
-                    if (fragCurrent.hasBottomBar)
+                    if (fragCurrent?.hasBottomBar ?: false)
                         transaction = transaction.hide(_fragBotBarMenu);
                 }
                 transaction.commitNow();
@@ -1264,10 +1264,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 }
             }
 
-            if (fragCurrent.isHistory && withHistory && _queue.lastOrNull() != fragCurrent)
-                _queue.add(Pair(fragCurrent, _parameterCurrent));
+            if (fragCurrent?.isHistory ?: false && withHistory && _queue.lastOrNull() != fragCurrent)
+                _queue.add(Pair(fragCurrent!!, _parameterCurrent));
 
-            if (segment.isOverlay && !fragCurrent.isOverlay && withHistory)// && fragCurrent.isHistory)
+            if (segment.isOverlay && !(fragCurrent?.isOverlay ?: false) && withHistory)// && fragCurrent.isHistory)
                 fragBeforeOverlay = fragCurrent;
 
             fragCurrent = segment;
@@ -1364,7 +1364,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private fun updateSegmentPaddings() {
         var paddingBottom = 0f;
-        if (fragCurrent.hasBottomBar)
+        if (fragCurrent?.hasBottomBar ?: false)
             paddingBottom += HEIGHT_MENU_DP;
 
         _fragContainerOverlay.setPadding(
