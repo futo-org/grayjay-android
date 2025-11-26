@@ -1,6 +1,9 @@
 package com.futo.platformplayer.downloads
 
 import android.content.Context
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaMuxer
 import android.util.Log
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
@@ -585,55 +588,44 @@ class VideoDownload {
         return cipher.doFinal(encryptedSegment)
     }
 
-    private fun remuxWithFfmpegInPlace(inputFile: File): Boolean {
-        val inputPath = inputFile.absolutePath
-        if (!inputFile.exists()) {
-            Logger.w(TAG, "remuxWithFfmpegInPlace: input does not exist: $inputPath")
-            return false
-        }
+    private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
+        suspendCancellableCoroutine { continuation ->
+            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
+            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
 
-        val parent = inputFile.parentFile
-        if (parent == null) {
-            Logger.w(TAG, "remuxWithFfmpegInPlace: input has no parent: $inputPath")
-            return false
-        }
-
-        val tmpFile = File(parent, inputFile.nameWithoutExtension + "_fixed." + inputFile.extension)
-        val cmd = buildString {
-            append("-y ")
-            append("-i \"").append(inputFile.absolutePath).append("\" ")
-            append("-c copy ")
-            append("-movflags +faststart ")
-            append("\"").append(tmpFile.absolutePath).append("\"")
-        }
-
-        Logger.i(TAG, "FFmpeg remux command: $cmd")
-
-        val session = FFmpegKit.execute(cmd)
-        val returnCode = session.returnCode
-
-        if (ReturnCode.isSuccess(returnCode)) {
-            val newLen = tmpFile.length()
-
-            if (!inputFile.delete()) {
-                Logger.w(TAG, "remuxWithFfmpegInPlace: failed to delete original: ${inputFile.absolutePath}")
+            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+            val statisticsCallback = StatisticsCallback { _ ->
+                //TODO: Show progress?
             }
 
-            if (!tmpFile.renameTo(inputFile)) {
-                Logger.w(TAG, "remuxWithFfmpegInPlace: failed to move tmp: ${tmpFile.absolutePath}")
-            } else {
-                Logger.i(TAG, "remuxWithFfmpegInPlace: success for $inputPath (size=$newLen bytes)")
-            }
+            val executorService = Executors.newSingleThreadExecutor()
+            val session = FFmpegKit.executeAsync(cmd,
+                { session ->
+                    if (ReturnCode.isSuccess(session.returnCode)) {
+                        fileList.delete()
+                        continuation.resumeWith(Result.success(Unit))
+                    } else {
+                        val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
+                            "Command cancelled"
+                        } else {
+                            "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
+                        }
+                        fileList.delete()
+                        continuation.resumeWithException(RuntimeException(errorMessage))
+                    }
+                },
+                { Logger.v(TAG, it.message) },
+                statisticsCallback,
+                executorService
+            )
 
-            return true
-        } else {
-            Logger.e(TAG, "FFmpeg remux failed for $inputPath. rc=$returnCode, logs=${session.allLogsAsString}")
-            tmpFile.delete()
-            return false
+            continuation.invokeOnCancellation {
+                session.cancel()
+            }
         }
     }
 
-    private fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, source: JSSource?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, source: JSSource?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if (targetFile.exists())
             targetFile.delete()
 
@@ -678,6 +670,7 @@ class VideoDownload {
                 .array()
         }
 
+        val segmentFiles = arrayListOf<File>()
         try {
             val playlistHeaders = mutableMapOf<String, String>()
             val modifiedPlaylistReq = modifier?.modifyRequest(hlsUrl, playlistHeaders)
@@ -713,123 +706,134 @@ class VideoDownload {
             val mediaSequence = variantPlaylist.mediaSequence ?: 0L
             val rangeOffsets = mutableMapOf<String, Long>()
 
-            targetFile.outputStream().use { outStr ->
-                if (!variantPlaylist.mapUrl.isNullOrEmpty()) {
-                    if (isCancelled) throw CancellationException("Cancelled")
+            if (!variantPlaylist.mapUrl.isNullOrEmpty()) {
+                if (isCancelled) throw CancellationException("Cancelled")
 
-                    Logger.i(TAG, "Downloading HLS initialization map")
+                Logger.i(TAG, "Downloading HLS initialization map")
 
-                    var mapRangeStart: Long? = null
-                    var mapRangeLength: Long? = null
+                var mapRangeStart: Long? = null
+                var mapRangeLength: Long? = null
 
-                    if (variantPlaylist.mapBytesLength > 0) {
-                        mapRangeLength = variantPlaylist.mapBytesLength
+                if (variantPlaylist.mapBytesLength > 0) {
+                    mapRangeLength = variantPlaylist.mapBytesLength
 
-                        val mapUrl = variantPlaylist.mapUrl!!
-                        if (variantPlaylist.mapBytesStart >= 0) {
-                            mapRangeStart = variantPlaylist.mapBytesStart
-                            rangeOffsets[mapUrl] =
-                                variantPlaylist.mapBytesStart + variantPlaylist.mapBytesLength
-                        } else {
-                            val offset = rangeOffsets[mapUrl] ?: 0L
-                            mapRangeStart = offset
-                            rangeOffsets[mapUrl] = offset + variantPlaylist.mapBytesLength
-                        }
+                    val mapUrl = variantPlaylist.mapUrl
+                    if (variantPlaylist.mapBytesStart >= 0) {
+                        mapRangeStart = variantPlaylist.mapBytesStart
+                        rangeOffsets[mapUrl] =
+                            variantPlaylist.mapBytesStart + variantPlaylist.mapBytesLength
+                    } else {
+                        val offset = rangeOffsets[mapUrl] ?: 0L
+                        mapRangeStart = offset
+                        rangeOffsets[mapUrl] = offset + variantPlaylist.mapBytesLength
                     }
+                }
 
-                    var mapBytes = downloadBytes(variantPlaylist.mapUrl!!, mapRangeStart, mapRangeLength)
+                var mapBytes = downloadBytes(variantPlaylist.mapUrl!!, mapRangeStart, mapRangeLength)
 
-                    if (useDecryption) {
-                        val kb = keyBytes ?: throw IllegalStateException("Decryption key bytes are missing.")
-                        val iv = staticIvBytes
-                            ?: throw UnsupportedOperationException("Encrypted EXT-X-MAP without explicit IV is not supported.")
-                        mapBytes = decryptSegment(mapBytes, kb, iv)
-                    }
+                if (useDecryption) {
+                    val kb = keyBytes ?: throw IllegalStateException("Decryption key bytes are missing.")
+                    val iv = staticIvBytes
+                        ?: throw UnsupportedOperationException("Encrypted EXT-X-MAP without explicit IV is not supported.")
+                    mapBytes = decryptSegment(mapBytes, kb, iv)
+                }
 
-                    if (mapBytes.size.toLong() > Int.MAX_VALUE) {
-                        throw IllegalStateException("HLS MAP segment too large to handle.")
-                    }
+                if (mapBytes.size.toLong() > Int.MAX_VALUE) {
+                    throw IllegalStateException("HLS MAP segment too large to handle.")
+                }
 
+                val segmentFile = File(context.cacheDir, "segment-${UUID.randomUUID()}")
+                val outStr = segmentFile.outputStream()
+                try {
+                    segmentFiles.add(segmentFile)
                     outStr.write(mapBytes)
                     outStr.flush()
-                    downloadedTotalLength += mapBytes.size
+                } finally {
+                    outStr.close()
                 }
-
-                val totalSegments = variantPlaylist.segments.size
-                var mediaSegmentIndex = 0
-
-                var bytesSinceLastSpeedUpdate = 0L
-                var lastSpeedUpdateTime = System.currentTimeMillis()
-                var lastSpeed = 0L
-
-                variantPlaylist.segments.forEachIndexed { index, segment ->
-                    if (segment !is HLS.MediaSegment) return@forEachIndexed
-                    if (isCancelled) throw CancellationException("Cancelled")
-
-                    Logger.i(TAG, "Download '$name' segment $index sequential")
-
-                    var rangeStart: Long? = null
-                    var rangeLength: Long? = null
-
-                    if (segment.bytesLength > 0) {
-                        rangeLength = segment.bytesLength
-
-                        val urlKey = segment.uri
-                        if (segment.bytesStart >= 0) {
-                            rangeStart = segment.bytesStart
-                            rangeOffsets[urlKey] = segment.bytesStart + segment.bytesLength
-                        } else {
-                            val offset = rangeOffsets[urlKey] ?: 0L
-                            rangeStart = offset
-                            rangeOffsets[urlKey] = offset + segment.bytesLength
-                        }
-                    }
-
-                    var segmentBytes = downloadBytes(segment.uri, rangeStart, rangeLength)
-
-                    if (useDecryption) {
-                        val kb = keyBytes ?: throw IllegalStateException("Decryption key bytes are missing.")
-                        val ivBytes = if (staticIvBytes != null) {
-                            staticIvBytes!!
-                        } else {
-                            val sequenceNumber = mediaSequence + mediaSegmentIndex
-                            buildSequenceIv(sequenceNumber)
-                        }
-
-                        segmentBytes = decryptSegment(segmentBytes, kb, ivBytes)
-                    }
-
-                    val segmentLength = segmentBytes.size.toLong()
-                    if (segmentLength > Int.MAX_VALUE) {
-                        throw IllegalStateException("HLS media segment too large to handle.")
-                    }
-
-                    val avgLen = if (index == 0) {
-                        segmentLength
-                    } else {
-                        if (index > 0) downloadedTotalLength / index else segmentLength
-                    }
-                    val expectedTotal = avgLen * (totalSegments - 1) + segmentLength
-
-                    outStr.write(segmentBytes)
-                    downloadedTotalLength += segmentLength
-
-                    bytesSinceLastSpeedUpdate += segmentLength
-                    val now = System.currentTimeMillis()
-                    val elapsed = now - lastSpeedUpdateTime
-                    if (elapsed >= 500 && bytesSinceLastSpeedUpdate > 0) {
-                        lastSpeed = (bytesSinceLastSpeedUpdate * 1000L / elapsed)
-                        bytesSinceLastSpeedUpdate = 0
-                        lastSpeedUpdateTime = now
-                    }
-
-                    onProgress(expectedTotal, downloadedTotalLength, lastSpeed)
-                    mediaSegmentIndex++
-                }
+                downloadedTotalLength += mapBytes.size
             }
 
-            remuxWithFfmpegInPlace(targetFile)
+            val totalSegments = variantPlaylist.segments.size
+            var mediaSegmentIndex = 0
 
+            var bytesSinceLastSpeedUpdate = 0L
+            var lastSpeedUpdateTime = System.currentTimeMillis()
+            var lastSpeed = 0L
+
+            variantPlaylist.segments.forEachIndexed { index, segment ->
+                if (segment !is HLS.MediaSegment) return@forEachIndexed
+                if (isCancelled) throw CancellationException("Cancelled")
+
+                Logger.i(TAG, "Download '$name' segment $index sequential")
+
+                var rangeStart: Long? = null
+                var rangeLength: Long? = null
+
+                if (segment.bytesLength > 0) {
+                    rangeLength = segment.bytesLength
+
+                    val urlKey = segment.uri
+                    if (segment.bytesStart >= 0) {
+                        rangeStart = segment.bytesStart
+                        rangeOffsets[urlKey] = segment.bytesStart + segment.bytesLength
+                    } else {
+                        val offset = rangeOffsets[urlKey] ?: 0L
+                        rangeStart = offset
+                        rangeOffsets[urlKey] = offset + segment.bytesLength
+                    }
+                }
+
+                var segmentBytes = downloadBytes(segment.uri, rangeStart, rangeLength)
+
+                if (useDecryption) {
+                    val kb = keyBytes ?: throw IllegalStateException("Decryption key bytes are missing.")
+                    val ivBytes = if (staticIvBytes != null) {
+                        staticIvBytes
+                    } else {
+                        val sequenceNumber = mediaSequence + mediaSegmentIndex
+                        buildSequenceIv(sequenceNumber)
+                    }
+
+                    segmentBytes = decryptSegment(segmentBytes, kb, ivBytes)
+                }
+
+                val segmentLength = segmentBytes.size.toLong()
+                if (segmentLength > Int.MAX_VALUE) {
+                    throw IllegalStateException("HLS media segment too large to handle.")
+                }
+
+                val avgLen = if (index == 0) {
+                    segmentLength
+                } else {
+                    if (index > 0) downloadedTotalLength / index else segmentLength
+                }
+                val expectedTotal = avgLen * (totalSegments - 1) + segmentLength
+
+                val segmentFile = File(context.cacheDir, "segment-${UUID.randomUUID()}")
+                val outStr = segmentFile.outputStream()
+                try {
+                    segmentFiles.add(segmentFile)
+                    outStr.write(segmentBytes)
+                } finally {
+                    outStr.close()
+                }
+                downloadedTotalLength += segmentLength
+
+                bytesSinceLastSpeedUpdate += segmentLength
+                val now = System.currentTimeMillis()
+                val elapsed = now - lastSpeedUpdateTime
+                if (elapsed >= 500 && bytesSinceLastSpeedUpdate > 0) {
+                    lastSpeed = (bytesSinceLastSpeedUpdate * 1000L / elapsed)
+                    bytesSinceLastSpeedUpdate = 0
+                    lastSpeedUpdateTime = now
+                }
+
+                onProgress(expectedTotal, downloadedTotalLength, lastSpeed)
+                mediaSegmentIndex++
+            }
+
+            combineSegments(context, segmentFiles, targetFile)
             Logger.i(TAG, "Finished HLS Source for $name")
         } catch (ioex: IOException) {
             if (targetFile.exists())
@@ -842,6 +846,11 @@ class VideoDownload {
             if (targetFile.exists())
                 targetFile.delete()
             throw ex
+        }
+        finally {
+            for (segmentFile in segmentFiles) {
+                segmentFile.delete()
+            }
         }
 
         return downloadedTotalLength
