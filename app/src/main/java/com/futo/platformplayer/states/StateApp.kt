@@ -436,9 +436,9 @@ class StateApp {
             try {
                 val caFile = AppCaUpdater.ensureCaBundle(context)
                 Libcurl.setDefaultCAPath(caFile.absolutePath)
+                Logger.i(TAG, "Libcurl initialized")
             } catch (t: Throwable) {
-                val fallback = File(context.noBackupFilesDir, "curl-ca-bundle.pem")
-                if (fallback.exists()) Libcurl.setDefaultCAPath(fallback.absolutePath)
+                Logger.e(TAG, "Failed to initialize Libcurl", t);
             }
         }
 
