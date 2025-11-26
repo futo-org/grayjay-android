@@ -102,6 +102,8 @@ class MenuBottomBarFragment : MainActivityFragment() {
 
         private var currentButtonDefinitions: List<ButtonDefinition>? = null;
 
+        private var moreColumns = 3;
+
         constructor(fragment: MenuBottomBarFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
             _inflater = inflater;
@@ -170,6 +172,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     setMoreVisible(false);
                 }
             })
+            moreColumns = columns;
             val layoutManager = GridLayoutManager(context, columns, GridLayoutManager.VERTICAL, true);
             _layoutMoreButtons.layoutManager = layoutManager;
 
@@ -321,29 +324,37 @@ class MenuBottomBarFragment : MainActivityFragment() {
             _layoutMoreButtons.removeAllViews();
 
             var insertedButtons = 0;
+            //Force settings to be first
+            val settingsIndex = buttons.indexOfFirst { b -> b.id == 7 };
+            if (settingsIndex != -1) {
+                val button = buttons[settingsIndex]
+                buttons.removeAt(settingsIndex)
+                buttons.add(0, button)
+                //insertedButtons++;
+            }
             //Force buy to be on top for more buttons
             val buyIndex = buttons.indexOfFirst { b -> b.id == 98 };
             if (buyIndex != -1) {
                 val button = buttons[buyIndex]
                 buttons.removeAt(buyIndex)
-                buttons.add(0, button)
-                insertedButtons++;
+                buttons.add(button)
+                //insertedButtons++;
             }
             //Force faq to be second
             val faqIndex = buttons.indexOfFirst { b -> b.id == 97 };
             if (faqIndex != -1) {
                 val button = buttons[faqIndex]
                 buttons.removeAt(faqIndex)
-                buttons.add(if (insertedButtons == 1) 1 else 0, button)
-                insertedButtons++;
+                buttons.add(button)
+                //insertedButtons++;
             }
             //Force privacy to be third
             val privacyIndex = buttons.indexOfFirst { b -> b.id == 96 };
             if (privacyIndex != -1) {
                 val button = buttons[privacyIndex]
                 buttons.removeAt(privacyIndex)
-                buttons.add(if (insertedButtons == 2) 2 else (if(insertedButtons == 1) 1 else 0), button)
-                insertedButtons++;
+                buttons.add(button)
+                //insertedButtons++;
             }
 
             val newButtons = mutableListOf<MenuButtonItem>();
@@ -602,7 +613,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 if (c is Activity) {
                     c.overridePendingTransition(R.anim.slide_in_up, R.anim.slide_darken);
                 }*/
-            }),
+            }),/*
             ButtonDefinition(96, R.drawable.ic_disabled_visible, R.drawable.ic_disabled_visible, R.string.privacy_mode, canToggle = true, { false }, {
                 UIDialogs.showDialog(it.context ?: return@ButtonDefinition, R.drawable.ic_disabled_visible_purple, "Privacy Mode",
                     "All requests will be processed anonymously (any logins will be disabled except for the personalized home page), local playback and history tracking will also be disabled.\n\nTap the icon to disable.", null, 0,
@@ -612,7 +623,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     UIDialogs.Action("Enable", {
                         StateApp.instance.setPrivacyMode(true);
                     }, UIDialogs.ActionStyle.PRIMARY));
-            }),
+            }),*/
             ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = true, { false }, {
                 it.navigate<BrowserFragment>(Settings.URL_FAQ, withHistory = false);
             })
