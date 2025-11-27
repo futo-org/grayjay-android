@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -330,6 +331,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } catch (e: Throwable) {
                 Logger.e(TAG, "Unhandled exception in updateAvailableClients", e)
             }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
         }
 
         //Preload common files to memory
