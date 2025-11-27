@@ -124,11 +124,10 @@ class LibraryFilesFragment : MainFragment() {
             }
         }
         fun leaveDirectory() {
-            if(navStack.size > 1) {
-                navStack.removeLast();
-                openDirectory(navStack.last());
+            if (navStack.size > 1) {
+                navStack.removeAt(navStack.size - 1)
+                openDirectory(navStack.last())
             }
-            else {}
         }
         fun openDirectory(stack: FileStack, addToStack: Boolean = false) {
             if(addToStack)
