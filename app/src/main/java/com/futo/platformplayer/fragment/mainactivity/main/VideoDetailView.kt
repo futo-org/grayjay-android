@@ -721,14 +721,16 @@ class VideoDetailView : ConstraintLayout {
                 val activeDevice = StateCasting.instance.activeDevice;
                 if (activeDevice != null) {
                     handlePlayChanged(it);
-
-                    val v = video;
-                    if (!it && v != null && v.duration - activeDevice.time.toLong() < 2L) {
-                        Log.i(TAG, "Next video (loop?)")
-                        nextVideo();
-                    }
                 }
             };
+
+            StateCasting.instance.onActiveDeviceMediaItemEnd.subscribe(this) {
+                val activeDevice = StateCasting.instance.activeDevice;
+                if (activeDevice != null) {
+                    Log.i(TAG, "Next video (loop?)")
+                    nextVideo();
+                }
+            }
 
             StateCasting.instance.onActiveDeviceTimeChanged.subscribe(this) {
                 if (_isCasting) {
@@ -1271,6 +1273,7 @@ class VideoDetailView : ConstraintLayout {
         StateCasting.instance.onActiveDevicePlayChanged.remove(this);
         StateCasting.instance.onActiveDeviceTimeChanged.remove(this);
         StateCasting.instance.onActiveDeviceConnectionStateChanged.remove(this);
+        StateCasting.instance.onActiveDeviceMediaItemEnd.remove(this)
         StateApp.instance.preventPictureInPicture.remove(this);
         StatePlayer.instance.onQueueChanged.remove(this);
         StatePlayer.instance.onVideoChanging.remove(this);

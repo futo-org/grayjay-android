@@ -36,6 +36,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.awaitCancelConverted
 import com.futo.platformplayer.builders.DashBuilder
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.models.CastingDeviceInfo
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -78,6 +79,7 @@ abstract class StateCasting {
     val onActiveDeviceTimeChanged = Event1<Double>();
     val onActiveDeviceDurationChanged = Event1<Double>();
     val onActiveDeviceVolumeChanged = Event1<Double>();
+    val onActiveDeviceMediaItemEnd = Event0()
     var activeDevice: CastingDevice? = null;
     private var _videoExecutor: JSRequestExecutor? = null
     private var _audioExecutor: JSRequestExecutor? = null
@@ -141,6 +143,7 @@ abstract class StateCasting {
             device.onTimeChanged.clear();
             device.onVolumeChanged.clear();
             device.onDurationChanged.clear();
+            device.onMediaItemEnd.clear();
             ad.disconnect()
         }
 
@@ -155,6 +158,7 @@ abstract class StateCasting {
                 device.onTimeChanged.clear();
                 device.onVolumeChanged.clear();
                 device.onDurationChanged.clear();
+                device.onMediaItemEnd.clear();
                 activeDevice = null;
             }
 
@@ -218,6 +222,9 @@ abstract class StateCasting {
         device.onTimeChanged.subscribe {
             invokeInMainScopeIfRequired { onActiveDeviceTimeChanged.emit(it) };
         };
+        device.onMediaItemEnd.subscribe {
+            invokeInMainScopeIfRequired { onActiveDeviceMediaItemEnd.emit() }
+        }
 
         try {
             device.connect();
@@ -228,6 +235,7 @@ abstract class StateCasting {
             device.onTimeChanged.clear();
             device.onVolumeChanged.clear();
             device.onDurationChanged.clear();
+            device.onMediaItemEnd.clear();
             return;
         }
 
