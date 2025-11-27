@@ -11,7 +11,7 @@ class SearchHistoryStorage : FragmentedStorageFileJson() {
         if (!lastQueries.contains(text)) {
             lastQueries.add(0, text);
             if (lastQueries.size > 10)
-                lastQueries.removeLast();
+                lastQueries.removeAt(lastQueries.size - 1);
         }
         else {
             lastQueries.remove(text);

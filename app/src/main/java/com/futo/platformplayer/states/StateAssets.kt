@@ -21,7 +21,7 @@ class StateAssets {
                 if(part == "." || part == "..") {
                     if(parentAllowance <= 0)
                         throw IllegalStateException("Path [${path}] attempted to escape path..");
-                    parts1.removeLast();
+                    parts1.removeAt(parts1.size - 1);
                     toSkip++;
                 }
                 else
