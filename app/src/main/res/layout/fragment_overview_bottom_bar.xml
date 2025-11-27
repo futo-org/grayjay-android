@@ -109,6 +109,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
+                android:layoutDirection="rtl"
 
                 android:gravity="end">
             </androidx.recyclerview.widget.RecyclerView>

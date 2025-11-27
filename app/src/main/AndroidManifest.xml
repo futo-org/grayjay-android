@@ -61,6 +61,7 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
             android:exported="true"
             android:theme="@style/Theme.FutoVideo.NoActionBar"
+            android:windowSoftInputMode="adjustPan"
             android:launchMode="singleInstance"
             android:resizeableActivity="true"
             android:supportsPictureInPicture="true">
