@@ -29,6 +29,8 @@ import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.reflect.Field
@@ -269,10 +271,12 @@ class DeveloperEndpoints(private val context: Context) {
                 context.respondCode(403, "This plugin doesn't support auth");
                 return;
             }
-            LoginFragment.showLogin(config){
-                _testPluginVariables.clear();
-                _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, null, config), JSHttpClient(null, it, null, config));
-            };
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                LoginFragment.showLogin(config){
+                    _testPluginVariables.clear();
+                    _testPlugin = V8Plugin(StateApp.instance.context, config, null, JSHttpClient(null, null, null, config), JSHttpClient(null, it, null, config));
+                };
+            }
             /*
             LoginActivity.showLogin(StateApp.instance.context, config) {
                 _testPluginVariables.clear();
