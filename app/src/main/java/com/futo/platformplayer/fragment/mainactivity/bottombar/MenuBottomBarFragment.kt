@@ -602,7 +602,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigate<CommentsFragment>(withHistory = false) }),
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>(withHistory = false) }),
             ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>(withHistory = false) }),
-            ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { false }, {
+            ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { it.currentMain is SettingsFragment }, {
                 it.navigate<SettingsFragment>();
                 /*
                 val c = it.context ?: return@ButtonDefinition;
