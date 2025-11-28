@@ -372,13 +372,13 @@ class VideoDetailFragment() : MainFragment() {
                     }
                 }
 
-                if (isTransitioning && (progress > 0.95 || progress < 0.05)) {
+                if (isTransitioning && (progress > 0.90 || progress < 0.1)) {
                     isTransitioning = false;
                     onTransitioning.emit(isTransitioning);
 
                     if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
                 }
-                else if (!isTransitioning && (progress < 0.95 && progress > 0.05)) {
+                else if (!isTransitioning && (progress < 0.90 && progress > 0.1)) {
                     isTransitioning = true;
                     onTransitioning.emit(isTransitioning);
 
