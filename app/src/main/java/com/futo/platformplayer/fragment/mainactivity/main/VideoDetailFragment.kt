@@ -352,13 +352,19 @@ class VideoDetailFragment() : MainFragment() {
                 }
             };
         }
-        var lastTransitionProgress = -1f;
         _view!!.setTransitionListener(object : MotionLayout.TransitionListener {
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
                 _viewDetail?.stopAllGestures()
 
-                //Logger.i(TAG, "onTransitionChange: ${progress}")
-                lastTransitionProgress = progress;
+                if (!isTransitioning && (progress < 0.9 && progress > 0.1)) {
+                    isTransitioning = true;
+                    onTransitioning.emit(isTransitioning);
+
+                    if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
+                }
+            }
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                val progress = motionLayout?.progress ?: return;
 
                 if (state != State.MINIMIZED && progress < 0.1) {
                     state = State.MINIMIZED;
@@ -376,30 +382,11 @@ class VideoDetailFragment() : MainFragment() {
                     }
                 }
 
-                if (isTransitioning && (progress > 0.90 || progress < 0.1)) {
+                if (isTransitioning && (progress > 0.6 || progress < 0.4)) {
                     isTransitioning = false;
                     onTransitioning.emit(isTransitioning);
 
                     if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
-                }
-                else if (!isTransitioning && (progress < 0.90 && progress > 0.1)) {
-                    isTransitioning = true;
-                    onTransitioning.emit(isTransitioning);
-
-                    if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
-                }
-            }
-            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
-                val progress = motionLayout?.progress//lastTransitionProgress;
-                if(progress != null && progress >= 0) {
-                    Logger.i(TAG, "onTransitionCompleted: ${progress}")
-                    if(state != State.MINIMIZED && progress < 0.5) {
-                        state = State.MINIMIZED;
-                        isMinimizingFromFullScreen = false
-                        onMinimize.emit();
-                    }
-                    isTransitioning = false;
-                    onTransitioning.emit(false);
                 }
             }
             override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) { }
