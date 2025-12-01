@@ -558,8 +558,8 @@ class VideoDetailView : ConstraintLayout {
             _loaderGameVisible = b
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 onShouldEnterPictureInPictureChanged.emit()
+                updateResumeVisibilityFor(lastPositionMilliseconds)
             }
-            updateResumeVisibilityFor(lastPositionMilliseconds)
         }
         _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
         _cast.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
