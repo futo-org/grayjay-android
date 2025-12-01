@@ -554,7 +554,7 @@ class VideoDetailView : ConstraintLayout {
         _buttonMore = buttonMore;
         updateMoreButtons();
 
-        val handleLoaderGameVisibilityChanged = { b: Boolean ->
+        val handleLoaderGameVisibilityChanged: (Boolean) -> Unit = { b: Boolean ->
             _loaderGameVisible = b
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 onShouldEnterPictureInPictureChanged.emit()
