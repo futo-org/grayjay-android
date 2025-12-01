@@ -17,6 +17,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.withMaxSizePx
 
 class UpNextView : LinearLayout {
     private val _layoutContainer: LinearLayout;
@@ -161,7 +162,7 @@ class UpNextView : LinearLayout {
             _textChannelName.text = nextItem.author.name;
             Glide.with(_imageThumbnail)
                 .load(nextItem.thumbnails.getHQThumbnail())
-                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                .withMaxSizePx()
                 .placeholder(R.drawable.placeholder_video_thumbnail)
                 .into(_imageThumbnail);
             Glide.with(_imageChannelThumbnail)

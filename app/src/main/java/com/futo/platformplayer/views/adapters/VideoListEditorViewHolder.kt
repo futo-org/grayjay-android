@@ -24,6 +24,7 @@ import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.others.ProgressBar
 import com.futo.platformplayer.views.platform.PlatformIndicator
+import com.futo.platformplayer.withMaxSizePx
 
 class VideoListEditorViewHolder : ViewHolder {
     private val _root: ConstraintLayout;
@@ -90,7 +91,7 @@ class VideoListEditorViewHolder : ViewHolder {
     fun bind(v: IPlatformVideo, canEdit: Boolean) {
         Glide.with(_imageThumbnail)
             .load(v.thumbnails.getHQThumbnail())
-            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+            .withMaxSizePx()
             .placeholder(R.drawable.placeholder_video_thumbnail)
             .crossfade()
             .into(_imageThumbnail);

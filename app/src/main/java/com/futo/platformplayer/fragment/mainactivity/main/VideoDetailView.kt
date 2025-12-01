@@ -162,6 +162,7 @@ import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.videometa.UpNextView
+import com.futo.platformplayer.withMaxSizePx
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -2050,7 +2051,7 @@ class VideoDetailView : ConstraintLayout {
                 } else {
                     val thumbnail = video.thumbnails.getHQThumbnail();
                     if ((videoSource == null) && !thumbnail.isNullOrBlank()) // || _player.isAudioMode
-                        Glide.with(context).asBitmap().load(thumbnail).downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                        Glide.with(context).asBitmap().load(thumbnail).withMaxSizePx()
                             .into(object: CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                                     _player.setArtwork(BitmapDrawable(resources, resource));

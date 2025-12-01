@@ -29,6 +29,7 @@ import com.futo.platformplayer.toHumanDuration
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.lists.VideoListEditorView
+import com.futo.platformplayer.withMaxSizePx
 
 abstract class VideoListEditorView : LinearLayout {
     private var _videoListEditorView: VideoListEditorView;
@@ -212,7 +213,7 @@ abstract class VideoListEditorView : LinearLayout {
                 _imagePlaylistThumbnail.let {
                     Glide.with(it)
                         .load(video.thumbnails.getHQThumbnail())
-                        .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                        .withMaxSizePx()
                         .placeholder(R.drawable.placeholder_video_thumbnail)
                         .crossfade()
                         .into(it);

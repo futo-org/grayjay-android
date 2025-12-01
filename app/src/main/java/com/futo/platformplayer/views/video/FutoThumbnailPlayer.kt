@@ -26,6 +26,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.video.PlayerManager
+import com.futo.platformplayer.withMaxSizePx
 
 
 class FutoThumbnailPlayer : FutoVideoPlayerBase {
@@ -136,7 +137,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
             if (videoSource == null && audioSource != null) {
                 val thumbnail = video.thumbnails.getHQThumbnail();
                 if (!thumbnail.isNullOrBlank()) {
-                    Glide.with(videoView).asBitmap().load(thumbnail).downsample(DownsampleStrategy.AT_MOST).override(1080, 1080).into(_loadArtwork);
+                    Glide.with(videoView).asBitmap().load(thumbnail).withMaxSizePx().into(_loadArtwork);
                 } else {
                     Glide.with(videoView).clear(_loadArtwork);
                     setArtwork(null);

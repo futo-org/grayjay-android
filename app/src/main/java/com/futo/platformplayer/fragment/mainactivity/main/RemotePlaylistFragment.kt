@@ -364,7 +364,7 @@ class RemotePlaylistFragment : MainFragment() {
                 _imagePlaylistThumbnail.let {
                     Glide.with(it)
                         .load(video.thumbnails.getHQThumbnail())
-                        .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                        .withMaxSizePx()
                         .placeholder(R.drawable.placeholder_video_thumbnail)
                         .crossfade()
                         .into(it);

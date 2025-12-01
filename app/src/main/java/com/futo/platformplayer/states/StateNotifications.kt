@@ -23,6 +23,7 @@ import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNowDiffStringMinDay
+import com.futo.platformplayer.withMaxSizePx
 import java.time.OffsetDateTime
 
 class StateNotifications {
@@ -97,7 +98,7 @@ class StateNotifications {
         if(thumbnail != null)
             Glide.with(context).asBitmap()
                 .load(thumbnail)
-                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                .withMaxSizePx()
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         notifyNewContent(context, manager, notificationChannel, id, content, resource);

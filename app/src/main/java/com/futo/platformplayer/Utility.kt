@@ -43,6 +43,8 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import androidx.core.graphics.scale
+import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 
 private val _allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
 fun getRandomString(sizeOfRandomString: Int): String {
@@ -441,3 +443,16 @@ fun addressScore(addr: InetAddress): Int {
 }
 
 fun <T> Enumeration<T>.toList(): List<T> = Collections.list(this)
+
+fun <T> RequestBuilder<T>.withMaxSizePx(maxSizePx: Int = 1920, useCenterCrop: Boolean = false): RequestBuilder<T> {
+    var builder = this
+        .downsample(DownsampleStrategy.AT_MOST)
+        .override(maxSizePx, maxSizePx)
+    builder = if (useCenterCrop) {
+        builder.centerCrop()
+    } else {
+        builder.fitCenter()
+    }
+
+    return builder
+}

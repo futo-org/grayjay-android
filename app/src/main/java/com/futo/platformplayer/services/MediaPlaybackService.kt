@@ -39,6 +39,7 @@ import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.withMaxSizePx
 
 class MediaPlaybackService : Service() {
     private val TAG = "MediaPlaybackService";
@@ -225,7 +226,7 @@ class MediaPlaybackService : Service() {
             val tag = video;
             Glide.with(this).asBitmap()
                 .load(thumbnail)
-                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                .withMaxSizePx()
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap,transition: Transition<in Bitmap>?) {
                         if (tag != _notif_last_video) return

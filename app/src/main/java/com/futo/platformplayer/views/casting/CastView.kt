@@ -33,6 +33,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
+import com.futo.platformplayer.withMaxSizePx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -307,7 +308,7 @@ class CastView : ConstraintLayout {
         Glide.with(_thumbnail)
             .load(video.thumbnails.getHQThumbnail())
             .placeholder(R.drawable.placeholder_video_thumbnail)
-            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+            .withMaxSizePx()
             .into(_thumbnail);
         _textPosition.text = (position * 1000).formatDuration();
         _textDuration.text = (video.duration * 1000).formatDuration();

@@ -9,6 +9,7 @@ import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.PlaylistDownloaded
+import com.futo.platformplayer.withMaxSizePx
 
 class PlaylistDownloadItem(context: Context, playlistName: String, playlistThumbnail: String?, val obj: Any): LinearLayout(context) {
     init { inflate(context, R.layout.list_downloaded_playlist, this) }
@@ -20,7 +21,7 @@ class PlaylistDownloadItem(context: Context, playlistName: String, playlistThumb
         imageText.text = playlistName;
         Glide.with(imageView)
             .load(playlistThumbnail)
-            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+            .withMaxSizePx()
             .crossfade()
             .into(imageView);
     }

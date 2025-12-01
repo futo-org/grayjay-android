@@ -78,6 +78,7 @@ import com.futo.platformplayer.views.video.FutoShortPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_AUDIO_CONTAINERS
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_VIDEO_CONTAINERS
+import com.futo.platformplayer.withMaxSizePx
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -859,7 +860,7 @@ class ShortView : FrameLayout {
 
             val thumbnail = videoDetails.thumbnails.getHQThumbnail()
             if (videoSource == null && !thumbnail.isNullOrBlank()) Glide.with(context).asBitmap()
-                .load(thumbnail).downsample(DownsampleStrategy.AT_MOST).override(1080, 1080).into(object : CustomTarget<Bitmap>() {
+                .load(thumbnail).withMaxSizePx().into(object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         player.setArtwork(resource.toDrawable(resources))
                     }

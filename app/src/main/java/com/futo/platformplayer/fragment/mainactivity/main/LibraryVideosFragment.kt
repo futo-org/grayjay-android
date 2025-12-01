@@ -96,7 +96,6 @@ class LibraryVideosFragment : MainFragment() {
         fun onShown() {
             val initialAlbums = StateLibrary.instance.getAlbums();
             Logger.i(TAG, "Initial album count: " + initialAlbums.size);
-            val buckets = StateLibrary.instance.getVideoBucketNames();
             setPager(StateLibrary.instance.getVideos(fragment._toggleBuckets));
         }
 

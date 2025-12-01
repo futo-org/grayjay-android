@@ -12,6 +12,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.withMaxSizePx
 
 class PlaylistsViewHolder : ViewHolder {
     private val _root: ConstraintLayout;
@@ -45,7 +46,7 @@ class PlaylistsViewHolder : ViewHolder {
         if (p.videos.isNotEmpty()) {
             Glide.with(_imageThumbnail)
                 .load(p.videos[0].thumbnails.getMinimumThumbnail(380))
-                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
+                .withMaxSizePx()
                 .placeholder(R.drawable.placeholder_video_thumbnail)
                 .crossfade()
                 .into(_imageThumbnail);

@@ -61,8 +61,8 @@ class ActiveDownloadItem: LinearLayout {
         }
 
         Glide.with(_videoImage)
-            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
             .load(download.thumbnail)
+            .withMaxSizePx()
             .crossfade()
             .into(_videoImage);
 
