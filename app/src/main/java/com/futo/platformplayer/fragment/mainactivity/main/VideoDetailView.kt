@@ -42,6 +42,7 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.BuildConfig
@@ -2049,7 +2050,7 @@ class VideoDetailView : ConstraintLayout {
                 } else {
                     val thumbnail = video.thumbnails.getHQThumbnail();
                     if ((videoSource == null) && !thumbnail.isNullOrBlank()) // || _player.isAudioMode
-                        Glide.with(context).asBitmap().load(thumbnail)
+                        Glide.with(context).asBitmap().load(thumbnail).downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                             .into(object: CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                                     _player.setArtwork(BitmapDrawable(resources, resource));

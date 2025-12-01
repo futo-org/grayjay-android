@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -49,6 +50,7 @@ class LocalVideoTileViewHolder(val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHo
                 Glide.with(it)
                     .load(content.thumbnails.getHQThumbnail())
                     .placeholder(R.drawable.unknown_music)
+                    .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                     .into(it)
             else
                 Glide.with(it).load(R.drawable.unknown_music).into(it);

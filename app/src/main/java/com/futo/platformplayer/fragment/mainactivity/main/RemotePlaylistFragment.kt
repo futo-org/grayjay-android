@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.*
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
@@ -363,6 +364,7 @@ class RemotePlaylistFragment : MainFragment() {
                 _imagePlaylistThumbnail.let {
                     Glide.with(it)
                         .load(video.thumbnails.getHQThumbnail())
+                        .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                         .placeholder(R.drawable.placeholder_video_thumbnail)
                         .crossfade()
                         .into(it);

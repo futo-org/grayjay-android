@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.activities.MainActivity
@@ -96,6 +97,7 @@ class StateNotifications {
         if(thumbnail != null)
             Glide.with(context).asBitmap()
                 .load(thumbnail)
+                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         notifyNewContent(context, manager, notificationChannel, id, content, resource);

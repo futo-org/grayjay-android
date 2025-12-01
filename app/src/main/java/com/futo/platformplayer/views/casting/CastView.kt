@@ -18,6 +18,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.chapters.IChapter
@@ -306,6 +307,7 @@ class CastView : ConstraintLayout {
         Glide.with(_thumbnail)
             .load(video.thumbnails.getHQThumbnail())
             .placeholder(R.drawable.placeholder_video_thumbnail)
+            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
             .into(_thumbnail);
         _textPosition.text = (position * 1000).formatDuration();
         _textDuration.text = (video.duration * 1000).formatDuration();

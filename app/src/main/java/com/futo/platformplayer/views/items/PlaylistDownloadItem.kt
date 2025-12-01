@@ -5,6 +5,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.PlaylistDownloaded
@@ -19,6 +20,7 @@ class PlaylistDownloadItem(context: Context, playlistName: String, playlistThumb
         imageText.text = playlistName;
         Glide.with(imageView)
             .load(playlistThumbnail)
+            .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
             .crossfade()
             .into(imageView);
     }

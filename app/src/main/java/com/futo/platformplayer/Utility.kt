@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.icu.util.Output
 import android.os.Build
 import android.os.Looper
 import android.os.OperationCanceledException
@@ -44,6 +42,7 @@ import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import androidx.core.graphics.scale
 
 private val _allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ";
 fun getRandomString(sizeOfRandomString: Int): String {
@@ -113,23 +112,6 @@ fun DocumentFile.writeBytes(context: Context, byteArray: ByteArray) = context.co
     it.write(byteArray);
     it.flush();
 };
-
-fun loadBitmap(url: String): Bitmap {
-    try {
-        val client = ManagedHttpClient();
-        val response = client.get(url);
-        if (response.isOk && response.body != null) {
-            val bitmapStream = response.body.byteStream();
-            val bitmap = BitmapFactory.decodeStream(bitmapStream);
-            return bitmap;
-        } else {
-            throw Exception("Failed to find data at URL.");
-        }
-    } catch (e: Throwable) {
-        Logger.w("Utility", "Exception thrown while downloading bitmap.", e);
-        throw e;
-    }
-}
 
 fun TextView.setPlatformPlayerLinkMovementMethod(context: Context) {
     this.movementMethod = PlatformLinkMovementMethod(context);

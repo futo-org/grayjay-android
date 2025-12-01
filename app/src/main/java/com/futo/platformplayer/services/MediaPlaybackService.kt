@@ -26,6 +26,7 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
@@ -224,6 +225,7 @@ class MediaPlaybackService : Service() {
             val tag = video;
             Glide.with(this).asBitmap()
                 .load(thumbnail)
+                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap,transition: Transition<in Bitmap>?) {
                         if (tag != _notif_last_video) return

@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
@@ -160,6 +161,7 @@ class UpNextView : LinearLayout {
             _textChannelName.text = nextItem.author.name;
             Glide.with(_imageThumbnail)
                 .load(nextItem.thumbnails.getHQThumbnail())
+                .downsample(DownsampleStrategy.AT_MOST).override(1080, 1080)
                 .placeholder(R.drawable.placeholder_video_thumbnail)
                 .into(_imageThumbnail);
             Glide.with(_imageChannelThumbnail)

@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.futo.platformplayer.api.media.models.Thumbnails
 
@@ -14,7 +15,7 @@ class GlideHelper {
         fun ImageView.loadThumbnails(thumbnails: Thumbnails, isHQ: Boolean = true, continuation: ((RequestBuilder<Drawable>) -> Unit)? = null) {
             val url = if(isHQ) thumbnails.getHQThumbnail() ?: thumbnails.getLQThumbnail() else thumbnails.getLQThumbnail();
 
-            val req = Glide.with(this).load(url);
+            val req = Glide.with(this).load(url).downsample(DownsampleStrategy.AT_MOST).override(1080, 1080);
 
             if (thumbnails.hasMultiple() && false) { //TODO: Resolve issue where fallback triggered on second loads?
                 val fallbackUrl = if (isHQ) thumbnails.getLQThumbnail() else thumbnails.getHQThumbnail();
