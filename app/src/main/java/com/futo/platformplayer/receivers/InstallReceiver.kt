@@ -1,5 +1,6 @@
 package com.futo.platformplayer.receivers
 
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -26,14 +27,24 @@ class InstallReceiver : BroadcastReceiver() {
                 val activityIntent: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
                 } else {
+                    @Suppress("DEPRECATION")
                     intent.getParcelableExtra(Intent.EXTRA_INTENT)
                 }
 
                 if (activityIntent == null) {
                     Logger.w(TAG, "Received STATUS_PENDING_USER_ACTION and activity intent is null.")
+                    onReceiveResult.emit(context.getString(R.string.install_failed_device_installer_broken))
                     return;
                 }
-                context.startActivity(activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+
+                activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                try {
+                    context.startActivity(activityIntent)
+                } catch (e: ActivityNotFoundException) {
+                    Logger.e(TAG, "System installer cannot handle CONFIRM_INSTALL intent. ROM is broken; falling back / reporting error.", e)
+                    onReceiveResult.emit(context.getString(R.string.install_failed_device_installer_broken))
+                }
             }
             PackageInstaller.STATUS_SUCCESS -> onReceiveResult.emit(null);
             PackageInstaller.STATUS_FAILURE -> onReceiveResult.emit(context.getString(R.string.general_failure));
@@ -45,6 +56,7 @@ class InstallReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_FAILURE_STORAGE -> onReceiveResult.emit(context.getString(R.string.not_enough_storage));
             else -> {
                 val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+                Logger.w(TAG, "Received unknown install status $status, message=$msg")
                 onReceiveResult.emit(msg)
             }
         }

@@ -25,6 +25,7 @@
     <string name="subscriptions">Subscriptions</string>
     <string name="loading">Loading</string>
     <string name="retry">Retry</string>
+    <string name="install_failed_device_installer_broken">Failed to start system installer. Your device’s ROM is not compatible with automatic updates.</string>
     <string name="cancel">Cancel</string>
     <string name="failed_to_retrieve_data_are_you_connected">Failed to retrieve data, are you connected?</string>
     <string name="settings">Settings</string>
