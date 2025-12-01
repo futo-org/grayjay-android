@@ -3357,9 +3357,11 @@ class VideoDetailView : ConstraintLayout {
                         false
                     else {
                         isLoginStop = true;
+                        onMinimize.emit();
                         StatePlugins.instance.loginPlugin(context, id) {
                             fragment.lifecycleScope.launch(Dispatchers.Main) {
                                 fetchVideo();
+                                onMaximize.emit(false);
                             }
                         }
                     }

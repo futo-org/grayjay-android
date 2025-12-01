@@ -356,6 +356,16 @@ class VideoDetailFragment() : MainFragment() {
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
                 _viewDetail?.stopAllGestures()
 
+                if (!isTransitioning && (progress < 0.9 && progress > 0.1)) {
+                    isTransitioning = true;
+                    onTransitioning.emit(isTransitioning);
+
+                    if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
+                }
+            }
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                val progress = motionLayout?.progress ?: return;
+
                 if (state != State.MINIMIZED && progress < 0.1) {
                     state = State.MINIMIZED;
                     isMinimizingFromFullScreen = false
@@ -372,22 +382,16 @@ class VideoDetailFragment() : MainFragment() {
                     }
                 }
 
-                if (isTransitioning && (progress > 0.95 || progress < 0.05)) {
+                if (isTransitioning && (progress > 0.6 || progress < 0.4)) {
                     isTransitioning = false;
                     onTransitioning.emit(isTransitioning);
 
                     if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
                 }
-                else if (!isTransitioning && (progress < 0.95 && progress > 0.05)) {
-                    isTransitioning = true;
-                    onTransitioning.emit(isTransitioning);
-
-                    if(isInPictureInPicture) leavePictureInPictureMode(false); //Workaround to prevent getting stuck in p2p
-                }
             }
-            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) { }
             override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) { }
-            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) { }
+            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
+            }
         });
 
         _view?.let {

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -332,6 +333,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+
         //Preload common files to memory
         FragmentedStorage.get<SubscriptionStorage>();
         FragmentedStorage.get<Settings>();
@@ -418,12 +423,17 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             updateSegmentPaddings();
         };
         _fragVideoDetail.onTransitioning.subscribe {
-            if (it || _fragVideoDetail.state != VideoDetailFragment.State.MINIMIZED)
+            if (it || _fragVideoDetail.state != VideoDetailFragment.State.MINIMIZED) {
+                Logger.i(TAG, "onTransition Setting elevation higher");
                 _fragContainerOverlay.elevation =
                     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 15f, resources.displayMetrics);
-            else
+            }
+            else {
+                Logger.i(TAG, "onTransition Setting elevation lower");
                 _fragContainerOverlay.elevation =
                     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics);
+            }
+
         }
 
         _fragVideoDetail.onCloseEvent.subscribe {

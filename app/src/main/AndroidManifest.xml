@@ -29,6 +29,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FutoVideo"
         android:usesCleartextTraffic="true"
+        tools:replace="android:enableOnBackInvokedCallback"
+        android:enableOnBackInvokedCallback="false"
         tools:targetApi="31"
         android:largeHeap="true">
         <provider

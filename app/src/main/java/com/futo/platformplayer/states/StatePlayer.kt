@@ -1,17 +1,22 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.text.TextOutput
+import androidx.media3.exoplayer.text.TextRenderer
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
@@ -21,7 +26,9 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.services.MediaPlaybackService
 import com.futo.platformplayer.video.PlayerManager
+import com.google.common.collect.Iterables
 import kotlin.random.Random
+
 
 /***
  * Used to keep track of queue and other player related stuff
@@ -662,6 +669,30 @@ class StatePlayer {
     @OptIn(UnstableApi::class)
     private fun createExoPlayer(context : Context): ExoPlayer {
         return ExoPlayer.Builder(context)
+            .setRenderersFactory(
+                object : DefaultRenderersFactory(context) {
+                    override fun buildTextRenderers(
+                        context: Context,
+                        output: TextOutput,
+                        outputLooper: Looper,
+                        extensionRendererMode: Int,
+                        out: java.util.ArrayList<Renderer>
+                    ) {
+                        super.buildTextRenderers(
+                            context,
+                            output,
+                            outputLooper,
+                            extensionRendererMode,
+                            out
+                        )
+                        (Iterables.getLast<Renderer?>(out) as TextRenderer)
+                            .experimentalSetLegacyDecodingEnabled(true)
+                    }
+                })
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(context)
+                    .experimentalParseSubtitlesDuringExtraction(false)
+            )
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setAllocator(DefaultAllocator(true, BUFFER_SIZE))
