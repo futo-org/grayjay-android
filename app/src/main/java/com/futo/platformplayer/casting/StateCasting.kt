@@ -1280,10 +1280,14 @@ abstract class StateCasting {
         }
 
         if (audioSource != null && audioSource.hasRequestExecutor) {
+            val oldExecutor = _audioExecutor;
+            oldExecutor?.closeAsync();
             _audioExecutor = audioSource.getRequestExecutor()
         }
 
         if (videoSource != null && videoSource.hasRequestExecutor) {
+            val oldExecutor = _videoExecutor;
+            oldExecutor?.closeAsync();
             _videoExecutor = videoSource.getRequestExecutor()
         }
 

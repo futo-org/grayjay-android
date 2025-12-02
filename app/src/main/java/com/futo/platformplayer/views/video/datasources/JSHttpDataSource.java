@@ -111,6 +111,10 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          * @return This factory.
          */
         public Factory setRequestExecutor(@Nullable JSRequestExecutor requestExecutor) {
+            JSRequestExecutor oldExecutor = this.requestExecutor;
+            if(oldExecutor != null) {
+                oldExecutor.closeAsync();
+            }
             this.requestExecutor = requestExecutor;
             return this;
         }
@@ -123,6 +127,10 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
          * @return This factory.
          */
         public Factory setRequestExecutor2(@Nullable JSRequestExecutor requestExecutor) {
+            JSRequestExecutor oldExecutor = this.requestExecutor2;
+            if(oldExecutor != null) {
+                oldExecutor.closeAsync();
+            }
             this.requestExecutor2 = requestExecutor;
             return this;
         }
@@ -508,6 +516,10 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
     @Override
     public void close() throws HttpDataSourceException {
+        if(requestExecutor != null)
+            requestExecutor.closeAsync();
+        if(requestExecutor2 != null)
+            requestExecutor2.closeAsync();
         try {
             @Nullable InputStream inputStream = this.inputStream;
             if (inputStream != null) {

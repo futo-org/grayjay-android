@@ -17,17 +17,23 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.util.Base64
 
-class JSRequestExecutor {
+class JSRequestExecutor: AutoCloseable {
     private val _plugin: JSClient;
     private val _config: IV8PluginConfig;
     private var _executor: V8ValueObject;
     val urlPrefix: String?;
 
     private val hasCleanup: Boolean;
+
+    private var _cleanLock = Any();
+    private var _cleaned: Boolean = false;
 
     constructor(plugin: JSClient, executor: V8ValueObject) {
         this._plugin = plugin;
@@ -102,8 +108,12 @@ class JSRequestExecutor {
 
 
     open fun cleanup() {
-        if (!hasCleanup || _executor.isClosed)
-            return;
+        synchronized(_cleanLock) {
+            if (!hasCleanup || _executor.isClosed || _cleaned)
+                return;
+            _cleaned = true;
+        }
+        Logger.i("JSRequestExecutor", "JSRequestExecutor cleanup requested");
         _plugin.busy {
             if(_plugin is DevJSClient)
                 StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
@@ -125,9 +135,25 @@ class JSRequestExecutor {
         }
     }
 
-    protected fun finalize() {
+    override fun close() {
         cleanup();
     }
+
+    fun closeAsync() {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO){
+            try {
+                close();
+            }
+            catch(ex: Throwable) {
+                Logger.e("JSRequestExecutor", "Cleanup failed");
+            }
+        }
+    }
+
+    /*
+    protected fun finalize() {
+        cleanup();
+    }*/
 }
 
 //TODO: are these available..?

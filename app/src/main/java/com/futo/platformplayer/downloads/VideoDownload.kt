@@ -865,6 +865,7 @@ class VideoDownload {
         val sourceLength: Long?;
         val fileStream = FileOutputStream(targetFile);
 
+        var executor: JSRequestExecutor? = null;
         try{
             var manifest = source.manifest;
             if(source.hasGenerate)
@@ -881,7 +882,7 @@ class VideoDownload {
             if(foundCues.count() <= 0)
                 throw IllegalStateException("No Cues found in manifest (unsupported dash?)");
 
-            val executor = if(source is JSSource && source.hasRequestExecutor)
+            executor = if(source is JSSource && source.hasRequestExecutor)
                 source.getRequestExecutor();
             else
                 null;
@@ -940,6 +941,7 @@ class VideoDownload {
         }
         finally {
             fileStream.close();
+            executor?.closeAsync()
         }
         return sourceLength!!;
     }

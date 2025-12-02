@@ -154,6 +154,16 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 else {
                     StateApp.instance.setPrivacyMode(true);
                     UIDialogs.appToast("Privacy mode enabled");
+
+                    UIDialogs.showDialog(it.context ?: return@setOnClickListener, R.drawable.incognito, "Privacy Mode",
+                        "All requests will be processed anonymously (any logins will be disabled except for the personalized home page), local playback and history tracking will also be disabled.\n\nTap the icon to disable.", null, 0,
+                        UIDialogs.Action("Don't show again", {
+                            Settings.instance.other.showPrivacyModeDialog = false;
+                            Settings.instance.save();
+                        }, UIDialogs.ActionStyle.NONE),
+                        UIDialogs.Action("Understood", {
+
+                        }, UIDialogs.ActionStyle.PRIMARY));
                 }
             }
 
