@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.PlatformID
@@ -55,6 +56,7 @@ import com.futo.platformplayer.views.adapters.ChannelViewPagerAdapter
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
+import com.futo.platformplayer.withTimestamp
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
@@ -198,8 +200,12 @@ class ChannelFragment : MainFragment() {
             adapter.onContentClicked.subscribe { v, _ ->
                 when (v) {
                     is IPlatformVideo -> {
-                        StatePlayer.instance.clearQueue()
-                        fragment.navigate<VideoDetailFragment>(v).maximizeVideoDetail()
+                        //StatePlayer.instance.clearQueue()
+                        if (StatePlayer.instance.hasQueue) {
+                            StatePlayer.instance.insertToQueue(v, true);
+                        } else {
+                            fragment.navigate<VideoDetailFragment>(v).maximizeVideoDetail();
+                        }
                     }
 
                     is IPlatformPlaylist -> {
@@ -244,7 +250,7 @@ class ChannelFragment : MainFragment() {
             adapter.onContentUrlClicked.subscribe { url, contentType ->
                 when (contentType) {
                     ContentType.MEDIA -> {
-                        StatePlayer.instance.clearQueue()
+                        StatePlayer.instance.clearQueue();
                         fragment.navigate<VideoDetailFragment>(url).maximizeVideoDetail()
                     }
 

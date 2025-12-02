@@ -489,7 +489,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
         StatePlayer.instance.onQueueChanged.subscribe(this) {
             CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
-                setLoopVisible(!StatePlayer.instance.hasQueue)
+                //setLoopVisible(!StatePlayer.instance.hasQueue)
                 updateNextPrevious();
             }
         }
@@ -886,12 +886,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     }
     fun updateLoopVideoUI() {
         if(StatePlayer.instance.loopVideo) {
-            _control_loop.setImageResource(R.drawable.ic_loop_active);
-            _control_loop_fullscreen.setImageResource(R.drawable.ic_loop_active);
+            _control_loop.setImageResource(R.drawable.ic_repeat_one_active);
+            _control_loop_fullscreen.setImageResource(R.drawable.ic_repeat_one_active);
         }
         else {
-            _control_loop.setImageResource(R.drawable.ic_loop);
-            _control_loop_fullscreen.setImageResource(R.drawable.ic_loop);
+            _control_loop.setImageResource(R.drawable.ic_repeat_one);
+            _control_loop_fullscreen.setImageResource(R.drawable.ic_repeat_one);
         }
     }
 
