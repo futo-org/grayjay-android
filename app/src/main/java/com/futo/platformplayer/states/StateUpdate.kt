@@ -15,146 +15,6 @@ import java.io.InputStream
 import java.io.OutputStream
 
 class StateUpdate {
-    private var _backgroundUpdateFinished = false;
-    private var _gettingOrDownloadingLastApk = false;
-    private var _shouldBackgroundUpdate = false;
-    private val _lockObject = Object();
-
-    private fun getOrDownloadLastApkFile(filesDir: File): File? {
-        try {
-            Logger.i(TAG, "Started getting or downloading latest APK file.");
-
-            if (!_shouldBackgroundUpdate) {
-                Logger.i(TAG, "Update download cancelled 1.");
-                return null;
-            }
-
-            Logger.i(TAG, "Started background update download.");
-            val client = ManagedHttpClient();
-            val latestVersion = downloadVersionCode(client);
-            if (!_shouldBackgroundUpdate) {
-                Logger.i(TAG, "Update download cancelled 2.");
-                return null;
-            }
-
-            if (latestVersion != null) {
-                val currentVersion = BuildConfig.VERSION_CODE;
-                Logger.i(TAG, "Current version ${currentVersion} latest version ${latestVersion}.");
-
-                if (latestVersion <= currentVersion) {
-                    Logger.i(TAG, "Already up to date.");
-                    _backgroundUpdateFinished = true;
-                    return null;
-                }
-
-                val outputDirectory = File(filesDir, "autoupdate");
-                if (!outputDirectory.exists()) {
-                    outputDirectory.mkdirs();
-                }
-
-                if (!_shouldBackgroundUpdate) {
-                    Logger.i(TAG, "Update download cancelled 3.");
-                    return null;
-                }
-
-                val apkOutputFile = File(outputDirectory, "last_version.apk");
-                val versionOutputFile = File(outputDirectory, "last_version.txt");
-
-                var cachedVersionInvalid = false;
-                if (!versionOutputFile.exists() || !apkOutputFile.exists()) {
-                    Logger.i(TAG, "No downloaded version exists.");
-                    cachedVersionInvalid = true;
-                } else {
-                    try {
-                        val downloadedVersion = versionOutputFile.readText().toInt();
-                        Logger.i(TAG, "Downloaded version is $downloadedVersion.");
-                        if (downloadedVersion != latestVersion) {
-                            Logger.i(TAG, "Downloaded version is not newest version.");
-                            cachedVersionInvalid = true;
-                        }
-                    }
-                    catch(ex: Throwable) {
-                        Logger.w(TAG, "Deleted version file as it was inaccessible");
-                        versionOutputFile.delete();
-                        cachedVersionInvalid = true;
-                    }
-                }
-
-                if (!_shouldBackgroundUpdate) {
-                    Logger.i(TAG, "Update download cancelled 4.");
-                    return null;
-                }
-
-                if (cachedVersionInvalid) {
-                    Logger.i(TAG, "Downloading new APK to '${apkOutputFile.path}'...");
-                    downloadApkToFile(client, apkOutputFile) { !_shouldBackgroundUpdate };
-                    versionOutputFile.writeText(latestVersion.toString());
-
-                    Logger.i(TAG, "Downloaded APK to '${apkOutputFile.path}'.");
-                } else {
-                    Logger.i(TAG, "Latest APK is already downloaded in '${apkOutputFile.path}'...");
-                }
-
-                if (!_shouldBackgroundUpdate) {
-                    Logger.i(TAG, "Update download cancelled 5.");
-                    return null;
-                }
-
-                return apkOutputFile;
-            } else {
-                Logger.w(TAG, "Failed to retrieve version from version URL.");
-                return null;
-            }
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to download APK.", e);
-            return null;
-        } finally {
-            _gettingOrDownloadingLastApk = false;
-        }
-    }
-
-    fun setShouldBackgroundUpdate(shouldBackgroundUpdate: Boolean) {
-        synchronized (_lockObject) {
-            if (_backgroundUpdateFinished) {
-                _shouldBackgroundUpdate = false;
-                return;
-            }
-
-            _shouldBackgroundUpdate = shouldBackgroundUpdate;
-            if (shouldBackgroundUpdate && !_gettingOrDownloadingLastApk) {
-                Logger.i(TAG, "Auto Updating in Background");
-
-                _gettingOrDownloadingLastApk = true;
-                StateApp.withContext { context ->
-                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                        try {
-                            val file = getOrDownloadLastApkFile(context.filesDir);
-                            if (file == null) {
-                                Logger.i(TAG, "Failed to get or download update.");
-                                return@launch;
-                            }
-
-                            withContext(Dispatchers.Main) {
-                                try {
-                                    context.let { c ->
-                                        _backgroundUpdateFinished = true;
-                                        UIDialogs.showInstallDownloadedUpdateDialog(c, file);
-                                    };
-                                    Logger.i(TAG, "Showing install dialog for '${file.path}'.");
-                                } catch (e: Throwable) {
-                                    context.let { c -> UIDialogs.toast(c, "Failed to show update dialog"); };
-                                    Logger.w(TAG, "Error occurred in update dialog.", e);
-                                }
-                            }
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to get last downloaded APK file.", e)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean, hideExceptionButtons: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val client = ManagedHttpClient();
@@ -193,25 +53,6 @@ class StateUpdate {
             withContext(Dispatchers.Main) {
                 UIDialogs.toast(context, "Failed to check for updates\n" + e.message);
             }
-        }
-    }
-
-    private fun downloadApkToFile(client: ManagedHttpClient, destinationFile: File, isCancelled: (() -> Boolean)? = null) {
-        var apkStream: InputStream? = null;
-        var outputStream: OutputStream? = null;
-
-        try {
-            val response = client.get(APK_URL);
-            if (response.isOk && response.body != null) {
-                apkStream = response.body.byteStream();
-                outputStream = destinationFile.outputStream();
-                apkStream.copyToOutputStream(outputStream, isCancelled);
-                apkStream.close();
-                outputStream.close();
-            }
-        } finally {
-            apkStream?.close();
-            outputStream?.close();
         }
     }
 
@@ -266,6 +107,22 @@ class StateUpdate {
             "https://releases.grayjay.app/app-$DESIRED_ABI-release.apk"
         }
         val CHANGELOG_BASE_URL = "https://releases.grayjay.app/changelogs";
+
+        fun getApkFile(context: Context, version: Int): File {
+            val dir = File(context.filesDir, "updates");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            return File(dir, "app-${DESIRED_ABI}-${version}.apk");
+        }
+
+        fun getPartialApkFile(context: Context, version: Int): File {
+            val dir = File(context.filesDir, "updates");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            return File(dir, "app-${DESIRED_ABI}-${version}.apk.part");
+        }
 
         fun finish() {
             _instance?.let {
