@@ -1,10 +1,12 @@
 package com.futo.platformplayer.states
 
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.Artists
 import android.webkit.MimeTypeMap
@@ -154,34 +156,101 @@ class StateLibrary {
     fun getArtist(id: Long): Artist? {
         return Artist.getArtist(id);
     }
+    fun getVideos(
+        buckets: List<String>? = null,
+        pageSize: Int = 20
+    ): IPager<IPlatformContent> {
+        val resolver = StateApp.instance.contextOrNull?.contentResolver ?: return EmptyPager()
+        val selection: String?
+        val selectionArgs: Array<String>?
 
-    fun getVideos(buckets: List<String>? = null): IPager<IPlatformContent> {
-        var query = if(buckets != null) "${MediaStore.Video.Media.BUCKET_DISPLAY_NAME} IN " + "(" + buckets.map { "'${it}'" }.joinToString(",") + ")" else null;
-        val cursor = StateApp.instance.contextOrNull?.contentResolver?.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, PROJECTION_VIDEO,
-            query,
-            null,
-            MediaStore.Video.Media.DATE_ADDED + " DESC") ?: return EmptyPager();
+        if (!buckets.isNullOrEmpty()) {
+            val placeholders = buckets.joinToString(",") { "?" }
+            selection = "${MediaStore.Video.Media.BUCKET_DISPLAY_NAME} IN ($placeholders)"
+            selectionArgs = buckets.toTypedArray()
+        } else {
+            selection = null
+            selectionArgs = null
+        }
 
-        //Ongoing usage of cursor..todo disposal
-        //return cursor.use {
-            cursor.moveToFirst();
-            val list = mutableListOf<IPlatformVideo>()
-            while(!cursor.isAfterLast && list.size < 10) {
-                list.add(videoFromCursor(cursor));
-                cursor.moveToNext();
+        val collectionUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        }
+
+        var nextPageIndex = 0
+        fun loadPage(pageIndex: Int): List<IPlatformContent> {
+            Logger.i(TAG, "loadPage $pageIndex")
+            val offset = pageIndex * pageSize
+
+            val queryArgs = Bundle().apply {
+                selection?.let {
+                    putString(ContentResolver.QUERY_ARG_SQL_SELECTION, it)
+                }
+                selectionArgs?.let {
+                    putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, it)
+                }
+
+                putStringArray(
+                    ContentResolver.QUERY_ARG_SORT_COLUMNS,
+                    arrayOf(
+                        MediaStore.Video.Media.DATE_ADDED,
+                        MediaStore.Video.Media._ID
+                    )
+                )
+                putInt(
+                    ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                    ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
+                )
+
+                putInt(ContentResolver.QUERY_ARG_LIMIT, pageSize)
+                putInt(ContentResolver.QUERY_ARG_OFFSET, offset)
             }
 
-            return AdhocPager<IPlatformContent>({
-                val list = mutableListOf<IPlatformContent>()
-                while(!cursor.isAfterLast && list.size < 10) {
-                    list.add(videoFromCursor(cursor));
-                    cursor.moveToNext();
+            val cursor = resolver.query(
+                collectionUri,
+                PROJECTION_VIDEO,
+                queryArgs,
+                null
+            )
+
+            if (cursor == null) {
+                Logger.i(TAG, "loadPage $pageIndex null, returning empty list")
+                return emptyList()
+            }
+
+            cursor.use { c ->
+                if (!c.moveToFirst()) {
+                    Logger.i(TAG, "loadPage $pageIndex moveToFirst failed, returning empty list")
+                    return emptyList()
                 }
-                Logger.i(TAG, "Videos nextPage: ${list.size}")
-                return@AdhocPager list;
-            }, list);
-        //}
+
+                val list = ArrayList<IPlatformContent>(pageSize)
+                do {
+                    list.add(videoFromCursor(c))
+                } while (c.moveToNext() && list.size < pageSize)
+
+                Logger.i(TAG, "loadPage $pageIndex found ${list.size} items")
+                return list
+            }
+        }
+
+        val firstPage = loadPage(0)
+        if (firstPage.isEmpty()) {
+            return EmptyPager()
+        }
+        nextPageIndex = 1
+
+        return AdhocPager<IPlatformContent>({
+            val page = loadPage(nextPageIndex)
+            nextPageIndex++
+
+            Logger.i(TAG, "loadPage nextPage: ${page.size}")
+            page
+        }, firstPage)
     }
+
     fun getRecentVideos(buckets: List<String>? = null, count: Int = 20): List<IPlatformVideo> {
         val videoPager = getVideos(buckets);
         val items = mutableListOf<IPlatformVideo>();
@@ -193,47 +262,79 @@ class StateLibrary {
         return items;
     }
 
-    private var _cacheBucketNames: List<Bucket>? = null;
-    fun getVideoBucketNames(): List<Bucket> {
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
-            return listOf();
-        if(_cacheBucketNames != null)
-            return _cacheBucketNames ?: listOf();
-        try {
-            val cur: Cursor = StateApp.instance.contextOrNull?.contentResolver?.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, arrayOf(
-                    MediaStore.Video.Media.BUCKET_ID,
-                    MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
-                ), null, null, null
-            ) ?: return listOf();
+    @Volatile
+    private var _cachedVideoBuckets: List<Bucket>? = null
+    private val _bucketCacheLock = Any()
 
-            return cur.use {
-                val buckets = mutableListOf<Bucket>();
-                val list = HashSet<Long>();
-                if (cur.moveToFirst()) {
-                    var id: Long;
-                    var bucket: String
-                    do {
-                        try {
-                            id = cur.getLong(0);
-                            bucket = cur.getStringOrNull(1) ?: continue;
-                            if (!list.contains(id)) {
-                                list.add(id);
-                                buckets.add(Bucket(id, bucket));
-                            }
-                        } catch (ex: Throwable) {
-                            Logger.e(TAG, "Failed to parse bucket due to ${ex.message}", ex);
-                        }
-                    } while (cur.moveToNext())
+    fun getVideoBucketNames(forceRefresh: Boolean = false): List<Bucket> {
+        if (!forceRefresh) {
+            _cachedVideoBuckets?.let { return it }
+        }
+
+        val resolver = StateApp.instance.contextOrNull?.contentResolver
+            ?: return emptyList()
+
+        val projection = arrayOf(
+            MediaStore.Video.VideoColumns.BUCKET_ID,
+            MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME
+        )
+
+        val sortOrder = "${MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME} COLLATE NOCASE ASC"
+        val loadedBuckets: List<Bucket> = try {
+            resolver.query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                sortOrder
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) {
+                    return@use emptyList<Bucket>()
                 }
-                _cacheBucketNames = buckets.toList()
-                return@use _cacheBucketNames ?: listOf();
+
+                val idxId = cursor.getColumnIndexOrThrow(MediaStore.Video.VideoColumns.BUCKET_ID)
+                val idxName = cursor.getColumnIndexOrThrow(MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME)
+                val seenIds = HashSet<Long>()
+                val buckets = ArrayList<Bucket>()
+
+                do {
+                    try {
+                        val id = cursor.getLong(idxId)
+                        if (!seenIds.add(id)) {
+                            continue
+                        }
+
+                        val name = cursor.getStringOrNull(idxName) ?: continue
+                        buckets.add(Bucket(id, name))
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "Failed to parse video bucket row: ${e.message}", e)
+                    }
+                } while (cursor.moveToNext())
+
+                buckets
+            } ?: emptyList()
+        } catch (e: Exception) {
+            Logger.e(TAG, "Buckets loading failed, returning empty: ${e.message}", e)
+            emptyList()
+        }
+
+        if (loadedBuckets.isEmpty()) {
+            if (!forceRefresh) {
+                _cachedVideoBuckets?.let { return it }
             }
+            return emptyList()
         }
-        catch(ex: Throwable) {
-            Logger.e(TAG, "Buckets loading failed, returning empty");
-            return listOf();
+
+        synchronized(_bucketCacheLock) {
+            if (!forceRefresh) {
+                _cachedVideoBuckets?.let { return it }
+            }
+            _cachedVideoBuckets = loadedBuckets
+            return loadedBuckets
         }
+    }
+    fun invalidateVideoBucketNamesCache() {
+        _cachedVideoBuckets = null
     }
 
 

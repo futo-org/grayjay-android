@@ -7,10 +7,12 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.withMaxSizePx
 
 class PlaylistsViewHolder : ViewHolder {
     private val _root: ConstraintLayout;
@@ -44,6 +46,7 @@ class PlaylistsViewHolder : ViewHolder {
         if (p.videos.isNotEmpty()) {
             Glide.with(_imageThumbnail)
                 .load(p.videos[0].thumbnails.getMinimumThumbnail(380))
+                .withMaxSizePx()
                 .placeholder(R.drawable.placeholder_video_thumbnail)
                 .crossfade()
                 .into(_imageThumbnail);

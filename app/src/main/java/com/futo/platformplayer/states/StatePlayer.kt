@@ -247,16 +247,28 @@ class StatePlayer {
     }
 
     private fun createShuffledQueue() {
-        val currentItem = getCurrentQueueItem();
-        if (_queuePosition == -1 || currentItem == null) {
-            _queueShuffled = _queue.shuffled().toMutableList()
-            return;
+        if (_queue.isEmpty()) {
+            _queueShuffled = mutableListOf()
+            return
         }
 
-        val nextItems = _queue.subList(Math.min(_queuePosition + 1, _queue.size - 1), _queue.size).shuffled();
-        val previousItems = _queue.subList(0, _queuePosition).shuffled();
-        _queueShuffled = (previousItems + currentItem + nextItems).toMutableList();
+        val currentItem = getCurrentQueueItem()
+        if (currentItem == null || _queuePosition !in _queue.indices) {
+            _queueShuffled = _queue.shuffled().toMutableList()
+            return
+        }
+
+        val previousItems = _queue
+            .take(_queuePosition)
+            .shuffled()
+
+        val nextItems = _queue
+            .drop(_queuePosition + 1)
+            .shuffled()
+
+        _queueShuffled = (previousItems + currentItem + nextItems).toMutableList()
     }
+
 
     private fun addToShuffledQueue(video: IPlatformVideo) {
         val isLastVideo = _queuePosition + 1 >= _queue.size;

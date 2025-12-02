@@ -26,6 +26,7 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
@@ -38,6 +39,7 @@ import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.withMaxSizePx
 
 class MediaPlaybackService : Service() {
     private val TAG = "MediaPlaybackService";
@@ -172,21 +174,26 @@ class MediaPlaybackService : Service() {
     }
 
     fun closeMediaSession() {
-        Logger.v(TAG, "closeMediaSession");
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        Logger.v(TAG, "closeMediaSession")
+        stopForeground(STOP_FOREGROUND_REMOVE)
 
         abandonAudioFocus()
 
-        val notifManager = _notificationManager;
-        Logger.i(TAG, "Cancelling playback notification (notifManager: ${notifManager != null})");
-        notifManager?.cancel(MEDIA_NOTIF_ID);
-        _notif_last_video = null;
-        _notif_last_bitmap = null;
-        _mediaSession = null;
+        val notifManager = _notificationManager
+        Logger.i(TAG, "Cancelling playback notification (notifManager: ${notifManager != null})")
+        notifManager?.cancel(MEDIA_NOTIF_ID)
 
-        if(_instance == this)
-            _instance = null;
-        this.stopSelf();
+        _notif_last_video = null
+        _notif_last_bitmap = null
+
+        _mediaSession?.isActive = false
+        _mediaSession?.release()
+        _mediaSession = null
+
+        if (_instance == this)
+            _instance = null
+
+        stopSelf()
     }
 
     fun updateMediaSession(videoUpdated: IPlatformVideo?) {
@@ -206,37 +213,37 @@ class MediaPlaybackService : Service() {
         if(_notificationChannel == null || _mediaSession == null)
             setupNotificationRequirements();
 
-        _mediaSession?.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
-                .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
-                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, lastBitmap)
-                .build());
+        updateMediaMetadata(video, lastBitmap)
 
         val thumbnail = video.thumbnails.getHQThumbnail();
 
         _notif_last_video = video;
 
         if(isUpdating)
-            notifyMediaSession(video, _notif_last_bitmap);
+            notifyMediaSession(video, _notif_last_bitmap?.takeIf { !it.isRecycled });
         else if(thumbnail != null) {
             notifyMediaSession(video, null);
             val tag = video;
             Glide.with(this).asBitmap()
                 .load(thumbnail)
+                .withMaxSizePx()
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap,transition: Transition<in Bitmap>?) {
-                        if(tag == _notif_last_video) {
-                            notifyMediaSession(video, resource)
-                            _mediaSession?.setMetadata(
-                                MediaMetadataCompat.Builder()
-                                    .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
-                                    .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
-                                    .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
-                                    .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, resource)
-                                    .build());
+                        if (tag != _notif_last_video) return
+                        if (resource.isRecycled) {
+                            notifyMediaSession(video, null)
+                            return
                         }
+
+                        val albumArt = resource.copy(
+                            resource.config ?: Bitmap.Config.ARGB_8888,
+                            false
+                        )
+
+                        _notif_last_bitmap = albumArt
+
+                        notifyMediaSession(video, albumArt)
+                        updateMediaMetadata(video, albumArt)
                     }
                     override fun onLoadCleared(placeholder: Drawable?) {
                         if(tag == _notif_last_video)
@@ -246,6 +253,19 @@ class MediaPlaybackService : Service() {
         }
         else
             notifyMediaSession(video, null);
+    }
+    private fun updateMediaMetadata(video: IPlatformVideo, bitmap: Bitmap?) {
+        val builder = MediaMetadataCompat.Builder()
+            .putString(MediaMetadata.METADATA_KEY_ARTIST, video.author.name)
+            .putString(MediaMetadata.METADATA_KEY_TITLE, video.name)
+            .putLong(MediaMetadata.METADATA_KEY_DURATION, video.duration * 1000)
+
+        val safeBitmap = bitmap?.takeIf { !it.isRecycled }
+        if (safeBitmap != null) {
+            builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, safeBitmap)
+        }
+
+        _mediaSession?.setMetadata(builder.build())
     }
     private fun generateMediaAction(icon: Int, title: String, intent: PendingIntent) : NotificationCompat.Action {
         return NotificationCompat.Action.Builder(icon, title, intent).build();

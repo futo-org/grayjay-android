@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
@@ -28,6 +29,7 @@ import com.futo.platformplayer.toHumanDuration
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.lists.VideoListEditorView
+import com.futo.platformplayer.withMaxSizePx
 
 abstract class VideoListEditorView : LinearLayout {
     private var _videoListEditorView: VideoListEditorView;
@@ -211,6 +213,7 @@ abstract class VideoListEditorView : LinearLayout {
                 _imagePlaylistThumbnail.let {
                     Glide.with(it)
                         .load(video.thumbnails.getHQThumbnail())
+                        .withMaxSizePx()
                         .placeholder(R.drawable.placeholder_video_thumbnail)
                         .crossfade()
                         .into(it);

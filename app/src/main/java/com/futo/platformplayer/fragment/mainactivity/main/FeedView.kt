@@ -55,7 +55,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     protected val _toolbarContentView: LinearLayout;
     protected val _bottomContentView: LinearLayout;
 
-    private var _loading: Boolean = true;
+    private var _loading: Boolean = false;
 
     private val _pagerLock = Object();
     private var _cache: ItemCache<TResult>? = null;
@@ -180,10 +180,9 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
 
                 val visibleItemCount = _recyclerResults.childCount;
                 val firstVisibleItem = recyclerData.layoutManager.findFirstVisibleItemPosition()
-                //Logger.i(TAG, "onScrolled loadNextPage visibleItemCount=$visibleItemCount firstVisibleItem=$visibleItemCount")
+                //Logger.i(TAG, "onScrolled loadNextPage(): firstVisibleItem=$firstVisibleItem visibleItemCount=$visibleItemCount visibleThreshold=$visibleThreshold recyclerData.results.size=${recyclerData.results.size}")
 
-                if (!_loading && firstVisibleItem + visibleItemCount + visibleThreshold >= recyclerData.results.size && firstVisibleItem > 0) {
-                    //Logger.i(TAG, "onScrolled loadNextPage(): firstVisibleItem=$firstVisibleItem visibleItemCount=$visibleItemCount visibleThreshold=$visibleThreshold recyclerData.results.size=${recyclerData.results.size}")
+                if (!_loading && firstVisibleItem + visibleItemCount + visibleThreshold >= recyclerData.results.size) {
                     loadNextPage();
                 }
             }
@@ -197,57 +196,44 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
 
     private fun ensureEnoughContentVisible(filteredResults: List<TConverted>) {
-        val canScroll = if (recyclerData.results.isEmpty()) false else {
-            val height = resources.displayMetrics.heightPixels;
+        _recyclerResults.post {
+            val canScroll = _recyclerResults.canScrollVertically(1)
+            Logger.i(
+                TAG,
+                "ensureEnoughContentVisible loadNextPage canScroll=$canScroll _automaticNextPageCounter=$_automaticNextPageCounter"
+            )
+            if (!canScroll || filteredResults.isEmpty()) {
+                _automaticNextPageCounter++
+                if (_automaticNextPageCounter < _automaticBackoff.size) {
+                    if (_automaticNextPageCounter > 0) {
+                        val automaticNextPageCounterSaved = _automaticNextPageCounter;
+                        fragment.lifecycleScope.launch(Dispatchers.Default) {
+                            val backoff = _automaticBackoff[Math.min(
+                                _automaticBackoff.size - 1,
+                                _automaticNextPageCounter
+                            )];
 
-            val layoutManager = recyclerData.layoutManager
-            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-            val firstVisibleItemView = if(firstVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(firstVisibleItemPosition) else null;
-            val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition();
-            val lastVisibleItemView = if(lastVisibleItemPosition != RecyclerView.NO_POSITION) layoutManager.findViewByPosition(lastVisibleItemPosition) else null;
-            val rows = if(recyclerData.layoutManager is GridLayoutManager) Math.max(1, recyclerData.results.size / recyclerData.layoutManager.spanCount) else 1;
-            val rowsHeight = (firstVisibleItemView?.height ?: 0) * rows;
-            if(lastVisibleItemView != null && lastVisibleItemPosition == (recyclerData.results.size - 1)) {
-                false;
-            }
-            else if (firstVisibleItemView != null && height != null && rowsHeight < height) {
-                false;
-            } else {
-                true;
-            }
-        }
-
-        Logger.i(TAG, "ensureEnoughContentVisible loadNextPage canScroll=$canScroll _automaticNextPageCounter=$_automaticNextPageCounter")
-        if (!canScroll || filteredResults.isEmpty()) {
-            _automaticNextPageCounter++
-            if(_automaticNextPageCounter < _automaticBackoff.size) {
-                if(_automaticNextPageCounter > 0) {
-                    val automaticNextPageCounterSaved = _automaticNextPageCounter;
-                    fragment.lifecycleScope.launch(Dispatchers.Default) {
-                        val backoff = _automaticBackoff[Math.min(_automaticBackoff.size - 1, _automaticNextPageCounter)];
-
-                        withContext(Dispatchers.Main) {
-                            setLoading(true);
-                        }
-                        delay(backoff.toLong());
-                        if(automaticNextPageCounterSaved == _automaticNextPageCounter) {
                             withContext(Dispatchers.Main) {
-                                loadNextPage();
+                                setLoading(true);
+                            }
+                            delay(backoff.toLong());
+                            if (automaticNextPageCounterSaved == _automaticNextPageCounter) {
+                                withContext(Dispatchers.Main) {
+                                    loadNextPage();
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    setLoading(false);
+                                }
                             }
                         }
-                        else {
-                            withContext(Dispatchers.Main) {
-                                setLoading(false);
-                            }
-                        }
-                    }
+                    } else
+                        loadNextPage();
                 }
-                else
-                    loadNextPage();
+            } else {
+                Logger.i(TAG, "ensureEnoughContentVisible automaticNextPageCounter reset");
+                _automaticNextPageCounter = 0;
             }
-        } else {
-            Logger.i(TAG, "ensureEnoughContentVisible automaticNextPageCounter reset");
-            _automaticNextPageCounter = 0;
         }
     }
     fun resetAutomaticNextPageCounter(){
@@ -484,6 +470,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         recyclerData.resultsUnfiltered.addAll(toAdd);
         recyclerData.adapter.notifyDataSetChanged();
         recyclerData.loadedFeedStyle = feedStyle;
+        setLoading(false)
         if(pager.hasMorePages())
             ensureEnoughContentVisible(filteredResults)
     }

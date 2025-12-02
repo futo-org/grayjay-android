@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
@@ -16,6 +17,7 @@ import com.futo.platformplayer.states.Artist
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.views.adapters.AnyAdapter
+import com.futo.platformplayer.withMaxSizePx
 import com.google.android.material.imageview.ShapeableImageView
 
 
@@ -49,6 +51,7 @@ class LocalVideoTileViewHolder(val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHo
                 Glide.with(it)
                     .load(content.thumbnails.getHQThumbnail())
                     .placeholder(R.drawable.unknown_music)
+                    .withMaxSizePx()
                     .into(it)
             else
                 Glide.with(it).load(R.drawable.unknown_music).into(it);

@@ -54,6 +54,7 @@ import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.views.TargetTapLoaderView
 import com.futo.platformplayer.views.behavior.GestureControlView
 import com.futo.platformplayer.views.others.ProgressBar
+import com.futo.platformplayer.withMaxSizePx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -928,11 +929,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     override fun switchToAudioMode(video: IPlatformVideoDetails?) {
         super.switchToAudioMode(video)
 
-        //This causes issues, and is in general confusing, needs improvements
-        /*
         val thumbnail = video?.thumbnails?.getHQThumbnail()
         if (!thumbnail.isNullOrBlank()) {
-            Glide.with(context).asBitmap().load(thumbnail)
+            Glide.with(context).asBitmap().load(thumbnail).withMaxSizePx()
                 .into(object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(
                         resource: Bitmap,
@@ -946,6 +945,5 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                     }
                 })
         }
-        */
     }
 }

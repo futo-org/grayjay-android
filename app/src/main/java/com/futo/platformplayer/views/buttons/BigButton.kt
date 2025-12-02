@@ -2,6 +2,7 @@ package com.futo.platformplayer.views.buttons
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Looper
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
@@ -98,46 +99,58 @@ open class BigButton : LinearLayout {
         return this;
     }
 
-    fun withIcon(resourceId: Int, rounded: Boolean = false): BigButton {
+    private fun applyIcon(resourceId: Int, rounded: Boolean) {
         if (resourceId != -1) {
-            _icon.visibility = View.VISIBLE;
-            _icon.setImageResource(resourceId);
-        } else
-            _icon.visibility = View.GONE;
-
-        if (rounded) {
-            val shapeAppearanceModel = ShapeAppearanceModel().toBuilder()
-                .setAllCornerSizes(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16.0f, context.resources.displayMetrics))
-                .build();
-
-            _icon.scaleType = ImageView.ScaleType.FIT_CENTER;
-            _icon.shapeAppearanceModel = shapeAppearanceModel;
+            _icon.visibility = View.VISIBLE
+            _icon.setImageResource(resourceId)
         } else {
-            _icon.scaleType = ImageView.ScaleType.CENTER_CROP;
-            _icon.shapeAppearanceModel = ShapeAppearanceModel();
+            _icon.visibility = View.GONE
         }
-
-        return this;
+        applyRounded(rounded)
     }
 
+    fun withIcon(resourceId: Int, rounded: Boolean = false): BigButton {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            applyIcon(resourceId, rounded)
+        } else {
+            post { applyIcon(resourceId, rounded) }
+        }
+        return this
+    }
 
     fun withIcon(bitmap: Bitmap, rounded: Boolean = false): BigButton {
-        _icon.visibility = View.VISIBLE;
-        _icon.setImageBitmap(bitmap);
-
-        if (rounded) {
-            val shapeAppearanceModel = ShapeAppearanceModel().toBuilder()
-                .setAllCornerSizes(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16.0f, context.resources.displayMetrics))
-                .build();
-
-            _icon.scaleType = ImageView.ScaleType.FIT_CENTER;
-            _icon.shapeAppearanceModel = shapeAppearanceModel;
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            applyIcon(bitmap, rounded)
         } else {
-            _icon.scaleType = ImageView.ScaleType.CENTER_CROP;
-            _icon.shapeAppearanceModel = ShapeAppearanceModel();
+            post { applyIcon(bitmap, rounded) }
         }
+        return this
+    }
 
-        return this;
+    private fun applyRounded(rounded: Boolean) {
+        if (rounded) {
+            val radiusPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                16.0f,
+                context.resources.displayMetrics
+            )
+            val shapeAppearanceModel = ShapeAppearanceModel()
+                .toBuilder()
+                .setAllCornerSizes(radiusPx)
+                .build()
+
+            _icon.scaleType = ImageView.ScaleType.FIT_CENTER
+            _icon.shapeAppearanceModel = shapeAppearanceModel
+        } else {
+            _icon.scaleType = ImageView.ScaleType.CENTER_CROP
+            _icon.shapeAppearanceModel = ShapeAppearanceModel()
+        }
+    }
+
+    private fun applyIcon(bitmap: Bitmap, rounded: Boolean) {
+        _icon.visibility = View.VISIBLE
+        _icon.setImageBitmap(bitmap)
+        applyRounded(rounded)
     }
 
     fun withBackground(resourceId: Int): BigButton {

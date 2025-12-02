@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.activities.MainActivity
@@ -22,6 +23,7 @@ import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNowDiffStringMinDay
+import com.futo.platformplayer.withMaxSizePx
 import java.time.OffsetDateTime
 
 class StateNotifications {
@@ -96,6 +98,7 @@ class StateNotifications {
         if(thumbnail != null)
             Glide.with(context).asBitmap()
                 .load(thumbnail)
+                .withMaxSizePx()
                 .into(object: CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         notifyNewContent(context, manager, notificationChannel, id, content, resource);

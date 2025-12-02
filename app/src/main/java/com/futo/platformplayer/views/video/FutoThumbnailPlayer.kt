@@ -15,6 +15,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
@@ -25,6 +26,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.toHumanTime
 import com.futo.platformplayer.video.PlayerManager
+import com.futo.platformplayer.withMaxSizePx
 
 
 class FutoThumbnailPlayer : FutoVideoPlayerBase {
@@ -135,7 +137,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
             if (videoSource == null && audioSource != null) {
                 val thumbnail = video.thumbnails.getHQThumbnail();
                 if (!thumbnail.isNullOrBlank()) {
-                    Glide.with(videoView).asBitmap().load(thumbnail).into(_loadArtwork);
+                    Glide.with(videoView).asBitmap().load(thumbnail).withMaxSizePx().into(_loadArtwork);
                 } else {
                     Glide.with(videoView).clear(_loadArtwork);
                     setArtwork(null);

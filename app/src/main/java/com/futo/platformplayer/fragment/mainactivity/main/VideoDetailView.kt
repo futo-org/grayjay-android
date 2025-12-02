@@ -42,6 +42,7 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.BuildConfig
@@ -161,6 +162,7 @@ import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.videometa.UpNextView
+import com.futo.platformplayer.withMaxSizePx
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -552,12 +554,12 @@ class VideoDetailView : ConstraintLayout {
         _buttonMore = buttonMore;
         updateMoreButtons();
 
-        val handleLoaderGameVisibilityChanged = { b: Boolean ->
+        val handleLoaderGameVisibilityChanged: (Boolean) -> Unit = { b: Boolean ->
             _loaderGameVisible = b
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 onShouldEnterPictureInPictureChanged.emit()
+                updateResumeVisibilityFor(lastPositionMilliseconds)
             }
-            updateResumeVisibilityFor(lastPositionMilliseconds)
         }
         _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
         _cast.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
@@ -2049,7 +2051,7 @@ class VideoDetailView : ConstraintLayout {
                 } else {
                     val thumbnail = video.thumbnails.getHQThumbnail();
                     if ((videoSource == null) && !thumbnail.isNullOrBlank()) // || _player.isAudioMode
-                        Glide.with(context).asBitmap().load(thumbnail)
+                        Glide.with(context).asBitmap().load(thumbnail).withMaxSizePx()
                             .into(object: CustomTarget<Bitmap>() {
                                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                                     _player.setArtwork(BitmapDrawable(resources, resource));

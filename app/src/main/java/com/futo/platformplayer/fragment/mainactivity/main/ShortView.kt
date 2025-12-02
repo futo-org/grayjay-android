@@ -2,7 +2,9 @@ package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.drawable.Animatable
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.WindowManager
@@ -13,10 +15,15 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -71,6 +78,7 @@ import com.futo.platformplayer.views.video.FutoShortPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_AUDIO_CONTAINERS
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_VIDEO_CONTAINERS
+import com.futo.platformplayer.withMaxSizePx
 import com.futo.polycentric.core.ApiMethods
 import com.futo.polycentric.core.ContentType
 import com.futo.polycentric.core.Models
@@ -851,9 +859,8 @@ class ShortView : FrameLayout {
             }
 
             val thumbnail = videoDetails.thumbnails.getHQThumbnail()
-            /*
             if (videoSource == null && !thumbnail.isNullOrBlank()) Glide.with(context).asBitmap()
-                .load(thumbnail).into(object : CustomTarget<Bitmap>() {
+                .load(thumbnail).withMaxSizePx().into(object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         player.setArtwork(resource.toDrawable(resources))
                     }
@@ -863,7 +870,6 @@ class ShortView : FrameLayout {
                     }
                 })
             else player.setArtwork(null)
-            */
 
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 try {

@@ -403,13 +403,6 @@ class UIDialogs {
             dialog.setMaxVersion(lastVersion);
         }
 
-        fun showInstallDownloadedUpdateDialog(context: Context, apkFile: File) {
-            val dialog = AutoUpdateDialog(context);
-            registerDialogOpened(dialog);
-            dialog.setOnDismissListener { registerDialogClosed(dialog) };
-            dialog.showPredownloaded(apkFile);
-        }
-
         fun showMigrateDialog(context: Context, store: ManagedStore<*>, onConcluded: ()->Unit) {
             if(!store.hasMissingReconstructions())
                 onConcluded();

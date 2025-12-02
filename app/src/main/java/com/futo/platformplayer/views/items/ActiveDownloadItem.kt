@@ -6,6 +6,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.futo.platformplayer.*
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
@@ -61,6 +62,7 @@ class ActiveDownloadItem: LinearLayout {
 
         Glide.with(_videoImage)
             .load(download.thumbnail)
+            .withMaxSizePx()
             .crossfade()
             .into(_videoImage);
 
