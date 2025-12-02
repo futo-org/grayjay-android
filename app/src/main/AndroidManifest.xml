@@ -252,5 +252,14 @@
             android:name=".activities.QRCodeFullscreenActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
+        <service
+            android:name=".UpdateDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".UpdateActionReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>

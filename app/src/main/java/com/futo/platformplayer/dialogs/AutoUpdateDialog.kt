@@ -16,9 +16,11 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.UpdateDownloadService
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.logging.Logger
@@ -46,7 +48,6 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
     private var _maxVersion: Int = 0;
 
     private var _updating: Boolean = false;
-    private var _apkFile: File? = null;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -80,14 +81,19 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
                 return@setOnClickListener;
             }
 
-            _updating = true;
-            update();
+            if (Settings.instance.autoUpdate.backgroundDownload == 1) {
+                val ctx = context.applicationContext;
+                val intent = Intent(ctx, UpdateDownloadService::class.java);
+                intent.putExtra(UpdateDownloadService.EXTRA_VERSION, _maxVersion);
+                ContextCompat.startForegroundService(ctx, intent);
+                UIDialogs.toast(context, "Downloading update in background");
+                dismiss();
+            } else {
+                _updating = true;
+                update();
+            }
         };
-    }
 
-    fun showPredownloaded(apkFile: File) {
-        _apkFile = apkFile;
-        super.show()
     }
 
     override fun dismiss() {
@@ -118,21 +124,14 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         GlobalScope.launch(Dispatchers.IO) {
             var inputStream: InputStream? = null;
             try {
-                val apkFile = _apkFile;
-                if (apkFile != null) {
-                    inputStream = apkFile.inputStream();
-                    val dataLength = apkFile.length();
+                val client = ManagedHttpClient();
+                val response = client.get(StateUpdate.APK_URL);
+                if (response.isOk && response.body != null) {
+                    inputStream = response.body.byteStream();
+                    val dataLength = response.body.contentLength();
                     install(inputStream, dataLength);
                 } else {
-                    val client = ManagedHttpClient();
-                    val response = client.get(StateUpdate.APK_URL);
-                    if (response.isOk && response.body != null) {
-                        inputStream = response.body.byteStream();
-                        val dataLength = response.body.contentLength();
-                        install(inputStream, dataLength);
-                    } else {
-                        throw Exception("Failed to download latest version of app.");
-                    }
+                    throw Exception("Failed to download latest version of app.");
                 }
             } catch (e: Throwable) {
                 Logger.w(TAG, "Exception thrown while downloading and installing latest version of app.", e);

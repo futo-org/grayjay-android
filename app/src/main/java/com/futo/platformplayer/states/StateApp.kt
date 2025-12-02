@@ -572,30 +572,39 @@ class StateApp {
                 DownloadService.getOrCreateService(context);
         }
 
-        Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate]");
-        val autoUpdateEnabled = Settings.instance.autoUpdate.isAutoUpdateEnabled();
-        val shouldDownload = Settings.instance.autoUpdate.shouldDownload();
-        val backgroundDownload = Settings.instance.autoUpdate.backgroundDownload == 1;
-        when {
-            //Background download
-            autoUpdateEnabled && shouldDownload && backgroundDownload -> {
-                StateUpdate.instance.setShouldBackgroundUpdate(true);
-            }
+        if (Settings.instance.autoUpdate.isAutoUpdateEnabled()) {
+            if (Settings.instance.autoUpdate.backgroundDownload == 1) {
+                Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate Background]");
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
 
-            autoUpdateEnabled && !shouldDownload && backgroundDownload -> {
-                Logger.i(TAG, "Auto update skipped due to wrong network state");
-            }
+                val periodicRequest = PeriodicWorkRequest.Builder(
+                    UpdateCheckWorker::class.java,
+                    12, TimeUnit.HOURS
+                )
+                    .setConstraints(constraints)
+                    .build();
 
-            //Foreground download
-            autoUpdateEnabled -> {
+                val wm = WorkManager.getInstance(context);
+                wm.enqueueUniquePeriodicWork(
+                    UpdateCheckWorker.UNIQUE_WORK_NAME,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    periodicRequest
+                );
+
+                val oneTimeRequest = OneTimeWorkRequest.Builder(UpdateCheckWorker::class.java)
+                    .setConstraints(constraints)
+                    .build();
+                wm.enqueue(oneTimeRequest);
+            } else {
+                Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate]");
                 scopeOrNull?.launch(Dispatchers.IO) {
                     StateUpdate.instance.checkForUpdates(context, false)
                 }
             }
-
-            else -> {
-                Logger.i(TAG, "Auto update disabled");
-            }
+        } else {
+            Logger.i(TAG, "AutoUpdate disabled");
         }
 
         Logger.i(TAG, "MainApp Started: Initialize [Noisy]");
@@ -781,29 +790,26 @@ class StateApp {
             Logger.i("StateApp", "No AutoBackup configured");
     }
 
-
     fun scheduleBackgroundWork(context: Context, active: Boolean = true, intervalMinutes: Int = 60 * 12) {
         try {
             val wm = WorkManager.getInstance(context);
 
-            if(active) {
-                if(BuildConfig.DEBUG)
+            if (active) {
+                if (BuildConfig.DEBUG)
                     UIDialogs.toast(context, "Scheduling background every ${intervalMinutes} minutes");
 
                 val req = PeriodicWorkRequest.Builder(BackgroundWorker::class.java, intervalMinutes.toLong(), TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
-                    .setConstraints(Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.UNMETERED)
-                        .build())
-                    .build();
+                    .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.UNMETERED).build()).build();
                 wm.enqueueUniquePeriodicWork("backgroundSubscriptions", ExistingPeriodicWorkPolicy.UPDATE, req);
+            } else {
+                wm.cancelUniqueWork("backgroundSubscriptions");
             }
-            else
-                wm.cancelAllWork();
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to schedule background subscription updates.", e)
             UIDialogs.toast(context, "Background subscription update failed: " + e.message)
         }
     }
+
 
 
     private suspend fun migrateStores(context: Context, managedStores: List<ManagedStore<*>>, index: Int) {
@@ -903,15 +909,6 @@ class StateApp {
             try {
                 if(FragmentedStorage.isInitialized && Settings.instance.downloads.shouldDownload())
                     StateDownloads.instance.checkForDownloadsTodos();
-
-                val autoUpdateEnabled = Settings.instance.autoUpdate.isAutoUpdateEnabled();
-                val shouldDownload = Settings.instance.autoUpdate.shouldDownload();
-                val backgroundDownload = Settings.instance.autoUpdate.backgroundDownload == 1;
-                if (autoUpdateEnabled && shouldDownload && backgroundDownload) {
-                    StateUpdate.instance.setShouldBackgroundUpdate(true);
-                } else {
-                    StateUpdate.instance.setShouldBackgroundUpdate(false);
-                }
             } catch(ex: Throwable) {
                 Logger.w(TAG, "Failed to handle capabilities changed event", ex);
             }
