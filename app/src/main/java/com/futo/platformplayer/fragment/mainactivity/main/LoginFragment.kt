@@ -55,7 +55,7 @@ class LoginFragment : MainFragment() {
         fun showLogin(config: SourcePluginConfig, callback: ((SourceAuth?) -> Unit)? = null) {
             if(_callback != null) _callback?.invoke(null);
             _callback = callback;
-            StateApp.instance.activity?.navigate<LoginFragment>(config, false);
+            StateApp.instance.activity?.navigate<LoginFragment>(config, true);
         }
     }
 

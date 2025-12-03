@@ -169,6 +169,9 @@ class StatePlugins {
             return false;
 
         LoginFragment.showLogin(config) {//LoginActivity.showLogin(context, config) {
+
+            if(it == null)
+                return@showLogin;
             try {
                 StatePlugins.instance.setPluginAuth(config.id, it);
             } catch (e: Throwable) {
