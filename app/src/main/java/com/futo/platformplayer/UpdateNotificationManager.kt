@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_MUTABLE
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.app.PendingIntent.getBroadcast
@@ -13,6 +14,7 @@ import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.futo.platformplayer.activities.InstallUpdateActivity
 import java.io.File
 
 object UpdateNotificationManager {
@@ -25,6 +27,7 @@ object UpdateNotificationManager {
     const val ACTION_UPDATE_NEVER = "com.futo.platformplayer.UPDATE_NEVER"
     const val ACTION_DOWNLOAD_CANCEL = "com.futo.platformplayer.UPDATE_CANCEL"
     const val ACTION_INSTALL_NOW = "com.futo.platformplayer.UPDATE_INSTALL"
+    private const val REQUEST_CODE_INSTALL = 1001
 
     const val EXTRA_VERSION = "version"
     const val EXTRA_APK_PATH = "apk_path"
@@ -130,17 +133,8 @@ object UpdateNotificationManager {
         }
         ensureChannel(context)
 
-        val installIntent = Intent(context, UpdateActionReceiver::class.java).apply {
-            action = ACTION_INSTALL_NOW
-            putExtra(EXTRA_VERSION, version)
-            putExtra(EXTRA_APK_PATH, apkFile.absolutePath)
-        }
-        val installPendingIntent = getBroadcast(
-            context,
-            4,
-            installIntent,
-            FLAG_MUTABLE or FLAG_UPDATE_CURRENT
-        )
+        val installIntent = InstallUpdateActivity.createIntent(context, version, apkFile.absolutePath)
+        val installPendingIntent = PendingIntent.getActivity(context, REQUEST_CODE_INSTALL, installIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.foreground)

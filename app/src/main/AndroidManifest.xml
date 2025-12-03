@@ -261,5 +261,12 @@
             android:name=".UpdateActionReceiver"
             android:exported="false" />
 
+        <activity
+            android:name=".activities.InstallUpdateActivity"
+            android:exported="false"
+            android:theme="@style/Theme.App.TransparentNoUi"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true" />
+
     </application>
 </manifest>
