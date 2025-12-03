@@ -344,7 +344,8 @@ class StateLibrary {
             MediaStore.Video.Media.DISPLAY_NAME,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.MIME_TYPE,
-            MediaStore.Video.Media.BUCKET_DISPLAY_NAME
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+            MediaStore.Video.Media.DURATION
         );
         val PROJECTION_MEDIA = arrayOf(
             MediaStore.Audio.Media._ID, //0
@@ -515,6 +516,8 @@ class StateLibrary {
             val date = cursor.getLong(2);
             val contentType = cursor.getString(3);
             val category = cursor.getString(4);
+            val durationMs = cursor.getLong(5)
+            val duration = if (durationMs > 0) durationMs / 1000 else -1
 
             val idLong = id.toLongOrNull();
             val contentUrl = if(idLong != null )
@@ -534,7 +537,7 @@ class StateLibrary {
                 PlatformID("FILE", contentUrl, null, 0, -1),
                 displayName, Thumbnails(arrayOf(
                     Thumbnail(contentUrl, 0)
-                )), authorObj, contentUrl, -1, contentType, dateObj);
+                )), authorObj, contentUrl, duration, contentType, dateObj);
         }
 
         private var _instance : StateLibrary? = null;

@@ -73,10 +73,10 @@ open class LocalVideoDetails(
     override val video: IVideoSourceDescriptor = (if(mimeType?.startsWith("audio/") ?: false)
         (LocalVideoUnMuxedSourceDescriptor(
             arrayOf(),
-            arrayOf(LocalAudioContentSource(url, mimeType ?: "", name))
+            arrayOf(LocalAudioContentSource(url, mimeType ?: "", name, duration))
         ))
         else (LocalVideoMuxedSourceDescriptor(
-            LocalVideoContentSource(url, mimeType ?: "", name)
+            LocalVideoContentSource(url, mimeType ?: "", name, duration)
         ))
     );
     override val preview: ISerializedVideoSourceDescriptor? = null;
