@@ -298,9 +298,9 @@ class StatePlaylists {
         createOrUpdatePlaylist(newPlaylist);
         return newPlaylist;
     }
-    fun createOrUpdatePlaylist(playlist: Playlist, isUserInteraction: Boolean = true) {
+    fun createOrUpdatePlaylist(playlist: Playlist, isUserInteraction: Boolean = true, onlyExisting: Boolean = false) {
         playlist.dateUpdate = OffsetDateTime.now();
-        playlistStore.saveAsync(playlist, true);
+        playlistStore.saveAsync(playlist, true, onlyExisting);
         if(playlist.id.isNotEmpty()) {
             if (StateDownloads.instance.isPlaylistCached(playlist.id)) {
                 StateDownloads.instance.checkForOutdatedPlaylistVideos(playlist.id);
