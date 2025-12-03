@@ -409,7 +409,7 @@ class ChannelFragment : MainFragment() {
             _fragment.topBar?.onShown(channel)
 
             val buttons = arrayListOf(Pair(R.drawable.ic_playlist_add) {
-                UIDialogs.showConfirmationDialog(context,
+                val dialog = UIDialogs.showConfirmationDialog(context,
                     context.getString(R.string.do_you_want_to_convert_channel_channelname_to_a_playlist)
                         .replace("{channelName}", channel.name),
                     {

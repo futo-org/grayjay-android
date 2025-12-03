@@ -1,5 +1,6 @@
 package com.futo.platformplayer
 
+import android.app.Dialog
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -21,6 +22,8 @@ class UpdateDownloadService : Service() {
         private const val MAX_RETRIES = 5
         private const val INITIAL_BACKOFF_MS = 5_000L
         private const val BUFFER_SIZE = 8 * 1024
+
+        var updateDownloadedDialog: Dialog? = null
     }
 
     private val job = SupervisorJob()
@@ -216,12 +219,13 @@ class UpdateDownloadService : Service() {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 StateApp.withContext { ctx ->
                     try {
-                        UIDialogs.showConfirmationDialog(ctx, "Update downloaded, press confirm to install", {
+                        updateDownloadedDialog = UIDialogs.showConfirmationDialog(ctx, "Update downloaded, press confirm to install", {
                             UpdateNotificationManager.cancelAll(ctx)
                             UpdateInstaller.startInstall(ctx, apkFile)
-                        }, {})
+                        }, dismissAction = { updateDownloadedDialog = null })
                     } catch (t: Throwable) {
                         Logger.w(TAG, "Failed to show in-app update downloaded dialog", t)
+                        updateDownloadedDialog = null
                     }
                 }
             }

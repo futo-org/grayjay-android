@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.dialogs.AutoUpdateDialog
 import com.futo.platformplayer.states.StateApp
 import java.io.File
 
@@ -21,6 +22,8 @@ class UpdateActionReceiver : BroadcastReceiver() {
     }
 
     private fun handleUpdateYes(context: Context, intent: Intent) {
+        AutoUpdateDialog.currentDialog?.dismiss()
+
         val version = intent.getIntExtra(UpdateNotificationManager.EXTRA_VERSION, 0)
         if (version == 0) {
             return
@@ -49,10 +52,12 @@ class UpdateActionReceiver : BroadcastReceiver() {
     }
 
     private fun handleUpdateNo(context: Context) {
+        AutoUpdateDialog.currentDialog?.dismiss()
         NotificationManagerCompat.from(context).cancel(UpdateNotificationManager.NOTIF_ID_AVAILABLE)
     }
 
     private fun handleUpdateNever(context: Context) {
+        AutoUpdateDialog.currentDialog?.dismiss()
         Settings.instance.autoUpdate.check = 1
         Settings.instance.save()
 
@@ -86,5 +91,6 @@ class UpdateActionReceiver : BroadcastReceiver() {
 
         UpdateNotificationManager.cancelAll(context)
         UpdateInstaller.startInstall(context, apkFile)
+        UpdateDownloadService.updateDownloadedDialog?.dismiss()
     }
 }

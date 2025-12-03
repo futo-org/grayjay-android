@@ -370,17 +370,19 @@ class UIDialogs {
         }
 
 
-        fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null) {
+        fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null, dismissAction: (() -> Unit)? = null): AlertDialog {
             val confirmButtonAction = Action(context.getString(R.string.confirm), action, ActionStyle.PRIMARY)
             val cancelButtonAction = Action(context.getString(R.string.cancel), cancelAction ?: {}, ActionStyle.ACCENT)
-            showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction)
+            return showDialog(context, R.drawable.ic_error, text, null, null, 0, cancelButtonAction, confirmButtonAction).apply {
+                setOnDismissListener { dismissAction?.invoke() }
+            }
         }
 
-        fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null, doNotAskAgainAction: (() -> Unit)? = null) {
+        fun showConfirmationDialog(context: Context, text: String, action: () -> Unit, cancelAction: (() -> Unit)? = null, dismissAction: (() -> Unit)? = null, doNotAskAgainAction: (() -> Unit)? = null): AlertDialog {
             val confirmButtonAction = Action(context.getString(R.string.confirm), action, ActionStyle.PRIMARY)
             val cancelButtonAction = Action(context.getString(R.string.cancel), cancelAction ?: {}, ActionStyle.ACCENT)
             val doNotAskAgain = Action(context.getString(R.string.do_not_ask_again), doNotAskAgainAction ?: {}, ActionStyle.NONE)
-            showDialog(context, R.drawable.ic_error, text, null, null, 0, doNotAskAgain, cancelButtonAction, confirmButtonAction)
+            return showDialog(context, R.drawable.ic_error, text, null, null, 0, doNotAskAgain, cancelButtonAction, confirmButtonAction)
         }
 
         fun showUpdateAvailableDialog(context: Context, lastVersion: Int, hideExceptionButtons: Boolean = false) {
