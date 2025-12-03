@@ -239,7 +239,7 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
                 }
 
                 DeviceConnectionState.Disconnected -> {
-                    connectionState = CastConnectionState.CONNECTING
+                    connectionState = CastConnectionState.DISCONNECTED
                     onConnectionStateChanged.emit(CastConnectionState.DISCONNECTED)
                 }
             }
