@@ -36,11 +36,16 @@ object UpdateNotificationManager {
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT)
-            channel.description = CHANNEL_DESCRIPTION
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = CHANNEL_DESCRIPTION
+                enableVibration(false)
+                enableLights(false)
+                setSound(null, null)
+            }
             manager.createNotificationChannel(channel)
         }
     }
+
 
     fun showUpdateAvailableNotification(context: Context, version: Int) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -70,9 +75,10 @@ object UpdateNotificationManager {
             .setContentText("A new version ($version) is available.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .addAction(0, "Download", yesPendingIntent)
-            .addAction(0, "Not now", noPendingIntent)
+            .setSilent(true)
             .addAction(0, "Never", neverPendingIntent)
+            .addAction(0, "Not now", noPendingIntent)
+            .addAction(0, "Download", yesPendingIntent)
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_AVAILABLE, builder.build())
     }
@@ -97,6 +103,7 @@ object UpdateNotificationManager {
             .setContentText("Downloading version $version")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setSilent(true)
             .addAction(0, "Cancel", cancelPendingIntent)
 
         if (indeterminate) {
@@ -141,6 +148,7 @@ object UpdateNotificationManager {
             .setContentText("Tap to install version $version.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+            .setSilent(true)
             .addAction(0, "Install", installPendingIntent)
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_READY, builder.build())
@@ -159,6 +167,7 @@ object UpdateNotificationManager {
             .setContentText(error?.message ?: "Unknown error")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+            .setSilent(true)
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_READY, builder.build())
     }
