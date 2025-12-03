@@ -23,10 +23,10 @@ class LocalAudioContentSource : IAudioSource {
 
     var contentUrl: String;
 
-    constructor(contentUrl: String, mime: String, name: String? = null) {
+    constructor(contentUrl: String, mime: String, name: String? = null, duration: Long = 0) {
         this.name = name ?: "File";
         container = mime;
-        duration = 0;
+        this.duration = duration;
 
         this.contentUrl = contentUrl;
     }

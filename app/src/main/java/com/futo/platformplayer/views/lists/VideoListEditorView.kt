@@ -77,7 +77,7 @@ class VideoListEditorView : FrameLayout {
                     executeDelete()
                 }, cancelAction = {
 
-                }, doNotAskAgainAction = {
+                }, dismissAction = {}, doNotAskAgainAction = {
                     Settings.instance.other.playlistDeleteConfirmation = false
                     Settings.instance.save()
                 })

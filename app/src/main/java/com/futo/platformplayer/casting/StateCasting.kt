@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
@@ -14,6 +15,7 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.http.server.HttpHeaders
 import com.futo.platformplayer.api.http.server.ManagedHttpServer
 import com.futo.platformplayer.api.http.server.handlers.HttpConstantHandler
+import com.futo.platformplayer.api.http.server.handlers.HttpContentUriHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFileHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFunctionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpProxyHandler
@@ -34,6 +36,8 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalAudioContentSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoContentSource
 import com.futo.platformplayer.awaitCancelConverted
 import com.futo.platformplayer.builders.DashBuilder
 import com.futo.platformplayer.models.CastingDeviceInfo
@@ -235,9 +239,9 @@ abstract class StateCasting {
         Logger.i(TAG, "Connect to device ${device.name}")
     }
 
-    fun metadataFromVideo(video: IPlatformVideoDetails): Metadata {
+    fun metadataFromVideo(video: IPlatformVideoDetails, videoThumbnailOverrideUrl: String? = null): Metadata {
         return Metadata(
-            title = video.name, thumbnailUrl = video.thumbnails.getHQThumbnail()
+            title = video.name, thumbnailUrl = videoThumbnailOverrideUrl ?: video.thumbnails.getHQThumbnail()
         )
     }
 
@@ -371,6 +375,12 @@ abstract class StateCasting {
                 } else if (audioSource is LocalAudioSource) {
                     Logger.i(TAG, "Casting as local audio");
                     castLocalAudio(video, audioSource, resumePosition, speed);
+                } else if (videoSource is LocalVideoContentSource) {
+                    Logger.i(TAG, "Casting as local video");
+                    castLocalVideo(contentResolver, video, videoSource, resumePosition, speed);
+                } else if (audioSource is LocalAudioContentSource) {
+                    Logger.i(TAG, "Casting as local audio");
+                    castLocalAudio(contentResolver, video, audioSource, resumePosition, speed);
                 } else if (videoSource is JSDashManifestRawSource) {
                     Logger.i(TAG, "Casting as JSDashManifestRawSource video");
                     castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, null, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
@@ -461,6 +471,65 @@ abstract class StateCasting {
         }
         return true;
     }
+
+    private fun castLocalVideo(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: LocalVideoContentSource, resumePosition: Double, speed: Double?) : List<String> {
+        val ad = activeDevice ?: return listOf();
+
+        val url = getLocalUrl(ad);
+        val id = UUID.randomUUID();
+        val videoPath = "/video-${id}"
+        val videoUrl = url + videoPath;
+        val thumbnailPath = "/thumbnail-${id}"
+        val thumbnailUrl = url + thumbnailPath;
+        val thumbnailContentUrl = video.thumbnails.getHQThumbnail()
+
+        if (thumbnailContentUrl != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpContentUriHandler("GET", thumbnailPath, contentResolver, thumbnailContentUrl.toUri())
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("cast");
+        }
+
+        _castServer.addHandlerWithAllowAllOptions(
+            HttpContentUriHandler("GET", videoPath, contentResolver, videoSource.contentUrl.toUri())
+                .withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("cast");
+
+        Logger.i(TAG, "Casting local video (videoUrl: $videoUrl).");
+        ad.loadVideo("BUFFERED", videoSource.container, videoUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video, if (thumbnailContentUrl != null) thumbnailUrl else null));
+
+        return listOf(videoUrl);
+    }
+
+    private fun castLocalAudio(contentResolver: ContentResolver, video: IPlatformVideoDetails, audioSource: LocalAudioContentSource, resumePosition: Double, speed: Double?) : List<String> {
+        val ad = activeDevice ?: return listOf();
+
+        val url = getLocalUrl(ad);
+        val id = UUID.randomUUID();
+        val audioPath = "/audio-${id}"
+        val audioUrl = url + audioPath;
+        val thumbnailPath = "/thumbnail-${id}"
+        val thumbnailUrl = url + thumbnailPath;
+        val thumbnailContentUrl = video.thumbnails.getHQThumbnail()
+
+        if (thumbnailContentUrl != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpContentUriHandler("GET", thumbnailPath, contentResolver, thumbnailContentUrl.toUri())
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("cast");
+        }
+
+        _castServer.addHandlerWithAllowAllOptions(
+            HttpContentUriHandler("GET", audioPath, contentResolver, audioSource.contentUrl.toUri())
+                .withHeader("Access-Control-Allow-Origin", "*"), true
+        ).withTag("cast");
+
+        Logger.i(TAG, "Casting local audio (audioUrl: $audioUrl).");
+        ad.loadVideo("BUFFERED", audioSource.container, audioUrl, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video, if (thumbnailContentUrl != null) thumbnailUrl else null));
+
+        return listOf(audioUrl);
+    }
+
     private fun castLocalVideo(video: IPlatformVideoDetails, videoSource: LocalVideoSource, resumePosition: Double, speed: Double?) : List<String> {
         val ad = activeDevice ?: return listOf();
 

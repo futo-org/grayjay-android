@@ -344,7 +344,8 @@ class StateLibrary {
             MediaStore.Video.Media.DISPLAY_NAME,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.MIME_TYPE,
-            MediaStore.Video.Media.BUCKET_DISPLAY_NAME
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+            MediaStore.Video.Media.DURATION
         );
         val PROJECTION_MEDIA = arrayOf(
             MediaStore.Audio.Media._ID, //0
@@ -487,9 +488,10 @@ class StateLibrary {
                 "";
 
 
-            val albumContentUrl = if(albumId > 0)
-                ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)?.toString()
-            else null;
+            val albumArtBase = Uri.parse("content://media/external/audio/albumart")
+            val albumContentUrl = if (albumId > 0)
+                ContentUris.withAppendedId(albumArtBase, albumId).toString()
+            else null
 
             val dateObj = if(date > 0)
                 OffsetDateTime.ofInstant(Instant.ofEpochSecond(date), ZoneOffset.UTC)
@@ -515,6 +517,8 @@ class StateLibrary {
             val date = cursor.getLong(2);
             val contentType = cursor.getString(3);
             val category = cursor.getString(4);
+            val durationMs = cursor.getLong(5)
+            val duration = if (durationMs > 0) durationMs / 1000 else -1
 
             val idLong = id.toLongOrNull();
             val contentUrl = if(idLong != null )
@@ -534,7 +538,7 @@ class StateLibrary {
                 PlatformID("FILE", contentUrl, null, 0, -1),
                 displayName, Thumbnails(arrayOf(
                     Thumbnail(contentUrl, 0)
-                )), authorObj, contentUrl, -1, contentType, dateObj);
+                )), authorObj, contentUrl, duration, contentType, dateObj);
         }
 
         private var _instance : StateLibrary? = null;
@@ -622,11 +626,12 @@ class Artist {
             val numTracks = cursor.getInt(2);
             val numAlbums = cursor.getInt(3);
 
-            val idLong = id.toLongOrNull();
-            val uri = if(idLong != null) ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, idLong) else null;
+            val idLong = id.toLongOrNull()
+            val uri = if (idLong != null)
+                ContentUris.withAppendedId(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, idLong)
+            else null
 
-            return Artist(artist, numTracks, numAlbums, null, id, uri?.toString());
-        }
+            return Artist(artist, numTracks, numAlbums, null, id, uri?.toString())        }
 
         fun getArtist(id: Long): Artist? {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -730,9 +735,10 @@ class Album {
             val numTracks = cursor.getInt(2);
             val artist = cursor.getString(3);
 
-            val idLong = id.toLongOrNull();
-            val uri = if(idLong != null) ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, idLong) else null;
-            return Album(album, numTracks, artist, id, uri?.toString());
+            val idLong = id.toLongOrNull()
+            val albumArtBase = Uri.parse("content://media/external/audio/albumart")
+            val uri = if (idLong != null) ContentUris.withAppendedId(albumArtBase, idLong) else null
+            return Album(album, numTracks, artist, id, uri?.toString())
         }
 
         fun getAlbumTracks(albumId: Long): List<IPlatformVideo> {

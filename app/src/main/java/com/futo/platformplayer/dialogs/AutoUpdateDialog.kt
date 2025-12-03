@@ -36,6 +36,8 @@ import java.io.InputStream
 class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
     companion object {
         private val TAG = "AutoUpdateDialog";
+
+        var currentDialog: AutoUpdateDialog? = null
     }
 
     private lateinit var _buttonNever: Button;
@@ -94,11 +96,13 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
             }
         };
 
+        currentDialog = this
     }
 
     override fun dismiss() {
         super.dismiss()
         InstallReceiver.onReceiveResult.clear();
+        currentDialog = null
         Logger.i(TAG, "Cleared InstallReceiver.onReceiveResult handler.")
     }
 
