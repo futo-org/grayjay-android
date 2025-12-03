@@ -1,5 +1,6 @@
 package com.futo.platformplayer.fragment.mainactivity.topbar
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -49,7 +50,11 @@ class GeneralTopBarFragment : TopFragment() {
             } else if (currentMain is PlaylistsFragment || currentMain is PlaylistFragment) {
                 navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.PLAYLIST));
             } else if (currentMain is LibraryFragment) {
-                navigate<LibrarySearchFragment>();
+                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    UIDialogs.toast("Your Android version is too old for Mediastore search", true);
+                }
+                else
+                    navigate<LibrarySearchFragment>();
             } else {
                 navigate<SuggestionsFragment>(SuggestionsFragmentData("", SearchType.VIDEO));
             }

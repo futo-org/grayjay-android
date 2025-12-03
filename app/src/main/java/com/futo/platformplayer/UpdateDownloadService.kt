@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import com.futo.platformplayer.UIDialogs.ActionStyle
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateUpdate
@@ -219,10 +220,16 @@ class UpdateDownloadService : Service() {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 StateApp.withContext { ctx ->
                     try {
-                        updateDownloadedDialog = UIDialogs.showConfirmationDialog(ctx, "Update downloaded, press confirm to install", {
-                            UpdateNotificationManager.cancelAll(ctx)
-                            UpdateInstaller.startInstall(ctx, apkFile)
-                        }, dismissAction = { updateDownloadedDialog = null })
+                        updateDownloadedDialog = UIDialogs.showDialog(ctx, R.drawable.foreground,
+                            "Update downloaded",
+                            "Would you like to install it now?", null, 0,
+                            UIDialogs.Action("Cancel", {
+                                updateDownloadedDialog = null
+                            }, ActionStyle.NONE, true),
+                            UIDialogs.Action("Install", {
+                                UpdateNotificationManager.cancelAll(ctx)
+                                UpdateInstaller.startInstall(ctx, apkFile)
+                            }, ActionStyle.PRIMARY, true));
                     } catch (t: Throwable) {
                         Logger.w(TAG, "Failed to show in-app update downloaded dialog", t)
                         updateDownloadedDialog = null
