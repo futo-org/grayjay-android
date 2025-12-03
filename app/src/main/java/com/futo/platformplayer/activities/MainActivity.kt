@@ -1302,7 +1302,15 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     finish();
                 } else {
                     //UIDialogs.toast("Grayjay continues in background because of an open video.")
-                    moveTaskToBack(false);
+                    if(Settings.instance.playback.isBackgroundPictureInPicture()) {
+                        try {
+                            _fragVideoDetail._viewDetail?.startPictureInPicture();
+                            _fragVideoDetail?.forcePictureInPicture();
+                        } catch (ex: Throwable) {
+                        } //Fail silently
+                    }
+                    else
+                     moveTaskToBack(false);
                     /*
                     UIDialogs.showConfirmationDialog(this, "There is a video playing, are you sure you want to exit the app?", {
                         finish();
