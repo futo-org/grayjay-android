@@ -7,7 +7,9 @@ import android.app.PendingIntent.getBroadcast
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.graphics.drawable.Animatable
 import android.provider.Settings
+import android.view.View
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.InstallReceiver
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
 import androidx.core.net.toUri
+import com.futo.platformplayer.dialogs.AutoUpdateDialog
+import com.futo.platformplayer.states.StateApp
 
 object UpdateInstaller {
     private const val TAG = "UpdateInstaller"
@@ -53,8 +57,8 @@ object UpdateInstaller {
         GlobalScope.launch(Dispatchers.IO) {
             var inputStream: InputStream? = null
             var session: PackageInstaller.Session? = null
-
             try {
+
                 val packageInstaller: PackageInstaller = context.packageManager.packageInstaller
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
                 val sessionId = packageInstaller.createSession(params)
@@ -72,6 +76,10 @@ object UpdateInstaller {
                 val pendingIntent = getBroadcast(context, 0, intent, FLAG_MUTABLE or FLAG_UPDATE_CURRENT)
                 val statusReceiver = pendingIntent.intentSender
 
+                InstallReceiver.onReceiveResult.subscribe(this) { message ->
+                    InstallReceiver.onReceiveResult.clear();
+                    onReceiveResult(context, message);
+                };
                 Logger.i(TAG, "Committing install session for ${apkFile.absolutePath}")
                 session.commit(statusReceiver)
             } catch (e: Throwable) {
@@ -85,5 +93,12 @@ object UpdateInstaller {
                 inputStream?.close()
             }
         }
+    }
+
+
+
+    private fun onReceiveResult(context: Context, result: String?) {
+        InstallReceiver.onReceiveResult.remove(this);
+        UIDialogs.showGeneralErrorDialog(context, "Install failed due to:\n" + result);
     }
 }
