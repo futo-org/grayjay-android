@@ -1301,9 +1301,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 if (_fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
                     finish();
                 } else {
+                    //UIDialogs.toast("Grayjay continues in background because of an open video.")
+                    moveTaskToBack(false);
+                    /*
                     UIDialogs.showConfirmationDialog(this, "There is a video playing, are you sure you want to exit the app?", {
                         finish();
                     })
+                    */
                 }
             }
         }
