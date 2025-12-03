@@ -76,9 +76,9 @@ object UpdateNotificationManager {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setSilent(true)
-            .addAction(0, "Download", yesPendingIntent)
-            .addAction(0, "Not now", noPendingIntent)
             .addAction(0, "Never", neverPendingIntent)
+            .addAction(0, "Not now", noPendingIntent)
+            .addAction(0, "Download", yesPendingIntent)
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_AVAILABLE, builder.build())
     }
