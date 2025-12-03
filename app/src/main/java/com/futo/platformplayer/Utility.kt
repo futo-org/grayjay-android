@@ -445,7 +445,8 @@ fun addressScore(addr: InetAddress): Int {
 fun <T> Enumeration<T>.toList(): List<T> = Collections.list(this)
 
 fun <T> RequestBuilder<T>.withMaxSizePx(maxSizePx: Int = 1920): RequestBuilder<T> {
-    return this/*
-        .downsample(DownsampleStrategy.AT_MOST)
-        .override(maxSizePx, maxSizePx)*/
+    return this;
+        //.downsample(DownsampleStrategy.AT_MOST)
+        //.override(maxSizePx, maxSizePx)
+        //.centerInside()
 }
