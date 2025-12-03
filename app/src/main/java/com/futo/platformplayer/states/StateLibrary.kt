@@ -488,9 +488,10 @@ class StateLibrary {
                 "";
 
 
-            val albumContentUrl = if(albumId > 0)
-                ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)?.toString()
-            else null;
+            val albumArtBase = Uri.parse("content://media/external/audio/albumart")
+            val albumContentUrl = if (albumId > 0)
+                ContentUris.withAppendedId(albumArtBase, albumId).toString()
+            else null
 
             val dateObj = if(date > 0)
                 OffsetDateTime.ofInstant(Instant.ofEpochSecond(date), ZoneOffset.UTC)
@@ -625,11 +626,12 @@ class Artist {
             val numTracks = cursor.getInt(2);
             val numAlbums = cursor.getInt(3);
 
-            val idLong = id.toLongOrNull();
-            val uri = if(idLong != null) ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, idLong) else null;
+            val idLong = id.toLongOrNull()
+            val uri = if (idLong != null)
+                ContentUris.withAppendedId(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, idLong)
+            else null
 
-            return Artist(artist, numTracks, numAlbums, null, id, uri?.toString());
-        }
+            return Artist(artist, numTracks, numAlbums, null, id, uri?.toString())        }
 
         fun getArtist(id: Long): Artist? {
             val resolver =  StateApp.instance.contextOrNull?.contentResolver;
@@ -733,9 +735,10 @@ class Album {
             val numTracks = cursor.getInt(2);
             val artist = cursor.getString(3);
 
-            val idLong = id.toLongOrNull();
-            val uri = if(idLong != null) ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, idLong) else null;
-            return Album(album, numTracks, artist, id, uri?.toString());
+            val idLong = id.toLongOrNull()
+            val albumArtBase = Uri.parse("content://media/external/audio/albumart")
+            val uri = if (idLong != null) ContentUris.withAppendedId(albumArtBase, idLong) else null
+            return Album(album, numTracks, artist, id, uri?.toString())
         }
 
         fun getAlbumTracks(albumId: Long): List<IPlatformVideo> {

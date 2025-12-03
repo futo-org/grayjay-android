@@ -137,14 +137,7 @@ class HttpContentUriHandler(
         var size: Long? = null
         var lastModifiedMillis: Long? = null
 
-        val projection = arrayOf(
-            OpenableColumns.DISPLAY_NAME,
-            OpenableColumns.SIZE,
-            MediaStore.MediaColumns.DATE_MODIFIED,
-            MediaStore.MediaColumns.DATE_ADDED
-        )
-
-        resolver.query(uri, projection, null, null, null)?.use { cursor ->
+        resolver.query(uri, null, null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 if (nameIndex != -1 && !cursor.isNull(nameIndex)) {
@@ -177,6 +170,10 @@ class HttpContentUriHandler(
             }
         }
 
+        if (displayName == null) {
+            displayName = uri.lastPathSegment
+        }
+
         if (size == null) {
             try {
                 resolver.openAssetFileDescriptor(uri, "r")?.use { afd ->
@@ -188,7 +185,11 @@ class HttpContentUriHandler(
             } catch (_: Exception) { }
         }
 
-        return ContentMeta(displayName = displayName, size = size, lastModifiedMillis = lastModifiedMillis)
+        return ContentMeta(
+            displayName = displayName,
+            size = size,
+            lastModifiedMillis = lastModifiedMillis
+        )
     }
 
     private fun parseRange(header: String, totalLength: Long): LongRange? {
