@@ -373,7 +373,7 @@ class VideoDetailFragment() : MainFragment() {
                 }
                 else if (state != State.MAXIMIZED && progress > 0.9) {
                     if (_isInitialMaximize) {
-                        state = State.CLOSED;
+                        //state = State.CLOSED; Causes issues? might no longer be needed
                         _isInitialMaximize = false;
                     }
                     else {

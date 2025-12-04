@@ -1299,6 +1299,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 navigate(last.first, last.second, false, true);
             } else {
                 if (_fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
+                    Logger.i(TAG, "Closing activity because _fragVideoDetail.state == closed");
                     finish();
                 } else {
                     //UIDialogs.toast("Grayjay continues in background because of an open video.")
