@@ -83,7 +83,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
                 return@setOnClickListener;
             }
 
-            if (Settings.instance.autoUpdate.backgroundDownload == 1) {
+            if (Settings.instance.autoUpdate.shouldBackgroundDownload) {
                 val ctx = context.applicationContext;
                 val intent = Intent(ctx, UpdateDownloadService::class.java);
                 intent.putExtra(UpdateDownloadService.EXTRA_VERSION, _maxVersion);

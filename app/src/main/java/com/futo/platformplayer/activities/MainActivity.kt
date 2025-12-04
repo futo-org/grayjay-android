@@ -618,8 +618,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             sharedPreferences.edit().putBoolean("IsFirstBoot", false).apply()
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Settings.instance.autoUpdate.isAutoUpdateEnabled()) {
-            requestNotificationPermissions("Grayjay uses notifications to inform you when a new app update is available.");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Settings.instance.autoUpdate.isAutoUpdateEnabled() && Settings.instance.autoUpdate.shouldBackgroundDownload) {
+            requestNotificationPermissions("You have enabled background updating.\n\nGrayjay uses notifications to inform you when a new app update is available.");
         }
 
         val submissionStatus = FragmentedStorage.get<StringStorage>("subscriptionSubmissionStatus")
