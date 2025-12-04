@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.os.SystemClock
 import com.futo.platformplayer.UIDialogs.ActionStyle
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
@@ -23,6 +24,7 @@ class UpdateDownloadService : Service() {
         private const val MAX_RETRIES = 5
         private const val INITIAL_BACKOFF_MS = 5_000L
         private const val BUFFER_SIZE = 8 * 1024
+        private const val MIN_PROGRESS_UPDATE_INTERVAL_MS = 500L
 
         var updateDownloadedDialog: Dialog? = null
     }
@@ -35,6 +37,8 @@ class UpdateDownloadService : Service() {
 
     @Volatile
     private var cancelRequested: Boolean = false
+
+    private var lastProgressUpdateElapsedMs: Long = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -79,6 +83,16 @@ class UpdateDownloadService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         job.cancel()
+    }
+
+    private fun throttledUpdateDownloadProgress(version: Int, progress: Int, indeterminate: Boolean) {
+        val now = SystemClock.elapsedRealtime()
+        val force = progress == 100 && !indeterminate
+
+        if (force || now - lastProgressUpdateElapsedMs >= MIN_PROGRESS_UPDATE_INTERVAL_MS) {
+            lastProgressUpdateElapsedMs = now
+            UpdateNotificationManager.updateDownloadProgress(this, version, progress, indeterminate)
+        }
     }
 
     private suspend fun downloadApk(version: Int) {
@@ -190,12 +204,18 @@ class UpdateDownloadService : Service() {
                                     progress > 100 -> 100
                                     else -> progress
                                 }
-                                UpdateNotificationManager.updateDownloadProgress(this, version, safeProgress, false)
+                                throttledUpdateDownloadProgress(version, safeProgress, indeterminate = false)
                             }
                         } else {
-                            UpdateNotificationManager.updateDownloadProgress(this, version, 0, true)
+                            throttledUpdateDownloadProgress(version, progress = 0, indeterminate = true)
                         }
                     }
+
+                    if (!cancelRequested && totalBytes > 0L) {
+                        val finalProgress = 100
+                        throttledUpdateDownloadProgress(version, finalProgress, indeterminate = false)
+                    }
+
                     output.flush()
                 }
             }
@@ -223,12 +243,12 @@ class UpdateDownloadService : Service() {
                         updateDownloadedDialog = UIDialogs.showDialog(ctx, R.drawable.foreground,
                             "Update downloaded",
                             "Would you like to install it now?", null, 0,
-                            UIDialogs.Action("Cancel", {
+                            UIDialogs.Action("Not now", {
                                 updateDownloadedDialog = null
                             }, ActionStyle.NONE, true),
                             UIDialogs.Action("Install", {
                                 UpdateNotificationManager.cancelAll(ctx)
-                                UpdateInstaller.startInstall(ctx, apkFile)
+                                UpdateInstaller.startInstall(ctx, version, apkFile)
                             }, ActionStyle.PRIMARY, true));
                     } catch (t: Throwable) {
                         Logger.w(TAG, "Failed to show in-app update downloaded dialog", t)
