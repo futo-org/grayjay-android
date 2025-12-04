@@ -372,6 +372,9 @@ class VideoDetailFragment() : MainFragment() {
                     onMinimize.emit();
                 }
                 else if (state != State.MAXIMIZED && progress > 0.9) {
+                    state = State.MAXIMIZED;
+                    onMaximized.emit();
+                    /*
                     if (_isInitialMaximize) {
                         //state = State.CLOSED; Causes issues? might no longer be needed
                         _isInitialMaximize = false;
@@ -380,6 +383,7 @@ class VideoDetailFragment() : MainFragment() {
                         state = State.MAXIMIZED;
                         onMaximized.emit();
                     }
+                    */
                 }
 
                 if (isTransitioning && (progress > 0.6 || progress < 0.4)) {
