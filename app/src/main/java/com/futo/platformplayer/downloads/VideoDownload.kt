@@ -9,7 +9,9 @@ import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import com.arthenica.ffmpegkit.StatisticsCallback
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
@@ -40,6 +42,8 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.engine.exceptions.ScriptException
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.exceptions.DownloadException
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
@@ -87,6 +91,9 @@ import kotlin.time.times
 class VideoDownload {
     var state: State = State.QUEUED;
 
+    @Contextual
+    @Transient
+    var plugin: IPlatformClient? = null;
     var video: SerializedPlatformVideo? = null;
     var videoDetails: SerializedPlatformVideoDetails? = null;
 
@@ -272,7 +279,7 @@ class VideoDownload {
 
         //Fetch full video object and determine source
         if(video != null && videoDetails == null) {
-            val original = StatePlatform.instance.getContentDetails(video!!.url).await();
+            val original = if (plugin != null) plugin!!.getContentDetails(video!!.url) else StatePlatform.instance.getContentDetails(video!!.url)?.await();
             if(original !is IPlatformVideoDetails)
                 throw IllegalStateException("Original content is not media?");
 
@@ -1007,6 +1014,15 @@ class VideoDownload {
 
             Logger.i(TAG, "$name downloadSource Finished");
         }
+        catch(scriptEx: ScriptReloadRequiredException) {
+            if(targetFile.exists() ?: false)
+                targetFile.delete();
+            if(targetFileAudio?.exists() ?: false)
+                targetFileAudio.delete();
+
+            createNewPluginClient();
+            throw scriptEx;
+        }
         catch(ioex: IOException) {
             if(targetFile.exists() ?: false)
                 targetFile.delete();
@@ -1033,6 +1049,24 @@ class VideoDownload {
             audioFileSize = sourceLengthAudio
         return sourceLength!!;
     }
+
+    fun createNewPluginClient() {
+        UIDialogs.appToast("Download creating new client at request of plugin");
+        cleanupPluginClient();
+        plugin = (video?.url ?: videoDetails?.url)?.let { StatePlatform.instance.getContentClient(it) }?.let { if(it is JSClient) it else null }?.getCopy(false, true);
+        plugin?.initialize();
+    }
+    fun cleanupPluginClient() {
+        val oldPlugin = plugin;
+        plugin = null;
+        try {
+            oldPlugin?.disable();
+        }
+        catch(ex: Throwable) {
+            Logger.e(TAG, "Failed to dispose download client: ${ex.message}" , ex);
+        }
+    }
+
     private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
@@ -1455,6 +1489,10 @@ class VideoDownload {
             newVideo.groupType = groupType;
             StateDownloads.instance.updateCachedVideo(newVideo);
         }
+    }
+
+    fun cleanup(){
+        cleanupPluginClient()
     }
 
     enum class State {

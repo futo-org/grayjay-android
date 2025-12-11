@@ -11,6 +11,7 @@ import com.futo.platformplayer.*
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.views.others.ProgressBar
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,7 @@ class ActiveDownloadItem: LinearLayout {
     private val _videoState: TextView;
 
     private val _videoCancel: TextView;
+    private val _videoRetry: TextView;
 
     private val _scope: CoroutineScope;
 
@@ -51,13 +53,14 @@ class ActiveDownloadItem: LinearLayout {
         _videoSpeed = findViewById(R.id.download_video_speed);
 
         _videoCancel = findViewById(R.id.download_cancel);
+        _videoRetry = findViewById(R.id.download_retry);
 
         _videoName.text = download.name;
         _videoDuration.text = download.videoEither.duration.toHumanTime(false);
         _videoAuthor.text = download.videoEither.author.name;
 
         _videoState.setOnClickListener {
-            UIDialogs.toast(context, _videoState.text.toString(), false);
+            UIDialogs.appToast(_videoState.text.toString(), false);
         }
 
         Glide.with(_videoImage)
@@ -72,6 +75,12 @@ class ActiveDownloadItem: LinearLayout {
             StateDownloads.instance.removeDownload(_download);
             StateDownloads.instance.preventPlaylistDownload(_download);
         };
+        _videoRetry.setOnClickListener {
+            download.changeState(VideoDownload.State.QUEUED);
+            DownloadService.getOrCreateService(context) {
+
+            }
+        }
 
         _download.onProgressChanged.subscribe(this) {
             _scope.launch(Dispatchers.Main) {
@@ -122,16 +131,19 @@ class ActiveDownloadItem: LinearLayout {
             VideoDownload.State.DOWNLOADING -> {
                 _videoBar.visibility = VISIBLE;
                 _videoSpeed.visibility = VISIBLE;
+                _videoRetry.visibility = GONE;
             };
             VideoDownload.State.ERROR -> {
                 _videoState.setTextColor(Color.RED);
                 _videoState.text = _download.error ?: context.getString(R.string.error);
                 _videoBar.visibility = GONE;
                 _videoSpeed.visibility = GONE;
+                _videoRetry.visibility = VISIBLE;
             }
             else -> {
                 _videoBar.visibility = GONE;
                 _videoSpeed.visibility = GONE;
+                _videoRetry.visibility = GONE;
             }
         }
     }

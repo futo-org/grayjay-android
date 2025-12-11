@@ -15,6 +15,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.downloads.VideoDownload
+import com.futo.platformplayer.engine.exceptions.ScriptReloadRequiredException
 import com.futo.platformplayer.exceptions.DownloadException
 import com.futo.platformplayer.getNowDiffMinutes
 import com.futo.platformplayer.logging.Logger
@@ -169,6 +170,7 @@ class DownloadService : Service() {
                 Thread.sleep(500);
             }
             catch(ex: Throwable) {
+                if(ex is ScriptReloadRequiredException)
                 Logger.e(TAG, "Download failed", ex);
                 if(currentVideo.video == null && currentVideo.videoDetails == null) {
                     //Corrupt?

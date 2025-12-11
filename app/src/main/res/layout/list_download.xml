@@ -119,6 +119,21 @@
                 android:layout_marginEnd="10dp" />
 
             <TextView
+                android:id="@+id/downloaded_author"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:gravity="center_vertical"
+                android:textSize="9dp"
+                android:textColor="@color/gray_e0"
+                android:fontFamily="@font/inter_extra_light"
+                app:layout_constraintTop_toBottomOf="@id/downloaded_video_name"
+                app:layout_constraintLeft_toLeftOf="parent"
+                tools:text="ShortCircuit"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginStart="10dp"  />
+
+            <TextView
                 android:id="@+id/download_cancel"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
@@ -130,20 +145,20 @@
                 android:background="@drawable/background_small_button"
                 android:textAlignment="center"
                 android:text="@string/cancel" />
+            <TextView
+                android:id="@+id/download_retry"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:padding="2dp"
+                android:visibility="gone"
+                app:layout_constraintRight_toRightOf="@id/download_cancel"
+                app:layout_constraintTop_toBottomOf="@id/download_cancel"
+                android:textSize="10dp"
+                android:background="@drawable/background_small_button"
+                android:textAlignment="center"
+                android:text="@string/retry" />
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <TextView
-            android:id="@+id/downloaded_author"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:gravity="center_vertical"
-            android:textSize="9dp"
-            android:textColor="@color/gray_e0"
-            android:fontFamily="@font/inter_extra_light"
-            tools:text="ShortCircuit"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:layout_marginStart="10dp"  />
     </LinearLayout>
     <LinearLayout
         android:layout_height="wrap_content"

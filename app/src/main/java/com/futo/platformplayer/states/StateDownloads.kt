@@ -179,6 +179,7 @@ class StateDownloads {
 
     fun removeDownload(download: VideoDownload) {
         download.isCancelled = true;
+        download.cleanup();
         _downloading.delete(download);
         onDownloadsChanged.emit();
     }
