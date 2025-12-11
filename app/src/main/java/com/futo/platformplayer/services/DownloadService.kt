@@ -170,7 +170,7 @@ class DownloadService : Service() {
                 Thread.sleep(500);
             }
             catch(ex: Throwable) {
-                if(ex is ScriptReloadRequiredException)
+                //if(ex is ScriptReloadRequiredException)
                 Logger.e(TAG, "Download failed", ex);
                 if(currentVideo.video == null && currentVideo.videoDetails == null) {
                     //Corrupt?
