@@ -44,6 +44,7 @@ import com.futo.platformplayer.exceptions.DownloadException
 import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.parsers.HLS
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.states.StateDownloads
@@ -101,6 +102,7 @@ class VideoDownload {
 
     var videoSource: VideoUrlSource?;
     var audioSource: AudioUrlSource?;
+    var overrideResultAudioSource: IAudioSource? = null;
     @Contextual
     @Transient
     val videoSourceToUse: IVideoSource? get () = if(requiresLiveVideoSource) videoSourceLive as IVideoSource? else videoSource as IVideoSource?;
@@ -437,6 +439,11 @@ class VideoDownload {
             videoFileNameBase = "${videoDetails!!.id.value!!} [${actualVideoSource!!.width}x${actualVideoSource!!.height}]".sanitizeFileName();
             videoFileNameExt = videoContainerToExtension(actualVideoSource!!.container);
             videoFilePath = File(downloadDir, videoFileName!!).absolutePath;
+            if(actualVideoSource is JSDashManifestRawSource && actualAudioSource == null) {
+                audioFileNameBase = "${videoDetails!!.id.value!!}-[unknown]".sanitizeFileName();
+                audioFileNameExt = videoAudioContainerToExtension(actualVideoSource!!.container);
+                audioFilePath = File(downloadDir, audioFileName!!).absolutePath;
+            }
         }
         if(actualAudioSource != null) {
             audioFileNameBase = "${videoDetails!!.id.value!!} [${actualAudioSource!!.language}-${actualAudioSource!!.bitrate}]".sanitizeFileName();
@@ -490,7 +497,11 @@ class VideoDownload {
                         else -> downloadFileSource("Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
-                    videoFileSize = downloadDashFileSource("Video", client, actualVideoSource, File(downloadDir, videoFileName!!), progressCallback);
+                    if(actualAudioSource == null)
+                        videoFileSize = downloadDashFileSource("Video", client, actualVideoSource, File(downloadDir, videoFileName!!), progressCallback, 3,
+                            File(downloadDir, audioFileName!!));
+                    else
+                        videoFileSize = downloadDashFileSource("Video", client, actualVideoSource, File(downloadDir, videoFileName!!), progressCallback, 1);
                 }
                 else throw NotImplementedError("NotImplemented video download: " + actualVideoSource.javaClass.name);
             });
@@ -530,7 +541,7 @@ class VideoDownload {
                         else -> downloadFileSource("Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
-                    audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback);
+                    audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback, 2);
                 }
                 else throw NotImplementedError("NotImplemented audio download: " + actualAudioSource.javaClass.name);
             });
@@ -856,14 +867,19 @@ class VideoDownload {
         return downloadedTotalLength
     }
 
-    private fun downloadDashFileSource(name: String, client: ManagedHttpClient, source: IJSDashManifestRawSource, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadDashFileSource(name: String, client: ManagedHttpClient, source: IJSDashManifestRawSource, targetFile: File, onProgress: (Long, Long, Long) -> Unit, downloadType: Int = 0, targetFileAudio: File? = null): Long {
         if(targetFile.exists())
             targetFile.delete();
+        if(targetFileAudio?.exists() ?: false)
+            targetFileAudio.delete();
 
         targetFile.createNewFile();
+        targetFileAudio?.createNewFile();
 
         val sourceLength: Long?;
+        val sourceLengthAudio: Long?;
         val fileStream = FileOutputStream(targetFile);
+        val fileStream2 = if(targetFileAudio != null) FileOutputStream(targetFileAudio) else null;
 
         var executor: JSRequestExecutor? = null;
         try{
@@ -874,13 +890,26 @@ class VideoDownload {
                 throw IllegalStateException("No manifest after generation");
 
             //TODO: Temporary naive assume single-sourced dash
-            val foundTemplate = REGEX_DASH_TEMPLATE.find(manifest);
-            if(foundTemplate == null || foundTemplate.groupValues.size != 3)
+            val foundTemplates = REGEX_DASH_TEMPLATE_WITH_MIME.findAll(manifest);
+            val foundTemplate = when(downloadType) {
+                1 -> foundTemplates.find({ it.groupValues[1].contains("video/") });
+                2 -> foundTemplates.find({ it.groupValues[1].contains("audio/") });
+                else -> foundTemplates.find({ it.groupValues[1].contains("video/") });
+            }
+            if(foundTemplate == null || foundTemplate.groupValues.size != 4)
                 throw IllegalStateException("No SegmentTemplate found in manifest (unsupported dash?)");
-            val foundTemplateUrl = foundTemplate.groupValues[1];
-            val foundCues = REGEX_DASH_CUE.findAll(foundTemplate.groupValues[2]);
+            val foundTemplateUrl = foundTemplate.groupValues[2];
+            val foundCues = REGEX_DASH_CUE.findAll(foundTemplate.groupValues[3]).toList();
             if(foundCues.count() <= 0)
                 throw IllegalStateException("No Cues found in manifest (unsupported dash?)");
+
+            val foundTemplate2 = if(downloadType == 3) foundTemplates.find({ it.groupValues[1].contains("audio/") }); else null;
+            val foundTemplateUrl2 = if(foundTemplate2 != null) foundTemplate2.groupValues[2] else null;
+            val foundCues2 = if(foundTemplate2 != null) REGEX_DASH_CUE.findAll(foundTemplate2.groupValues[3]).toList() else null;
+            val foundCues2Downloaded = hashSetOf<MatchResult>();
+
+            if(foundTemplate2 != null)
+                overrideResultAudioSource = LocalAudioSource((videoSource?.name)?.let { it + " [audio]" } ?: "audio", "", 0, 0, foundTemplate2.groupValues[1], REGEX_CODECS.find(foundTemplate2.groupValues[0])?.groupValues?.get(1) ?: "", Language.UNKNOWN);
 
             executor = if(source is JSSource && source.hasRequestExecutor)
                 source.getRequestExecutor();
@@ -896,13 +925,17 @@ class VideoDownload {
             Logger.i(TAG, "Download $name Dash, CueCount: " + foundCues.count().toString());
 
             var written: Long = 0;
+            var written2: Long = 0;
             var indexCounter = 0;
+            var indexCounter2 = 0;
             onProgress(foundCues.count().toLong(), 0, 0);
+            val totalCues = foundCues.count().toLong() + (foundCues2?.count()?.toLong() ?: 0)
+            val lastCue = foundCues.lastOrNull();
             for(cue in foundCues) {
                 val t = cue.groupValues[1];
                 val d = cue.groupValues[2];
 
-
+                Logger.i(TAG, "Downloading cue ${indexCounter}")
                 val url = foundTemplateUrl.replace("\$Number\$", (indexCounter).toString());
                 val modified = modifier?.modifyRequest(url, mapOf());
 
@@ -918,17 +951,51 @@ class VideoDownload {
                 speedTracker.addWork(data.size.toLong());
                 written += data.size;
 
-                onProgress(foundCues.count().toLong(), indexCounter.toLong(), speedTracker.lastSpeed);
+                onProgress(totalCues, indexCounter.toLong() + indexCounter2.toLong(), speedTracker.lastSpeed);
+
 
                 indexCounter++;
+
+                if(foundCues2 != null && foundTemplateUrl2 != null && fileStream2 != null) {
+                    val toDownload = if(lastCue != null && cue == lastCue)
+                        foundCues2.filter { !foundCues2Downloaded.contains(it) }.toList() else
+                        foundCues2.filter { !foundCues2Downloaded.contains(it) && (it.groupValues[1].toLong()) < t.toLong() }.toList();
+                    Logger.i(TAG, "Downloading audio cues (${toDownload.size})")
+                    for(cue2 in toDownload) {
+                        val index2 = foundCues2.indexOf(cue2);
+                        val t2 = cue2.groupValues[1];
+                        val d2 = cue2.groupValues[2];
+                        val url2 = foundTemplateUrl2!!.replace("\$Number\$", (index2).toString());
+                        val modified2 = modifier?.modifyRequest(url, mapOf());
+
+                        val data = if(executor != null)
+                            executor.executeRequest("GET", modified2?.url ?: url2, null, modified2?.headers ?: mapOf());
+                        else {
+                            val resp = client.get(modified2?.url ?: url, modified2?.headers?.toMutableMap() ?: mutableMapOf());
+                            if(!resp.isOk)
+                                throw IllegalStateException("Dash request2 failed for index " + indexCounter.toString() + ", with code: " + resp.code.toString());
+                            resp.body!!.bytes()
+                        }
+                        fileStream2.write(data, 0, data.size);
+                        speedTracker.addWork(data.size.toLong());
+                        written2 += data.size;
+                        indexCounter2++;
+
+                        foundCues2Downloaded.add(cue2);
+                        onProgress(totalCues, indexCounter.toLong() + indexCounter2.toLong(), speedTracker.lastSpeed);
+                    }
+                }
             }
             sourceLength = written;
+            sourceLengthAudio = written2;
 
             Logger.i(TAG, "$name downloadSource Finished");
         }
         catch(ioex: IOException) {
             if(targetFile.exists() ?: false)
                 targetFile.delete();
+            if(targetFileAudio?.exists() ?: false)
+                targetFileAudio.delete();
             if(ioex.message?.contains("ENOSPC") ?: false)
                 throw Exception("Not enough space on device", ioex);
             else
@@ -937,12 +1004,17 @@ class VideoDownload {
         catch(ex: Throwable) {
             if(targetFile.exists() ?: false)
                 targetFile.delete();
+            if(targetFileAudio?.exists() ?: false)
+                targetFileAudio.delete();
             throw ex;
         }
         finally {
             fileStream.close();
+            fileStream2?.close();
             executor?.closeAsync()
         }
+        if(sourceLengthAudio != null && sourceLengthAudio > 0)
+            audioFileSize = sourceLengthAudio
         return sourceLength!!;
     }
     private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
@@ -1304,7 +1376,7 @@ class VideoDownload {
                     throw IllegalStateException("Expected size [${videoFileSize}], but found ${expectedFile.length()}");
             }
         }
-        if(audioSourceToUse != null) {
+        if(audioSourceToUse != null || (videoSourceToUse is IJSDashManifestRawSource)) {
             if(audioFilePath == null)
                 throw IllegalStateException("Missing audio file name after download");
             val expectedFile = File(audioFilePath!!);
@@ -1327,7 +1399,7 @@ class VideoDownload {
         Logger.i(TAG, "VideoDownload Complete [${name}]");
         val existing = StateDownloads.instance.getCachedVideo(id);
         val localVideoSource = videoFilePath?.let { LocalVideoSource.fromSource(videoSourceToUse!!, it, videoFileSize ?: 0, videoOverrideContainer) };
-        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(audioSourceToUse!!, it, audioFileSize ?: 0, audioOverrideContainer) };
+        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(overrideResultAudioSource ?: audioSourceToUse!!, it, audioFileSize ?: 0, audioOverrideContainer) };
         val localSubtitleSource = subtitleFilePath?.let { LocalSubtitleSource.fromSource(subtitleSource!!, it) };
 
         if(localVideoSource != null && videoSourceToUse != null && videoSourceToUse is IStreamMetaDataSource)
@@ -1392,6 +1464,8 @@ class VideoDownload {
         const val GROUP_WATCHLATER= "WatchLater";
 
         val REGEX_DASH_TEMPLATE = Regex("<SegmentTemplate .*?media=\"(.*?)\".*?>(.*?)<\\/SegmentTemplate>", RegexOption.DOT_MATCHES_ALL);
+        val REGEX_DASH_TEMPLATE_WITH_MIME = Regex("<Representation.*?mimeType=\\\"(.*?)\\\".*?>.*?<SegmentTemplate .*?media=\\\"(.*?)\\\".*?>(.*?)<\\/SegmentTemplate>", RegexOption.DOT_MATCHES_ALL);
+        val REGEX_CODECS = Regex("codecs=\\\"(.*?)\\\"")
         val REGEX_DASH_CUE = Regex("<S .*?t=\"([0-9]*?)\".*?d=\"([0-9]*?)\".*?\\/>", RegexOption.DOT_MATCHES_ALL);
 
         fun videoContainerToExtension(container: String): String? {
@@ -1409,6 +1483,16 @@ class VideoDownload {
                 return "mkv";
             else
                 return "video";//throw IllegalStateException("Unknown container: " + container)
+        }
+
+        //TODO: Change usages of this to an accurate container instead of infering it.
+        fun videoAudioContainerToExtension(container: String): String? {
+            if (container.contains("video/mp4") || container == "application/vnd.apple.mpegurl")
+                return "mp4a";
+            else if (container.contains("video/webm"))
+                return "webm";
+            else
+                return "mp4a";//throw IllegalStateException("Unknown container: " + container)
         }
 
         fun audioContainerToExtension(container: String): String {
