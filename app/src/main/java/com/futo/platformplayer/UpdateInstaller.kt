@@ -26,15 +26,17 @@ object UpdateInstaller {
     private const val TAG = "UpdateInstaller"
 
     @SuppressLint("RequestInstallPackagesPolicy")
-    fun startInstall(context: Context, apkFile: File) {
+    fun startInstall(context: Context, version: Int, apkFile: File) {
         if (!apkFile.exists()) {
             Logger.w(TAG, "APK file does not exist: ${apkFile.absolutePath}")
             UIDialogs.toast(context, "Update file missing")
+            UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, "APK file does not exist.")
             return
         }
 
         if (BuildConfig.IS_PLAYSTORE_BUILD) {
             UIDialogs.toast(context, "Updates are managed by the Play Store")
+            UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, "Updates are managed by the Play Store.")
             return
         }
 
@@ -42,6 +44,7 @@ object UpdateInstaller {
             val pm = context.packageManager
             if (!pm.canRequestPackageInstalls()) {
                 UIDialogs.toast(context, "Allow this app to install updates, then try again")
+                UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, "Install update permission was missing.")
 
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                     data = "package:${context.packageName}".toUri()
@@ -72,13 +75,16 @@ object UpdateInstaller {
                     session.fsync(sessionStream)
                 }
 
-                val intent = Intent(context, InstallReceiver::class.java)
+                val intent = Intent(context, InstallReceiver::class.java).apply {
+                    putExtra(UpdateNotificationManager.EXTRA_VERSION, version)
+                    putExtra(UpdateNotificationManager.EXTRA_APK_PATH, apkFile.absolutePath)
+                }
                 val pendingIntent = getBroadcast(context, 0, intent, FLAG_MUTABLE or FLAG_UPDATE_CURRENT)
                 val statusReceiver = pendingIntent.intentSender
 
                 InstallReceiver.onReceiveResult.subscribe(this) { message ->
                     InstallReceiver.onReceiveResult.clear();
-                    onReceiveResult(context, message);
+                    onReceiveResult(context, version, apkFile, message);
                 };
                 Logger.i(TAG, "Committing install session for ${apkFile.absolutePath}")
                 session.commit(statusReceiver)
@@ -88,6 +94,8 @@ object UpdateInstaller {
                 withContext(Dispatchers.Main) {
                     UIDialogs.toast(context, "Failed to install update: ${e.message}")
                 }
+
+                UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, e.message)
             } finally {
                 session?.close()
                 inputStream?.close()
@@ -95,10 +103,20 @@ object UpdateInstaller {
         }
     }
 
+    private fun onReceiveResult(context: Context, version: Int, apkFile: File, result: String?) {
+        try {
+            InstallReceiver.onReceiveResult.remove(this)
 
-
-    private fun onReceiveResult(context: Context, result: String?) {
-        InstallReceiver.onReceiveResult.remove(this);
-        UIDialogs.showGeneralErrorDialog(context, "Install failed due to:\n" + result);
+            if (result.isNullOrEmpty()) {
+                Logger.i(TAG, "Update install finished successfully")
+                UpdateNotificationManager.showInstallSucceededNotification(context, version)
+            } else {
+                Logger.w(TAG, "Update install failed: $result")
+                UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, result)
+                UIDialogs.showGeneralErrorDialog(context, "Install failed due to:\n$result")
+            }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to handle install result", e)
+        }
     }
 }

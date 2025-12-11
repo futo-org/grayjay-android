@@ -15,6 +15,8 @@ class InstallUpdateActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        UpdateNotificationManager.cancelAll(this)
+
         val version = intent.getIntExtra(UpdateNotificationManager.EXTRA_VERSION, 0)
         val apkPath = intent.getStringExtra(UpdateNotificationManager.EXTRA_APK_PATH)
 
@@ -32,7 +34,7 @@ class InstallUpdateActivity : AppCompatActivity() {
             return
         }
 
-        UpdateInstaller.startInstall(this, apkFile)
+        UpdateInstaller.startInstall(this, version, apkFile)
         finish()
     }
 

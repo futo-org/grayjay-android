@@ -21,6 +21,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UpdateDownloadService
+import com.futo.platformplayer.UpdateNotificationManager
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.logging.Logger
@@ -64,12 +65,14 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         _buttonShowChangelog = findViewById(R.id.button_show_changelog);
 
         _buttonNever.setOnClickListener {
+            UpdateNotificationManager.cancelAll(context)
             Settings.instance.autoUpdate.check = 1;
             Settings.instance.save();
             dismiss();
         };
 
         _buttonClose.setOnClickListener {
+            UpdateNotificationManager.cancelAll(context)
             dismiss();
         };
 
@@ -79,6 +82,8 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
         };
 
         _buttonUpdate.setOnClickListener {
+            UpdateNotificationManager.cancelAll(context)
+
             if (_updating) {
                 return@setOnClickListener;
             }

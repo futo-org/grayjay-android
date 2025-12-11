@@ -600,38 +600,54 @@ class VideoDownload {
     }
 
     private suspend fun combineSegments(context: Context, segmentFiles: List<File>, targetFile: File) = withContext(Dispatchers.IO) {
-        suspendCancellableCoroutine { continuation ->
-            val fileList = File(context.cacheDir, "fileList-${UUID.randomUUID()}.txt")
-            fileList.writeText(segmentFiles.joinToString("\n") { "file '${it.absolutePath}'" })
+        require(segmentFiles.isNotEmpty()) { "segmentFiles must not be empty" }
 
-            val cmd = "-f concat -safe 0 -i \"${fileList.absolutePath}\" -c copy \"${targetFile.absolutePath}\""
+        suspendCancellableCoroutine { continuation ->
+            val concatInput = buildString {
+                append("concat:")
+                append(
+                    segmentFiles.joinToString("|") { file ->
+                        file.absolutePath
+                    }
+                )
+            }
+
+            val cmd = "-i \"$concatInput\" -c copy \"${targetFile.absolutePath}\""
+
             val statisticsCallback = StatisticsCallback { _ ->
-                //TODO: Show progress?
+                //No callback
             }
 
             val executorService = Executors.newSingleThreadExecutor()
-            val session = FFmpegKit.executeAsync(cmd,
-                { session ->
-                    if (ReturnCode.isSuccess(session.returnCode)) {
-                        fileList.delete()
+
+            val session = FFmpegKit.executeAsync(
+                cmd,
+                { completedSession ->
+                    executorService.shutdown()
+
+                    if (ReturnCode.isSuccess(completedSession.returnCode)) {
                         continuation.resumeWith(Result.success(Unit))
                     } else {
-                        val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
+                        val errorMessage = if (ReturnCode.isCancel(completedSession.returnCode)) {
                             "Command cancelled"
                         } else {
-                            "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
+                            "Command failed with state '${completedSession.state}' " +
+                                    "and return code ${completedSession.returnCode}, " +
+                                    "stack trace ${completedSession.failStackTrace}"
                         }
-                        fileList.delete()
                         continuation.resumeWithException(RuntimeException(errorMessage))
                     }
                 },
-                { Logger.v(TAG, it.message) },
+                { log ->
+                    Logger.v(TAG, log.message)
+                },
                 statisticsCallback,
                 executorService
             )
 
             continuation.invokeOnCancellation {
                 session.cancel()
+                executorService.shutdownNow()
             }
         }
     }
