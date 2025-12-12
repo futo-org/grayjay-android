@@ -38,6 +38,6 @@ class JSPlaylistDetails: JSPlaylist, IPlatformPlaylistDetails {
             onProgress?.invoke(videos.size);
         }
 
-        return Playlist(UUID.randomUUID().toString(), name, videos.map { SerializedPlatformVideo.fromVideo(it)});
+        return Playlist(UUID.randomUUID().toString(), name, videos.map { SerializedPlatformVideo.fromVideo(it)}, url);
     }
 }
