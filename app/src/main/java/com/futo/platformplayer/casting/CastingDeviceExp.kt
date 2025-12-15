@@ -2,12 +2,14 @@ package com.futo.platformplayer.casting
 
 import android.os.Build
 import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
+import com.futo.polycentric.core.Event
 import org.fcast.sender_sdk.ApplicationInfo
-import org.fcast.sender_sdk.GenericKeyEvent
-import org.fcast.sender_sdk.GenericMediaEvent
+import org.fcast.sender_sdk.KeyEvent
+import org.fcast.sender_sdk.MediaEvent
 import org.fcast.sender_sdk.PlaybackState
 import org.fcast.sender_sdk.Source
 import java.net.InetAddress
@@ -15,8 +17,10 @@ import org.fcast.sender_sdk.CastingDevice as RsCastingDevice;
 import org.fcast.sender_sdk.DeviceEventHandler as RsDeviceEventHandler;
 import org.fcast.sender_sdk.DeviceConnectionState
 import org.fcast.sender_sdk.DeviceFeature
+import org.fcast.sender_sdk.EventSubscription
 import org.fcast.sender_sdk.IpAddr
 import org.fcast.sender_sdk.LoadRequest
+import org.fcast.sender_sdk.MediaItemEventType
 import org.fcast.sender_sdk.Metadata
 import org.fcast.sender_sdk.ProtocolType
 import org.fcast.sender_sdk.urlFormatIpAddr
@@ -63,6 +67,7 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
         var onDurationChanged = Event1<Double>()
         var onVolumeChanged = Event1<Double>()
         var onSpeedChanged = Event1<Double>()
+        var onMediaItemEnd = Event0()
 
         override fun connectionStateChanged(state: DeviceConnectionState) {
             onConnectionStateChanged.emit(state)
@@ -92,12 +97,14 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
             // TODO
         }
 
-        override fun keyEvent(event: GenericKeyEvent) {
+        override fun keyEvent(event: KeyEvent) {
             // Unreachable
         }
 
-        override fun mediaEvent(event: GenericMediaEvent) {
-            // Unreachable
+        override fun mediaEvent(event: MediaEvent) {
+            if (event.type == MediaItemEventType.END) {
+                onMediaItemEnd.emit()
+            }
         }
 
         override fun playbackError(message: String) {
@@ -127,6 +134,8 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
         get() = eventHandler.onVolumeChanged
     override val onSpeedChanged: Event1<Double>
         get() = eventHandler.onSpeedChanged
+    override val onMediaItemEnd: Event0
+        get() = eventHandler.onMediaItemEnd
 
     override fun resumePlayback() = device.resumePlayback()
     override fun pausePlayback() = device.pausePlayback()
@@ -181,7 +190,8 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
             resumePosition = resumePosition,
             speed = speed,
             volume = volume,
-            metadata = metadata
+            metadata = metadata,
+            requestHeaders = null,
         )
     )
 
@@ -200,6 +210,7 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
             speed = speed,
             volume = volume,
             metadata = metadata,
+            requestHeaders = null,
         )
     )
 
@@ -227,6 +238,13 @@ class CastingDeviceExp(val device: RsCastingDevice) : CastingDevice() {
         eventHandler.onConnectionStateChanged.subscribe { newState ->
             when (newState) {
                 is DeviceConnectionState.Connected -> {
+                    if (device.supportsFeature(DeviceFeature.MEDIA_EVENT_SUBSCRIPTION)) {
+                        try {
+                            device.subscribeEvent(EventSubscription.MediaItemEnd)
+                        } catch (e: Exception) {
+                            Logger.e(TAG, "Failed to subscribe to MediaItemEnd events: $e")
+                        }
+                    }
                     usedRemoteAddress = ipAddrToInetAddress(newState.usedRemoteAddr)
                     localAddress = ipAddrToInetAddress(newState.localAddr)
                     connectionState = CastConnectionState.CONNECTED
