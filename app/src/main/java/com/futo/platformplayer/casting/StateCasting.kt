@@ -1323,8 +1323,14 @@ abstract class StateCasting {
             return emptyList()
         }
 
+        var hasAudioInDash = false
         for (representation in representationRegex.findAll(dashContent)) {
             val mediaType = representation.groups[1]?.value ?: throw Exception("Media type should be found")
+
+            if (mediaType.startsWith("audio/")) {
+                hasAudioInDash = true
+            }
+
             dashContent = mediaInitializationRegex.replace(dashContent) {
                 if (it.range.first < representation.range.first || it.range.last > representation.range.last) {
                     return@replace it.value
@@ -1348,16 +1354,20 @@ abstract class StateCasting {
             throw Exception("Audio source without request executor not supported")
         }
 
-        if (audioSource != null && audioSource.hasRequestExecutor) {
-            val oldExecutor = _audioExecutor;
-            oldExecutor?.closeAsync();
-            _audioExecutor = audioSource.getRequestExecutor()
+        if (videoSource != null && videoSource.hasRequestExecutor) {
+            val oldVideoExecutor = _videoExecutor
+            oldVideoExecutor?.closeAsync()
+            _videoExecutor = videoSource.getRequestExecutor()
         }
 
-        if (videoSource != null && videoSource.hasRequestExecutor) {
-            val oldExecutor = _videoExecutor;
-            oldExecutor?.closeAsync();
-            _videoExecutor = videoSource.getRequestExecutor()
+        if (audioSource != null) {
+            val oldExecutor = _audioExecutor
+            oldExecutor?.closeAsync()
+            _audioExecutor = audioSource.getRequestExecutor()
+        } else if (hasAudioInDash && videoSource != null) {
+            val oldExecutor = _audioExecutor
+            oldExecutor?.closeAsync()
+            _audioExecutor = _videoExecutor
         }
 
         //TOOD: Else also handle the non request executor case, perhaps add ?url=$originalUrl to the query parameters, ... propagate this for all other flows also
@@ -1388,7 +1398,7 @@ abstract class StateCasting {
                 }.withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castDashRaw");
         }
-        if (audioSource != null) {
+        if (audioSource != null || (audioSource == null && hasAudioInDash)) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpFunctionHandler("GET", audioPath) { httpContext ->
                     val originalUrl = httpContext.query["url"]?.let { URLDecoder.decode(it, "UTF-8") } ?: return@HttpFunctionHandler
