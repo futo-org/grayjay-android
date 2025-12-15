@@ -232,7 +232,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 
     //Rust casting SDK
-    implementation('org.futo.gitlab.videostreaming.fcast-sdk-jitpack:sender-sdk-minimal:0.3.1') {
+    implementation('org.futo.gitlab.videostreaming.fcast-sdk-jitpack:sender-sdk-minimal:0.4.0') {
         // Polycentricandroid includes this
         exclude group: 'net.java.dev.jna'
     }

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.casting
 
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.CastingDeviceInfo
 import kotlinx.serialization.KSerializer
@@ -181,6 +182,7 @@ class CastingDeviceLegacyWrapper(val inner: CastingDeviceLegacy) : CastingDevice
     override val onDurationChanged: Event1<Double> get() = inner.onDurationChanged
     override val onVolumeChanged: Event1<Double> get() = inner.onVolumeChanged
     override val onSpeedChanged: Event1<Double> get() = inner.onSpeedChanged
+    override val onMediaItemEnd: Event0 = Event0()
     override var connectionState: CastConnectionState
         get() = inner.connectionState
         set(_) = Unit

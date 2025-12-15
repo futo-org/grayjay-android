@@ -1,5 +1,6 @@
 package com.futo.platformplayer.casting
 
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.models.CastingDeviceInfo
 import org.fcast.sender_sdk.Metadata
@@ -16,6 +17,7 @@ abstract class CastingDevice {
     abstract val onDurationChanged: Event1<Double>
     abstract val onVolumeChanged: Event1<Double>
     abstract val onSpeedChanged: Event1<Double>
+    abstract val onMediaItemEnd: Event0
     abstract var connectionState: CastConnectionState
     abstract val protocolType: CastProtocolType
     abstract var isPlaying: Boolean
