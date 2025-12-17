@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.OptIn
@@ -74,6 +75,8 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import androidx.core.net.toUri
 import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuButtonList
+import kotlin.collections.toList
 
 class UISlideOverlays {
     companion object {
@@ -573,6 +576,51 @@ class UISlideOverlays {
                 return null;
             }
 
+
+            val allLanguages = videoSources?.map { it.language }?.distinct() ?: listOf();
+            val langResCombinations = if(videoSources != null) allLanguages.flatMap {
+                    lang -> videoSources
+                .filter { v -> v.language == lang }
+                .map { it.height * it.width }
+                .distinct()
+                .map { res -> Pair(res, lang) }
+            } else listOf();
+            var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+            var selectedLanguage: String? = null;
+            val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
+                SlideUpMenuButtonList(container.context, null, "language_filter", true).apply {
+                    var languageFilterLabels = allLanguages.filterNotNull().toList();
+                    val english = languageFilterLabels.find { it?.lowercase() == "en" };
+                    val originalLanguage = videoSources?.find { it.original == true }?.language;
+                    val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
+                    val hasPrimaryLanguage = videoSources?.any { it.language == primaryLanguage } ?: false;
+
+                    if(english != null)
+                        languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
+                    if(primaryLanguage != null && languageFilterLabels.contains(primaryLanguage))
+                        languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList();
+                    if(originalLanguage != null)
+                        languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList();
+                    Log.i(TAG, "Language filtesr: ${languageFilterLabels.joinToString(", ")}");
+                    selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null);
+                    setButtons(languageFilterLabels, selectedLanguage);
+                    onClick.subscribe { selected ->
+                        setSelected(selected);
+
+                        videoSourceItems.forEach {
+                            val item = it.itemTag;
+                            if(item is IVideoSource) {
+                                if(item.language == selected)
+                                    it.visibility = View.VISIBLE;
+                                else
+                                    it.visibility = View.GONE;
+                            }
+                        }
+                    }
+                }
+            else null;
+
+            if(languageFilters != null) items.add(languageFilters)
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoSources,
                 listOf((if (audioSources != null) listOf(SlideUpMenuItem(
                     container.context,
@@ -609,7 +657,13 @@ class UISlideOverlays {
                                         menu?.setOk(container.context.getString(R.string.download));
                                 },
                                 invokeParent = false
-                            )
+                            ).apply {
+                                videoSourceItems.add(this);
+                                if(selectedLanguage != null) {
+                                    if(it.language != selectedLanguage)
+                                        this.visibility = View.GONE;
+                                }
+                            }
                         }
 
                         is JSDashManifestRawSource -> {
@@ -629,7 +683,13 @@ class UISlideOverlays {
                                         menu?.setOk(container.context.getString(R.string.download));
                                 },
                                 invokeParent = false
-                            )
+                            ).apply {
+                                videoSourceItems.add(this);
+                                if(selectedLanguage != null) {
+                                    if(it.language != selectedLanguage)
+                                        this.visibility = View.GONE;
+                                }
+                            }
                         }
 
                         is IHLSManifestSource -> {
@@ -643,7 +703,13 @@ class UISlideOverlays {
                                     showHlsPicker(video, it, it.url, container)
                                 },
                                 invokeParent = false
-                            )
+                            ).apply {
+                                videoSourceItems.add(this);
+                                if(selectedLanguage != null) {
+                                    if(it.language != selectedLanguage)
+                                        this.visibility = View.GONE;
+                                }
+                            }
                         }
 
                         else -> {
