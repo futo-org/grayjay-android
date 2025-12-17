@@ -20,6 +20,9 @@ class LocalVideoContentSource: IVideoSource {
     override val duration: Long;
     override val priority: Boolean = false;
 
+    override val language: String? = null;
+    override val original: Boolean? = false;
+
     var contentUrl: String;
 
     constructor(contentUrl: String, mime: String, name: String? = null, duration: Long = 0) {

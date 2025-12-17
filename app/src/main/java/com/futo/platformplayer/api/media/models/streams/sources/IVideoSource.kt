@@ -9,4 +9,6 @@ interface IVideoSource {
     val bitrate : Int?;
     val duration: Long;
     val priority: Boolean;
+    val language: String?;
+    val original: Boolean?;
 }

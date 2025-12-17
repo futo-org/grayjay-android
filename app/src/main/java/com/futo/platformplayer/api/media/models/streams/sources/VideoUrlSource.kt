@@ -19,6 +19,9 @@ open class VideoUrlSource(
 ) : IVideoUrlSource, IStreamMetaDataSource {
     override var streamMetaData: StreamMetaData? = null;
 
+    override val language: String? = null;
+    override val original: Boolean? = false;
+
     override fun getVideoUrl() : String {
         return url;
     }

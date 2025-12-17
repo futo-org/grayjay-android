@@ -14,6 +14,9 @@ class HLSVariantVideoUrlSource(
     override val priority: Boolean,
     val url: String
 ) : IVideoUrlSource {
+    override val language: String? = null;
+    override val original: Boolean? = false;
+
     override fun getVideoUrl(): String {
         return url
     }

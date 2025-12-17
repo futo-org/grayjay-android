@@ -2423,9 +2423,17 @@ class VideoDetailView : ConstraintLayout {
 
         val doDedup = Settings.instance.playback.simplifySources;
 
-        val bestVideoSources = if(doDedup) (videoSources?.map { it.height * it.width }
-            ?.distinct()
-            ?.map { x -> VideoHelper.selectBestVideoSource(videoSources.filter { x == it.height * it.width }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
+        val allLanguages = videoSources?.map { it.language } ?: listOf();
+        val langResCombinations = if(videoSources != null) allLanguages.flatMap {
+            lang -> videoSources
+                .filter { v -> v.language == lang }
+                .map { it.height * it.width }
+                .distinct()
+                .map { res -> Pair(res, lang) }
+        } else listOf();
+
+        val bestVideoSources = if(doDedup && videoSources != null) (langResCombinations
+            ?.map { comb -> VideoHelper.selectBestVideoSource(videoSources.filter { comb.first == it.height * it.width && comb.second == it.language }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
             ?.plus(videoSources.filter { it is IHLSManifestSource || it is IDashManifestSource }))
             ?.distinct()
             ?.filterNotNull()
