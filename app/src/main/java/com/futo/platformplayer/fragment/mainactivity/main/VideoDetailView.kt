@@ -33,6 +33,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.text.toLowerCase
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -2423,7 +2424,7 @@ class VideoDetailView : ConstraintLayout {
 
         val doDedup = Settings.instance.playback.simplifySources;
 
-        val allLanguages = videoSources?.map { it.language } ?: listOf();
+        val allLanguages = videoSources?.map { it.language }?.distinct() ?: listOf();
         val langResCombinations = if(videoSources != null) allLanguages.flatMap {
             lang -> videoSources
                 .filter { v -> v.language == lang }
@@ -2431,6 +2432,43 @@ class VideoDetailView : ConstraintLayout {
                 .distinct()
                 .map { res -> Pair(res, lang) }
         } else listOf();
+
+
+        Log.i(TAG, "Language count: ${allLanguages}");
+        var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+        var selectedLanguage: String? = null;
+        val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
+            SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
+                var languageFilterLabels = allLanguages.filterNotNull().toList();
+                val english = languageFilterLabels.find { it?.lowercase() == "en" };
+                val originalLanguage = videoSources?.find { it.original == true }?.language;
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
+                val hasPrimaryLanguage = videoSources?.any { it.language == primaryLanguage } ?: false;
+
+                if(english != null)
+                    languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
+                if(primaryLanguage != null && languageFilterLabels.contains(primaryLanguage))
+                    languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList();
+                if(originalLanguage != null)
+                    languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList();
+                Log.i(TAG, "Language filtesr: ${languageFilterLabels.joinToString(", ")}");
+                selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null);
+                setButtons(languageFilterLabels, selectedLanguage);
+                onClick.subscribe { selected ->
+                    setSelected(selected);
+
+                    videoSourceItems.forEach {
+                        val item = it.itemTag;
+                        if(item is IVideoSource) {
+                            if(item.language == selected)
+                                it.visibility = View.VISIBLE;
+                            else
+                                it.visibility = View.GONE;
+                        }
+                    }
+                }
+            }
+        else null;
 
         val bestVideoSources = if(doDedup && videoSources != null) (langResCombinations
             ?.map { comb -> VideoHelper.selectBestVideoSource(videoSources.filter { comb.first == it.height * it.width && comb.second == it.language }, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS) }
@@ -2539,11 +2577,10 @@ class VideoDetailView : ConstraintLayout {
                                 call = { _player.selectAudioTrack(it.bitrate) });
                         }.toList().toTypedArray())
             else null,
-
+            if(languageFilters != null) languageFilters else null,
             if(bestVideoSources.isNotEmpty())
                 SlideUpMenuGroup(this.context, context.getString(R.string.video), "video",
-                    *bestVideoSources
-                        .map {
+                            (bestVideoSources.map {
                             val estSize = VideoHelper.estimateSourceSize(it);
                             val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
                             SlideUpMenuItem(this.context,
@@ -2552,8 +2589,14 @@ class VideoDetailView : ConstraintLayout {
                                 if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "",
                                 (prefix + it.codec.trim()).trim(),
                                 tag = it,
-                                call = { handleSelectVideoTrack(it) });
-                        }.toList().toTypedArray())
+                                call = { handleSelectVideoTrack(it) }).apply {
+                                    videoSourceItems.add(this);
+                                    if(selectedLanguage != null) {
+                                        if(it.language != selectedLanguage)
+                                            this.visibility = View.GONE;
+                                    }
+                                };
+                        }).toList())
             else null,
             if(bestAudioSources.isNotEmpty())
                 SlideUpMenuGroup(this.context, context.getString(R.string.audio), "audio",

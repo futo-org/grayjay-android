@@ -387,7 +387,7 @@ class Settings : FragmentedStorageFileJson() {
         @DropdownFieldOptionsId(R.array.audio_languages)
         var primaryLanguage: Int = 0;
 
-        fun getPrimaryLanguage(context: Context): String? {
+        fun getPrimaryLanguage(context: Context? = null): String? {
             return when(primaryLanguage) {
                 0 -> "en";
                 1 -> "es";
