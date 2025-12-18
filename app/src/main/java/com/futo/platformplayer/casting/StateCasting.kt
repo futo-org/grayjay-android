@@ -1241,6 +1241,47 @@ abstract class StateCasting {
         return "http://${address.toUrlAddress().trim('/')}:${_castServer.port}";
     }
 
+    private fun escapeXml(s: String): String =
+        s.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+
+    private fun injectSubtitleAdaptationSet(
+        mpd: String,
+        subtitleUrl: String,
+        mimeType: String,
+        lang: String = "und",
+        label: String = "Subtitles"
+    ): String {
+        val mt = mimeType.lowercase()
+        val codecs = when (mt) {
+            "text/vtt", "text/webvtt" -> "wvtt"
+            "application/ttml+xml", "application/ttml" -> "stpp"
+            else -> null
+        }
+        val codecsAttr = codecs?.let { " codecs=\"${escapeXml(it)}\"" } ?: ""
+
+        val adaptation = """
+        <AdaptationSet id="subtitles-1" contentType="text" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}">
+          <Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
+          <Label>${escapeXml(label)}</Label>
+          <Representation id="subtitles-1"$codecsAttr bandwidth="256" mimeType="${escapeXml(mimeType)}">
+            <BaseURL>${escapeXml(subtitleUrl)}</BaseURL>
+          </Representation>
+        </AdaptationSet>
+    """.trimIndent()
+
+        val periodClose = Regex("</Period\\s*>", RegexOption.IGNORE_CASE)
+
+        return if (periodClose.containsMatchIn(mpd)) {
+            mpd.replaceFirst(periodClose, adaptation + "\n</Period>")
+        } else {
+            mpd
+        }
+    }
+
     @OptIn(UnstableApi::class)
     private suspend fun castDashRaw(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: JSDashManifestRawSource?, audioSource: JSDashManifestRawAudioSource?, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null) : List<String> {
         val ad = activeDevice ?: return listOf();
@@ -1262,30 +1303,42 @@ abstract class StateCasting {
         val videoUrl = url + videoPath
         val audioUrl = url + audioPath
 
+        val subtitleMimeTypeFull = subtitleSource?.format ?: "text/vtt"
+        val subtitleMimeTypeForMpd = subtitleMimeTypeFull.substringBefore(';').trim()
+
         val subtitlesUri = if (subtitleSource != null) withContext(Dispatchers.IO) {
-            return@withContext subtitleSource.getSubtitlesURI();
-        } else null;
+            subtitleSource.getSubtitlesURI()
+        } else null
 
-        var subtitlesUrl: String? = null;
+        var subtitlesUrl: String? = null
         if (subtitlesUri != null) {
-            if(subtitlesUri.scheme == "file") {
-                var content: String? = null;
-                val inputStream = contentResolver.openInputStream(subtitlesUri);
-                inputStream?.use { stream ->
-                    val reader = stream.bufferedReader();
-                    content = reader.use { it.readText() };
+            when (subtitlesUri.scheme) {
+                "file", "content" -> {
+                    val content = withContext(Dispatchers.IO) {
+                        contentResolver.openInputStream(subtitlesUri)?.use { stream ->
+                            stream.bufferedReader().use { it.readText() }
+                        }
+                    }
+
+                    if (!content.isNullOrEmpty()) {
+                        _castServer.addHandlerWithAllowAllOptions(
+                            HttpConstantHandler("GET", subtitlePath, content, subtitleMimeTypeFull)
+                                .withHeader("Access-Control-Allow-Origin", "*"),
+                            true
+                        ).withTag("castDashRaw")
+
+                        subtitlesUrl = url + subtitlePath
+                    }
                 }
 
-                if (content != null) {
-                    _castServer.addHandlerWithAllowAllOptions(
-                        HttpConstantHandler("GET", subtitlePath, content!!, subtitleSource?.format ?: "text/vtt")
-                            .withHeader("Access-Control-Allow-Origin", "*"), true
-                    ).withTag("cast");
+                "http", "https" -> {
+                    // Receiver will fetch directly (works only if it doesn’t need auth/headers)
+                    subtitlesUrl = subtitlesUri.toString()
                 }
 
-                subtitlesUrl = url + subtitlePath;
-            } else {
-                subtitlesUrl = subtitlesUri.toString();
+                else -> {
+                    Logger.w(TAG, "Unsupported subtitlesUri scheme: ${subtitlesUri.scheme}")
+                }
             }
         }
 
@@ -1329,6 +1382,14 @@ abstract class StateCasting {
         if (castId != _castId.get()) {
             Log.i(TAG, "Get DASH cancelled.")
             return emptyList()
+        }
+
+        if (subtitlesUrl != null) {
+            dashContent = injectSubtitleAdaptationSet(
+                dashContent,
+                subtitlesUrl!!,
+                subtitleMimeTypeForMpd
+            )
         }
 
         var hasAudioInDash = false
