@@ -1264,10 +1264,10 @@ abstract class StateCasting {
         val codecsAttr = codecs?.let { " codecs=\"${escapeXml(it)}\"" } ?: ""
 
         val adaptation = """
-        <AdaptationSet id="subtitles-1" contentType="text" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}">
+        <AdaptationSet id="123456" contentType="text" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}">
           <Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
           <Label>${escapeXml(label)}</Label>
-          <Representation id="subtitles-1"$codecsAttr bandwidth="256" mimeType="${escapeXml(mimeType)}">
+          <Representation id="123457"$codecsAttr bandwidth="256" mimeType="${escapeXml(mimeType)}">
             <BaseURL>${escapeXml(subtitleUrl)}</BaseURL>
           </Representation>
         </AdaptationSet>
