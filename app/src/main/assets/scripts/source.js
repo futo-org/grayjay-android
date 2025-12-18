@@ -415,6 +415,8 @@ class VideoUrlSource {
         this.url = obj.url;
         if(obj.requestModifier)
             this.requestModifier = obj.requestModifier;
+        this.language = obj?.language;
+        this.original = obj?.original;
     }
 }
 class VideoUrlWidevineSource extends VideoUrlSource {
@@ -512,6 +514,8 @@ class HLSSource {
             this.language = obj.language;
         if(obj.requestModifier)
             this.requestModifier = obj.requestModifier;
+        this.language = obj?.language;
+        this.original = obj?.original;
     }
 }
 class DashSource {
@@ -525,6 +529,8 @@ class DashSource {
             this.language = obj.language;
         if(obj.requestModifier)
             this.requestModifier = obj.requestModifier;
+        this.language = obj?.language;
+        this.original = obj?.original;
     }
 }
 class DashWidevineSource extends DashSource {
@@ -550,6 +556,7 @@ class DashManifestRawSource {
         this.language = obj.language ?? Language.UNKNOWN;
         if(obj.requestModifier)
             this.requestModifier = obj.requestModifier;
+        this.original = obj?.original;
     }
 }
 

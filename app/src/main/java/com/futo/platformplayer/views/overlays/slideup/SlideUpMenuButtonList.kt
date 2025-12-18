@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.dp
 
 class SlideUpMenuButtonList : LinearLayout {
     private val _root: LinearLayout;
@@ -20,10 +21,16 @@ class SlideUpMenuButtonList : LinearLayout {
     var _activeText: String? = null;
     val id: String?
 
-    constructor(context: Context, attrs: AttributeSet? = null, id: String? = null): super(context, attrs) {
-        this.id = id
+    val scrollable: Boolean;
 
-        LayoutInflater.from(context).inflate(R.layout.overlay_slide_up_menu_button_list, this, true);
+    constructor(context: Context, attrs: AttributeSet? = null, id: String? = null, scrollable: Boolean = false): super(context, attrs) {
+        this.id = id
+        this.scrollable = scrollable ?: false;
+
+        LayoutInflater.from(context).inflate(
+            if(!scrollable)
+            R.layout.overlay_slide_up_menu_button_list
+            else R.layout.overlay_slide_up_menu_button_list_scrollable, this, true);
 
         _root = findViewById(R.id.root);
     }
@@ -37,8 +44,9 @@ class SlideUpMenuButtonList : LinearLayout {
         buttons.clear();
         for (t in texts) {
             val button = LinearLayout(context);
-            button.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT).apply {
-                weight = 1.0f;
+            button.layoutParams = LinearLayout.LayoutParams(if(!scrollable) 0 else LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT).apply {
+                if(!scrollable)
+                    weight = 1.0f;
                 marginStart = marginLeft;
                 marginEnd = marginRight;
             };
@@ -49,7 +57,11 @@ class SlideUpMenuButtonList : LinearLayout {
                 onClick.emit(t);
             };
 
-            button.setPadding(0, 0, 0, 0);
+            val dp8 = 8.dp(resources)
+            if(!scrollable)
+                button.setPadding(0, 0, 0, 0);
+            else
+                button.setPadding(dp8, 0, dp8, 0);
 
             val text = TextView(context);
             text.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -69,6 +81,18 @@ class SlideUpMenuButtonList : LinearLayout {
     fun setSelected(text: String) {
         buttons[_activeText]?.background = ContextCompat.getDrawable(context, R.drawable.background_slide_up_option);
         buttons[text]?.background = ContextCompat.getDrawable(context, R.drawable.background_slide_up_option_selected);
+
+
+        val dp8 = 8.dp(resources)
+        if(!scrollable) {
+            buttons[text]?.setPadding(0, 0, 0, 0);
+            buttons[_activeText]?.setPadding(0, 0, 0, 0);
+        }
+        else {
+            buttons[text]?.setPadding(dp8, 0, dp8, 0);
+            buttons[_activeText]?.setPadding(dp8, 0, dp8, 0);
+        }
+
         _activeText = text;
     }
 }

@@ -28,6 +28,9 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
     override val licenseUri: String
     override val hasLicenseRequestExecutor: Boolean
 
+    override val language: String?;
+    override val original: Boolean?;
+
     @Suppress("ConvertSecondaryConstructorToPrimary")
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH, plugin, obj) {
         val contextName = "DashWidevineSource"
@@ -40,6 +43,9 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
 
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName)
         hasLicenseRequestExecutor = obj.has("getLicenseRequestExecutor")
+
+        language = _obj.getOrNull(config, "language", contextName);
+        original = _obj.getOrNull(config, "original", contextName);
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {

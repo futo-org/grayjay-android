@@ -44,6 +44,9 @@ open class JSVideoUrlSource(
     override var priority: Boolean =
         _obj.getOrDefault<Boolean>(cfg, "priority", ctx, false) ?: false
 
+    override val language: String? = _obj.getOrDefault(cfg, "language", ctx, null);
+    override val original: Boolean? = _obj.getOrDefault(cfg, "original", ctx, null);
+
     override fun getVideoUrl(): String = url
 
     override fun toString(): String =

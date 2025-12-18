@@ -52,8 +52,8 @@ class VideoHelper {
         fun isDownloadable(source: IVideoSource) = (source is IVideoUrlSource || source is IHLSManifestSource || source is JSDashManifestRawSource) && source !is IWidevineSource
         fun isDownloadable(source: IAudioSource) = (source is IAudioUrlSource || source is IHLSManifestAudioSource || source is JSDashManifestRawAudioSource) && source !is IWidevineSource
 
-        fun selectBestVideoSource(desc: IVideoSourceDescriptor, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? = selectBestVideoSource(desc.videoSources.toList(), desiredPixelCount, prefContainers);
-        fun selectBestVideoSource(sources: Iterable<IVideoSource>, desiredPixelCount : Int, prefContainers : Array<String>) : IVideoSource? {
+        fun selectBestVideoSource(desc: IVideoSourceDescriptor, desiredPixelCount : Int, prefContainers : Array<String>, preferredLanguage: String? = null) : IVideoSource? = selectBestVideoSource(desc.videoSources.toList(), desiredPixelCount, prefContainers, preferredLanguage);
+        fun selectBestVideoSource(sources: Iterable<IVideoSource>, desiredPixelCount : Int, prefContainers : Array<String>, preferredLanguage: String? = null) : IVideoSource? {
             val targetVideo = if(desiredPixelCount > 0) {
                 sources.toList().minByOrNull { x -> abs(x.height * x.width - desiredPixelCount) };
             } else {
@@ -63,10 +63,32 @@ class VideoHelper {
             val hasPriority = sources.any { it.priority };
 
             val targetPixelCount = if(targetVideo != null) targetVideo.width * targetVideo.height else desiredPixelCount;
-            val altSources = if(hasPriority) {
+
+            //Filter priority
+            var altSources = if(hasPriority) {
                 sources.filter { it.priority }.sortedBy { x -> abs(x.height * x.width - targetPixelCount) };
             } else {
                 sources.filter { it.height == (targetVideo?.height ?: 0) };
+            }
+
+            //Filter Original
+            val hasOriginal = altSources.any { it.original == true };
+            if(hasOriginal && Settings.instance.playback.preferOriginalAudio)
+                altSources = altSources.filter { it.original == true };
+
+            //Filter Language
+            val languageToFilter = if(preferredLanguage != null && altSources.any { it.language == preferredLanguage }) {
+                preferredLanguage
+            } else {
+                if(altSources.any { it.language == Language.ENGLISH })
+                    Language.ENGLISH;
+                else
+                    Language.UNKNOWN;
+            }
+            if(altSources.any { it.language == languageToFilter }) {
+                altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList();
+            } else {
+                altSources.sortedBy { it.bitrate }
             }
 
             var bestSource = altSources.firstOrNull();

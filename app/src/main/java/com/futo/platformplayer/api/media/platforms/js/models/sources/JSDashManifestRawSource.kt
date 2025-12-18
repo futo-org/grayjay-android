@@ -39,6 +39,10 @@ open class JSDashManifestRawSource(
     private val ctx = "DashRawSource"
     private val cfg = plugin.config
 
+    override val language: String? = _obj.getOrDefault(cfg, "language", ctx, null);
+    override val original: Boolean? = _obj.getOrDefault(cfg, "original", ctx, null);
+
+
     override val container: String =
         _obj.getOrDefault<String>(cfg, "container", ctx, null) ?: "application/dash+xml"
 
@@ -184,6 +188,9 @@ class JSDashManifestMergingRawSource(
         get() = video.width;
     override val priority: Boolean
         get() = video.priority;
+
+    override val language: String? get() = audio.language
+    override val original: Boolean? get() = audio.original;
 
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         val videoDashDef = video.generateAsync(scope);

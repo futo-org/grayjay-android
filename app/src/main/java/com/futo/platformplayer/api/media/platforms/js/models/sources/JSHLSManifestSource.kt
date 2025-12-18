@@ -21,6 +21,9 @@ class JSHLSManifestSource : IHLSManifestSource, JSSource {
 
     override var priority: Boolean = false;
 
+    override val language: String?;
+    override val original: Boolean?;
+
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_HLS, plugin, obj) {
         val contextName = "HLSSource";
         val config = plugin.config;
@@ -30,5 +33,8 @@ class JSHLSManifestSource : IHLSManifestSource, JSSource {
         duration = _obj.getOrThrow<Int>(config, "duration", contextName).toLong();
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
+
+        language = _obj.getOrNull(config, "language", contextName);
+        original = _obj.getOrNull(config, "original", contextName);
     }
 }

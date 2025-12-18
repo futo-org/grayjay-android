@@ -21,6 +21,9 @@ class JSDashManifestSource : IVideoUrlSource, IDashManifestSource, JSSource {
 
     override var priority: Boolean = false;
 
+    override val language: String?;
+    override val original: Boolean?;
+
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_DASH, plugin, obj) {
         val contextName = "DashSource";
         val config = plugin.config;
@@ -29,6 +32,9 @@ class JSDashManifestSource : IVideoUrlSource, IDashManifestSource, JSSource {
         duration = _obj.getOrThrow(config, "duration", contextName);
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
+
+        language = obj.getOrNull(config, "language", contextName);
+        original = obj.getOrNull(config, "original", contextName);
     }
 
     override fun getVideoUrl(): String {

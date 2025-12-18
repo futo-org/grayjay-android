@@ -12,6 +12,9 @@ class DashManifestSource : IVideoSource, IDashManifestSource {
 
     override var priority: Boolean = false;
 
+    override val language: String? = null;
+    override val original: Boolean? = false;
+
     constructor(url : String) {
         this.url = url;
     }
