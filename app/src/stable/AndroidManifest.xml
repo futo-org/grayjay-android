@@ -40,6 +40,7 @@
                 <data android:host="old.bitchute.com" />
                 <data android:host="open.spotify.com" />
                 <data android:host="music.youtube.com" />
+                <data android:host="b23.tv" />
                 <data android:pathPrefix="/" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
@@ -71,6 +72,7 @@
                 <data android:host="old.bitchute.com" />
                 <data android:host="open.spotify.com" />
                 <data android:host="music.youtube.com" />
+                <data android:host="b23.tv" />
             </intent-filter>
         </activity>
     </application>
