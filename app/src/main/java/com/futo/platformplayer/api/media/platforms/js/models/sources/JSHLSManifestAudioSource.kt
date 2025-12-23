@@ -34,7 +34,7 @@ class JSHLSManifestAudioSource : IHLSManifestAudioSource, JSSource {
         language = _obj.getOrThrow(config, "language", contextName);
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
-        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
+        original =  obj.getOrNull(config, "original", contextName) ?: false;
     }
 
 

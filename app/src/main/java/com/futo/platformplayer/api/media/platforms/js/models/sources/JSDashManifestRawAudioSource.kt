@@ -54,7 +54,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         duration = _obj.getOrDefault(config, "duration", contextName, 0) ?: 0;
         priority = _obj.getOrDefault(config, "priority", contextName, false) ?: false;
         language = _obj.getOrDefault(config, "language", contextName, Language.UNKNOWN) ?: Language.UNKNOWN;
-        original =  if(_obj.has("original")) obj.getOrThrow(config, "original", contextName) else false;
+        original =  obj.getOrNull(config, "original", contextName) ?: false;
         hasGenerate = _obj.has("generate");
     }
 
