@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
@@ -57,16 +58,22 @@ import com.futo.platformplayer.views.casting.CastView.Companion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.fcast.sender_sdk.CastContext
+import org.fcast.sender_sdk.DeviceInfo
 import org.fcast.sender_sdk.Metadata
+import org.fcast.sender_sdk.NsdDeviceDiscoverer
+import org.fcast.sender_sdk.ProtocolType
 import java.net.Inet6Address
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
+import org.fcast.sender_sdk.DeviceInfo as RsDeviceInfo
 
-abstract class StateCasting {
+class StateCasting {
     val _scopeIO = CoroutineScope(Dispatchers.IO);
     val _scopeMain = CoroutineScope(Dispatchers.Main);
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
@@ -92,15 +99,163 @@ abstract class StateCasting {
     val isCasting: Boolean get() = activeDevice != null;
     private val _castId = AtomicInteger(0)
 
-    abstract fun handleUrl(url: String)
-    abstract fun onStop()
-    abstract fun start(context: Context)
-    abstract fun stop()
+    private val _context = CastContext()
+    var _deviceDiscoverer: NsdDeviceDiscoverer? = null
 
-    abstract fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice?
-    abstract fun startUpdateTimeJob(
-        onTimeJobTimeChanged_s: Event1<Long>, setTime: (Long) -> Unit
-    ): Job?
+    class DiscoveryEventHandler(
+        private val onDeviceAdded: (RsDeviceInfo) -> Unit,
+        private val onDeviceRemoved: (String) -> Unit,
+        private val onDeviceUpdated: (RsDeviceInfo) -> Unit,
+    ) : org.fcast.sender_sdk.DeviceDiscovererEventHandler {
+        override fun deviceAvailable(deviceInfo: RsDeviceInfo) {
+            onDeviceAdded(deviceInfo)
+        }
+
+        override fun deviceChanged(deviceInfo: RsDeviceInfo) {
+            onDeviceUpdated(deviceInfo)
+        }
+
+        override fun deviceRemoved(deviceName: String) {
+            onDeviceRemoved(deviceName)
+        }
+    }
+
+    init {
+        if (BuildConfig.DEBUG) {
+            org.fcast.sender_sdk.initLogger(org.fcast.sender_sdk.LogLevelFilter.DEBUG)
+        }
+    }
+
+    fun handleUrl(url: String) {
+        try {
+            val foundDeviceInfo = org.fcast.sender_sdk.deviceInfoFromUrl(url)!!
+            val foundDevice = _context.createDeviceFromInfo(foundDeviceInfo)
+            connectDevice(CastingDevice(foundDevice))
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to handle URL: $e")
+        }
+    }
+
+    fun onStop() {
+        val ad = activeDevice ?: return
+        _resumeCastingDevice = ad.getDeviceInfo()
+        Log.i(TAG, "_resumeCastingDevice set to '${ad.name}'")
+        Logger.i(TAG, "Stopping active device because of onStop.")
+        try {
+            ad.disconnect()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to disconnect from device: $e")
+        }
+    }
+
+    @Synchronized
+    fun start(context: Context) {
+        if (_started)
+            return
+        _started = true
+
+        Log.i(TAG, "_resumeCastingDevice set null start")
+        _resumeCastingDevice = null
+
+        Logger.i(TAG, "CastingService starting...")
+
+        _castServer.start()
+        enableDeveloper(true)
+
+        Logger.i(TAG, "CastingService started.")
+
+        _deviceDiscoverer = NsdDeviceDiscoverer(
+            context,
+            DiscoveryEventHandler(
+                { deviceInfo -> // Added
+                    Logger.i(TAG, "Device added: ${deviceInfo.name}")
+                    val device = _context.createDeviceFromInfo(deviceInfo)
+                    val deviceHandle = CastingDevice(device)
+                    devices[deviceHandle.device.name()] = deviceHandle
+                    invokeInMainScopeIfRequired {
+                        onDeviceAdded.emit(deviceHandle)
+                    }
+                },
+                { deviceName -> // Removed
+                    invokeInMainScopeIfRequired {
+                        if (devices.containsKey(deviceName)) {
+                            val device = devices.remove(deviceName)
+                            if (device != null) {
+                                onDeviceRemoved.emit(device)
+                            }
+                        }
+                    }
+                },
+                { deviceInfo -> // Updated
+                    Logger.i(TAG, "Device updated: $deviceInfo")
+                    val handle = devices[deviceInfo.name]
+                    if (handle != null && handle is CastingDevice) {
+                        handle.device.setPort(deviceInfo.port)
+                        handle.device.setAddresses(deviceInfo.addresses)
+                        invokeInMainScopeIfRequired {
+                            onDeviceChanged.emit(handle)
+                        }
+                    }
+                },
+            )
+        )
+    }
+
+    @Synchronized
+    fun stop() {
+        if (!_started) {
+            return
+        }
+
+        _started = false
+
+        Logger.i(TAG, "CastingService stopping.")
+
+        _scopeIO.cancel()
+        _scopeMain.cancel()
+
+        Logger.i(TAG, "Stopping active device because StateCasting is being stopped.")
+        val d = activeDevice
+        activeDevice = null
+        try {
+            d?.disconnect()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to disconnect device: $e")
+        }
+
+        _castServer.stop()
+        _castServer.removeAllHandlers()
+
+        Logger.i(TAG, "CastingService stopped.")
+
+        _deviceDiscoverer = null
+    }
+
+    fun startUpdateTimeJob(
+        onTimeJobTimeChanged_s: Event1<Long>,
+        setTime: (Long) -> Unit
+    ): Job? = null
+
+    fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice? {
+        try {
+            val rsAddrs =
+                deviceInfo.addresses.map { org.fcast.sender_sdk.tryIpAddrFromStr(it) }
+            val rsDeviceInfo = RsDeviceInfo(
+                name = deviceInfo.name,
+                protocol = when (deviceInfo.type) {
+                    com.futo.platformplayer.casting.CastProtocolType.CHROMECAST -> ProtocolType.CHROMECAST
+                    com.futo.platformplayer.casting.CastProtocolType.FCAST -> ProtocolType.F_CAST
+                    else -> throw IllegalArgumentException()
+                },
+                addresses = rsAddrs,
+                port = deviceInfo.port.toUShort(),
+            )
+
+            return CastingDevice(_context.createDeviceFromInfo(rsDeviceInfo))
+        } catch (_: Throwable) {
+            return null
+        }
+    }
 
     fun onResume() {
         val ad = activeDevice
@@ -1532,11 +1687,7 @@ abstract class StateCasting {
     }
 
     companion object {
-        var instance: StateCasting = if (Settings.instance.casting.experimentalCasting) {
-            StateCastingExp()
-        } else {
-            StateCastingLegacy()
-        }
+        var instance = StateCasting()
         private val representationRegex = Regex(
             "<Representation .*?mimeType=\"(.*?)\".*?>(.*?)<\\/Representation>",
             RegexOption.DOT_MATCHES_ALL

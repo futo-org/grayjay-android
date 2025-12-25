@@ -40,13 +40,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
         _buttonConfirm = findViewById(R.id.button_confirm);
         _buttonTutorial = findViewById(R.id.button_tutorial)
 
-        val deviceTypeArray =  if (Settings.instance.casting.experimentalCasting) {
-            R.array.exp_casting_device_type_array
-        } else {
-            R.array.casting_device_type_array
-        }
-
-        ArrayAdapter.createFromResource(context, deviceTypeArray, R.layout.spinner_item_simple).also { adapter ->
+        ArrayAdapter.createFromResource(context, R.array.casting_device_type_array, R.layout.spinner_item_simple).also { adapter ->
             adapter.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             _spinnerType.adapter = adapter;
         };
