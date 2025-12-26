@@ -725,11 +725,6 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var allowLinkLocalIpv4: Boolean = false;
 
-        @AdvancedField
-        @FormField(R.string.experimental_cast, FieldForm.TOGGLE, R.string.experimental_cast_description, 6)
-        @Serializable(with = FlexibleBooleanSerializer::class)
-        var experimentalCasting: Boolean = true
-
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)

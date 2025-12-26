@@ -9,7 +9,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
-import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.CastProtocolType
@@ -91,13 +90,7 @@ class DeviceViewHolder : ViewHolder {
                 _textType.text = "AirPlay";
             }
             CastProtocolType.FCAST -> {
-                _imageDevice.setImageResource(
-                    if (Settings.instance.casting.experimentalCasting) {
-                        R.drawable.ic_exp_fc
-                    } else {
-                        R.drawable.ic_fc
-                    }
-                )
+                _imageDevice.setImageResource(R.drawable.ic_fc)
                 _textType.text = "FCast";
             }
         }

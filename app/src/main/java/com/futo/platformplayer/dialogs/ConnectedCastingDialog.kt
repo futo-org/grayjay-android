@@ -12,7 +12,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
-import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.CastProtocolType
@@ -174,13 +173,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
                 _textType.text = "AirPlay";
             }
             CastProtocolType.FCAST -> {
-                _imageDevice.setImageResource(
-                    if (Settings.instance.casting.experimentalCasting) {
-                        R.drawable.ic_exp_fc
-                    } else {
-                        R.drawable.ic_fc
-                    }
-                )
+                _imageDevice.setImageResource(R.drawable.ic_fc)
                 _textType.text = "FCast";
             }
         }
