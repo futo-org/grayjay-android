@@ -15,9 +15,9 @@ class PluginMediaDrmCallback(
 ) : MediaDrmCallback by delegate {
 
     @ExperimentalEncodingApi
-    override fun executeKeyRequest(uuid: UUID, request: ExoMediaDrm.KeyRequest): ByteArray {
+    override fun executeKeyRequest(uuid: UUID, request: ExoMediaDrm.KeyRequest): MediaDrmCallback.Response {
         val pluginResponse = requestExecutor.executeRequest("POST", licenseUrl, request.data, mapOf())
 
-        return pluginResponse
+        return MediaDrmCallback.Response(pluginResponse)
     }
 }
