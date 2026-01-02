@@ -43,6 +43,7 @@ import com.futo.platformplayer.logging.AndroidLogConsumer
 import com.futo.platformplayer.logging.FileLogConsumer
 import com.futo.platformplayer.logging.LogLevel
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.receivers.AudioNoisyReceiver
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -732,8 +733,10 @@ class StateApp {
                         ));
 
                     for(update in updateAvailable)
-                        if(StatePlatform.instance.isClientEnabled(update.first.id))
-                            UIDialogs.showPluginUpdateDialog(context, update.first, update.second);
+                        if(StatePlatform.instance.isClientEnabled(update.first.id)) {
+                            //UIDialogs.showPluginUpdateDialog(context, update.first, update.second);
+                            StateAnnouncement.instance.registerPluginUpdate(update.first, update.second);
+                        }
                 }
             }
         }

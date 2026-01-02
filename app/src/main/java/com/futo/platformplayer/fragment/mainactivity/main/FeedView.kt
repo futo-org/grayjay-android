@@ -47,7 +47,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     private val _progressBar: ProgressBar;
     private val _spinnerSortBy: Spinner;
     private val _containerSortBy: LinearLayout;
-    private val _announcementView: AnnouncementView;
+    //private val _announcementView: AnnouncementView;
     private val _tagsView: TagsView;
     private val _textCentered: TextView;
     private val _emptyPagerContainer: FrameLayout;
@@ -87,7 +87,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         _textCentered = findViewById(R.id.text_centered);
         _emptyPagerContainer = findViewById(R.id.empty_pager_container);
         _progressBar = findViewById(R.id.progress_bar);
-        _announcementView = findViewById(R.id.announcement_view)
+        //_announcementView = findViewById(R.id.announcement_view)
         _progressBar.inactiveColor = Color.TRANSPARENT;
 
         _swipeRefresh = findViewById(R.id.swipe_refresh);
@@ -192,7 +192,7 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
     }
 
     protected fun showAnnouncementView() {
-        _announcementView.visibility = View.VISIBLE
+        //_announcementView.visibility = View.VISIBLE
     }
 
     private fun ensureEnoughContentVisible(filteredResults: List<TConverted>) {

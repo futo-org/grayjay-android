@@ -30,11 +30,12 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!--
                 <com.futo.platformplayer.views.announcements.AnnouncementView
                     android:id="@+id/announcement_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone" />
+                    android:visibility="gone" /> -->
 
                 <com.futo.platformplayer.views.others.RadioGroupView
                     android:id="@+id/radio_group"

@@ -896,6 +896,7 @@
     <string name="cd_creator_thumbnail">Creator thumbnail</string>
     <string name="cd_button_clear_search">Clear search</string>
     <string name="cd_button_search">Search</string>
+    <string name="cd_button_notifs">Notifications</string>
     <string name="cd_search_icon">Search icon</string>
     <string name="cd_button_back">Back button</string>
     <string name="cd_app_icon">App icon</string>
