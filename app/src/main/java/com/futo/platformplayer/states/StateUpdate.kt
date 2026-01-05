@@ -113,7 +113,10 @@ class StateUpdate {
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            return File(dir, "app-${DESIRED_ABI}-${version}.apk");
+            val result = File(dir, "app-${DESIRED_ABI}-${version}.apk");
+            //if(result.exists())
+            //    result.delete();
+            return result;
         }
 
         fun getPartialApkFile(context: Context, version: Int): File {
@@ -121,7 +124,10 @@ class StateUpdate {
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            return File(dir, "app-${DESIRED_ABI}-${version}.apk.part");
+            val result = File(dir, "app-${DESIRED_ABI}-${version}.apk.part");
+            //if(result.exists())
+            //    result.delete();
+            return result;
         }
 
         fun finish() {

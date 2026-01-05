@@ -7,8 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
@@ -78,6 +81,7 @@ class NotificationOverlayView: ConstraintLayout {
         protected val _buttonExtra: LinearLayout
         protected val _buttonExtraText: TextView
         protected val _loader: LoaderView;
+        protected val _progress: ProgressBar;
 
         init {
             _textName = _view.findViewById(R.id.text_name);
@@ -90,6 +94,7 @@ class NotificationOverlayView: ConstraintLayout {
             _buttonExtraText = _view.findViewById(R.id.button_extra_text);
             _icon = _view.findViewById(R.id.icon);
             _loader = _view.findViewById(R.id.loader);
+            _progress = _view.findViewById(R.id.progress);
 
             _buttonIgnore.setOnClickListener {
                 _announcement.let {
@@ -116,7 +121,11 @@ class NotificationOverlayView: ConstraintLayout {
 
 
         override fun bind(value: Announcement) {
+            val oldAnnouncement = _announcement;
             _announcement = value;
+
+            if(oldAnnouncement is SessionAnnouncement)
+                oldAnnouncement.onProgressChanged.clear();
 
             _textName.text = value.title;
             _textMetadata.text = value.msg;
@@ -141,6 +150,23 @@ class NotificationOverlayView: ConstraintLayout {
                 else {
                     _buttonIgnore.visibility = View.VISIBLE;
                 }
+                if(value.progress != null && value.announceType == AnnouncementType.ONGOING) {
+                    _progress.isVisible = true;
+                    _progress.min = 0;
+                    _progress.max = 100;
+                    value.onProgressChanged.subscribe {
+                        val prog = it.progress;
+                        if(prog == 0.toDouble() || prog == 100.toDouble()) {
+                            _progress.isIndeterminate = true;
+                        }
+                        else {
+                            _progress.isIndeterminate = false;
+                            _progress.setProgress(it.progress?.times(100)?.toInt() ?: 0, false);
+                        }
+                    }
+                }
+                else
+                    _progress.isVisible = false;
             }
             else {
                 _buttonExtra.visibility = View.GONE;

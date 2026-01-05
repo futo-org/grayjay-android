@@ -7,6 +7,8 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.dialogs.PluginUpdateDialog
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
@@ -118,8 +120,8 @@ class StateAnnouncement {
     }
 
     //Special Announcements
-    fun registerPluginUpdate(oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig) {
-        registerAnnouncementSession(SessionAnnouncement(
+    fun registerPluginUpdate(oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig): SessionAnnouncement {
+        val announcement = SessionAnnouncement(
             "update-plugin-" + UUID.randomUUID().toString(),
             "${newConfig.name} update v${newConfig.version} available!",
             "An update is available to upgrade from ${oldConfig.version} to ${newConfig.version}.",
@@ -127,7 +129,9 @@ class StateAnnouncement {
             null, "updates", "Update", StateAnnouncement.ACTION_UPDATE_PLUGIN,
             null, null,oldConfig.id,
             newConfig?.absoluteIconUrl?.let { ImageVariable.fromUrl(it) }
-        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, oldConfig.id));
+        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, oldConfig.id);
+        registerAnnouncementSession(announcement);
+        return announcement;
     }
     fun registerPluginUpdated(newConfig: SourcePluginConfig) {
         registerAnnouncementSession(SessionAnnouncement(
@@ -141,17 +145,18 @@ class StateAnnouncement {
         ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, newConfig.id));
     }
 
-    fun registerLoading(title: String, description: String, icon: ImageVariable? = null): String {
+    fun registerLoading(title: String, description: String, icon: ImageVariable? = null, customId: String? = null): SessionAnnouncement {
         val id = "loading-" + UUID.randomUUID().toString();
-        registerAnnouncementSession(SessionAnnouncement(
-            id,
+        val announcement = SessionAnnouncement(
+            customId ?: id,
             title,
             description,
             AnnouncementType.ONGOING,
             null, "loading", null, null,
             null, null,null, icon
-        ));
-        return id;
+        );
+        registerAnnouncementSession(announcement);
+        return announcement;
     }
 
 
@@ -338,9 +343,10 @@ class StateAnnouncement {
             return
 
         closeAnnouncement(notifId);
-        val loadingId = registerLoading("Updating ${plugin.config.name}..", "An update is in progress for ${plugin.config.name}.",
+        val loadingAnnouncement = registerLoading("Updating ${plugin.config.name}..", "An update is in progress for ${plugin.config.name}.",
             if(plugin.config.absoluteIconUrl != null) ImageVariable.fromUrl(plugin.config.absoluteIconUrl!!) else null);
 
+        val loadingId = loadingAnnouncement.id;
 
         StateApp.instance.contextOrNull?.let { context ->
 
@@ -462,11 +468,25 @@ class SessionAnnouncement(
     var extraActionId: String? = null;
     var extraActionData: String? = null;
 
+    var extraObj: Any? = null;
+
+    var progress: Double? = null;
+    val onProgressChanged = Event1<SessionAnnouncement>();
+
     fun withExtraAction(name: String, id: String, data: String? = null): SessionAnnouncement {
         extraActionName = name;
         extraActionId = id;
         extraActionData = data;
         return this;
+    }
+
+    fun setProgress(progress: Double) {
+        this.progress = progress;
+        onProgressChanged?.emit(this);
+    }
+    fun setProgress(progress: Int) {
+        this.progress = progress.toDouble().div(100);
+        onProgressChanged?.emit(this);
     }
 }
 

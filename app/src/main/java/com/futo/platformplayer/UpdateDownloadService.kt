@@ -7,6 +7,10 @@ import android.os.IBinder
 import android.os.SystemClock
 import com.futo.platformplayer.UIDialogs.ActionStyle
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImageVariable
+import com.futo.platformplayer.states.AnnouncementType
+import com.futo.platformplayer.states.SessionAnnouncement
+import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateUpdate
 import kotlinx.coroutines.*
@@ -14,6 +18,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.time.OffsetDateTime
 
 class UpdateDownloadService : Service() {
 
@@ -85,13 +90,16 @@ class UpdateDownloadService : Service() {
         job.cancel()
     }
 
-    private fun throttledUpdateDownloadProgress(version: Int, progress: Int, indeterminate: Boolean) {
+    private fun throttledUpdateDownloadProgress(version: Int, progress: Int, indeterminate: Boolean, onProgress: ((Int) -> Unit)? = null) {
         val now = SystemClock.elapsedRealtime()
         val force = progress == 100 && !indeterminate
 
         if (force || now - lastProgressUpdateElapsedMs >= MIN_PROGRESS_UPDATE_INTERVAL_MS) {
             lastProgressUpdateElapsedMs = now
-            UpdateNotificationManager.updateDownloadProgress(this, version, progress, indeterminate)
+            UpdateNotificationManager.updateDownloadProgress(this, version, progress, indeterminate);
+
+            if(onProgress != null)
+                onProgress.invoke(progress);
         }
     }
 
@@ -99,11 +107,20 @@ class UpdateDownloadService : Service() {
         val apkFile = StateUpdate.getApkFile(this, version)
         val partialFile = StateUpdate.getPartialApkFile(this, version)
 
+        var announcement: SessionAnnouncement? = null;
         try {
             if (apkFile.exists() && apkFile.length() > 0L) {
                 Logger.i(TAG, "APK already downloaded at ${apkFile.absolutePath}")
                 onDownloadComplete(version, apkFile)
                 return
+            }
+
+            try {
+                announcement = StateAnnouncement.instance.registerLoading("Downloading new version [${version}]", "New version is being downloaded..",
+                    ImageVariable.fromResource(R.drawable.foreground));
+            }
+            catch(ex: Exception){
+                Logger.e(TAG, "Failed to set progress announcement", ex);
             }
 
             var backoffMs = INITIAL_BACKOFF_MS
@@ -115,7 +132,13 @@ class UpdateDownloadService : Service() {
                 }
 
                 try {
-                    performDownload(StateUpdate.APK_URL, partialFile, version)
+                    performDownload(StateUpdate.APK_URL, partialFile, version, {
+                        try {
+                            if (announcement != null)
+                                announcement?.setProgress(it);
+                        }
+                        catch(ex: Throwable) {}
+                    })
 
                     if (!cancelRequested) {
                         if (apkFile.exists()) {
@@ -145,6 +168,12 @@ class UpdateDownloadService : Service() {
                 }
             }
         } finally {
+            try {
+                if (announcement != null) {
+                    StateAnnouncement.instance.closeAnnouncement(announcement.id);
+                }
+            }
+            catch(ex: Throwable){}
             isDownloading = false
             cancelRequested = false
             stopForeground(Service.STOP_FOREGROUND_REMOVE)
@@ -152,7 +181,7 @@ class UpdateDownloadService : Service() {
         }
     }
 
-    private fun performDownload(url: String, partialFile: File, version: Int) {
+    private fun performDownload(url: String, partialFile: File, version: Int, onProgress: ((Int)->Unit)? = null) {
         var startOffset = if (partialFile.exists()) partialFile.length() else 0L
         Logger.i(TAG, "Starting download. url=$url, existingBytes=$startOffset")
 
@@ -204,7 +233,7 @@ class UpdateDownloadService : Service() {
                                     progress > 100 -> 100
                                     else -> progress
                                 }
-                                throttledUpdateDownloadProgress(version, safeProgress, indeterminate = false)
+                                throttledUpdateDownloadProgress(version, safeProgress, indeterminate = false, onProgress)
                             }
                         } else {
                             throttledUpdateDownloadProgress(version, progress = 0, indeterminate = true)
@@ -250,6 +279,18 @@ class UpdateDownloadService : Service() {
                                 UpdateNotificationManager.cancelAll(ctx)
                                 UpdateInstaller.startInstall(ctx, version, apkFile)
                             }, ActionStyle.PRIMARY, true));
+
+                        try {
+                            StateAnnouncement.instance.registerAnnouncement("install-update-apk", "Grayjay v${version} is ready!", "You can now install the new Grayjay version.",
+                                AnnouncementType.SESSION,
+                                OffsetDateTime.now(), "update", "Install", {
+                                    UpdateNotificationManager.cancelAll(ctx)
+                                    UpdateInstaller.startInstall(ctx, version, apkFile)
+                                });
+                        }
+                        catch(ex: Throwable) {
+
+                        }
                     } catch (t: Throwable) {
                         Logger.w(TAG, "Failed to show in-app update downloaded dialog", t)
                         updateDownloadedDialog = null
