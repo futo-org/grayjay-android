@@ -15,6 +15,7 @@ import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.IV8ValuePromise
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.caoccao.javet.values.reference.V8ValuePromise
+import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
@@ -34,6 +35,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptTimeoutException
 import com.futo.platformplayer.engine.exceptions.ScriptUnavailableException
 import com.futo.platformplayer.engine.internal.V8Converter
 import com.futo.platformplayer.engine.packages.PackageBridge
+import com.futo.platformplayer.engine.packages.PackageBrowser
 import com.futo.platformplayer.engine.packages.PackageDOMParser
 import com.futo.platformplayer.engine.packages.PackageHttp
 import com.futo.platformplayer.engine.packages.PackageHttpImp
@@ -387,6 +389,11 @@ class V8Plugin {
             "HttpImp" -> PackageHttpImp(this, config)
             "Utilities" -> PackageUtilities(this, config)
             "JSDOM" -> PackageJSDOM(this, config)
+            "Browser" -> {
+                if(!BuildConfig.DEBUG)
+                    throw IllegalArgumentException("Browser is only allowed for debug builds due to security");
+                PackageBrowser(this)
+            };
             else -> if(allowNull) null else throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
         };
     }
