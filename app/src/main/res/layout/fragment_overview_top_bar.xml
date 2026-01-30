@@ -46,6 +46,42 @@
         android:scaleType="fitCenter"
         app:srcCompat="@drawable/ic_cast_white_25dp" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_notifs">
+        <ImageButton
+            android:id="@+id/button_notifs_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/cd_button_notifs"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="11dp"
+            android:paddingBottom="10dp"
+            android:scaleType="fitCenter"
+            android:clickable="false"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:srcCompat="@drawable/ic_notifications" />
+        <TextView
+            android:id="@+id/button_notifs_count"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:text="5"
+            android:textSize="12dp"
+            android:textAlignment="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:background="@drawable/background_primary_round_20dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginRight="5dp"
+            android:clickable="false"
+            />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <!--Back Button-->
     <ImageButton
         android:id="@+id/button_search"

@@ -116,7 +116,7 @@ class StatePlugins {
         _updatesAvailableMap = updatesAvailableFor
         return@withContext configs;
     }
-    private suspend fun checkForUpdates(c: SourcePluginConfig): SourcePluginConfig? = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdates(c: SourcePluginConfig): SourcePluginConfig? = withContext(Dispatchers.IO) {
         val sourceUrl = c.sourceUrl ?: return@withContext null;
 
         Logger.i(TAG, "Check for source updates '${c.name}'.");

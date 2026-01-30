@@ -266,7 +266,7 @@ class LibraryFragment : MainFragment() {
             });
 
             if(this.allowMusic) {
-                val artists = StateLibrary.instance.getArtists(ArtistOrdering.TrackCount);
+                val artists = StateLibrary.instance.getArtists(ArtistOrdering.TrackCount)
                 adapterArtists.setData(artists);
                 if (artists.size == 0)
                     sectionArtists.setEmpty(
@@ -289,7 +289,7 @@ class LibraryFragment : MainFragment() {
             }
 
             if(this.allowMusic) {
-                val albums = StateLibrary.instance.getAlbums();
+                val albums = StateLibrary.instance.getAlbums()
                 adapterAlbums.setData(albums);
                 if (albums.size == 0)
                     sectionAlbums.setEmpty("No albums", "No albums were found on your device", -1);

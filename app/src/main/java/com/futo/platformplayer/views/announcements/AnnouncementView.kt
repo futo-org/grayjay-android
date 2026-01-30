@@ -6,12 +6,10 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event0
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.Announcement
 import com.futo.platformplayer.states.AnnouncementType
@@ -161,6 +159,10 @@ class AnnouncementView : LinearLayout {
             AnnouncementType.SESSION_RECURRING -> {
                 _textClose.visibility = View.VISIBLE;
                 _textNever.visibility = View.VISIBLE;
+            }
+            AnnouncementType.ONGOING -> {
+                _textClose.visibility = View.GONE;
+                _textNever.visibility = View.GONE;
             }
         }
 

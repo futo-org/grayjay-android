@@ -110,6 +110,7 @@ import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
+import com.futo.platformplayer.views.notification.NotificationOverlayView
 import com.futo.polycentric.core.ApiMethods
 import com.google.gson.JsonParser
 import com.google.zxing.integration.android.IntentIntegrator
@@ -201,6 +202,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragLibraryVideos: LibraryVideosFragment;
     lateinit var _fragLibrarySearch: LibrarySearchFragment;
     lateinit var _fragLibraryFiles: LibraryFilesFragment;
+    lateinit var _fragNotifications: NotificationOverlayView.Frag;
     lateinit var _fragSettings: SettingsFragment;
     lateinit var _fragDeveloper: DeveloperFragment;
     lateinit var _fragLogin: LoginFragment;
@@ -389,6 +391,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibraryVideos = LibraryVideosFragment.newInstance();
         _fragLibraryFiles = LibraryFilesFragment.newInstance();
         _fragLibrarySearch = LibrarySearchFragment.newInstance();
+        _fragNotifications = NotificationOverlayView.Frag();
         _fragSettings = SettingsFragment.newInstance();
         _fragDeveloper = DeveloperFragment.newInstance();
         _fragLogin = LoginFragment.newInstance();
@@ -538,6 +541,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragLibrarySearch.topBar = _fragTopBarSearch;
         _fragSettings.topBar = _fragTopBarNavigation;
         _fragDeveloper.topBar = _fragTopBarNavigation;
+        _fragNotifications.topBar = _fragTopBarGeneral;
 
         _fragBrowser.topBar = _fragTopBarNavigation;
 
@@ -1368,6 +1372,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             LibraryVideosFragment::class -> _fragLibraryVideos as T;
             LibraryFilesFragment::class -> _fragLibraryFiles as T;
             LibrarySearchFragment::class -> _fragLibrarySearch as T;
+            NotificationOverlayView.Frag::class -> _fragNotifications as T;
             SettingsFragment:: class -> _fragSettings as T;
             DeveloperFragment::class -> _fragDeveloper as T;
             LoginFragment::class -> _fragLogin as T;

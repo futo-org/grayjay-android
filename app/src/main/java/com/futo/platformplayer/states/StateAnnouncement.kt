@@ -1,13 +1,22 @@
 package com.futo.platformplayer.states
 
+import android.view.View
+import android.view.WindowManager
+import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
+import com.futo.platformplayer.dialogs.PluginUpdateDialog
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringHashSetStorage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -110,6 +119,48 @@ class StateAnnouncement {
         onAnnouncementChanged.emit();
     }
 
+    //Special Announcements
+    fun registerPluginUpdate(oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig): SessionAnnouncement {
+        val announcement = SessionAnnouncement(
+            "update-plugin-" + UUID.randomUUID().toString(),
+            "${newConfig.name} update v${newConfig.version} available!",
+            "An update is available to upgrade from ${oldConfig.version} to ${newConfig.version}.",
+            AnnouncementType.SESSION,
+            null, "updates", "Update", StateAnnouncement.ACTION_UPDATE_PLUGIN,
+            null, null,oldConfig.id,
+            newConfig?.absoluteIconUrl?.let { ImageVariable.fromUrl(it) }
+        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, oldConfig.id);
+        registerAnnouncementSession(announcement);
+        return announcement;
+    }
+    fun registerPluginUpdated(newConfig: SourcePluginConfig) {
+        registerAnnouncementSession(SessionAnnouncement(
+            "updated-plugin-" + UUID.randomUUID().toString(),
+            "${newConfig.name} updated to v${newConfig.version}!",
+            "You have succesfully been updater to v${newConfig.version}.",
+            AnnouncementType.SESSION,
+            null, "updates", null, null,
+            null, null,null,
+            newConfig?.absoluteIconUrl?.let { ImageVariable.fromUrl(it) }
+        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, newConfig.id));
+    }
+
+    fun registerLoading(title: String, description: String, icon: ImageVariable? = null, customId: String? = null): SessionAnnouncement {
+        val id = "loading-" + UUID.randomUUID().toString();
+        val announcement = SessionAnnouncement(
+            customId ?: id,
+            title,
+            description,
+            AnnouncementType.ONGOING,
+            null, "loading", null, null,
+            null, null,null, icon
+        );
+        registerAnnouncementSession(announcement);
+        return announcement;
+    }
+
+
+
     fun getVisibleAnnouncements(category: String? = null): List<Announcement> {
         synchronized(_lock) {
             if (category != null) {
@@ -122,7 +173,9 @@ class StateAnnouncement {
         }
     }
 
-    fun closeAnnouncement(id: String) {
+    fun closeAnnouncement(id: String?) {
+        if(id == null)
+            return;
         val item: Announcement?;
         synchronized(_lock) {
             item = _announcementsStore.findItem { it.id == id };
@@ -164,6 +217,7 @@ class StateAnnouncement {
                 cancelAction?.invoke(item);
             }
         }
+        onAnnouncementChanged?.emit();
     }
 
     fun deleteAllAnnouncements() {
@@ -194,7 +248,9 @@ class StateAnnouncement {
 
         onAnnouncementChanged.emit();
     }
-    fun neverAnnouncement(id: String) {
+    fun neverAnnouncement(id: String?) {
+        if(id == null)
+            return;
         synchronized(_lock) {
             val item = _announcementsStore.findItem { it.id == id };
             if (item != null && !_announcementsNever.contains(id))
@@ -208,19 +264,26 @@ class StateAnnouncement {
         _announcementsNever.save();
         onAnnouncementChanged.emit();
     }
-    fun actionAnnouncement(id: String) {
+    fun actionAnnouncement(id: String?, extra: Boolean = false) {
+        if(id == null)
+            return;
         val item = _announcementsStore.findItem { it.id == id } ?: _sessionAnnouncements[id];
         if(item != null)
-            actionAnnouncement(item);
+            actionAnnouncement(item, extra);
     }
-    fun actionAnnouncement(item: Announcement) {
+    fun actionAnnouncement(item: Announcement, extra: Boolean = false) {
+        val actionId = if(!extra) item.actionId else if(item is SessionAnnouncement) item.extraActionId else null;
+        val actionData = if(!extra) item.actionData else if(item is SessionAnnouncement) item.extraActionData else null;
+
         val action = _sessionActions[item.id];
         if (action != null) {
             action(item);
         } else {
-            when (item.actionId) {
+            when (actionId) {
                 ACTION_NEVER -> neverAnnouncement(item.id);
                 ACTION_SOMETHING -> actionSomething();
+                ACTION_CHANGELOG -> actionChangelog(actionData);
+                ACTION_UPDATE_PLUGIN -> actionUpdatePlugin(item.id, actionData);
             }
         }
     }
@@ -251,6 +314,84 @@ class StateAnnouncement {
 
     }
 
+    private fun actionChangelog(id: String?) {
+        if(id == null)
+            return;
+
+        StateApp.instance.contextOrNull?.let { context ->
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                val plugin = StatePlugins.instance.getPlugin(id);
+                if (plugin == null)
+                    return@launch
+                val update = StatePlugins.instance.checkForUpdates(plugin.config);
+                if(update == null)
+                    return@launch;
+
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                    UIDialogs.showChangelogDialog(context, update.version, update.changelog!!.filterKeys { it.toIntOrNull() != null }
+                        .mapKeys { it.key.toInt() }
+                        .mapValues { update.getChangelogString(it.key.toString()) ?: "" });
+                }
+            }
+        }
+    }
+    private fun actionUpdatePlugin(notifId: String?, id: String?) {
+        if(id == null)
+            return;
+        val plugin = StatePlugins.instance.getPlugin(id);
+        if (plugin == null)
+            return
+
+        closeAnnouncement(notifId);
+        val loadingAnnouncement = registerLoading("Updating ${plugin.config.name}..", "An update is in progress for ${plugin.config.name}.",
+            if(plugin.config.absoluteIconUrl != null) ImageVariable.fromUrl(plugin.config.absoluteIconUrl!!) else null);
+
+        val loadingId = loadingAnnouncement.id;
+
+        StateApp.instance.contextOrNull?.let { context ->
+
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                try {
+                    val update = StatePlugins.instance.checkForUpdates(plugin.config);
+                    if (update == null)
+                        return@launch;
+
+                    val client = ManagedHttpClient();
+                    client.setTimeout(10000);
+                    val script = StatePlugins.instance.getScript(plugin.config.id) ?: "";
+                    val newScript = client.get(update.absoluteScriptUrl)?.body?.string();
+                    if(newScript.isNullOrEmpty())
+                        throw IllegalStateException("No script found");
+
+                    if(true || plugin.config.isLowRiskUpdate(script, update, newScript)) {
+                        StatePlugins.instance.installPluginBackground(context, StateApp.instance.scope, update, newScript,
+                            { text: String, progress: Double -> },
+                            { ex ->
+                                if(ex == null) {
+                                    registerPluginUpdated(update);
+                                }
+                                else {
+                                    UIDialogs.appToast("Update for ${update.name} failed\n" + ex.message);
+                                }
+                                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                                    closeAnnouncement(loadingId);
+                                }
+                            });
+                    }
+                    else {
+                        StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                            closeAnnouncement(loadingId);
+                            UIDialogs.showPluginUpdateDialog(context, plugin.config, update);
+                        }
+                    }
+                }
+                catch(ex: Throwable) {
+                    Logger.e(TAG, "Failed to trigger update from announcement", ex);
+                }
+            }
+        }
+    }
+
     fun registerDefaultHandlerAnnouncement() {
         registerAnnouncement(
             "default-url-handler",
@@ -279,6 +420,8 @@ class StateAnnouncement {
 
 
         const val ACTION_SOMETHING = "SOMETHING";
+        const val ACTION_CHANGELOG = "CHANGELOG";
+        const val ACTION_UPDATE_PLUGIN = "UPDATE_PLUGIN";
         const val ACTION_NEVER = "NEVER";
         private const val TAG = "StateAnnouncement";
     }
@@ -294,7 +437,8 @@ open class Announcement(
     val time: OffsetDateTime? = null,
     val category: String? = null,
     val actionName: String? = null,
-    val actionId: String? = null
+    val actionId: String? = null,
+    val actionData: String? = null
 );
 class SessionAnnouncement(
     id: String,
@@ -306,7 +450,9 @@ class SessionAnnouncement(
     actionName: String? = null,
     actionId: String? = null,
     val cancelName: String? = null,
-    val cancelActionId: String? = null
+    val cancelActionId: String? = null,
+    actionData: String? = null,
+    val icon: ImageVariable? = null
 ): Announcement(
     id= id,
     title = title,
@@ -315,13 +461,40 @@ class SessionAnnouncement(
     time = time,
     category = category,
     actionName = actionName,
-    actionId = actionId
-);
+    actionId = actionId,
+    actionData = actionData
+) {
+    var extraActionName: String? = null;
+    var extraActionId: String? = null;
+    var extraActionData: String? = null;
+
+    var extraObj: Any? = null;
+
+    var progress: Double? = null;
+    val onProgressChanged = Event1<SessionAnnouncement>();
+
+    fun withExtraAction(name: String, id: String, data: String? = null): SessionAnnouncement {
+        extraActionName = name;
+        extraActionId = id;
+        extraActionData = data;
+        return this;
+    }
+
+    fun setProgress(progress: Double) {
+        this.progress = progress;
+        onProgressChanged?.emit(this);
+    }
+    fun setProgress(progress: Int) {
+        this.progress = progress.toDouble().div(100);
+        onProgressChanged?.emit(this);
+    }
+}
 
 enum class AnnouncementType(val value : Int) {
     DELETABLE(0), //Close button deletes announcement (generally for actions)
     RECURRING(1), //Shows up till never is pressed (generally for patchnotes etc)
     PERMANENT(2), //Shows up until deleted through other means (action)
     SESSION(3), //Not persistent, only during this session
-    SESSION_RECURRING(4); //Not persistent, only during this session, recurring id
+    SESSION_RECURRING(4), //Not persistent, only during this session, recurring id
+    ONGOING(5);
 }
