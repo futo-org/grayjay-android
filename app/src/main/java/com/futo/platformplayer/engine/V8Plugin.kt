@@ -17,6 +17,7 @@ import com.caoccao.javet.values.reference.V8ValueObject
 import com.caoccao.javet.values.reference.V8ValuePromise
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.NoInternetException
@@ -46,6 +47,7 @@ import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateAssets
+import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.toList
 import com.futo.platformplayer.toV8ValueBlocking
 import com.futo.platformplayer.toV8ValueAsync
@@ -220,6 +222,9 @@ class V8Plugin {
                     if(pack is PackageHttp) {
                         pack.cleanup();
                     }
+                    else if(pack is PackageBrowser) {
+                        pack.deinitialize();
+                    }
                 }
 
                 _runtime?.let {
@@ -390,9 +395,16 @@ class V8Plugin {
             "Utilities" -> PackageUtilities(this, config)
             "JSDOM" -> PackageJSDOM(this, config)
             "Browser" -> {
-                if(!BuildConfig.DEBUG)
-                    throw IllegalArgumentException("Browser is only allowed for debug builds due to security");
-                PackageBrowser(this)
+                val isOfficial = (config is SourcePluginConfig && config.isOfficialAuthor());
+
+                if(BuildConfig.DEBUG)
+                    PackageBrowser(this)
+                else if(isOfficial)
+                    PackageBrowser(this)
+                else if(config is SourcePluginConfig && config.id == StateDeveloper.DEV_ID)
+                    PackageBrowser(this)
+                else
+                    throw IllegalArgumentException("Browser is only allowed for debug and official plugins due to security");
             };
             else -> if(allowNull) null else throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
         };

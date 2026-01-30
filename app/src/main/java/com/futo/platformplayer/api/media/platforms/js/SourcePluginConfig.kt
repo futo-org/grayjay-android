@@ -61,6 +61,11 @@ class SourcePluginConfig(
     val absoluteIconUrl: String? get() = resolveAbsoluteUrl(iconUrl, sourceUrl);
     val absoluteScriptUrl: String get() = resolveAbsoluteUrl(scriptUrl, sourceUrl)!!;
 
+    fun isOfficialAuthor(): Boolean {
+        return scriptSignature != null &&
+            scriptPublicKey == "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsoFJU4AReDyUnSQI9A99UjLCwkY8OH+1o8cdtf2EjSb+fO2qmP8MGMTAvfvgmq5d2QBJE2XHRkRO3JKcTlcc1j0WlOlU8P9W272DYCeX6oYaavpKNqGKoGEuodp9wtiyNwyH46++JfpU/uIUacZbZKkHv9gIGchmNvpKYZQjFd/8pUqXGpcXZP54tGSC9PLcY+5TozZThK7Oy1+3YEf1bZ44UinRYYATbLk/wNuAfsupvlt6nxZOcJhABhdo9V+gY0FE6Ayg5+1cd1noWhnRtLF+sPdEr3z8Nt15JEK5a/524t25FMhwz8yKxlGW5qW3QLJHSUgLQncL6a1zlZ1s8QIDAQAB"
+    }
+
     private fun resolveAbsoluteUrl(url: String?, sourceUrl: String?): String? {
         if(url == null)
             return null;
@@ -165,6 +170,12 @@ class SourcePluginConfig(
                 "Unrestricted Http Header access",
                 "Allows this plugin to access all headers (including cookies and authorization headers) for unauthenticated requests."
             ))
+        if(packagesOptional.contains("Browser") || packages.contains("Browser")) {
+            list.add(Pair(
+                "Browser Interop",
+                "This plugin requires webbrowser interop. May access urls outside of the restricted urls. This will only work for official plugins and during development builds."
+            ))
+        }
 
         return list;
     }

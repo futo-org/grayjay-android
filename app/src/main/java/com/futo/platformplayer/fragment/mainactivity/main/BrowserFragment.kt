@@ -10,6 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
 import android.widget.Spinner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,6 +22,7 @@ class BrowserFragment : MainFragment() {
     override val isTab: Boolean = false;
     override val hasBottomBar: Boolean get() = true;
 
+    private var _root: LinearLayout? = null;
     private var _webview: WebView? = null;
     private val _webviewWithoutHandling = object: WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -31,6 +33,7 @@ class BrowserFragment : MainFragment() {
 
     override fun onCreateMainView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_browser, container, false);
+        _root = view.findViewById<LinearLayout>(R.id.root);
         _webview = view.findViewById<WebView?>(R.id.webview).apply {
             this.webViewClient = _webviewWithoutHandling;
             this.settings.javaScriptEnabled = true;
@@ -43,7 +46,12 @@ class BrowserFragment : MainFragment() {
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
         super.onShownWithView(parameter, isBack)
 
-        if(parameter is String) {
+        if(parameter is WebView) {
+            _root?.removeView(_webview);
+            _root?.addView(parameter);
+            _webview = parameter;
+        }
+        else if(parameter is String) {
             _webview?.webViewClient = _webviewWithoutHandling;
             _webview?.loadUrl(parameter);
         }

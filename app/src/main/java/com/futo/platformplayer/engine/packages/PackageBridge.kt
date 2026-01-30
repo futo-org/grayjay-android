@@ -106,6 +106,11 @@ class PackageBridge : V8Package {
     }
 
     @V8Function
+    fun hasPackage(str: String): Boolean {
+        return _plugin.getPackages().any { it.name == str };
+    }
+
+    @V8Function
     fun dispose(value: V8Value) {
         Logger.e(TAG, "Manual dispose: " + value.javaClass.name);
         value.close();
