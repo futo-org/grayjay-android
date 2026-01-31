@@ -9,6 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.collection.emptyLongSet
 import com.caoccao.javet.annotations.V8Function
+import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.reference.V8ValueFunction
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -89,7 +90,9 @@ class PackageBrowser: V8Package {
     }
     @V8Function
     fun deinitialize() {
-        _browser?.destroy();
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+            _browser?.destroy();
+        }
         _browser = null;
     }
 
@@ -140,7 +143,11 @@ class PackageBrowser: V8Package {
         if(callbackId != null && callback != null) {
             synchronized(_callbacks) {
                 _callbacks.put(callbackId, {
-                    funcClone?.callVoid(null, arrayOf(it));
+                    _plugin.busy {
+                        funcClone?.callVoid(null, arrayOf(it));
+                    }
+                    if (!_plugin.isStopped)
+                        JavetResourceUtils.safeClose(funcClone);
                 });
             }
         }
@@ -169,7 +176,12 @@ class PackageBrowser: V8Package {
                     override fun onReceiveValue(value: String?) {
                         Logger.i("PackageBrowser", "Browser run returned: " + (value ?: ""));
                         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                            funcClone?.callVoid(null, arrayOf(value));
+                            Logger.i("PackageBrowser", "Invoking V8 with result (${funcClone != null})");
+                            _plugin.busy {
+                                funcClone?.callVoid(null, arrayOf(value));
+                            }
+                            if (!_plugin.isStopped)
+                                JavetResourceUtils.safeClose(funcClone);
                         }
                     }
                 })
