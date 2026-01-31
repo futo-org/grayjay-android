@@ -1047,8 +1047,12 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 7)
         var polycentricLocalCache: Boolean = true;
-
         var showPrivacyModeDialog: Boolean = true;
+
+
+        fun shouldClearWebviewCookies(): Boolean {
+            return true;
+        }
     }
 
     @FormField(R.string.gesture_controls, FieldForm.GROUP, -1, 19)

@@ -5,6 +5,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.collection.emptyLongSet
@@ -64,6 +65,10 @@ class PackageBrowser: V8Package {
                         _readySemaphore?.release();
                         _readySemaphore = null;
                         Logger.i("PackageBrowser", "Browser loaded");
+                    }
+
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        return false;
                     }
                 }
                 _browser?.webChromeClient = object : WebChromeClient() {

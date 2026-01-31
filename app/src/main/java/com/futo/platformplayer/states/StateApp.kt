@@ -448,6 +448,8 @@ class StateApp {
             _cacheDirectory?.let { ApiMethods.initCache(it) };
         }
 
+
+
         Logger.i(TAG, "MainApp Starting: Initializing [ModerationsManager]");
         ModerationsManager.initialize(context);
 

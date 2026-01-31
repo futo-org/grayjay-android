@@ -309,13 +309,14 @@ class SourceDetailFragment : MainFragment() {
                         BigButton(c, context.getString(R.string.logout), context.getString(R.string.sign_out_of_the_platform), R.drawable.ic_logout) {
                             logoutSource();
                         },
+                        if(!Settings.instance.other.shouldClearWebviewCookies())
                         BigButton(c, "Logout without Clear", "Logout but keep the browser cookies.\nThis allows for quick re-logging.", R.drawable.ic_logout) {
                             logoutSource(false);
                         }.apply {
                             this.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
                                 setMargins(0, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics).toInt(), 0, 0);
                             };
-                        }
+                        } else null
                     )
                 );
 
@@ -517,6 +518,17 @@ class SourceDetailFragment : MainFragment() {
                                     context?.let { c -> UIDialogs.showGeneralErrorDialog(c, "Failed to set plugin authentication (loginSource, loginWarning)", e) }
                                 }
                                 Logger.e(TAG, "Failed to set plugin authentication (loginSource, loginWarning)", e)
+                            }
+                            finally {
+                                if(Settings.instance.other.shouldClearWebviewCookies()) {
+                                    try {
+                                        val cookieManager: CookieManager =
+                                            CookieManager.getInstance();
+                                        cookieManager.removeAllCookies(null);
+                                    } catch (ex: Throwable) {
+                                        Logger.e(TAG, "Failed to clear cookies", ex);
+                                    }
+                                }
                             }
                         };
                     }, UIDialogs.ActionStyle.PRIMARY))
