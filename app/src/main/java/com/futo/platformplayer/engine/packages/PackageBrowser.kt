@@ -168,7 +168,9 @@ class PackageBrowser: V8Package {
                 browser.evaluateJavascript(js, object : ValueCallback<String> {
                     override fun onReceiveValue(value: String?) {
                         Logger.i("PackageBrowser", "Browser run returned: " + (value ?: ""));
-                        funcClone?.callVoid(null, arrayOf(value));
+                        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                            funcClone?.callVoid(null, arrayOf(value));
+                        }
                     }
                 })
             }
@@ -184,8 +186,11 @@ class PackageBrowser: V8Package {
         fun callback(id: String, result: String) {
             Logger.i("PackageBrowser", "Browser Callback [${id}]: ${result}");
             val callback = synchronized(pack._callbacks) { pack._callbacks.remove(id); };
-            if(callback != null)
-                callback.invoke(result);
+            if(callback != null) {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    callback.invoke(result);
+                }
+            }
         }
 
         @JavascriptInterface
