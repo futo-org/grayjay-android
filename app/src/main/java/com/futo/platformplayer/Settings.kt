@@ -1051,7 +1051,7 @@ class Settings : FragmentedStorageFileJson() {
 
 
         fun shouldClearWebviewCookies(): Boolean {
-            return true;
+            return false;
         }
     }
 

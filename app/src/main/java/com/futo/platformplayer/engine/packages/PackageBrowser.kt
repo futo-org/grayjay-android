@@ -25,10 +25,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.Json
 
 class PackageBrowser: V8Package {
     override val name: String get() = "Browser";
     override val variableName: String = "browser";
+
+    private val _json = Json { };
 
     @Transient
     private var _readySemaphore: Semaphore? = null;
@@ -137,7 +140,9 @@ class PackageBrowser: V8Package {
         Logger.i("PackageBrowser", "Browser loading url [${url}]");
         _readySemaphore = Semaphore(1, 1);
         StateApp.instance.scope.launch(Dispatchers.Main) {
-            browser.loadUrl(url);
+            try {
+                browser.loadUrl(url);
+            } catch(ex: Throwable) {}
         }
     }
 
@@ -158,12 +163,17 @@ class PackageBrowser: V8Package {
         }
         StateApp.instance.scope.launch(Dispatchers.Main) {
             try {
-                Logger.i("PackageBrowser", "Browser running JS with callback [${callbackId}]\n${(if(js.length > 200) (js.substring(0, 200) + "...") else js)})");
-                browser.evaluateJavascript(js, object : ValueCallback<String> {
-                    override fun onReceiveValue(value: String?) {
-                        Logger.i("PackageBrowser", "Browser run finished");
-                    }
-                })
+                try {
+                    Logger.i("PackageBrowser", "Browser running JS with callback [${callbackId}]\n${(if(js.length > 200) (js.substring(0, 200) + "...") else js)})");
+                    browser.evaluateJavascript(js, object : ValueCallback<String> {
+                        override fun onReceiveValue(value: String?) {
+                            Logger.i("PackageBrowser", "Browser run finished");
+                        }
+                    })
+                }
+                catch(ex: Throwable) {
+                    Logger.e("PackageBrowser", "Browser running failed: " + ex.message, ex);
+                }
             }
             catch(ex: Throwable) {
                 Logger.e("PackageBrowser", "Failed to invoke browser", ex);
@@ -182,17 +192,27 @@ class PackageBrowser: V8Package {
                         Logger.i("PackageBrowser", "Browser run returned: " + (value ?: ""));
                         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                             Logger.i("PackageBrowser", "Invoking V8 with result (${funcClone != null})");
-                            _plugin.busy {
-                                funcClone?.callVoid(null, arrayOf(value));
+                            try {
+                                _plugin.busy {
+                                    if (value != null) {
+                                        val json = _json.decodeFromString<String>(value);
+                                        funcClone?.callVoid(null, arrayOf(json));
+                                    } else
+                                        funcClone?.callVoid(null, arrayOf((null as String?)));
+                                }
+                                if (!_plugin.isStopped)
+                                    JavetResourceUtils.safeClose(funcClone);
                             }
-                            if (!_plugin.isStopped)
-                                JavetResourceUtils.safeClose(funcClone);
+                            catch(ex: Throwable) {
+                                Logger.e("PackageBrowser", "Browser Failed to callback: " + ex.message, ex);
+
+                            }
                         }
                     }
                 })
             }
             catch(ex: Throwable) {
-                Logger.e("PackageBrowser", "Failed to invoke browser", ex);
+                Logger.e("PackageBrowser", "Browser Failed to invoke browser", ex);
             }
         }
     }

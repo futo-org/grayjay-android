@@ -235,7 +235,8 @@ class SourcePluginConfig(
         val variable: String? = null,
         val dependency: String? = null,
         val warningDialog: String? = null,
-        val options: List<String>? = null
+        val options: List<String>? = null,
+        val isAdvanced: Boolean? = null
     ) {
         val variableOrName: String get() = variable ?: name;
     }

@@ -50,7 +50,7 @@ class FieldForm : LinearLayout {
         }
     }
 
-    fun updateSettingsVisibility(group: GroupField? = null) {
+    fun updateSettingsVisibility(group: GroupField? = null, allowEmptyGroups: Boolean = false) {
         val settings = group?.getFields() ?: _fields;
         val query = _editSearch.text.toString().lowercase();
 
@@ -58,7 +58,8 @@ class FieldForm : LinearLayout {
         val isGroupMatch = query.isEmpty() || group?.searchContent?.lowercase()?.contains(query) == true;
         for(field in settings) {
             if(field is GroupField) {
-                updateSettingsVisibility(field);
+                if(!allowEmptyGroups)
+                    updateSettingsVisibility(field);
             } else if(field is View && field.descriptor != null) {
                 if(field.isAdvanced && !_showAdvancedSettings)
                 {
@@ -73,15 +74,21 @@ class FieldForm : LinearLayout {
                     }
                 }
             }
+            else if(field is View) {
+                if(field.isAdvanced && !_showAdvancedSettings)
+                    field.visibility = View.GONE;
+                else
+                    field.visibility = VISIBLE;
+            }
         }
         if(group != null) {
             group.visibility = if (groupVisible) View.VISIBLE else View.GONE;
         }
     }
 
-    fun setShowAdvancedSettings(show: Boolean) {
+    fun setShowAdvancedSettings(show: Boolean, allowEmptyGroups: Boolean = false) {
         _showAdvancedSettings = show;
-        updateSettingsVisibility();
+        updateSettingsVisibility(null, allowEmptyGroups);
     }
     fun setSearchQuery(query: String) {
         _editSearch.setText(query);
@@ -141,7 +148,9 @@ class FieldForm : LinearLayout {
     }
     fun fromPluginSettings(settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>, groupTitle: String? = null, groupDescription: String? = null) {
         _fieldsContainer.removeAllViews();
-        val newFields = getFieldsFromPluginSettings(context, settings, values);
+        val newFields = getFieldsFromPluginSettings(context, settings, values, {
+            setShowAdvancedSettings(it, true);
+        });
         if (newFields.isEmpty()) {
             return;
         }
@@ -157,6 +166,7 @@ class FieldForm : LinearLayout {
                 _fieldsContainer.addView(v);
             }
             _fields = newFields.map { it.second };
+            updateSettingsVisibility(null, true);
         } else {
             for(field in newFields) {
                 finalizePluginSettingField(field.first, field.second, newFields);
@@ -164,6 +174,8 @@ class FieldForm : LinearLayout {
             val group = GroupField(context, groupTitle, groupDescription)
                 .withFields(newFields.map { it.second });
             _fieldsContainer.addView(group as View);
+            _fields = newFields.map { it.second };
+            updateSettingsVisibility(null, true);
         }
     }
     private fun finalizePluginSettingField(setting: SourcePluginConfig.Setting, field: IField, others: List<Pair<SourcePluginConfig.Setting, IField>>) {
@@ -234,7 +246,7 @@ class FieldForm : LinearLayout {
         private val _json = Json;
 
 
-        fun getFieldsFromPluginSettings(context: Context, settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>): List<Pair<SourcePluginConfig.Setting, IField>> {
+        fun getFieldsFromPluginSettings(context: Context, settings: List<SourcePluginConfig.Setting>, values: HashMap<String, String?>, onAdvancedChanged: ((newVal: Boolean)->Unit)? = null): List<Pair<SourcePluginConfig.Setting, IField>> {
             val fields = mutableListOf<Pair<SourcePluginConfig.Setting, IField>>()
 
             for(setting in settings) {
@@ -243,6 +255,7 @@ class FieldForm : LinearLayout {
                 val field = when(setting.type.lowercase()) {
                     "header" -> {
                         val groupField = GroupField(context, setting.name, setting.description);
+                        groupField.isAdvanced = (setting.isAdvanced ?: false);
                         groupField;
                     }
                     "boolean" -> {
@@ -252,6 +265,7 @@ class FieldForm : LinearLayout {
                         field.onChanged.subscribe { _, v, _ ->
                             values[setting.variableOrName] = _json.encodeToString (v == 1 || v == true);
                         }
+                        field.isAdvanced = (setting.isAdvanced ?: false);
                         field;
                     }
                     "dropdown" -> {
@@ -261,6 +275,7 @@ class FieldForm : LinearLayout {
                             field.onChanged.subscribe { _, v, _ ->
                                 values[setting.variableOrName] = v.toString();
                             }
+                            field.isAdvanced = (setting.isAdvanced ?: false);
                             field;
                         }
                         else null;
@@ -272,6 +287,17 @@ class FieldForm : LinearLayout {
                     fields.add(Pair(setting, field));
                 }
             }
+
+            if(onAdvancedChanged != null && settings.any { it.isAdvanced == true }) {
+                val setting = SourcePluginConfig.Setting("Show Advanced", "See advanced settings, which may be counter productive to change", "boolean", "false");
+                val field = ToggleField(context).withValue(setting.name, setting.description, false);
+
+                field.onChanged.subscribe { field, new, old ->
+                    onAdvancedChanged?.invoke(new as Boolean);
+                }
+                fields.add(Pair(setting, field));
+            }
+
             return fields;
         }
 

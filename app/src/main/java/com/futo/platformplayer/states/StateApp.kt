@@ -16,6 +16,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
 import android.util.Log
+import android.webkit.CookieManager
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -448,7 +449,15 @@ class StateApp {
             _cacheDirectory?.let { ApiMethods.initCache(it) };
         }
 
-
+        if(Settings.instance.other.shouldClearWebviewCookies()) {
+            try {
+                val cookieManager: CookieManager =
+                    CookieManager.getInstance();
+                cookieManager.removeAllCookies(null);
+            } catch (ex: Throwable) {
+                Logger.e(SourceDetailFragment.Companion.TAG, "Failed to clear cookies", ex);
+            }
+        }
 
         Logger.i(TAG, "MainApp Starting: Initializing [ModerationsManager]");
         ModerationsManager.initialize(context);
