@@ -90,7 +90,10 @@ class GeneralTopBarFragment : TopFragment() {
         updateNotifCount();
 
         _buttonNotifs?.setOnClickListener {
-            navigate<NotificationOverlayView.Frag>();
+            if(currentMain is NotificationOverlayView.Frag)
+                closeSegment();
+            else
+                navigate<NotificationOverlayView.Frag>();
         }
 
         buttonSearch.setOnClickListener {

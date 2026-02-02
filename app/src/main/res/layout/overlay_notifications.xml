@@ -17,6 +17,11 @@
         android:layout_width="match_parent"
         android:layout_height="1px"
         android:background="#181818" />
+    <com.futo.platformplayer.views.NoResultsView
+        android:id="@+id/no_results"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/container_notifications"
         app:layout_constraintTop_toBottomOf="@id/separator"

@@ -24,6 +24,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.LoaderView
+import com.futo.platformplayer.views.NoResultsView
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,21 +32,28 @@ import kotlinx.coroutines.launch
 class NotificationOverlayView: ConstraintLayout {
 
     lateinit var recycler: RecyclerView;
+    lateinit var emptyView: NoResultsView;
     var adapterNotifications: AnyAdapterView<Announcement, ViewHolder>;
 
     constructor(context: Context) : super(context) {
         inflate(context, R.layout.overlay_notifications, this)
 
         recycler = findViewById<RecyclerView>(R.id.container_notifications);
+        emptyView = findViewById<NoResultsView>(R.id.no_results);
         adapterNotifications = recycler.asAny<Announcement, ViewHolder>(RecyclerView.VERTICAL, false, {
 
         });
-
+        emptyView.setText("Nothing to see here", "You don't have any notifications", R.drawable.ic_notifications)
     }
 
     fun onShown(parameter: Any?) {
         val announcements = StateAnnouncement.instance.getVisibleAnnouncements();
         adapterNotifications.adapter.setData(announcements);
+
+        if(announcements.any())
+            emptyView.isVisible = false;
+        else
+            emptyView.isVisible = true;
 
         StateAnnouncement.instance.onAnnouncementChanged.subscribe(this) {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
