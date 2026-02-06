@@ -449,8 +449,9 @@ class StateApp {
             _cacheDirectory?.let { ApiMethods.initCache(it) };
         }
 
-        if(Settings.instance.other.shouldClearWebviewCookies()) {
+        if(Settings.instance.plugins.shouldClearWebviewCookies()) {
             try {
+                Logger.i(TAG, "Clearing cookies on startup");
                 val cookieManager: CookieManager =
                     CookieManager.getInstance();
                 cookieManager.removeAllCookies(null);

@@ -797,6 +797,9 @@ class Settings : FragmentedStorageFileJson() {
         var checkDisabledPluginsForUpdates: Boolean = false;
 
         @AdvancedField
+        @FormField(R.string.clear_cookies_after_login, FieldForm.TOGGLE, R.string.clear_cookies_after_login_desc, 0)
+        var clearCookiesAfterLogin: Boolean = true;
+        @AdvancedField
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
 
@@ -805,6 +808,12 @@ class Settings : FragmentedStorageFileJson() {
             val cookieManager: CookieManager = CookieManager.getInstance();
             cookieManager.removeAllCookies(null);
         }
+
+        fun shouldClearWebviewCookies(): Boolean {
+            return clearCookiesAfterLogin;
+        }
+
+
         /*@FormField(R.string.reinstall_embedded_plugins, FieldForm.BUTTON, R.string.also_removes_any_data_related_plugin_like_login_or_settings, 1)
         fun reinstallEmbedded() {
             StateApp.instance.scopeOrNull!!.launch(Dispatchers.IO) {
@@ -1048,11 +1057,6 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.polycentric_local_cache, FieldForm.TOGGLE, R.string.polycentric_local_cache_description, 7)
         var polycentricLocalCache: Boolean = true;
         var showPrivacyModeDialog: Boolean = true;
-
-
-        fun shouldClearWebviewCookies(): Boolean {
-            return false;
-        }
     }
 
     @FormField(R.string.gesture_controls, FieldForm.GROUP, -1, 19)

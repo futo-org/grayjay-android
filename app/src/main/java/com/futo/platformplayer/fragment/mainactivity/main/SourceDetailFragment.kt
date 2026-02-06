@@ -309,7 +309,7 @@ class SourceDetailFragment : MainFragment() {
                         BigButton(c, context.getString(R.string.logout), context.getString(R.string.sign_out_of_the_platform), R.drawable.ic_logout) {
                             logoutSource();
                         },
-                        if(!Settings.instance.other.shouldClearWebviewCookies())
+                        if(!Settings.instance.plugins.shouldClearWebviewCookies())
                         BigButton(c, "Logout without Clear", "Logout but keep the browser cookies.\nThis allows for quick re-logging.", R.drawable.ic_logout) {
                             logoutSource(false);
                         }.apply {
@@ -520,7 +520,7 @@ class SourceDetailFragment : MainFragment() {
                                 Logger.e(TAG, "Failed to set plugin authentication (loginSource, loginWarning)", e)
                             }
                             finally {
-                                if(Settings.instance.other.shouldClearWebviewCookies()) {
+                                if(Settings.instance.plugins.shouldClearWebviewCookies()) {
                                     try {
                                         val cookieManager: CookieManager =
                                             CookieManager.getInstance();

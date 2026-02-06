@@ -338,6 +338,8 @@
     <string name="clear_the_external_storage_for_download_files">Clear the external storage for download files</string>
     <string name="change_the_external_storage_for_download_files">Change the external storage for download files</string>
     <string name="clear_cookies">Clear Cookies</string>
+    <string name="clear_cookies_after_login">Clear Cookies after Login</string>
+    <string name="clear_cookies_after_login_desc">Deletes all cookies on the webview after login, this may be required for certain plugins to function properly.</string>
     <string name="clear_cookies_on_logout">Clear Cookies on Logout</string>
     <string name="test_background_worker">Test Background Worker</string>
     <string name="test_background_worker_description"></string>
