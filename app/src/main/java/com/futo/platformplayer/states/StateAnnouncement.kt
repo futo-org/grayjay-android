@@ -137,7 +137,7 @@ class StateAnnouncement {
         registerAnnouncementSession(SessionAnnouncement(
             "updated-plugin-" + UUID.randomUUID().toString(),
             "${newConfig.name} updated to v${newConfig.version}!",
-            "You have succesfully been updater to v${newConfig.version}.",
+            "You have succesfully been updated to v${newConfig.version}.",
             AnnouncementType.SESSION,
             null, "updates", null, null,
             null, null,null,
