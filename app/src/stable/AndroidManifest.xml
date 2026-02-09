@@ -19,7 +19,7 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
                 <data android:host="youtu.be" />
-                <data android:host="www.you.be" />
+                <data android:host="www.youtu.be" />
                 <data android:host="youtube.com"  />
                 <data android:host="www.youtube.com"  />
                 <data android:host="m.youtube.com" />
@@ -31,6 +31,8 @@
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
+                <data android:host="www.twitch.tv" />
+                <data android:host="m.twitch.tv" />
                 <data android:host="bilibili.com" />
                 <data android:host="bilibili.tv" />
                 <data android:host="dailymotion.com" />
@@ -51,7 +53,7 @@
                 <data android:mimeType="text/plain" />
 
                 <data android:host="youtu.be" />
-                <data android:host="www.you.be" />
+                <data android:host="www.youtu.be" />
                 <data android:host="youtube.com"  />
                 <data android:host="www.youtube.com"  />
                 <data android:host="m.youtube.com" />
@@ -63,6 +65,8 @@
                 <data android:host="patreon.com" />
                 <data android:host="soundcloud.com" />
                 <data android:host="twitch.tv" />
+                <data android:host="www.twitch.tv" />
+                <data android:host="m.twitch.tv" />
                 <data android:host="bilibili.com" />
                 <data android:host="bilibili.tv" />
                 <data android:host="dailymotion.com" />
