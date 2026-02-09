@@ -1017,6 +1017,7 @@
         <item>Rusça</item>
         <item>Portekizce</item>
         <item>Çince</item>
+        <item>İtalyanca</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>

@@ -1064,6 +1064,7 @@
         <item>Russo</item>
         <item>Portoghese</item>
         <item>Cinese</item>
+        <item>Italiano</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>
