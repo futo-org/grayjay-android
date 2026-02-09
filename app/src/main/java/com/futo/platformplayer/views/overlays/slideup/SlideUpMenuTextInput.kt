@@ -3,15 +3,10 @@ package com.futo.platformplayer.views.overlays.slideup
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RelativeLayout
-import android.widget.TextView
 import com.futo.platformplayer.R
-import org.w3c.dom.Text
 
 class SlideUpMenuTextInput : LinearLayout {
     private lateinit var _root: LinearLayout;

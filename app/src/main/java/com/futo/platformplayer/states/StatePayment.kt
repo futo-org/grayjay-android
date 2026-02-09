@@ -18,7 +18,14 @@ class StatePayment : PaymentState(if(!isTestingPayment) VERIFICATION_PUBLIC_KEY 
     }
 
     companion object {
-        private val VERIFICATION_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzJqqETLa42xw4AfbNOLQolMdMiGgg8DAC4RXEcH4/gytLhaqp1XsjiiMkADi1C7sDtGj6kOuAuQkqXQKpZ2dJSZsO+GPyop6DmgfAM6MQgOgFUpwsb3Lt3SvskJcls8MeOC+jg+GjjcuJI8qOfYevj4/7wAOpqzAwocTYnJivlK5nrC+qNtUC2HZX93OVu69aU5yvA1SQe9GiiU7vBld+CbzHxTcABCK/THu/BpLtGx0M7W3HNMKK1Z79dopCL9ZZWbWdkGDY8Zf39Gn/WVrs5elBvPzU+AfNYty77vx2r+sKgyohlbz4KVYpnw8HfawKcwuRE/GUyD3F2hUcXy8dQIDAQAB";
+        private val VERIFICATION_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzJqqETLa42xw4AfbNOLQ" +
+        "olMdMiGgg8DAC4RXEcH4/gytLhaqp1XsjiiMkADi1C7sDtGj6kOuAuQkqXQKpZ2d" +
+        "JSZsO+GPyop6DmgfAM6MQgOgFUpwsb3Lt3SvskJcls8MeOC+jg+GjjcuJI8qOfYe" +
+        "vj4/7wAOpqzAwocTYnJivlK5nrC+qNtUC2HZX93OVu69aU5yvA1SQe9GiiU7vBld" +
+        "+CbzHxTcABCK/THu/BpLtGx0M7W3HNMKK1Z79dopCL9ZZWbWdkGDY8Zf39Gn/WVr" +
+        "s5elBvPzU+AfNYty77vx2r+sKgyohlbz4KVYpnw8HfawKcwuRE/GUyD3F2hUcXy8" +
+        "dQIDAQAB"
+
         private val VERIFICATION_PUBLIC_KEY_TESTING = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqyDuxsRtD5gmBoLCNoZa" +
                 "XSRTwyUxgzcPHzLZkvomXVSQqzD+3aOKngcTKAZ83rm4GvoyMlBukxQMLShannSx" +
                 "k8GQGTCT7VStQKNc4lKVER5ASB6aEaypaFMIYI3rXN1xLF1LqY/j7cu5GgMsvAuU" +
