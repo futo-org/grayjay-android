@@ -542,7 +542,7 @@
     <string name="restart_playback_when_gaining_connectivity_after_a_loss">Restart playback when gaining connectivity after a loss</string>
     <string name="chapter_update_fps_title">Chapter Update FPS</string>
     <string name="chapter_update_fps_description">Change accuracy of chapter updating, higher might cost more performance</string>
-    <string name="set_automatic_backup">Set Automatic Backup</string>
+    <string name="set_automatic_backup">Configure Automatic Backup</string>
     <string name="shortly_after_opening_the_app_start_fetching_subscriptions">Shortly after opening the app, start fetching subscriptions</string>
     <string name="show_faq">Show FAQ</string>
     <string name="show_issues">Show Issues</string>

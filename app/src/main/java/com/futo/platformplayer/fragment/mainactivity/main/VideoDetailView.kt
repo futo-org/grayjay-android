@@ -216,6 +216,7 @@ class VideoDetailView : ConstraintLayout {
     private val _playerProgress: PlayerControlView;
     private val _timeBar: TimeBar;
     private var _upNext: UpNextView;
+    private var _artworkTarget: CustomTarget<Bitmap>? = null
 
     private val rootView: ConstraintLayout;
 
@@ -882,6 +883,9 @@ class VideoDetailView : ConstraintLayout {
         };
 
         onClose.subscribe {
+            _artworkTarget?.let { Glide.with(context).clear(it) }
+            _artworkTarget = null
+            _player.setArtwork(null)
             checkAndRemoveWatchLater();
             _lastVideoSource = null;
             _lastAudioSource = null;
@@ -1264,6 +1268,9 @@ class VideoDetailView : ConstraintLayout {
     fun onDestroy() {
         Logger.i(TAG, "onDestroy");
         _destroyed = true;
+        _artworkTarget?.let { Glide.with(context).clear(it) }
+        _artworkTarget = null
+        _player.setArtwork(null)
         _taskLoadVideo.cancel();
         _commentsList.cancel();
         _player.clear();
@@ -2053,19 +2060,31 @@ class VideoDetailView : ConstraintLayout {
                     _player.switchToVideoMode()
                     isAudioOnlyUserAction = false;
                 } else {
-                    val thumbnail = video.thumbnails.getHQThumbnail();
-                    if ((videoSource == null) && !thumbnail.isNullOrBlank()) // || _player.isAudioMode
-                        Glide.with(context).asBitmap().load(thumbnail).withMaxSizePx()
-                            .into(object: CustomTarget<Bitmap>() {
-                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                    _player.setArtwork(BitmapDrawable(resources, resource));
-                                }
-                                override fun onLoadCleared(placeholder: Drawable?) {
-                                    _player.setArtwork(null);
-                                }
-                            });
-                    else
-                        _player.setArtwork(null);
+                    _artworkTarget?.let { Glide.with(context).clear(it) }
+                    _artworkTarget = null
+
+                    val thumbnail = video.thumbnails.getHQThumbnail()
+                    val showArtwork = _player.isAudioMode || isAudioOnlyUserAction || (videoSource == null)
+
+                    if (showArtwork && !thumbnail.isNullOrBlank()) {
+                        val target = object : CustomTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                _player.setArtwork(BitmapDrawable(resources, resource))
+                            }
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                _player.setArtwork(null)
+                            }
+                        }
+                        _artworkTarget = target
+
+                        Glide.with(context)
+                            .asBitmap()
+                            .load(thumbnail)
+                            .withMaxSizePx()
+                            .into(target)
+                    } else {
+                        _player.setArtwork(null)
+                    }
                 }
 
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
