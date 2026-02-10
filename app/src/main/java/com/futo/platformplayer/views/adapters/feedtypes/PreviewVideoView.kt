@@ -125,6 +125,7 @@ open class PreviewVideoView : LinearLayout {
     protected open fun inflate(feedStyle: FeedStyle) {
         inflate(context, when(feedStyle) {
             FeedStyle.PREVIEW -> R.layout.list_video_preview
+            FeedStyle.ACCESSIBILITY -> R.layout.list_video_accessibility
             else -> R.layout.list_video_thumbnail
         }, this)
     }

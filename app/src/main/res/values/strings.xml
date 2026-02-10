@@ -1058,6 +1058,7 @@
     <string-array name="feed_style">
         <item>Preview</item>
         <item>List</item>
+        <item>Accessibility</item>
     </string-array>
     <string-array name="app_languages">
         <item>System</item>
