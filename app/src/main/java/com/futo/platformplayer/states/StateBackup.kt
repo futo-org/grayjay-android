@@ -462,14 +462,16 @@ class StateBackup {
                                                         UIDialogs.Action("No", {
                                                         }, UIDialogs.ActionStyle.NONE),
                                                         UIDialogs.Action("Yes", {
-                                                            for (historyStr in store.value) {
-                                                                try {
-                                                                    val histObj = HistoryVideo.fromReconString(historyStr) { url -> return@fromReconString export.cache?.videos?.firstOrNull { it.url == url }; }
-                                                                    val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
-                                                                    if (hist != null)
-                                                                        StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false, histObj.playlistId);
-                                                                } catch (ex: Throwable) {
-                                                                    Logger.e(TAG, "Failed to import subscription group", ex);
+                                                            scope.launch(Dispatchers.IO) {
+                                                                for (historyStr in store.value) {
+                                                                    try {
+                                                                        val histObj = HistoryVideo.fromReconString(historyStr) { url -> return@fromReconString export.cache?.videos?.firstOrNull { it.url == url }; }
+                                                                        val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
+                                                                        if (hist != null)
+                                                                            StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false, histObj.playlistId);
+                                                                    } catch (ex: Throwable) {
+                                                                        Logger.e(TAG, "Failed to import subscription group", ex);
+                                                                    }
                                                                 }
                                                             }
                                                         }, UIDialogs.ActionStyle.PRIMARY)
@@ -481,15 +483,17 @@ class StateBackup {
                                                         UIDialogs.Action("No", {
                                                         }, UIDialogs.ActionStyle.NONE),
                                                         UIDialogs.Action("Yes", {
-                                                            for (groupStr in store.value) {
-                                                                try {
-                                                                    val group = Json.decodeFromString<SubscriptionGroup>(groupStr);
-                                                                    val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
-                                                                    if (existing != null)
-                                                                        StateSubscriptionGroups.instance.deleteSubscriptionGroup(existing.id, false);
-                                                                    StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
-                                                                } catch (ex: Throwable) {
-                                                                    Logger.e(TAG, "Failed to import subscription group", ex);
+                                                            scope.launch(Dispatchers.IO) {
+                                                                for (groupStr in store.value) {
+                                                                    try {
+                                                                        val group = Json.decodeFromString<SubscriptionGroup>(groupStr);
+                                                                        val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+                                                                        if (existing != null)
+                                                                            StateSubscriptionGroups.instance.deleteSubscriptionGroup(existing.id, false);
+                                                                        StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
+                                                                    } catch (ex: Throwable) {
+                                                                        Logger.e(TAG, "Failed to import subscription group", ex);
+                                                                    }
                                                                 }
                                                             }
                                                         }, UIDialogs.ActionStyle.PRIMARY)
