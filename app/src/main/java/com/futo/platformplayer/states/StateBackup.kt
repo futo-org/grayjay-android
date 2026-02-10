@@ -49,6 +49,33 @@ class StateBackup {
 
         private val _autoBackupLock = Object();
 
+        private val AUTO_MAGIC = byteArrayOf(
+            0x11.toByte(), 0x22.toByte(), 0x33.toByte(), 0x44.toByte()
+        )
+
+        private val AUTO_MARKER = byteArrayOf(
+            'G'.code.toByte(), 'J'.code.toByte()
+        )
+
+        private const val AUTO_FORMAT_VERSION: Byte = 1
+        private const val FLAG_ENCRYPTED: Byte = 0x01
+
+        private fun ByteArray.startsWithZipSignature(): Boolean =
+            this.size >= 2 && this[0] == 0x50.toByte() && this[1] == 0x4B.toByte()
+
+        private fun ByteArray.hasAutoMagic(): Boolean =
+            this.size >= 4 &&
+                    this[0] == AUTO_MAGIC[0] &&
+                    this[1] == AUTO_MAGIC[1] &&
+                    this[2] == AUTO_MAGIC[2] &&
+                    this[3] == AUTO_MAGIC[3]
+
+        private fun ByteArray.hasNewAutoHeader(): Boolean =
+            this.size >= 8 &&
+                    this.hasAutoMagic() &&
+                    this[4] == AUTO_MARKER[0] &&
+                    this[5] == AUTO_MARKER[1]
+
         private fun getAutomaticBackupDocumentFiles(context: Context, create: Boolean = false): Pair<DocumentFile?, DocumentFile?> {
             if(!Settings.instance.storage.isStorageMainValid(context))
                 return Pair(null, null);
@@ -76,14 +103,13 @@ class StateBackup {
             );
         }
 
-
-        private fun getAutomaticBackupPassword(customPassword: String? = null): String {
-            val password = customPassword ?: Settings.instance.backup.autoBackupPassword ?: "";
-            val pbytes = password.toByteArray();
-            if(pbytes.size < 4 || pbytes.size > 32)
-                throw IllegalStateException("Automatic backup passwords should atleast be 4 character and smaller than 32");
-            return password;
+        private fun requireLegacyBackupPassword(password: String): String {
+            val pbytes = password.toByteArray()
+            if (pbytes.size < 4 || pbytes.size > 32)
+                throw IllegalStateException("Password must be at least 4 bytes and smaller than 32 bytes")
+            return password
         }
+
         fun hasAutomaticBackup(): Boolean {
             val context = StateApp.instance.contextOrNull ?: return false;
             if(!Settings.instance.storage.isStorageMainValid(context))
@@ -106,8 +132,6 @@ class StateBackup {
                         val data = export();
                         val zip = data.asZip();
 
-                        //Prepend some magic bytes to identify everything version 1 and up
-                        val encryptedZip = byteArrayOf(0x11, 0x22, 0x33, 0x44, GPasswordEncryptionProvider.version.toByte()) + GPasswordEncryptionProvider.instance.encrypt(zip, getAutomaticBackupPassword());
                         if(!Settings.instance.storage.isStorageMainValid(context)) {
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                                 UIDialogs.toast("Missing permissions for auto-backup, please set the external general directory in settings");
@@ -118,7 +142,8 @@ class StateBackup {
                             val exportFile = backupFiles.first;
                             if (exportFile?.exists() == true && backupFiles.second != null)
                                 exportFile.copyTo(context, backupFiles.second!!);
-                            exportFile!!.writeBytes(context, encryptedZip);
+                            val backupBytes = AUTO_MAGIC + AUTO_MARKER + byteArrayOf(AUTO_FORMAT_VERSION, 0x00.toByte()) + zip
+                            exportFile!!.writeBytes(context, backupBytes)
 
                             Settings.instance.backup.lastAutoBackupTime = OffsetDateTime.now(); //OffsetDateTime.now();
                             Settings.instance.save();
@@ -137,69 +162,105 @@ class StateBackup {
 
         //TODO: This goes has recently changed to use DocumentFiles and DocumentTree, and might need additional checks/edgecases covered.
         fun restoreAutomaticBackup(context: Context, scope: CoroutineScope, password: String, ifExists: Boolean = false) {
-            if(ifExists && !hasAutomaticBackup()) {
-                Logger.i(TAG, "No AutoBackup exists, not restoring");
-                return;
+            if (ifExists && !hasAutomaticBackup()) {
+                Logger.i(TAG, "No AutoBackup exists, not restoring")
+                return
             }
 
-            Logger.i(TAG, "Starting AutoBackup restore");
-            synchronized(_autoBackupLock) {
+            Logger.i(TAG, "Starting AutoBackup restore")
+            var permissionRequest: Pair<IWithResultLauncher, android.net.Uri?>? = null
+            val backupBytesEncrypted: ByteArray? = synchronized(_autoBackupLock) {
+                val backupFiles = getAutomaticBackupDocumentFiles(StateApp.instance.context, false)
 
-                val backupFiles = getAutomaticBackupDocumentFiles(StateApp.instance.context, false);
+                fun read(doc: DocumentFile?): ByteArray? = doc?.readBytes(context)
                 try {
                     if (backupFiles.first?.exists() != true)
-                        throw IllegalStateException("Backup file does not exist");
+                        throw IllegalStateException("Backup file does not exist")
 
-                    val backupBytesEncrypted = backupFiles.first!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.first?.uri}]");
-                    importEncryptedZipBytes(context, scope, backupBytesEncrypted, password);
-                    Logger.i(TAG, "Finished AutoBackup restore");
-                }
-                catch (exSec: FileNotFoundException) {
-                    Logger.e(TAG, "Failed to access backup file", exSec);
-                    val activity = if(StateApp.instance.activity != null)
-                        StateApp.instance.activity
-                    else if(StateApp.instance.isMainActive)
-                        StateApp.instance.contextOrNull;
-                    else null;
-                    if(activity != null) {
-                        if(activity is IWithResultLauncher)
-                            StateApp.instance.requestDirectoryAccess(activity, "Grayjay Backup Directory", "Allows restoring of a backup", backupFiles.first?.parentFile?.uri) {
-                                if(it != null) {
-                                    val customFiles = StateBackup.getAutomaticBackupDocumentFiles(activity);
-                                    if(customFiles.first != null && customFiles.first!!.isFile && customFiles.first!!.exists() && customFiles.first!!.canRead())
-                                        restoreAutomaticBackup(context, scope, password, ifExists);
-                                }
-                            };
+                    read(backupFiles.first) ?: throw IllegalStateException("Could not read stream of [${backupFiles.first?.uri}]")
+                } catch (ex: Throwable) {
+                    if (ex is FileNotFoundException || ex is SecurityException) {
+                        val activity = (StateApp.instance.activity as? IWithResultLauncher)
+                            ?: (if (StateApp.instance.isMainActive) StateApp.instance.contextOrNull as? IWithResultLauncher else null)
+
+                        if (activity != null) {
+                            permissionRequest = Pair(activity, backupFiles.first?.parentFile?.uri)
+                            return@synchronized null
+                        }
+                    }
+
+                    // Otherwise, try the .old file
+                    if (backupFiles.second?.exists() == true) {
+                        read(backupFiles.second) ?: throw IllegalStateException("Could not read stream of [${backupFiles.second?.uri}]")
+                    } else {
+                        throw ex
                     }
                 }
-                catch (ex: Throwable) {
-                    Logger.e(TAG, "Failed main AutoBackup restore", ex)
-                    if (backupFiles.second?.exists() != true)
-                        throw ex;
-
-                    val backupBytesEncrypted = backupFiles.second!!.readBytes(context) ?: throw IllegalStateException("Could not read stream of [${backupFiles.second?.uri}]");
-                    importEncryptedZipBytes(context, scope, backupBytesEncrypted, password);
-                    Logger.i(TAG, "Finished AutoBackup restore");
-                }
             }
+
+            if (backupBytesEncrypted == null && permissionRequest != null) {
+                val (activity, initialUri) = permissionRequest
+                StateApp.instance.requestDirectoryAccess(activity, "Grayjay Backup Directory", "Allows restoring of a backup", initialUri) { uri ->
+                    if (uri != null) {
+                        scope.launch(Dispatchers.IO) {
+                            restoreAutomaticBackup(context, scope, password, ifExists)
+                        }
+                    }
+                }
+                return
+            }
+
+            importEncryptedZipBytes(context, scope, backupBytesEncrypted!!, password)
+            Logger.i(TAG, "Finished AutoBackup restore")
         }
 
         private fun importEncryptedZipBytes(context: Context, scope: CoroutineScope, backupBytesEncrypted: ByteArray, password: String) {
-            val backupBytes: ByteArray;
-            //Check magic bytes indicating version 1 and up
-            if (backupBytesEncrypted[0] == 0x11.toByte() && backupBytesEncrypted[1] == 0x22.toByte() && backupBytesEncrypted[2] == 0x33.toByte() && backupBytesEncrypted[3] == 0x44.toByte()) {
-                val version = backupBytesEncrypted[4].toInt();
-                if (version != GPasswordEncryptionProvider.version) {
-                    throw Exception("Invalid encryption version");
-                }
-
-                backupBytes = GPasswordEncryptionProvider.instance.decrypt(backupBytesEncrypted.sliceArray(IntRange(5, backupBytesEncrypted.size - 1)), getAutomaticBackupPassword(password))
-            } else {
-                //Else its a version 0
-                backupBytes = GPasswordEncryptionProviderV0(getAutomaticBackupPassword(password).padStart(32, '9')).decrypt(backupBytesEncrypted);
+            if (backupBytesEncrypted.startsWithZipSignature()) {
+                importZipBytes(context, scope, backupBytesEncrypted)
+                return
             }
 
-            importZipBytes(context, scope, backupBytes);
+            // New unencrypted header (magic + "GJ" + format + flags)
+            if (backupBytesEncrypted.hasNewAutoHeader()) {
+                val formatVersion = backupBytesEncrypted[6].toInt()
+                val flags = backupBytesEncrypted[7].toInt()
+                var offset = 8
+
+                if (formatVersion != AUTO_FORMAT_VERSION.toInt()) {
+                    throw IllegalStateException("Unsupported backup format version: $formatVersion")
+                }
+
+                val isEncrypted = (flags and FLAG_ENCRYPTED.toInt()) != 0
+                if (!isEncrypted) {
+                    val zipBytes = backupBytesEncrypted.copyOfRange(offset, backupBytesEncrypted.size)
+                    importZipBytes(context, scope, zipBytes)
+                    return
+                }
+
+                throw IllegalStateException("Encrypted backups with new header are not supported")
+            }
+
+            // Old encrypted v1+ header (magic + providerVersion + ciphertext)
+            if (backupBytesEncrypted.hasAutoMagic()) {
+                if (backupBytesEncrypted.size < 6) {
+                    throw IllegalStateException("Invalid backup: too small")
+                }
+
+                val version = backupBytesEncrypted[4].toInt()
+                if (version != GPasswordEncryptionProvider.version) {
+                    throw Exception("Invalid encryption version")
+                }
+
+                val ciphertext = backupBytesEncrypted.copyOfRange(5, backupBytesEncrypted.size)
+                val plaintextZip = GPasswordEncryptionProvider.instance.decrypt(ciphertext, requireLegacyBackupPassword(password))
+
+                importZipBytes(context, scope, plaintextZip)
+                return
+            }
+
+            // Old encrypted v0 (no magic)
+            val plaintextZip = GPasswordEncryptionProviderV0(requireLegacyBackupPassword(password).padStart(32, '9')).decrypt(backupBytesEncrypted)
+            importZipBytes(context, scope, plaintextZip)
         }
 
         fun saveExternalBackup(activity: IWithResultLauncher) {
@@ -232,6 +293,47 @@ class StateBackup {
                         .setStream(uri)
                         .intent);
             }
+        }
+
+        suspend fun requiresPasswordForAutomaticBackup(context: Context): Boolean = withContext(Dispatchers.IO) {
+            val files = getAutomaticBackupDocumentFiles(context, create = false)
+
+            // Prefer main, fallback to .old
+            val doc = when {
+                files.first?.exists() == true -> files.first
+                files.second?.exists() == true -> files.second
+                else -> return@withContext true // if nothing exists, keep old behavior
+            } ?: return@withContext true
+
+            val header = try {
+                context.contentResolver.openInputStream(doc.uri)?.use { input ->
+                    val buf = ByteArray(16)
+                    val n = input.read(buf)
+                    if (n <= 0) ByteArray(0) else buf.copyOf(n)
+                } ?: return@withContext true
+            } catch (_: Throwable) {
+                return@withContext true
+            }
+
+            // Raw zip ("PK") => not encrypted
+            if (header.size >= 2 && header[0] == 0x50.toByte() && header[1] == 0x4B.toByte()) {
+                return@withContext false
+            }
+
+            // New unencrypted header (magic + "GJ" + format + flags)
+            if (header.size >= 8 && header[0] == AUTO_MAGIC[0] && header[1] == AUTO_MAGIC[1] && header[2] == AUTO_MAGIC[2] && header[3] == AUTO_MAGIC[3] && header[4] == AUTO_MARKER[0] && header[5] == AUTO_MARKER[1]) {
+                val flags = header[7].toInt()
+                val isEncrypted = (flags and FLAG_ENCRYPTED.toInt()) != 0
+                return@withContext isEncrypted
+            }
+
+            // Old encrypted v1+ header (magic + providerVersion + ciphertext) => needs password
+            if (header.size >= 5 && header[0] == AUTO_MAGIC[0] && header[1] == AUTO_MAGIC[1] && header[2] == AUTO_MAGIC[2] && header[3] == AUTO_MAGIC[3]) {
+                return@withContext true
+            }
+
+            // Otherwise assume legacy v0 encrypted (no magic) => needs password
+            return@withContext true
         }
 
         fun export(): ExportStructure {
@@ -303,186 +405,168 @@ class StateBackup {
             var doEnablePlugins = false;
             var doImportStores = false;
             Logger.i(TAG, "Starting import choices");
-            UIDialogs.multiShowDialog(context, {
-                Logger.i(TAG, "Starting import");
-                if(!doImport)
-                    return@multiShowDialog;
-                val enabledBefore = StatePlatform.instance.getEnabledClients().map { it.id };
 
-                val onConclusion = {
+            scope.launch(Dispatchers.Main) {
+                UIDialogs.multiShowDialog(context, {
+                    Logger.i(TAG, "Starting import");
+                    if (!doImport)
+                        return@multiShowDialog;
+                    val enabledBefore = StatePlatform.instance.getEnabledClients().map { it.id };
+
+                    val onConclusion = {
+                        scope.launch(Dispatchers.IO) {
+                            StatePlatform.instance.selectClients(*enabledBefore.toTypedArray());
+
+                            withContext(Dispatchers.Main) {
+                                UIDialogs.showDialog(context, R.drawable.ic_update_success_251dp, "Import has finished", null, null,0, UIDialogs.Action("Ok", {}));
+                            }
+                        }
+                    };
+                    //TODO: Probably restructure this to be less nested
                     scope.launch(Dispatchers.IO) {
-                        StatePlatform.instance.selectClients(*enabledBefore.toTypedArray());
-
-                        withContext(Dispatchers.Main) {
-                            UIDialogs.showDialog(context, R.drawable.ic_update_success_251dp,
-                                "Import has finished", null, null, 0, UIDialogs.Action("Ok", {}));
-                        }
-                    }
-                };
-                //TODO: Probably restructure this to be less nested
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        if (doImportSettings && export.settings != null) {
-                            Logger.i(TAG, "Importing settings");
-                            try {
-                                Settings.replace(export.settings);
-                            }
-                            catch(ex: Throwable) {
-                                UIDialogs.toast(context, "Failed to import settings\n(" + ex.message + ")");
-                            }
-                        }
-
-                        val afterPluginInstalls = {
-                            scope.launch(Dispatchers.IO) {
-                                if (doEnablePlugins) {
-                                    val availableClients = StatePlatform.instance.getEnabledClients().toMutableList();
-                                    availableClients.addAll(StatePlatform.instance.getAvailableClients().filter { !availableClients.contains(it) });
-
-                                    Logger.i(TAG, "Import enabling plugins [${availableClients.map{it.name}.joinToString(", ")}]");
-                                    StatePlatform.instance.updateAvailableClients(context, false);
-                                    StatePlatform.instance.selectClients(*availableClients.map { it.id }.toTypedArray());
+                        try {
+                            if (doImportSettings && export.settings != null) {
+                                Logger.i(TAG, "Importing settings");
+                                try {
+                                    Settings.replace(export.settings);
+                                } catch (ex: Throwable) {
+                                    UIDialogs.toast(
+                                        context,
+                                        "Failed to import settings\n(" + ex.message + ")"
+                                    );
                                 }
-                                if(doImportPluginSettings) {
-                                    for(settings in export.pluginSettings) {
-                                        Logger.i(TAG, "Importing Plugin settings [${settings.key}]");
-                                        StatePlugins.instance.setPluginSettings(settings.key, settings.value);
+                            }
+
+                            val afterPluginInstalls = {
+                                scope.launch(Dispatchers.IO) {
+                                    if (doEnablePlugins) {
+                                        val availableClients = StatePlatform.instance.getEnabledClients().toMutableList();
+                                        availableClients.addAll(StatePlatform.instance.getAvailableClients().filter { !availableClients.contains(it) });
+                                        Logger.i(TAG, "Import enabling plugins [${availableClients.map { it.name }.joinToString(", ")}]");
+                                        StatePlatform.instance.updateAvailableClients(context, false);
+                                        StatePlatform.instance.selectClients(*availableClients.map { it.id }.toTypedArray());
                                     }
-                                }
-                                val toAwait = export.stores.map { it.key }.toMutableList();
-                                if(doImportStores) {
-                                    for(store in export.stores) {
-                                        Logger.i(TAG, "Importing store [${store.key}]");
-                                        if(store.key == "history") {
-                                            withContext(Dispatchers.Main) {
-                                                UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import History", "Would you like to import history?", null, 0,
-                                                    UIDialogs.Action("No", {
-                                                    }, UIDialogs.ActionStyle.NONE),
-                                                    UIDialogs.Action("Yes", {
-                                                        for(historyStr in store.value) {
-                                                            try {
-                                                                val histObj = HistoryVideo.fromReconString(historyStr) { url ->
-                                                                    return@fromReconString export.cache?.videos?.firstOrNull { it.url == url };
+                                    if (doImportPluginSettings) {
+                                        for (settings in export.pluginSettings) {
+                                            Logger.i(TAG, "Importing Plugin settings [${settings.key}]");
+                                            StatePlugins.instance.setPluginSettings(settings.key, settings.value);
+                                        }
+                                    }
+                                    val toAwait = export.stores.map { it.key }.toMutableList();
+                                    if (doImportStores) {
+                                        for (store in export.stores) {
+                                            Logger.i(TAG, "Importing store [${store.key}]");
+                                            if (store.key == "history") {
+                                                withContext(Dispatchers.Main) {
+                                                    UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import History", "Would you like to import history?", null, 0,
+                                                        UIDialogs.Action("No", {
+                                                        }, UIDialogs.ActionStyle.NONE),
+                                                        UIDialogs.Action("Yes", {
+                                                            for (historyStr in store.value) {
+                                                                try {
+                                                                    val histObj = HistoryVideo.fromReconString(historyStr) { url -> return@fromReconString export.cache?.videos?.firstOrNull { it.url == url }; }
+                                                                    val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
+                                                                    if (hist != null)
+                                                                        StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false, histObj.playlistId);
+                                                                } catch (ex: Throwable) {
+                                                                    Logger.e(TAG, "Failed to import subscription group", ex);
                                                                 }
-                                                                val hist = StateHistory.instance.getHistoryByVideo(histObj.video, true, histObj.date);
-                                                                if(hist != null)
-                                                                    StateHistory.instance.updateHistoryPosition(histObj.video, hist, true, histObj.position, histObj.date, false, histObj.playlistId);
                                                             }
-                                                            catch(ex: Throwable) {
-                                                                Logger.e(TAG, "Failed to import subscription group", ex);
+                                                        }, UIDialogs.ActionStyle.PRIMARY)
+                                                    )
+                                                }
+                                            } else if (store.key == "subscription_groups") {
+                                                withContext(Dispatchers.Main) {
+                                                    UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import Subscription Groups", "Would you like to import subscription groups?\nExisting groups with the same id will be overridden!", null, 0,
+                                                        UIDialogs.Action("No", {
+                                                        }, UIDialogs.ActionStyle.NONE),
+                                                        UIDialogs.Action("Yes", {
+                                                            for (groupStr in store.value) {
+                                                                try {
+                                                                    val group = Json.decodeFromString<SubscriptionGroup>(groupStr);
+                                                                    val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
+                                                                    if (existing != null)
+                                                                        StateSubscriptionGroups.instance.deleteSubscriptionGroup(existing.id, false);
+                                                                    StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
+                                                                } catch (ex: Throwable) {
+                                                                    Logger.e(TAG, "Failed to import subscription group", ex);
+                                                                }
                                                             }
+                                                        }, UIDialogs.ActionStyle.PRIMARY)
+                                                    )
+                                                }
+                                            } else {
+                                                val relevantStore = availableStores.find { it.name == store.key };
+                                                if (relevantStore == null) {
+                                                    Logger.w(TAG, "Unknown store [${store.key}] import");
+                                                    continue;
+                                                }
+                                                withContext(Dispatchers.Main) {
+                                                    UIDialogs.showImportDialog(context, relevantStore, store.key, store.value, export.cache) {
+                                                        synchronized(toAwait) {
+                                                            toAwait.remove(store.key);
+                                                            if (toAwait.isEmpty())
+                                                                onConclusion();
                                                         }
-                                                    }, UIDialogs.ActionStyle.PRIMARY))
-                                            }
-                                        }
-                                        else if(store.key == "subscription_groups") {
-                                            withContext(Dispatchers.Main) {
-                                                UIDialogs.showDialog(context, R.drawable.ic_move_up, "Import Subscription Groups", "Would you like to import subscription groups?\nExisting groups with the same id will be overridden!", null, 0,
-                                                    UIDialogs.Action("No", {
-                                                    }, UIDialogs.ActionStyle.NONE),
-                                                    UIDialogs.Action("Yes", {
-                                                        for(groupStr in store.value) {
-                                                            try {
-                                                                val group = Json.decodeFromString<SubscriptionGroup>(groupStr);
-                                                                val existing = StateSubscriptionGroups.instance.getSubscriptionGroup(group.id);
-                                                                if(existing != null)
-                                                                    StateSubscriptionGroups.instance.deleteSubscriptionGroup(existing.id, false);
-                                                                StateSubscriptionGroups.instance.updateSubscriptionGroup(group);
-                                                            }
-                                                            catch(ex: Throwable) {
-                                                                Logger.e(TAG, "Failed to import subscription group", ex);
-                                                            }
-                                                        }
-                                                    }, UIDialogs.ActionStyle.PRIMARY))
-                                            }
-                                        }
-                                        else {
-                                            val relevantStore = availableStores.find { it.name == store.key };
-                                            if (relevantStore == null) {
-                                                Logger.w(TAG, "Unknown store [${store.key}] import");
-                                                continue;
-                                            }
-                                            withContext(Dispatchers.Main) {
-                                                UIDialogs.showImportDialog(context, relevantStore, store.key, store.value, export.cache) {
-                                                    synchronized(toAwait) {
-                                                        toAwait.remove(store.key);
-                                                        if(toAwait.isEmpty())
-                                                            onConclusion();
-                                                    }
-                                                };
+                                                    };
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if (doImportPlugins) {
-                            Logger.i(TAG, "Importing plugins");
-                            StatePlugins.instance.installPlugins(context, scope, unknownPlugins.map { it.value }) {
+                            if (doImportPlugins) {
+                                Logger.i(TAG, "Importing plugins");
+                                StatePlugins.instance.installPlugins(context, scope, unknownPlugins.map { it.value }) {
+                                    afterPluginInstalls();
+                                }
+                            } else
                                 afterPluginInstalls();
-                            }
+                        } catch (ex: Throwable) {
+                            Logger.e(TAG, "Import failed", ex);
+                            UIDialogs.showGeneralErrorDialog(context, "Import failed", ex);
                         }
-                        else
-                            afterPluginInstalls();
                     }
-                    catch(ex: Throwable) {
-                        Logger.e(TAG, "Import failed", ex);
-                        UIDialogs.showGeneralErrorDialog(context, "Import failed", ex);
-                    }
-                }
-            },
-                UIDialogs.Descriptor(R.drawable.ic_move_up,
-                    "Do you want to import data?",
-                    "Several dialogs will follow asking individual parts",
-                    "Settings: ${export.settings != null}\n" +
-                            "Plugins: ${unknownPlugins.size}\n" +
-                            "Plugin Settings: ${export.pluginSettings.size}\n" +
-                            export.stores.map { "${it.key}: ${it.value.size}" }.joinToString("\n").trim()
-                    , 1,
-                    UIDialogs.Action("Import", {
-                        doImport = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("Cancel", { doImport = false})
-                ),
-                if(export.settings != null) UIDialogs.Descriptor(R.drawable.ic_settings,
-                    "Would you like to import settings",
-                    "These are the settings that configure how your app works",
-                    null, 0,
-                    UIDialogs.Action("Yes", {
-                        doImportSettings = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
-                ).withCondition { doImport } else null,
-                if(unknownPlugins.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_sources,
-                    "Would you like to import plugins?",
-                    "Your import contains the following plugins",
-                    unknownPlugins.map { it.value }.joinToString("\n"), 1,
-                    UIDialogs.Action("Yes", {
-                        doImportPlugins = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
-                ).withCondition { doImport } else null,
-                if(export.pluginSettings.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_sources,
-                    "Would you like to import plugin settings?",
-                    null, null, 1,
-                    UIDialogs.Action("Yes", {
-                        doImportPluginSettings = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
-                ).withCondition { doImport } else null,
-                UIDialogs.Descriptor(R.drawable.ic_sources,
-                    "Would you like to enable all plugins?",
-                    "Enabling all plugins ensures all required plugins are available during import",
-                    null, 0,
-                    UIDialogs.Action("Yes", {
-                        doEnablePlugins = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
-                ).withCondition { doImport },
-                if(export.stores.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_move_up,
-                    "Would you like to import stores",
-                    "Stores contain playlists, watch later, subscriptions, etc",
-                    null, 0,
-                    UIDialogs.Action("Yes", {
-                        doImportStores = true;
-                    }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
-                ).withCondition { doImport } else null
-            );
+                },
+                    UIDialogs.Descriptor(R.drawable.ic_move_up, "Do you want to import data?", "Several dialogs will follow asking individual parts",
+                        "Settings: ${export.settings != null}\n" +
+                                "Plugins: ${unknownPlugins.size}\n" +
+                                "Plugin Settings: ${export.pluginSettings.size}\n" +
+                                export.stores.map { "${it.key}: ${it.value.size}" }.joinToString("\n").trim(),
+                        1,
+                        UIDialogs.Action("Import", {
+                            doImport = true;
+                        }, UIDialogs.ActionStyle.PRIMARY),
+                        UIDialogs.Action("Cancel", { doImport = false })
+                    ),
+                    if (export.settings != null) UIDialogs.Descriptor(R.drawable.ic_settings, "Would you like to import settings", "These are the settings that configure how your app works", null, 0,
+                        UIDialogs.Action("Yes", {
+                            doImportSettings = true;
+                        }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
+                    ).withCondition { doImport } else null,
+                    if (unknownPlugins.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_sources, "Would you like to import plugins?", "Your import contains the following plugins", unknownPlugins.map { it.value }.joinToString("\n"), 1,
+                        UIDialogs.Action("Yes", {
+                            doImportPlugins = true;
+                        }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
+                    ).withCondition { doImport } else null,
+                    if (export.pluginSettings.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_sources, "Would you like to import plugin settings?", null, null, 1,
+                        UIDialogs.Action("Yes", {
+                            doImportPluginSettings = true;
+                        }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
+                    ).withCondition { doImport } else null,
+                    UIDialogs.Descriptor(R.drawable.ic_sources, "Would you like to enable all plugins?", "Enabling all plugins ensures all required plugins are available during import", null, 0,
+                        UIDialogs.Action("Yes", {
+                            doEnablePlugins = true;
+                        }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
+                    ).withCondition { doImport },
+                    if (export.stores.isNotEmpty()) UIDialogs.Descriptor(R.drawable.ic_move_up, "Would you like to import stores", "Stores contain playlists, watch later, subscriptions, etc", null, 0,
+                        UIDialogs.Action("Yes", {
+                            doImportStores = true;
+                        }, UIDialogs.ActionStyle.PRIMARY), UIDialogs.Action("No", {})
+                    ).withCondition { doImport } else null
+                );
+            }
         }
 
         fun importTxt(context: MainActivity, text: String, allowFailure: Boolean = false): Boolean {

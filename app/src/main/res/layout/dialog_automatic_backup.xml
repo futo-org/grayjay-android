@@ -41,7 +41,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/set_a_password_for_your_daily_backup"
+            android:text="@string/enable_daily_backup"
             android:textSize="14dp"
             android:textColor="@color/white"
             android:fontFamily="@font/inter_regular"
@@ -54,7 +54,7 @@
             android:layout_width="match_parent"
             android:textColor="#AAAAAA"
             android:fontFamily="@font/inter_regular"
-            android:text="@string/set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage"
+            android:text="@string/automatic_backup_unencrypted_explanation"
             android:textAlignment="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
@@ -62,26 +62,6 @@
             android:layout_height="wrap_content">
 
         </TextView>
-        <EditText
-            android:id="@+id/edit_password"
-            android:layout_width="match_parent"
-            android:layout_marginLeft="30dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="30dp"
-            android:layout_height="wrap_content"
-            android:singleLine="true"
-            android:inputType="textPassword"
-            android:hint="@string/backup_password" />
-        <EditText
-            android:id="@+id/edit_password2"
-            android:layout_width="match_parent"
-            android:layout_marginLeft="30dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="30dp"
-            android:layout_height="wrap_content"
-            android:singleLine="true"
-            android:inputType="textPassword"
-            android:hint="@string/repeat_password" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -107,7 +87,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/stop"
+                    android:text="@string/disable"
                     android:textSize="14dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_regular"
@@ -128,7 +108,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/start"
+                    android:text="@string/enable"
                     android:textSize="14dp"
                     android:textColor="@color/white"
                     android:fontFamily="@font/inter_regular"

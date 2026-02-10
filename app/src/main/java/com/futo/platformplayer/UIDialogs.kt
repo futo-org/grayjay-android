@@ -19,6 +19,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -165,27 +166,42 @@ class UIDialogs {
             dialog.show()
         }
 
-        fun showAutomaticBackupDialog(context: Context, skipRestoreCheck: Boolean = false, onClosed: (()->Unit)? = null) {
-            val dialogAction: ()->Unit = {
-                val dialog = AutomaticBackupDialog(context);
-                registerDialogOpened(dialog);
-                dialog.setOnDismissListener { registerDialogClosed(dialog); onClosed?.invoke() };
-                dialog.show();
-            };
-            if(StateBackup.hasAutomaticBackup() && !skipRestoreCheck)
-                UIDialogs.showDialog(context, R.drawable.ic_move_up, context.getString(R.string.an_old_backup_is_available), context.getString(R.string.would_you_like_to_restore_this_backup), null, 0,
-                    UIDialogs.Action(context.getString(R.string.cancel), {}), //To nothing
-                    UIDialogs.Action(context.getString(R.string.override), {
-                        dialogAction();
+        fun showAutomaticBackupDialog(context: Context, onClosed: (() -> Unit)? = null) {
+            val dialogAction: () -> Unit = {
+                val dialog = AutomaticBackupDialog(context)
+                registerDialogOpened(dialog)
+                dialog.setOnDismissListener {
+                    registerDialogClosed(dialog)
+                    onClosed?.invoke()
+                }
+                dialog.show()
+            }
+
+            if (StateBackup.hasAutomaticBackup()) {
+                UIDialogs.showDialog(
+                    context,
+                    R.drawable.ic_move_up,
+                    context.getString(R.string.an_old_backup_is_available),
+                    context.getString(R.string.would_you_like_to_restore_this_backup),
+                    null,
+                    0,
+                    UIDialogs.Action(context.getString(R.string.cancel), {}),
+                    UIDialogs.Action(context.getString(R.string.continue_anyway), {
+                        dialogAction()
                     }, UIDialogs.ActionStyle.DANGEROUS),
                     UIDialogs.Action(context.getString(R.string.restore), {
-                        UIDialogs.showAutomaticRestoreDialog(context, StateApp.instance.scope);
+                        val scope = (context as? androidx.lifecycle.LifecycleOwner)?.lifecycleScope
+                            ?: StateApp.instance.scopeOrNull
+                            ?: StateApp.instance.scope
+
+                        UIDialogs.showAutomaticRestoreDialog(context, scope)
                     }, UIDialogs.ActionStyle.PRIMARY)
-                );
-            else {
-                dialogAction();
+                )
+            } else {
+                dialogAction()
             }
         }
+
         fun showAutomaticRestoreDialog(context: Context, scope: CoroutineScope) {
             val dialog = AutomaticRestoreDialog(context, scope);
             registerDialogOpened(dialog);

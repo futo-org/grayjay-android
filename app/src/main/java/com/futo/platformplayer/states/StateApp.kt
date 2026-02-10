@@ -13,6 +13,8 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
 import android.util.Log
@@ -308,49 +310,45 @@ class StateApp {
     fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit) {
         return requestDirectoryAccess(activity, name, purpose, path, handle, false);
     }
-    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?)->Unit, skipDialog: Boolean = false)
-    {
-        if(activity is Context)
-        {
-            if(skipDialog) {
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                if(path != null)
-                    intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+    fun requestDirectoryAccess(activity: IWithResultLauncher, name: String, purpose: String? = null, path: Uri?, handle: (Uri?) -> Unit, skipDialog: Boolean = false) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Handler(Looper.getMainLooper()).post {
+                requestDirectoryAccess(activity, name, purpose, path, handle, skipDialog)
+            }
+            return
+        }
+
+        if (activity is Context) {
+            if (skipDialog) {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                if (path != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path)
                 intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                    .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+                    .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
 
                 activity.launchForResult(intent, 99) {
-                    if(it.resultCode == Activity.RESULT_OK) {
-                        handle(it.data?.data);
-                    }
-                    else
-                        UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
-                };
-            }
-            else {
+                    if (it.resultCode == Activity.RESULT_OK) handle(it.data?.data)
+                    else UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted")
+                }
+            } else {
                 UIDialogs.showDialog(activity, R.drawable.ic_security, "Directory required for\n${name}", "Please select a directory for ${name}.\n${purpose}".trim(), null, 0,
                     UIDialogs.Action("Cancel", {}),
                     UIDialogs.Action("Ok", {
-                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                        if(path != null)
-                            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path);
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                        if (path != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, path)
                         intent.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                             .or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             .or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                            .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+                            .or(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
 
                         activity.launchForResult(intent, 99) {
-                            if(it.resultCode == Activity.RESULT_OK) {
-                                handle(it.data?.data);
-                            }
-                            else
-                                UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted");
-                        };
-                    }, UIDialogs.ActionStyle.PRIMARY));
+                            if (it.resultCode == Activity.RESULT_OK) handle(it.data?.data)
+                            else UIDialogs.showDialogOk(context, R.drawable.ic_security_pred, "No access granted")
+                        }
+                    }, UIDialogs.ActionStyle.PRIMARY)
+                )
             }
-
         }
     }
 
@@ -672,9 +670,7 @@ class StateApp {
         scheduleBackgroundWork(context, interval != 0, interval);
 
         Logger.i(TAG, "MainApp Started: Initialize [AutoBackup]");
-        Settings.instance.backup.didAskAutoBackup = true; //Some users have issues with it
         if(!Settings.instance.backup.didAskAutoBackup && !Settings.instance.backup.shouldAutomaticBackup()) {
-            /*
             StateAnnouncement.instance.registerAnnouncement("backup", "Set Automatic Backup", "Configure daily backups of your data to restore in case of catastrophic failure.", AnnouncementType.SESSION, null, null, "Configure", {
                 if(context is IWithResultLauncher && !Settings.instance.storage.isStorageMainValid(context)) {
                     UIDialogs.toast("Missing general directory");
@@ -691,7 +687,6 @@ class StateApp {
                 Settings.instance.backup.didAskAutoBackup = true;
                 Settings.instance.save();
             });
-            */
         }
         else if(Settings.instance.backup.didAskAutoBackup && Settings.instance.backup.shouldAutomaticBackup() && !Settings.instance.storage.isStorageMainValid(context)) {
             if(context is IWithResultLauncher) {

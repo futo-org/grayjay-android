@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.CookieManager
 import androidx.lifecycle.lifecycleScope
+import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.ManageTabsActivity
 import com.futo.platformplayer.activities.PolycentricHomeActivity
@@ -962,18 +963,31 @@ class Settings : FragmentedStorageFileJson() {
     class Backup {
         @Serializable(with = OffsetDateTimeSerializer::class)
         var lastAutoBackupTime: OffsetDateTime = OffsetDateTime.MIN;
-        var didAskAutoBackup: Boolean = true;
+        var didAskAutoBackup: Boolean = false;
+        var autoBackupEnabled: Boolean = false
         var autoBackupPassword: String? = null;
-        fun shouldAutomaticBackup() = autoBackupPassword != null;
+        fun shouldAutomaticBackup() = autoBackupEnabled
 
         @FormField(R.string.automatic_backup, FieldForm.READONLYTEXT, -1, 0)
         val automaticBackupText get() = if(!shouldAutomaticBackup()) "None" else "Every Day";
 
         @FormField(R.string.set_automatic_backup, FieldForm.BUTTON, R.string.configure_daily_backup_in_case_of_catastrophic_failure, 1)
         fun configureAutomaticBackup() {
-            UIDialogs.showAutomaticBackupDialog(StateApp.instance.activity!!, autoBackupPassword != null) {
-                SettingsFragment.currentView?.reloadSettings();
-            };
+            StateApp.instance.activity?.let { activity ->
+                if(!Settings.instance.storage.isStorageMainValid(activity)) {
+                    UIDialogs.toast("Missing general directory")
+                    StateApp.instance.changeExternalGeneralDirectory(activity) {
+                        UIDialogs.showAutomaticBackupDialog(activity) {
+                            SettingsFragment.currentView?.reloadSettings()
+                        }
+                    };
+                }
+                else {
+                    UIDialogs.showAutomaticBackupDialog(activity) {
+                        SettingsFragment.currentView?.reloadSettings()
+                    }
+                }
+            }
         }
         @FormField(R.string.restore_automatic_backup, FieldForm.BUTTON, R.string.restore_a_previous_automatic_backup, 2)
         fun restoreAutomaticBackup() {

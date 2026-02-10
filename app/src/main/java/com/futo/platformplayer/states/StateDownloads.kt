@@ -483,9 +483,9 @@ class StateDownloads {
                 var localVideos = StateDownloads.instance.getDownloadedVideosPlaylist(playlistId);
                 if(playlist != null) {
                     val missing = playlist.videos
-                                .filter { vid -> !localVideos.any { it.id.value == null || it.id.value == vid.id.value  } }
-                                .map { getCachedVideo(it.id) }
-                                .filterNotNull();
+                        .filter { vid -> !localVideos.any { it.id.value == null || it.id.value == vid.id.value  } }
+                        .map { getCachedVideo(it.id) }
+                        .filterNotNull();
                     if(missing.size > 0)
                         localVideos = localVideos + missing;
                 };
@@ -500,7 +500,6 @@ class StateDownloads {
                         for (video in localVideos) {
                             withContext(Dispatchers.Main) {
                                 it.setText("Exporting videos...(${i}/${localVideos.size})");
-                                //it.setProgress(i.toDouble() / localVideos.size);
                             }
 
                             try {

@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:gravity="center"
     android:background="@color/gray_1d">
 
@@ -13,9 +13,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingTop="40dp">
+        android:paddingTop="40dp"
+        android:paddingBottom="24dp">
 
         <ImageView
+            android:id="@+id/image_icon"
             android:layout_width="80dp"
             android:layout_height="80dp"
             app:srcCompat="@drawable/ic_lock" />
@@ -31,42 +33,57 @@
             android:layout_marginStart="30dp"
             android:textAlignment="center"
             android:layout_marginEnd="30dp" />
+
         <TextView
             android:id="@+id/text_reason"
             android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:textColor="#AAAAAA"
             android:fontFamily="@font/inter_regular"
             android:text="@string/it_appears_an_automatic_backup_exists_on_your_device_if_you_would_like_to_restore_enter_your_backup_password"
             android:textAlignment="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
-            android:textSize="10dp"
-            android:layout_height="wrap_content">
+            android:textSize="10dp" />
 
-        </TextView>
-        <EditText
-            android:id="@+id/edit_password"
+        <LinearLayout
+            android:id="@+id/password_container"
             android:layout_width="match_parent"
-            android:layout_marginLeft="30dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="30dp"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:singleLine="true"
-            android:hint="@string/backup_password" />
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/edit_password"
+                android:layout_width="match_parent"
+                android:layout_marginLeft="30dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="30dp"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:hint="@string/backup_password" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_restore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            style="?android:attr/progressBarStyleLarge" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="28dp"
-            android:layout_marginBottom="28dp">
+            android:layout_marginTop="28dp">
 
             <Space
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
+
             <Button
                 android:id="@+id/button_cancel"
                 android:layout_width="wrap_content"
@@ -77,6 +94,7 @@
                 android:fontFamily="@font/inter_regular"
                 android:textColor="@color/colorPrimary"
                 android:background="@color/transparent" />
+
             <LinearLayout
                 android:id="@+id/button_start"
                 android:layout_width="wrap_content"
@@ -86,6 +104,7 @@
                 android:clickable="true">
 
                 <TextView
+                    android:id="@+id/text_start"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/restore"
