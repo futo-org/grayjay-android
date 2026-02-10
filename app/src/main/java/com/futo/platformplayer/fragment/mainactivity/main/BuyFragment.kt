@@ -1,8 +1,6 @@
 package com.futo.platformplayer.fragment.mainactivity.main
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +14,8 @@ import com.futo.futopay.formatMoney
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePayment
 import com.futo.platformplayer.views.overlays.LoaderOverlay
@@ -68,8 +68,11 @@ class BuyFragment : MainFragment() {
 
             _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, _, exception ->
                 if(success) {
-                    UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0, UIDialogs.Action("Ok", {}, UIDialogs.ActionStyle.PRIMARY));
-                    _fragment.close(true);
+                    UIDialogs.showDialog(context, R.drawable.ic_check, context.getString(R.string.payment_succeeded), context.getString(R.string.thanks_for_your_purchase_a_key_will_be_sent_to_your_email_after_your_payment_has_been_received), null, 0,
+                        UIDialogs.Action("Ok", {
+                            (fragment.activity as? MainActivity)?.navigate<SettingsFragment>(withHistory = false);
+                        }, UIDialogs.ActionStyle.PRIMARY)
+                    );
                 }
                 else {
                     UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.payment_failed), exception);
@@ -89,16 +92,19 @@ class BuyFragment : MainFragment() {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 //Calling this function will cache first call
                 try {
-                    val currencies = StatePayment.instance.getAvailableCurrencies("grayjay");
-                    val prices = StatePayment.instance.getAvailableCurrencyPrices("grayjay");
-                    val country = StatePayment.instance.getPaymentCountryFromIP(true)?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
-                    val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id)) } };
+                    // TODO: Restore multi-currency support when payment backend supports it
+                    // val currencies = StatePayment.instance.getAvailableCurrencies("grayjay");
+                    // val prices = StatePayment.instance.getAvailableCurrencyPrices("grayjay");
+                    // val country = StatePayment.instance.getPaymentCountryFromIP(true)?.let { c -> PaymentConfigurations.COUNTRIES.find { it.id.equals(c, ignoreCase = true) } };
+                    // val currency = country?.let { c -> PaymentConfigurations.CURRENCIES.find { it.id == c.defaultCurrencyId && (currencies.contains(it.id)) } };
+                    // if(currency != null && prices.containsKey(currency.id)) {
+                    //     val price = prices[currency.id]!!;
+                    //     _buttonBuyText.text = formatMoney(country.id, currency.id, price) + context.getString(R.string.plus_tax);
+                    // }
 
-                    if(currency != null && prices.containsKey(currency.id)) {
-                        val price = prices[currency.id]!!;
-                        withContext(Dispatchers.Main) {
-                            _buttonBuyText.text = formatMoney(country.id, currency.id, price) + context.getString(R.string.plus_tax);
-                        }
+                    val priceCents = StatePayment.instance.getPolarProductPrice(PaymentConfigurations.PolarConfig.PRODUCT_SLUG)
+                    withContext(Dispatchers.Main) {
+                        _buttonBuyText.text = formatMoney("US", "usd", priceCents) + context.getString(R.string.plus_tax)
                     }
                 }
                 catch(ex: Throwable) {
