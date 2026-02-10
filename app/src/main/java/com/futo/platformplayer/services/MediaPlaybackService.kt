@@ -456,26 +456,19 @@ class MediaPlaybackService : Service() {
 
                         val audioFocusLossDuration = _audioFocusLossTime_ms?.let { System.currentTimeMillis() - it }
                         _audioFocusLossTime_ms = null
+
                         Log.i(TAG, "Audio focus gained (restartPlaybackAfterLoss = ${Settings.instance.playback.restartPlaybackAfterLoss}, _audioFocusLossTime_ms = $_audioFocusLossTime_ms, audioFocusLossDuration = ${audioFocusLossDuration})");
 
-                        if (Settings.instance.playback.restartPlaybackAfterLoss == 1) {
-                            if (audioFocusLossDuration != null && audioFocusLossDuration < 1000 * 10) {
-                                MediaControlReceiver.onPlayReceived.emit()
-                            }
-                        } else if (Settings.instance.playback.restartPlaybackAfterLoss == 2) {
-                            if (audioFocusLossDuration != null && audioFocusLossDuration < 1000 * 30) {
-                                MediaControlReceiver.onPlayReceived.emit()
-                            }
-                        } else if (Settings.instance.playback.restartPlaybackAfterLoss == 3) {
-                            MediaControlReceiver.onPlayReceived.emit()
+                        if (audioFocusLossDuration == null) return@OnAudioFocusChangeListener
+                        when (Settings.instance.playback.restartPlaybackAfterLoss) {
+                            1 -> if (audioFocusLossDuration < 10_000) MediaControlReceiver.onPlayReceived.emit()
+                            2 -> if (audioFocusLossDuration < 30_000) MediaControlReceiver.onPlayReceived.emit()
+                            3 -> MediaControlReceiver.onPlayReceived.emit()
                         }
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                        _audioFocusLossTime_ms = if (isPlaying) {
-                            System.currentTimeMillis()
-                        } else {
-                            null
-                        }
+                        val wasPlaying = isPlaying
+                        _audioFocusLossTime_ms = if (wasPlaying) System.currentTimeMillis() else null
 
                         _hasFocus = false;
                         _isTransientLoss = true;
@@ -488,11 +481,8 @@ class MediaPlaybackService : Service() {
                         _isTransientLoss = true;
                     }
                     AudioManager.AUDIOFOCUS_LOSS -> {
-                        _audioFocusLossTime_ms = if (isPlaying) {
-                            System.currentTimeMillis()
-                        } else {
-                            null
-                        }
+                        val wasPlaying = isPlaying
+                        _audioFocusLossTime_ms = if (wasPlaying) System.currentTimeMillis() else null
 
                         MediaControlReceiver.onPauseReceived.emit();
                         abandonAudioFocus();
