@@ -177,7 +177,7 @@ class UIDialogs {
                 dialog.show()
             }
 
-            if (StateBackup.hasAutomaticBackup()) {
+            if (!Settings.instance.backup.autoBackupEnabled && StateBackup.hasAutomaticBackup()) {
                 UIDialogs.showDialog(
                     context,
                     R.drawable.ic_move_up,
