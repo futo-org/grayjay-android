@@ -1199,6 +1199,7 @@ class VideoDetailView : ConstraintLayout {
         else if(_didStop) {
             _didStop = false;
             Logger.i(TAG, "loadCurrentVideo _lastPosition=${lastPositionMilliseconds}");
+            StatePlayer.instance.startOrUpdateMediaSession(context, video);
             loadCurrentVideo(lastPositionMilliseconds);
             handlePause();
         }
