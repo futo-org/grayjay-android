@@ -919,6 +919,7 @@
     <string name="cd_button_settings">Settings</string>
     <string name="cd_image_group">Group image</string>
     <string name="cd_button_edit">Edit</string>
+    <string name="cd_button_sort">Sort</string>
     <string name="cd_button_download">Download</string>
     <string name="cd_minimize_close">Close</string>
     <string name="cd_minimize_pause">Pause</string>
