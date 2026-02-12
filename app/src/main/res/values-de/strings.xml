@@ -2,7 +2,7 @@
 <resources>
     <string name="cast">Übertragen</string>
     <string name="search">Suche</string>
-    <string name="add_to_query">Zur Anfrage hinzufügen</string>
+    <string name="add_to_query">Zur Warteschlage hinzufügen</string>
     <string name="thumbnail">Vorschaubild</string>
     <string name="channel_image">Kanalbild</string>
     <string name="add_to">Hinzufügen zu</string>
@@ -15,7 +15,7 @@
     <string name="loading">Lädt</string>
     <string name="retry">Wiederholen</string>
     <string name="cancel">Abbrechen</string>
-    <string name="failed_to_retrieve_data_are_you_connected">Datenabruf fehlgeschlagen, sind Sie verbunden?</string>
+    <string name="failed_to_retrieve_data_are_you_connected">Datenabruf fehlgeschlagen, sind Sie online?</string>
     <string name="settings">Einstellungen</string>
     <string name="history">Verlauf</string>
     <string name="sources">Quellen</string>
@@ -28,7 +28,7 @@
     <string name="update">Aktualisieren</string>
     <string name="close">Schließen</string>
     <string name="never">Nie</string>
-    <string name="there_is_an_update_available_do_you_wish_to_update">Ein Update ist verfügbar. Möchten Sie aktualisieren?</string>
+    <string name="there_is_an_update_available_do_you_wish_to_update">Ein Update ist verfügbar, möchten Sie aktualisieren?</string>
     <string name="downloading_update">Update wird heruntergeladen…</string>
     <string name="installing_update">Update wird installiert…</string>
     <string name="done">Fertig</string>
@@ -36,10 +36,10 @@
     <string name="failed_to_update_with_error">Update fehlgeschlagen mit Fehler</string>
     <string name="general_failure">Allgemeiner Fehler</string>
     <string name="aborted">Abgebrochen</string>
-    <string name="blocked">Blockiert</string>
-    <string name="conflict">Konflikt</string>
-    <string name="incompatible">Inkompatibel</string>
-    <string name="invalid">Ungültig</string>
+    <string name="blocked">Der Vorgang ist fehlgeschlagen, weil er blockiert wurde</string>
+    <string name="conflict">Der Vorgang ist fehlgeschlagen, weil er mit einem anderen, bereits auf dem Gerät installierten Paket kollidiert (oder inkonsistent damit ist)</string>
+    <string name="incompatible">Der Vorgang ist fehlgeschlagen, weil er mit diesem Gerät grundsätzlich nicht kompatibel ist</string>
+    <string name="invalid">Der Vorgang ist fehlgeschlagen, weil eine oder mehrere APKs ungültig waren</string>
     <string name="not_enough_storage">Nicht genügend Speicherplatz</string>
     <string name="live_capitalized">LIVE</string>
     <string name="live">Live</string>
@@ -93,11 +93,11 @@
     <string name="add_source">Quelle hinzufügen</string>
     <string name="repository_url">Repository-URL</string>
     <string name="script_url">Skript-URL</string>
-    <string name="source_permissions_explanation">Dies sind die Berechtigungen, die das Plugin zur Funktion benötigt</string>
+    <string name="source_permissions_explanation">Dies sind die Berechtigungen, die das Plugin zum Funktionieren benötigt</string>
     <string name="source_explain_eval_access">Das Plugin hat Zugang zur Eval-Kapazität</string>
     <string name="source_explain_script_url">Das Plugin hat Zugriff auf die folgenden Domains</string>
     <string name="scan_qr">QR-Code scannen</string>
-    <string name="scan_qr_explain">Scannen Sie einen QR-Code, um zu installieren</string>
+    <string name="scan_qr_explain">Scannen Sie zum Installieren einen QR-Code</string>
     <string name="enter_url">URL eingeben</string>
     <string name="install">Installieren</string>
     <string name="no_devices_found_it_may_take_a_while_for_your_device_to_show_up_please_be_patient">Keine Geräte gefunden. Es kann eine Weile dauern, bis Ihr Gerät angezeigt wird. Bitte haben Sie Geduld</string>
@@ -130,7 +130,7 @@
     <string name="permissions">Berechtigungen</string>
     <string name="security_warnings">Sicherheitswarnungen</string>
     <string name="these_are_warnings_of_plugin_behavior_and_implementation">Dies sind Warnungen über das Verhalten und die Implementierung von Plugins</string>
-    <string name="please_enter_the_captcha_and_close_when_finished">Bitte geben Sie das Captcha ein und schließen Sie, wenn Sie fertig sind</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">Bitte das Captcha eingeben und schließen, wenn fertig</string>
     <string name="close_capitalized">SCHLIESSEN</string>
     <string name="submit">Absenden</string>
     <string name="restart">Neustart</string>
@@ -178,7 +178,7 @@
     <string name="i_already_paid">Ich habe bereits bezahlt</string>
     <string name="memberships">Mitgliedschaften</string>
     <string name="a_monthly_recurring_payment_with_often">Eine monatlich wiederkehrende Zahlung mit häufig</string>
-    <string name="additional_perks">zusätzliche Vorteile.</string>
+    <string name="additional_perks">zusätzlichen Vorteilen.</string>
     <string name="a_one_time_payment_to_support_the_creator">Eine einmalige Zahlung zur Unterstützung des Erstellers</string>
     <string name="donation">Spende</string>
     <string name="downloading">Herunterladen</string>
@@ -243,11 +243,11 @@
     <string name="announcement">Ankündigung</string>
     <string name="attempt_to_utilize_byte_ranges">Versuch, Byte-Bereiche zu nutzen</string>
     <string name="auto_update">Automatische Aktualisierung</string>
-    <string name="automatic_backup">Automatisches Backup</string>
+    <string name="automatic_backup">Automatische Sicherung</string>
     <string name="background_behavior">Hintergrundverhalten</string>
     <string name="background_update">Hintergrundaktualisierung</string>
     <string name="background_download">Hintergrunddownload</string>
-    <string name="backup">Backup</string>
+    <string name="backup">Sicherung</string>
     <string name="browsing">Browsen</string>
     <string name="byte_range_concurrency">Byte-Bereichs-Gleichzeitigkeit</string>
     <string name="byte_range_download">Byte-Bereichs-Download</string>
@@ -265,7 +265,7 @@
     <string name="clears_in_app_browser_cookies">In-App-Browser-Cookies löschen</string>
     <string name="configure_browsing_behavior">Browsing-Verhalten konfigurieren</string>
     <string name="configure_casting">Casting konfigurieren</string>
-    <string name="configure_daily_backup_in_case_of_catastrophic_failure">Tägliches Backup im Falle eines katastrophalen Ausfalls konfigurieren</string>
+    <string name="configure_daily_backup_in_case_of_catastrophic_failure">Tägliche Sicherung im Falle eines katastrophalen Ausfalls konfigurieren</string>
     <string name="configure_downloading_of_videos">Herunterladen von Videos konfigurieren</string>
     <string name="configure_how_your_home_tab_works_and_feels">Konfigurieren, wie Ihr Start-Tab funktioniert und sich anfühlt</string>
     <string name="configure_how_your_subscriptions_works_and_feels">Konfigurieren, wie Ihre Abonnements funktionieren und sich anfühlen</string>
@@ -340,7 +340,7 @@
     <string name="clear_all_downloaded">Alle Downloads löschen</string>
     <string name="clear_downloads">Downloads löschen</string>
     <string name="clear_all_cookies_from_the_cookieManager">Alle Cookies aus dem CookieManager löschen</string>
-    <string name="crash_me">Stürzen Sie mich ab</string>
+    <string name="crash_me">Anwendung abstürzen lassen</string>
     <string name="crashes_the_application_on_purpose">Absichtliches Abstürzen der Anwendung</string>
     <string name="delete_announcements">Ankündigungen löschen</string>
     <string name="delete_unresolved">Nicht gelöste löschen</string>
@@ -562,9 +562,9 @@
     <string name="signature_is_invalid">Die Signatur ist ungültig</string>
     <string name="no_signature_available">Keine Signatur verfügbar</string>
     <string name="unsubscribed_from">"Abonnement gekündigt bei "</string>
-    <string name="you_don_t_have_any_automatic_backups">Sie haben keine automatischen Backups</string>
-    <string name="an_old_backup_is_available">Ein altes Backup ist verfügbar</string>
-    <string name="would_you_like_to_restore_this_backup">Möchten Sie dieses Backup wiederherstellen?</string>
+    <string name="you_don_t_have_any_automatic_backups">Sie haben keine automatischen Sicherungen</string>
+    <string name="an_old_backup_is_available">Ein alte Sicherung ist verfügbar</string>
+    <string name="would_you_like_to_restore_this_backup">Möchten Sie diese Sicherung wiederherstellen?</string>
     <string name="override">Überschreiben</string>
     <string name="data_retry">Datenwiederholung</string>
     <string name="no_downloads_available">Keine Downloads verfügbar</string>
@@ -592,13 +592,13 @@
     <string name="the_playlist_will_restart_after_the_video_is_finished">Die Playlist wird nach dem Ende des Videos neu gestartet</string>
     <string name="end_of_playlist_reached">Ende der Playlist erreicht</string>
     <string name="enter_url_explain">Geben Sie eine URL ein, um die Plugin-Konfiguration von dort zu laden.</string>
-    <string name="buy_text">Es ist weder einfache noch günstige, eine App wie Grayjay, zu Entwikeln und zu Warten…</string>
+    <string name="buy_text">Grayjay ist nicht einfach oder billig zu entwickeln und zu warten. Wir haben Vollzeit-Ingenieure, die an der App und an den sie umgebenden Systemen arbeiten. Und wird wahrscheinlich nicht so bald wieder Geld einbringen, wenn überhaupt.\n\nFUTOs Mission ist es, dass Open-Source-Software und nicht-bösartige Software-Geschäftspraktiken eine nachhaltige Einkommensquelle für Projekte und ihre Entwickler werden. Aus diesem Grund sind wir dafür, dass die Nutzer tatsächlich für die Software bezahlen.\n\nDeshalb möchte Grayjay, dass Sie für die Software bezahlen.</string>
     <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Ein unabgefangene Ausnahme wurde ausgelöst, es tut uns leid für die Unannehmlichkeiten.</string>
-    <string name="set_a_password_for_your_daily_backup">Legen Sie ein Passwort für Ihr tägliches Backup fest</string>
-    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elemente erfordern eine Migration oder sind beschädigt. Möchten Sie sie jetzt aus dem Backup wiederherstellen?</string>
+    <string name="set_a_password_for_your_daily_backup">Ein Passwort für Ihr tägliche Sicherung festlegen</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elemente erfordern eine Migration oder sind beschädigt. Möchten Sie sie jetzt aus der Sicherung wiederherstellen?</string>
     <string name="recently_used_playlist">Kürzlich verwendete Playlist</string>
-    <string name="make_a_backup_of_your_identity">Ein Backup Ihrer Identität erstellen</string>
-    <string name="restore_a_previous_automatic_backup">Ein vorheriges automatisches Backup wiederherstellen</string>
+    <string name="make_a_backup_of_your_identity">Eine Sicherung Ihrer Identität erstellen</string>
+    <string name="restore_a_previous_automatic_backup">Eine vorherige automatische Sicherung wiederherstellen</string>
     <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Embedded-Plugins neu installiert, ein Neustart der App ist empfohlen</string>
     <string name="injects_a_test_source_config_local_into_v8">Fügt eine Testquellenkonfiguration (lokal) in V8 ein</string>
     <string name="do_you_want_to_convert_channel_channelname_to_a_playlist">Möchten Sie den Kanal {channelName} in eine Playlist umwandeln?</string>
@@ -607,6 +607,256 @@
     <string name="failed_to_retrieve_playlists">Abrufen von Playlisten fehlgeschlagen.</string>
     <string name="subscribed_to">"Abonniert bei "</string>
     <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in Reihenfolge aus</string>
+<string name="a_store_by_the_creator">Ein Shop vom Ersteller</string>
+    <string name="add_creator">Ersteller hinzufügen</string>
+    <string name="add_to_history">Zum Verlauf hinzufügen</string>
+    <string name="add_to_new_playlist">Zu neuer Playlist hinzufügen</string>
+    <string name="allow_all_certificates">Alle Zertifikate zulassen</string>
+    <string name="allow_all_certificates_warning">Dies birgt das Risiko, Ihren gesamten Grayjay-Netzwerkverkehr offenzulegen.</string>
+    <string name="allow_developer_submit">Entwickler-Übermittlungen zulassen</string>
+    <string name="allow_developer_submit_description">Erlaubt dem Entwickler, Daten an seinen Server zu senden. Seien Sie vorsichtig, da dies sensible Daten enthalten könnte.</string>
+    <string name="allow_developer_submit_warning">Stellen Sie sicher, dass Sie dem Entwickler vertrauen. Er könnte Zugriff auf sensible Daten erhalten. Aktivieren Sie dies nur, wenn Sie dem Entwickler bei der Behebung eines Fehlers helfen möchten.</string>
+    <string name="allow_full_screen_portrait">Vollbild im Hochformat beim Ansehen von horizontalen Videos erlauben</string>
+    <string name="allow_grayjay_to_handle_links">Grayjay erlauben, Links zu verarbeiten</string>
+    <string name="allow_ipv6">IPV6 erlauben</string>
+    <string name="allow_ipv6_description">Wenn das Übertragen über IPV6 erlaubt ist, kann dies in einigen Netzwerken Probleme verursachen</string>
+    <string name="allow_under_cutout">Video unter Bildschirmausschnitt erlauben</string>
+    <string name="allow_under_cutout_description">Video erlauben, im Vollbildmodus unter den Bildschirmausschnitt zu gelangen.\nNeustart möglicherweise erforderlich</string>
+    <string name="already_queued">Bereits in der Warteschlange</string>
+    <string name="always_allow_reverse_landscape_auto_rotate">Automatische Drehung ins umgekehrte Querformat immer erlauben</string>
+    <string name="always_allow_reverse_landscape_auto_rotate_description">Es erfolgt immer eine automatische Drehung zwischen den beiden Querformatausrichtungen im Vollbildmodus, auch wenn Sie die automatische Drehung in den Systemeinstellungen deaktivieren.</string>
+    <string name="always_proxy_requests">Anfragen immer über Proxy leiten</string>
+    <string name="always_proxy_requests_description">Anfragen beim Übertragen von Daten über das Gerät immer über einen Proxy leiten.</string>
+    <string name="always_reload_from_cache">Immer aus dem Cache neu laden</string>
+    <string name="always_reload_from_cache_description">Dies wird nicht empfohlen, ist aber eine mögliche Problemumgehung für einige Probleme.</string>
+    <string name="app_language">App-Sprache</string>
+    <string name="automatic_update_setting">Automatische Aktualisierung</string>
+    <string name="automatic_update_setting_description">Beim Start automatisch aktualisieren, wenn keine Berechtigungen geändert wurden und das Plugin aktiviert ist</string>
+    <string name="autoplay">Nächstes Video standardmäßig automatisch abspielen</string>
+    <string name="autoplay_description">Die automatische Wiedergabe des nächsten Videos ist standardmäßig aktiviert, wenn Sie ein Video ansehen</string>
+    <string name="background_switch_audio">Im Hintergrund zu Audio wechseln</string>
+    <string name="background_switch_audio_description">Optimieren Sie die Bandbreitennutzung, indem Sie im Hintergrund zu einem reinen Audio-Stream wechseln, falls verfügbar. Kann Ruckeln verursachen</string>
+    <string name="bad_reputation_comments_fading">Ausblenden von Kommentaren mit schlechtem Ruf</string>
+    <string name="bad_reputation_comments_fading_description">Ob Kommentare mit sehr schlechtem Ruf ausgeblendet werden sollen. Das Deaktivieren kann die Benutzererfahrung verschlechtern.</string>
+    <string name="brightness_slider">Helligkeitsregler</string>
+    <string name="brightness_slider_descr">Wischgeste zum Ändern der Helligkeit aktivieren</string>
+    <string name="broadcast">Übertragung</string>
+    <string name="broadcast_description">Gerät erlauben, Anwesenheit zu übertragen</string>
+    <string name="bypass_rotation_prevention">Drehungsverhinderung umgehen</string>
+    <string name="bypass_rotation_prevention_description">Ermöglicht Drehung in Nicht-Video-Ansichten.\nWARNUNG: Nicht dafür ausgelegt</string>
+    <string name="bypass_rotation_prevention_warning">Dies kann zu unerwartetem Verhalten führen und ist größtenteils ungetestet.</string>
+    <string name="cache">Cache</string>
+    <string name="can_be_disabled_when_you_are_experiencing_issues">Kann bei Problemen deaktiviert werden</string>
+    <string name="cd_app_icon">App-Symbol</string>
+    <string name="cd_button_add">Hinzufügen</string>
+    <string name="cd_button_add_to_watch_later">Zu „Später ansehen“ hinzufügen</string>
+    <string name="cd_button_autoplay">Autoplay</string>
+    <string name="cd_button_back">Zurück-Schaltfläche</string>
+    <string name="cd_button_clear_search">Suche löschen</string>
+    <string name="cd_button_close">Schließen</string>
+    <string name="cd_button_create_playlist">Playlist erstellen</string>
+    <string name="cd_button_delete">Löschen</string>
+    <string name="cd_button_download">Herunterladen</string>
+    <string name="cd_button_edit">Bearbeiten</string>
+    <string name="cd_button_filter">Filter</string>
+    <string name="cd_button_fullscreen">Vollbild</string>
+    <string name="cd_button_help">Hilfe</string>
+    <string name="cd_button_loop">Wiederholen</string>
+    <string name="cd_button_minimize">Minimieren</string>
+    <string name="cd_button_next">Weiter</string>
+    <string name="cd_button_pause">Pause</string>
+    <string name="cd_button_play">Wiedergabe</string>
+    <string name="cd_button_previous">Zurück</string>
+    <string name="cd_button_replies">Antworten</string>
+    <string name="cd_button_rotate_lock">Drehung sperren</string>
+    <string name="cd_button_scan_qr">QR-Code scannen</string>
+    <string name="cd_button_search">Suchen</string>
+    <string name="cd_button_settings">Einstellungen</string>
+    <string name="cd_button_share">Teilen</string>
+    <string name="cd_button_stop">Stopp</string>
+    <string name="cd_button_subscribe">Abonnieren</string>
+    <string name="cd_cast_button">Übertragen-Schaltfläche</string>
+    <string name="cd_creator_thumbnail">Ersteller-Vorschaubild</string>
+    <string name="cd_donation_amount">Spendenbetrag</string>
+    <string name="cd_donation_author_image">Bild des Spendenautors</string>
+    <string name="cd_download_indicator">Download-Anzeige</string>
+    <string name="cd_drag_drop">Ziehen und Ablegen</string>
+    <string name="cd_edit_image">Bild bearbeiten</string>
+    <string name="cd_icon_history">Verlaufssymbol</string>
+    <string name="cd_image_device">Gerätesymbol</string>
+    <string name="cd_image_dislike_icon">Nicht mögen</string>
+    <string name="cd_image_group">Gruppenbild</string>
+    <string name="cd_image_like_icon">Mögen</string>
+    <string name="cd_image_loader">Ladeanzeige</string>
+    <string name="cd_image_polycentric">Polycentric-Profilbild ändern</string>
+    <string name="cd_incognito_button">Inkognito-Schaltfläche</string>
+    <string name="cd_minimize_close">Schließen</string>
+    <string name="cd_minimize_pause">Pause</string>
+    <string name="cd_minimize_play">Wiedergabe</string>
+    <string name="cd_platform_indicator">Plattformanzeige</string>
+    <string name="cd_search_icon">Suchsymbol</string>
+    <string name="cd_thumbnail_player_unmute">Stummschaltung aufheben</string>
+    <string name="cd_update_spinner">Aktualisierungs-Ladekreis</string>
+    <string name="changelog_plugin_description">Zeigt verfügbare Änderungsprotokolle für aktuelle und frühere Versionen an</string>
+    <string name="changing_this_field_requires_restart">Das Ändern dieses Feldes erfordert einen Neustart der App.</string>
+    <string name="channel">Kanal</string>
+    <string name="chapter_update_fps_description">Genauigkeit der Kapitelaktualisierung ändern, höher könnte mehr Leistung kosten</string>
+    <string name="chapter_update_fps_title">Kapitelaktualisierungs-FPS</string>
+    <string name="chapters">Kapitel</string>
+    <string name="check_disabled_plugin_updates">Deaktivierte Plugins auf Updates prüfen</string>
+    <string name="check_disabled_plugin_updates_description">Deaktivierte Plugins auf Updates prüfen</string>
+    <string name="check_for_updates_setting">Auf Updates prüfen</string>
+    <string name="check_for_updates_setting_description">Ob ein Plugin beim Start auf Updates geprüft werden soll</string>
+    <string name="check_to_see_if_an_update_is_available">Prüfen, ob ein Update verfügbar ist.</string>
+    <string name="clear_channel_cache">Kanal-Cache leeren</string>
+    <string name="clear_channel_cache_description">Löscht alle Inhalte aus dem Cache der abonnierten Kanäle</string>
+    <string name="clear_external_downloads_directory">Externes Download-Verzeichnis leeren</string>
+    <string name="clear_hidden">Ausgeblendete Elemente löschen</string>
+    <string name="clear_hidden_description">Entfernt alle ausgeblendeten Ersteller und Videos und zeigt sie wieder an</string>
+    <string name="clear_the_external_storage_for_download_files">Externen Speicher für heruntergeladene Dateien leeren</string>
+    <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Klicken, um zu den Akkuoptimierungseinstellungen zu gelangen. Das Deaktivieren der Akkuoptimierung verhindert, dass das Betriebssystem Mediensitzungen beendet.</string>
+    <string name="comments_description">Der Kommentarbereich unter dem Inhalt</string>
+    <string name="config_url">Konfigurations-URL</string>
+    <string name="configure_if_historical_time_bar_should_be_shown">Konfigurieren, ob historische Zeitbalken angezeigt werden sollen</string>
+    <string name="connect_discovered">Gefundene verbinden</string>
+    <string name="connect_discovered_description">Gerät erlauben, nach bekannten gekoppelten Geräten zu suchen und eine Verbindung herzustellen</string>
+    <string name="connect_last">Letzte Verbindung versuchen</string>
+    <string name="connect_last_description">Gerät erlauben, sich automatisch mit dem zuletzt bekannten zu verbinden</string>
+    <string name="create_new_subgroup">Neue Gruppe erstellen</string>
+    <string name="current_promotions_by_this_creator">Aktuelle Werbeaktionen dieses Erstellers</string>
+    <string name="default_comment_section">Standard-Kommentarbereich</string>
+    <string name="default_recommendations">Empfehlungen als Standard</string>
+    <string name="default_recommendations_description">Empfehlungen standardmäßig anstelle von Kommentaren anzeigen.</string>
+    <string name="delete_watchlist_on_finish">Aus „Später ansehen“ löschen, wenn angesehen</string>
+    <string name="delete_watchlist_on_finish_description">Nachdem Sie ein Video verlassen, das Sie größtenteils angesehen haben, wird es aus „Später ansehen“ entfernt.</string>
+    <string name="dev_info_channel_cache_size">Kanal-Cache-Größe (Start)</string>
+    <string name="disable_battery_optimization">Akkuoptimierung deaktivieren</string>
+    <string name="do_not_ask_again">Nicht erneut fragen</string>
+    <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Möchten Sie die Tutorials sehen? Sie können sie jederzeit über die Mehr-Schaltfläche finden.</string>
+    <string name="enable_polycentric">Polycentric aktivieren</string>
+    <string name="enabled_description">Funktion aktivieren</string>
+    <string name="failed_to_parse_text_file">Fehler beim Parsen der Textdatei</string>
+    <string name="failed_to_show_settings">Einstellungen konnten nicht angezeigt werden</string>
+    <string name="fcast">FCast</string>
+    <string name="fcast_technical_documentation">Technische Dokumentation für FCast</string>
+    <string name="fcast_website">FCast-Webseite</string>
+    <string name="fetch_on_tab_opened">Beim Öffnen des Tabs abrufen</string>
+    <string name="fetch_on_tab_opened_description">Neue Ergebnisse abrufen, wenn der Tab geöffnet wird (wenn noch keine Ergebnisse vorhanden sind, wird das Deaktivieren nicht empfohlen, es sei denn, Sie haben Probleme)</string>
+    <string name="full_autorotate_lock">Vollständige Sperre der automatischen Drehung</string>
+    <string name="full_autorotate_lock_description">Verhindert jede Drehung, während die Rotationssperre aktiviert ist (auch das Wechseln zwischen Querformat und umgekehrtem Querformat).</string>
+    <string name="full_screen_portrait">Vollbild Hochformat</string>
+    <string name="general">Allgemein</string>
+    <string name="gesture_controls">Gestensteuerung</string>
+    <string name="go_back_to_casting_add_dialog">Zurück zum Hinzufügen-Dialog für die Übertragung</string>
+    <string name="guide">Anleitung</string>
+    <string name="hide_creator_from_home">Ersteller auf Startseite ausblenden</string>
+    <string name="history_cache_100">Verlaufs-Cache 100</string>
+    <string name="how_to_use_fcast_guide">Anleitung zur Verwendung von FCast</string>
+    <string name="import_data">Daten importieren</string>
+    <string name="import_data_description">Datei zum Importieren auswählen, unterstützt verschiedene Dateien (Alternative zum direkten Öffnen)</string>
+    <string name="import_options">Wählen Sie eine der folgenden verfügbaren Importoptionen.</string>
+    <string name="keep_screen_on">Bildschirm eingeschaltet lassen</string>
+    <string name="keep_screen_on_while_casting">Bildschirm während der Übertragung eingeschaltet lassen</string>
+    <string name="language">Sprache</string>
+    <string name="link_handling">Link-Verarbeitung</string>
+    <string name="load_more">Mehr laden</string>
+    <string name="locked_content_description">Dieser Inhalt ist gesperrt</string>
+    <string name="login_required">Anmeldung erforderlich</string>
+    <string name="login_to_view_your_comments">Melden Sie sich an, um Ihre Kommentare anzuzeigen</string>
+    <string name="may_require_restart">Neustart möglicherweise erforderlich</string>
+    <string name="membership">Mitgliedschaft</string>
+    <string name="merchandise">Fanartikel</string>
+    <string name="networking">Netzwerk</string>
+    <string name="new_playlist">Neue Playlist</string>
+    <string name="no_sources_installed">Sie haben keine Quellen installiert. Bitte fügen Sie Quellen hinzu, um die App wie vorgesehen zu nutzen.</string>
+    <string name="not_empty_close">Kommentar ist nicht leer, trotzdem schließen?</string>
+    <string name="notifications">Benachrichtigungen</string>
+    <string name="open_the_fcast_website">Die FCast-Webseite öffnen</string>
+    <string name="pan_option">Schwenken aktivieren</string>
+    <string name="pan_option_descr">Zwei-Finger-Schwenkgeste aktivieren</string>
+    <string name="peek_channel_contents">Kanalinhalte kurz anzeigen</string>
+    <string name="peek_channel_contents_description">Kanalinhalte kurz anzeigen, wenn vom Plugin bei ratenbegrenzten Aufrufen unterstützt, kann die Ladezeit von Abonnements verlängern.</string>
+    <string name="planned_content_notifications">Benachrichtigungen für geplante Inhalte</string>
+    <string name="planned_content_notifications_description">Plant erkannte geplante Inhalte als Benachrichtigungen, was zu genaueren Benachrichtigungen für diese Inhalte führt.</string>
+    <string name="platform_url">Plattform-URL</string>
+    <string name="play_pause">Wiedergabe/Pause</string>
+    <string name="play_store_version_does_not_support_default_url_handling">Die Play Store-Version unterstützt keine standardmäßige URL-Verarbeitung.</string>
+    <string name="playlist_delete_confirmation">Bestätigung zum Löschen der Playlist</string>
+    <string name="playlist_delete_confirmation_description">Bestätigungsdialog beim Löschen von Medien aus einer Playlist anzeigen</string>
+    <string name="please_use_at_least_1_character">Bitte verwenden Sie mindestens 1 Zeichen</string>
+    <string name="plus_tax">" + Steuer"</string>
+    <string name="polycentric_is_disabled">Polycentric ist deaktiviert</string>
+    <string name="polycentric_local_cache">Lokales Caching für Polycentric aktivieren</string>
+    <string name="polycentric_local_cache_description">Speichert Polycentric-Ergebnisse auf dem Gerät zwischen, um Ladezeiten zu verkürzen. Änderung erfordert App-Neustart</string>
+    <string name="position">Position</string>
+    <string name="prefer_webm">Webm-Video-Codecs bevorzugen</string>
+    <string name="prefer_webm_audio">Webm-Audio-Codecs bevorzugen</string>
+    <string name="prefer_webm_audio_description">Ob der Player Webm-Codecs (Opus) gegenüber MP4-Codecs (AAC) bevorzugen soll, kann zu schlechterer Kompatibilität führen.</string>
+    <string name="prefer_webm_description">Ob der Player Webm-Codecs (VP9/Opus) gegenüber MP4-Codecs (H.264/AAC) bevorzugen soll, kann zu schlechterer Kompatibilität führen.</string>
+    <string name="preferred_casting_quality_description">Standardqualität beim Übertragen auf ein externes Gerät</string>
+    <string name="preferred_metered_quality_description">Standardqualität bei getakteten Verbindungen wie Mobilfunk</string>
+    <string name="preferred_preview_quality_description">Standardqualität bei der Vorschau eines Videos in einem Feed</string>
+    <string name="preferred_quality_description">Standardqualität zum Ansehen eines Videos</string>
+    <string name="preview_feed_items">Feed-Elemente vorab anzeigen</string>
+    <string name="preview_feed_items_description">Wenn der Vorschau-Feedstil verwendet wird, ob Elemente beim Darüber-Scrollen automatisch vorab angezeigt werden sollen</string>
+    <string name="privacy_mode">Privatsphärenmodus</string>
+    <string name="progress_bar">Fortschrittsbalken</string>
+    <string name="progress_bar_description">Ob ein historischer Fortschrittsbalken angezeigt werden soll</string>
+    <string name="promotions">Werbeaktionen</string>
+    <string name="ratelimit">Ratenbegrenzung</string>
+    <string name="ratelimit_description">Einstellungen zur Ratenbegrenzung des Verhaltens dieses Plugins</string>
+    <string name="ratelimit_sub_setting">Abonnements ratenbegrenzen</string>
+    <string name="ratelimit_sub_setting_description">Begrenzt die Anzahl der gestellten Abonnementanfragen</string>
+    <string name="repeat_password">Passwort wiederholen</string>
+    <string name="restart_after_audio_focus_loss">Neustart nach Verlust des Audiofokus</string>
+    <string name="restart_after_connectivity_loss">Neustart nach Verbindungsverlust</string>
+    <string name="restart_playback_when_gaining_audio_focus_after_a_loss">Wiedergabe neu starten, wenn der Audiofokus nach einem Verlust wiedererlangt wird</string>
+    <string name="restart_playback_when_gaining_connectivity_after_a_loss">Wiedergabe neu starten, wenn die Verbindung nach einem Verlust wiederhergestellt wird</string>
+    <string name="restore_system_brightness">Systemhelligkeit wiederherstellen</string>
+    <string name="restore_system_brightness_descr">Systemhelligkeit beim Verlassen des Vollbildmodus wiederherstellen</string>
+    <string name="reverse_portrait">Umgekehrtes Hochformat zulassen</string>
+    <string name="reverse_portrait_description">App erlauben, ins umgekehrte Hochformat zu wechseln</string>
+    <string name="rotation_zone">Rotationszone</string>
+    <string name="rotation_zone_description">Empfindlichkeit der Rotationszonen festlegen (verringern, um weniger empfindlich zu machen)</string>
+    <string name="scroll_to_top">Nach oben scrollen</string>
+    <string name="select">Auswählen</string>
+    <string name="send_to_device">Video synchronisieren</string>
+    <string name="show_home_filters">Startseiten-Filter anzeigen</string>
+    <string name="show_home_filters_description">Ob die Startseiten-Filter über der Startseite angezeigt werden sollen</string>
+    <string name="show_home_filters_plugin_names">Plugin-Namen der Startseiten-Filter</string>
+    <string name="show_home_filters_plugin_names_description">Ob Startseiten-Filter vollständige Plugin-Namen oder nur Symbole anzeigen sollen</string>
+    <string name="show_watch_metrics">Wiedergabemetriken anzeigen</string>
+    <string name="show_watch_metrics_description">Zeigt die Wiedergabezeit und Aufrufe jedes Erstellers im Ersteller-Tab an</string>
+    <string name="stability_threshold_time">Stabilitätsschwellenzeit</string>
+    <string name="stability_threshold_time_description">Geben Sie die Dauer an, für die die Ausrichtung gleich bleiben muss, um eine Drehung auszulösen</string>
+    <string name="stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more">Nach {requestCount} gestoppt, um Ratenbegrenzung zu vermeiden. Klicken Sie auf „Mehr laden“, um mehr zu laden.</string>
+    <string name="subscription_group_menu">Gruppen</string>
+    <string name="subscriptions_cache_5000">Abonnement-Cache 5000</string>
+    <string name="sync_grayjay">Grayjay synchronisieren</string>
+    <string name="sync_grayjay_description">Synchronisieren Sie Ihre Daten über mehrere Geräte hinweg</string>
+    <string name="synchronization">Synchronisation</string>
+    <string name="system_brightness">Systemhelligkeit</string>
+    <string name="system_brightness_descr">Gestensteuerung passt Systemhelligkeit an</string>
+    <string name="system_volume">Systemlautstärke</string>
+    <string name="system_volume_descr">Gestensteuerung passt Systemlautstärke an</string>
+    <string name="test_background_worker">Hintergrund-Worker testen</string>
+    <string name="test_background_worker_description"></string>
+    <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">Dies sind alle {commentCount} Kommentare, die Sie in Grayjay gemacht haben.</string>
+    <string name="these_creators_in_group">Dies sind die Ersteller, die für diese Gruppe sichtbar sind.</string>
+    <string name="these_creators_not_in_group">Diese Ersteller sind nicht in dieser Gruppe.</string>
+    <string name="time_bar">Zeitbalken</string>
+    <string name="toggle_full_screen">Vollbild umschalten</string>
+    <string name="toggle_full_screen_descr">Wischgeste zum Umschalten des Vollbildmodus aktivieren</string>
+    <string name="update_available_exclamation">Update verfügbar!</string>
+    <string name="url_handling">URL-Verarbeitung</string>
+    <string name="view_a_video_about_how_to_cast">Video zum Übertragen ansehen</string>
+    <string name="view_the_fcast_technical_documentation">Die technische Dokumentation von FCast ansehen</string>
+    <string name="volume_slider">Lautstärkeregler</string>
+    <string name="volume_slider_descr">Wischgeste zum Ändern der Lautstärke aktivieren</string>
+    <string name="watched">Angesehen</string>
+    <string name="zoom">Zoom</string>
+    <string name="zoom_option">Zoom aktivieren</string>
+    <string name="zoom_option_descr">Zwei-Finger-Pinch-Zoom-Geste aktivieren</string>
     <string-array name="home_screen_array">
         <item>Empfehlungen</item>
         <item>Abonnements</item>
@@ -702,8 +952,85 @@
         <item>Ausführlich</item>
     </string-array>
     <string-array name="comments_sortby_array">
-        <item>Newest</item>
-        <item>Oldest</item>
+        <item>Neuste</item>
+        <item>Älteste</item>
+    </string-array>
+<string-array name="downloads_sortby_array">
+        <item>Name (Aufsteigend)</item>
+        <item>Name (Absteigend)</item>
+        <item>Downloaddatum (Älteste)</item>
+        <item>Downloaddatum (Neueste)</item>
+        <item>Veröffentlichungsdatum (Älteste)</item>
+        <item>Veröffentlichungsdatum (Neueste)</item>
+    </string-array>
+    <string-array name="playlists_sortby_array">
+        <item>Name (Aufsteigend)</item>
+        <item>Name (Absteigend)</item>
+        <item>Änderungsdatum (Älteste)</item>
+        <item>Änderungsdatum (Neueste)</item>
+        <item>Erstellungsdatum (Älteste)</item>
+        <item>Erstellungsdatum (Neueste)</item>
+        <item>Wiedergabedatum (Älteste)</item>
+        <item>Wiedergabedatum (Neueste)</item>
+    </string-array>
+    <string-array name="app_languages">
+        <item>System</item>
+        <item>Englisch (EN)</item>
+        <item>Deutsch (DE)</item>
+        <item>Spanisch (ES)</item>
+        <item>Portugiesisch (PT)</item>
+        <item>Französisch (FR)</item>
+        <item>Japanisch (JA)</item>
+        <item>Koreanisch (KO)</item>
+        <item>Chinesisch (ZH)</item>
+        <item>Russisch (RU)</item>
+        <item>Arabisch (AR)</item>
+    </string-array>
+    <string-array name="chapter_fps">
+        <item>24</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+    </string-array>
+    <string-array name="comment_sections">
+        <item>Polycentric</item> <item>Plattform</item>
+        <item>Zuletzt ausgewählt</item>
+    </string-array>
+    <string-array name="audio_languages">
+        <item>Englisch</item>
+        <item>Spanisch</item>
+        <item>Deutsch</item>
+        <item>Französisch</item>
+        <item>Japanisch</item>
+        <item>Koreanisch</item>
+        <item>Thailändisch</item>
+        <item>Vietnamesisch</item>
+        <item>Indonesisch</item>
+        <item>Hindi</item>
+        <item>Arabisch</item>
+        <item>Türkisch</item>
+        <item>Russisch</item>
+        <item>Portugiesisch</item>
+        <item>Chinesisch</item>
+    </string-array>
+    <string-array name="restart_playback_after_loss">
+        <item>Nie</item>
+        <item>Innerhalb von 10 Sekunden nach Verlust</item>
+        <item>Innerhalb von 30 Sekunden nach Verlust</item>
+        <item>Immer</item>
+    </string-array>
+    <string-array name="rotation_zone">
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+    </string-array>
+    <string-array name="rotation_threshold_time">
+        <item>100</item>
+        <item>500</item>
+        <item>750</item>
+        <item>1000</item>
+        <item>1500</item>
+        <item>2000</item>
     </string-array>
     <string-array name="app_languages">
         <item>System</item>
