@@ -1,6 +1,8 @@
 package com.futo.platformplayer.engine.packages
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.os.Looper
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -9,6 +11,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.collection.emptyLongSet
+import androidx.webkit.ScriptHandler
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.reference.V8ValueFunction
@@ -24,14 +27,25 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class PackageBrowser: V8Package {
     override val name: String get() = "Browser";
     override val variableName: String = "browser";
 
     private val _json = Json { };
+
+    @Transient
+    private val _pageLoadScriptRefs = ConcurrentHashMap<String, ScriptHandler>()
+
+    @Transient
+    private val _pageLoadScriptsFallback = ConcurrentHashMap<String, String>()
 
     @Transient
     private var _readySemaphore: Semaphore? = null;
@@ -63,6 +77,18 @@ class PackageBrowser: V8Package {
                 //_browser?.settings?.useWideViewPort = true;
                 //_browser?.settings?.loadWithOverviewMode = true;
                 _browser?.webViewClient = object : WebViewClient() {
+                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                        super.onPageStarted(view, url, favicon)
+
+                        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                            // Best-effort fallback. Not equivalent, but as early as WebView exposes.
+                            val scripts = _pageLoadScriptsFallback.values.toList()
+                            for (s in scripts) {
+                                try { view?.evaluateJavascript(s, null) } catch (_: Throwable) {}
+                            }
+                        }
+                    }
+
                     override fun onPageCommitVisible(view: WebView?, url: String?) {
                         super.onPageCommitVisible(view, url)
                         _readySemaphore?.release();
@@ -214,6 +240,73 @@ class PackageBrowser: V8Package {
             catch(ex: Throwable) {
                 Logger.e("PackageBrowser", "Browser Failed to invoke browser", ex);
             }
+        }
+    }
+
+    @V8Function
+    fun addScriptOnLoad(js: String): String {
+        require(js.isNotBlank()) { "Script must be non-empty." }
+
+        val id = UUID.randomUUID().toString()
+
+        onMainBlocking {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                val ref = WebViewCompat.addDocumentStartJavaScript(browser, js, setOf("*"))
+                _pageLoadScriptRefs[id] = ref
+            } else {
+                _pageLoadScriptsFallback[id] = js
+            }
+        }
+
+        Logger.i("PackageBrowser", "addScriptOnLoad() registered (id=$id)")
+        return id
+    }
+
+    @SuppressLint("RequiresFeature")
+    @V8Function
+    fun removeScriptOnLoad(identifier: String): Boolean {
+        if (identifier.isBlank()) return false
+
+        val ref = _pageLoadScriptRefs.remove(identifier)
+        val removedFallback = _pageLoadScriptsFallback.remove(identifier) != null
+
+        if (ref != null) {
+            onMainBlocking {
+                try { ref.remove() } catch (_: Throwable) {}
+            }
+            Logger.i("PackageBrowser", "removeScriptOnLoad() removed (id=$identifier)")
+            return true
+        }
+
+        if (removedFallback) {
+            Logger.i("PackageBrowser", "removeScriptOnLoad() removed fallback (id=$identifier)")
+            return true
+        }
+
+        return false
+    }
+
+    @SuppressLint("RequiresFeature")
+    @V8Function
+    fun clearScriptsOnLoad() {
+        val refs = _pageLoadScriptRefs.values.toList()
+        _pageLoadScriptRefs.clear()
+        _pageLoadScriptsFallback.clear()
+
+        onMainBlocking {
+            for (r in refs) {
+                try { r.remove() } catch (_: Throwable) {}
+            }
+        }
+
+        Logger.i("PackageBrowser", "clearScriptsOnLoad() cleared")
+    }
+
+    private fun <T> onMainBlocking(block: () -> T): T {
+        return if (Looper.myLooper() == Looper.getMainLooper()) {
+            block()
+        } else runBlocking {
+            withContext(Dispatchers.Main) { block() }
         }
     }
 
