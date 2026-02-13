@@ -4,14 +4,14 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Looper
 import android.webkit.ConsoleMessage
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.collection.emptyLongSet
-import androidx.webkit.ScriptHandler
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.reference.V8ValueFunction
@@ -27,22 +27,21 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
-import androidx.webkit.WebViewCompat
-import androidx.webkit.WebViewFeature
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
 
 class PackageBrowser: V8Package {
     override val name: String get() = "Browser";
     override val variableName: String = "browser";
 
     private val _json = Json { };
-
-    @Transient
-    private val _pageLoadScriptRefs = ConcurrentHashMap<String, ScriptHandler>()
 
     @Transient
     private val _pageLoadScriptsFallback = ConcurrentHashMap<String, String>()
@@ -61,6 +60,13 @@ class PackageBrowser: V8Package {
         return _browser!!;
     }
 
+    @Volatile
+    private var _userAgent: String = ""
+    private val http = OkHttpClient.Builder()
+        .followRedirects(false)
+        .followSslRedirects(false)
+        .build()
+
     constructor(v8Plugin: V8Plugin): super(v8Plugin) {
 
     }
@@ -69,6 +75,7 @@ class PackageBrowser: V8Package {
         if(_browser == null){
             StateApp.instance.scope.launch(Dispatchers.Main) {
                 _browser = WebView(StateApp.instance.contextOrNull ?: return@launch);
+                _userAgent = _browser?.settings?.userAgentString.orEmpty()
                 _browser?.settings?.javaScriptEnabled = true;
                 _browser?.settings?.blockNetworkImage = false;
                 _browser?.settings?.blockNetworkLoads = false;
@@ -77,15 +84,63 @@ class PackageBrowser: V8Package {
                 //_browser?.settings?.useWideViewPort = true;
                 //_browser?.settings?.loadWithOverviewMode = true;
                 _browser?.webViewClient = object : WebViewClient() {
-                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                        super.onPageStarted(view, url, favicon)
+                    override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                        if (view == null || request == null) return null
 
-                        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                            // Best-effort fallback. Not equivalent, but as early as WebView exposes.
-                            val scripts = _pageLoadScriptsFallback.values.toList()
-                            for (s in scripts) {
-                                try { view?.evaluateJavascript(s, null) } catch (_: Throwable) {}
+                        if (!request.isForMainFrame) return null
+                        if (!request.method.equals("GET", ignoreCase = true)) return null
+
+                        val url = request.url?.toString() ?: return null
+                        val scheme = request.url?.scheme ?: return null
+                        if (scheme != "http" && scheme != "https") return null
+
+                        val scripts = _pageLoadScriptsFallback.values.toList()
+                        if (scripts.isEmpty()) return null
+
+                        return try {
+                            val cookie = request.requestHeaders["Cookie"] ?: runCatching { CookieManager.getInstance().getCookie(url) }.getOrNull()
+                            val ua = request.requestHeaders["User-Agent"] ?: _userAgent
+
+                            val okReq = Request.Builder()
+                                .url(url)
+                                .get()
+                                .header("User-Agent", ua)
+                                .apply { if (!cookie.isNullOrEmpty()) header("Cookie", cookie) }
+                                .build()
+
+                            http.newCall(okReq).execute().use { resp ->
+                                val code = resp.code
+                                val reason = resp.message.ifBlank { "OK" }
+                                if (code in 300..399) return null
+
+                                val contentType = resp.header("Content-Type") ?: ""
+                                val isHtml =
+                                    contentType.startsWith("text/html", ignoreCase = true) ||
+                                            contentType.startsWith("application/xhtml+xml", ignoreCase = true)
+
+                                if (!isHtml) return null
+
+                                val bodyBytes = resp.body.bytes()
+                                val charset = charsetFromContentType(contentType) ?: Charsets.UTF_8
+                                val html = bodyBytes.toString(charset)
+
+                                val injected = injectIntoHead(html, scripts.joinToString("\n"))
+                                val outBytes = injected.toByteArray(charset)
+                                val headers = resp.headers.toMultimap()
+                                    .mapValues { it.value.joinToString(",") }
+                                    .toMutableMap()
+
+                                headers.remove("Content-Length")
+                                val cookieMgr = CookieManager.getInstance()
+                                resp.headers.values("Set-Cookie").forEach { sc ->
+                                    try { cookieMgr.setCookie(url, sc) } catch (_: Throwable) {}
+                                }
+                                try { cookieMgr.flush() } catch (_: Throwable) {}
+
+                                WebResourceResponse("text/html", charset.name(), code, reason, headers, ByteArrayInputStream(outBytes))
                             }
+                        } catch (_: Throwable) {
+                            null
                         }
                     }
 
@@ -103,13 +158,13 @@ class PackageBrowser: V8Package {
                 _browser?.webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                         if(consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                            val msg = "Browser Error:${consoleMessage?.message()} [${consoleMessage?.lineNumber()}]" ?: ""
+                            val msg = "Browser Error:${consoleMessage.message()} [${consoleMessage.lineNumber()}]"
                             Logger.e("PackageBrowser", msg);
                             if(_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
                                 StateDeveloper.instance.logDevException(StateDeveloper.instance.currentDevID ?: "", msg)
                         }
                         else {
-                            val msg = "Browser Log:" + consoleMessage?.message() ?: "";
+                            val msg = ("Browser Log:" + consoleMessage?.message());
                             Logger.e("PackageBrowser", msg);
                             if(_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
                                 StateDeveloper.instance.logDevInfo(StateDeveloper.instance.currentDevID ?: "", msg);
@@ -250,56 +305,34 @@ class PackageBrowser: V8Package {
         val id = UUID.randomUUID().toString()
 
         onMainBlocking {
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                val ref = WebViewCompat.addDocumentStartJavaScript(browser, js, setOf("*"))
-                _pageLoadScriptRefs[id] = ref
-            } else {
-                _pageLoadScriptsFallback[id] = js
-            }
+            _pageLoadScriptsFallback[id] = js
         }
 
         Logger.i("PackageBrowser", "addScriptOnLoad() registered (id=$id)")
         return id
     }
 
-    @SuppressLint("RequiresFeature")
-    @V8Function
-    fun removeScriptOnLoad(identifier: String): Boolean {
-        if (identifier.isBlank()) return false
-
-        val ref = _pageLoadScriptRefs.remove(identifier)
-        val removedFallback = _pageLoadScriptsFallback.remove(identifier) != null
-
-        if (ref != null) {
-            onMainBlocking {
-                try { ref.remove() } catch (_: Throwable) {}
-            }
-            Logger.i("PackageBrowser", "removeScriptOnLoad() removed (id=$identifier)")
-            return true
-        }
-
-        if (removedFallback) {
-            Logger.i("PackageBrowser", "removeScriptOnLoad() removed fallback (id=$identifier)")
-            return true
-        }
-
-        return false
+    private fun charsetFromContentType(ct: String): Charset? {
+        val m = Regex("(?i)charset=([\\w\\-]+)").find(ct) ?: return null
+        val name = m.groupValues.getOrNull(1)?.trim().orEmpty()
+        return runCatching { Charset.forName(name) }.getOrNull()
     }
 
-    @SuppressLint("RequiresFeature")
-    @V8Function
-    fun clearScriptsOnLoad() {
-        val refs = _pageLoadScriptRefs.values.toList()
-        _pageLoadScriptRefs.clear()
-        _pageLoadScriptsFallback.clear()
+    private fun injectIntoHead(html: String, js: String): String {
+        val tag = "<script>\n$js\n</script>\n"
 
-        onMainBlocking {
-            for (r in refs) {
-                try { r.remove() } catch (_: Throwable) {}
+        val head = Regex("(?i)<head[^>]*>").find(html)
+        if (head != null) {
+            val i = head.range.last + 1
+            return buildString(html.length + tag.length + 8) {
+                append(html, 0, i)
+                append('\n')
+                append(tag)
+                append(html, i, html.length)
             }
         }
 
-        Logger.i("PackageBrowser", "clearScriptsOnLoad() cleared")
+        return tag + html
     }
 
     private fun <T> onMainBlocking(block: () -> T): T {
