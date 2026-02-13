@@ -3,6 +3,7 @@ package com.futo.platformplayer.engine.packages
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Looper
+import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
@@ -12,6 +13,9 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.ScriptHandler
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.utils.JavetResourceUtils
 import com.caoccao.javet.values.reference.V8ValueFunction
@@ -38,10 +42,15 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
 
 class PackageBrowser: V8Package {
+    val useAddDocumentStartJavaScript = true
+
     override val name: String get() = "Browser";
     override val variableName: String = "browser";
 
     private val _json = Json { };
+
+    @Transient
+    private val _pageLoadScriptRefs = ConcurrentHashMap<String, ScriptHandler>()
 
     @Transient
     private val _pageLoadScriptsFallback = ConcurrentHashMap<String, String>()
@@ -87,10 +96,12 @@ class PackageBrowser: V8Package {
                     override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                         if (view == null || request == null) return null
 
+                        if (useAddDocumentStartJavaScript && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return null
                         if (!request.isForMainFrame) return null
                         if (!request.method.equals("GET", ignoreCase = true)) return null
 
                         val url = request.url?.toString() ?: return null
+                        Log.i("PackageBrowser", "shouldInterceptRequest: " + url)
                         val scheme = request.url?.scheme ?: return null
                         if (scheme != "http" && scheme != "https") return null
 
@@ -303,13 +314,57 @@ class PackageBrowser: V8Package {
         require(js.isNotBlank()) { "Script must be non-empty." }
 
         val id = UUID.randomUUID().toString()
-
         onMainBlocking {
-            _pageLoadScriptsFallback[id] = js
+            if (useAddDocumentStartJavaScript && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                val ref = WebViewCompat.addDocumentStartJavaScript(browser, js, setOf("*"))
+                _pageLoadScriptRefs[id] = ref
+            } else {
+                _pageLoadScriptsFallback[id] = js
+            }
         }
 
         Logger.i("PackageBrowser", "addScriptOnLoad() registered (id=$id)")
         return id
+    }
+
+    @SuppressLint("RequiresFeature")
+    @V8Function
+    fun removeScriptOnLoad(identifier: String): Boolean {
+        if (identifier.isBlank()) return false
+
+        val ref = _pageLoadScriptRefs.remove(identifier)
+        val removedFallback = _pageLoadScriptsFallback.remove(identifier) != null
+
+        if (ref != null) {
+            onMainBlocking {
+                try { ref.remove() } catch (_: Throwable) {}
+            }
+            Logger.i("PackageBrowser", "removeScriptOnLoad() removed (id=$identifier)")
+            return true
+        }
+
+        if (removedFallback) {
+            Logger.i("PackageBrowser", "removeScriptOnLoad() removed fallback (id=$identifier)")
+            return true
+        }
+
+        return false
+    }
+
+    @SuppressLint("RequiresFeature")
+    @V8Function
+    fun clearScriptsOnLoad() {
+        val refs = _pageLoadScriptRefs.values.toList()
+        _pageLoadScriptRefs.clear()
+        _pageLoadScriptsFallback.clear()
+
+        onMainBlocking {
+            for (r in refs) {
+                try { r.remove() } catch (_: Throwable) {}
+            }
+        }
+
+        Logger.i("PackageBrowser", "clearScriptsOnLoad() cleared")
     }
 
     private fun charsetFromContentType(ct: String): Charset? {
