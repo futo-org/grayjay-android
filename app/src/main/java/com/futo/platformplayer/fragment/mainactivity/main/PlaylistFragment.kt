@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
+import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.TaskHandler
@@ -22,11 +23,13 @@ import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.views.adapters.viewholders.SelectablePlaylist
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PlaylistFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -111,6 +114,113 @@ class PlaylistFragment : MainFragment() {
 
             _editPlaylistOverlay = editPlaylistOverlay;
             _editPlaylistNameInput = nameInput;
+
+            setOnSync {
+                val playlist = _playlist ?: return@setOnSync;
+                if (playlist.url.isNullOrBlank()) {
+                    UIDialogs.appToast("Can't sync playlist because it was not imported", false);
+                }
+                else {
+                    UISlideOverlays.showOverlay(overlayContainer, "Sync " + context.getString(R.string.playlist) + " [${playlist.name}] with source", null, {},
+                        SlideUpMenuItem(
+                            context,
+                            R.drawable.ic_sync,
+                            "Keep videos not on source",
+                            "",
+                            tag = 1,
+                            call = {
+                                val taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails?>({fragment.lifecycleScope}, { link -> StatePlatform.instance.getPlaylist(link); })
+                                    .success {
+                                        if (it != null) {
+                                            val playlistToImport = SelectablePlaylist(it);
+
+                                            UIDialogs.showDialogProgress(context) {
+                                                it.setText("Syncing playlist..");
+                                                it.setProgress(0f);
+                                                _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                                    withContext(Dispatchers.Main) {
+                                                        it.setText("Syncing playlist..\n[${playlistToImport.playlist.name}]");
+                                                    }
+                                                    try {
+                                                        val tempPlaylist = playlistToImport.playlist.toPlaylist();
+                                                        tempPlaylist.id = playlist.id;
+                                                        tempPlaylist.videos = (tempPlaylist.videos + playlist.videos)
+                                                            .distinctBy { it.id } as java.util.ArrayList<SerializedPlatformVideo>;
+                                                        StatePlaylists.instance.createOrUpdatePlaylist(tempPlaylist, true, true);
+                                                        playlist.videos = tempPlaylist.videos;
+                                                    }
+                                                    catch(ex: Throwable) {
+                                                        UIDialogs.appToast("Failed to sync [${playlistToImport.playlist.name}]\n" + ex.message);
+                                                    }
+
+                                                    withContext(Dispatchers.Main) {
+                                                        UIDialogs.toast("${playlist.name} " + "Synced");
+                                                        _fragment.closeSegment();
+                                                        it.dismiss();
+                                                    }
+                                                }
+                                            }
+
+                                        }
+
+                                        onShown(playlist)
+
+                                    }.exceptionWithParameter<Throwable> { ex, para ->
+                                        Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
+                                        UIDialogs.appToast(context.getString(R.string.failed_to_fetch) + "\n${para}\n" + ex.message, false)
+                                    };
+                                taskLoadPlaylist.run(playlist.url);
+                            }),
+                        SlideUpMenuItem(
+                            context,
+                            R.drawable.ic_sync,
+                            "Remove videos not on source",
+                            "",
+                            tag = 2,
+                            call = {
+                                val taskLoadPlaylist = TaskHandler<String, IPlatformPlaylistDetails?>({fragment.lifecycleScope}, { link -> StatePlatform.instance.getPlaylist(link); })
+                                    .success {
+                                        if (it != null) {
+                                            val playlistToImport = SelectablePlaylist(it);
+
+                                            UIDialogs.showDialogProgress(context) {
+                                                it.setText("Syncing playlist..");
+                                                it.setProgress(0f);
+                                                _fragment.lifecycleScope.launch(Dispatchers.IO) {
+                                                    withContext(Dispatchers.Main) {
+                                                        it.setText("Syncing playlist..\n[${playlistToImport.playlist.name}]");
+                                                    }
+                                                    try {
+                                                        val tempPlaylist = playlistToImport.playlist.toPlaylist();
+                                                        tempPlaylist.id = playlist.id;
+                                                        StatePlaylists.instance.createOrUpdatePlaylist(tempPlaylist, true, true);
+                                                        playlist.videos = tempPlaylist.videos;
+                                                    }
+                                                    catch(ex: Throwable) {
+                                                        UIDialogs.appToast("Failed to sync [${playlistToImport.playlist.name}]\n" + ex.message);
+                                                    }
+
+                                                    withContext(Dispatchers.Main) {
+                                                        UIDialogs.toast("${playlist.name} " + "Synced");
+                                                        _fragment.closeSegment();
+                                                        it.dismiss();
+                                                    }
+                                                }
+                                            }
+
+                                        }
+
+                                        onShown(playlist)
+
+                                    }.exceptionWithParameter<Throwable> { ex, para ->
+                                        Logger.w(ChannelFragment.TAG, "Failed to load results.", ex);
+                                        UIDialogs.appToast(context.getString(R.string.failed_to_fetch) + "\n${para}\n" + ex.message, false)
+                                    };
+                                taskLoadPlaylist.run(playlist.url);
+                            })
+                    );
+                }
+            };
 
             setOnShare {
                 val playlist = _playlist ?: return@setOnShare;
