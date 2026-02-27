@@ -96,11 +96,15 @@ class LoginFragment : MainFragment() {
             else throw IllegalStateException("No valid configuration?");
             //TODO: Backwards compat removal?
 
-            _webView.settings.userAgentString = authConfig.userAgent ?: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
+            // Only override UA if config specifies one, otherwise keep WebView default (matches Desktop CEF behavior)
+            if (authConfig.userAgent != null)
+                _webView.settings.userAgentString = authConfig.userAgent;
+            // Capture UA on main thread - callback fires on WebView background thread where settings access is not allowed
+            val capturedUserAgent = _webView.settings.userAgentString;
             _webView.settings.useWideViewPort = true;
             _webView.settings.loadWithOverviewMode = true;
 
-            val webViewClient = if(config != null) LoginWebViewClient(config) else LoginWebViewClient(authConfig);
+            val webViewClient = if(config != null) LoginWebViewClient(config, capturedUserAgent) else LoginWebViewClient(authConfig, capturedUserAgent);
 
             webViewClient.onLogin.subscribe { auth ->
                 _callback?.let {

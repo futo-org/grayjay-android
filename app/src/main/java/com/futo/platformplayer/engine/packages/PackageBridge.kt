@@ -17,6 +17,7 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClientConstants
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.platforms.js.internal.JSHttpClient
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
@@ -36,6 +37,9 @@ class PackageBridge : V8Package {
     private val _client: ManagedHttpClient
     @Transient
     private val _clientAuth: ManagedHttpClient
+    // Set by JSClient after construction to provide access to auth/captcha data
+    @Transient
+    var descriptor: SourcePluginDescriptor? = null
 
 
     override val name: String get() = "Bridge";
@@ -78,6 +82,17 @@ class PackageBridge : V8Package {
     @V8Property
     fun buildPlatform(): String {
         return "android";
+    }
+
+    // User agent captured during captcha/auth WebView flows, matching Desktop's bridge.captchaUserAgent/bridge.authUserAgent.
+    // Plugins use these to make HTTP requests with the same UA that was used in the WebView.
+    @V8Property
+    fun captchaUserAgent(): String? {
+        return descriptor?.getCaptchaData()?.userAgent
+    }
+    @V8Property
+    fun authUserAgent(): String? {
+        return descriptor?.getAuth()?.userAgent
     }
 
     @V8Property

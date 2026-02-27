@@ -16,13 +16,15 @@ class CaptchaWebViewClient : WebViewClient {
 
     private val _pluginConfig: SourcePluginConfig?;
     private val _captchaConfig: SourcePluginCaptchaConfig;
+    private val _userAgent: String?;
 
     private var _didNotify = false;
     private val _extractor: WebViewRequirementExtractor;
 
-    constructor(config: SourcePluginConfig) : super() {
+    constructor(config: SourcePluginConfig, userAgent: String? = null) : super() {
         _pluginConfig = config;
         _captchaConfig = config.captcha!!;
+        _userAgent = userAgent;
         _extractor = WebViewRequirementExtractor(
             config.allowUrls,
             null,
@@ -34,9 +36,10 @@ class CaptchaWebViewClient : WebViewClient {
         Logger.i(TAG, "Captcha [${config.name}]" +
                 "\nRequired Cookies: ${Serializer.json.encodeToString(config.captcha!!.cookiesToFind)}",);
     }
-    constructor(captcha: SourcePluginCaptchaConfig) : super() {
+    constructor(captcha: SourcePluginCaptchaConfig, userAgent: String? = null) : super() {
         _pluginConfig = null;
         _captchaConfig = captcha;
+        _userAgent = userAgent;
         _extractor = WebViewRequirementExtractor(
             null,
             null,
@@ -62,7 +65,8 @@ class CaptchaWebViewClient : WebViewClient {
             _didNotify = true;
             onCaptchaFinished.emit(SourceCaptchaData(
                extracted.cookies,
-               extracted.headers
+               extracted.headers,
+               _userAgent
             ));
         }
 

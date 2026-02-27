@@ -24,23 +24,26 @@ class LoginWebViewClient : WebViewClient {
 
     private val _pluginConfig: SourcePluginConfig?;
     private val _authConfig: SourcePluginAuthConfig;
+    private val _userAgent: String?;
 
     private val _client = ManagedHttpClient();
 
     val onLogin = Event1<SourceAuth>();
     val onPageLoaded = Event2<WebView?, String?>()
 
-    constructor(config: SourcePluginConfig) : super() {
+    constructor(config: SourcePluginConfig, userAgent: String? = null) : super() {
         _pluginConfig = config;
         _authConfig = config.authentication!!;
+        _userAgent = userAgent;
         Logger.i(TAG, "Login [${config.name}]" +
                 "\nRequired Headers: ${config.authentication.headersToFind?.joinToString(", ")}" +
                 "\nRequired Domain Headers: ${Serializer.json.encodeToString(config.authentication.domainHeadersToFind)}" +
                 "\nRequired Cookies: ${Serializer.json.encodeToString(config.authentication.cookiesToFind)}",);
     }
-    constructor(auth: SourcePluginAuthConfig) : super() {
+    constructor(auth: SourcePluginAuthConfig, userAgent: String? = null) : super() {
         _pluginConfig = null;
         _authConfig = auth;
+        _userAgent = userAgent;
     }
 
     private val headersFoundMap: HashMap<String, HashMap<String, String>> = hashMapOf();
@@ -192,13 +195,14 @@ class LoginWebViewClient : WebViewClient {
         if (urlFound && headersFound && domainHeadersFound && cookiesFound) {
             onLogin.emit(SourceAuth(
                 cookieMap = cookiesFoundMap,
-                headers = headersFoundMap /*.associate { headerToFind ->
+                headers = headersFoundMap, /*.associate { headerToFind ->
                     headerToFind to headersFoundMap.firstNotNullOf { requestHeader ->
                         if (requestHeader.key.equals(headerToFind, ignoreCase = true))
                             requestHeader.value
                         else null;
                     }
                 } ?: mapOf()*/
+                userAgent = _userAgent
             ));
         }
 
