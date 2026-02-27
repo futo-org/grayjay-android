@@ -87,6 +87,7 @@ class V8Plugin {
     private val _deps : LinkedHashMap<String, String> = LinkedHashMap();
     private val _depsPackages : MutableList<V8Package> = mutableListOf();
     private var _script : String? = null;
+    val bridge: PackageBridge;
 
     var isStopped = true;
     val onStopped = Event1<V8Plugin>();
@@ -114,7 +115,8 @@ class V8Plugin {
         this._clientAuth = clientAuth;
         this.config = config;
         this._script = script;
-        withDependency(PackageBridge(this, config));
+        bridge = PackageBridge(this, config);
+        withDependency(bridge);
 
         for(pack in config.packages)
             withDependency(getPackage(pack)!!);

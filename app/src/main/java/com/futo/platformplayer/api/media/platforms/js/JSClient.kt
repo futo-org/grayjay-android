@@ -55,6 +55,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptCaptchaRequiredException
 import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.engine.exceptions.ScriptValidationException
+import com.futo.platformplayer.engine.packages.PackageBridge
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.states.AnnouncementType
@@ -156,6 +157,7 @@ open class JSClient : IPlatformClient {
         _httpClient = JSHttpClient(this, null, _captcha, config);
         _httpClientAuth = JSHttpClient(this, _auth, _captcha, config);
         _plugin = V8Plugin(context, descriptor.config, null, _httpClient, _httpClientAuth);
+        _plugin.bridge.descriptor = descriptor;
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
 
@@ -189,6 +191,7 @@ open class JSClient : IPlatformClient {
         _httpClient = JSHttpClient(this, null, _captcha, config);
         _httpClientAuth = JSHttpClient(this, _auth, _captcha, config);
         _plugin = V8Plugin(context, descriptor.config, script, _httpClient, _httpClientAuth);
+        _plugin.bridge.descriptor = descriptor;
         _plugin.withDependency(context, "scripts/polyfil.js");
         _plugin.withDependency(context, "scripts/source.js");
         _plugin.withScript(script);

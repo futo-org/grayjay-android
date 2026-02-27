@@ -68,11 +68,15 @@ class CaptchaActivity : AppCompatActivity() {
             intent.getStringExtra("body");
         else null;
 
-        _webView.settings.userAgentString = captchaConfig.userAgent ?: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
+        // Only override UA if config specifies one, otherwise keep WebView default (matches Desktop CEF behavior)
+        if (captchaConfig.userAgent != null)
+            _webView.settings.userAgentString = captchaConfig.userAgent;
+        // Capture UA on main thread - callback fires on WebView background thread where settings access is not allowed
+        val capturedUserAgent = _webView.settings.userAgentString;
         _webView.settings.useWideViewPort = true;
         _webView.settings.loadWithOverviewMode = true;
 
-        val webViewClient = if(config != null) CaptchaWebViewClient(config) else CaptchaWebViewClient(captchaConfig);
+        val webViewClient = if(config != null) CaptchaWebViewClient(config, capturedUserAgent) else CaptchaWebViewClient(captchaConfig, capturedUserAgent);
         webViewClient.onCaptchaFinished.subscribe { captcha ->
             _callback?.let {
                 _callback = null;
