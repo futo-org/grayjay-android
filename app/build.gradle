@@ -231,10 +231,4 @@ dependencies {
     testImplementation "org.mockito:mockito-core:5.20.0"
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-
-    //Rust casting SDK
-    implementation('org.futo.gitlab.videostreaming.fcast-sdk-jitpack:sender-sdk-minimal:0.4.1') {
-        // Polycentricandroid includes this
-        exclude group: 'net.java.dev.jna'
-    }
 }
