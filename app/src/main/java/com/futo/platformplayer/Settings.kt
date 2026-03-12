@@ -789,7 +789,6 @@ class Settings : FragmentedStorageFileJson() {
     }
 
     @FormField(R.string.plugins, FieldForm.GROUP, -1, 13)
-    @Transient
     var plugins = Plugins();
     @Serializable
     class Plugins {
