@@ -12,6 +12,7 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <TextView
             android:id="@+id/videodetail_up_next"
             android:layout_width="wrap_content"
@@ -23,18 +24,23 @@
             android:includeFontPadding="false"
             android:textSize="17dp"
             android:text="@string/up_next" />
+
         <TextView
             android:id="@+id/videodetail_queue_type"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textColor="@color/gray_ac"
             android:fontFamily="@font/inter_extra_light"
             android:includeFontPadding="false"
             app:layout_constraintLeft_toRightOf="@id/videodetail_up_next"
             app:layout_constraintBottom_toBottomOf="@id/videodetail_up_next"
+            app:layout_constraintRight_toLeftOf="@id/videodetail_queue_position"
             android:layout_marginLeft="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textSize="14dp"
             android:text="@string/queue" />
+
         <TextView
             android:id="@+id/videodetail_queue_position"
             android:layout_width="wrap_content"
@@ -47,6 +53,7 @@
             android:layout_marginLeft="10dp"
             android:textSize="12dp"
             tools:text="1/4" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
