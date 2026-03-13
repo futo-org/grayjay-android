@@ -150,7 +150,7 @@ class DownloadsFragment : MainFragment() {
             spinnerSortBy.adapter = ArrayAdapter(context, R.layout.spinner_item_simple, resources.getStringArray(R.array.downloads_sortby_array)).also {
                 it.setDropDownViewResource(R.layout.spinner_dropdownitem_simple);
             };
-            val options = listOf("nameAsc", "nameDesc", "downloadDateAsc", "downloadDateDesc", "releasedAsc", "releasedDesc", "sizeAsc", "sizeDesc");
+            val options = listOf("nameAsc", "nameDesc", "downloadDateAsc", "downloadDateDesc", "releasedAsc", "releasedDesc", "sizeAsc", "sizeDesc", "typeAudio", "typeVideo");
             spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
                     when(pos) {
@@ -162,6 +162,8 @@ class DownloadsFragment : MainFragment() {
                         5 -> ordering.setAndSave("releasedDesc")
                         6 -> ordering.setAndSave("sizeAsc")
                         7 -> ordering.setAndSave("sizeDesc")
+                        8 -> ordering.setAndSave("typeAudio")
+                        9 -> ordering.setAndSave("typeVideo")
                         else -> ordering.setAndSave("")
                     }
                     updateContentFilters()
@@ -261,6 +263,8 @@ class DownloadsFragment : MainFragment() {
                     "releasedDesc" -> vidsToReturn.sortedByDescending { it.datetime ?: OffsetDateTime.MIN }
                     "sizeAsc" -> vidsToReturn.sortedBy { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
                     "sizeDesc" -> vidsToReturn.sortedByDescending { it.videoSource.sumOf { it.fileSize } + it.audioSource.sumOf { it.fileSize } }
+                    "typeAudio" -> vidsToReturn.sortedBy { if (it.videoSource.isEmpty() && it.audioSource.isNotEmpty()) 0 else 1 }
+                    "typeVideo" -> vidsToReturn.sortedBy { if (it.videoSource.isNotEmpty()) 0 else 1 }
                     else -> vidsToReturn
                 }
             }
