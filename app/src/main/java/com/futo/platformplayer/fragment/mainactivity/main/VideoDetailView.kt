@@ -694,7 +694,14 @@ class VideoDetailView : ConstraintLayout {
 
         onShouldEnterPictureInPictureChanged.subscribe {
             val params = getPictureInPictureParams()
-            fragment.activity?.setPictureInPictureParams(params)
+
+            try {
+                fragment.activity?.setPictureInPictureParams(params)
+            } catch(e: IllegalStateException) {
+                if(e.message?.contains("Device doesn't support picture-in-picture") != true) {
+                    throw e
+                }
+            }
         }
 
         if (!isInEditMode) {

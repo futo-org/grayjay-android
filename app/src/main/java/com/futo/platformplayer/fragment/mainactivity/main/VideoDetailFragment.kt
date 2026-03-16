@@ -459,7 +459,14 @@ class VideoDetailFragment() : MainFragment() {
             val params = _viewDetail?.getPictureInPictureParams();
             if(params != null) {
                 Logger.i(TAG, "enterPictureInPictureMode")
-                activity?.enterPictureInPictureMode(params);
+
+                try {
+                    activity?.enterPictureInPictureMode(params);
+                } catch(e: IllegalStateException) {
+                    if(e.message?.contains("Device doesn't support picture-in-picture") != true) {
+                        throw e
+                    }
+                }
             }
         }
 
@@ -470,8 +477,15 @@ class VideoDetailFragment() : MainFragment() {
 
     fun forcePictureInPicture() {
         val params = _viewDetail?.getPictureInPictureParams();
-        if(params != null)
-            activity?.enterPictureInPictureMode(params);
+        if(params != null) {
+            try {
+                activity?.enterPictureInPictureMode(params);
+            } catch(e: IllegalStateException) {
+                if(e.message?.contains("Device doesn't support picture-in-picture") != true) {
+                    throw e
+                }
+            }
+        }
     }
     fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, isStop: Boolean, newConfig: Configuration) {
         try {
