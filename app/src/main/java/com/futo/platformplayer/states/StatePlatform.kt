@@ -199,16 +199,24 @@ class StatePlatform {
                 StatePlugins.instance.installMissingEmbeddedPlugins(context);
 
                 for (plugin in StatePlugins.instance.getPlugins()) {
-                    _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
-                            ImageVariable(plugin.config.absoluteIconUrl, null);
-                    _iconsByName[plugin.config.name.lowercase()] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
-                            ImageVariable(plugin.config.absoluteIconUrl, null);
+                    try {
+                        val client = JSClient(context, plugin);
+                        client.onCaptchaException.subscribe { c, ex ->
+                            StateApp.instance.handleCaptchaException(c, ex);
+                        }
 
-                    val client = JSClient(context, plugin);
-                    client.onCaptchaException.subscribe { c, ex ->
-                        StateApp.instance.handleCaptchaException(c, ex);
+                        _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
+                                ImageVariable(plugin.config.absoluteIconUrl, null);
+                        _iconsByName[plugin.config.name.lowercase()] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
+                                ImageVariable(plugin.config.absoluteIconUrl, null);
+                        _availableClients.add(client);
                     }
-                    _availableClients.add(client);
+                    catch(ex: Throwable) {
+                        Logger.e(TAG, "Failed to initialize plugin [${plugin.config.name}]", ex);
+                        StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                            UIDialogs.toast("Plugin ${plugin.config.name} failed to load\n${ex.message}");
+                        }
+                    }
                 }
 
                 if(_availableClients.distinctBy { it.id }.count() < _availableClients.size) {
