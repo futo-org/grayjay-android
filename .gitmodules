@@ -106,3 +106,21 @@
 [submodule "app/src/unstable/assets/sources/mixcloud"]
 	path = app/src/unstable/assets/sources/mixcloud
 	url = ../plugins/mixcloud.git
+[submodule "app/src/unstable/assets/sources/radiobrowser"]
+	path = app/src/unstable/assets/sources/radiobrowser
+	url = ../plugins/radiobrowser.git
+[submodule "app/src/stable/assets/sources/radiobrowser"]
+	path = app/src/stable/assets/sources/radiobrowser
+	url = ../plugins/radiobrowser.git
+[submodule "app/src/stable/assets/sources/redbull-tv"]
+	path = app/src/stable/assets/sources/redbull-tv
+	url = ../plugins/redbull-tv.git
+[submodule "app/src/unstable/assets/sources/redbull-tv"]
+	path = app/src/unstable/assets/sources/redbull-tv
+	url = ../plugins/redbull-tv.git
+[submodule "app/src/unstable/assets/sources/fosdem"]
+	path = app/src/unstable/assets/sources/fosdem
+	url = ../plugins/fosdem.git
+[submodule "app/src/stable/assets/sources/fosdem"]
+	path = app/src/stable/assets/sources/fosdem
+	url = ../plugins/fosdem.git
