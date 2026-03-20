@@ -183,32 +183,41 @@ class PackageBrowser: V8Package {
             }
             _browser?.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                    val raw = consoleMessage?.message().orEmpty()
+                    try {
+                        val raw = consoleMessage?.message().orEmpty()
 
-                    val normalized = raw.trim().let { s ->
-                        if (s.length >= 2 && s.first() == '"' && s.last() == '"') {
-                            s.substring(1, s.length - 1)
-                        } else s
+                        val normalized = raw.trim().let { s ->
+                            if (s.length >= 2 && s.first() == '"' && s.last() == '"') {
+                                s.substring(1, s.length - 1)
+                            } else s
+                        }
+
+                        if (normalized.startsWith(CONSOLE_BRIDGE_PREFIX)) {
+                            val payload = normalized.substring(CONSOLE_BRIDGE_PREFIX.length)
+                            if (handleConsoleBridgeMessage(payload)) return true
+                        }
+
+                        if (consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                            val emsg =
+                                "Browser Error:${consoleMessage.message()} [${consoleMessage.lineNumber()}]"
+                            Logger.e("PackageBrowser", emsg)
+                            if (_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
+                                StateDeveloper.instance.logDevException(
+                                    StateDeveloper.instance.currentDevID ?: "", emsg
+                                )
+                        } else {
+                            val imsg = "Browser Log:${consoleMessage?.message()}"
+                            Logger.i("PackageBrowser", imsg)
+                            if (_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
+                                StateDeveloper.instance.logDevInfo(
+                                    StateDeveloper.instance.currentDevID ?: "", imsg
+                                )
+                        }
+
+                        return super.onConsoleMessage(consoleMessage)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to handle onConsoleMessage", e)
                     }
-
-                    if (normalized.startsWith(CONSOLE_BRIDGE_PREFIX)) {
-                        val payload = normalized.substring(CONSOLE_BRIDGE_PREFIX.length)
-                        if (handleConsoleBridgeMessage(payload)) return true
-                    }
-
-                    if (consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                        val emsg = "Browser Error:${consoleMessage.message()} [${consoleMessage.lineNumber()}]"
-                        Logger.e("PackageBrowser", emsg)
-                        if (_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
-                            StateDeveloper.instance.logDevException(StateDeveloper.instance.currentDevID ?: "", emsg)
-                    } else {
-                        val imsg = "Browser Log:${consoleMessage?.message()}"
-                        Logger.i("PackageBrowser", imsg)
-                        if (_plugin.config is SourcePluginConfig && _plugin.config.id == StateDeveloper.DEV_ID)
-                            StateDeveloper.instance.logDevInfo(StateDeveloper.instance.currentDevID ?: "", imsg)
-                    }
-
-                    return super.onConsoleMessage(consoleMessage)
                 }
             }
         }
@@ -507,7 +516,13 @@ class PackageBrowser: V8Package {
                 val res = parsed.result
 
                 val cb = synchronized(_callbacks) { _callbacks.remove(id) } ?: return true
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) { cb.invoke(res) }
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    try {
+                        cb.invoke(res)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "Failed to invoke callback asynchronously", e)
+                    }
+                }
                 return true
             }
             "log" -> {
@@ -524,6 +539,7 @@ class PackageBrowser: V8Package {
 
     private companion object {
         private const val CONSOLE_BRIDGE_PREFIX = "__GJ__:"
+        private const val TAG = "PackageBrowser"
 
         private fun String.quoteForJs(): String {
             val s = this
