@@ -152,6 +152,13 @@ class VideoDownload {
     var hasVideoRequestModifier: Boolean = false;
     var hasAudioRequestModifier: Boolean = false;
 
+    @Contextual
+    @Transient
+    private var hlsVideoRequestModifier: IRequestModifier? = null;
+    @Contextual
+    @Transient
+    private var hlsAudioRequestModifier: IRequestModifier? = null;
+
     var progress: Double = 0.0;
     var isCancelled = false;
 
@@ -317,6 +324,9 @@ class VideoDownload {
                 val videoSources = arrayListOf<IVideoSource>()
                 for (source in original.video.videoSources) {
                     if (source is IHLSManifestSource) {
+                        if (source is JSSource && source.hasRequestModifier) {
+                            hlsVideoRequestModifier = source.getRequestModifier()
+                        }
                         try {
                             val playlistResponse = client.get(source.url)
                             if (playlistResponse.isOk) {
@@ -366,6 +376,9 @@ class VideoDownload {
                 if (video is VideoUnMuxedSourceDescriptor) {
                     for (source in video.audioSources) {
                         if (source is IHLSManifestAudioSource) {
+                            if (source is JSSource && source.hasRequestModifier) {
+                                hlsAudioRequestModifier = source.getRequestModifier()
+                            }
                             try {
                                 val playlistResponse = client.get(source.url)
                                 if (playlistResponse.isOk) {
@@ -500,8 +513,8 @@ class VideoDownload {
 
                 if(actualVideoSource is IVideoUrlSource)
                     videoFileSize = when (videoSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
-                        else -> downloadFileSource("Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, hlsVideoRequestModifier ?: (if (actualVideoSource is JSSource && actualVideoSource.hasRequestModifier) actualVideoSource.getRequestModifier() else null), videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        else -> downloadFileSource("Video", client, hlsVideoRequestModifier ?: (if (actualVideoSource is JSSource && actualVideoSource.hasRequestModifier) actualVideoSource.getRequestModifier() else null), videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
                     if(actualAudioSource == null)
@@ -544,8 +557,8 @@ class VideoDownload {
 
                 if(actualAudioSource is IAudioUrlSource)
                     audioFileSize = when (audioSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
-                        else -> downloadFileSource("Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, hlsAudioRequestModifier ?: (if (actualAudioSource is JSSource && actualAudioSource.hasRequestModifier) actualAudioSource.getRequestModifier() else null), audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        else -> downloadFileSource("Audio", client, hlsAudioRequestModifier ?: (if (actualAudioSource is JSSource && actualAudioSource.hasRequestModifier) actualAudioSource.getRequestModifier() else null), audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
                     audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback, 2);
@@ -659,15 +672,11 @@ class VideoDownload {
         }
     }
 
-    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, source: JSSource?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, modifier: IRequestModifier?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if (targetFile.exists())
             targetFile.delete()
 
         var downloadedTotalLength = 0L
-        val modifier = if (source is JSSource && source.hasRequestModifier)
-            source.getRequestModifier()
-        else
-            null
 
         fun downloadBytes(url: String, rangeStart: Long? = null, rangeLength: Long? = null): ByteArray {
             val headers = mutableMapOf<String, String>()
@@ -1067,7 +1076,7 @@ class VideoDownload {
         }
     }
 
-    private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadFileSource(name: String, client: ManagedHttpClient, modifier: IRequestModifier?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
 
@@ -1075,11 +1084,6 @@ class VideoDownload {
 
         val sourceLength: Long?;
         val fileStream = FileOutputStream(targetFile);
-
-        val modifier = if (source is JSSource && source.hasRequestModifier)
-            source.getRequestModifier();
-        else
-            null;
 
         try {
             val head = client.tryHead(videoUrl);
