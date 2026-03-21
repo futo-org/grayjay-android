@@ -960,6 +960,8 @@
         <item>Çıkış Tarihi (En Yeni)</item>
         <item>Boyut (En Küçük)</item>
         <item>Boyut (En Büyük)</item>
+        <item>Tür (Yalnızca Ses)</item>
+        <item>Tür (Video)</item>
     </string-array>
     <string-array name="feed_style">
         <item>Önizle</item>
