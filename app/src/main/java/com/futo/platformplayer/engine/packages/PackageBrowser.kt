@@ -217,6 +217,7 @@ class PackageBrowser: V8Package {
                         return super.onConsoleMessage(consoleMessage)
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to handle onConsoleMessage", e)
+                        return super.onConsoleMessage(consoleMessage)
                     }
                 }
             }
