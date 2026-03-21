@@ -168,6 +168,16 @@ class VideoDownload {
         (hasVideoRequestModifier && preparedVideoRequestModifier == null && videoSourceLive == null) ||
         (hasAudioRequestModifier && preparedAudioRequestModifier == null && audioSourceLive == null);
 
+    // HLS-specific: captured from the original JSSource before variant expansion.
+    // Variants are plain data classes without modifier support, so we preserve the
+    // modifier here for use during download.
+    @Contextual
+    @Transient
+    private var hlsVideoRequestModifier: IRequestModifier? = null;
+    @Contextual
+    @Transient
+    private var hlsAudioRequestModifier: IRequestModifier? = null;
+
     var progress: Double = 0.0;
     var isCancelled = false;
 
@@ -344,7 +354,10 @@ class VideoDownload {
                 for (source in original.video.videoSources) {
                     if (source is IHLSManifestSource) {
                         val sourceModifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
-                        if (sourceModifier != null) preparedVideoRequestModifier = sourceModifier
+                        if (sourceModifier != null) {
+                            preparedVideoRequestModifier = sourceModifier
+                            hlsVideoRequestModifier = sourceModifier
+                        }
                         try {
                             val playlistResponse = client.get(source.url, HashMap(), sourceModifier)
                             if (playlistResponse.isOk) {
@@ -397,7 +410,10 @@ class VideoDownload {
                     for (source in video.audioSources) {
                         if (source is IHLSManifestAudioSource) {
                             val sourceModifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
-                            if (sourceModifier != null) preparedAudioRequestModifier = sourceModifier
+                            if (sourceModifier != null) {
+                                preparedAudioRequestModifier = sourceModifier
+                                hlsAudioRequestModifier = sourceModifier
+                            }
                             try {
                                 val playlistResponse = client.get(source.url, HashMap(), sourceModifier)
                                 if (playlistResponse.isOk) {
@@ -539,9 +555,9 @@ class VideoDownload {
                             // HLS segments are concatenated into an MP4 file during download,
                             // so override the container for local playback/casting
                             videoOverrideContainer = "video/mp4";
-                            downloadHlsSource(context, "Video", client, videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                            downloadHlsSource(context, "Video", client, hlsVideoRequestModifier ?: videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                         }
-                        else -> downloadFileSource("Video", client, videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        else -> downloadFileSource("Video", client, hlsVideoRequestModifier ?: videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
                     if(actualAudioSource == null)
@@ -589,9 +605,9 @@ class VideoDownload {
                             // HLS segments are concatenated into an MP4 file during download,
                             // so override the container for local playback/casting
                             audioOverrideContainer = "audio/mp4";
-                            downloadHlsSource(context, "Audio", client, audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                            downloadHlsSource(context, "Audio", client, hlsAudioRequestModifier ?: audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                         }
-                        else -> downloadFileSource("Audio", client, audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        else -> downloadFileSource("Audio", client, hlsAudioRequestModifier ?: audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
                     audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback, 2);
