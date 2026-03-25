@@ -370,7 +370,7 @@ class PostDetailFragment : MainFragment {
 
                         _rating.visibility = VISIBLE;
                         _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                        _rating.onLikeDislikeUpdated.subscribe(this@PostDetailView) { args ->
                             if (args.hasLiked) {
                                 args.processHandle.opinion(ref, Opinion.like);
                             } else if (args.hasDisliked) {

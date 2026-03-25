@@ -688,6 +688,7 @@ class ShortView : FrameLayout {
         dislikeButton.visibility = GONE
 
         loadLikesTask?.cancel()
+        onLikeDislikeUpdated.remove(this@ShortView)
         loadLikesTask =
             TaskHandler<IPlatformVideo, Pair<Protocol.Reference, Protocol.QueryReferencesResponse>>(
                 StateApp.instance.scopeGetter, {
@@ -715,7 +716,7 @@ class ShortView : FrameLayout {
                 val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())
                 val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())
                 onLikesLoaded.emit(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked)
-                onLikeDislikeUpdated.subscribe(this) { args ->
+                onLikeDislikeUpdated.subscribe(this@ShortView) { args ->
                     if (args.hasLiked) {
                         args.processHandle.opinion(ref, Opinion.like)
                     } else if (args.hasDisliked) {
