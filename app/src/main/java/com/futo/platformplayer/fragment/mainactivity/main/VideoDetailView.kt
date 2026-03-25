@@ -3245,7 +3245,11 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        updateResumeVisibilityFor(positionMilliseconds)
+        // Hide resume only if visible to avoid overriding manual states (PiP/minimized)
+        // and to prevent infinite update loops.
+        if (_layoutResume.visibility == View.VISIBLE) {
+            updateResumeVisibilityFor(positionMilliseconds);
+        }
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {
