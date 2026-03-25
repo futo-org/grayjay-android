@@ -1912,7 +1912,7 @@ class VideoDetailView : ConstraintLayout {
         val visible = shouldShowResume(positionMs)
         if (visible) {
             _layoutResume.visibility = View.VISIBLE
-            _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}"
+            _textResume.text = context.getString(R.string.resume_at, _historicalPosition.toHumanTime(false))
         } else {
             _layoutResume.visibility = View.GONE
             _textResume.text = ""
