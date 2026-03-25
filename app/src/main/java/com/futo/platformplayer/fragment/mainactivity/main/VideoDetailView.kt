@@ -556,7 +556,6 @@ class VideoDetailView : ConstraintLayout {
             _loaderGameVisible = b
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 onShouldEnterPictureInPictureChanged.emit()
-                updateResumeVisibilityFor(lastPositionMilliseconds)
             }
         }
         _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
@@ -1844,7 +1843,6 @@ class VideoDetailView : ConstraintLayout {
                         TAG,
                         "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds"
                     );
-                    updateResumeVisibilityFor(lastPositionMilliseconds)
                 }
             }
         }
@@ -1895,12 +1893,10 @@ class VideoDetailView : ConstraintLayout {
     }
 
     private fun shouldShowResume(positionMs: Long): Boolean {
-        if (_loaderGameVisible) return false
         val v = video ?: return false
         val resumeS = _historicalPosition
         val durS = v.duration
 
-        if (_overlay_loading.visibility == View.VISIBLE) return false
         if (resumeS <= 60) return false
         if (durS - resumeS <= 5) return false
 
@@ -2209,6 +2205,8 @@ class VideoDetailView : ConstraintLayout {
         _layoutPlayerContainer.post {
             onShouldEnterPictureInPictureChanged.emit()
         }
+
+        updateResumeVisibilityFor(lastPositionMilliseconds);
     }
 
     private var _didTriggerDatasourceErrorCount = 0;
@@ -2839,6 +2837,7 @@ class VideoDetailView : ConstraintLayout {
     private fun fetchVideo() {
         Logger.i(TAG, "fetchVideo")
         video = null;
+        _layoutResume.visibility = View.GONE;
         cleanupPlaybackTracker();
 
         val url = _url;
@@ -2954,8 +2953,6 @@ class VideoDetailView : ConstraintLayout {
             _overlay_loading.visibility = View.GONE;
             (_overlay_loading_spinner.drawable as Animatable?)?.stop()
         }
-
-        updateResumeVisibilityFor(lastPositionMilliseconds)
     }
 
     //UI Actions
