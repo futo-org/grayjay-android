@@ -33,7 +33,6 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.ui.text.toLowerCase
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -43,7 +42,6 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.BuildConfig
@@ -57,7 +55,6 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
@@ -180,7 +177,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import java.util.Locale
