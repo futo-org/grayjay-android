@@ -1918,6 +1918,11 @@ class VideoDetailView : ConstraintLayout {
             _textResume.text = ""
         }
     }
+
+    fun updateResumeClickability(isClickable: Boolean) {
+        _layoutResume.isClickable = isClickable;
+    }
+
     fun loadVODChat(video: IPlatformVideoDetails) {
         _liveChat?.stop();
         _container_content_liveChat.cancel();
