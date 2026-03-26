@@ -1746,7 +1746,7 @@ class VideoDetailView : ConstraintLayout {
                             hasLiked,
                             hasDisliked
                         );
-                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                        _rating.onLikeDislikeUpdated.subscribe(this@VideoDetailView) { args ->
                             if (args.hasLiked) {
                                 args.processHandle.opinion(ref, Opinion.like);
                             } else if (args.hasDisliked) {

@@ -367,7 +367,7 @@ class ArticleDetailFragment : MainFragment {
 
                         _rating.visibility = VISIBLE;
                         _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
-                        _rating.onLikeDislikeUpdated.subscribe(this) { args ->
+                        _rating.onLikeDislikeUpdated.subscribe(this@ArticleDetailView) { args ->
                             if (args.hasLiked) {
                                 args.processHandle.opinion(ref, Opinion.like);
                             } else if (args.hasDisliked) {
