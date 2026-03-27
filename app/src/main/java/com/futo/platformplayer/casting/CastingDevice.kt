@@ -95,79 +95,7 @@ private fun ipAddrToInetAddress(addr: IpAddr): InetAddress = when (addr) {
     )
 }
 
-// abstract class CastingDevice {
 class CastingDevice(val device: RsCastingDevice) {
-    // abstract val isReady: Boolean
-    // abstract val usedRemoteAddress: InetAddress?
-    // abstract val localAddress: InetAddress?
-    // abstract val name: String?
-    // abstract val onConnectionStateChanged: Event1<CastConnectionState>
-    // abstract val onPlayChanged: Event1<Boolean>
-    // abstract val onTimeChanged: Event1<Double>
-    // abstract val onDurationChanged: Event1<Double>
-    // abstract val onVolumeChanged: Event1<Double>
-    // abstract val onSpeedChanged: Event1<Double>
-    // abstract val onMediaItemEnd: Event0
-    // abstract var connectionState: CastConnectionState
-    // abstract val protocolType: CastProtocolType
-    // abstract var isPlaying: Boolean
-    // abstract val expectedCurrentTime: Double
-    // abstract var speed: Double
-    // abstract var time: Double
-    // abstract var duration: Double
-    // abstract var volume: Double
-    // abstract fun canSetVolume(): Boolean
-    // abstract fun canSetSpeed(): Boolean
-
-    // @Throws
-    // abstract fun resumePlayback()
-
-    // @Throws
-    // abstract fun pausePlayback()
-
-    // @Throws
-    // abstract fun stopPlayback()
-
-    // @Throws
-    // abstract fun seekTo(timeSeconds: Double)
-
-    // @Throws
-    // abstract fun changeVolume(timeSeconds: Double)
-
-    // @Throws
-    // abstract fun changeSpeed(speed: Double)
-
-    // @Throws
-    // abstract fun connect()
-
-    // @Throws
-    // abstract fun disconnect()
-    // abstract fun getDeviceInfo(): CastingDeviceInfo
-    // abstract fun getAddresses(): List<InetAddress>
-
-    // @Throws
-    // abstract fun loadVideo(
-    //     streamType: String,
-    //     contentType: String,
-    //     contentId: String,
-    //     resumePosition: Double,
-    //     duration: Double,
-    //     speed: Double?,
-    //     metadata: Metadata?
-    // )
-
-    // @Throws
-    // fun loadContent(
-    //     contentType: String,
-    //     content: String,
-    //     resumePosition: Double,
-    //     duration: Double,
-    //     speed: Double?,
-    //     metadata: Metadata?
-    // )
-
-    // fun ensureThreadStarted()
-
     class EventHandler : RsDeviceEventHandler {
         var onConnectionStateChanged = Event1<DeviceConnectionState>();
         var onPlayChanged = Event1<Boolean>()
