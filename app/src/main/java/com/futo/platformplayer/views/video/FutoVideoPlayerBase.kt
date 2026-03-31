@@ -684,11 +684,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
                             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
                                 dataSource.setRequestExecutor2(withContext(Dispatchers.IO){videoSource.audio.getRequestExecutor()});
-val url = if (videoSource is JSDashManifestRawSource) videoSource.url else (videoSource as? JSDashManifestRawAudioSource)?.url;
                             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                                 .createMediaSource(
                                     DashManifestParser().parse(
-                                        Uri.parse(url ?: ""),
+                                        Uri.parse(videoSource.url ?: ""),
                                         ByteArrayInputStream(
                                             generated?.toByteArray() ?: ByteArray(0)
                                         )
@@ -728,9 +727,8 @@ val url = if (videoSource is JSDashManifestRawSource) videoSource.url else (vide
 
             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
                 dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
-            val url = if (videoSource is JSDashManifestRawSource) videoSource.url else (videoSource as? JSDashManifestRawAudioSource)?.url;
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                .createMediaSource(DashManifestParser().parse(Uri.parse(url ?: ""),
+                .createMediaSource(DashManifestParser().parse(Uri.parse(videoSource.url ?: ""),
                     ByteArrayInputStream(videoSource.manifest?.toByteArray() ?: ByteArray(0))));
             return true;
         }
@@ -845,10 +843,9 @@ val url = if (videoSource is JSDashManifestRawSource) videoSource.url else (vide
                             audioSource.getHttpDataSourceFactory()
                         else
                             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
-                        val url = if (audioSource is JSDashManifestRawSource) audioSource.url else (audioSource as? JSDashManifestRawAudioSource)?.url;
                         withContext(Dispatchers.Main) {
                             _lastAudioMediaSource = DashMediaSource.Factory(dataSource)
-                                .createMediaSource(DashManifestParser().parse(Uri.parse(url ?: ""),
+                                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url ?: ""),
                                     ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
                             loadSelectedSources(play, resume);
                         }
@@ -880,11 +877,10 @@ val url = if (videoSource is JSDashManifestRawSource) videoSource.url else (vide
                 audioSource.getHttpDataSourceFactory()
             else
                 DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
-            val url = if (audioSource is JSDashManifestRawSource) audioSource.url else (audioSource as? JSDashManifestRawAudioSource)?.url;
             _lastAudioMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(
                     DashManifestParser().parse(
-                        Uri.parse(url ?: ""),
+                        Uri.parse(audioSource.url ?: ""),
                         ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))
                     )
                 );

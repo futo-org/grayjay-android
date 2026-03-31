@@ -471,6 +471,55 @@ class ShortView : FrameLayout {
                 .toList()
         } else audioSources?.toList() ?: listOf()
 
+        val allLanguages = (videoSources?.map { it.language } ?: listOf())
+            .plus(audioSources?.map { it.language } ?: listOf())
+            .distinct();
+
+        var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+        var audioSourceItems = mutableListOf<SlideUpMenuItem>();
+        var selectedLanguage: String? = null;
+        val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
+            SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
+                var languageFilterLabels = allLanguages.filterNotNull().toList();
+                val english = languageFilterLabels.find { it?.lowercase() == "en" };
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original == true }?.language;
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
+                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage };
+
+                if(english != null)
+                    languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
+                if(primaryLanguage != null && languageFilterLabels.contains(primaryLanguage))
+                    languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList();
+                if(originalLanguage != null)
+                    languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList();
+
+                selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null);
+                setButtons(languageFilterLabels, selectedLanguage);
+                onClick.subscribe { selected ->
+                    setSelected(selected);
+
+                    videoSourceItems.forEach {
+                        val item = it.itemTag;
+                        if(item is IVideoSource) {
+                            if(item.language == selected)
+                                it.visibility = View.VISIBLE;
+                            else
+                                it.visibility = View.GONE;
+                        }
+                    }
+                    audioSourceItems.forEach {
+                        val item = it.itemTag;
+                        if(item is IAudioSource) {
+                            if(item.language == selected)
+                                it.visibility = View.VISIBLE;
+                            else
+                                it.visibility = View.GONE;
+                        }
+                    }
+                }
+            }
+        else null;
+
         val canSetSpeed = true
         val currentPlaybackRate = player.getPlaybackRate()
         overlayQualitySelector =
@@ -514,18 +563,32 @@ class ShortView : FrameLayout {
                         SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) })
                     }.toList().toTypedArray()
                 )
-                else null, if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
+                else null,
+                languageFilters,
+                if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
                     this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
                         val estSize = VideoHelper.estimateSourceSize(it)
                         val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) })
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) }).apply {
+                            videoSourceItems.add(this)
+                            if (selectedLanguage != null) {
+                                if (it.language != selectedLanguage)
+                                    this.visibility = View.GONE
+                            }
+                        }
                     }.toList().toTypedArray()
                 )
                 else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
                     this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
                         val estSize = VideoHelper.estimateSourceSize(it)
                         val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) })
+                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) }).apply {
+                            audioSourceItems.add(this)
+                            if (selectedLanguage != null) {
+                                if (it.language != selectedLanguage)
+                                    this.visibility = View.GONE
+                            }
+                        }
                     }.toList().toTypedArray()
                 )
                 else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(

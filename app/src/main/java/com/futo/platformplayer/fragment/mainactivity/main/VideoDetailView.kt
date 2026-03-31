@@ -2474,7 +2474,9 @@ class VideoDetailView : ConstraintLayout {
 
         val doDedup = Settings.instance.playback.simplifySources;
 
-        val allLanguages = videoSources?.map { it.language }?.distinct() ?: listOf();
+        val allLanguages = (videoSources?.map { it.language } ?: listOf())
+            .plus(audioSources?.map { it.language } ?: listOf())
+            .distinct();
         val langResCombinations = if(videoSources != null) allLanguages.flatMap {
             lang -> videoSources
                 .filter { v -> v.language == lang }
@@ -2486,14 +2488,15 @@ class VideoDetailView : ConstraintLayout {
 
         Log.i(TAG, "Language count: ${allLanguages}");
         var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+        var audioSourceItems = mutableListOf<SlideUpMenuItem>();
         var selectedLanguage: String? = null;
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
                 var languageFilterLabels = allLanguages.filterNotNull().toList();
                 val english = languageFilterLabels.find { it?.lowercase() == "en" };
-                val originalLanguage = videoSources?.find { it.original == true }?.language;
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original == true }?.language;
                 val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
-                val hasPrimaryLanguage = videoSources?.any { it.language == primaryLanguage } ?: false;
+                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage };
 
                 if(english != null)
                     languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
@@ -2510,6 +2513,15 @@ class VideoDetailView : ConstraintLayout {
                     videoSourceItems.forEach {
                         val item = it.itemTag;
                         if(item is IVideoSource) {
+                            if(item.language == selected)
+                                it.visibility = View.VISIBLE;
+                            else
+                                it.visibility = View.GONE;
+                        }
+                    }
+                    audioSourceItems.forEach {
+                        val item = it.itemTag;
+                        if(item is IAudioSource) {
                             if(item.language == selected)
                                 it.visibility = View.VISIBLE;
                             else
@@ -2664,7 +2676,13 @@ class VideoDetailView : ConstraintLayout {
                                 it.bitrate.toHumanBitrate(),
                                 (prefix + it.codec.trim()).trim(),
                                 tag = it,
-                                call = { handleSelectAudioTrack(it) });
+                                call = { handleSelectAudioTrack(it) }).apply {
+                                    audioSourceItems.add(this);
+                                    if(selectedLanguage != null) {
+                                        if(it.language != selectedLanguage)
+                                            this.visibility = View.GONE;
+                                    }
+                                }
                         }.toList().toTypedArray())
             else null,
             if(video?.subtitles?.isNotEmpty() == true)

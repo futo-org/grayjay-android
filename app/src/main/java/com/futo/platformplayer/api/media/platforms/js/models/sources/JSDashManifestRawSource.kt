@@ -26,6 +26,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 
 interface IJSDashManifestRawSource {
+    val url: String?
     val hasGenerate: Boolean;
     var manifest: String?;
     fun generateAsync(scope: CoroutineScope): Deferred<String?>;
@@ -67,7 +68,7 @@ open class JSDashManifestRawSource(
     override val priority: Boolean =
         _obj.getOrDefault<Boolean>(cfg, "priority", ctx, false) ?: false
 
-    val url: String? =
+    override val url: String? =
         _obj.getOrDefault<String>(cfg, "url", ctx, null)
 
     override var manifest: String? =

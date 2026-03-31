@@ -35,7 +35,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
 
     override val language: String;
 
-    val url: String;
+    override val url: String;
     override var manifest: String?;
 
     override val hasGenerate: Boolean;
