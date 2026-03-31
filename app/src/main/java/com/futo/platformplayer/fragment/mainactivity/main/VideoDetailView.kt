@@ -84,7 +84,9 @@ import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.sources.IJSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
@@ -106,6 +108,7 @@ import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.fixHtmlWhitespace
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.helpers.toAudioSource
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.receivers.MediaControlReceiver
@@ -2046,6 +2049,10 @@ class VideoDetailView : ConstraintLayout {
             val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount());
             val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, Settings.instance.playback.getPrimaryLanguage(context));
             val subtitleSource = _lastSubtitleSource ?: (if (Settings.instance.playback.stickySubtitles) _player.getPreferredSubtitleSource(video, _subtitleLanguage) else null) ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
+
+            _player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context));
+            _player.setPreferredSubtitleLanguage(_subtitleLanguage);
+
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if(videoSource == null && audioSource == null) {
@@ -2310,7 +2317,7 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is IJSDashManifestRawSource) {
 
             val videoTracks =
                 _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
@@ -2339,6 +2346,22 @@ class VideoDetailView : ConstraintLayout {
                 videoMenuGroup?.getItem("auto")
                     ?.setSubText("${_player.exoPlayer?.player?.videoFormat?.width}x${_player.exoPlayer?.player?.videoFormat?.height}")
                 _overlay_quality_selector?.selectOption("video", "auto")
+            }
+
+            // Audio track selection from manifest
+            val audioTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+            if (audioTracks != null) {
+                var audioMenuGroup: SlideUpMenuGroup? = null
+                for (view in _overlay_quality_selector!!.groupItems) {
+                    if (view is SlideUpMenuGroup && view.groupTag == "audio") {
+                        audioMenuGroup = view
+                    }
+                }
+
+                val currentAudioTrack = _player.exoPlayer?.player?.audioFormat
+                if (currentAudioTrack != null) {
+                    _overlay_quality_selector?.selectOption("audio", currentAudioTrack)
+                }
             }
         }
 
@@ -2436,7 +2459,7 @@ class VideoDetailView : ConstraintLayout {
             videoSources = video?.video?.videoSources?.toList();
             audioSources = if(video?.video?.isUnMuxed == true)
                 (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
-            else null
+            else video?.video?.videoSources?.map { it.toAudioSource() }
             if(videoLocal != null) {
                 localVideoSources = videoLocal.videoSource.toList();
                 localAudioSource = videoLocal.audioSource.toList();
@@ -2504,11 +2527,15 @@ class VideoDetailView : ConstraintLayout {
             ?.filterNotNull()
             ?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
-        val bestAudioSources = if(doDedup) audioSources
-            ?.filter { it.container == bestAudioContainer }
-            ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
-            ?.distinct()
-            ?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
+        val bestAudioSources = if(doDedup && audioSources != null) {
+            val audioLangs = audioSources.map { it.language }.distinct();
+            audioLangs.map { lang ->
+                VideoHelper.selectBestAudioSource(audioSources.filter { it.language == lang }, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)
+            }.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource || it is IJSDashManifestRawSource })
+            .filterNotNull()
+            .distinct()
+            .toList()
+        } else audioSources?.toList() ?: listOf();
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed() == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()

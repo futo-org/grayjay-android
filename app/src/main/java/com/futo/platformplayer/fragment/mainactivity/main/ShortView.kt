@@ -44,7 +44,9 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.IJSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.helpers.toAudioSource
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
@@ -438,9 +440,8 @@ class ShortView : FrameLayout {
         } else {
             video = videoDetails
             videoSources = video?.video?.videoSources?.toList()
-            audioSources =
-                if (video?.video?.isUnMuxed == true) (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
-                else null
+            audioSources = if (video?.video?.isUnMuxed == true) (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
+            else video?.video?.videoSources?.map { it.toAudioSource() }
             if (videoLocal != null) {
                 localVideoSources = videoLocal.videoSource.toList()
                 localAudioSource = videoLocal.audioSource.toList()
@@ -460,10 +461,15 @@ class ShortView : FrameLayout {
             ?.filterNotNull()?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer =
             audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container }
-        val bestAudioSources =
-            if (doDedup) audioSources?.filter { it.container == bestAudioContainer }
-                ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
-                ?.distinct()?.toList() ?: listOf() else audioSources?.toList() ?: listOf()
+        val bestAudioSources = if (doDedup && audioSources != null) {
+            val audioLangs = audioSources.map { it.language }.distinct()
+            audioLangs.map { lang ->
+                VideoHelper.selectBestAudioSource(audioSources.filter { it.language == lang }, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)
+            }.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource || it is IJSDashManifestRawSource })
+                .filterNotNull()
+                .distinct()
+                .toList()
+        } else audioSources?.toList() ?: listOf()
 
         val canSetSpeed = true
         val currentPlaybackRate = player.getPlaybackRate()
@@ -572,7 +578,7 @@ class ShortView : FrameLayout {
         overlayQualitySelector?.selectOption("audio", _lastAudioSource)
         overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource)
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is IJSDashManifestRawSource) {
             val videoTracks =
                 player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
 
@@ -600,6 +606,22 @@ class ShortView : FrameLayout {
                 videoMenuGroup?.getItem("auto")
                     ?.setSubText("${player.exoPlayer?.player?.videoFormat?.width}x${player.exoPlayer?.player?.videoFormat?.height}")
                 overlayQualitySelector?.selectOption("video", "auto")
+            }
+
+            // Audio track selection from manifest
+            val audioTracks = player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+            if (audioTracks != null) {
+                var audioMenuGroup: SlideUpMenuGroup? = null
+                for (view in overlayQualitySelector!!.groupItems) {
+                    if (view is SlideUpMenuGroup && view.groupTag == "audio") {
+                        audioMenuGroup = view
+                    }
+                }
+
+                val currentAudioTrack = player.exoPlayer?.player?.audioFormat
+                if (currentAudioTrack != null) {
+                    overlayQualitySelector?.selectOption("audio", currentAudioTrack)
+                }
             }
         }
 
