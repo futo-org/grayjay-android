@@ -2666,7 +2666,7 @@ class VideoDetailView : ConstraintLayout {
             else null,
             if(bestAudioSources.isNotEmpty())
                 SlideUpMenuGroup(this.context, context.getString(R.string.audio), "audio",
-                    *bestAudioSources
+                    *(bestAudioSources
                         .map {
                             val estSize = VideoHelper.estimateSourceSize(it);
                             val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
@@ -2683,7 +2683,20 @@ class VideoDetailView : ConstraintLayout {
                                             this.visibility = View.GONE;
                                     }
                                 }
-                        }.toList().toTypedArray())
+                        }.toList() + (
+                            _player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
+                                (0 until group.mediaTrackGroup.length).map { i ->
+                                    val format = group.mediaTrackGroup.getFormat(i);
+                                    SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { _player.selectAudioTrack(format) }).apply {
+                                        audioSourceItems.add(this);
+                                        if (selectedLanguage != null) {
+                                            if (format.language != selectedLanguage)
+                                                this.visibility = View.GONE;
+                                        }
+                                    }
+                                }
+                            } ?: listOf()
+                        )).toTypedArray())
             else null,
             if(video?.subtitles?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",

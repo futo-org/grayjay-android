@@ -580,7 +580,7 @@ class ShortView : FrameLayout {
                     }.toList().toTypedArray()
                 )
                 else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
+                    this.context, context.getString(R.string.audio), "audio", *(bestAudioSources.map {
                         val estSize = VideoHelper.estimateSourceSize(it)
                         val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
                         SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) }).apply {
@@ -590,7 +590,20 @@ class ShortView : FrameLayout {
                                     this.visibility = View.GONE
                             }
                         }
-                    }.toList().toTypedArray()
+                    }.toList() + (
+                        player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
+                            (0 until group.mediaTrackGroup.length).map { i ->
+                                val format = group.mediaTrackGroup.getFormat(i);
+                                SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { player.selectAudioTrack(format) }).apply {
+                                    audioSourceItems.add(this);
+                                    if (selectedLanguage != null) {
+                                        if (format.language != selectedLanguage)
+                                            this.visibility = View.GONE;
+                                    }
+                                }
+                            }
+                        } ?: listOf()
+                    )).toTypedArray()
                 )
                 else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
                     this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
@@ -935,6 +948,10 @@ class ShortView : FrameLayout {
                 ?: player.getPreferredAudioSource(videoDetails, Settings.instance.playback.getPrimaryLanguage(context))
             val subtitleSource = _lastSubtitleSource
                 ?: (if (videoDetails is VideoLocal) videoDetails.subtitlesSources.firstOrNull() else null)
+
+            player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context));
+            player.setPreferredSubtitleLanguage(null); // Shorts usually don't have sticky subtitles in the same way
+
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if (videoSource == null && audioSource == null) {

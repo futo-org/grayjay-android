@@ -17,6 +17,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -147,6 +148,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     var targetTrackVideoHeight = -1
         private set
     private var _targetTrackAudioBitrate = -1
+    private var _targetTrackVideoFormat: Format? = null;
+    private var _targetTrackAudioFormat: Format? = null;
     var preferredAudioLanguage: String? = null
         private set;
     var preferredSubtitleLanguage: String? = null
@@ -328,10 +331,22 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     //TODO: Temporary solution, Implement custom track selector without using constraints
     fun selectVideoTrack(height: Int) {
         targetTrackVideoHeight = height;
+        _targetTrackVideoFormat = null;
+        updateTrackSelector();
+    }
+    fun selectVideoTrack(format: Format?) {
+        _targetTrackVideoFormat = format;
+        targetTrackVideoHeight = format?.height ?: -1;
         updateTrackSelector();
     }
     fun selectAudioTrack(bitrate: Int) {
         _targetTrackAudioBitrate = bitrate;
+        _targetTrackAudioFormat = null;
+        updateTrackSelector();
+    }
+    fun selectAudioTrack(format: Format?) {
+        _targetTrackAudioFormat = format;
+        _targetTrackAudioBitrate = format?.bitrate ?: -1;
         updateTrackSelector();
     }
     fun setPreferredAudioLanguage(lang: String?) {
@@ -345,15 +360,43 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
-        var builder = DefaultTrackSelector.Parameters.Builder(context);
+        var builder = (exoPlayer?.player?.trackSelectionParameters as? DefaultTrackSelector.Parameters)?.buildUpon()
+            ?: DefaultTrackSelector.Parameters.Builder(context);
+
+        builder = builder.clearOverrides();
+
+        if (_targetTrackVideoFormat != null || _targetTrackAudioFormat != null) {
+            val tracks = exoPlayer?.player?.currentTracks;
+            if (tracks != null) {
+                if (_targetTrackVideoFormat != null) {
+                    val group = tracks.groups.find { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO && (0 until it.mediaTrackGroup.length).any { i -> it.mediaTrackGroup.getFormat(i) == _targetTrackVideoFormat } };
+                    if (group != null) {
+                        builder = builder.addOverride(TrackSelectionOverride(group.mediaTrackGroup, (0 until group.mediaTrackGroup.length).find { i -> group.mediaTrackGroup.getFormat(i) == _targetTrackVideoFormat }!!));
+                    }
+                }
+                if (_targetTrackAudioFormat != null) {
+                    val group = tracks.groups.find { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO && (0 until it.mediaTrackGroup.length).any { i -> it.mediaTrackGroup.getFormat(i) == _targetTrackAudioFormat } };
+                    if (group != null) {
+                        builder = builder.addOverride(TrackSelectionOverride(group.mediaTrackGroup, (0 until group.mediaTrackGroup.length).find { i -> group.mediaTrackGroup.getFormat(i) == _targetTrackAudioFormat }!!));
+                    }
+                }
+            }
+        }
+
         if(targetTrackVideoHeight > 0) {
             builder = builder
                 .setMinVideoSize(0, targetTrackVideoHeight - 10)
                 .setMaxVideoSize(9999, targetTrackVideoHeight + 10);
+        } else {
+            builder = builder
+                .setMinVideoSize(0, 0)
+                .setMaxVideoSize(9999, 9999);
         }
 
         if(_targetTrackAudioBitrate > 0) {
             builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
+        } else {
+            builder = builder.setMaxAudioBitrate(Int.MAX_VALUE);
         }
 
         if (preferredAudioLanguage != null) {
@@ -363,11 +406,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             builder = builder.setPreferredTextLanguage(preferredSubtitleLanguage);
         }
 
-        builder = if (isAudioMode) {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
-        } else {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
-        }
+        builder = builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode);
 
         val trackSelector = exoPlayer?.player?.trackSelector;
         if(trackSelector != null) {
