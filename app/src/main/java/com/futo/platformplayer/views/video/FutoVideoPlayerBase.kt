@@ -925,7 +925,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             _lastAudioMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(
                     DashManifestParser().parse(
-                        Uri.parse(audioSource.url ?: ""),
+                        (audioSource.url ?: "").toUri(),
                         ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))
                     )
                 );

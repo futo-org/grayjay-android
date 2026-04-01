@@ -2349,13 +2349,6 @@ class VideoDetailView : ConstraintLayout {
             // Audio track selection from manifest
             val audioTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
             if (audioTracks != null) {
-                var audioMenuGroup: SlideUpMenuGroup? = null
-                for (view in _overlay_quality_selector!!.groupItems) {
-                    if (view is SlideUpMenuGroup && view.groupTag == "audio") {
-                        audioMenuGroup = view
-                    }
-                }
-
                 val currentAudioTrack = _player.exoPlayer?.player?.audioFormat
                 if (currentAudioTrack != null) {
                     _overlay_quality_selector?.selectOption("audio", currentAudioTrack)
@@ -2486,14 +2479,14 @@ class VideoDetailView : ConstraintLayout {
 
         Log.i(TAG, "Language count: ${allLanguages}");
         var videoSourceItems = mutableListOf<SlideUpMenuItem>();
-        var audioSourceItems = mutableListOf<SlideUpMenuItem>()
+        val audioSourceItems = mutableListOf<SlideUpMenuItem>()
         var selectedLanguage: String? = null;
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
                 var languageFilterLabels = allLanguages.filterNotNull().toList();
                 val english = languageFilterLabels.find { it?.lowercase() == "en" };
-                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original == true }?.language
-                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original }?.language
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage()
                 val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage }
 
                 if(english != null)

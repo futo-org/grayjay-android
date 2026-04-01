@@ -75,7 +75,7 @@ open class JSDashManifestRawSource(
     override var streamMetaData: StreamMetaData? = null
 
     companion object {
-        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL)
+        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?</AdaptationSet>", RegexOption.DOT_MATCHES_ALL)
     }
 
     private var _pregenerate: V8Deferred<String?>? = null
@@ -214,7 +214,7 @@ class JSDashManifestMergingRawSource(
         val videoDashDef = video.generateAsync(scope);
         val audioDashDef = audio.generateAsync(scope);
 
-        return V8Deferred.merge(scope, listOf(videoDashDef, audioDashDef)) {
+        return V8Deferred.merge(scope, listOf(videoDashDef, audioDashDef)) { it ->
             val (videoDash: String?, audioDash: String?) = it;
 
             if (videoDash != null && audioDash == null) return@merge videoDash;
@@ -226,18 +226,23 @@ class JSDashManifestMergingRawSource(
             var result: String?
             val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
             val audioTracks = audioAdaptationSets
-                .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
-                .map {
+                .filter {
+                    it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains(
+                        "lang="
+                    )
+                }.joinToString("\n") {
                     var set = it.value
-                    if (!set.contains("lang=") && audio.language != null) {
-                        set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"")
+                    if (!set.contains("lang=")) {
+                        set = set.replaceFirst(
+                            "<AdaptationSet",
+                            "<AdaptationSet lang=\"${audio.language}\""
+                        )
                     }
                     set
                 }
-                .joinToString("\n")
 
-            if (audioTracks.isNotEmpty()) {
-                result = if (videoDash.contains("</AdaptationSet>")) {
+            result = if (audioTracks.isNotEmpty()) {
+                if (videoDash.contains("</AdaptationSet>")) {
                     videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
                 } else if (videoDash.contains("</Period>")) {
                     videoDash.replace("</Period>", "$audioTracks\n</Period>")
@@ -247,7 +252,7 @@ class JSDashManifestMergingRawSource(
                     videoDash + audioTracks
                 }
             } else
-                result = videoDash
+                videoDash
 
             return@merge result
         };
@@ -261,21 +266,26 @@ class JSDashManifestMergingRawSource(
 
         //TODO: Temporary simple solution..make more reliable version
 
-        var result: String? = null;
+        var result: String?
         val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
         val audioTracks = audioAdaptationSets
-            .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
-            .map {
+            .filter {
+                it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains(
+                    "lang="
+                )
+            }.joinToString("\n") {
                 var set = it.value
-                if (!set.contains("lang=") && audio.language != null) {
-                    set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"")
+                if (!set.contains("lang=")) {
+                    set = set.replaceFirst(
+                        "<AdaptationSet",
+                        "<AdaptationSet lang=\"${audio.language}\""
+                    )
                 }
                 set
             }
-            .joinToString("\n")
 
-        if (audioTracks.isNotEmpty()) {
-            result = if (videoDash.contains("</AdaptationSet>")) {
+        result = if (audioTracks.isNotEmpty()) {
+            if (videoDash.contains("</AdaptationSet>")) {
                 videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
             } else if (videoDash.contains("</Period>")) {
                 videoDash.replace("</Period>", "$audioTracks\n</Period>")
@@ -284,9 +294,8 @@ class JSDashManifestMergingRawSource(
             } else {
                 videoDash + audioTracks
             }
-        }
-        else
-            result = videoDash
+        } else
+            videoDash
 
         return result
     }

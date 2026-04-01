@@ -88,10 +88,10 @@ class VideoHelper {
                 else
                     Language.UNKNOWN;
             }
-            if(altSources.any { it.language == languageToFilter }) {
-                altSources = altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList()
+            altSources = if(altSources.any { it.language == languageToFilter }) {
+                altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList()
             } else {
-                altSources = altSources.sortedBy { it.bitrate }.toList()
+                altSources.sortedBy { it.bitrate }.toList()
             }
 
             var bestSource = altSources.firstOrNull();
