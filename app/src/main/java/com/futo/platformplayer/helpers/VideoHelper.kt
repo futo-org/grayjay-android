@@ -89,9 +89,9 @@ class VideoHelper {
                     Language.UNKNOWN;
             }
             if(altSources.any { it.language == languageToFilter }) {
-                altSources = altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList();
+                altSources = altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList()
             } else {
-                altSources = altSources.sortedBy { it.bitrate }.toList();
+                altSources = altSources.sortedBy { it.bitrate }.toList()
             }
 
             var bestSource = altSources.firstOrNull();
@@ -109,8 +109,8 @@ class VideoHelper {
 
         fun selectBestAudioSource(desc: IVideoSourceDescriptor, prefContainers : Array<String>, prefLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
             if(!desc.isUnMuxed) {
-                val audioEquivalent = desc.videoSources.map { it.toAudioSource() };
-                return selectBestAudioSource(audioEquivalent, prefContainers, prefLanguage, targetBitrate);
+                val audioEquivalent = desc.videoSources.map { it.toAudioSource() }
+                return selectBestAudioSource(audioEquivalent, prefContainers, prefLanguage, targetBitrate)
             }
 
             return selectBestAudioSource((desc as VideoUnMuxedSourceDescriptor).audioSources.toList(), prefContainers, prefLanguage, targetBitrate);

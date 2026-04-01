@@ -1,20 +1,14 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
-import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.V8Deferred
-import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
-import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.engine.IV8PluginConfig
-import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
-import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Async
@@ -23,7 +17,6 @@ import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 
 interface IJSDashManifestRawSource {
     val url: String?
@@ -82,7 +75,7 @@ open class JSDashManifestRawSource(
     override var streamMetaData: StreamMetaData? = null
 
     companion object {
-        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL);
+        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL)
     }
 
     private var _pregenerate: V8Deferred<String?>? = null
@@ -173,7 +166,7 @@ open class JSDashManifestRawSource(
                 val sets = adaptationSetRegex.findAll(result)
                 for (set in sets) {
                     if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
-                        val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"");
+                        val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"")
                         result = result!!.replace(set.value, newSet)
                     }
                 }
