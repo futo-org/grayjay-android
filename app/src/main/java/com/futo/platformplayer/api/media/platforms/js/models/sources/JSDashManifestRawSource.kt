@@ -133,13 +133,11 @@ open class JSDashManifestRawSource(
             return@busy result.convert {
                 var manifest = it.value
                 if (manifest != null && language != null) {
-                    val sets = adaptationSetRegex.findAll(manifest);
-                    var changed = false;
+                    val sets = adaptationSetRegex.findAll(manifest)
                     for (set in sets) {
                         if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
-                            val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"");
-                            manifest = manifest.replace(set.value, newSet);
-                            changed = true;
+                            val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"")
+                            manifest = manifest.replace(set.value, newSet)
                         }
                     }
                 }
@@ -151,7 +149,7 @@ open class JSDashManifestRawSource(
         if(!hasGenerate)
             return manifest;
         if(_obj.isClosed)
-            throw IllegalStateException("Source object already closed");
+            throw IllegalStateException("Source object already closed")
 
         var result: String? = null;
         if(_plugin is DevJSClient) {
@@ -160,7 +158,7 @@ open class JSDashManifestRawSource(
                     _plugin.isBusyWith("dashVideo.generate") {
                         _obj.invokeV8<V8ValueString>("generate").value;
                     }
-                });
+                })
             }
         }
         else
@@ -168,28 +166,26 @@ open class JSDashManifestRawSource(
                 _plugin.isBusyWith("dashVideo.generate") {
                     _obj.invokeV8<V8ValueString>("generate").value;
                 }
-            });
+            })
 
         if(result != null){
             if (language != null) {
-                val sets = adaptationSetRegex.findAll(result);
-                var changed = false;
+                val sets = adaptationSetRegex.findAll(result)
                 for (set in sets) {
                     if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
                         val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"");
-                        result = result!!.replace(set.value, newSet);
-                        changed = true;
+                        result = result!!.replace(set.value, newSet)
                     }
                 }
             }
 
             _plugin.busy {
-                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
-                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
-                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
-                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0
+                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0
+                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0
+                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0
                 if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
-                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd)
                 }
             }
         }
@@ -234,18 +230,18 @@ class JSDashManifestMergingRawSource(
 
             //TODO: Temporary simple solution..make more reliable version
 
-            var result: String? = null;
-            val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!);
+            var result: String?
+            val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
             val audioTracks = audioAdaptationSets
                 .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
                 .map {
-                    var set = it.value;
+                    var set = it.value
                     if (!set.contains("lang=") && audio.language != null) {
-                        set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"");
+                        set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"")
                     }
                     set
                 }
-                .joinToString("\n");
+                .joinToString("\n")
 
             if (audioTracks.isNotEmpty()) {
                 result = if (videoDash.contains("</AdaptationSet>")) {
@@ -258,9 +254,9 @@ class JSDashManifestMergingRawSource(
                     videoDash + audioTracks
                 }
             } else
-                result = videoDash;
+                result = videoDash
 
-            return@merge result;
+            return@merge result
         };
     }
     override fun generate(): String? {
@@ -273,19 +269,19 @@ class JSDashManifestMergingRawSource(
         //TODO: Temporary simple solution..make more reliable version
 
         var result: String? = null;
-        val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!);
+        val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
         val audioTracks = audioAdaptationSets
             .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
             .map {
                 var set = it.value;
                 if (!set.contains("lang=") && audio.language != null) {
-                    set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"");
+                    set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"")
                 }
                 set
             }
-            .joinToString("\n");
+            .joinToString("\n")
 
-        if(audioTracks.isNotEmpty()) {
+        if (audioTracks.isNotEmpty()) {
             result = if (videoDash.contains("</AdaptationSet>")) {
                 videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
             } else if (videoDash.contains("</Period>")) {
@@ -297,9 +293,9 @@ class JSDashManifestMergingRawSource(
             }
         }
         else
-            result = videoDash;
+            result = videoDash
 
-        return result;
+        return result
     }
 
     companion object {
