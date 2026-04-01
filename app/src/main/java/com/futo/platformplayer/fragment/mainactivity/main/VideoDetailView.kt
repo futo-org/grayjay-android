@@ -2486,7 +2486,7 @@ class VideoDetailView : ConstraintLayout {
 
         Log.i(TAG, "Language count: ${allLanguages}");
         var videoSourceItems = mutableListOf<SlideUpMenuItem>();
-        var audioSourceItems = mutableListOf<SlideUpMenuItem>();
+        var audioSourceItems = mutableListOf<SlideUpMenuItem>()
         var selectedLanguage: String? = null;
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
@@ -2518,12 +2518,12 @@ class VideoDetailView : ConstraintLayout {
                         }
                     }
                     audioSourceItems.forEach {
-                        val item = it.itemTag;
+                        val item = it.itemTag
                         if(item is IAudioSource) {
                             if(item.language == selected)
-                                it.visibility = VISIBLE;
+                                it.visibility = VISIBLE
                             else
-                                it.visibility = GONE;
+                                it.visibility = GONE
                         }
                     }
                 }
@@ -2675,7 +2675,7 @@ class VideoDetailView : ConstraintLayout {
                                 (prefix + it.codec.trim()).trim(),
                                 tag = it,
                                 call = { handleSelectAudioTrack(it) }).apply {
-                                    audioSourceItems.add(this);
+                                    audioSourceItems.add(this)
                                     if(selectedLanguage != null) {
                                         if(it.language != selectedLanguage)
                                             this.visibility = GONE
@@ -2684,9 +2684,9 @@ class VideoDetailView : ConstraintLayout {
                         }.toList() + (
                             _player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
                                 (0 until group.mediaTrackGroup.length).map { i ->
-                                    val format = group.mediaTrackGroup.getFormat(i);
+                                    val format = group.mediaTrackGroup.getFormat(i)
                                     SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { _player.selectAudioTrack(format) }).apply {
-                                        audioSourceItems.add(this);
+                                        audioSourceItems.add(this)
                                         if (selectedLanguage != null) {
                                             if (format.language != selectedLanguage)
                                                 this.visibility = GONE

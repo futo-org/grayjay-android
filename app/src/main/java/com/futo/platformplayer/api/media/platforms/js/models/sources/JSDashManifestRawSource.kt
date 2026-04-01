@@ -266,7 +266,7 @@ class JSDashManifestMergingRawSource(
         val audioTracks = audioAdaptationSets
             .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
             .map {
-                var set = it.value;
+                var set = it.value
                 if (!set.contains("lang=") && audio.language != null) {
                     set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"")
                 }

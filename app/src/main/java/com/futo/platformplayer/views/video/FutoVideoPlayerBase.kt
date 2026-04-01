@@ -153,9 +153,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _targetTrackVideoFormat: Format? = null
     private var _targetTrackAudioFormat: Format? = null
     var preferredAudioLanguage: String? = null
-        private set;
+        private set
     var preferredSubtitleLanguage: String? = null
-        private set;
+        private set
 
     private var _toResume = false;
 
@@ -333,17 +333,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     //TODO: Temporary solution, Implement custom track selector without using constraints
     fun selectVideoTrack(height: Int) {
-        targetTrackVideoHeight = height;
-        _targetTrackVideoFormat = null;
+        targetTrackVideoHeight = height
+        _targetTrackVideoFormat = null
         updateTrackSelector()
     }
-    fun selectVideoTrack(format: Format?) {
-        _targetTrackVideoFormat = format;
-        targetTrackVideoHeight = format?.height ?: -1;
-        updateTrackSelector()
-    }
+
     fun selectAudioTrack(bitrate: Int) {
-        _targetTrackAudioBitrate = bitrate;
+        _targetTrackAudioBitrate = bitrate
         _targetTrackAudioFormat = null
         updateTrackSelector()
     }
@@ -351,15 +347,15 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     fun selectAudioTrack(format: Format?) {
         _targetTrackAudioFormat = format;
-        _targetTrackAudioBitrate = format?.bitrate ?: -1;
+        _targetTrackAudioBitrate = format?.bitrate ?: -1
         updateTrackSelector()
     }
     fun setPreferredAudioLanguage(lang: String?) {
-        preferredAudioLanguage = lang;
+        preferredAudioLanguage = lang
         updateTrackSelector()
     }
     fun setPreferredSubtitleLanguage(lang: String?) {
-        preferredSubtitleLanguage = lang;
+        preferredSubtitleLanguage = lang
         updateTrackSelector()
     }
 
@@ -443,7 +439,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             var audioSourceUsed = audioSource;
             if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
                 if (videoSource.url != audioSource.url || videoSource.name != audioSource.name) {
-                    Logger.i(TAG, "Merging different DASH manifests");
+                    Logger.i(TAG, "Merging different DASH manifests")
                     videoSource.getUnderlyingPlugin()?.busy {
                         videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource)
                         audioSourceUsed = null
@@ -704,9 +700,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 val scope = this;
                 var startId = -1;
                 try {
-                    val plugin = (videoSource as? JSSource)?.getUnderlyingPlugin() ?: return@launch;
-                    startId = plugin.getUnderlyingPlugin().runtimeId ?: -1;
-                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); };
+                    val plugin = (videoSource as? JSSource)?.getUnderlyingPlugin() ?: return@launch
+                    startId = plugin.getUnderlyingPlugin().runtimeId
+                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); }
                     withContext(Dispatchers.Main) {
                         if (generatedDef.estDuration >= 0) {
                             setLoading(generatedDef.estDuration)
@@ -902,7 +898,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 }
                 catch(reloadRequired: ScriptReloadRequiredException) {
                     Logger.i(TAG, "Reload required detected");
-                    val plugin = (audioSource as? JSSource)?.getUnderlyingPlugin();
+                    val plugin = (audioSource as? JSSource)?.getUnderlyingPlugin()
                     if(plugin == null)
                         return@launch;
                     if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)

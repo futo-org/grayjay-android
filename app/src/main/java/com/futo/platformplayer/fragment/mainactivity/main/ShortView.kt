@@ -478,7 +478,7 @@ class ShortView : FrameLayout {
 
         var videoSourceItems = mutableListOf<SlideUpMenuItem>()
         var audioSourceItems = mutableListOf<SlideUpMenuItem>()
-        var selectedLanguage: String? = null;
+        var selectedLanguage: String? = null
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
                 var languageFilterLabels = allLanguages.filterNotNull().toList()
@@ -503,18 +503,18 @@ class ShortView : FrameLayout {
                         val item = it.itemTag
                         if(item is IVideoSource) {
                             if(item.language == selected)
-                                it.visibility = VISIBLE;
+                                it.visibility = VISIBLE
                             else
-                                it.visibility = GONE;
+                                it.visibility = GONE
                         }
                     }
                     audioSourceItems.forEach {
                         val item = it.itemTag;
                         if(item is IAudioSource) {
                             if(item.language == selected)
-                                it.visibility = VISIBLE;
+                                it.visibility = VISIBLE
                             else
-                                it.visibility = View.GONE;
+                                it.visibility = GONE
                         }
                     }
                 }
@@ -595,7 +595,7 @@ class ShortView : FrameLayout {
                             (0 until group.mediaTrackGroup.length).map { i ->
                                 val format = group.mediaTrackGroup.getFormat(i)
                                 SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { player.selectAudioTrack(format) }).apply {
-                                    audioSourceItems.add(this);
+                                    audioSourceItems.add(this)
                                     if (selectedLanguage != null) {
                                         if (format.language != selectedLanguage)
                                             this.visibility = GONE
@@ -942,7 +942,7 @@ class ShortView : FrameLayout {
         updateQualitySourcesOverlay(videoDetails, null)
 
         try {
-            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context);
+            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context)
             val videoSource = _lastVideoSource
                 ?: player.getPreferredVideoSource(videoDetails, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), primaryLanguage)
             val audioSource = _lastAudioSource
@@ -950,7 +950,7 @@ class ShortView : FrameLayout {
             val subtitleSource = _lastSubtitleSource
                 ?: (if (videoDetails is VideoLocal) videoDetails.subtitlesSources.firstOrNull() else null)
 
-            player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context));
+            player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context))
             player.setPreferredSubtitleLanguage(null); // Shorts usually don't have sticky subtitles in the same way
 
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
