@@ -585,7 +585,7 @@ class UISlideOverlays {
                 .distinct()
                 .map { res -> Pair(res, lang) }
             } else listOf();
-            var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+            var videoSourceItems = mutableListOf<SlideUpMenuItem>()
             var selectedLanguage: String? = null;
             val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
                 SlideUpMenuButtonList(container.context, null, "language_filter", true).apply {
