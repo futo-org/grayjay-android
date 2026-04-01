@@ -327,6 +327,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         exoPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = null});
         newPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = _playerEventListener});
         exoPlayer = newPlayer;
+        updateTrackSelector();
     }
 
     //TODO: Temporary solution, Implement custom track selector without using constraints
@@ -361,13 +362,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
-        var builder = (exoPlayer?.player?.trackSelectionParameters as? DefaultTrackSelector.Parameters)?.buildUpon()
-            ?: DefaultTrackSelector.Parameters.Builder(context);
+        val player = exoPlayer?.player ?: return;
+        var builder = player.trackSelectionParameters.buildUpon();
 
         builder = builder.clearOverrides();
 
         if (_targetTrackVideoFormat != null || _targetTrackAudioFormat != null) {
-            val tracks = exoPlayer?.player?.currentTracks;
+            val tracks = player.currentTracks;
             if (tracks != null) {
                 if (_targetTrackVideoFormat != null) {
                     val group = tracks.groups.find { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO && (0 until it.mediaTrackGroup.length).any { i -> it.mediaTrackGroup.getFormat(i) == _targetTrackVideoFormat } };
@@ -409,10 +410,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         builder = builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode);
 
-        val trackSelector = exoPlayer?.player?.trackSelector;
-        if(trackSelector != null) {
-            trackSelector.parameters = builder.build();
-        }
+        player.trackSelectionParameters = builder.build();
     }
 
     fun setChapters(chapters: List<IChapter>?) {
@@ -441,8 +439,14 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             var videoSourceUsed = videoSource;
             var audioSourceUsed = audioSource;
             if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
-                videoSource.getUnderlyingPlugin()?.busy {
-                    videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+                if (videoSource.url != audioSource.url || videoSource.name != audioSource.name) {
+                    Logger.i(TAG, "Merging different DASH manifests");
+                    videoSource.getUnderlyingPlugin()?.busy {
+                        videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
+                        audioSourceUsed = null;
+                    }
+                } else {
+                    Logger.i(TAG, "Skipping merge of identical DASH manifests (UMP)");
                     audioSourceUsed = null;
                 }
             }
@@ -767,6 +771,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
                 dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+            
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(DashManifestParser().parse(Uri.parse(videoSource.url ?: ""),
                     ByteArrayInputStream(videoSource.manifest?.toByteArray() ?: ByteArray(0))));
@@ -957,7 +962,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
 
     //Prefered source selection
-    fun getPreferredVideoSource(video: IPlatformVideoDetails, targetPixels: Int = -1): IVideoSource? {
+    fun getPreferredVideoSource(video: IPlatformVideoDetails, targetPixels: Int = -1, preferredLanguage: String? = null): IVideoSource? {
         val usePreview = false;
         if(usePreview) {
             if(video.preview != null && video.preview is VideoMuxedSourceDescriptor)
@@ -971,7 +976,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else if(video.hls != null)
             return video.hls;
         else
-            return VideoHelper.selectBestVideoSource(video.video, targetPixels, PREFERED_VIDEO_CONTAINERS)
+            return VideoHelper.selectBestVideoSource(video.video, targetPixels, PREFERED_VIDEO_CONTAINERS, preferredLanguage)
     }
     fun getPreferredAudioSource(video: IPlatformVideoDetails, preferredLanguage: String?): IAudioSource? {
         return VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, preferredLanguage);

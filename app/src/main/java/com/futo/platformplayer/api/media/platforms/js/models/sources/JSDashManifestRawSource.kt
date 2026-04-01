@@ -81,6 +81,10 @@ open class JSDashManifestRawSource(
 
     override var streamMetaData: StreamMetaData? = null
 
+    companion object {
+        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL);
+    }
+
     private var _pregenerate: V8Deferred<String?>? = null
     fun pregenerateAsync(scope: CoroutineScope): V8Deferred<String?>? {
         _pregenerate = generateAsync(scope);
@@ -127,7 +131,19 @@ open class JSDashManifestRawSource(
             }
 
             return@busy result.convert {
-                it.value
+                var manifest = it.value
+                if (manifest != null && language != null) {
+                    val sets = adaptationSetRegex.findAll(manifest);
+                    var changed = false;
+                    for (set in sets) {
+                        if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
+                            val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"");
+                            manifest = manifest.replace(set.value, newSet);
+                            changed = true;
+                        }
+                    }
+                }
+                manifest
             };
         }
     }
@@ -155,6 +171,18 @@ open class JSDashManifestRawSource(
             });
 
         if(result != null){
+            if (language != null) {
+                val sets = adaptationSetRegex.findAll(result);
+                var changed = false;
+                for (set in sets) {
+                    if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
+                        val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"");
+                        result = result!!.replace(set.value, newSet);
+                        changed = true;
+                    }
+                }
+            }
+
             _plugin.busy {
                 val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
                 val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
@@ -207,12 +235,28 @@ class JSDashManifestMergingRawSource(
             //TODO: Temporary simple solution..make more reliable version
 
             var result: String? = null;
-            val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
-            if (audioAdaptationSet != null) {
-                result = videoDash.replace(
-                    "</AdaptationSet>",
-                    "</AdaptationSet>\n" + audioAdaptationSet.value
-                )
+            val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!);
+            val audioTracks = audioAdaptationSets
+                .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
+                .map {
+                    var set = it.value;
+                    if (!set.contains("lang=") && audio.language != null) {
+                        set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"");
+                    }
+                    set
+                }
+                .joinToString("\n");
+
+            if (audioTracks.isNotEmpty()) {
+                result = if (videoDash.contains("</AdaptationSet>")) {
+                    videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
+                } else if (videoDash.contains("</Period>")) {
+                    videoDash.replace("</Period>", "$audioTracks\n</Period>")
+                } else if (videoDash.contains("</MPD>")) {
+                    videoDash.replace("</MPD>", "$audioTracks\n</MPD>")
+                } else {
+                    videoDash + audioTracks
+                }
             } else
                 result = videoDash;
 
@@ -229,9 +273,28 @@ class JSDashManifestMergingRawSource(
         //TODO: Temporary simple solution..make more reliable version
 
         var result: String? = null;
-        val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
-        if(audioAdaptationSet != null) {
-            result = videoDash.replace("</AdaptationSet>", "</AdaptationSet>\n" + audioAdaptationSet.value)
+        val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!);
+        val audioTracks = audioAdaptationSets
+            .filter { it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains("lang=") }
+            .map {
+                var set = it.value;
+                if (!set.contains("lang=") && audio.language != null) {
+                    set = set.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"${audio.language}\"");
+                }
+                set
+            }
+            .joinToString("\n");
+
+        if(audioTracks.isNotEmpty()) {
+            result = if (videoDash.contains("</AdaptationSet>")) {
+                videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
+            } else if (videoDash.contains("</Period>")) {
+                videoDash.replace("</Period>", "$audioTracks\n</Period>")
+            } else if (videoDash.contains("</MPD>")) {
+                videoDash.replace("</MPD>", "$audioTracks\n</MPD>")
+            } else {
+                videoDash + audioTracks
+            }
         }
         else
             result = videoDash;
@@ -240,6 +303,5 @@ class JSDashManifestMergingRawSource(
     }
 
     companion object {
-        private val adaptationSetRegex = Regex("<AdaptationSet.*?>.*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL);
     }
-}
+    }

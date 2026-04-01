@@ -942,8 +942,9 @@ class ShortView : FrameLayout {
         updateQualitySourcesOverlay(videoDetails, null)
 
         try {
+            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context);
             val videoSource = _lastVideoSource
-                ?: player.getPreferredVideoSource(videoDetails, Settings.instance.playback.getCurrentPreferredQualityPixelCount())
+                ?: player.getPreferredVideoSource(videoDetails, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), primaryLanguage)
             val audioSource = _lastAudioSource
                 ?: player.getPreferredAudioSource(videoDetails, Settings.instance.playback.getPrimaryLanguage(context))
             val subtitleSource = _lastSubtitleSource

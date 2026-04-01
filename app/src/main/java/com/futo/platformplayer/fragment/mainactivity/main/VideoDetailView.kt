@@ -2046,11 +2046,13 @@ class VideoDetailView : ConstraintLayout {
         val video = (videoLocal ?: video) ?: return;
 
         try {
-            val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount());
-            val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, Settings.instance.playback.getPrimaryLanguage(context));
+            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context);
+
+            val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), primaryLanguage);
+            val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, primaryLanguage);
             val subtitleSource = _lastSubtitleSource ?: (if (Settings.instance.playback.stickySubtitles) _player.getPreferredSubtitleSource(video, _subtitleLanguage) else null) ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
 
-            _player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context));
+            _player.setPreferredAudioLanguage(primaryLanguage);
             _player.setPreferredSubtitleLanguage(_subtitleLanguage);
 
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
