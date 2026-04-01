@@ -474,45 +474,45 @@ class ShortView : FrameLayout {
 
         val allLanguages = (videoSources?.map { it.language } ?: listOf())
             .plus(audioSources?.map { it.language } ?: listOf())
-            .distinct();
+            .distinct()
 
-        var videoSourceItems = mutableListOf<SlideUpMenuItem>();
-        var audioSourceItems = mutableListOf<SlideUpMenuItem>();
+        var videoSourceItems = mutableListOf<SlideUpMenuItem>()
+        var audioSourceItems = mutableListOf<SlideUpMenuItem>()
         var selectedLanguage: String? = null;
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
-                var languageFilterLabels = allLanguages.filterNotNull().toList();
-                val english = languageFilterLabels.find { it?.lowercase() == "en" };
-                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original == true }?.language;
-                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
-                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage };
+                var languageFilterLabels = allLanguages.filterNotNull().toList()
+                val english = languageFilterLabels.find { it?.lowercase() == "en" }
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original == true }?.language
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage()
+                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage }
 
                 if(english != null)
-                    languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
+                    languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList()
                 if(primaryLanguage != null && languageFilterLabels.contains(primaryLanguage))
-                    languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList();
+                    languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList()
                 if(originalLanguage != null)
-                    languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList();
+                    languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList()
 
-                selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null);
-                setButtons(languageFilterLabels, selectedLanguage);
+                selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null)
+                setButtons(languageFilterLabels, selectedLanguage)
                 onClick.subscribe { selected ->
-                    setSelected(selected);
+                    setSelected(selected)
 
                     videoSourceItems.forEach {
-                        val item = it.itemTag;
+                        val item = it.itemTag
                         if(item is IVideoSource) {
                             if(item.language == selected)
-                                it.visibility = View.VISIBLE;
+                                it.visibility = VISIBLE;
                             else
-                                it.visibility = View.GONE;
+                                it.visibility = GONE;
                         }
                     }
                     audioSourceItems.forEach {
                         val item = it.itemTag;
                         if(item is IAudioSource) {
                             if(item.language == selected)
-                                it.visibility = View.VISIBLE;
+                                it.visibility = VISIBLE;
                             else
                                 it.visibility = View.GONE;
                         }
@@ -574,7 +574,7 @@ class ShortView : FrameLayout {
                             videoSourceItems.add(this)
                             if (selectedLanguage != null) {
                                 if (it.language != selectedLanguage)
-                                    this.visibility = View.GONE
+                                    this.visibility = GONE
                             }
                         }
                     }.toList().toTypedArray()
@@ -587,18 +587,18 @@ class ShortView : FrameLayout {
                             audioSourceItems.add(this)
                             if (selectedLanguage != null) {
                                 if (it.language != selectedLanguage)
-                                    this.visibility = View.GONE
+                                    this.visibility = GONE
                             }
                         }
                     }.toList() + (
                         player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
                             (0 until group.mediaTrackGroup.length).map { i ->
-                                val format = group.mediaTrackGroup.getFormat(i);
+                                val format = group.mediaTrackGroup.getFormat(i)
                                 SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { player.selectAudioTrack(format) }).apply {
                                     audioSourceItems.add(this);
                                     if (selectedLanguage != null) {
                                         if (format.language != selectedLanguage)
-                                            this.visibility = View.GONE;
+                                            this.visibility = GONE
                                     }
                                 }
                             }
