@@ -25,7 +25,7 @@ fun JSSource.getHttpDataSourceFactory(): HttpDataSource.Factory {
     } else if (requestModifier != null) {
         JSHttpDataSource.Factory().setRequestModifier(requestModifier);
     } else {
-        DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+        DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
     }
 }
 
