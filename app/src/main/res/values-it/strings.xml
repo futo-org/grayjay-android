@@ -997,6 +997,8 @@
         <item>Data di Rilascio (Più Recente)</item>
         <item>Dimensione (Più Piccola)</item>
         <item>Dimensione (Più Grande)</item>
+        <item>Tipo (Solo Audio)</item>
+        <item>Tipo (Video)</item>
     </string-array>
     <string-array name="playlists_sortby_array">
         <item>Nome (Ascending)</item>
