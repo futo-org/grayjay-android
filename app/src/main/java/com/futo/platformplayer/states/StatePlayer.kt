@@ -10,6 +10,7 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.text.TextOutput
 import androidx.media3.exoplayer.text.TextRenderer
@@ -679,9 +680,11 @@ class StatePlayer {
     }
 
     @OptIn(UnstableApi::class)
-    private fun createExoPlayer(context : Context): ExoPlayer {
+    private fun createExoPlayer(context: Context): ExoPlayer {
         return ExoPlayer.Builder(context)
+            .setTrackSelector(DefaultTrackSelector(context))
             .setRenderersFactory(
+
                 object : DefaultRenderersFactory(context) {
                     override fun buildTextRenderers(
                         context: Context,

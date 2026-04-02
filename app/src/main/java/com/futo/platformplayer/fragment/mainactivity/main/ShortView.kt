@@ -7,6 +7,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
@@ -44,7 +45,9 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.IJSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.helpers.toAudioSource
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
@@ -438,9 +441,8 @@ class ShortView : FrameLayout {
         } else {
             video = videoDetails
             videoSources = video?.video?.videoSources?.toList()
-            audioSources =
-                if (video?.video?.isUnMuxed == true) (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
-                else null
+            audioSources = if (video?.video?.isUnMuxed == true) (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
+            else video?.video?.videoSources?.map { it.toAudioSource() }
             if (videoLocal != null) {
                 localVideoSources = videoLocal.videoSource.toList()
                 localAudioSource = videoLocal.audioSource.toList()
@@ -460,10 +462,64 @@ class ShortView : FrameLayout {
             ?.filterNotNull()?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer =
             audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container }
-        val bestAudioSources =
-            if (doDedup) audioSources?.filter { it.container == bestAudioContainer }
-                ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
-                ?.distinct()?.toList() ?: listOf() else audioSources?.toList() ?: listOf()
+        val bestAudioSources = if (doDedup && audioSources != null) {
+            val audioLangs = audioSources.map { it.language }.distinct()
+            audioLangs.map { lang ->
+                VideoHelper.selectBestAudioSource(audioSources.filter { it.language == lang }, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)
+            }.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource || it is IJSDashManifestRawSource })
+                .filterNotNull()
+                .distinct()
+                .toList()
+        } else audioSources?.toList() ?: listOf()
+
+        val allLanguages = (videoSources?.map { it.language } ?: listOf())
+            .plus(audioSources?.map { it.language } ?: listOf())
+            .distinct()
+
+        val videoSourceItems = mutableListOf<SlideUpMenuItem>()
+        val audioSourceItems = mutableListOf<SlideUpMenuItem>()
+        var selectedLanguage: String? = null
+        val languageFilters = if(allLanguages.filterNotNull().count() > 1)
+            SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
+                var languageFilterLabels = allLanguages.filterNotNull().toList()
+                val english = languageFilterLabels.find { it?.lowercase() == "en" }
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original }?.language
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage()
+                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage }
+
+                if(english != null)
+                    languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList()
+                if(primaryLanguage != null && languageFilterLabels.contains(primaryLanguage))
+                    languageFilterLabels = listOf(primaryLanguage).plus(languageFilterLabels.filter { it != primaryLanguage }).toList()
+                if(originalLanguage != null)
+                    languageFilterLabels = listOf(originalLanguage).plus(languageFilterLabels.filter { it != originalLanguage }).toList()
+
+                selectedLanguage = originalLanguage ?: (if(hasPrimaryLanguage) primaryLanguage else null)
+                setButtons(languageFilterLabels, selectedLanguage)
+                onClick.subscribe { selected ->
+                    setSelected(selected)
+
+                    videoSourceItems.forEach {
+                        val item = it.itemTag
+                        if(item is IVideoSource) {
+                            if(item.language == selected)
+                                it.visibility = VISIBLE
+                            else
+                                it.visibility = GONE
+                        }
+                    }
+                    audioSourceItems.forEach {
+                        val item = it.itemTag;
+                        if(item is IAudioSource) {
+                            if(item.language == selected)
+                                it.visibility = VISIBLE
+                            else
+                                it.visibility = GONE
+                        }
+                    }
+                }
+            }
+        else null
 
         val canSetSpeed = true
         val currentPlaybackRate = player.getPlaybackRate()
@@ -508,19 +564,46 @@ class ShortView : FrameLayout {
                         SlideUpMenuItem(this.context, R.drawable.ic_music, "${it.label ?: it.containerMimeType} ${it.bitrate}", "", tag = it, call = { player.selectAudioTrack(it.bitrate) })
                     }.toList().toTypedArray()
                 )
-                else null, if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
+                else null,
+                languageFilters,
+                if (bestVideoSources.isNotEmpty()) SlideUpMenuGroup(
                     this.context, context.getString(R.string.video), "video", *bestVideoSources.map {
                         val estSize = VideoHelper.estimateSourceSize(it)
                         val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) })
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, it.name, if (it.width > 0 && it.height > 0) "${it.width}x${it.height}" else "", (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectVideoTrack(it) }).apply {
+                            videoSourceItems.add(this)
+                            if (selectedLanguage != null) {
+                                if (it.language != selectedLanguage)
+                                    this.visibility = GONE
+                            }
+                        }
                     }.toList().toTypedArray()
                 )
                 else null, if (bestAudioSources.isNotEmpty()) SlideUpMenuGroup(
-                    this.context, context.getString(R.string.audio), "audio", *bestAudioSources.map {
+                    this.context, context.getString(R.string.audio), "audio", *(bestAudioSources.map {
                         val estSize = VideoHelper.estimateSourceSize(it)
                         val prefix = if (estSize > 0) "±" + estSize.toHumanBytesSize() + " " else ""
-                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) })
-                    }.toList().toTypedArray()
+                        SlideUpMenuItem(this.context, R.drawable.ic_music, it.name, it.bitrate.toHumanBitrate(), (prefix + it.codec.trim()).trim(), tag = it, call = { handleSelectAudioTrack(it) }).apply {
+                            audioSourceItems.add(this)
+                            if (selectedLanguage != null) {
+                                if (it.language != selectedLanguage)
+                                    this.visibility = GONE
+                            }
+                        }
+                    }.toList() + (
+                        player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
+                            (0 until group.mediaTrackGroup.length).map { i ->
+                                val format = group.mediaTrackGroup.getFormat(i)
+                                SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { player.selectAudioTrack(format) }).apply {
+                                    audioSourceItems.add(this)
+                                    if (selectedLanguage != null) {
+                                        if (format.language != selectedLanguage)
+                                            this.visibility = GONE
+                                    }
+                                }
+                            }
+                        } ?: listOf()
+                    )).toTypedArray()
                 )
                 else null, if (video?.subtitles?.isNotEmpty() == true) SlideUpMenuGroup(
                     this.context, context.getString(R.string.subtitles), "subtitles", *video.subtitles.map {
@@ -572,7 +655,7 @@ class ShortView : FrameLayout {
         overlayQualitySelector?.selectOption("audio", _lastAudioSource)
         overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource)
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is IJSDashManifestRawSource) {
             val videoTracks =
                 player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
 
@@ -600,6 +683,15 @@ class ShortView : FrameLayout {
                 videoMenuGroup?.getItem("auto")
                     ?.setSubText("${player.exoPlayer?.player?.videoFormat?.width}x${player.exoPlayer?.player?.videoFormat?.height}")
                 overlayQualitySelector?.selectOption("video", "auto")
+            }
+
+            // Audio track selection from manifest
+            val audioTracks = player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+            if (audioTracks != null) {
+                val currentAudioTrack = player.exoPlayer?.player?.audioFormat
+                if (currentAudioTrack != null) {
+                    overlayQualitySelector?.selectOption("audio", currentAudioTrack)
+                }
             }
         }
 
@@ -843,12 +935,17 @@ class ShortView : FrameLayout {
         updateQualitySourcesOverlay(videoDetails, null)
 
         try {
+            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context)
             val videoSource = _lastVideoSource
-                ?: player.getPreferredVideoSource(videoDetails, Settings.instance.playback.getCurrentPreferredQualityPixelCount())
+                ?: player.getPreferredVideoSource(videoDetails, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), primaryLanguage)
             val audioSource = _lastAudioSource
                 ?: player.getPreferredAudioSource(videoDetails, Settings.instance.playback.getPrimaryLanguage(context))
             val subtitleSource = _lastSubtitleSource
                 ?: (if (videoDetails is VideoLocal) videoDetails.subtitlesSources.firstOrNull() else null)
+
+            player.setPreferredAudioLanguage(Settings.instance.playback.getPrimaryLanguage(context))
+            player.setPreferredSubtitleLanguage(null); // Shorts usually don't have sticky subtitles in the same way
+
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if (videoSource == null && audioSource == null) {

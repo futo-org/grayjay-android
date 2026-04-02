@@ -12,6 +12,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
+import com.futo.platformplayer.api.media.models.streams.sources.AudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
@@ -23,9 +24,11 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlSource
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.Language
 import getHttpDataSourceFactory
@@ -85,10 +88,10 @@ class VideoHelper {
                 else
                     Language.UNKNOWN;
             }
-            if(altSources.any { it.language == languageToFilter }) {
-                altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList();
+            altSources = if(altSources.any { it.language == languageToFilter }) {
+                altSources.filter { it.language == languageToFilter }.sortedBy { it.bitrate }.toList()
             } else {
-                altSources.sortedBy { it.bitrate }
+                altSources.sortedBy { it.bitrate }.toList()
             }
 
             var bestSource = altSources.firstOrNull();
@@ -105,8 +108,10 @@ class VideoHelper {
 
 
         fun selectBestAudioSource(desc: IVideoSourceDescriptor, prefContainers : Array<String>, prefLanguage: String? = null, targetBitrate: Long? = null) : IAudioSource? {
-            if(!desc.isUnMuxed)
-                return null;
+            if(!desc.isUnMuxed) {
+                val audioEquivalent = desc.videoSources.map { it.toAudioSource() }
+                return selectBestAudioSource(audioEquivalent, prefContainers, prefLanguage, targetBitrate)
+            }
 
             return selectBestAudioSource((desc as VideoUnMuxedSourceDescriptor).audioSources.toList(), prefContainers, prefLanguage, targetBitrate);
         }
@@ -327,5 +332,48 @@ class VideoHelper {
                 else -> null;
             }
         }
+    }
+}
+
+fun IVideoSource.toAudioSource(): IAudioSource {
+    if (this is IAudioSource) return this
+    return when (this) {
+        is JSVideoUrlRangeSource -> {
+            val plugin = this.getUnderlyingPlugin() ?: throw IllegalStateException("Plugin is null")
+            val obj = this.getUnderlyingObject() ?: throw IllegalStateException("Object is null")
+            JSAudioUrlRangeSource(plugin, obj)
+        }
+        is JSVideoUrlSource -> {
+            val plugin = this.getUnderlyingPlugin() ?: throw IllegalStateException("Plugin is null")
+            val obj = this.getUnderlyingObject() ?: throw IllegalStateException("Object is null")
+            JSAudioUrlSource(plugin, obj)
+        }
+        is IVideoUrlSource -> AudioUrlSource(
+            name = this.name,
+            url = this.getVideoUrl(),
+            bitrate = this.bitrate ?: 0,
+            container = this.container,
+            codec = this.codec,
+            language = this.language ?: Language.UNKNOWN,
+            duration = this.duration,
+            priority = this.priority,
+            original = this.original ?: false
+        )
+        is JSDashManifestRawSource -> {
+            val plugin = this.getUnderlyingPlugin() ?: throw IllegalStateException("Plugin is null")
+            val obj = this.getUnderlyingObject() ?: throw IllegalStateException("Object is null")
+            JSDashManifestRawAudioSource(plugin, obj)
+        }
+        else -> AudioUrlSource(
+            name = this.name,
+            url = "",
+            bitrate = this.bitrate ?: 0,
+            container = this.container,
+            codec = this.codec,
+            language = this.language ?: Language.UNKNOWN,
+            duration = this.duration,
+            priority = this.priority,
+            original = this.original ?: false
+        )
     }
 }

@@ -33,7 +33,6 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.ui.text.toLowerCase
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -43,7 +42,6 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.BuildConfig
@@ -57,7 +55,6 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
@@ -84,7 +81,9 @@ import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.models.sources.IJSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
+
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
@@ -106,6 +105,7 @@ import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.fixHtmlWhitespace
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.helpers.toAudioSource
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.receivers.MediaControlReceiver
@@ -180,7 +180,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -2043,9 +2042,15 @@ class VideoDetailView : ConstraintLayout {
         val video = (videoLocal ?: video) ?: return;
 
         try {
-            val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount());
-            val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, Settings.instance.playback.getPrimaryLanguage(context));
-            val subtitleSource = _lastSubtitleSource ?: (if (Settings.instance.playback.stickySubtitles) _player.getPreferredSubtitleSource(video, _subtitleLanguage) else null) ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null);
+            val primaryLanguage = Settings.instance.playback.getPrimaryLanguage(context)
+
+            val videoSource = _lastVideoSource ?: _player.getPreferredVideoSource(video, Settings.instance.playback.getCurrentPreferredQualityPixelCount(), primaryLanguage)
+            val audioSource = _lastAudioSource ?: _player.getPreferredAudioSource(video, primaryLanguage)
+            val subtitleSource = _lastSubtitleSource ?: (if (Settings.instance.playback.stickySubtitles) _player.getPreferredSubtitleSource(video, _subtitleLanguage) else null) ?: (if(video is VideoLocal) video.subtitlesSources.firstOrNull() else null)
+
+            _player.setPreferredAudioLanguage(primaryLanguage)
+            _player.setPreferredSubtitleLanguage(_subtitleLanguage)
+
             Logger.i(TAG, "loadCurrentVideo(videoSource=$videoSource, audioSource=$audioSource, subtitleSource=$subtitleSource, resumePositionMs=$resumePositionMs)")
 
             if(videoSource == null && audioSource == null) {
@@ -2310,7 +2315,7 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is IJSDashManifestRawSource) {
 
             val videoTracks =
                 _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
@@ -2339,6 +2344,15 @@ class VideoDetailView : ConstraintLayout {
                 videoMenuGroup?.getItem("auto")
                     ?.setSubText("${_player.exoPlayer?.player?.videoFormat?.width}x${_player.exoPlayer?.player?.videoFormat?.height}")
                 _overlay_quality_selector?.selectOption("video", "auto")
+            }
+
+            // Audio track selection from manifest
+            val audioTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+            if (audioTracks != null) {
+                val currentAudioTrack = _player.exoPlayer?.player?.audioFormat
+                if (currentAudioTrack != null) {
+                    _overlay_quality_selector?.selectOption("audio", currentAudioTrack)
+                }
             }
         }
 
@@ -2436,7 +2450,7 @@ class VideoDetailView : ConstraintLayout {
             videoSources = video?.video?.videoSources?.toList();
             audioSources = if(video?.video?.isUnMuxed == true)
                 (video.video as VideoUnMuxedSourceDescriptor).audioSources.toList()
-            else null
+            else video?.video?.videoSources?.map { it.toAudioSource() }
             if(videoLocal != null) {
                 localVideoSources = videoLocal.videoSource.toList();
                 localAudioSource = videoLocal.audioSource.toList();
@@ -2451,7 +2465,9 @@ class VideoDetailView : ConstraintLayout {
 
         val doDedup = Settings.instance.playback.simplifySources;
 
-        val allLanguages = videoSources?.map { it.language }?.distinct() ?: listOf();
+        val allLanguages = (videoSources?.map { it.language } ?: listOf())
+            .plus(audioSources?.map { it.language } ?: listOf())
+            .distinct()
         val langResCombinations = if(videoSources != null) allLanguages.flatMap {
             lang -> videoSources
                 .filter { v -> v.language == lang }
@@ -2463,14 +2479,15 @@ class VideoDetailView : ConstraintLayout {
 
         Log.i(TAG, "Language count: ${allLanguages}");
         var videoSourceItems = mutableListOf<SlideUpMenuItem>();
+        val audioSourceItems = mutableListOf<SlideUpMenuItem>()
         var selectedLanguage: String? = null;
         val languageFilters = if(allLanguages.filter { it != null }.count() > 1)
             SlideUpMenuButtonList(this.context, null, "language_filter", true).apply {
                 var languageFilterLabels = allLanguages.filterNotNull().toList();
                 val english = languageFilterLabels.find { it?.lowercase() == "en" };
-                val originalLanguage = videoSources?.find { it.original == true }?.language;
-                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage();
-                val hasPrimaryLanguage = videoSources?.any { it.language == primaryLanguage } ?: false;
+                val originalLanguage = videoSources?.find { it.original == true }?.language ?: audioSources?.find { it.original }?.language
+                val primaryLanguage = Settings.instance.playback.getPrimaryLanguage()
+                val hasPrimaryLanguage = allLanguages.any { it == primaryLanguage }
 
                 if(english != null)
                     languageFilterLabels = listOf(english).plus(languageFilterLabels.filter { it != english }).toList();
@@ -2493,6 +2510,15 @@ class VideoDetailView : ConstraintLayout {
                                 it.visibility = View.GONE;
                         }
                     }
+                    audioSourceItems.forEach {
+                        val item = it.itemTag
+                        if(item is IAudioSource) {
+                            if(item.language == selected)
+                                it.visibility = VISIBLE
+                            else
+                                it.visibility = GONE
+                        }
+                    }
                 }
             }
         else null;
@@ -2504,11 +2530,15 @@ class VideoDetailView : ConstraintLayout {
             ?.filterNotNull()
             ?.toList() ?: listOf() else videoSources?.toList() ?: listOf()
         val bestAudioContainer = audioSources?.let { VideoHelper.selectBestAudioSource(it, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)?.container };
-        val bestAudioSources = if(doDedup) audioSources
-            ?.filter { it.container == bestAudioContainer }
-            ?.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource })
-            ?.distinct()
-            ?.toList() ?: listOf() else audioSources?.toList() ?: listOf();
+        val bestAudioSources = if(doDedup && audioSources != null) {
+            val audioLangs = audioSources.map { it.language }.distinct()
+            audioLangs.map { lang ->
+                VideoHelper.selectBestAudioSource(audioSources.filter { it.language == lang }, FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS)
+            }.plus(audioSources.filter { it is IHLSManifestAudioSource || it is IDashManifestSource || it is IJSDashManifestRawSource })
+            .filterNotNull()
+            .distinct()
+            .toList()
+        } else audioSources?.toList() ?: listOf()
 
         val canSetSpeed = !_isCasting || StateCasting.instance.activeDevice?.canSetSpeed() == true
         val currentPlaybackRate = if (_isCasting) StateCasting.instance.activeDevice?.speed else _player.getPlaybackRate()
@@ -2627,7 +2657,7 @@ class VideoDetailView : ConstraintLayout {
             else null,
             if(bestAudioSources.isNotEmpty())
                 SlideUpMenuGroup(this.context, context.getString(R.string.audio), "audio",
-                    *bestAudioSources
+                    *(bestAudioSources
                         .map {
                             val estSize = VideoHelper.estimateSourceSize(it);
                             val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
@@ -2637,8 +2667,27 @@ class VideoDetailView : ConstraintLayout {
                                 it.bitrate.toHumanBitrate(),
                                 (prefix + it.codec.trim()).trim(),
                                 tag = it,
-                                call = { handleSelectAudioTrack(it) });
-                        }.toList().toTypedArray())
+                                call = { handleSelectAudioTrack(it) }).apply {
+                                    audioSourceItems.add(this)
+                                    if(selectedLanguage != null) {
+                                        if(it.language != selectedLanguage)
+                                            this.visibility = GONE
+                                    }
+                                }
+                        }.toList() + (
+                            _player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }?.flatMap { group ->
+                                (0 until group.mediaTrackGroup.length).map { i ->
+                                    val format = group.mediaTrackGroup.getFormat(i)
+                                    SlideUpMenuItem(this.context, R.drawable.ic_music, format.label ?: format.id ?: "Track $i", format.bitrate.toHumanBitrate(), format.language ?: "", tag = format, call = { _player.selectAudioTrack(format) }).apply {
+                                        audioSourceItems.add(this)
+                                        if (selectedLanguage != null) {
+                                            if (format.language != selectedLanguage)
+                                                this.visibility = GONE
+                                        }
+                                    }
+                                }
+                            } ?: listOf()
+                        )).toTypedArray())
             else null,
             if(video?.subtitles?.isNotEmpty() == true)
                 SlideUpMenuGroup(this.context, context.getString(R.string.subtitles), "subtitles",
