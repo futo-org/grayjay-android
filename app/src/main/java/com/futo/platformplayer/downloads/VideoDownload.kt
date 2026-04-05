@@ -576,20 +576,7 @@ class VideoDownload {
         finally {
             if(!wasSuccesful) {
                 try {
-                    if(videoFilePath != null) {
-                        val remainingVideo = File(videoFilePath!!);
-                        if (remainingVideo.exists()) {
-                            Logger.i(TAG, "Deleting remaining video file");
-                            remainingVideo.delete();
-                        }
-                    }
-                    if(audioFilePath != null) {
-                        val remainingAudio = File(audioFilePath!!);
-                        if (remainingAudio.exists()) {
-                            Logger.i(TAG, "Deleting remaining audio file");
-                            remainingAudio.delete();
-                        }
-                    }
+                    // Files are kept for resuming downloads
                 }
                 catch(iex: Throwable) {
                     Logger.e(TAG, "Failed to delete files after failure:\n${iex.message}", iex);
@@ -1068,59 +1055,71 @@ class VideoDownload {
     }
 
     private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
-        if(targetFile.exists())
-            targetFile.delete();
-
-        targetFile.createNewFile();
-
-        val sourceLength: Long?;
-        val fileStream = FileOutputStream(targetFile);
+        val fileLength = if (targetFile.exists()) targetFile.length() else 0L
 
         val modifier = if (source is JSSource && source.hasRequestModifier)
             source.getRequestModifier();
         else
             null;
 
+        var sourceLength: Long? = null
+
         try {
             val head = client.tryHead(videoUrl);
             val relatedPlugin = (video?.url ?: videoDetails?.url)?.let { StatePlatform.instance.getContentClient(it) }?.let { if(it is JSClient) it else null };
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
-                val maxParallel = if(relatedPlugin != null && relatedPlugin.config.maxDownloadParallelism > 0)
-                    relatedPlugin.config.maxDownloadParallelism else 99;
-                val concurrency = Math.min(maxParallel, Settings.instance.downloads.getByteRangeThreadCount());
-                Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
                 sourceLength = head["content-length"]!!.toLong();
-                onProgress(sourceLength, 0, 0);
-                downloadSource_Ranges(name, client, modifier, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress);
+                if (fileLength >= sourceLength && sourceLength > 0) {
+                    Logger.i(TAG, "Download $name Already Finished (${sourceLength} bytes)");
+                    onProgress(sourceLength, sourceLength, 0);
+                    return sourceLength;
+                }
+
+                if (!targetFile.exists()) {
+                    targetFile.createNewFile()
+                }
+
+                val fileStream = FileOutputStream(targetFile, true);
+                try {
+                    val maxParallel = if(relatedPlugin != null && relatedPlugin.config.maxDownloadParallelism > 0)
+                        relatedPlugin.config.maxDownloadParallelism else 99;
+                    val concurrency = Math.min(maxParallel, Settings.instance.downloads.getByteRangeThreadCount());
+                    Logger.i(TAG, "Download $name ByteRange Parallel (${concurrency}): " + videoUrl);
+                    
+                    onProgress(sourceLength, fileLength, 0);
+                    downloadSource_Ranges(name, client, modifier, fileStream, videoUrl, sourceLength, 1024*512, concurrency, onProgress, fileLength);
+                } finally {
+                    fileStream.close()
+                }
             }
             else {
                 Logger.i(TAG, "Download $name Sequential");
+                if (targetFile.exists())
+                    targetFile.delete();
+
+                targetFile.createNewFile();
+                val fileStream = FileOutputStream(targetFile);
                 try {
                     sourceLength = downloadSource_Sequential(client, modifier, fileStream, videoUrl, null, 0, onProgress);
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to download sequentially (url = $videoUrl)")
                     throw e
+                } finally {
+                    fileStream.close()
                 }
             }
 
             Logger.i(TAG, "$name downloadSource Finished");
         }
         catch(ioex: IOException) {
-            if(targetFile.exists() ?: false)
-                targetFile.delete();
             if(ioex.message?.contains("ENOSPC") ?: false)
                 throw Exception("Not enough space on device", ioex);
             else
                 throw ioex;
         }
         catch(ex: Throwable) {
-            if(targetFile.exists() ?: false)
-                targetFile.delete();
             throw ex;
-        }
-        finally {
-            fileStream.close();
         }
         return sourceLength!!;
     }
@@ -1299,7 +1298,7 @@ class VideoDownload {
         onProgress(sourceLength, totalRead, 0)
         return sourceLength
     }*/
-    private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, modifier: IRequestModifier?, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit) {
+    private fun downloadSource_Ranges(name: String, client: ManagedHttpClient, modifier: IRequestModifier?, fileStream: FileOutputStream, url: String, sourceLength: Long, rangeSize: Int, concurrency: Int = 1, onProgress: (Long, Long, Long) -> Unit, initialRead: Long = 0) {
         val progressRate: Int = 4096 * 5;
         var lastProgressCount: Int = 0;
         val speedRate: Int = 4096 * 5;
@@ -1309,7 +1308,7 @@ class VideoDownload {
         var lastSpeed: Long = 0;
 
         var reqCount = -1;
-        var totalRead: Long = 0;
+        var totalRead: Long = initialRead;
 
         val pool = ForkJoinPool(concurrency);
 
