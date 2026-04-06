@@ -152,6 +152,18 @@ class VideoDownload {
     var hasVideoRequestModifier: Boolean = false;
     var hasAudioRequestModifier: Boolean = false;
 
+    // Transient: IRequestModifier is a runtime object from the JS plugin engine and cannot be
+    // serialized. After deserialization these are null - DownloadService must re-prepare to
+    // recapture them from the live plugin source (see needsReprepareForAuth).
+    @kotlinx.serialization.Transient
+    private var preparedVideoRequestModifier: IRequestModifier? = null;
+    @kotlinx.serialization.Transient
+    private var preparedAudioRequestModifier: IRequestModifier? = null;
+
+    val needsReprepareForAuth: Boolean get() =
+        (hasVideoRequestModifier && preparedVideoRequestModifier == null && videoSourceLive == null) ||
+        (hasAudioRequestModifier && preparedAudioRequestModifier == null && audioSourceLive == null);
+
     var progress: Double = 0.0;
     var isCancelled = false;
 
@@ -207,7 +219,7 @@ class VideoDownload {
         this.requireAudioSource = targetBitrate != null; //TODO: May not be a valid check.. can only be determined after live fetch?
         this.requiredCheck = optionalSources;
     }
-    constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?) {
+    constructor(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: SubtitleRawSource?, videoModifier: IRequestModifier? = null, audioModifier: IRequestModifier? = null) {
         this.video = SerializedPlatformVideo.fromVideo(video);
         this.videoDetails = SerializedPlatformVideoDetails.fromVideo(video, if (subtitleSource != null) listOf(subtitleSource) else listOf());
         this.videoSource = if(videoSource is IVideoUrlSource) VideoUrlSource.fromUrlSource(videoSource) else null;
@@ -216,12 +228,22 @@ class VideoDownload {
         this.audioSourceLive = if(audioSource is JSSource) audioSource else null;
         this.subtitleSource = subtitleSource;
         this.prepareTime = OffsetDateTime.now();
+        this.preparedVideoRequestModifier = videoModifier ?: (if (videoSource is JSSource && videoSource.hasRequestModifier) videoSource.getRequestModifier() else null);
+        this.preparedAudioRequestModifier = audioModifier ?: (if (audioSource is JSSource && audioSource.hasRequestModifier) audioSource.getRequestModifier() else null);
         this.hasVideoRequestExecutor = videoSource is JSSource && videoSource.hasRequestExecutor;
         this.hasAudioRequestExecutor = audioSource is JSSource && audioSource.hasRequestExecutor;
-        this.hasVideoRequestModifier = videoSource is JSSource && videoSource.hasRequestModifier;
-        this.hasAudioRequestModifier = audioSource is JSSource && audioSource.hasRequestModifier;
-        this.requiresLiveVideoSource = this.hasVideoRequestModifier || this.hasVideoRequestExecutor || (videoSource is JSDashManifestRawSource && videoSource.hasGenerate);
-        this.requiresLiveAudioSource = this.hasAudioRequestModifier || this.hasAudioRequestExecutor || (audioSource is JSDashManifestRawAudioSource && audioSource.hasGenerate);
+        // Set modifier flags from either the source or an explicitly provided modifier
+        // (e.g. from the HLS picker, where the source is an HLSVariant, not JSSource).
+        // These flags are serialized and used by needsReprepareForAuth after restore.
+        this.hasVideoRequestModifier = preparedVideoRequestModifier != null;
+        this.hasAudioRequestModifier = preparedAudioRequestModifier != null;
+        // requiresLiveVideoSource means a live JSSource is needed at download time (for executors
+        // or DASH generation). Modifiers alone don't require a live source - they're already
+        // captured in preparedVideoRequestModifier and recaptured via needsReprepareForAuth.
+        val sourceHasVideoModifier = videoSource is JSSource && videoSource.hasRequestModifier;
+        val sourceHasAudioModifier = audioSource is JSSource && audioSource.hasRequestModifier;
+        this.requiresLiveVideoSource = sourceHasVideoModifier || this.hasVideoRequestExecutor || (videoSource is JSDashManifestRawSource && videoSource.hasGenerate);
+        this.requiresLiveAudioSource = sourceHasAudioModifier || this.hasAudioRequestExecutor || (audioSource is JSDashManifestRawAudioSource && audioSource.hasGenerate);
         this.targetVideoName = videoSource?.name;
         this.targetAudioName = audioSource?.name;
         this.targetPixelCount = if(videoSource != null) (videoSource.width * videoSource.height).toLong() else null;
@@ -317,8 +339,10 @@ class VideoDownload {
                 val videoSources = arrayListOf<IVideoSource>()
                 for (source in original.video.videoSources) {
                     if (source is IHLSManifestSource) {
+                        val sourceModifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
+                        if (sourceModifier != null) preparedVideoRequestModifier = sourceModifier
                         try {
-                            val playlistResponse = client.get(source.url)
+                            val playlistResponse = client.get(source.url, HashMap(), sourceModifier)
                             if (playlistResponse.isOk) {
                                 val resolvedPlaylistUrl = playlistResponse.url
                                 val playlistContent = playlistResponse.body?.string()
@@ -345,6 +369,8 @@ class VideoDownload {
                 if(vsource is JSSource) {
                     this.hasVideoRequestExecutor = this.hasVideoRequestExecutor || vsource.hasRequestExecutor;
                     this.requiresLiveVideoSource = this.hasVideoRequestExecutor || (vsource is JSDashManifestRawSource && vsource.hasGenerate);
+                    if (vsource.hasRequestModifier && preparedVideoRequestModifier == null)
+                        preparedVideoRequestModifier = vsource.getRequestModifier()
                 }
 
                 if(vsource == null) {
@@ -366,8 +392,10 @@ class VideoDownload {
                 if (video is VideoUnMuxedSourceDescriptor) {
                     for (source in video.audioSources) {
                         if (source is IHLSManifestAudioSource) {
+                            val sourceModifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
+                            if (sourceModifier != null) preparedAudioRequestModifier = sourceModifier
                             try {
-                                val playlistResponse = client.get(source.url)
+                                val playlistResponse = client.get(source.url, HashMap(), sourceModifier)
                                 if (playlistResponse.isOk) {
                                     val resolvedPlaylistUrl = playlistResponse.url
                                     val playlistContent = playlistResponse.body?.string()
@@ -402,6 +430,8 @@ class VideoDownload {
                 if(asource is JSSource) {
                     this.hasAudioRequestExecutor = this.hasAudioRequestExecutor || asource.hasRequestExecutor;
                     this.requiresLiveAudioSource = this.hasAudioRequestExecutor || (asource is JSDashManifestRawSource && asource.hasGenerate);
+                    if (asource.hasRequestModifier && preparedAudioRequestModifier == null)
+                        preparedAudioRequestModifier = asource.getRequestModifier()
                 }
 
                 if(asource == null) {
@@ -498,10 +528,16 @@ class VideoDownload {
                     }
                 }
 
+                val videoModifier = preparedVideoRequestModifier
                 if(actualVideoSource is IVideoUrlSource)
                     videoFileSize = when (videoSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
-                        else -> downloadFileSource("Video", client, if (actualVideoSource is JSSource) actualVideoSource else null, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> {
+                            // HLS segments are concatenated into an MP4 file during download,
+                            // so override the container for local playback/casting
+                            videoOverrideContainer = "video/mp4";
+                            downloadHlsSource(context, "Video", client, videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
+                        }
+                        else -> downloadFileSource("Video", client, videoModifier, videoSource!!.getVideoUrl(), File(downloadDir, videoFileName!!), progressCallback)
                     }
                 else if(actualVideoSource is JSDashManifestRawSource) {
                     if(actualAudioSource == null)
@@ -542,10 +578,16 @@ class VideoDownload {
                     }
                 }
 
+                val audioModifier = preparedAudioRequestModifier
                 if(actualAudioSource is IAudioUrlSource)
                     audioFileSize = when (audioSource!!.container) {
-                        "application/vnd.apple.mpegurl" -> downloadHlsSource(context, "Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
-                        else -> downloadFileSource("Audio", client, if (actualAudioSource is JSSource) actualAudioSource else null, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        "application/vnd.apple.mpegurl" -> {
+                            // HLS segments are concatenated into an MP4 file during download,
+                            // so override the container for local playback/casting
+                            audioOverrideContainer = "audio/mp4";
+                            downloadHlsSource(context, "Audio", client, audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
+                        }
+                        else -> downloadFileSource("Audio", client, audioModifier, audioSource!!.getAudioUrl(), File(downloadDir, audioFileName!!), progressCallback)
                     }
                 else if(actualAudioSource is JSDashManifestRawAudioSource) {
                     audioFileSize = downloadDashFileSource("Audio", client, actualAudioSource, File(downloadDir, audioFileName!!), progressCallback, 2);
@@ -659,15 +701,11 @@ class VideoDownload {
         }
     }
 
-    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, source: JSSource?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private suspend fun downloadHlsSource(context: Context, name: String, client: ManagedHttpClient, modifier: IRequestModifier?, hlsUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if (targetFile.exists())
             targetFile.delete()
 
         var downloadedTotalLength = 0L
-        val modifier = if (source is JSSource && source.hasRequestModifier)
-            source.getRequestModifier()
-        else
-            null
 
         fun downloadBytes(url: String, rangeStart: Long? = null, rangeLength: Long? = null): ByteArray {
             val headers = mutableMapOf<String, String>()
@@ -681,17 +719,13 @@ class VideoDownload {
                 }
             }
 
-            val modified = modifier?.modifyRequest(url, headers)
-            val finalUrl = modified?.url ?: url
-            val finalHeaders = modified?.headers?.toMutableMap() ?: headers
-
-            val resp = client.get(finalUrl, finalHeaders)
+            val resp = client.get(url, headers, modifier)
             if (!resp.isOk) {
                 resp.body?.close()
-                throw IllegalStateException("Failed to download HLS resource ($finalUrl): HTTP ${resp.code}")
+                throw IllegalStateException("Failed to download HLS resource ($url): HTTP ${resp.code}")
             }
 
-            val body = resp.body ?: throw IllegalStateException("Failed to download HLS resource ($finalUrl): Empty body")
+            val body = resp.body ?: throw IllegalStateException("Failed to download HLS resource ($url): Empty body")
             val bytes = body.bytes()
             body.close()
             return bytes
@@ -706,12 +740,7 @@ class VideoDownload {
 
         val segmentFiles = arrayListOf<File>()
         try {
-            val playlistHeaders = mutableMapOf<String, String>()
-            val modifiedPlaylistReq = modifier?.modifyRequest(hlsUrl, playlistHeaders)
-            val playlistResp = client.get(
-                modifiedPlaylistReq?.url ?: hlsUrl,
-                modifiedPlaylistReq?.headers?.toMutableMap() ?: playlistHeaders
-            )
+            val playlistResp = client.get(hlsUrl, mutableMapOf(), modifier)
 
             check(playlistResp.isOk) { "Failed to get variant playlist: ${playlistResp.code}" }
 
@@ -960,16 +989,7 @@ class VideoDownload {
 
                 Logger.i(TAG, "Downloading cue ${indexCounter}")
                 val url = foundTemplateUrl.replace("\$Number\$", (indexCounter).toString());
-                val modified = modifier?.modifyRequest(url, mapOf());
-
-                val data = if(executor != null)
-                    executor.executeRequest("GET", modified?.url ?: url, null, modified?.headers ?: mapOf());
-                else {
-                    val resp = client.get(modified?.url ?: url, modified?.headers?.toMutableMap() ?: mutableMapOf());
-                    if(!resp.isOk)
-                        throw IllegalStateException("Dash request failed for index " + indexCounter.toString() + ", with code: " + resp.code.toString());
-                    resp.body!!.bytes()
-                }
+                val data = executeOrGet(client, executor, modifier, url)
                 fileStream.write(data, 0, data.size);
                 speedTracker.addWork(data.size.toLong());
                 written += data.size;
@@ -989,16 +1009,7 @@ class VideoDownload {
                         val t2 = cue2.groupValues[1];
                         val d2 = cue2.groupValues[2];
                         val url2 = foundTemplateUrl2!!.replace("\$Number\$", (index2).toString());
-                        val modified2 = modifier?.modifyRequest(url, mapOf());
-
-                        val data = if(executor != null)
-                            executor.executeRequest("GET", modified2?.url ?: url2, null, modified2?.headers ?: mapOf());
-                        else {
-                            val resp = client.get(modified2?.url ?: url, modified2?.headers?.toMutableMap() ?: mutableMapOf());
-                            if(!resp.isOk)
-                                throw IllegalStateException("Dash request2 failed for index " + indexCounter.toString() + ", with code: " + resp.code.toString());
-                            resp.body!!.bytes()
-                        }
+                        val data = executeOrGet(client, executor, modifier, url2)
                         fileStream2.write(data, 0, data.size);
                         speedTracker.addWork(data.size.toLong());
                         written2 += data.size;
@@ -1067,7 +1078,7 @@ class VideoDownload {
         }
     }
 
-    private fun downloadFileSource(name: String, client: ManagedHttpClient, source: JSSource?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
+    private fun downloadFileSource(name: String, client: ManagedHttpClient, modifier: IRequestModifier?, videoUrl: String, targetFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
         if(targetFile.exists())
             targetFile.delete();
 
@@ -1076,13 +1087,8 @@ class VideoDownload {
         val sourceLength: Long?;
         val fileStream = FileOutputStream(targetFile);
 
-        val modifier = if (source is JSSource && source.hasRequestModifier)
-            source.getRequestModifier();
-        else
-            null;
-
         try {
-            val head = client.tryHead(videoUrl);
+            val head = client.tryHead(videoUrl, modifier);
             val relatedPlugin = (video?.url ?: videoDetails?.url)?.let { StatePlatform.instance.getContentClient(it) }?.let { if(it is JSClient) it else null };
             if(Settings.instance.downloads.byteRangeDownload && head?.containsKey("accept-ranges") == true && head.containsKey("content-length"))
             {
@@ -1157,12 +1163,7 @@ class VideoDownload {
 
         var lastSpeed: Long = 0;
 
-        val result = if (modifier != null) {
-            val modified = modifier.modifyRequest(url, mapOf())
-            client.get(modified.url!!, modified.headers.toMutableMap())
-        } else {
-            client.get(url)
-        }
+        val result = client.get(url, HashMap(), modifier)
         if (!result.isOk) {
             result.body?.close()
             throw IllegalStateException("Failed to download source. Web[${result.code}] Error");
@@ -1375,13 +1376,12 @@ class VideoDownload {
         var lastException: Throwable? = null;
 
         val headers = mutableMapOf(Pair("Range", "bytes=${rangeStart}-${rangeEnd}"));
-        val modified = modifier?.modifyRequest(url, headers);
 
         while (retryCount <= 3) {
             try {
                 val toRead = rangeEnd - rangeStart;
 
-                val req = client.get(modified?.url ?: url, modified?.headers?.toMutableMap() ?: headers);
+                val req = client.get(url, headers.toMutableMap(), modifier);
                 if (!req.isOk) {
                     val bodyString = req.body?.string()
                     req.body?.close()
@@ -1509,6 +1509,18 @@ class VideoDownload {
             if(lowercase.length == 0)
                 return lowercase;
             return lowercase[0].uppercase() + lowercase.substring(1);
+        }
+    }
+
+    private fun executeOrGet(client: ManagedHttpClient, executor: JSRequestExecutor?, modifier: IRequestModifier?, url: String, headers: Map<String, String> = mapOf()): ByteArray {
+        if (executor != null) {
+            val modified = modifier?.modifyRequest(url, headers)
+            return executor.executeRequest("GET", modified?.url ?: url, null, modified?.headers ?: headers)
+        } else {
+            val resp = client.get(url, headers.toMutableMap(), modifier)
+            if (!resp.isOk)
+                throw IllegalStateException("Request failed for ($url) with code: ${resp.code}")
+            return resp.body!!.bytes()
         }
     }
 
