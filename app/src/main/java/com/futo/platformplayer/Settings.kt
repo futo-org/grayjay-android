@@ -641,6 +641,14 @@ class Settings : FragmentedStorageFileJson() {
         var recommendationsDefault: Boolean = false;
 
         @AdvancedField
+        @FormField(R.string.hide_polycentric_comments, FieldForm.TOGGLE, R.string.hide_polycentric_comments_description, 0)
+        var hidePolycentricComments: Boolean = false;
+
+        @AdvancedField
+        @FormField(R.string.hide_platform_comments, FieldForm.TOGGLE, R.string.hide_platform_comments_description, 0)
+        var hidePlatformComments: Boolean = false;
+
+        @AdvancedField
         @FormField(R.string.hide_recommendations, FieldForm.TOGGLE, R.string.hide_recommendations_description, 0)
         var hideRecommendations: Boolean = false;
 
@@ -1064,6 +1072,18 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.watch_later_add_start, FieldForm.TOGGLE, R.string.watch_later_add_start_description, 4)
         var watchLaterAddStart: Boolean = true;
+
+        @AdvancedField
+        @FormField(R.string.hide_polycentric_likes, FieldForm.TOGGLE, R.string.hide_polycentric_likes_description, 0)
+        var hidePolycentricLikes: Boolean = false;
+
+        @AdvancedField
+        @FormField(R.string.hide_platform_likes, FieldForm.TOGGLE, R.string.hide_platform_likes_description, 0)
+        var hidePlatformLikes: Boolean = false;
+
+        @AdvancedField
+        @FormField(R.string.hide_live_chat, FieldForm.TOGGLE, R.string.hide_live_chat_description, 0)
+        var hideLiveChat: Boolean = false;
 
         @FormField(R.string.enable_polycentric, FieldForm.TOGGLE, R.string.can_be_disabled_when_you_are_experiencing_issues, 5)
         var polycentricEnabled: Boolean = true;

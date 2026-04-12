@@ -497,6 +497,12 @@
     <string name="playlist_allow_dups_description">Allow adding duplicate videos to playlists</string>
     <string name="watch_later_add_start">Add new videos to the beginning of Watch Later</string>
     <string name="watch_later_add_start_description">When adding videos to Watch Later add them to the beginning of the list instead of the end</string>
+    <string name="hide_polycentric_likes">Hide Polycentric likes</string>
+    <string name="hide_polycentric_likes_description">Fully hide Polycentric rating</string>
+    <string name="hide_platform_likes">Hide platform likes</string>
+    <string name="hide_platform_likes_description">Fully hide platform rating</string>
+    <string name="hide_live_chat">Hide live chat</string>
+    <string name="hide_live_chat_description">Fully hide the live chat button and popup</string>
     <string name="already_in_watch_later">Already in watch later</string>
     <string name="enable_polycentric">Enable Polycentric</string>
     <string name="polycentric_local_cache">Enable Polycentric Local Caching</string>
@@ -519,6 +525,10 @@
     <string name="prefer_original_audio">Prefer Original Audio</string>
     <string name="prefer_original_audio_description">Use original audio instead of preferred language when it is known</string>
     <string name="default_comment_section">Default Comment Section</string>
+    <string name="hide_polycentric_comments">Hide Polycentric Comments</string>
+    <string name="hide_polycentric_comments_description">Fully hide the Polycentric comments tab.</string>
+    <string name="hide_platform_comments">Hide Platform Comments</string>
+    <string name="hide_platform_comments_description">Fully hide the platform comments tab.</string>
     <string name="hide_recommendations">Hide Recommendations</string>
     <string name="hide_recommendations_description">Fully hide the recommendations tab.</string>
     <string name="default_recommendations">Recommendations as Default</string>
