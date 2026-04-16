@@ -41,7 +41,7 @@ class CastButton : androidx.appcompat.widget.AppCompatImageButton {
             when (d.connectionState) {
                 CastConnectionState.CONNECTED -> setColorFilter(activeColor)
                 CastConnectionState.CONNECTING -> setColorFilter(connectingColor)
-                CastConnectionState.DISCONNECTED -> setColorFilter(activeColor)
+                CastConnectionState.DISCONNECTED -> setColorFilter(inactiveColor)
             }
         } else {
             setColorFilter(inactiveColor);
