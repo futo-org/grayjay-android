@@ -176,6 +176,10 @@ class LibraryArtistFragment : MainFragment() {
                     is IPlatformPost -> {
                         fragment.navigate<PostDetailFragment>(v)
                     }
+
+                    is IPlatformArticle -> {
+                        fragment.navigate<ArticleDetailFragment>(v)
+                    }
                 }
             }
             adapter.onShortClicked.subscribe { v, _, pagerPair ->
