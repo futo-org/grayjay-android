@@ -33,7 +33,6 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.ui.text.toLowerCase
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -43,7 +42,6 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.TimeBar
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.BuildConfig
@@ -57,7 +55,6 @@ import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.chapters.ChapterType
 import com.futo.platformplayer.api.media.models.chapters.IChapter
@@ -180,7 +177,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import userpackage.Protocol
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -560,7 +556,6 @@ class VideoDetailView : ConstraintLayout {
             _loaderGameVisible = b
             fragment.lifecycleScope.launch(Dispatchers.Main) {
                 onShouldEnterPictureInPictureChanged.emit()
-                updateResumeVisibilityFor(lastPositionMilliseconds)
             }
         }
         _player.loaderGameVisibilityChanged.subscribe(handleLoaderGameVisibilityChanged)
@@ -1848,7 +1843,6 @@ class VideoDetailView : ConstraintLayout {
                         TAG,
                         "Historical position: $_historicalPosition, last position: $lastPositionMilliseconds"
                     );
-                    updateResumeVisibilityFor(lastPositionMilliseconds)
                 }
             }
         }
@@ -1899,12 +1893,10 @@ class VideoDetailView : ConstraintLayout {
     }
 
     private fun shouldShowResume(positionMs: Long): Boolean {
-        if (_loaderGameVisible) return false
         val v = video ?: return false
         val resumeS = _historicalPosition
         val durS = v.duration
 
-        if (_overlay_loading.visibility == View.VISIBLE) return false
         if (resumeS <= 60) return false
         if (durS - resumeS <= 5) return false
 
@@ -1920,12 +1912,17 @@ class VideoDetailView : ConstraintLayout {
         val visible = shouldShowResume(positionMs)
         if (visible) {
             _layoutResume.visibility = View.VISIBLE
-            _textResume.text = "Resume at ${_historicalPosition.toHumanTime(false)}"
+            _textResume.text = context.getString(R.string.resume_at, _historicalPosition.toHumanTime(false))
         } else {
             _layoutResume.visibility = View.GONE
             _textResume.text = ""
         }
     }
+
+    fun updateResumeClickability(isClickable: Boolean) {
+        _layoutResume.isClickable = isClickable;
+    }
+
     fun loadVODChat(video: IPlatformVideoDetails) {
         _liveChat?.stop();
         _container_content_liveChat.cancel();
@@ -2213,6 +2210,8 @@ class VideoDetailView : ConstraintLayout {
         _layoutPlayerContainer.post {
             onShouldEnterPictureInPictureChanged.emit()
         }
+
+        updateResumeVisibilityFor(lastPositionMilliseconds);
     }
 
     private var _didTriggerDatasourceErrorCount = 0;
@@ -2843,6 +2842,7 @@ class VideoDetailView : ConstraintLayout {
     private fun fetchVideo() {
         Logger.i(TAG, "fetchVideo")
         video = null;
+        _layoutResume.visibility = View.GONE;
         cleanupPlaybackTracker();
 
         val url = _url;
@@ -2958,8 +2958,6 @@ class VideoDetailView : ConstraintLayout {
             _overlay_loading.visibility = View.GONE;
             (_overlay_loading_spinner.drawable as Animatable?)?.stop()
         }
-
-        updateResumeVisibilityFor(lastPositionMilliseconds)
     }
 
     //UI Actions
@@ -3252,7 +3250,11 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        updateResumeVisibilityFor(positionMilliseconds)
+        // Hide resume only if visible to avoid overriding manual states (PiP/minimized)
+        // and to prevent infinite update loops.
+        if (_layoutResume.visibility == View.VISIBLE) {
+            updateResumeVisibilityFor(positionMilliseconds);
+        }
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {
