@@ -1036,7 +1036,7 @@ class VideoDetailView : ConstraintLayout {
                   }
               else null
             },
-            if(video?.isLive ?: false)
+            if(!Settings.instance.other.hideChat && video?.isLive ?: false)
                 RoundButton(context, R.drawable.ic_chat, context.getString(R.string.live_chat), TAG_LIVECHAT) {
                     video?.let {
                         try {
@@ -1047,7 +1047,7 @@ class VideoDetailView : ConstraintLayout {
                         }
                     }
                     _slideUpOverlay?.hide();
-                } else if(video is JSVideoDetails && (video as JSVideoDetails).hasVODEvents())
+                } else if(!Settings.instance.other.hideChat && video is JSVideoDetails && (video as JSVideoDetails).hasVODEvents())
                 RoundButton(context, R.drawable.ic_chat, context.getString(R.string.vod_chat), TAG_VODCHAT) {
                     video?.let {
                         try {
@@ -1645,10 +1645,29 @@ class VideoDetailView : ConstraintLayout {
             if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
                 setTabIndex(2, true)
             } else {
-                when (Settings.instance.comments.defaultCommentSection) {
-                    0 -> if (Settings.instance.other.polycentricEnabled) setTabIndex(0, true) else setTabIndex(1, true)
-                    1 -> setTabIndex(1, true)
-                    2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
+                val index = when (Settings.instance.comments.defaultCommentSection) {
+                    2 -> StateMeta.instance.getLastCommentSection()
+                    else -> Settings.instance.comments.defaultCommentSection
+                }
+                when (index) {
+                    0 -> {
+                        if (Settings.instance.other.polycentricEnabled && !Settings.instance.comments.hidePolycentricComments) {
+                            setTabIndex(0, true)
+                        } else {
+                            if (Settings.instance.comments.hidePlatformComments) {
+                                setTabIndex(null, true)
+                            } else {
+                                setTabIndex(1, true)
+                            }
+                        }
+                    }
+                    1 -> {
+                        if (Settings.instance.comments.hidePlatformComments) {
+                            setTabIndex(null, true)
+                        } else {
+                            setTabIndex(1, true)
+                        }
+                    }
                 }
             }
         }
@@ -1714,7 +1733,7 @@ class VideoDetailView : ConstraintLayout {
 
         _rating.visibility = View.GONE;
 
-        if (StatePolycentric.instance.enabled && !(video is LocalVideoDetails)) {
+        if (StatePolycentric.instance.enabled && !(video is LocalVideoDetails) && !Settings.instance.other.hidePolycentricLikes) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val queryReferencesResponse = ApiMethods.getQueryReferences(
@@ -1781,34 +1800,40 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        when (video.rating) {
-            is RatingLikeDislikes -> {
-                val r = video.rating as RatingLikeDislikes;
-                _layoutRating.visibility = View.VISIBLE;
+        if (Settings.instance.other.hidePlatformLikes) {
+            _layoutRating.visibility = View.GONE;
+            _imageLikeIcon.visibility = View.GONE;
+            _imageDislikeIcon.visibility = View.GONE;
+        } else {
+            when (video.rating) {
+                is RatingLikeDislikes -> {
+                    val r = video.rating as RatingLikeDislikes;
+                    _layoutRating.visibility = View.VISIBLE;
 
-                _textLikes.visibility = View.VISIBLE;
-                _imageLikeIcon.visibility = View.VISIBLE;
-                _textLikes.text = r.likes.toHumanNumber();
+                    _textLikes.visibility = View.VISIBLE;
+                    _imageLikeIcon.visibility = View.VISIBLE;
+                    _textLikes.text = r.likes.toHumanNumber();
 
-                _imageDislikeIcon.visibility = View.VISIBLE;
-                _textDislikes.visibility = View.VISIBLE;
-                _textDislikes.text = r.dislikes.toHumanNumber();
-            }
+                    _imageDislikeIcon.visibility = View.VISIBLE;
+                    _textDislikes.visibility = View.VISIBLE;
+                    _textDislikes.text = r.dislikes.toHumanNumber();
+                }
 
-            is RatingLikes -> {
-                val r = video.rating as RatingLikes;
-                _layoutRating.visibility = View.VISIBLE;
+                is RatingLikes -> {
+                    val r = video.rating as RatingLikes;
+                    _layoutRating.visibility = View.VISIBLE;
 
-                _textLikes.visibility = View.VISIBLE;
-                _imageLikeIcon.visibility = View.VISIBLE;
-                _textLikes.text = r.likes.toHumanNumber();
+                    _textLikes.visibility = View.VISIBLE;
+                    _imageLikeIcon.visibility = View.VISIBLE;
+                    _textLikes.text = r.likes.toHumanNumber();
 
-                _imageDislikeIcon.visibility = View.GONE;
-                _textDislikes.visibility = View.GONE;
-            }
+                    _imageDislikeIcon.visibility = View.GONE;
+                    _textDislikes.visibility = View.GONE;
+                }
 
-            else -> {
-                _layoutRating.visibility = View.GONE;
+                else -> {
+                    _layoutRating.visibility = View.GONE;
+                }
             }
         }
 
@@ -1860,17 +1885,19 @@ class VideoDetailView : ConstraintLayout {
         _liveChat?.stop();
         _liveChat = null;
         var gotLive = false;
-        if (video.isLive && video.live != null) {
-            loadLiveChat(video);
-            gotLive = true;
-        }
-        if (video.isLive && video.live == null && !video.video.videoSources.any()) {
-            startLiveTry(video);
-            gotLive = true;
-        }
-        if(!gotLive && video is JSVideoDetails && video.hasVODEvents()) {
-            Logger.i(TAG, "Loading VOD chat");
-            loadVODChat(video);
+        if (!Settings.instance.other.hideChat) {
+            if (video.isLive && video.live != null) {
+                loadLiveChat(video);
+                gotLive = true;
+            }
+            if (video.isLive && video.live == null && !video.video.videoSources.any()) {
+                startLiveTry(video);
+                gotLive = true;
+            }
+            if (!gotLive && video is JSVideoDetails && video.hasVODEvents()) {
+                Logger.i(TAG, "Loading VOD chat");
+                loadVODChat(video);
+            }
         }
 
         _player.updateNextPrevious();
@@ -1887,8 +1914,6 @@ class VideoDetailView : ConstraintLayout {
             _buttonSubscribe.visibility = View.VISIBLE
             _buttonMore.visibility = View.VISIBLE
             _buttonPins.visibility = View.VISIBLE
-            _layoutRating.visibility = View.VISIBLE
-            _rating.visibility = View.VISIBLE;
             _layoutChangeBottomSection.visibility = View.VISIBLE
         }
 
@@ -3042,6 +3067,12 @@ class VideoDetailView : ConstraintLayout {
         if (!changed) {
             return
         }
+
+        val polycentricCommentsHidden = Settings.instance.comments.hidePolycentricComments || !Settings.instance.other.polycentricEnabled
+        _buttonPolycentric.visibility = if (polycentricCommentsHidden) View.GONE else View.VISIBLE
+
+        val platformCommentsHidden = Settings.instance.comments.hidePlatformComments
+        _buttonPlatform.visibility = if (platformCommentsHidden) View.GONE else View.VISIBLE
 
         val recommendationsHidden = Settings.instance.comments.hideRecommendations
         _buttonRecommended.visibility = if (recommendationsHidden) View.GONE else View.VISIBLE
