@@ -28,6 +28,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
+import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist

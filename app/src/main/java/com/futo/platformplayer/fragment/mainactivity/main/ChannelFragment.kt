@@ -27,6 +27,7 @@ import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
+import com.futo.platformplayer.api.media.models.article.IPlatformArticle
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.ContentType
