@@ -28,6 +28,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.net.InetAddress
@@ -41,22 +42,16 @@ class DownloadService : Service() {
     private val TAG = "DownloadService";
 
     private val DOWNLOAD_NOTIF_ID = 3;
-    private val DOWNLOAD_NOTIF_TAG = "download";
     private val DOWNLOAD_NOTIF_CHANNEL_ID = "downloadChannel";
     private val DOWNLOAD_NOTIF_CHANNEL_NAME = "Downloads";
 
     //Context
-    private val _scope: CoroutineScope = CoroutineScope(Dispatchers.Default);
+    private val _scope: CoroutineScope = CoroutineScope(Dispatchers.IO);
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
     private var _isForeground = false
 
-    private val _client = ManagedHttpClient(OkHttpClient.Builder()
-        //.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(InetAddress.getByName("192.168.1.175"), 8081)))
-        .readTimeout(Duration.ofMinutes(0))
-        .writeTimeout(Duration.ofMinutes(0))
-        .connectTimeout(Duration.ofSeconds(100))
-        .callTimeout(Duration.ofMinutes(0)))
+    private lateinit var _client: ManagedHttpClient
 
     private var _started = false;
 
@@ -76,11 +71,23 @@ class DownloadService : Service() {
         setupNotificationRequirements();
         notifyDownload(null);
 
+        if (StateDownloads.instance.getDownloading().isEmpty()) {
+            Logger.i(TAG, "No downloads queued, stopping service")
+            closeDownloadSession()
+            return START_NOT_STICKY
+        }
+
         _callOnStarted?.invoke(this);
         _instance = this;
 
         _scope.launch {
             try {
+                _client = ManagedHttpClient(OkHttpClient.Builder()
+                    //.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(InetAddress.getByName("192.168.1.175"), 8081)))
+                    .readTimeout(Duration.ofMinutes(0))
+                    .writeTimeout(Duration.ofMinutes(0))
+                    .connectTimeout(Duration.ofSeconds(100))
+                    .callTimeout(Duration.ofMinutes(0)))
                 doDownloading();
             }
             catch(ex: Throwable) {
@@ -167,7 +174,7 @@ class DownloadService : Service() {
                 ignore.add(currentVideo);
 
                 //Give it a sec
-                Thread.sleep(500);
+                delay(500);
             }
             catch(ex: Throwable) {
                 //if(ex is ScriptReloadRequiredException)
@@ -200,7 +207,7 @@ class DownloadService : Service() {
                 }
 
                 //Give it a sec
-                Thread.sleep(500);
+                delay(500);
             }
             StateDownloads.instance.updateDownloading(currentVideo);
 
@@ -338,6 +345,8 @@ class DownloadService : Service() {
         fun getOrCreateService(context: Context, handle: ((DownloadService)->Unit)? = null) {
             if(!FragmentedStorage.isInitialized)
                 return;
+            if(StateDownloads.instance.getDownloading().isEmpty())
+                return
             if(_instance == null) {
                 _callOnStarted = handle;
                 val intent = Intent(context, DownloadService::class.java);
