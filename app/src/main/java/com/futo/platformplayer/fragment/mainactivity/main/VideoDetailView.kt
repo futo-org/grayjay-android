@@ -905,6 +905,7 @@ class VideoDetailView : ConstraintLayout {
             cleanupPlaybackTracker();
             Logger.i(TAG, "Keep screen on unset onClose")
             fragment.activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            clearChapters()
         };
 
         StatePlayer.instance.autoplayChanged.subscribe(this) {
@@ -997,6 +998,12 @@ class VideoDetailView : ConstraintLayout {
     fun stopAllGestures() {
         _player.stopAllGestures();
         _cast.stopAllGestures();
+    }
+
+    private fun clearChapters() {
+        _chapters = null
+        _player.setChapters(null)
+        _cast.setChapters(null)
     }
 
     fun showChaptersUI(){
@@ -1330,6 +1337,7 @@ class VideoDetailView : ConstraintLayout {
         _lastVideoSource = null;
         _lastAudioSource = null;
         _lastSubtitleSource = null;
+        clearChapters()
     }
     fun setVideo(url: String, resumeSeconds: Long = 0, playWhenReady: Boolean = true) {
         Logger.i(TAG, "setVideo url=$url resumeSeconds=$resumeSeconds playWhenReady=$playWhenReady")
@@ -1340,6 +1348,7 @@ class VideoDetailView : ConstraintLayout {
         _searchVideo = null;
         video = null;
         cleanupPlaybackTracker();
+        clearChapters()
         _url = url;
         _videoResumePositionMilliseconds = resumeSeconds * 1000;
         _rating.visibility = View.GONE;
@@ -1550,6 +1559,7 @@ class VideoDetailView : ConstraintLayout {
         }
 
         val me = this;
+        clearChapters()
         if (video is JSVideoDetails) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
