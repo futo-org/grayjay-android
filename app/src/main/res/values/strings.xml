@@ -1053,6 +1053,8 @@
         <item>Release Date (Newest)</item>
         <item>Size (Smallest)</item>
         <item>Size (Largest)</item>
+        <item>Type (Audio Only)</item>
+        <item>Type (Video)</item>
     </string-array>
     <string-array name="playlists_sortby_array">
         <item>Name (Ascending)</item>
