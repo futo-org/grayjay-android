@@ -635,7 +635,6 @@
     <string name="autoplay">Nächstes Video standardmäßig automatisch abspielen</string>
     <string name="autoplay_description">Die automatische Wiedergabe des nächsten Videos ist standardmäßig aktiviert, wenn Sie ein Video ansehen</string>
     <string name="background_switch_audio">Im Hintergrund zu Audio wechseln</string>
-    <string name="background_switch_audio_description">Optimieren Sie die Bandbreitennutzung, indem Sie im Hintergrund zu einem reinen Audio-Stream wechseln, falls verfügbar. Kann Ruckeln verursachen</string>
     <string name="bad_reputation_comments_fading">Ausblenden von Kommentaren mit schlechtem Ruf</string>
     <string name="bad_reputation_comments_fading_description">Ob Kommentare mit sehr schlechtem Ruf ausgeblendet werden sollen. Das Deaktivieren kann die Benutzererfahrung verschlechtern.</string>
     <string name="brightness_slider">Helligkeitsregler</string>
@@ -955,13 +954,17 @@
         <item>Neuste</item>
         <item>Älteste</item>
     </string-array>
-<string-array name="downloads_sortby_array">
+    <string-array name="downloads_sortby_array">
         <item>Name (Aufsteigend)</item>
         <item>Name (Absteigend)</item>
-        <item>Downloaddatum (Älteste)</item>
-        <item>Downloaddatum (Neueste)</item>
-        <item>Veröffentlichungsdatum (Älteste)</item>
-        <item>Veröffentlichungsdatum (Neueste)</item>
+        <item>Download-Datum (Älteste zuerst)</item>
+        <item>Download-Datum (Neueste zuerst)</item>
+        <item>Veröffentlichungsdatum (Älteste zuerst)</item>
+        <item>Veröffentlichungsdatum (Neueste zuerst)</item>
+        <item>Größe (Kleinste zuerst)</item>
+        <item>Größe (Größte zuerst)</item>
+        <item>Typ (Nur Audio)</item>
+        <item>Typ (Video)</item>
     </string-array>
     <string-array name="playlists_sortby_array">
         <item>Name (Aufsteigend)</item>
@@ -974,7 +977,7 @@
         <item>Wiedergabedatum (Neueste)</item>
     </string-array>
     <string-array name="app_languages">
-        <item>System</item>
+        <item>Systemsprache</item>
         <item>Englisch (EN)</item>
         <item>Deutsch (DE)</item>
         <item>Spanisch (ES)</item>
@@ -985,6 +988,8 @@
         <item>Chinesisch (ZH)</item>
         <item>Russisch (RU)</item>
         <item>Arabisch (AR)</item>
+        <item>Italienisch (IT)</item>
+        <item>Türkisch (TR)</item>
     </string-array>
     <string-array name="chapter_fps">
         <item>24</item>
@@ -995,23 +1000,6 @@
     <string-array name="comment_sections">
         <item>Polycentric</item> <item>Plattform</item>
         <item>Zuletzt ausgewählt</item>
-    </string-array>
-    <string-array name="audio_languages">
-        <item>Englisch</item>
-        <item>Spanisch</item>
-        <item>Deutsch</item>
-        <item>Französisch</item>
-        <item>Japanisch</item>
-        <item>Koreanisch</item>
-        <item>Thailändisch</item>
-        <item>Vietnamesisch</item>
-        <item>Indonesisch</item>
-        <item>Hindi</item>
-        <item>Arabisch</item>
-        <item>Türkisch</item>
-        <item>Russisch</item>
-        <item>Portugiesisch</item>
-        <item>Chinesisch</item>
     </string-array>
     <string-array name="restart_playback_after_loss">
         <item>Nie</item>
@@ -1032,19 +1020,22 @@
         <item>1500</item>
         <item>2000</item>
     </string-array>
-    <string-array name="app_languages">
-        <item>System</item>
-        <item>Englisch (EN)</item>
-        <item>Deutsch (DE)</item>
-        <item>Spanisch (ES)</item>
-        <item>Portugiesisch (PT)</item>
-        <item>Französisch (FR)</item>
-        <item>Japanisch (JA)</item>
-        <item>Koreanisch (KO)</item>
-        <item>Chinesisch (ZH)</item>
-        <item>Russisch (RU)</item>
-        <item>Arabisch (AR)</item>
-        <item>Italienisch (IT)</item>
-        <item>Türkisch (TR)</item>
+    <string-array name="audio_languages">
+        <item>Englisch</item>
+        <item>Spanisch</item>
+        <item>Deutsch</item>
+        <item>Französisch</item>
+        <item>Japanisch</item>
+        <item>Koreanisch</item>
+        <item>Thailändisch</item>
+        <item>Vietnamesisch</item>
+        <item>Indonesisch</item>
+        <item>Hindi</item>
+        <item>Arabisch</item>
+        <item>Türkisch</item>
+        <item>Russisch</item>
+        <item>Portugiesisch</item>
+        <item>Chinesisch</item>
+        <item>Italienisch</item>
     </string-array>
 </resources>

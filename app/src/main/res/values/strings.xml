@@ -1127,6 +1127,7 @@
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>
         <item>ChromeCast</item>
+        <item>AirPlay</item>
     </string-array>
     <string-array name="log_levels">
         <item>None</item>
