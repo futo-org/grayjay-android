@@ -313,7 +313,7 @@ class Settings : FragmentedStorageFileJson() {
         var showSubscriptionGroups: Boolean = true;
 
         @FormField(R.string.use_subscription_exchange, FieldForm.TOGGLE, R.string.use_subscription_exchange_description, 6)
-        var useSubscriptionExchange: Boolean = false;
+        var useSubscriptionExchange: Boolean = true;
 
         @AdvancedField
         @FormField(R.string.preview_feed_items, FieldForm.TOGGLE, R.string.preview_feed_items_description, 6)

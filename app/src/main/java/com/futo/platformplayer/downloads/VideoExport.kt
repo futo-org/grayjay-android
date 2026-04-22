@@ -13,8 +13,10 @@ import com.futo.platformplayer.helpers.FileHelper.Companion.sanitizeFileName
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanBitrate
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -51,8 +53,12 @@ class VideoExport {
 
         val outputFile: DocumentFile?;
         val downloadRoot = documentRoot ?: StateApp.instance.getExternalDownloadDirectory(context) ?: throw Exception("External download directory is not set");
+        val safeBaseName = videoLocal.name.sanitizeFileName(true).ifBlank {
+            "video_${UUID.randomUUID()}"
+        }
+
         if (sourceCount > 1) {
-            val outputFileName = videoLocal.name.sanitizeFileName(true) + ".mp4"// + VideoDownload.videoContainerToExtension(v.container);
+            val outputFileName = "$safeBaseName.mp4"
             val f = downloadRoot.createFile("video/mp4", outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
@@ -60,7 +66,9 @@ class VideoExport {
             val tempFile = File(context.cacheDir, "${UUID.randomUUID()}.mp4");
             try {
                 combine(a?.filePath, v?.filePath, s?.filePath, tempFile.absolutePath, videoLocal.duration.toDouble()) { progress -> onProgress?.invoke(progress) };
-                context.contentResolver.openOutputStream(f.uri)?.use { outputStream ->
+                val outputStream = context.contentResolver.openOutputStream(f.uri)
+                    ?: throw IOException("Failed to open output stream for ${f.uri}")
+                outputStream.use { outputStream ->
                     copy(tempFile.absolutePath, outputStream) { progress -> onProgress?.invoke(progress) };
                 }
             } finally {
@@ -68,25 +76,29 @@ class VideoExport {
             }
             outputFile = f;
         } else if (v != null) {
-            val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.videoContainerToExtension(v.container);
+            val outputFileName = "$safeBaseName.${VideoDownload.videoContainerToExtension(v.container)}"
             val f = downloadRoot.createFile(if (v.container == "application/vnd.apple.mpegurl") "video/mp4" else v.container, outputFileName)
                 ?: throw Exception("Failed to create file in external directory.");
 
             Logger.i(TAG, "Copying video.");
 
-            context.contentResolver.openOutputStream(f.uri)?.use { outputStream ->
+            val outputStream = context.contentResolver.openOutputStream(f.uri)
+                ?: throw IOException("Failed to open output stream for ${f.uri}")
+            outputStream.use { outputStream ->
                 copy(v.filePath, outputStream) { progress -> onProgress?.invoke(progress) };
             }
 
             outputFile = f;
         } else if (a != null) {
-            val outputFileName = videoLocal.name.sanitizeFileName(true) + "." + VideoDownload.audioContainerToExtension(a.container);
+            val outputFileName = "$safeBaseName.${VideoDownload.audioContainerToExtension(a.container)}"
             val f = downloadRoot.createFile(if (a.container == "application/vnd.apple.mpegurl") "video/mp4" else a.container, outputFileName)
                     ?: throw Exception("Failed to create file in external directory.");
 
             Logger.i(TAG, "Copying audio.");
 
-            context.contentResolver.openOutputStream(f.uri)?.use { outputStream ->
+            val outputStream = context.contentResolver.openOutputStream(f.uri)
+                ?: throw IOException("Failed to open output stream for ${f.uri}")
+            outputStream.use { outputStream ->
                 copy(a.filePath, outputStream) { progress -> onProgress?.invoke(progress) };
             }
 
@@ -98,29 +110,48 @@ class VideoExport {
         return@coroutineScope outputFile;
     }
 
+    private fun ffmpegArg(value: String): String {
+        return "\"" + value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"") + "\""
+    }
+
+
+    private fun resumeSuccessSafely(continuation: CancellableContinuation<Unit>) {
+        if (!continuation.isActive) return
+        try {
+            continuation.resumeWith(Result.success(Unit))
+        } catch (_: IllegalStateException) {
+        }
+    }
+
+    private fun resumeFailureSafely(continuation: CancellableContinuation<Unit>, throwable: Throwable) {
+        if (!continuation.isActive) return
+        try {
+            continuation.resumeWithException(throwable)
+        } catch (_: IllegalStateException) {
+        }
+    }
+
     private suspend fun combine(inputPathAudio: String?, inputPathVideo: String?, inputPathSubtitles: String?, outputPath: String, duration: Double, onProgress: ((Double) -> Unit)? = null) = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { continuation ->
-            //ffmpeg -i a.mp4 -i b.m4a -scodec mov_text -i c.vtt -map 0:v -map 1:a -map 2 -c:v copy -c:a copy -c:s mov_text output.mp4
-
             val cmdBuilder = StringBuilder("-y")
             var counter = 0
 
             if (inputPathVideo != null) {
-                cmdBuilder.append(" -i $inputPathVideo")
+                cmdBuilder.append(" -i ${ffmpegArg(inputPathVideo)}")
             }
             if (inputPathAudio != null) {
-                cmdBuilder.append(" -i $inputPathAudio")
+                cmdBuilder.append(" -i ${ffmpegArg(inputPathAudio)}")
             }
             if (inputPathSubtitles != null) {
-                val subtitleExtension = File(inputPathSubtitles).extension
-
-                val codec = when (subtitleExtension.lowercase()) {
-                    "srt" -> "mov_text"
-                    "vtt" -> "webvtt"
+                val subtitleExtension = File(inputPathSubtitles).extension.lowercase()
+                when (subtitleExtension) {
+                    "srt", "vtt" -> {}
                     else -> throw Exception("Unsupported subtitle format: $subtitleExtension")
                 }
 
-                cmdBuilder.append(" -scodec $codec -i $inputPathSubtitles")
+                cmdBuilder.append(" -i ${ffmpegArg(inputPathSubtitles)}")
             }
 
             if (inputPathVideo != null) {
@@ -132,6 +163,7 @@ class VideoExport {
 
             if (inputPathSubtitles != null) {
                 cmdBuilder.append(" -map ${counter++}")
+                cmdBuilder.append(" -c:s mov_text")
             }
 
             if (inputPathVideo != null) {
@@ -140,33 +172,44 @@ class VideoExport {
             if (inputPathAudio != null) {
                 cmdBuilder.append(" -c:a copy")
             }
-            if (inputPathAudio != null) {
-                cmdBuilder.append(" -c:s mov_text")
-            }
 
-            cmdBuilder.append(" $outputPath")
+            cmdBuilder.append(" ${ffmpegArg(outputPath)}")
 
             val cmd = cmdBuilder.toString()
             Logger.i(TAG, "Used command: $cmd");
 
             val statisticsCallback = StatisticsCallback { statistics ->
                 val time = statistics.time.toDouble() / 1000.0
-                val progressPercentage = (time / duration)
-                onProgress?.invoke(progressPercentage)
+                val progressPercentage = if (duration > 0.0) {
+                    (time / duration).coerceIn(0.0, 1.0)
+                } else {
+                    0.0
+                }
+
+                onProgress?.let { callback ->
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                        callback(progressPercentage)
+                    }
+                }
             }
 
             val executorService = Executors.newSingleThreadExecutor()
             val session = FFmpegKit.executeAsync(cmd,
                 { session ->
-                    if (ReturnCode.isSuccess(session.returnCode)) {
-                        continuation.resumeWith(Result.success(Unit))
-                    } else {
-                        val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
-                            "Command cancelled"
+                    try {
+                        if (ReturnCode.isSuccess(session.returnCode)) {
+                            resumeSuccessSafely(continuation)
                         } else {
-                            "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
+                            val errorMessage = if (ReturnCode.isCancel(session.returnCode)) {
+                                "Command cancelled"
+                            } else {
+                                "Command failed with state '${session.state}' and return code ${session.returnCode}, stack trace ${session.failStackTrace}"
+                            }
+                            resumeFailureSafely(continuation, RuntimeException(errorMessage))
+
                         }
-                        continuation.resumeWithException(RuntimeException(errorMessage))
+                    } finally {
+                        executorService.shutdown()
                     }
                 },
                 LogCallback { Logger.v(TAG, it.message) },
@@ -176,6 +219,7 @@ class VideoExport {
 
             continuation.invokeOnCancellation {
                 session.cancel()
+                executorService.shutdown()
             }
         }
     }
@@ -196,14 +240,24 @@ class VideoExport {
                 val totalBytes = srcFile.length()
                 var bytesCopied: Long = 0
 
+                if (totalBytes == 0L) {
+                    onProgress?.let {
+                        withContext(Dispatchers.Main) {
+                            it(1.0)
+                        }
+                    }
+                    return@withContext
+                }
+
                 var bytesRead: Int
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                     outputStream.write(buffer, 0, bytesRead)
                     bytesCopied += bytesRead.toLong()
 
                     onProgress?.let {
+                        val progress = (bytesCopied / totalBytes.toDouble()).coerceIn(0.0, 1.0)
                         withContext(Dispatchers.Main) {
-                            it(bytesCopied / totalBytes.toDouble())
+                            it(progress)
                         }
                     }
                 }

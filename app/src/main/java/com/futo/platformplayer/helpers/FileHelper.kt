@@ -1,18 +1,35 @@
 package com.futo.platformplayer.helpers
 
+import java.text.Normalizer
+
 class FileHelper {
     companion object {
+
         fun String.sanitizeFileName(allowSpace: Boolean = false): String {
-            return this.filter {
-                (it in '0' .. '9') ||
-                    (it in 'a'..'z') ||
-                    (it in 'A'..'Z') ||
-                    (it == '-' || it == '.' || it == '_' || (it == ' ' && allowSpace)) ||
-                    (it in '丁'..'龤') || //Chinese/Kanji
-                    (it in '\u3040'..'\u309f') || //Hiragana
-                    (it in '\u30A0'..'\u30ff') || //Katakana
-                    (it in '\u0600'..'\u06FF') //Arabic
-            }; //Chinese
+            val normalized = Normalizer.normalize(this, Normalizer.Form.NFC)
+
+            val cleaned = buildString(normalized.length) {
+                for (ch in normalized) {
+                    when {
+                        ch == '\u0000' -> {}
+                        Character.isISOControl(ch) -> {}
+                        ch == '/' || ch == '\\' || ch == ':' || ch == '*' ||
+                                ch == '?' || ch == '"' || ch == '<' || ch == '>' || ch == '|' -> append('_')
+                        ch == ' ' && !allowSpace -> append('_')
+                        else -> append(ch)
+                    }
+                }
+            }
+
+            val collapsed = if (allowSpace) {
+                cleaned.replace(Regex("""\s+"""), " ")
+            } else {
+                cleaned.replace(Regex("""\s+"""), "_")
+            }
+
+            return collapsed
+                .trim()
+                .trimEnd('.')
         }
     }
 }
