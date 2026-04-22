@@ -103,10 +103,16 @@ class StateApp {
     var hasMediaStoreVideoPermission: Boolean = false;
 
     fun getExternalGeneralDirectory(context: Context): DocumentFile? {
-        val generalUri = Settings.instance.storage.getStorageGeneralUri();
-        if(isValidStorageUri(context, generalUri))
-            return DocumentFile.fromTreeUri(context, generalUri!!);
-        return null;
+        val generalUri = Settings.instance.storage.getStorageGeneralUri()
+        val document = getAccessibleTreeDirectory(context, generalUri)
+
+        if (document == null && generalUri != null) {
+            Logger.w(TAG, "Stored general directory is no longer valid, clearing setting [$generalUri]")
+            Settings.instance.storage.storage_general = null
+            Settings.instance.save()
+        }
+
+        return document
     }
     fun changeExternalGeneralDirectory(context: IWithResultLauncher, onChanged: ((DocumentFile?)->Unit)? = null) {
         if(context is Context)
@@ -127,10 +133,16 @@ class StateApp {
             };
     }
     fun getExternalDownloadDirectory(context: Context): DocumentFile? {
-        val downloadUri = Settings.instance.storage.storage_download?.let { Uri.parse(it) };
-        if(isValidStorageUri(context, downloadUri))
-            return DocumentFile.fromTreeUri(context, downloadUri!!);
-        return null;
+        val downloadUri = Settings.instance.storage.storage_download?.let { Uri.parse(it) }
+        val document = getAccessibleTreeDirectory(context, downloadUri)
+
+        if (document == null && downloadUri != null) {
+            Logger.w(TAG, "Stored download directory is no longer valid, clearing setting [$downloadUri]")
+            Settings.instance.storage.storage_download = null
+            Settings.instance.save()
+        }
+
+        return document
     }
     fun changeExternalDownloadDirectory(context: IWithResultLauncher, onChanged: ((DocumentFile?)->Unit)? = null) {
         if(context is Context)
@@ -146,11 +158,80 @@ class StateApp {
                 }
             };
     }
-    fun isValidStorageUri(context: Context, uri: Uri?): Boolean {
-        if(uri == null)
-            return false;
 
-        return context.contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission && it.isWritePermission };
+    private fun hasPersistedStoragePermission(context: Context, uri: Uri?): Boolean {
+        if (uri == null)
+            return false
+
+        return context.contentResolver.persistedUriPermissions.any {
+            it.uri == uri && it.isReadPermission && it.isWritePermission
+        }
+    }
+
+    private fun getAccessibleTreeDirectory(context: Context, uri: Uri?): DocumentFile? {
+        if (uri == null)
+            return null
+
+        if (!hasPersistedStoragePermission(context, uri))
+            return null
+
+        return try {
+            val treeDocumentId = DocumentsContract.getTreeDocumentId(uri)
+            val treeDocumentUri = DocumentsContract.buildDocumentUriUsingTree(uri, treeDocumentId)
+
+            // Force a provider round-trip. If the directory was deleted, storage was removed,
+            // or the URI is otherwise stale, this usually fails here.
+            context.contentResolver.query(
+                treeDocumentUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                    DocumentsContract.Document.COLUMN_FLAGS
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (!cursor.moveToFirst())
+                    return null
+
+                val mimeTypeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                if (mimeTypeIndex >= 0) {
+                    val mimeType = cursor.getString(mimeTypeIndex)
+                    if (mimeType != DocumentsContract.Document.MIME_TYPE_DIR)
+                        return null
+                }
+            } ?: return null
+
+            val document = DocumentFile.fromTreeUri(context, uri) ?: return null
+
+            if (!document.exists())
+                return null
+            if (!document.isDirectory)
+                return null
+            if (!document.canRead())
+                return null
+            if (!document.canWrite())
+                return null
+
+            document
+        }
+        catch (e: SecurityException) {
+            Logger.w(TAG, "Storage URI is no longer accessible [$uri]", e)
+            null
+        }
+        catch (e: IllegalArgumentException) {
+            Logger.w(TAG, "Storage URI is invalid [$uri]", e)
+            null
+        }
+        catch (e: Throwable) {
+            Logger.w(TAG, "Failed to validate storage URI [$uri]", e)
+            null
+        }
+    }
+
+    fun isValidStorageUri(context: Context, uri: Uri?): Boolean {
+        return getAccessibleTreeDirectory(context, uri) != null
     }
 
     //Scope
