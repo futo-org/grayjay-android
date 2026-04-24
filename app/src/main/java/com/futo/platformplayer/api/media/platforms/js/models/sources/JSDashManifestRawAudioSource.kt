@@ -4,14 +4,10 @@ import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.V8Deferred
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
-import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
-import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.engine.IV8PluginConfig
-import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
@@ -22,7 +18,6 @@ import com.futo.platformplayer.others.Language
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 
 class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawSource, IStreamMetaDataSource {
     override val container : String;
@@ -35,7 +30,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
 
     override val language: String;
 
-    val url: String;
+    override val url: String
     override var manifest: String?;
 
     override val hasGenerate: Boolean;

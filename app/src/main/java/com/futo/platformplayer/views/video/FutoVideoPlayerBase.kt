@@ -14,9 +14,11 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -98,6 +100,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
+import androidx.core.net.toUri
 
 abstract class FutoVideoPlayerBase : RelativeLayout {
     private val TAG = "FutoVideoPlayerBase"
@@ -147,6 +150,12 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     var targetTrackVideoHeight = -1
         private set
     private var _targetTrackAudioBitrate = -1
+    private var _targetTrackVideoFormat: Format? = null
+    private var _targetTrackAudioFormat: Format? = null
+    var preferredAudioLanguage: String? = null
+        private set
+    var preferredSubtitleLanguage: String? = null
+        private set
 
     private var _toResume = false;
 
@@ -319,40 +328,88 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         exoPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = null});
         newPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = _playerEventListener});
         exoPlayer = newPlayer;
+        updateTrackSelector()
     }
 
     //TODO: Temporary solution, Implement custom track selector without using constraints
     fun selectVideoTrack(height: Int) {
-        targetTrackVideoHeight = height;
-        updateTrackSelector();
+        targetTrackVideoHeight = height
+        _targetTrackVideoFormat = null
+        updateTrackSelector()
     }
+
     fun selectAudioTrack(bitrate: Int) {
-        _targetTrackAudioBitrate = bitrate;
-        updateTrackSelector();
+        _targetTrackAudioBitrate = bitrate
+        _targetTrackAudioFormat = null
+        updateTrackSelector()
     }
+
+    @OptIn(UnstableApi::class)
+    fun selectAudioTrack(format: Format?) {
+        _targetTrackAudioFormat = format;
+        _targetTrackAudioBitrate = format?.bitrate ?: -1
+        updateTrackSelector()
+    }
+    fun setPreferredAudioLanguage(lang: String?) {
+        preferredAudioLanguage = lang
+        updateTrackSelector()
+    }
+    fun setPreferredSubtitleLanguage(lang: String?) {
+        preferredSubtitleLanguage = lang
+        updateTrackSelector()
+    }
+
     @OptIn(UnstableApi::class)
     private fun updateTrackSelector() {
-        var builder = DefaultTrackSelector.Parameters.Builder(context);
+        val player = exoPlayer?.player ?: return
+        var builder = player.trackSelectionParameters.buildUpon()
+
+        builder = builder.clearOverrides()
+
+        if (_targetTrackVideoFormat != null || _targetTrackAudioFormat != null) {
+            val tracks = player.currentTracks
+            if (tracks != null) {
+                if (_targetTrackVideoFormat != null) {
+                    val group = tracks.groups.find { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO && (0 until it.mediaTrackGroup.length).any { i -> it.mediaTrackGroup.getFormat(i) == _targetTrackVideoFormat } }
+                    if (group != null) {
+                        builder = builder.addOverride(TrackSelectionOverride(group.mediaTrackGroup, (0 until group.mediaTrackGroup.length).find { i -> group.mediaTrackGroup.getFormat(i) == _targetTrackVideoFormat }!!))
+                    }
+                }
+                if (_targetTrackAudioFormat != null) {
+                    val group = tracks.groups.find { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO && (0 until it.mediaTrackGroup.length).any { i -> it.mediaTrackGroup.getFormat(i) == _targetTrackAudioFormat } }
+                    if (group != null) {
+                        builder = builder.addOverride(TrackSelectionOverride(group.mediaTrackGroup, (0 until group.mediaTrackGroup.length).find { i -> group.mediaTrackGroup.getFormat(i) == _targetTrackAudioFormat }!!))
+                    }
+                }
+            }
+        }
+
         if(targetTrackVideoHeight > 0) {
             builder = builder
                 .setMinVideoSize(0, targetTrackVideoHeight - 10)
                 .setMaxVideoSize(9999, targetTrackVideoHeight + 10);
+        } else {
+            builder = builder
+                .setMinVideoSize(0, 0)
+                .setMaxVideoSize(9999, 9999)
         }
 
         if(_targetTrackAudioBitrate > 0) {
             builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
-        }
-
-        builder = if (isAudioMode) {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
         } else {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
+            builder = builder.setMaxAudioBitrate(Int.MAX_VALUE)
         }
 
-        val trackSelector = exoPlayer?.player?.trackSelector;
-        if(trackSelector != null) {
-            trackSelector.parameters = builder.build();
+        if (preferredAudioLanguage != null) {
+            builder = builder.setPreferredAudioLanguage(preferredAudioLanguage)
         }
+        if (preferredSubtitleLanguage != null) {
+            builder = builder.setPreferredTextLanguage(preferredSubtitleLanguage)
+        }
+
+        builder = builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isAudioMode)
+
+        player.trackSelectionParameters = builder.build()
     }
 
     fun setChapters(chapters: List<IChapter>?) {
@@ -381,14 +438,20 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             var videoSourceUsed = videoSource;
             var audioSourceUsed = audioSource;
             if(videoSource is JSDashManifestRawSource && audioSource is JSDashManifestRawAudioSource){
-                videoSource.getUnderlyingPlugin()?.busy {
-                    videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource);
-                    audioSourceUsed = null;
+                if (videoSource.url != audioSource.url || videoSource.name != audioSource.name) {
+                    Logger.i(TAG, "Merging different DASH manifests")
+                    videoSource.getUnderlyingPlugin()?.busy {
+                        videoSourceUsed = JSDashManifestMergingRawSource(videoSource, audioSource)
+                        audioSourceUsed = null
+                    }
+                } else {
+                    Logger.i(TAG, "Skipping merge of identical DASH manifests (UMP)")
+                    audioSourceUsed = null
                 }
             }
 
-            val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume);
-            val didSetAudio = swapSourceInternal(audioSourceUsed, play, resume);
+            val didSetVideo = swapSourceInternal(videoSourceUsed, play, resume)
+            val didSetAudio = swapSourceInternal(audioSourceUsed, play, resume)
             if(!keepSubtitles)
                 _lastSubtitleMediaSource = null;
 
@@ -637,9 +700,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 val scope = this;
                 var startId = -1;
                 try {
-                    val plugin = videoSource.getUnderlyingPlugin() ?: return@launch;
-                    startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
-                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); };
+                    val plugin = (videoSource as? JSSource)?.getUnderlyingPlugin() ?: return@launch
+                    startId = plugin.getUnderlyingPlugin().runtimeId
+                    val generatedDef = plugin.busy { videoSource.generateAsync(scope); }
                     withContext(Dispatchers.Main) {
                         if (generatedDef.estDuration >= 0) {
                             setLoading(generatedDef.estDuration)
@@ -667,13 +730,13 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
                                 .createMediaSource(
                                     DashManifestParser().parse(
-                                        Uri.parse(videoSource.url),
+                                        Uri.parse(videoSource.url ?: ""),
                                         ByteArrayInputStream(
                                             generated?.toByteArray() ?: ByteArray(0)
                                         )
                                     )
                                 );
-                            if(lastVideoSource == videoSource || (videoSource is JSDashManifestMergingRawSource && videoSource.video == lastVideoSource));
+                            if(lastVideoSource == videoSource || (videoSource is JSDashManifestMergingRawSource && videoSource.video == lastVideoSource))
                                 loadSelectedSources(play, resume);
                         }
                     }
@@ -707,8 +770,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
             if(dataSource is JSHttpDataSource.Factory && videoSource is JSDashManifestMergingRawSource)
                 dataSource.setRequestExecutor2(videoSource.audio.getRequestExecutor());
+            
             _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                .createMediaSource(DashManifestParser().parse(Uri.parse(videoSource.url),
+                .createMediaSource(DashManifestParser().parse(
+                    (videoSource.url ?: "").toUri(),
                     ByteArrayInputStream(videoSource.manifest?.toByteArray() ?: ByteArray(0))));
             return true;
         }
@@ -801,8 +866,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 val scope = this;
                 var startId = -1;
                 try {
-                    val plugin = audioSource.getUnderlyingPlugin() ?: return@launch;
-                    startId = audioSource.getUnderlyingPlugin()?.getUnderlyingPlugin()?.runtimeId ?: -1;
+                    val plugin = (audioSource as? JSSource)?.getUnderlyingPlugin() ?: return@launch;
+                    startId = plugin.getUnderlyingPlugin()?.runtimeId ?: -1;
                     val generatedDef = plugin.busy { audioSource.generateAsync(scope); }
                     withContext(Dispatchers.Main) {
                         if (generatedDef.estDuration >= 0) {
@@ -824,8 +889,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                         else
                             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
                         withContext(Dispatchers.Main) {
-                            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
-                                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url),
+                            _lastAudioMediaSource = DashMediaSource.Factory(dataSource)
+                                .createMediaSource(DashManifestParser().parse(Uri.parse(audioSource.url ?: ""),
                                     ByteArrayInputStream(generated?.toByteArray() ?: ByteArray(0))));
                             loadSelectedSources(play, resume);
                         }
@@ -833,12 +898,12 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 }
                 catch(reloadRequired: ScriptReloadRequiredException) {
                     Logger.i(TAG, "Reload required detected");
-                    val plugin = audioSource.getUnderlyingPlugin();
+                    val plugin = (audioSource as? JSSource)?.getUnderlyingPlugin()
                     if(plugin == null)
                         return@launch;
                     if(startId != -1 && plugin.getUnderlyingPlugin()?.runtimeId != startId)
                         return@launch;
-                    StatePlatform.instance.reEnableClient(plugin.id, {
+                    StatePlatform.instance.reEnableClient(plugin.config.id, {
                         onReloadRequired.emit();
                     });
                 }
@@ -857,10 +922,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 audioSource.getHttpDataSourceFactory()
             else
                 DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
-            _lastVideoMediaSource = DashMediaSource.Factory(dataSource)
+            _lastAudioMediaSource = DashMediaSource.Factory(dataSource)
                 .createMediaSource(
                     DashManifestParser().parse(
-                        Uri.parse(audioSource.url),
+                        (audioSource.url ?: "").toUri(),
                         ByteArrayInputStream(audioSource.manifest?.toByteArray() ?: ByteArray(0))
                     )
                 );
@@ -897,7 +962,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
 
     //Prefered source selection
-    fun getPreferredVideoSource(video: IPlatformVideoDetails, targetPixels: Int = -1): IVideoSource? {
+    fun getPreferredVideoSource(video: IPlatformVideoDetails, targetPixels: Int = -1, preferredLanguage: String? = null): IVideoSource? {
         val usePreview = false;
         if(usePreview) {
             if(video.preview != null && video.preview is VideoMuxedSourceDescriptor)
@@ -911,7 +976,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else if(video.hls != null)
             return video.hls;
         else
-            return VideoHelper.selectBestVideoSource(video.video, targetPixels, PREFERED_VIDEO_CONTAINERS)
+            return VideoHelper.selectBestVideoSource(video.video, targetPixels, PREFERED_VIDEO_CONTAINERS, preferredLanguage)
     }
     fun getPreferredAudioSource(video: IPlatformVideoDetails, preferredLanguage: String?): IAudioSource? {
         return VideoHelper.selectBestAudioSource(video.video, PREFERED_AUDIO_CONTAINERS, preferredLanguage);

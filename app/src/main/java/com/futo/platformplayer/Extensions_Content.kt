@@ -9,6 +9,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.DEFAULT_USER_AGENT
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 
 fun IPlatformVideoDetails.isDownloadable(): Boolean = VideoHelper.isDownloadable(this);
@@ -24,8 +25,9 @@ fun JSSource.getHttpDataSourceFactory(): HttpDataSource.Factory {
     } else if (requestModifier != null) {
         JSHttpDataSource.Factory().setRequestModifier(requestModifier);
     } else {
-        DefaultHttpDataSource.Factory();
+        DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
     }
 }
+
 
 fun IVideoSourceDescriptor.hasAnySource(): Boolean = this.videoSources.any() || (this is VideoUnMuxedSourceDescriptor && this.audioSources.any());

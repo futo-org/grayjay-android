@@ -1,20 +1,14 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
-import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.primitive.V8ValueString
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.V8Deferred
-import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
-import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
-import com.futo.platformplayer.engine.IV8PluginConfig
-import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
-import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Async
@@ -23,9 +17,9 @@ import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 
 interface IJSDashManifestRawSource {
+    val url: String?
     val hasGenerate: Boolean;
     var manifest: String?;
     fun generateAsync(scope: CoroutineScope): Deferred<String?>;
@@ -67,7 +61,7 @@ open class JSDashManifestRawSource(
     override val priority: Boolean =
         _obj.getOrDefault<Boolean>(cfg, "priority", ctx, false) ?: false
 
-    val url: String? =
+    override val url: String? =
         _obj.getOrDefault<String>(cfg, "url", ctx, null)
 
     override var manifest: String? =
@@ -79,6 +73,10 @@ open class JSDashManifestRawSource(
         _obj.getOrDefault<Boolean>(cfg, "canMerge", ctx, false) ?: false
 
     override var streamMetaData: StreamMetaData? = null
+
+    companion object {
+        val adaptationSetRegex = Regex("<AdaptationSet[\\s\\S]*?</AdaptationSet>", RegexOption.DOT_MATCHES_ALL)
+    }
 
     private var _pregenerate: V8Deferred<String?>? = null
     fun pregenerateAsync(scope: CoroutineScope): V8Deferred<String?>? {
@@ -126,7 +124,17 @@ open class JSDashManifestRawSource(
             }
 
             return@busy result.convert {
-                it.value
+                var manifest = it.value
+                if (manifest != null && language != null) {
+                    val sets = adaptationSetRegex.findAll(manifest)
+                    for (set in sets) {
+                        if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
+                            val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"")
+                            manifest = manifest.replace(set.value, newSet)
+                        }
+                    }
+                }
+                manifest
             };
         }
     }
@@ -134,7 +142,7 @@ open class JSDashManifestRawSource(
         if(!hasGenerate)
             return manifest;
         if(_obj.isClosed)
-            throw IllegalStateException("Source object already closed");
+            throw IllegalStateException("Source object already closed")
 
         var result: String? = null;
         if(_plugin is DevJSClient) {
@@ -143,7 +151,7 @@ open class JSDashManifestRawSource(
                     _plugin.isBusyWith("dashVideo.generate") {
                         _obj.invokeV8<V8ValueString>("generate").value;
                     }
-                });
+                })
             }
         }
         else
@@ -151,16 +159,26 @@ open class JSDashManifestRawSource(
                 _plugin.isBusyWith("dashVideo.generate") {
                     _obj.invokeV8<V8ValueString>("generate").value;
                 }
-            });
+            })
 
         if(result != null){
+            if (language != null) {
+                val sets = adaptationSetRegex.findAll(result)
+                for (set in sets) {
+                    if ((set.value.contains("contentType=\"audio\"") || set.value.contains("mimeType=\"audio/")) && !set.value.contains("lang=")) {
+                        val newSet = set.value.replaceFirst("<AdaptationSet", "<AdaptationSet lang=\"$language\"")
+                        result = result!!.replace(set.value, newSet)
+                    }
+                }
+            }
+
             _plugin.busy {
-                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
-                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
-                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
-                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
+                val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0
+                val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0
+                val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0
+                val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0
                 if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
-                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                    streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd)
                 }
             }
         }
@@ -196,7 +214,7 @@ class JSDashManifestMergingRawSource(
         val videoDashDef = video.generateAsync(scope);
         val audioDashDef = audio.generateAsync(scope);
 
-        return V8Deferred.merge(scope, listOf(videoDashDef, audioDashDef)) {
+        return V8Deferred.merge(scope, listOf(videoDashDef, audioDashDef)) { it ->
             val (videoDash: String?, audioDash: String?) = it;
 
             if (videoDash != null && audioDash == null) return@merge videoDash;
@@ -205,17 +223,38 @@ class JSDashManifestMergingRawSource(
 
             //TODO: Temporary simple solution..make more reliable version
 
-            var result: String? = null;
-            val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
-            if (audioAdaptationSet != null) {
-                result = videoDash.replace(
-                    "</AdaptationSet>",
-                    "</AdaptationSet>\n" + audioAdaptationSet.value
-                )
-            } else
-                result = videoDash;
+            var result: String?
+            val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
+            val audioTracks = audioAdaptationSets
+                .filter {
+                    it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains(
+                        "lang="
+                    )
+                }.joinToString("\n") {
+                    var set = it.value
+                    if (!set.contains("lang=")) {
+                        set = set.replaceFirst(
+                            "<AdaptationSet",
+                            "<AdaptationSet lang=\"${audio.language}\""
+                        )
+                    }
+                    set
+                }
 
-            return@merge result;
+            result = if (audioTracks.isNotEmpty()) {
+                if (videoDash.contains("</AdaptationSet>")) {
+                    videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
+                } else if (videoDash.contains("</Period>")) {
+                    videoDash.replace("</Period>", "$audioTracks\n</Period>")
+                } else if (videoDash.contains("</MPD>")) {
+                    videoDash.replace("</MPD>", "$audioTracks\n</MPD>")
+                } else {
+                    videoDash + audioTracks
+                }
+            } else
+                videoDash
+
+            return@merge result
         };
     }
     override fun generate(): String? {
@@ -227,18 +266,40 @@ class JSDashManifestMergingRawSource(
 
         //TODO: Temporary simple solution..make more reliable version
 
-        var result: String? = null;
-        val audioAdaptationSet = adaptationSetRegex.find(audioDash!!);
-        if(audioAdaptationSet != null) {
-            result = videoDash.replace("</AdaptationSet>", "</AdaptationSet>\n" + audioAdaptationSet.value)
-        }
-        else
-            result = videoDash;
+        var result: String?
+        val audioAdaptationSets = adaptationSetRegex.findAll(audioDash!!)
+        val audioTracks = audioAdaptationSets
+            .filter {
+                it.value.contains("contentType=\"audio\"") || it.value.contains("mimeType=\"audio/") || it.value.contains(
+                    "lang="
+                )
+            }.joinToString("\n") {
+                var set = it.value
+                if (!set.contains("lang=")) {
+                    set = set.replaceFirst(
+                        "<AdaptationSet",
+                        "<AdaptationSet lang=\"${audio.language}\""
+                    )
+                }
+                set
+            }
 
-        return result;
+        result = if (audioTracks.isNotEmpty()) {
+            if (videoDash.contains("</AdaptationSet>")) {
+                videoDash.replaceFirst("</AdaptationSet>", "</AdaptationSet>\n$audioTracks")
+            } else if (videoDash.contains("</Period>")) {
+                videoDash.replace("</Period>", "$audioTracks\n</Period>")
+            } else if (videoDash.contains("</MPD>")) {
+                videoDash.replace("</MPD>", "$audioTracks\n</MPD>")
+            } else {
+                videoDash + audioTracks
+            }
+        } else
+            videoDash
+
+        return result
     }
 
     companion object {
-        private val adaptationSetRegex = Regex("<AdaptationSet.*?>.*?<\\/AdaptationSet>", RegexOption.DOT_MATCHES_ALL);
     }
-}
+    }
