@@ -799,7 +799,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @AdvancedField
         @FormField(R.string.clear_cookies_after_login, FieldForm.TOGGLE, R.string.clear_cookies_after_login_desc, 0)
-        var clearCookiesAfterLogin: Boolean = true;
+        var clearCookiesAfterLogin: Boolean = false;
         @AdvancedField
         @FormField(R.string.clear_cookies_on_logout, FieldForm.TOGGLE, R.string.clears_cookies_when_you_log_out, 0)
         var clearCookiesOnLogout: Boolean = true;
