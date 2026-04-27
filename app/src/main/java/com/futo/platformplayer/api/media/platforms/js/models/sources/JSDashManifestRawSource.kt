@@ -73,7 +73,7 @@ open class JSDashManifestRawSource(
     override var manifest: String? =
         _obj.getOrDefault<String>(cfg, "manifest", ctx, null)
 
-    override val hasGenerate: Boolean = _obj.has("generate")
+    override val hasGenerate: Boolean = plugin.busy { _obj.has("generate") }
 
     val canMerge: Boolean =
         _obj.getOrDefault<Boolean>(cfg, "canMerge", ctx, false) ?: false
@@ -89,7 +89,7 @@ open class JSDashManifestRawSource(
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         if(!hasGenerate)
             return V8Deferred(CompletableDeferred(manifest));
-        if(_obj.isClosed)
+        if(_plugin.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
         val pregenerated = _pregenerate;
         if(pregenerated != null) {
@@ -133,7 +133,7 @@ open class JSDashManifestRawSource(
     override open fun generate(): String? {
         if(!hasGenerate)
             return manifest;
-        if(_obj.isClosed)
+        if(_plugin.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
 
         var result: String? = null;

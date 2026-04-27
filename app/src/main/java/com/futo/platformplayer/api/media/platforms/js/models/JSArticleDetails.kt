@@ -31,18 +31,20 @@ open class JSArticleDetails(
 
     final override val contentType: ContentType = ContentType.ARTICLE
 
-    private val _hasGetComments: Boolean = _content.has("getComments")
-    private val _hasGetContentRecommendations: Boolean = _content.has("getContentRecommendations")
+    private val _hasGetComments: Boolean = client.busy { _content.has("getComments") }
+    private val _hasGetContentRecommendations: Boolean = client.busy { _content.has("getContentRecommendations") }
 
-    override val rating: IRating =
+    override val rating: IRating = client.busy {
         obj.getOrDefault<V8ValueObject>(client.config, "rating", "PlatformArticle", null)
             ?.let { IRating.fromV8(client.config, it, "PlatformArticle") }
             ?: RatingLikes(0)
+    }
 
-    override val summary: String =
+    override val summary: String = client.busy {
         _content.getOrThrow(client.config, "summary", "PlatformArticle")
+    }
 
-    override val thumbnails: Thumbnails? =
+    override val thumbnails: Thumbnails? = client.busy {
         if (_content.has("thumbnails"))
             Thumbnails.fromV8(
                 client.config,
@@ -50,14 +52,19 @@ open class JSArticleDetails(
             )
         else
             null
+    }
 
-    override val segments: List<IJSArticleSegment> =
+    override val segments: List<IJSArticleSegment> = client.busy {
         obj.getOrThrowNullableList<V8ValueObject>(client.config, "segments", "PlatformArticle")
             ?.mapNotNull { fromV8Segment(client, it) }
             ?: emptyList()
+    }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {
-        if(!_hasGetComments || _content.isClosed)
+        val canGetComments = this.client.busy {
+            _hasGetComments && !_content.isClosed
+        }
+        if(!canGetComments)
             return null;
 
         if(client is DevJSClient)
@@ -73,7 +80,10 @@ open class JSArticleDetails(
     override fun getPlaybackTracker(): IPlaybackTracker? = null;
 
     override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? {
-        if(!_hasGetContentRecommendations || _content.isClosed)
+        val canGetContentRecommendations = this.client.busy {
+            _hasGetContentRecommendations && !_content.isClosed
+        }
+        if(!canGetContentRecommendations)
             return  null;
 
         if(client is DevJSClient)
@@ -87,25 +97,31 @@ open class JSArticleDetails(
     }
 
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
-        return JSContentPager(_pluginConfig, client, contentPager);
+        return client.busy {
+            val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
+            return@busy JSContentPager(_pluginConfig, client, contentPager);
+        }
     }
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
-        val commentPager = _content.invokeV8<V8ValueObject>("getComments", arrayOf<Any>());
-        return JSCommentPager(_pluginConfig, client, commentPager);
+        return client.busy {
+            val commentPager = _content.invokeV8<V8ValueObject>("getComments", arrayOf<Any>());
+            return@busy JSCommentPager(_pluginConfig, client, commentPager);
+        }
     }
 
     companion object {
         fun fromV8Segment(client: JSClient, obj: V8ValueObject): IJSArticleSegment? {
-            if(!obj.has("type"))
-                throw IllegalArgumentException("Object missing type field");
-            return when(SegmentType.fromInt(obj.getOrThrow(client.config, "type", "JSArticle.Segment"))) {
-                SegmentType.TEXT -> JSTextSegment(client, obj);
-                SegmentType.IMAGES -> JSImagesSegment(client, obj);
-                SegmentType.HEADER -> JSHeaderSegment(client, obj);
-                SegmentType.NESTED -> JSNestedSegment(client, obj);
-                else -> null;
+            return client.busy {
+                if(!obj.has("type"))
+                    throw IllegalArgumentException("Object missing type field");
+                return@busy when(SegmentType.fromInt(obj.getOrThrow(client.config, "type", "JSArticle.Segment"))) {
+                    SegmentType.TEXT -> JSTextSegment(client, obj);
+                    SegmentType.IMAGES -> JSImagesSegment(client, obj);
+                    SegmentType.HEADER -> JSHeaderSegment(client, obj);
+                    SegmentType.NESTED -> JSNestedSegment(client, obj);
+                    else -> null;
+                }
             }
         }
     }

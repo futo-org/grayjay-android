@@ -42,24 +42,26 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
         priority = obj.getOrNull(config, "priority", contextName) ?: false
 
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName)
-        hasLicenseRequestExecutor = obj.has("getLicenseRequestExecutor")
+        hasLicenseRequestExecutor = plugin.busy { obj.has("getLicenseRequestExecutor") }
 
         language = _obj.getOrNull(config, "language", contextName);
         original = _obj.getOrNull(config, "original", contextName);
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
-        if (!hasLicenseRequestExecutor || _obj.isClosed)
-            return null
+        return _plugin.busy {
+            if (!hasLicenseRequestExecutor || _obj.isClosed)
+                return@busy null
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseRequestExecutor()") {
-            _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
+            val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseRequestExecutor()") {
+                _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
+            }
+
+            if (result !is V8ValueObject)
+                return@busy null
+
+            return@busy JSRequestExecutor(_plugin, result)
         }
-
-        if (result !is V8ValueObject)
-            return null
-
-        return JSRequestExecutor(_plugin, result)
     }
 
     override fun getVideoUrl(): String {

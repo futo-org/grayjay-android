@@ -46,23 +46,45 @@ class JSComment : IPlatformComment {
         _comment = obj;
         _plugin = plugin;
 
-        val contextName = "Comment";
-        contextUrl = _comment!!.getOrThrow(config, "contextUrl", contextName);
-        author = PlatformAuthorLink.fromV8(_config!!, _comment!!.getOrThrow(config, "author", contextName));
-        message = _comment!!.getOrThrow(config, "message", contextName);
-        rating = IRating.fromV8(config, _comment!!.getOrThrow(config, "rating", contextName));
-        date = _comment!!.getOrThrowNullable<Int>(config, "date", contextName)?.let { OffsetDateTime.of(LocalDateTime.ofEpochSecond(it.toLong(), 0, ZoneOffset.UTC), ZoneOffset.UTC) }
-        replyCount = _comment!!.getOrThrowNullable(config, "replyCount", contextName);
-        context = _comment!!.getOrDefault(config, "context", contextName, hashMapOf()) ?: hashMapOf();
-        _hasGetReplies = _comment!!.has("getReplies");
+        var parsedContextUrl: String? = null;
+        var parsedAuthor: PlatformAuthorLink? = null;
+        var parsedMessage: String? = null;
+        var parsedRating: IRating? = null;
+        var parsedDate: OffsetDateTime? = null;
+        var parsedReplyCount: Int? = null;
+        var parsedContext: Map<String, String>? = null;
+        var parsedHasGetReplies = false;
+
+        plugin.busy {
+            val contextName = "Comment";
+            parsedContextUrl = _comment!!.getOrThrow(config, "contextUrl", contextName);
+            parsedAuthor = PlatformAuthorLink.fromV8(_config!!, _comment!!.getOrThrow(config, "author", contextName));
+            parsedMessage = _comment!!.getOrThrow(config, "message", contextName);
+            parsedRating = IRating.fromV8(config, _comment!!.getOrThrow(config, "rating", contextName));
+            parsedDate = _comment!!.getOrThrowNullable<Int>(config, "date", contextName)?.let { OffsetDateTime.of(LocalDateTime.ofEpochSecond(it.toLong(), 0, ZoneOffset.UTC), ZoneOffset.UTC) };
+            parsedReplyCount = _comment!!.getOrThrowNullable(config, "replyCount", contextName);
+            parsedContext = _comment!!.getOrDefault(config, "context", contextName, hashMapOf()) ?: hashMapOf();
+            parsedHasGetReplies = _comment!!.has("getReplies");
+        }
+
+        contextUrl = parsedContextUrl ?: "";
+        author = parsedAuthor ?: PlatformAuthorLink.UNKNOWN;
+        message = parsedMessage ?: "";
+        rating = parsedRating ?: throw IllegalStateException("Missing comment rating");
+        date = parsedDate;
+        replyCount = parsedReplyCount;
+        context = parsedContext ?: hashMapOf();
+        _hasGetReplies = parsedHasGetReplies;
     }
 
     override fun getReplies(client: IPlatformClient): IPager<IPlatformComment>? {
         if(!_hasGetReplies)
             return null;
 
-        val obj = _comment!!.invokeV8<V8ValueObject>("getReplies", arrayOf<Any>());
         val plugin = if(client is JSClient) client else throw NotImplementedError("Only implemented for JSClient");
-        return JSCommentPager(_config!!, plugin, obj);
+        return plugin.busy {
+            val obj = _comment!!.invokeV8<V8ValueObject>("getReplies", arrayOf<Any>());
+            return@busy JSCommentPager(_config!!, plugin, obj);
+        }
     }
 }

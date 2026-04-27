@@ -128,7 +128,9 @@ class PackageBridge : V8Package {
     @V8Function
     fun dispose(value: V8Value) {
         Logger.e(TAG, "Manual dispose: " + value.javaClass.name);
-        value.close();
+        _plugin.busy {
+            value.close();
+        }
     }
 
     var timeoutCounter = 0;

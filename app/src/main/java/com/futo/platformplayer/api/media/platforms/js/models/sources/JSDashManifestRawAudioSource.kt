@@ -55,7 +55,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
         priority = _obj.getOrDefault(config, "priority", contextName, false) ?: false;
         language = _obj.getOrDefault(config, "language", contextName, Language.UNKNOWN) ?: Language.UNKNOWN;
         original =  obj.getOrNull(config, "original", contextName) ?: false;
-        hasGenerate = _obj.has("generate");
+        hasGenerate = plugin.busy { _obj.has("generate") };
     }
 
     private var _pregenerate: V8Deferred<String?>? = null;
@@ -67,7 +67,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         if(!hasGenerate)
             return V8Deferred(CompletableDeferred(manifest));
-        if(_obj.isClosed)
+        if(_plugin.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
 
         val pregenerated = _pregenerate;
@@ -111,7 +111,7 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override fun generate(): String? {
         if(!hasGenerate)
             return manifest;
-        if(_obj.isClosed)
+        if(_plugin.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
 
         val plugin = _plugin.getUnderlyingPlugin();

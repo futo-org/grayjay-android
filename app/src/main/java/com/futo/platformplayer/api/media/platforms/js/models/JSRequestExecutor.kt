@@ -41,20 +41,26 @@ class JSRequestExecutor: AutoCloseable {
         this._config = plugin.config;
         val config = plugin.config;
 
-        urlPrefix = executor.getOrDefault(config, "urlPrefix", "RequestExecutor", null);
+        var parsedUrlPrefix: String? = null;
+        var parsedHasCleanup = false;
+        plugin.busy {
+            parsedUrlPrefix = executor.getOrDefault(config, "urlPrefix", "RequestExecutor", null);
 
-        if(!executor.has("executeRequest"))
-            throw ScriptImplementationException(config, "RequestExecutor is missing executeRequest", null);
-        hasCleanup = executor.has("cleanup");
+            if(!executor.has("executeRequest"))
+                throw ScriptImplementationException(config, "RequestExecutor is missing executeRequest", null);
+            parsedHasCleanup = executor.has("cleanup");
+        }
+
+        urlPrefix = parsedUrlPrefix;
+        hasCleanup = parsedHasCleanup;
     }
 
     //TODO: Executor properties?
     @Throws(ScriptException::class)
     open fun executeRequest(method: String, url: String, body: ByteArray?, headers: Map<String, String>): ByteArray {
-        if (_executor.isClosed)
-            throw IllegalStateException("Executor object is closed");
-
         return _plugin.getUnderlyingPlugin().busy {
+            if (_executor.isClosed)
+                throw IllegalStateException("Executor object is closed");
 
             val result = if(_plugin is DevJSClient)
                 StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
@@ -108,10 +114,12 @@ class JSRequestExecutor: AutoCloseable {
 
 
     open fun cleanup() {
-        synchronized(_cleanLock) {
-            if (!hasCleanup || _executor.isClosed || _cleaned)
-                return;
-            _cleaned = true;
+        _plugin.busy {
+            synchronized(_cleanLock) {
+                if (!hasCleanup || _executor.isClosed || _cleaned)
+                    return@busy;
+                _cleaned = true;
+            }
         }
         Logger.i("JSRequestExecutor", "JSRequestExecutor cleanup requested");
         _plugin.busy {

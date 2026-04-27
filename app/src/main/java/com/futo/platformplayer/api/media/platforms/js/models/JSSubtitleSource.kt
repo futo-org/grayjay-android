@@ -29,12 +29,28 @@ class JSSubtitleSource : ISubtitleSource {
     constructor(config: SourcePluginConfig, v8Value: V8ValueObject) {
         _obj = v8Value;
 
-        val context = "JSSubtitles";
-        name = v8Value.getOrThrow(config, "name", context, false);
-        language = v8Value.getOrDefault(config, "language", context, null);
-        url = v8Value.getOrThrow(config, "url", context, true);
-        format = v8Value.getOrThrow(config, "format", context, true);
-        hasFetch = v8Value.has("getSubtitles");
+        var parsedName: String? = null;
+        var parsedLanguage: String? = null;
+        var parsedUrl: String? = null;
+        var parsedFormat: String? = null;
+        var parsedHasFetch = false;
+        val parse = {
+            val context = "JSSubtitles";
+            parsedName = v8Value.getOrThrow(config, "name", context, false);
+            parsedLanguage = v8Value.getOrDefault(config, "language", context, null);
+            parsedUrl = v8Value.getOrThrow(config, "url", context, true);
+            parsedFormat = v8Value.getOrThrow(config, "format", context, true);
+            parsedHasFetch = v8Value.has("getSubtitles");
+        };
+        v8Value.getSourcePlugin()?.busy {
+            parse();
+        } ?: parse()
+
+        name = parsedName ?: "";
+        language = parsedLanguage;
+        url = parsedUrl;
+        format = parsedFormat;
+        hasFetch = parsedHasFetch;
     }
 
     override fun getSubtitles(): String {

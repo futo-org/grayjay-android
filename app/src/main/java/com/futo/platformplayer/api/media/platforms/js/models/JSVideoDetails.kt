@@ -52,34 +52,63 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     override val subtitles: List<ISubtitleSource>;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(plugin.config, obj) {
-        val contextName = "VideoDetails";
         _plugin = plugin;
-        val config = plugin.config;
-        description = _content.getOrThrow(config, "description", contextName);
-        video = JSVideoSourceDescriptor.fromV8(plugin, _content.getOrThrow(config, "video", contextName));
-        dash =  JSSource.fromV8DashNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "dash", contextName));
-        hls = JSSource.fromV8HLSNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "hls", contextName));
-        live = JSSource.fromV8VideoNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "live", contextName));
-        rating = IRating.fromV8OrDefault(config, _content.getOrDefault<V8ValueObject>(config, "rating", contextName, null), RatingLikes(0));
+        var parsedDescription: String? = null;
+        var parsedVideo: IVideoSourceDescriptor? = null;
+        var parsedDash: IDashManifestSource? = null;
+        var parsedHls: IHLSManifestSource? = null;
+        var parsedLive: IVideoSource? = null;
+        var parsedRating: IRating? = null;
+        var parsedSubtitles: List<ISubtitleSource>? = null;
+        var parsedHasGetComments = false;
+        var parsedHasGetPlaybackTracker = false;
+        var parsedHasGetContentRecommendations = false;
+        var parsedHasGetVODEvents = false;
 
-        if(!_content.has("subtitles"))
-            subtitles = listOf();
-        else {
-            val subArrs = _content.getOrThrowNullable<V8ValueArray>(config, "subtitles", contextName);
-            if(subArrs != null)
-                subtitles = subArrs.keys.map { JSSubtitleSource.fromV8(config, subArrs.get(it)) };
-            else
-                subtitles = listOf();
+        plugin.busy {
+            val contextName = "VideoDetails";
+            val config = plugin.config;
+            parsedDescription = _content.getOrThrow(config, "description", contextName);
+            parsedVideo = JSVideoSourceDescriptor.fromV8(plugin, _content.getOrThrow(config, "video", contextName));
+            parsedDash = JSSource.fromV8DashNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "dash", contextName));
+            parsedHls = JSSource.fromV8HLSNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "hls", contextName));
+            parsedLive = JSSource.fromV8VideoNullable(plugin, _content.getOrThrowNullable<V8ValueObject>(config, "live", contextName));
+            parsedRating = IRating.fromV8OrDefault(config, _content.getOrDefault<V8ValueObject>(config, "rating", contextName, null), RatingLikes(0));
+
+            if(!_content.has("subtitles"))
+                parsedSubtitles = listOf();
+            else {
+                val subArrs = _content.getOrThrowNullable<V8ValueArray>(config, "subtitles", contextName);
+                if(subArrs != null)
+                    parsedSubtitles = subArrs.keys.map { JSSubtitleSource.fromV8(config, subArrs.get(it)) };
+                else
+                    parsedSubtitles = listOf();
+            }
+
+            parsedHasGetComments = _content.has("getComments");
+            parsedHasGetPlaybackTracker = _content.has("getPlaybackTracker");
+            parsedHasGetContentRecommendations = _content.has("getContentRecommendations");
+            parsedHasGetVODEvents = _content.has("getVODEvents");
         }
 
-        _hasGetComments = _content.has("getComments");
-        _hasGetPlaybackTracker = _content.has("getPlaybackTracker");
-        _hasGetContentRecommendations = _content.has("getContentRecommendations");
-        _hasGetVODEvents = _content.has("getVODEvents");
+        description = parsedDescription ?: "";
+        video = parsedVideo ?: throw IllegalStateException("Missing video source descriptor");
+        dash = parsedDash;
+        hls = parsedHls;
+        live = parsedLive;
+        rating = parsedRating ?: RatingLikes(0);
+        subtitles = parsedSubtitles ?: listOf();
+        _hasGetComments = parsedHasGetComments;
+        _hasGetPlaybackTracker = parsedHasGetPlaybackTracker;
+        _hasGetContentRecommendations = parsedHasGetContentRecommendations;
+        _hasGetVODEvents = parsedHasGetVODEvents;
     }
 
     override fun getPlaybackTracker(): IPlaybackTracker? {
-        if(!_hasGetPlaybackTracker || _content.isClosed)
+        val canGetPlaybackTracker = _plugin.busy {
+            _hasGetPlaybackTracker && !_content.isClosed
+        }
+        if(!canGetPlaybackTracker)
             return null;
         if(_pluginConfig.id == StateDeveloper.DEV_ID)
             return StateDeveloper.instance.handleDevCall(_pluginConfig.id, "videoDetail.getComments()") {
@@ -102,7 +131,10 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     }
 
     override fun getContentRecommendations(client: IPlatformClient): IPager<IPlatformContent>? {
-        if(!_hasGetContentRecommendations || _content.isClosed)
+        val canGetContentRecommendations = _plugin.busy {
+            _hasGetContentRecommendations && !_content.isClosed
+        }
+        if(!canGetContentRecommendations)
             return  null;
 
         if(client is DevJSClient)
@@ -122,7 +154,12 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     }
 
     override fun getComments(client: IPlatformClient): IPager<IPlatformComment>? {
-        if(client !is JSClient || !_hasGetComments || _content.isClosed)
+        if(client !is JSClient)
+            return null;
+        val canGetComments = _plugin.busy {
+            _hasGetComments && !_content.isClosed
+        }
+        if(!canGetComments)
             return null;
 
         if(client is DevJSClient)

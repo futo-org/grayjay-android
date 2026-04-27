@@ -58,6 +58,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -94,6 +95,9 @@ class V8Plugin {
 
     private val _busyLock = ReentrantLock()
     val isBusy get() = _busyLock.isLocked;
+
+    @Volatile
+    private var _busyHolder: Thread? = null;
 
     var allowDevSubmit: Boolean = false
         private set(value) {
@@ -161,51 +165,53 @@ class V8Plugin {
 
     fun start() {
         val script = _script ?: throw IllegalStateException("Attempted to start V8 without script");
-        synchronized(_runtimeLock) {
-            if (_runtime != null)
-                return;
-            runtimeId = runtimeId + 1;
-            //V8RuntimeOptions.V8_FLAGS.setUseStrict(true);
-            val host = V8Host.getV8Instance();
-            val options = host.jsRuntimeType.getRuntimeOptions();
+        tryBusy(BUSY_STARTUP_MS) {
+            synchronized(_runtimeLock) {
+                if (_runtime != null)
+                    return@tryBusy;
+                runtimeId = runtimeId + 1;
+                //V8RuntimeOptions.V8_FLAGS.setUseStrict(true);
+                val host = V8Host.getV8Instance();
+                val options = host.jsRuntimeType.getRuntimeOptions();
 
-            _runtime = host.createV8Runtime(options);
-            if (!host.isIsolateCreated)
-                throw IllegalStateException("Isolate not created");
+                _runtime = host.createV8Runtime(options);
+                if (!host.isIsolateCreated)
+                    throw IllegalStateException("Isolate not created");
 
-            _runtimeMap.put(_runtime!!, this);
+                _runtimeMap.put(_runtime!!, this);
 
-            //Setup bridge
-            _runtime?.let {
-                it.converter = V8Converter();
+                //Setup bridge
+                _runtime?.let {
+                    it.converter = V8Converter();
 
-                for (pack in _depsPackages) {
-                    if (pack.variableName != null)
-                        it.createV8ValueObject().use { v8valueObject ->
-                            it.globalObject.set(pack.variableName, v8valueObject);
-                            v8valueObject.bind(pack);
-                        };
-                    catchScriptErrors("Package Dep[${pack.name}]") {
-                        for (packScript in pack.getScripts())
-                            it.getExecutor(packScript).executeVoid();
+                    for (pack in _depsPackages) {
+                        if (pack.variableName != null)
+                            it.createV8ValueObject().use { v8valueObject ->
+                                it.globalObject.set(pack.variableName, v8valueObject);
+                                v8valueObject.bind(pack);
+                            };
+                        catchScriptErrors("Package Dep[${pack.name}]") {
+                            for (packScript in pack.getScripts())
+                                it.getExecutor(packScript).executeVoid();
+                        }
                     }
-                }
 
-                //Load deps
-                for (dep in _deps)
-                    catchScriptErrors("Dep[${dep.key}]") {
-                        it.getExecutor(dep.value).executeVoid()
+                    //Load deps
+                    for (dep in _deps)
+                        catchScriptErrors("Dep[${dep.key}]") {
+                            it.getExecutor(dep.value).executeVoid()
+                        };
+
+
+                    if (config.allowEval)
+                        it.allowEval(true);
+
+                    //Load plugin
+                    catchScriptErrors("Plugin[${config.name}]") {
+                        it.getExecutor(script).executeVoid()
                     };
-
-
-                if (config.allowEval)
-                    it.allowEval(true);
-
-                //Load plugin
-                catchScriptErrors("Plugin[${config.name}]") {
-                    it.getExecutor(script).executeVoid()
-                };
-                isStopped = false;
+                    isStopped = false;
+                }
             }
         }
     }
@@ -254,27 +260,30 @@ class V8Plugin {
     fun isThreadAlreadyBusy(): Boolean {
         return _busyLock.isHeldByCurrentThread;
     }
-    fun <T> busy(handle: ()->T): T {
-        _busyLock.lock();
-        //Logger.i(TAG, "Busy Enter [" + _busyLock.holdCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString())
+    fun <T> busy(handle: ()->T): T = busyInternal(BUSY_FATAL_MS, true, "busy(enter)", handle)
+
+    fun <T> tryBusy(maxWaitMs: Long, handle: ()->T): T = busyInternal(maxWaitMs, false, "tryBusy(enter)", handle)
+
+    private fun <T> busyInternal(maxWaitMs: Long, allowUnwedge: Boolean, context: String, handle: ()->T): T {
+        acquireBusyOrThrow(context, maxWaitMs, allowUnwedge);
+        _busyHolder = Thread.currentThread();
         try {
             return handle();
         }
         finally {
-            //Logger.i(TAG, "Busy Leave [" + _busyLock.holdCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString()+ ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString())
-            _busyLock.unlock();
+            if (_busyLock.isHeldByCurrentThread) {
+                if (_busyLock.holdCount == 1)
+                    _busyHolder = null;
+                _busyLock.unlock();
+            }
         }
-        /*
-        _busyLock.withLock {
-            //Logger.i(TAG, "Entered busy: " + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString());
-            return handle();
-        }*/
     }
     fun <T> unbusy(handle: ()->T): T {
         val wasLocked = isThreadAlreadyBusy();
         if(!wasLocked)
             return handle();
         val lockCount = _busyLock.holdCount;
+        _busyHolder = null;
         for(i in 1..lockCount)
             _busyLock.unlock();
         try {
@@ -283,9 +292,90 @@ class V8Plugin {
         }
         finally {
             Logger.w(TAG, "Relocking V8 thread for [${config.name}] for a blocking resolve of a promise")
+            var acquired = 0;
+            try {
+                for (i in 1..lockCount) {
+                    acquireBusyOrThrow("unbusy(relock)");
+                    acquired++;
+                }
+                _busyHolder = Thread.currentThread();
+            }
+            catch (timeout: Throwable) {
+                for (j in 1..acquired)
+                    _busyLock.unlock();
+                throw timeout;
+            }
+        }
+    }
 
-            for(i in 1..lockCount)
-                _busyLock.lock();
+    private fun acquireBusyOrThrow(context: String, maxWaitMs: Long = BUSY_FATAL_MS, allowUnwedge: Boolean = true) {
+        val warnAt = Math.min(BUSY_WARN_MS, maxWaitMs);
+        if (_busyLock.tryLock(warnAt, TimeUnit.MILLISECONDS))
+            return;
+        logBusyContention(context);
+        val remaining = maxWaitMs - warnAt;
+        if (remaining > 0 && _busyLock.tryLock(remaining, TimeUnit.MILLISECONDS))
+            return;
+        if (!allowUnwedge)
+            throw IllegalStateException("V8 busy lock for [${config.name}] timed out after ${maxWaitMs}ms in $context (fast-fail)");
+        unwedgeBusyHolder(context);
+        if (_busyLock.tryLock(BUSY_RECOVERY_MS, TimeUnit.MILLISECONDS))
+            return;
+        throw IllegalStateException("V8 busy lock for [${config.name}] timed out after ${maxWaitMs + BUSY_RECOVERY_MS}ms in $context; holder did not release after recovery");
+    }
+
+    private fun unwedgeBusyHolder(context: String) {
+        val holder = _busyHolder;
+        Logger.w(TAG, "V8 busy lock for [${config.name}] still held in $context after ${BUSY_FATAL_MS}ms; attempting to unwedge holder ${holder?.name ?: "unknown"}");
+        try {
+            val rt = _runtime;
+            if (rt != null && !rt.isClosed && !rt.isDead) {
+                Logger.w(TAG, "Calling terminateExecution() on [${config.name}] runtime");
+                rt.terminateExecution();
+            }
+        }
+        catch (ex: Throwable) {
+            Logger.e(TAG, "terminateExecution() failed for [${config.name}]", ex);
+        }
+        try {
+            holder?.interrupt();
+        }
+        catch (ex: Throwable) {
+            Logger.e(TAG, "Interrupting holder thread for [${config.name}] failed", ex);
+        }
+    }
+
+    private fun logBusyContention(context: String) {
+        try {
+            val holder = _busyHolder;
+            val sb = StringBuilder();
+            sb.append("V8 BUSY CONTENTION [${config.name}] in $context: queueLength=${_busyLock.queueLength}, holdCount=${_busyLock.holdCount}, waited>${BUSY_WARN_MS}ms\n");
+            if (holder != null) {
+                sb.append("Lock holder: ${holder.name} (id=${holder.id}, state=${holder.state})\n");
+                for (frame in holder.stackTrace.take(40))
+                    sb.append("  at ").append(frame.toString()).append("\n");
+            } else {
+                sb.append("Lock holder unknown (likely already released or never set)\n");
+            }
+            sb.append("Suspect waiting/blocked threads:\n");
+            val cur = Thread.currentThread();
+            for ((thread, stack) in Thread.getAllStackTraces()) {
+                if (thread == cur || thread == holder) continue;
+                if (thread.state != Thread.State.WAITING && thread.state != Thread.State.BLOCKED && thread.state != Thread.State.TIMED_WAITING) continue;
+                if (stack.none {
+                        val cn = it.className;
+                        cn.contains("V8Plugin") || cn.contains("JSClient") || cn.contains("Extensions_V8")
+                            || cn.contains("Subscription") || cn.contains("PackageHttp") || cn.contains("JSPager")
+                            || cn.contains("JSContent")
+                    }) continue;
+                sb.append("  ${thread.name} (state=${thread.state}):\n");
+                for (frame in stack.take(20))
+                    sb.append("    at ").append(frame.toString()).append("\n");
+            }
+            Logger.w(TAG, sb.toString());
+        }
+        catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to log busy contention", ex);
         }
     }
     fun execute(js: String) : V8Value {
@@ -429,6 +519,11 @@ class V8Plugin {
         private val _runtimeMap = ConcurrentHashMap<V8Runtime, V8Plugin>();
 
         val TAG = "V8Plugin";
+
+        private const val BUSY_WARN_MS = 10_000L;
+        private const val BUSY_FATAL_MS = 60_000L;
+        private const val BUSY_RECOVERY_MS = 5_000L;
+        const val BUSY_STARTUP_MS = 5_000L;
 
         fun getPluginFromRuntime(runtime: V8Runtime): V8Plugin? {
             return _runtimeMap.getOrDefault(runtime, null);
