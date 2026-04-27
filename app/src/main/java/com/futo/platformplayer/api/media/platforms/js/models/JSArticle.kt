@@ -21,6 +21,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullableList
+import com.futo.platformplayer.getSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
 
 open class JSArticle(
@@ -34,7 +35,7 @@ open class JSArticle(
         obj.getOrDefault<String>(config, "summary", "PlatformArticle", "") ?: ""
 
     override val thumbnails: Thumbnails? =
-        if (obj.has("thumbnails"))
+        if (obj.getSourcePlugin()?.busy { obj.has("thumbnails") } ?: obj.has("thumbnails"))
             Thumbnails.fromV8(
                 config,
                 obj.getOrThrow<V8ValueObject>(config, "thumbnails", "PlatformArticle")

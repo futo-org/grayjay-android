@@ -40,6 +40,8 @@ import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.system.measureTimeMillis
 
 abstract class SubscriptionsTaskFetchAlgorithm(
@@ -125,7 +127,7 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val timeTotal = measureTimeMillis {
             for(task in forkTasks) {
                 try {
-                    val result = task.get();
+                    val result = task.get(TASK_TIMEOUT_S, TimeUnit.SECONDS);
                     if(result != null) {
                         if(result.pager != null) {
                             taskResults.add(result);
@@ -148,6 +150,10 @@ abstract class SubscriptionsTaskFetchAlgorithm(
                     } else {
                         throw ex.cause ?: ex;
                     }
+                } catch (ex: TimeoutException) {
+                    Logger.w(TAG, "Subscription task timed out after ${TASK_TIMEOUT_S}s, abandoning");
+                    task.cancel(true);
+                    exs.add(ex);
                 };
             }
 
@@ -382,4 +388,8 @@ abstract class SubscriptionsTaskFetchAlgorithm(
         val pager: IPager<IPlatformContent>?,
         val exception: Throwable?
     )
+
+    companion object {
+        private const val TASK_TIMEOUT_S = 90L;
+    }
 }

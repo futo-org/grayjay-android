@@ -44,6 +44,7 @@ import kotlin.streams.asSequence
  * Used to maintain subscriptions
  */
 class StateSubscriptions {
+
     private val _subscriptions = FragmentedStorage.storeJson<Subscription>("subscriptions")
         .withUnique { it.channel.url }
         .withRestore(object: ReconstructStore<Subscription>(){

@@ -28,6 +28,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginDescriptor
 import com.futo.platformplayer.api.media.platforms.local.LocalClient
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
@@ -181,11 +182,14 @@ class StatePlatform {
         }
 
         withContext(Dispatchers.IO) {
-            var toDisables = mutableListOf<IPlatformClient>();
+            val toDispose = mutableListOf<IPlatformClient>();
             var enabled: Array<String>;
             synchronized(_clientsLock) {
-                for(e in _enabledClients) {
-                    toDisables.add(e);
+                val previousAvailable = _availableClients.toList();
+                val reusableByDescriptor = HashMap<SourcePluginDescriptor, JSClient>();
+                for (prev in previousAvailable) {
+                    if (prev is JSClient)
+                        reusableByDescriptor[prev.descriptor] = prev;
                 }
 
                 _enabledClients.clear();
@@ -200,9 +204,16 @@ class StatePlatform {
 
                 for (plugin in StatePlugins.instance.getPlugins()) {
                     try {
-                        val client = JSClient(context, plugin);
-                        client.onCaptchaException.subscribe { c, ex ->
-                            StateApp.instance.handleCaptchaException(c, ex);
+                        val reused = reusableByDescriptor[plugin];
+                        val isReused = reused != null && reused.descriptor === plugin;
+                        val client: JSClient = if (isReused) {
+                            reused!!;
+                        } else {
+                            JSClient(context, plugin).also { fresh ->
+                                fresh.onCaptchaException.subscribe { c, ex ->
+                                    StateApp.instance.handleCaptchaException(c, ex);
+                                }
+                            }
                         }
 
                         _icons[plugin.config.id] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
@@ -210,6 +221,9 @@ class StatePlatform {
                         _iconsByName[plugin.config.name.lowercase()] = StatePlugins.instance.getPluginIconOrNull(plugin.config.id) ?:
                                 ImageVariable(plugin.config.absoluteIconUrl, null);
                         _availableClients.add(client);
+
+                        if (isReused)
+                            reusableByDescriptor.remove(plugin);
                     }
                     catch(ex: Throwable) {
                         Logger.e(TAG, "Failed to initialize plugin [${plugin.config.name}]", ex);
@@ -218,6 +232,8 @@ class StatePlatform {
                         }
                     }
                 }
+
+                toDispose.addAll(reusableByDescriptor.values);
 
                 if(_availableClients.distinctBy { it.id }.count() < _availableClients.size) {
                     val dups = _availableClients.filter { x-> _availableClients.count { it.id == x.id } > 1 };
@@ -244,7 +260,7 @@ class StatePlatform {
             }
             selectClients(*enabled);
 
-            for(toDisable in toDisables) {
+            for(toDisable in toDispose) {
                 launch(Dispatchers.IO) {
                     try {
                         toDisable.disable();

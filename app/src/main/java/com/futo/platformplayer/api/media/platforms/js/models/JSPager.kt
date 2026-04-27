@@ -41,7 +41,9 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun hasMorePages(): Boolean {
-        return _hasMorePages && !pager.isClosed;
+        return plugin.getUnderlyingPlugin().busy {
+            _hasMorePages && !pager.isClosed;
+        }
     }
 
     override fun nextPage() {

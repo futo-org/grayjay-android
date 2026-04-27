@@ -11,6 +11,7 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.decodeUnicode
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.getSourcePlugin
 import com.futo.platformplayer.logging.Logger
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -23,7 +24,8 @@ open class JSContent(
 
     override val contentType: ContentType = ContentType.UNKNOWN
 
-    protected val _hasGetDetails: Boolean = _content.has("getDetails")
+    protected val _hasGetDetails: Boolean =
+        _content.getSourcePlugin()?.busy { _content.has("getDetails") } ?: false
 
     override val id: PlatformID =
         PlatformID.fromV8(_pluginConfig, _content.getOrThrow(_pluginConfig, "id", CTX))

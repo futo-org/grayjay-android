@@ -39,10 +39,10 @@ open class JSAudioUrlSource(
             ?: "$container $bitrate"
 
     override var priority: Boolean =
-        if (_obj.has("priority")) _obj.getOrThrow<Boolean>(cfg, "priority", ctx) else false
+        plugin.busy { if (_obj.has("priority")) _obj.getOrThrow<Boolean>(cfg, "priority", ctx) else false }
 
     override var original: Boolean =
-        if (_obj.has("original")) _obj.getOrThrow<Boolean>(cfg, "original", ctx) else false
+        plugin.busy { if (_obj.has("original")) _obj.getOrThrow<Boolean>(cfg, "original", ctx) else false }
 
     override fun getAudioUrl(): String = url
 

@@ -36,11 +36,11 @@ class JSRequestModifier: IRequestModifier {
     }
 
     override fun modifyRequest(url: String, headers: Map<String, String>): IRequest {
-        if (_modifier.isClosed) {
-            return Request(url, headers);
-        }
-
         return _plugin.busy {
+            if (_modifier.isClosed) {
+                return@busy Request(url, headers);
+            }
+
             val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSRequestModifier", "builder.modifyRequest()") {
                 _modifier.invokeV8("modifyRequest", url, headers);
             } as V8ValueObject;

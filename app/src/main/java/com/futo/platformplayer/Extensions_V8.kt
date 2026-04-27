@@ -118,14 +118,13 @@ inline fun <reified T> V8ValueArray.expectV8Variants(config: IV8PluginConfig, co
 inline fun V8Plugin.ensureIsBusy() {
     this.let {
         if (!it.isThreadAlreadyBusy()) {
-            //throw IllegalStateException("Tried to access V8Plugin without busy");
             val stacktrace = Thread.currentThread().stackTrace;
-            Logger.w("Extensions_V8",
-                "V8 USE OUTSIDE BUSY: " + stacktrace.drop(3)?.firstOrNull().toString() +
-                        ", " + stacktrace.drop(4)?.firstOrNull().toString() +
-                        ", " + stacktrace.drop(5)?.firstOrNull()?.toString() +
-                        ", " + stacktrace.drop(6)?.firstOrNull()?.toString()
-            );
+            val message = "V8 USE OUTSIDE BUSY: " + stacktrace.drop(3)?.firstOrNull().toString() +
+                ", " + stacktrace.drop(4)?.firstOrNull().toString() +
+                ", " + stacktrace.drop(5)?.firstOrNull()?.toString() +
+                ", " + stacktrace.drop(6)?.firstOrNull()?.toString();
+            Logger.w("Extensions_V8", message);
+            throw IllegalStateException(message);
         }
     }
 }
@@ -136,8 +135,7 @@ inline fun V8Value.ensureIsBusy() {
 }
 
 inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextName: String): T {
-    if(false)
-        ensureIsBusy();
+    ensureIsBusy();
     return when(T::class) {
         String::class -> this.expectOrThrow<V8ValueString>(config, contextName).value as T;
         Int::class -> {
@@ -186,10 +184,14 @@ inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextN
         else -> throw NotImplementedError("Type ${T::class.simpleName} not implemented conversion");
     }
 }
-fun V8ArrayToStringList(obj: V8ValueArray): List<String> = obj.keys.map { obj.getString(it) };
+fun V8ArrayToStringList(obj: V8ValueArray): List<String> {
+    obj.ensureIsBusy();
+    return obj.keys.map { obj.getString(it) };
+}
 fun V8ObjectToHashMap(obj: V8ValueObject?): HashMap<String, String> {
     if(obj == null)
         return hashMapOf();
+    obj.ensureIsBusy();
     val map = hashMapOf<String, String>();
     for(prop in obj.ownPropertyNames.keys.map { obj.ownPropertyNames.get<V8Value>(it).toString() })
         map.put(prop, obj.getString(prop));
@@ -203,21 +205,27 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
     plugin.busy {
         this.register(object: IV8ValuePromise.IListener {
             override fun onFulfilled(p0: V8Value?) {
-                if(p0 is V8ValueError)
-                    promiseException = ScriptExecutionException(plugin.config, p0.message);
-                else {
-                    if(p0 is V8ValueObject)
-                        p0.setWeak();
-                    promiseResult = p0 as T;
+                plugin.busy {
+                    if(p0 is V8ValueError)
+                        promiseException = ScriptExecutionException(plugin.config, p0.message);
+                    else {
+                        if(p0 is V8ValueObject)
+                            p0.setWeak();
+                        promiseResult = p0 as T;
+                    }
                 }
                 latch.countDown();
             }
             override fun onRejected(p0: V8Value?) {
-                promiseException = p0?.toException(plugin.config);
+                plugin.busy {
+                    promiseException = p0?.toException(plugin.config);
+                }
                 latch.countDown();
             }
             override fun onCatch(p0: V8Value?) {
-                promiseException = p0?.toException(plugin.config);
+                plugin.busy {
+                    promiseException = p0?.toException(plugin.config);
+                }
                 latch.countDown();
             }
         });
@@ -229,20 +237,23 @@ fun <T: V8Value> V8ValuePromise.toV8ValueBlocking(plugin: V8Plugin): T {
     }
     //Logger.i("V8", "V8ValueBlocking started (Busy) [" + blockCount + "]" + Thread.currentThread().stackTrace.drop(3)?.firstOrNull()?.toString() + ", " + Thread.currentThread().stackTrace.drop(4)?.firstOrNull()?.toString()+ ", " + Thread.currentThread().stackTrace.drop(5)?.firstOrNull()?.toString());
 
-
-    if(!promise.isPending) {
-        try {
-            Logger.i("V8", "V8Promise resolved synchronously");
-            if(promise.isFulfilled)
-                promiseResult = promise.getResult<T>();
-            else
-                promiseException = promise.getResult<V8Value>().toException(plugin.config);
+    val isPending = plugin.busy {
+        promise.isPending
+    };
+    if(!isPending) {
+        plugin.busy {
+            try {
+                Logger.i("V8", "V8Promise resolved synchronously");
+                if(promise.isFulfilled)
+                    promiseResult = promise.getResult<T>();
+                else
+                    promiseException = promise.getResult<V8Value>().toException(plugin.config);
+            }
+            catch(ex: Throwable) {
+                promiseException = ex;
+            }
         }
-        catch(ex: Throwable) {
-            promiseException = ex;
-        }
-    }
-    else {
+    } else {
         plugin.unbusy {
             latch.await();
         }
@@ -266,15 +277,19 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
     plugin.busy {
         this.register(object: IV8ValuePromise.IListener {
             override fun onFulfilled(p0: V8Value?) {
-                plugin.resolvePromise(promise);
-                underlyingDef.complete(p0 as T);
+                plugin.busy {
+                    plugin.resolvePromise(promise);
+                    underlyingDef.complete(p0 as T);
+                }
             }
             override fun onRejected(p0: V8Value?) {
                 try {
-                    plugin.resolvePromise(promise);
-                    val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onRejected promise not implemented..");
-                    Logger.i("V8", "Promise rejected, setting exception");
-                    underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                    plugin.busy {
+                        plugin.resolvePromise(promise);
+                        val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onRejected promise not implemented..");
+                        Logger.i("V8", "Promise rejected, setting exception");
+                        underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                    }
                 }
                 catch(ex: Throwable) {
                     Logger.e("V8", "Rejection handling failed?" , ex);
@@ -282,9 +297,11 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
             }
             override fun onCatch(p0: V8Value?) {
                 try {
-                    plugin.resolvePromise(promise);
-                    val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onCatch promise not implemented..");
-                    underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                    plugin.busy {
+                        plugin.resolvePromise(promise);
+                        val exceptionFound = p0?.toException(plugin.config) ?: NotImplementedError("onCatch promise not implemented..");
+                        underlyingDef.completeExceptionally(CancellationException(exceptionFound.message, exceptionFound));
+                    }
                 }
                 catch(ex: Throwable) {
                     Logger.e("V8", "Catching handling failed?" , ex);
@@ -300,6 +317,7 @@ fun <T: V8Value> V8ValuePromise.toV8ValueAsync(plugin: V8Plugin): V8Deferred<T> 
 }
 
 fun V8Value.toException(config: IV8PluginConfig): Throwable {
+    ensureIsBusy();
     val p0 = this;
     if(p0 is V8ValueObject) {
         return V8Plugin.getExceptionFromPlugin(config, p0, null, null, null, "P:");
@@ -349,6 +367,7 @@ class V8Deferred<T>(val deferred: Deferred<T>, val estDuration: Int = -1): Defer
 
 
 fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any?): T {
+    ensureIsBusy();
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         return result.toV8ValueBlocking(this.getSourcePlugin()!!);
@@ -356,6 +375,7 @@ fun <T: V8Value> V8ValueObject.invokeV8(method: String, vararg obj: Any?): T {
     return result as T;
 }
 fun <T: V8Value> V8ValueObject.invokeV8Async(method: String, vararg obj: Any?): V8Deferred<T> {
+    ensureIsBusy();
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         return result.toV8ValueAsync(this.getSourcePlugin()!!);
@@ -363,6 +383,7 @@ fun <T: V8Value> V8ValueObject.invokeV8Async(method: String, vararg obj: Any?): 
     return V8Deferred(CompletableDeferred(result as T));
 }
 fun V8ValueObject.invokeV8Void(method: String, vararg obj: Any?): V8Value {
+    ensureIsBusy();
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         return result.toV8ValueBlocking(this.getSourcePlugin()!!);
@@ -370,6 +391,7 @@ fun V8ValueObject.invokeV8Void(method: String, vararg obj: Any?): V8Value {
     return result;
 }
 fun V8ValueObject.invokeV8VoidAsync(method: String, vararg obj: Any?): V8Deferred<V8Value> {
+    ensureIsBusy();
     var result = this.invoke<V8Value>(method, *obj);
     if(result is V8ValuePromise) {
         val result = result.toV8ValueAsync<V8Value>(this.getSourcePlugin()!!);

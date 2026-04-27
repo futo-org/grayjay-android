@@ -18,21 +18,23 @@ class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
         val config = plugin.config
 
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName)
-        hasLicenseRequestExecutor = obj.has("getLicenseRequestExecutor")
+        hasLicenseRequestExecutor = plugin.busy { obj.has("getLicenseRequestExecutor") }
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
-        if (!hasLicenseRequestExecutor || _obj.isClosed)
-            return null
+        return _plugin.busy {
+            if (!hasLicenseRequestExecutor || _obj.isClosed)
+                return@busy null
 
-        val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSAudioUrlWidevineSource", "obj.getLicenseRequestExecutor()") {
-            _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
+            val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSAudioUrlWidevineSource", "obj.getLicenseRequestExecutor()") {
+                _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
+            }
+
+            if (result !is V8ValueObject)
+                return@busy null
+
+            return@busy JSRequestExecutor(_plugin, result)
         }
-
-        if (result !is V8ValueObject)
-            return null
-
-        return JSRequestExecutor(_plugin, result)
     }
 
     override fun toString(): String {

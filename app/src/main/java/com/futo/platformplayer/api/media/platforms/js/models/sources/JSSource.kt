@@ -44,15 +44,26 @@ abstract class JSSource {
         this._obj = obj;
         this.type = type;
 
-        _requestModifier = obj.getOrDefault<V8ValueObject>(_config, "requestModifier", "JSSource.requestModifier", null)?.let {
-            JSRequest(plugin, it, null, null, true);
-        }
-        hasRequestModifier = _requestModifier != null || obj.has("getRequestModifier");
+        var parsedRequestModifier: JSRequest? = null;
+        var parsedHasRequestModifier = false;
+        var parsedRequestExecutor: JSRequest? = null;
+        var parsedHasRequestExecutor = false;
+        plugin.busy {
+            parsedRequestModifier = obj.getOrDefault<V8ValueObject>(_config, "requestModifier", "JSSource.requestModifier", null)?.let {
+                JSRequest(plugin, it, null, null, true);
+            };
+            parsedHasRequestModifier = parsedRequestModifier != null || obj.has("getRequestModifier");
 
-        _requestExecutor = obj.getOrDefault<V8ValueObject>(_config, "requestExecutor", "JSSource.requestExecutor", null)?.let {
-            JSRequest(plugin, it, null, null, true);
+            parsedRequestExecutor = obj.getOrDefault<V8ValueObject>(_config, "requestExecutor", "JSSource.requestExecutor", null)?.let {
+                JSRequest(plugin, it, null, null, true);
+            };
+            parsedHasRequestExecutor = parsedRequestExecutor != null || obj.has("getRequestExecutor");
         }
-        hasRequestExecutor = _requestExecutor != null || obj.has("getRequestExecutor");
+
+        _requestModifier = parsedRequestModifier;
+        hasRequestModifier = parsedHasRequestModifier;
+        _requestExecutor = parsedRequestExecutor;
+        hasRequestExecutor = parsedHasRequestExecutor;
     }
 
     fun getRequestModifier(): IRequestModifier? = _plugin.isBusyWith("getRequestModifier") {

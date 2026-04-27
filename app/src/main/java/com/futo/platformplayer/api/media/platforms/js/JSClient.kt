@@ -488,13 +488,14 @@ open class JSClient : IPlatformClient {
             if (_peekChannelTypes != null) {
                 return _peekChannelTypes!!;
             }
-            val arr: V8ValueArray = plugin.executeTyped("source.getPeekChannelTypes()");
-
-            _peekChannelTypes = arr.keys.mapNotNull {
-                val str = arr.get<V8ValueString>(it);
-                return@mapNotNull str.value;
-            };
-            return _peekChannelTypes ?: listOf();
+            return busy {
+                val arr: V8ValueArray = plugin.executeTyped("source.getPeekChannelTypes()");
+                _peekChannelTypes = arr.keys.mapNotNull {
+                    val str = arr.get<V8ValueString>(it);
+                    return@mapNotNull str.value;
+                };
+                return@busy _peekChannelTypes ?: listOf();
+            }
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getPeekChannelTypes", ex);
@@ -523,10 +524,12 @@ open class JSClient : IPlatformClient {
         if(!capabilities.hasGetChannelUrlByClaim)
             throw IllegalStateException("This plugin does not support channel url by claim");
 
-        val value = plugin.executeTyped<V8Value>("source.getChannelUrlByClaim(${claimType}, ${Json.encodeToString(claimValues)})");
-        if(value !is V8ValueString)
-            return null;
-        return value.value;
+        return busy {
+            val value = plugin.executeTyped<V8Value>("source.getChannelUrlByClaim(${claimType}, ${Json.encodeToString(claimValues)})");
+            if(value !is V8ValueString)
+                return@busy null;
+            return@busy value.value;
+        }
     }
     @JSOptional
     @JSDocs(12, "source.getChannelTemplateByClaimMap()", "Get a map for every supported claimtype mapping field to urls")
@@ -536,28 +539,30 @@ open class JSClient : IPlatformClient {
         if(!capabilities.hasGetChannelTemplateByClaimMap)
             throw IllegalStateException("This plugin does not support channel template by claim map");
 
-        val value = plugin.executeTyped<V8Value>("source.getChannelTemplateByClaimMap()");
-        if(value !is V8ValueObject)
-            return mapOf();
+        return busy {
+            val value = plugin.executeTyped<V8Value>("source.getChannelTemplateByClaimMap()");
+            if(value !is V8ValueObject)
+                return@busy mapOf();
 
-        val claimTypes = mutableMapOf<Int, Map<Int, String>>();
+            val claimTypes = mutableMapOf<Int, Map<Int, String>>();
 
-        val keys = value.ownPropertyNames;
-        for(key in keys.toArray()) {
-            if(key is V8ValueInteger) {
-                val map = value.get<V8ValueObject>(key);
-                val mapKeys = map.ownPropertyNames;
+            val keys = value.ownPropertyNames;
+            for(key in keys.toArray()) {
+                if(key is V8ValueInteger) {
+                    val map = value.get<V8ValueObject>(key);
+                    val mapKeys = map.ownPropertyNames;
 
-                claimTypes[key.value] = mapKeys.toArray().filter {
-                    it is V8ValueInteger
-                }.associate {
-                    val mapKey = (it as V8ValueInteger).value;
-                    return@associate Pair(mapKey, map.getString(mapKey));
-                };
+                    claimTypes[key.value] = mapKeys.toArray().filter {
+                        it is V8ValueInteger
+                    }.associate {
+                        val mapKey = (it as V8ValueInteger).value;
+                        return@associate Pair(mapKey, map.getString(mapKey));
+                    };
+                }
             }
+            channelClaimTemplates = claimTypes.toMap();
+            return@busy claimTypes;
         }
-        channelClaimTemplates = claimTypes.toMap();
-        return claimTypes;
     }
 
 
@@ -698,27 +703,33 @@ open class JSClient : IPlatformClient {
     @JSDocs(22, "source.getUserPlaylists()", "Gets the playlist of the current user")
     override fun getUserPlaylists(): Array<String> {
         ensureEnabled();
-        return plugin.executeTyped<V8ValueArray>("source.getUserPlaylists()")
-            .toArray()
-            .map { (it as V8ValueString).value }
-            .toTypedArray();
+        return busy {
+            return@busy plugin.executeTyped<V8ValueArray>("source.getUserPlaylists()")
+                .toArray()
+                .map { (it as V8ValueString).value }
+                .toTypedArray();
+        }
     }
 
     @JSOptional
     @JSDocs(23, "source.getUserSubscriptions()", "Gets the subscriptions of the current user")
     override fun getUserSubscriptions(): Array<String> {
         ensureEnabled();
-        return plugin.executeTyped<V8ValueArray>("source.getUserSubscriptions()")
-            .toArray()
-            .map { (it as V8ValueString).value }
-            .toTypedArray();
+        return busy {
+            return@busy plugin.executeTyped<V8ValueArray>("source.getUserSubscriptions()")
+                .toArray()
+                .map { (it as V8ValueString).value }
+                .toTypedArray();
+        }
     }
 
     @JSOptional
     @JSDocs(23, "source.getUserHistory()", "Gets the history of the current user")
     override fun getUserHistory(): IPager<IPlatformContent> {
         ensureEnabled();
-        return JSContentPager(config, this, plugin.executeTyped("source.getUserHistory()"));
+        return isBusyWith("getUserHistory") {
+            return@isBusyWith JSContentPager(config, this, plugin.executeTyped("source.getUserHistory()"));
+        }
     }
 
     fun validate() {

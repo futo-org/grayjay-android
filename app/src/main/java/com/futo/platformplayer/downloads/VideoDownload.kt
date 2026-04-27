@@ -139,13 +139,17 @@ class VideoDownload {
     @Contextual
     @kotlinx.serialization.Transient
     var videoSourceLive: JSSource? = null;
-    val isLiveVideoSourceValid get() = videoSourceLive?.getUnderlyingObject()?.isClosed?.let { !it } ?: false;
+    val isLiveVideoSourceValid get() = videoSourceLive?.getUnderlyingPlugin()?.busy {
+        videoSourceLive?.getUnderlyingObject()?.isClosed?.let { !it } ?: false;
+    } ?: false;
 
     var requiresLiveAudioSource: Boolean = false;
     @Contextual
     @kotlinx.serialization.Transient
     var audioSourceLive: JSSource? = null;
-    val isLiveAudioSourceValid get() = audioSourceLive?.getUnderlyingObject()?.isClosed?.let { !it } ?: false;
+    val isLiveAudioSourceValid get() = audioSourceLive?.getUnderlyingPlugin()?.busy {
+        audioSourceLive?.getUnderlyingObject()?.isClosed?.let { !it } ?: false;
+    } ?: false;
 
     var hasVideoRequestExecutor: Boolean = false;
     var hasAudioRequestExecutor: Boolean = false;
