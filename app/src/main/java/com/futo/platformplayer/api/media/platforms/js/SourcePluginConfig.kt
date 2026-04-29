@@ -170,12 +170,12 @@ class SourcePluginConfig(
                 "Unrestricted Http Header access",
                 "Allows this plugin to access all headers (including cookies and authorization headers) for unauthenticated requests."
             ))
-        if(packagesOptional.contains("Browser") || packages.contains("Browser")) {
+        /*if(packagesOptional.contains("Browser") || packages.contains("Browser")) {
             list.add(Pair(
                 "Browser Interop",
                 "This plugin requires webbrowser interop. May access urls outside of the restricted urls. This will only work for official plugins and during development builds."
             ))
-        }
+        }*/
 
         return list;
     }
