@@ -1462,6 +1462,9 @@ class VideoDownload {
         if(localAudioSource != null && audioSourceToUse != null && audioSourceToUse is IStreamMetaDataSource)
             localAudioSource.streamMetaData = (audioSourceToUse as IStreamMetaDataSource).streamMetaData;
 
+        if(localAudioSource != null && localAudioSource.streamMetaData == null && videoSourceToUse is JSDashManifestRawSource)
+            localAudioSource.streamMetaData = (videoSourceToUse as JSDashManifestRawSource).audioStreamMetaData;
+
         if(existing != null) {
             existing.videoSerialized = videoDetails!!;
             if(localVideoSource != null) {

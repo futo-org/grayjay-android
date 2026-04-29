@@ -79,6 +79,7 @@ open class JSDashManifestRawSource(
         _obj.getOrDefault<Boolean>(cfg, "canMerge", ctx, false) ?: false
 
     override var streamMetaData: StreamMetaData? = null
+    var audioStreamMetaData: StreamMetaData? = null
 
     private var _pregenerate: V8Deferred<String?>? = null
     fun pregenerateAsync(scope: CoroutineScope): V8Deferred<String?>? {
@@ -125,6 +126,14 @@ open class JSDashManifestRawSource(
                 streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
             }
 
+            val audioInitStart = _obj.getOrDefault<Int>(_config, "audioInitStart", "JSDashManifestRawSource", null) ?: 0;
+            val audioInitEnd = _obj.getOrDefault<Int>(_config, "audioInitEnd", "JSDashManifestRawSource", null) ?: 0;
+            val audioIndexStart = _obj.getOrDefault<Int>(_config, "audioIndexStart", "JSDashManifestRawSource", null) ?: 0;
+            val audioIndexEnd = _obj.getOrDefault<Int>(_config, "audioIndexEnd", "JSDashManifestRawSource", null) ?: 0;
+            if(audioInitEnd > 0 && audioIndexStart > 0 && audioIndexEnd > 0) {
+                audioStreamMetaData = StreamMetaData(audioInitStart, audioInitEnd, audioIndexStart, audioIndexEnd);
+            }
+
             return@busy result.convert {
                 it.value
             };
@@ -161,6 +170,14 @@ open class JSDashManifestRawSource(
                 val indexEnd = _obj.getOrDefault<Int>(_config, "indexEnd", "JSDashManifestRawSource", null) ?: 0;
                 if(initEnd > 0 && indexStart > 0 && indexEnd > 0) {
                     streamMetaData = StreamMetaData(initStart, initEnd, indexStart, indexEnd);
+                }
+
+                val audioInitStart = _obj.getOrDefault<Int>(_config, "audioInitStart", "JSDashManifestRawSource", null) ?: 0;
+                val audioInitEnd = _obj.getOrDefault<Int>(_config, "audioInitEnd", "JSDashManifestRawSource", null) ?: 0;
+                val audioIndexStart = _obj.getOrDefault<Int>(_config, "audioIndexStart", "JSDashManifestRawSource", null) ?: 0;
+                val audioIndexEnd = _obj.getOrDefault<Int>(_config, "audioIndexEnd", "JSDashManifestRawSource", null) ?: 0;
+                if(audioInitEnd > 0 && audioIndexStart > 0 && audioIndexEnd > 0) {
+                    audioStreamMetaData = StreamMetaData(audioInitStart, audioInitEnd, audioIndexStart, audioIndexEnd);
                 }
             }
         }
