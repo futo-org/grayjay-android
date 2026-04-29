@@ -34,6 +34,7 @@ import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.platforms.js.DevJSClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.background.BackgroundWorker
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event0
@@ -804,15 +805,24 @@ class StateApp {
         if(StateHistory.instance.shouldMigrateLegacyHistory())
             StateHistory.instance.migrateLegacyHistory();
 
-        StateAnnouncement.instance.deleteAnnouncement("plugin-update")
-
         scopeOrNull?.launch(Dispatchers.IO) {
             val updateAvailable = StatePlugins.instance.checkForUpdates()
 
             withContext(Dispatchers.Main) {
-                if (updateAvailable.isNotEmpty()) {
+                val toNotify = mutableListOf<Pair<SourcePluginConfig, SourcePluginConfig>>();
+                for(update in updateAvailable) {
+                    if(!StatePlatform.instance.isClientEnabled(update.first.id))
+                        continue;
+                    val descriptor = StatePlugins.instance.getPlugin(update.first.id);
+                    if(descriptor?.appSettings?.automaticUpdate == true)
+                        StateAnnouncement.instance.tryAutoUpdatePlugin(update.first, update.second);
+                    else
+                        toNotify.add(update);
+                }
+
+                if(toNotify.isNotEmpty()) {
                     UIDialogs.appToast(
-                        ToastView.Toast(updateAvailable
+                        ToastView.Toast(toNotify
                             .map { " - " + it.first.name }
                             .joinToString("\n"),
                             true,
@@ -820,11 +830,8 @@ class StateApp {
                             "Plugin updates available"
                         ));
 
-                    for(update in updateAvailable)
-                        if(StatePlatform.instance.isClientEnabled(update.first.id)) {
-                            //UIDialogs.showPluginUpdateDialog(context, update.first, update.second);
-                            StateAnnouncement.instance.registerPluginUpdate(update.first, update.second);
-                        }
+                    for(update in toNotify)
+                        StateAnnouncement.instance.registerPluginUpdate(update.first, update.second);
                 }
             }
         }

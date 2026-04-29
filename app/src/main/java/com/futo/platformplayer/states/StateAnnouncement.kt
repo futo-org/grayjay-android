@@ -1,5 +1,6 @@
 package com.futo.platformplayer.states
 
+import android.content.Context
 import android.view.View
 import android.view.WindowManager
 import com.futo.platformplayer.R
@@ -122,7 +123,7 @@ class StateAnnouncement {
     //Special Announcements
     fun registerPluginUpdate(oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig): SessionAnnouncement {
         val announcement = SessionAnnouncement(
-            "update-plugin-" + UUID.randomUUID().toString(),
+            "update-plugin-" + oldConfig.id + "-v" + newConfig.version,
             "${newConfig.name} update v${newConfig.version} available!",
             "An update is available to upgrade from ${oldConfig.version} to ${newConfig.version}.",
             AnnouncementType.SESSION,
@@ -130,19 +131,62 @@ class StateAnnouncement {
             null, null,oldConfig.id,
             newConfig?.absoluteIconUrl?.let { ImageVariable.fromUrl(it) }
         ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, oldConfig.id);
+        announcement.extraObj = newConfig;
         registerAnnouncementSession(announcement);
         return announcement;
     }
     fun registerPluginUpdated(newConfig: SourcePluginConfig) {
-        registerAnnouncementSession(SessionAnnouncement(
-            "updated-plugin-" + UUID.randomUUID().toString(),
+        val announcement = SessionAnnouncement(
+            "updated-plugin-" + newConfig.id + "-v" + newConfig.version,
             "${newConfig.name} updated to v${newConfig.version}!",
             "You have succesfully been updated to v${newConfig.version}.",
             AnnouncementType.SESSION,
             null, "updates", null, null,
             null, null,null,
             newConfig?.absoluteIconUrl?.let { ImageVariable.fromUrl(it) }
-        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, newConfig.id));
+        ).withExtraAction("Changelog", StateAnnouncement.ACTION_CHANGELOG, newConfig.id);
+        announcement.extraObj = newConfig;
+        registerAnnouncementSession(announcement);
+    }
+
+    fun tryAutoUpdatePlugin(oldConfig: SourcePluginConfig, newConfig: SourcePluginConfig) {
+        val context = StateApp.instance.contextOrNull;
+        if(context == null) {
+            registerPluginUpdate(oldConfig, newConfig);
+            return;
+        }
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                val client = ManagedHttpClient();
+                client.setTimeout(10000);
+                val oldScript = StatePlugins.instance.getScript(oldConfig.id) ?: "";
+                val newScript = client.get(newConfig.absoluteScriptUrl)?.body?.string();
+                if(newScript.isNullOrEmpty()) {
+                    Logger.w(TAG, "Auto-update for ${oldConfig.name}: no script returned, falling back to notification");
+                    withContext(Dispatchers.Main) { registerPluginUpdate(oldConfig, newConfig); }
+                    return@launch;
+                }
+
+                if(!oldConfig.isLowRiskUpdate(oldScript, newConfig, newScript)) {
+                    withContext(Dispatchers.Main) { registerPluginUpdate(oldConfig, newConfig); }
+                    return@launch;
+                }
+
+                StatePlugins.instance.installPluginBackground(context, StateApp.instance.scope, newConfig, newScript,
+                    { _: String, _: Double -> },
+                    { ex ->
+                        if(ex == null) {
+                            registerPluginUpdated(newConfig);
+                        } else {
+                            Logger.e(TAG, "Auto-update for ${newConfig.name} failed during install", ex);
+                            UIDialogs.appToast("Update for ${newConfig.name} failed\n" + ex.message);
+                        }
+                    });
+            } catch(ex: Throwable) {
+                Logger.e(TAG, "Auto-update for ${oldConfig.name} failed", ex);
+                withContext(Dispatchers.Main) { registerPluginUpdate(oldConfig, newConfig); }
+            }
+        }
     }
 
     fun registerLoading(title: String, description: String, icon: ImageVariable? = null, customId: String? = null): SessionAnnouncement {
@@ -282,7 +326,7 @@ class StateAnnouncement {
             when (actionId) {
                 ACTION_NEVER -> neverAnnouncement(item.id);
                 ACTION_SOMETHING -> actionSomething();
-                ACTION_CHANGELOG -> actionChangelog(actionData);
+                ACTION_CHANGELOG -> actionChangelog(item, actionData);
                 ACTION_UPDATE_PLUGIN -> actionUpdatePlugin(item.id, actionData);
             }
         }
@@ -314,26 +358,34 @@ class StateAnnouncement {
 
     }
 
-    private fun actionChangelog(id: String?) {
-        if(id == null)
+    private fun actionChangelog(item: Announcement, id: String?) {
+        val context = StateApp.instance.contextOrNull ?: return;
+
+        val cached = (item as? SessionAnnouncement)?.extraObj as? SourcePluginConfig;
+        if(cached != null) {
+            showPluginChangelog(context, cached);
             return;
+        }
 
-        StateApp.instance.contextOrNull?.let { context ->
-            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                val plugin = StatePlugins.instance.getPlugin(id);
-                if (plugin == null)
-                    return@launch
-                val update = StatePlugins.instance.checkForUpdates(plugin.config);
-                if(update == null)
-                    return@launch;
+        if(id == null) return;
 
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
-                    UIDialogs.showChangelogDialog(context, update.version, update.changelog!!.filterKeys { it.toIntOrNull() != null }
-                        .mapKeys { it.key.toInt() }
-                        .mapValues { update.getChangelogString(it.key.toString()) ?: "" });
-                }
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            val plugin = StatePlugins.instance.getPlugin(id) ?: return@launch;
+            val update = StatePlugins.instance.checkForUpdates(plugin.config) ?: return@launch;
+            withContext(Dispatchers.Main) {
+                showPluginChangelog(context, update);
             }
         }
+    }
+
+    private fun showPluginChangelog(context: Context, config: SourcePluginConfig) {
+        if(config.changelog?.any() != true) {
+            UIDialogs.toast(context, "No changelog available");
+            return;
+        }
+        UIDialogs.showChangelogDialog(context, config.version, config.changelog!!.filterKeys { it.toIntOrNull() != null }
+            .mapKeys { it.key.toInt() }
+            .mapValues { config.getChangelogString(it.key.toString()) ?: "" });
     }
     private fun actionUpdatePlugin(notifId: String?, id: String?) {
         if(id == null)
@@ -363,7 +415,7 @@ class StateAnnouncement {
                     if(newScript.isNullOrEmpty())
                         throw IllegalStateException("No script found");
 
-                    if(true || plugin.config.isLowRiskUpdate(script, update, newScript)) {
+                    if(plugin.config.isLowRiskUpdate(script, update, newScript)) {
                         StatePlugins.instance.installPluginBackground(context, StateApp.instance.scope, update, newScript,
                             { text: String, progress: Double -> },
                             { ex ->
