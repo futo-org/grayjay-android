@@ -23,6 +23,7 @@ import java.time.Duration
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import kotlin.system.measureTimeMillis
 
 open class ManagedHttpClient {
@@ -89,10 +90,16 @@ open class ManagedHttpClient {
         return clonedClient;
     }
 
-    fun tryHead(url: String): Map<String, String>? {
+    private fun applyModifier(url: String, headers: MutableMap<String, String>, modifier: IRequestModifier?): Pair<String, MutableMap<String, String>> {
+        if (modifier == null) return Pair(url, headers)
+        val modified = modifier.modifyRequest(url, headers)
+        return Pair(modified.url ?: url, modified.headers.toMutableMap())
+    }
+
+    fun tryHead(url: String, modifier: IRequestModifier? = null): Map<String, String>? {
         ensureNotMainThread()
         try {
-            val result = head(url);
+            val result = head(url, HashMap(), modifier);
             if(result.isOk)
                 return result.getHeadersFlat();
             else
@@ -141,12 +148,14 @@ open class ManagedHttpClient {
         return Socket(websocket);
     }
 
-    fun get(url : String, headers : MutableMap<String, String> = HashMap<String, String>()) : Response {
-        return execute(Request(url, "GET", null, headers));
+    fun get(url : String, headers : MutableMap<String, String> = HashMap<String, String>(), modifier: IRequestModifier? = null) : Response {
+        val (finalUrl, finalHeaders) = applyModifier(url, headers, modifier)
+        return execute(Request(finalUrl, "GET", null, finalHeaders));
     }
 
-    fun head(url : String, headers : MutableMap<String, String> = HashMap<String, String>()) : Response {
-        return execute(Request(url, "HEAD", null, headers));
+    fun head(url : String, headers : MutableMap<String, String> = HashMap<String, String>(), modifier: IRequestModifier? = null) : Response {
+        val (finalUrl, finalHeaders) = applyModifier(url, headers, modifier)
+        return execute(Request(finalUrl, "HEAD", null, finalHeaders));
     }
 
     fun post(url : String, headers : MutableMap<String, String> = HashMap<String, String>()) : Response {

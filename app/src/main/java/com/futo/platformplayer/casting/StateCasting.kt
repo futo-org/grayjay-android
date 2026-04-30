@@ -920,6 +920,7 @@ class StateCasting {
         if (videoSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl(), true)
+                    .withIRequestModifier((videoSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
@@ -927,6 +928,7 @@ class StateCasting {
         if (audioSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
+                    .withIRequestModifier((audioSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
@@ -968,8 +970,7 @@ class StateCasting {
                 val headers = masterContext.headers.clone()
                 headers["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                val req = requestModifier?.modifyRequest(sourceUrl, mapOf())
-                val masterPlaylistResponse = _client.get(req?.url ?: sourceUrl, (req?.headers ?: mapOf()).toMutableMap())
+                val masterPlaylistResponse = _client.get(sourceUrl, mutableMapOf(), requestModifier)
 
                 check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
 
@@ -1022,7 +1023,7 @@ class StateCasting {
                             val vpHeaders = vpContext.headers.clone()
                             vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                            val response = _client.get(variantPlaylistRef.url)
+                            val response = _client.get(variantPlaylistRef.url, mutableMapOf(), requestModifier)
                             check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
 
                             val vpContent = response.body?.string()
@@ -1059,7 +1060,7 @@ class StateCasting {
                                 val vpHeaders = vpContext.headers.clone()
                                 vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
-                                val response = _client.get(mediaRendition.uri)
+                                val response = _client.get(mediaRendition.uri, mutableMapOf(), requestModifier)
                                 check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
 
                                 val vpContent = response.body?.string()
@@ -1190,6 +1191,7 @@ class StateCasting {
 
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
+                    .withIRequestModifier((audioSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castHlsIndirectVariant");
@@ -1267,6 +1269,7 @@ class StateCasting {
 
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl(), true)
+                    .withIRequestModifier((videoSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("castHlsIndirectVariant");
@@ -1350,6 +1353,7 @@ class StateCasting {
         if (videoSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", videoPath, videoSource.getVideoUrl(), true)
+                    .withIRequestModifier((videoSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
@@ -1357,6 +1361,7 @@ class StateCasting {
         if (audioSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
                 HttpProxyHandler("GET", audioPath, audioSource.getAudioUrl(), true)
+                    .withIRequestModifier((audioSource as? JSSource)?.getRequestModifier())
                     .withInjectedHost()
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");

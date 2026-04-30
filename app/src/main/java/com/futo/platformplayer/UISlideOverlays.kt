@@ -32,6 +32,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.downloads.VideoLocal
@@ -382,7 +383,8 @@ class UISlideOverlays {
             val slideUpMenuOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.download_video), null, true, items)
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                val masterPlaylistResponse = ManagedHttpClient().get(sourceUrl)
+                val modifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
+                val masterPlaylistResponse = ManagedHttpClient().get(sourceUrl, HashMap(), modifier)
                 check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
 
                 val masterPlaylistContent = masterPlaylistResponse.body?.string()
@@ -515,7 +517,7 @@ class UISlideOverlays {
 
                     slideUpMenuOverlay.onOK.subscribe {
                         //TODO: Fix SubtitleRawSource issue
-                        StateDownloads.instance.download(video, selectedVideoVariant, selectedAudioVariant, null);
+                        StateDownloads.instance.download(video, selectedVideoVariant, selectedAudioVariant, null, videoModifier = modifier, audioModifier = modifier);
                         slideUpMenuOverlay.hide()
                     }
 
@@ -526,11 +528,11 @@ class UISlideOverlays {
                     if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
                         withContext(Dispatchers.Main) {
                             if (source is IHLSManifestSource) {
-                                StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, resolvedPlaylistUrl), null, null)
+                                StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, resolvedPlaylistUrl), null, null, videoModifier = modifier)
                                 UIDialogs.toast(container.context, "Variant video HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else if (source is IHLSManifestAudioSource) {
-                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, resolvedPlaylistUrl), null)
+                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, resolvedPlaylistUrl), null, audioModifier = modifier)
                                 UIDialogs.toast(container.context, "Variant audio HLS playlist download started")
                                 slideUpMenuOverlay.hide()
                             } else {

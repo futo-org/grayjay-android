@@ -238,6 +238,16 @@ class DownloadService : Service() {
                 download.targetBitrate = download.audioSource!!.bitrate.toLong();
             download.audioSource = null;
         }
+        // Force re-prepare if auth modifiers are needed but lost (e.g. after deserialization,
+        // since IRequestModifier is transient and cannot survive serialization).
+        // Must also clear sources so prepare() enters the source selection branches where
+        // modifiers are recaptured from the live plugin JSSource.
+        if(download.needsReprepareForAuth) {
+            Logger.w(TAG, "Video Download [${download.name}] needs re-prepare for auth modifiers");
+            download.videoDetails = null;
+            download.videoSource = null;
+            download.audioSource = null;
+        }
         if(download.videoDetails == null || (!download.isVideoDownloadReady || !download.isAudioDownloadReady))
             download.changeState(VideoDownload.State.PREPARING);
         notifyDownload(download);
