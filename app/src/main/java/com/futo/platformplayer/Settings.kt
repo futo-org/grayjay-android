@@ -882,7 +882,7 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.background_download, FieldForm.TOGGLE, R.string.configure_if_background_download_should_be_used, 1)
         //@DropdownFieldOptionsId(R.array.background_download)
-        var shouldBackgroundDownload: Boolean = false;
+        var shouldBackgroundDownload: Boolean = true;
 
         @FormField(R.string.download_when, FieldForm.DROPDOWN, R.string.configure_when_updates_should_be_downloaded, 2)
         @DropdownFieldOptionsId(R.array.when_download)
