@@ -97,16 +97,16 @@ class StateUpdate {
             throw Exception("App is not compatible. Supported ABIS: ${Build.SUPPORTED_ABIS.joinToString()}}.");
         };
         val VERSION_URL = if (BuildConfig.IS_UNSTABLE_BUILD) {
-            "https://releases.grayjay.app/version-unstable.txt"
+            "https://rel.grayjay.app/version-unstable.txt"
         } else {
-            "https://releases.grayjay.app/version.txt"
+            "https://rel.grayjay.app/version.txt"
         }
-        val APK_URL = if (BuildConfig.IS_UNSTABLE_BUILD) {
-            "https://releases.grayjay.app/app-$DESIRED_ABI-release-unstable.apk"
+        fun getApkUrl(version: Int): String = if (BuildConfig.IS_UNSTABLE_BUILD) {
+            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release-unstable.apk"
         } else {
-            "https://releases.grayjay.app/app-$DESIRED_ABI-release.apk"
+            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release.apk"
         }
-        val CHANGELOG_BASE_URL = "https://releases.grayjay.app/changelogs";
+        val CHANGELOG_BASE_URL = "https://rel.grayjay.app/changelogs";
 
         fun getApkFile(context: Context, version: Int): File {
             val dir = File(context.filesDir, "updates");

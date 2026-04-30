@@ -134,7 +134,7 @@ class AutoUpdateDialog(context: Context?) : AlertDialog(context) {
             var inputStream: InputStream? = null;
             try {
                 val client = ManagedHttpClient();
-                val response = client.get(StateUpdate.APK_URL);
+                val response = client.get(StateUpdate.getApkUrl(_maxVersion));
                 if (response.isOk && response.body != null) {
                     inputStream = response.body.byteStream();
                     val dataLength = response.body.contentLength();

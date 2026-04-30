@@ -132,7 +132,7 @@ class UpdateDownloadService : Service() {
                 }
 
                 try {
-                    performDownload(StateUpdate.APK_URL, partialFile, version, {
+                    performDownload(StateUpdate.getApkUrl(version), partialFile, version, {
                         try {
                             if (announcement != null)
                                 announcement?.setProgress(it);
