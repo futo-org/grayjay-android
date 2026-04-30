@@ -745,20 +745,24 @@ class VideoDetailView : ConstraintLayout {
 
             StateCasting.instance.onActiveDeviceTimeChanged.subscribe(this) {
                 if (_isCasting) {
-                    setLastPositionMilliseconds((it * 1000.0).toLong(), true);
+                    val posMs = (it * 1000.0).toLong();
+                    setLastPositionMilliseconds(posMs, true);
                     _cast.setTime(lastPositionMilliseconds);
                     _timeBar.setPosition(it.toLong());
                     _timeBar.setBufferedPosition(0);
                     _timeBar.setDuration(video?.duration ?: 0);
+                    updatePlaybackTracking(posMs);
                 }
             };
 
             _cast.onTimeJobTimeChanged_s.subscribe {
                 if (_isCasting) {
-                    setLastPositionMilliseconds((it * 1000.0).toLong(), true);
+                    val posMs = (it * 1000.0).toLong();
+                    setLastPositionMilliseconds(posMs, true);
                     _timeBar.setPosition(it);
                     _timeBar.setBufferedPosition(0);
                     _timeBar.setDuration(video?.duration ?: 0);
+                    updatePlaybackTracking(posMs);
                 }
             }
         }
@@ -1593,7 +1597,7 @@ class VideoDetailView : ConstraintLayout {
                             )
                         }
 
-                        if (me.video == video)
+                        if (me.video == video || (me.video?.url == video.url && !video.url.isNullOrBlank()))
                             me._playbackTracker = tracker;
                     } else if (me.video == video)
                         me._playbackTracker = null;
