@@ -415,6 +415,46 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     /**
+     * Recovers playback when the player is stuck in a non-recoverable state.
+     * Returns true if recovery was attempted (caller should not also call play()).
+     *
+     * STATE_IDLE happens after an unrecoverable error; STATE_ENDED happens on live when the
+     * window slips past the player. For both, plain play() is a no-op until we re-prepare; for
+     * live we additionally seek to the live edge so the user lands where YouTube's UI would.
+     *
+     * Non-live STATE_ENDED is *not* stuck -- it's the user pressing replay on a finished VOD --
+     * so we deliberately fall through to the caller, which seeks to 0 and plays. Without this
+     * guard the play button would re-prepare and seek to the saved end position, immediately
+     * re-entering STATE_ENDED, and the replay icon set by [setIsReplay] would never replay.
+     * We key off the sticky [_isLiveSession] rather than [Player.isCurrentMediaItemLive] because
+     * the latter can flip false during a live-window slip even though the user *is* watching live.
+     */
+    fun recoverFromStuck(): Boolean {
+        val player = exoPlayer?.player ?: return false
+        val state = player.playbackState
+        if (state != Player.STATE_IDLE && state != Player.STATE_ENDED) return false
+        if (state == Player.STATE_ENDED && !_isLiveSession) return false
+        Logger.i(TAG, "recoverFromStuck state=$state isLive=${player.isCurrentMediaItemLive}")
+        // Reload the current source if available; preserves position via reloadMediaSource(resume=true)
+        // but for live we want to land at the edge.
+        if (_mediaSource != null) {
+            val wasLive = player.isCurrentMediaItemLive
+            reloadMediaSource(play = true, resume = !wasLive)
+            if (wasLive) {
+                exoPlayer?.player?.seekToDefaultPosition()
+            }
+        } else {
+            // No media source cached yet; just re-prepare what's loaded.
+            player.prepare()
+            player.playWhenReady = true
+            if (player.isCurrentMediaItemLive) {
+                player.seekToDefaultPosition()
+            }
+        }
+        return true
+    }
+
+    /**
      * Best-effort auto-reload for a live stream after a transient HLS/IO error.
      * Debounces consecutive reloads (min [LIVE_RELOAD_MIN_INTERVAL_MS] apart) and caps
      * attempts at [LIVE_RELOAD_MAX_ATTEMPTS] before giving up so we don't spin on a

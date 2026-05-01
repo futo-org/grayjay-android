@@ -225,24 +225,26 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _buttonNext.setOnClickListener { onNext.emit() };
         _buttonPrevious_fullscreen.setOnClickListener { onPrevious.emit() };
         _buttonNext_fullscreen.setOnClickListener { onNext.emit() };
-        _control_play.setOnClickListener {
-            exoPlayer?.player?.let {
-                if (it.contentPosition >= it.duration) {
-                    it.seekTo(0)
+        val playClickHandler = View.OnClickListener {
+            // Order matters:
+            // 1. If the player is stuck (STATE_IDLE after error, STATE_ENDED on a slipped live
+            //    window) plain play() is a no-op until we re-prepare. Recover first.
+            // 2. Otherwise, if a VOD has played to its end, rewind to start (replay).
+            // 3. Then start playback.
+            val recovered = recoverFromStuck()
+            if (!recovered) {
+                exoPlayer?.player?.let {
+                    val dur = it.duration
+                    if (dur > 0 && it.contentPosition >= dur) {
+                        it.seekTo(0)
+                    }
+                    it.play()
                 }
-                exoPlayer?.player?.play();
             }
-            updatePlayPause();
-        };
-        _control_play_fullscreen.setOnClickListener {
-            exoPlayer?.player?.let {
-                if (it.contentPosition >= it.duration) {
-                    it.seekTo(0)
-                }
-                exoPlayer?.player?.play();
-            }
-            updatePlayPause();
-        };
+            updatePlayPause()
+        }
+        _control_play.setOnClickListener(playClickHandler)
+        _control_play_fullscreen.setOnClickListener(playClickHandler)
         _control_pause.setOnClickListener {
             exoPlayer?.player?.pause();
             updatePlayPause();
