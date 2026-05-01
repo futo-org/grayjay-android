@@ -18,6 +18,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.annotation.OptIn
@@ -119,6 +120,15 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     private val _control_duration_fullscreen: TextView;
     private val _control_pause_fullscreen: ImageButton;
 
+    // LIVE pill: shown only when current media item is live; dot color reflects live-edge proximity.
+    private val _live_pill: LinearLayout
+    private val _live_pill_dot: View
+    private val _live_pill_fullscreen: LinearLayout
+    private val _live_pill_dot_fullscreen: View
+    private val _text_divider: TextView
+    private val _text_divider_fullscreen: TextView
+    private var _wasAtLiveEdge: Boolean = true
+
     private val _title_fullscreen: TextView;
     private val _author_fullscreen: TextView;
     private var _shouldRestartHideJobOnPlaybackStateChange: Boolean = false;
@@ -189,6 +199,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _buttonPrevious = videoControls.findViewById(R.id.button_previous);
         _control_time = videoControls.findViewById(R.id.text_position);
         _control_duration = videoControls.findViewById(R.id.text_duration);
+        _live_pill = videoControls.findViewById(R.id.live_pill_container)
+        _live_pill_dot = videoControls.findViewById(R.id.live_pill_dot)
+        _text_divider = videoControls.findViewById(R.id.text_divider)
 
         _videoControls_fullscreen = findViewById(R.id.video_player_controller_fullscreen);
         _control_autoplay_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_autoplay);
@@ -206,6 +219,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _control_time_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_position);
         _control_duration_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_duration);
         _control_pause_fullscreen = _videoControls_fullscreen.findViewById(R.id.button_pause);
+        _live_pill_fullscreen = _videoControls_fullscreen.findViewById(R.id.live_pill_container)
+        _live_pill_dot_fullscreen = _videoControls_fullscreen.findViewById(R.id.live_pill_dot)
+        _text_divider_fullscreen = _videoControls_fullscreen.findViewById(R.id.text_divider)
 
         _loaderGame = findViewById(R.id.loader_overlay)
         _loaderGame.visibility = View.GONE
@@ -475,6 +491,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _time_bar_fullscreen.setBufferedPosition(bufferedPosition);
             _time_bar.setBufferedPosition(bufferedPosition);
 
+            // While live, refresh the LIVE pill's edge state so the dot reflects whether the user
+            // is at the live edge or seeked behind. Cheap and only updates when state actually changes.
+            if (isLive) {
+                updateLiveEdgeState()
+            }
+
             onTimeBarChanged.emit(position, bufferedPosition);
 
             if(!_currentChapterLoopActive)
@@ -500,6 +522,23 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
                 updateNextPrevious();
             }
         }
+
+        // Toggle LIVE pill / time UI when the underlying media item changes liveness.
+        // The base class emits this on Timeline / MediaItem transitions.
+        onLiveChanged.subscribe { live ->
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.Main) {
+                applyLiveUI(live)
+            }
+        }
+
+        val jumpToLiveListener = View.OnClickListener {
+            seekToLiveEdge()
+        }
+        _live_pill.setOnClickListener(jumpToLiveListener)
+        _live_pill_fullscreen.setOnClickListener(jumpToLiveListener)
+
+        // Apply once at construction in case we attach to an already-live media item.
+        applyLiveUI(isLive)
 
         updateLoopVideoUI();
 
@@ -895,6 +934,58 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             _control_loop.setImageResource(R.drawable.ic_repeat_one);
             _control_loop_fullscreen.setImageResource(R.drawable.ic_repeat_one);
         }
+    }
+
+    /**
+     * Applies (or reverts) live-stream-specific control affordances:
+     *  - shows/hides the LIVE pill
+     *  - hides the duration text + divider when live (duration shown by the pill)
+     *  - hides the loop button (looping a live stream is meaningless)
+     *  - hides the chapter text (live streams from the source plugins do not provide chapters)
+     *
+     * Position text is kept visible because for HLS DVR streams it shows offset within the
+     * available seek window, which is useful information.
+     */
+    private fun applyLiveUI(live: Boolean) {
+        val pillVis = if (live) View.VISIBLE else View.GONE
+        val timeVis = if (live) View.GONE else View.VISIBLE
+        _live_pill.visibility = pillVis
+        _live_pill_fullscreen.visibility = pillVis
+        _text_divider.visibility = timeVis
+        _text_divider_fullscreen.visibility = timeVis
+        _control_duration.visibility = timeVis
+        _control_duration_fullscreen.visibility = timeVis
+
+        if (live) {
+            // Loop / chapter UI is meaningless on live; hide and reset.
+            _control_loop.visibility = View.GONE
+            _control_loop_fullscreen.visibility = View.GONE
+            _control_chapter.visibility = View.GONE
+            _control_chapter_fullscreen.visibility = View.GONE
+            updateLiveEdgeState()
+        } else {
+            _control_loop.visibility = View.VISIBLE
+            _control_loop_fullscreen.visibility = View.VISIBLE
+            _control_chapter.visibility = View.VISIBLE
+            _control_chapter_fullscreen.visibility = View.VISIBLE
+        }
+    }
+
+    /**
+     * Updates the LIVE pill's dot + background to reflect whether playback is at the live edge.
+     * Idempotent: only mutates when state changes to avoid invalidations on every progress tick.
+     */
+    private fun updateLiveEdgeState() {
+        val atEdge = isAtLiveEdge
+        if (atEdge == _wasAtLiveEdge) return
+        _wasAtLiveEdge = atEdge
+        Logger.i(TAG, "LIVE pill -> ${if (atEdge) "AT EDGE" else "BEHIND"} (offset=${liveOffsetMs}ms target=${targetLiveOffsetMs}ms)")
+        val bg = if (atEdge) R.drawable.background_live_pill else R.drawable.background_live_pill_behind
+        val dot = if (atEdge) R.drawable.dot_live_edge else R.drawable.dot_live_behind
+        _live_pill.setBackgroundResource(bg)
+        _live_pill_fullscreen.setBackgroundResource(bg)
+        _live_pill_dot.setBackgroundResource(dot)
+        _live_pill_dot_fullscreen.setBackgroundResource(dot)
     }
 
     fun setGestureSoundFactor(soundFactor: Float) {
