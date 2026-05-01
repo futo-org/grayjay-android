@@ -17,6 +17,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -129,6 +130,64 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
 
+    /** True when the current media item is a live stream. */
+    val isLive: Boolean get() = exoPlayer?.player?.isCurrentMediaItemLive ?: false
+
+    /**
+     * Live offset reported by the player in ms (ms behind live edge, 0 == at edge).
+     * Returns null when not live or when offset is unavailable.
+     */
+    val liveOffsetMs: Long? get() {
+        val player = exoPlayer?.player ?: return null
+        if (!player.isCurrentMediaItemLive) return null
+        val offset = player.currentLiveOffset
+        return if (offset == C.TIME_UNSET) null else offset
+    }
+
+    /**
+     * Target live offset (ms) the player wants to maintain behind the wall-clock edge.
+     * Comes from the manifest's [MediaItem.LiveConfiguration]; YouTube HLS typically reports
+     * 15-30s. Returns null when not live or when no target is configured.
+     */
+    val targetLiveOffsetMs: Long? get() {
+        val player = exoPlayer?.player ?: return null
+        if (!player.isCurrentMediaItemLive) return null
+        val target = player.currentMediaItem?.liveConfiguration?.targetOffsetMs
+            ?: return null
+        return if (target == C.TIME_UNSET) null else target
+    }
+
+    /**
+     * Whether the player is at the live edge from a user perspective: current offset is
+     * within [LIVE_EDGE_TOLERANCE_MS] of the manifest's target offset (or, if no target is
+     * known, within [LIVE_EDGE_FALLBACK_THRESHOLD_MS] of wall-clock).
+     *
+     * The naive "offset <= 5s" check fails for YouTube HLS, which sets target offsets of
+     * ~18-30s -- after [Player.seekToDefaultPosition] the player snaps to the target, not
+     * to wall clock, so a tighter threshold reports "behind" forever.
+     */
+    val isAtLiveEdge: Boolean get() {
+        val offset = liveOffsetMs ?: return false
+        val target = targetLiveOffsetMs
+        return if (target != null) {
+            offset - target <= LIVE_EDGE_TOLERANCE_MS
+        } else {
+            offset <= LIVE_EDGE_FALLBACK_THRESHOLD_MS
+        }
+    }
+
+    /**
+     * How far the player is behind the live edge from a user perspective, in ms. Subtracts the
+     * manifest's natural live offset (or the [LIVE_EDGE_FALLBACK_THRESHOLD_MS] when unknown) so
+     * the value reflects the user-perceptible delay rather than the inherent HLS/DASH latency.
+     * Returns null when not live or the offset is unknown; returns 0 when at the live edge.
+     */
+    val behindLiveMs: Long? get() {
+        val offset = liveOffsetMs ?: return null
+        val baseline = targetLiveOffsetMs ?: LIVE_EDGE_FALLBACK_THRESHOLD_MS
+        return (offset - baseline).coerceAtLeast(0)
+    }
+
     var isAudioMode: Boolean = false
         private set;
 
@@ -136,6 +195,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val onStateChange = Event1<Int>();
     val onPositionDiscontinuity = Event1<Long>();
     val onDatasourceError = Event1<Throwable>();
+    /** Emits when live state (live vs not) of the current media item changes. */
+    val onLiveChanged = Event1<Boolean>();
 
     val onReloadRequired = Event0();
 
@@ -149,6 +210,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _targetTrackAudioBitrate = -1
 
     private var _toResume = false;
+
+    private var _wasLive: Boolean = false
+    /**
+     * Sticky 'live session' flag. Goes true when the player observes a live media item, and
+     * stays true through transient timeline-empty events (e.g. while a reload is in flight).
+     * Only cleared when the source actually changes (swapSourceInternal / clear). Without this,
+     * `isCurrentMediaItemLive` flips to false during a reload and the second error in a chain
+     * skips the live-recovery branch -- breaking the auto-reload retry sequence.
+     */
+    private var _isLiveSession: Boolean = false
+
+    /** Timestamp (ms) of last live auto-reload, used to back off duplicate reloads. */
+    private var _lastLiveReloadAt_ms: Long = 0
+    /** Consecutive live auto-reload attempts; resets on successful playback. */
+    private var _liveReloadAttempts: Int = 0
 
     private val _playerEventListener = object: Player.Listener {
         override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
@@ -215,6 +291,30 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         override fun onCues(cueGroup: CueGroup) {
             super.onCues(cueGroup)
             Logger.i(TAG, "CUE GROUP: ${cueGroup.cues.firstOrNull()?.text}");
+        }
+
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            super.onTimelineChanged(timeline, reason)
+            checkLiveStateChanged()
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            super.onMediaItemTransition(mediaItem, reason)
+            checkLiveStateChanged()
+        }
+
+        private fun checkLiveStateChanged() {
+            val nowLive = exoPlayer?.player?.isCurrentMediaItemLive ?: false
+            if (nowLive) {
+                // Sticky: any observation of a live item locks the session in until the source
+                // is replaced. Survives transient timeline-empty events during reloads.
+                _isLiveSession = true
+            }
+            if (nowLive != _wasLive) {
+                _wasLive = nowLive
+                Logger.i(TAG, "isCurrentMediaItemLive changed -> $nowLive (session=$_isLiveSession)")
+                onLiveChanged.emit(nowLive)
+            }
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -313,6 +413,91 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun seekFromCurrent(ms: Long) {
         val to = Math.max((exoPlayer?.player?.currentPosition ?: 0) + ms, 0);
         exoPlayer?.player?.seekTo(Math.min(to, exoPlayer?.player?.duration ?: to));
+    }
+
+    /**
+     * Seeks to the live edge of the current dynamic window. No-op if not live.
+     * Uses [Player.seekToDefaultPosition] which targets the live edge in HLS/DASH dynamic windows.
+     */
+    fun seekToLiveEdge() {
+        val player = exoPlayer?.player ?: return
+        if (!player.isCurrentMediaItemLive) return
+        Logger.i(TAG, "seekToLiveEdge (offset=${player.currentLiveOffset}ms)")
+        player.seekToDefaultPosition()
+    }
+
+    /**
+     * Recovers playback when the player is stuck in a non-recoverable state.
+     * Returns true if recovery was attempted (caller should not also call play()).
+     *
+     * STATE_IDLE happens after an unrecoverable error; STATE_ENDED happens on live when the
+     * window slips past the player. For both, plain play() is a no-op until we re-prepare; for
+     * live we additionally seek to the live edge so the user lands where YouTube's UI would.
+     *
+     * Non-live STATE_ENDED is *not* stuck -- it's the user pressing replay on a finished VOD --
+     * so we deliberately fall through to the caller, which seeks to 0 and plays. Without this
+     * guard the play button would re-prepare and seek to the saved end position, immediately
+     * re-entering STATE_ENDED, and the replay icon set by [setIsReplay] would never replay.
+     * We key off the sticky [_isLiveSession] rather than [Player.isCurrentMediaItemLive] because
+     * the latter can flip false during a live-window slip even though the user *is* watching live.
+     */
+    fun recoverFromStuck(): Boolean {
+        val player = exoPlayer?.player ?: return false
+        val state = player.playbackState
+        if (state != Player.STATE_IDLE && state != Player.STATE_ENDED) return false
+        if (state == Player.STATE_ENDED && !_isLiveSession) return false
+        Logger.i(TAG, "recoverFromStuck state=$state isLive=${player.isCurrentMediaItemLive}")
+        // Reload the current source if available; preserves position via reloadMediaSource(resume=true)
+        // but for live we want to land at the edge.
+        if (_mediaSource != null) {
+            val wasLive = player.isCurrentMediaItemLive
+            reloadMediaSource(play = true, resume = !wasLive)
+            if (wasLive) {
+                exoPlayer?.player?.seekToDefaultPosition()
+            }
+        } else {
+            // No media source cached yet; just re-prepare what's loaded.
+            player.prepare()
+            player.playWhenReady = true
+            if (player.isCurrentMediaItemLive) {
+                player.seekToDefaultPosition()
+            }
+        }
+        return true
+    }
+
+    /**
+     * Best-effort auto-reload for a live stream after a transient HLS/IO error.
+     * Debounces consecutive reloads (min [LIVE_RELOAD_MIN_INTERVAL_MS] apart) and caps
+     * attempts at [LIVE_RELOAD_MAX_ATTEMPTS] before giving up so we don't spin on a
+     * permanently-broken source.
+     *
+     * Returns true if a reload was actually issued.
+     */
+    private fun tryLiveAutoReload(reason: String): Boolean {
+        if (!_isLiveSession) return false
+        val now = System.currentTimeMillis()
+        val sinceLast = now - _lastLiveReloadAt_ms
+        if (sinceLast < LIVE_RELOAD_MIN_INTERVAL_MS) {
+            Logger.i(TAG, "tryLiveAutoReload skipped ($reason): last=${sinceLast}ms ago")
+            return false
+        }
+        if (_liveReloadAttempts >= LIVE_RELOAD_MAX_ATTEMPTS) {
+            Logger.w(TAG, "tryLiveAutoReload giving up ($reason): attempts=$_liveReloadAttempts")
+            return false
+        }
+        _lastLiveReloadAt_ms = now
+        _liveReloadAttempts += 1
+        Logger.i(TAG, "tryLiveAutoReload ($reason): attempt=$_liveReloadAttempts")
+        if (_mediaSource != null) {
+            reloadMediaSource(play = true, resume = false)
+            exoPlayer?.player?.seekToDefaultPosition()
+        } else {
+            exoPlayer?.player?.prepare()
+            exoPlayer?.player?.playWhenReady = true
+            exoPlayer?.player?.seekToDefaultPosition()
+        }
+        return true
     }
 
     fun changePlayer(newPlayer: PlayerManager?) {
@@ -476,6 +661,12 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
 
     private fun swapSourceInternal(videoSource: IVideoSource?, play: Boolean, resume: Boolean): Boolean {
+        // The video source is what defines a playback session in this player. Audio/subtitle
+        // swaps within an existing session must NOT reset live-state, so the audio/subtitle
+        // overloads deliberately do not duplicate this block.
+        _isLiveSession = false
+        _liveReloadAttempts = 0
+        _lastLiveReloadAt_ms = 0
         setLoading(false)
         val swapId = _swapIdVideo.incrementAndGet()
         _lastGeneratedDash = null;
@@ -989,6 +1180,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _lastAudioMediaSource = null;
         _lastSubtitleMediaSource = null;
         _mediaSource = null;
+        _isLiveSession = false
+        _liveReloadAttempts = 0
+        _lastLiveReloadAt_ms = 0
     }
 
     fun stop(){
@@ -1013,16 +1207,32 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     protected open fun onPlayerError(error: PlaybackException) {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss, cause=${error.cause}");
 
-        if(error is BehindLiveWindowException) {
+        // BehindLiveWindowException is wrapped as the *cause* of an ExoPlaybackException, so
+        // checking `error is BehindLiveWindowException` is always false (compiler warns). Use
+        // both the cause and the dedicated error code 1002 (ERROR_CODE_BEHIND_LIVE_WINDOW)
+        // so we recover whether the exception bubbled up wrapped or as an error code only.
+        if (error.cause is BehindLiveWindowException
+            || error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
             Logger.e(TAG, "BehindLiveWindowException, " + error.message);
             reloadMediaSource(true, true);
+            exoPlayer?.player?.seekToDefaultPosition();
             return;
         }
         if(error != null && error.cause is HlsPlaylistTracker.PlaylistStuckException) {
             Logger.e(TAG, "PlaylistStuckException");
             reloadMediaSource(true, true);
+            exoPlayer?.player?.seekToDefaultPosition();
             UIDialogs.toast("Live playback error, reloading..");
             return;
+        }
+
+        // For live streams, transient HLS/IO errors usually mean a segment expired or
+        // the manifest tracker fell behind. Re-prepare and snap to the live edge so the
+        // user does not have to back out of the video to recover.
+        if (_isLiveSession && isLiveAutoRecoverableError(error)) {
+            if (tryLiveAutoReload("onPlayerError code=${error.errorCode}")) {
+                return;
+            }
         }
 
         when (error.errorCode) {
@@ -1043,7 +1253,6 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             //PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
             //PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
             //PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
-            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
             //PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
             //PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
@@ -1055,6 +1264,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
                 Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true _connectivityLossTime_ms=$_connectivityLossTime_ms");
             }
+        }
+    }
+
+    /**
+     * Whether a player error is the kind we should silently auto-reload on for live streams.
+     * Excludes hard failures (DRM, decoder, malformed) where reloading won't help.
+     */
+    private fun isLiveAutoRecoverableError(error: PlaybackException): Boolean {
+        return when (error.errorCode) {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+            PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+            PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> true
+            else -> false
         }
     }
 
@@ -1074,6 +1300,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             Logger.i(TAG, "_shouldPlaybackRestartOnConnectivity=false");
             _shouldPlaybackRestartOnConnectivity = false;
         }
+        if (playbackState == ExoPlayer.STATE_READY) {
+            // Successful prepare cycle; reset the attempts counter so future hiccups get a
+            // fresh budget. The debounce timestamp does not need clearing -- a new error after
+            // any non-trivial play interval will be well past LIVE_RELOAD_MIN_INTERVAL_MS.
+            _liveReloadAttempts = 0
+        }
+        if (playbackState == ExoPlayer.STATE_ENDED && _isLiveSession) {
+            // A live stream that 'ends' from the player's perspective is almost always a window
+            // slip or stalled tracker. Try to silently rejoin at the live edge.
+            tryLiveAutoReload("STATE_ENDED on live")
+        }
     }
 
     protected open fun setLoading(isLoading: Boolean) { }
@@ -1091,6 +1328,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val PREFERED_AUDIO_CONTAINERS_WEBMPref = arrayOf("audio/webm", "audio/opus", "audio/mp3", "audio/mp4");
         val PREFERED_AUDIO_CONTAINERS: Array<String> get() { return if(Settings.instance.playback.preferWebmAudio)
             PREFERED_AUDIO_CONTAINERS_WEBMPref else PREFERED_AUDIO_CONTAINERS_MP4Pref }
+
+        /**
+         * Tolerance (ms) for being "at the live edge" relative to the manifest's target offset.
+         * Slack accounts for normal network jitter and the player drifting around the target.
+         */
+        const val LIVE_EDGE_TOLERANCE_MS = 5_000L
+        /**
+         * Fallback threshold (ms) used when the manifest does not declare a target live offset:
+         * generous enough to cover typical HLS/DASH live latencies (15-30s).
+         */
+        const val LIVE_EDGE_FALLBACK_THRESHOLD_MS = 45_000L
+        /** Min interval between live auto-reload attempts (debounce). */
+        const val LIVE_RELOAD_MIN_INTERVAL_MS = 3_000L
+        /** Max consecutive auto-reloads before giving up to avoid loops on broken sources. */
+        const val LIVE_RELOAD_MAX_ATTEMPTS = 5
 
         val SUPPORTED_SUBTITLES = hashSetOf("text/vtt", "application/x-subrip");
     }
