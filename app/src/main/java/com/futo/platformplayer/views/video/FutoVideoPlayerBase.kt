@@ -176,6 +176,18 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         }
     }
 
+    /**
+     * How far the player is behind the live edge from a user perspective, in ms. Subtracts the
+     * manifest's natural live offset (or the [LIVE_EDGE_FALLBACK_THRESHOLD_MS] when unknown) so
+     * the value reflects the user-perceptible delay rather than the inherent HLS/DASH latency.
+     * Returns null when not live or the offset is unknown; returns 0 when at the live edge.
+     */
+    val behindLiveMs: Long? get() {
+        val offset = liveOffsetMs ?: return null
+        val baseline = targetLiveOffsetMs ?: LIVE_EDGE_FALLBACK_THRESHOLD_MS
+        return (offset - baseline).coerceAtLeast(0)
+    }
+
     var isAudioMode: Boolean = false
         private set;
 

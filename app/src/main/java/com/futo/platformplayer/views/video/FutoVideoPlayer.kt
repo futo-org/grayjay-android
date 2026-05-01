@@ -478,7 +478,17 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         updateAutoplayButton()
 
         val progressUpdateListener = { position: Long, bufferedPosition: Long ->
-            val currentTime = position.formatDuration()
+            // For live streams that have been seeked behind, replace the running position with
+            // a -MM:SS "behind live" indicator (the videojs/HLS convention). At the live edge
+            // we keep showing the running position; this matches YouTube's web behaviour where
+            // the LIVE pill alone (red "caught up" / gray "behind") + a clear offset readout
+            // tell the whole story.
+            val behindMs = if (isLive) behindLiveMs else null
+            val currentTime = if (behindMs != null && behindMs > 0) {
+                "-" + behindMs.formatDuration()
+            } else {
+                position.formatDuration()
+            }
             val currentDuration = duration.formatDuration()
             _control_time.text = currentTime;
             _control_time_fullscreen.text = currentTime;
