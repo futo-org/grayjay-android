@@ -1013,14 +1013,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     protected open fun onPlayerError(error: PlaybackException) {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss, cause=${error.cause}");
 
-        if(error is BehindLiveWindowException) {
+        // BehindLiveWindowException is wrapped as the *cause* of an ExoPlaybackException, so
+        // checking `error is BehindLiveWindowException` is always false (compiler warns). Use
+        // both the cause and the dedicated error code 1002 (ERROR_CODE_BEHIND_LIVE_WINDOW)
+        // so we recover whether the exception bubbled up wrapped or as an error code only.
+        if (error.cause is BehindLiveWindowException
+            || error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
             Logger.e(TAG, "BehindLiveWindowException, " + error.message);
             reloadMediaSource(true, true);
+            exoPlayer?.player?.seekToDefaultPosition();
             return;
         }
         if(error != null && error.cause is HlsPlaylistTracker.PlaylistStuckException) {
             Logger.e(TAG, "PlaylistStuckException");
             reloadMediaSource(true, true);
+            exoPlayer?.player?.seekToDefaultPosition();
             UIDialogs.toast("Live playback error, reloading..");
             return;
         }
