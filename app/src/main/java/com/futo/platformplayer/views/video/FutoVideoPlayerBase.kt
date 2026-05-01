@@ -209,6 +209,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
      */
     private var _isLiveSession: Boolean = false
 
+    /** Timestamp (ms) of last live auto-reload, used to back off duplicate reloads. */
+    private var _lastLiveReloadAt_ms: Long = 0
+    /** Consecutive live auto-reload attempts; resets on successful playback. */
+    private var _liveReloadAttempts: Int = 0
+
     private val _playerEventListener = object: Player.Listener {
         override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
             super.onPlaybackSuppressionReasonChanged(playbackSuppressionReason)
@@ -409,6 +414,40 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         player.seekToDefaultPosition()
     }
 
+    /**
+     * Best-effort auto-reload for a live stream after a transient HLS/IO error.
+     * Debounces consecutive reloads (min [LIVE_RELOAD_MIN_INTERVAL_MS] apart) and caps
+     * attempts at [LIVE_RELOAD_MAX_ATTEMPTS] before giving up so we don't spin on a
+     * permanently-broken source.
+     *
+     * Returns true if a reload was actually issued.
+     */
+    private fun tryLiveAutoReload(reason: String): Boolean {
+        if (!_isLiveSession) return false
+        val now = System.currentTimeMillis()
+        val sinceLast = now - _lastLiveReloadAt_ms
+        if (sinceLast < LIVE_RELOAD_MIN_INTERVAL_MS) {
+            Logger.i(TAG, "tryLiveAutoReload skipped ($reason): last=${sinceLast}ms ago")
+            return false
+        }
+        if (_liveReloadAttempts >= LIVE_RELOAD_MAX_ATTEMPTS) {
+            Logger.w(TAG, "tryLiveAutoReload giving up ($reason): attempts=$_liveReloadAttempts")
+            return false
+        }
+        _lastLiveReloadAt_ms = now
+        _liveReloadAttempts += 1
+        Logger.i(TAG, "tryLiveAutoReload ($reason): attempt=$_liveReloadAttempts")
+        if (_mediaSource != null) {
+            reloadMediaSource(play = true, resume = false)
+            exoPlayer?.player?.seekToDefaultPosition()
+        } else {
+            exoPlayer?.player?.prepare()
+            exoPlayer?.player?.playWhenReady = true
+            exoPlayer?.player?.seekToDefaultPosition()
+        }
+        return true
+    }
+
     fun changePlayer(newPlayer: PlayerManager?) {
         exoPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = null});
         newPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = _playerEventListener});
@@ -574,6 +613,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         // swaps within an existing session must NOT reset live-state, so the audio/subtitle
         // overloads deliberately do not duplicate this block.
         _isLiveSession = false
+        _liveReloadAttempts = 0
+        _lastLiveReloadAt_ms = 0
         setLoading(false)
         val swapId = _swapIdVideo.incrementAndGet()
         _lastGeneratedDash = null;
@@ -1088,6 +1129,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _lastSubtitleMediaSource = null;
         _mediaSource = null;
         _isLiveSession = false
+        _liveReloadAttempts = 0
+        _lastLiveReloadAt_ms = 0
     }
 
     fun stop(){
@@ -1131,6 +1174,15 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             return;
         }
 
+        // For live streams, transient HLS/IO errors usually mean a segment expired or
+        // the manifest tracker fell behind. Re-prepare and snap to the live edge so the
+        // user does not have to back out of the video to recover.
+        if (_isLiveSession && isLiveAutoRecoverableError(error)) {
+            if (tryLiveAutoReload("onPlayerError code=${error.errorCode}")) {
+                return;
+            }
+        }
+
         when (error.errorCode) {
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> {
                 Logger.w(TAG, "ERROR_CODE_IO_BAD_HTTP_STATUS ${error.cause?.javaClass?.simpleName}");
@@ -1149,7 +1201,6 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             //PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
             //PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
             //PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
-            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
             //PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
             //PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
@@ -1161,6 +1212,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
                 Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true _connectivityLossTime_ms=$_connectivityLossTime_ms");
             }
+        }
+    }
+
+    /**
+     * Whether a player error is the kind we should silently auto-reload on for live streams.
+     * Excludes hard failures (DRM, decoder, malformed) where reloading won't help.
+     */
+    private fun isLiveAutoRecoverableError(error: PlaybackException): Boolean {
+        return when (error.errorCode) {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+            PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+            PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> true
+            else -> false
         }
     }
 
@@ -1179,6 +1247,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         if (_shouldPlaybackRestartOnConnectivity && playbackState == ExoPlayer.STATE_READY) {
             Logger.i(TAG, "_shouldPlaybackRestartOnConnectivity=false");
             _shouldPlaybackRestartOnConnectivity = false;
+        }
+        if (playbackState == ExoPlayer.STATE_READY) {
+            // Successful prepare cycle; reset the attempts counter so future hiccups get a
+            // fresh budget. The debounce timestamp does not need clearing -- a new error after
+            // any non-trivial play interval will be well past LIVE_RELOAD_MIN_INTERVAL_MS.
+            _liveReloadAttempts = 0
+        }
+        if (playbackState == ExoPlayer.STATE_ENDED && _isLiveSession) {
+            // A live stream that 'ends' from the player's perspective is almost always a window
+            // slip or stalled tracker. Try to silently rejoin at the live edge.
+            tryLiveAutoReload("STATE_ENDED on live")
         }
     }
 
@@ -1208,6 +1287,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
          * generous enough to cover typical HLS/DASH live latencies (15-30s).
          */
         const val LIVE_EDGE_FALLBACK_THRESHOLD_MS = 45_000L
+        /** Min interval between live auto-reload attempts (debounce). */
+        const val LIVE_RELOAD_MIN_INTERVAL_MS = 3_000L
+        /** Max consecutive auto-reloads before giving up to avoid loops on broken sources. */
+        const val LIVE_RELOAD_MAX_ATTEMPTS = 5
 
         val SUPPORTED_SUBTITLES = hashSetOf("text/vtt", "application/x-subrip");
     }
