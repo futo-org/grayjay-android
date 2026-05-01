@@ -251,6 +251,11 @@ fun String.fixHtmlWhitespace(): Spanned {
 }
 
 fun Long.formatDuration(): String {
+    // Negative durations show up for live streams seeked behind the seek-window start, or
+    // briefly while the player is reseating. Recurse on the absolute value so we get a clean
+    // `-MM:SS` instead of garbage like `00:-49`.
+    if (this < 0) return "-" + (-this).formatDuration()
+
     val hours = this / 3600000
     val minutes = (this % 3600000) / 60000
     val seconds = (this % 60000) / 1000
