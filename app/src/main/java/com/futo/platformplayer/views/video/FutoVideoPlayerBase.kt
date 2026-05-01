@@ -17,6 +17,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -129,6 +130,52 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val position: Long get() = exoPlayer?.player?.currentPosition ?: 0;
     val duration: Long get() = exoPlayer?.player?.duration ?: 0;
 
+    /** True when the current media item is a live stream. */
+    val isLive: Boolean get() = exoPlayer?.player?.isCurrentMediaItemLive ?: false
+
+    /**
+     * Live offset reported by the player in ms (ms behind live edge, 0 == at edge).
+     * Returns null when not live or when offset is unavailable.
+     */
+    val liveOffsetMs: Long? get() {
+        val player = exoPlayer?.player ?: return null
+        if (!player.isCurrentMediaItemLive) return null
+        val offset = player.currentLiveOffset
+        return if (offset == C.TIME_UNSET) null else offset
+    }
+
+    /**
+     * Target live offset (ms) the player wants to maintain behind the wall-clock edge.
+     * Comes from the manifest's [MediaItem.LiveConfiguration]; YouTube HLS typically reports
+     * 15-30s. Returns null when not live or when no target is configured.
+     */
+    val targetLiveOffsetMs: Long? get() {
+        val player = exoPlayer?.player ?: return null
+        if (!player.isCurrentMediaItemLive) return null
+        val target = player.currentMediaItem?.liveConfiguration?.targetOffsetMs
+            ?: return null
+        return if (target == C.TIME_UNSET) null else target
+    }
+
+    /**
+     * Whether the player is at the live edge from a user perspective: current offset is
+     * within [LIVE_EDGE_TOLERANCE_MS] of the manifest's target offset (or, if no target is
+     * known, within [LIVE_EDGE_FALLBACK_THRESHOLD_MS] of wall-clock).
+     *
+     * The naive "offset <= 5s" check fails for YouTube HLS, which sets target offsets of
+     * ~18-30s -- after [Player.seekToDefaultPosition] the player snaps to the target, not
+     * to wall clock, so a tighter threshold reports "behind" forever.
+     */
+    val isAtLiveEdge: Boolean get() {
+        val offset = liveOffsetMs ?: return false
+        val target = targetLiveOffsetMs
+        return if (target != null) {
+            offset - target <= LIVE_EDGE_TOLERANCE_MS
+        } else {
+            offset <= LIVE_EDGE_FALLBACK_THRESHOLD_MS
+        }
+    }
+
     var isAudioMode: Boolean = false
         private set;
 
@@ -136,6 +183,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val onStateChange = Event1<Int>();
     val onPositionDiscontinuity = Event1<Long>();
     val onDatasourceError = Event1<Throwable>();
+    /** Emits when live state (live vs not) of the current media item changes. */
+    val onLiveChanged = Event1<Boolean>();
 
     val onReloadRequired = Event0();
 
@@ -149,6 +198,16 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private var _targetTrackAudioBitrate = -1
 
     private var _toResume = false;
+
+    private var _wasLive: Boolean = false
+    /**
+     * Sticky 'live session' flag. Goes true when the player observes a live media item, and
+     * stays true through transient timeline-empty events (e.g. while a reload is in flight).
+     * Only cleared when the source actually changes (swapSourceInternal / clear). Without this,
+     * `isCurrentMediaItemLive` flips to false during a reload and the second error in a chain
+     * skips the live-recovery branch -- breaking the auto-reload retry sequence.
+     */
+    private var _isLiveSession: Boolean = false
 
     private val _playerEventListener = object: Player.Listener {
         override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
@@ -215,6 +274,30 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         override fun onCues(cueGroup: CueGroup) {
             super.onCues(cueGroup)
             Logger.i(TAG, "CUE GROUP: ${cueGroup.cues.firstOrNull()?.text}");
+        }
+
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            super.onTimelineChanged(timeline, reason)
+            checkLiveStateChanged()
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            super.onMediaItemTransition(mediaItem, reason)
+            checkLiveStateChanged()
+        }
+
+        private fun checkLiveStateChanged() {
+            val nowLive = exoPlayer?.player?.isCurrentMediaItemLive ?: false
+            if (nowLive) {
+                // Sticky: any observation of a live item locks the session in until the source
+                // is replaced. Survives transient timeline-empty events during reloads.
+                _isLiveSession = true
+            }
+            if (nowLive != _wasLive) {
+                _wasLive = nowLive
+                Logger.i(TAG, "isCurrentMediaItemLive changed -> $nowLive (session=$_isLiveSession)")
+                onLiveChanged.emit(nowLive)
+            }
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -313,6 +396,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     fun seekFromCurrent(ms: Long) {
         val to = Math.max((exoPlayer?.player?.currentPosition ?: 0) + ms, 0);
         exoPlayer?.player?.seekTo(Math.min(to, exoPlayer?.player?.duration ?: to));
+    }
+
+    /**
+     * Seeks to the live edge of the current dynamic window. No-op if not live.
+     * Uses [Player.seekToDefaultPosition] which targets the live edge in HLS/DASH dynamic windows.
+     */
+    fun seekToLiveEdge() {
+        val player = exoPlayer?.player ?: return
+        if (!player.isCurrentMediaItemLive) return
+        Logger.i(TAG, "seekToLiveEdge (offset=${player.currentLiveOffset}ms)")
+        player.seekToDefaultPosition()
     }
 
     fun changePlayer(newPlayer: PlayerManager?) {
@@ -476,6 +570,10 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
 
     private fun swapSourceInternal(videoSource: IVideoSource?, play: Boolean, resume: Boolean): Boolean {
+        // The video source is what defines a playback session in this player. Audio/subtitle
+        // swaps within an existing session must NOT reset live-state, so the audio/subtitle
+        // overloads deliberately do not duplicate this block.
+        _isLiveSession = false
         setLoading(false)
         val swapId = _swapIdVideo.incrementAndGet()
         _lastGeneratedDash = null;
@@ -989,6 +1087,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _lastAudioMediaSource = null;
         _lastSubtitleMediaSource = null;
         _mediaSource = null;
+        _isLiveSession = false
     }
 
     fun stop(){
@@ -1098,6 +1197,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val PREFERED_AUDIO_CONTAINERS_WEBMPref = arrayOf("audio/webm", "audio/opus", "audio/mp3", "audio/mp4");
         val PREFERED_AUDIO_CONTAINERS: Array<String> get() { return if(Settings.instance.playback.preferWebmAudio)
             PREFERED_AUDIO_CONTAINERS_WEBMPref else PREFERED_AUDIO_CONTAINERS_MP4Pref }
+
+        /**
+         * Tolerance (ms) for being "at the live edge" relative to the manifest's target offset.
+         * Slack accounts for normal network jitter and the player drifting around the target.
+         */
+        const val LIVE_EDGE_TOLERANCE_MS = 5_000L
+        /**
+         * Fallback threshold (ms) used when the manifest does not declare a target live offset:
+         * generous enough to cover typical HLS/DASH live latencies (15-30s).
+         */
+        const val LIVE_EDGE_FALLBACK_THRESHOLD_MS = 45_000L
 
         val SUPPORTED_SUBTITLES = hashSetOf("text/vtt", "application/x-subrip");
     }
