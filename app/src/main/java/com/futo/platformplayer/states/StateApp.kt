@@ -668,6 +668,9 @@ class StateApp {
         if (Settings.instance.autoUpdate.isAutoUpdateEnabled()) {
             if (Settings.instance.autoUpdate.shouldBackgroundDownload) {
                 Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate Background]");
+                scopeOrNull?.launch(Dispatchers.IO) {
+                    StateUpdate.instance.seedUiFromDisk(context)
+                }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build();

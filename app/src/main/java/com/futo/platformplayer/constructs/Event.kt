@@ -71,16 +71,14 @@ class Event0() : EventBase<(()->Unit), (()->Boolean)>() {
     fun emit() : Boolean {
         var handled = false;
 
-        synchronized(_conditionalListeners) {
-            for (conditional in _conditionalListeners)
-                handled = handled || conditional.handler.invoke();
-        }
+        val condSnapshot = synchronized(_conditionalListeners) { _conditionalListeners.toList() };
+        for (conditional in condSnapshot)
+            handled = handled || conditional.handler.invoke();
 
-        synchronized(_listeners) {
-            handled = handled || _listeners.isNotEmpty();
-            for (handler in _listeners)
-                handler.handler.invoke();
-        }
+        val snapshot = synchronized(_listeners) { _listeners.toList() };
+        handled = handled || snapshot.isNotEmpty();
+        for (handler in snapshot)
+            handler.handler.invoke();
 
         return handled;
     }
@@ -88,16 +86,15 @@ class Event0() : EventBase<(()->Unit), (()->Boolean)>() {
 class Event1<T1>() : EventBase<((T1)->Unit), ((T1)->Boolean)>() {
     fun emit(value : T1): Boolean {
         var handled = false;
-        synchronized(_conditionalListeners) {
-            for (conditional in _conditionalListeners)
-                handled = handled || conditional.handler.invoke(value);
-        }
 
-        synchronized(_listeners) {
-            handled = handled || _listeners.isNotEmpty();
-            for (handler in _listeners)
-                handler.handler.invoke(value);
-        }
+        val condSnapshot = synchronized(_conditionalListeners) { _conditionalListeners.toList() };
+        for (conditional in condSnapshot)
+            handled = handled || conditional.handler.invoke(value);
+
+        val snapshot = synchronized(_listeners) { _listeners.toList() };
+        handled = handled || snapshot.isNotEmpty();
+        for (handler in snapshot)
+            handler.handler.invoke(value);
 
         return handled;
     }
@@ -106,16 +103,14 @@ class Event2<T1, T2>() : EventBase<((T1, T2)->Unit), ((T1, T2)->Boolean)>() {
     fun emit(value1 : T1, value2 : T2): Boolean {
         var handled = false;
 
-        synchronized(_conditionalListeners) {
-            for (conditional in _conditionalListeners)
-                handled = handled || conditional.handler.invoke(value1, value2);
-        }
+        val condSnapshot = synchronized(_conditionalListeners) { _conditionalListeners.toList() };
+        for (conditional in condSnapshot)
+            handled = handled || conditional.handler.invoke(value1, value2);
 
-        synchronized(_listeners) {
-            handled = handled || _listeners.isNotEmpty();
-            for (handler in _listeners)
-                handler.handler.invoke(value1, value2);
-        }
+        val snapshot = synchronized(_listeners) { _listeners.toList() };
+        handled = handled || snapshot.isNotEmpty();
+        for (handler in snapshot)
+            handler.handler.invoke(value1, value2);
 
         return handled;
     }
@@ -125,16 +120,14 @@ class Event3<T1, T2, T3>() : EventBase<((T1, T2, T3)->Unit), ((T1, T2, T3)->Bool
     fun emit(value1 : T1, value2 : T2, value3 : T3): Boolean {
         var handled = false;
 
-        synchronized(_conditionalListeners) {
-            for (conditional in _conditionalListeners)
-                handled = handled || conditional.handler.invoke(value1, value2, value3);
-        }
+        val condSnapshot = synchronized(_conditionalListeners) { _conditionalListeners.toList() };
+        for (conditional in condSnapshot)
+            handled = handled || conditional.handler.invoke(value1, value2, value3);
 
-        synchronized(_listeners) {
-            handled = handled || _listeners.isNotEmpty();
-            for (handler in _listeners)
-                handler.handler.invoke(value1, value2, value3);
-        }
+        val snapshot = synchronized(_listeners) { _listeners.toList() };
+        handled = handled || snapshot.isNotEmpty();
+        for (handler in snapshot)
+            handler.handler.invoke(value1, value2, value3);
 
         return handled;
     }

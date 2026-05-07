@@ -5,6 +5,7 @@ import android.os.Build
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.copyToOutputStream
 import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +15,113 @@ import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 
+enum class UpdateUiState { NONE, AVAILABLE, DOWNLOADING, READY, FAILED }
+
 class StateUpdate {
+
+    @Volatile var uiState: UpdateUiState = UpdateUiState.NONE
+        private set
+    @Volatile var uiVersion: Int = 0
+        private set
+    @Volatile var uiProgress: Int = 0
+        private set
+    @Volatile var uiIndeterminate: Boolean = true
+        private set
+    @Volatile var uiApkFile: File? = null
+        private set
+    @Volatile var uiError: String? = null
+        private set
+    @Volatile var uiDismissed: Boolean = false
+        private set
+
+    val onUiChanged = Event0()
+
+    fun setUiAvailable(version: Int) {
+        val transitioned = uiState != UpdateUiState.AVAILABLE
+        uiState = UpdateUiState.AVAILABLE
+        uiVersion = version
+        uiError = null
+        if (transitioned) uiDismissed = false
+        onUiChanged.emit()
+    }
+
+    fun setUiDownloading(version: Int, progress: Int, indeterminate: Boolean) {
+        val transitioned = uiState != UpdateUiState.DOWNLOADING
+        uiState = UpdateUiState.DOWNLOADING
+        uiVersion = version
+        uiProgress = progress
+        uiIndeterminate = indeterminate
+        uiError = null
+        if (transitioned) uiDismissed = false
+        onUiChanged.emit()
+    }
+
+    fun setUiReady(version: Int, apkFile: File) {
+        val transitioned = uiState != UpdateUiState.READY
+        uiState = UpdateUiState.READY
+        uiVersion = version
+        uiApkFile = apkFile
+        uiError = null
+        if (transitioned) uiDismissed = false
+        onUiChanged.emit()
+    }
+
+    fun setUiFailed(version: Int, error: String?) {
+        val transitioned = uiState != UpdateUiState.FAILED
+        uiState = UpdateUiState.FAILED
+        uiVersion = version
+        uiError = error
+        if (transitioned) uiDismissed = false
+        onUiChanged.emit()
+    }
+
+    fun clearUi() {
+        uiState = UpdateUiState.NONE
+        uiVersion = 0
+        uiProgress = 0
+        uiIndeterminate = true
+        uiApkFile = null
+        uiError = null
+        uiDismissed = false
+        onUiChanged.emit()
+    }
+
+    fun dismissUi() {
+        uiDismissed = true
+        onUiChanged.emit()
+    }
+
+    fun seedUiFromDisk(context: Context) {
+        if (uiState != UpdateUiState.NONE) return
+        try {
+            val dir = File(context.filesDir, "updates")
+            if (!dir.exists()) return
+            val abi = try { DESIRED_ABI } catch (t: Throwable) { return }
+            val prefix = "app-$abi-"
+            val suffix = ".apk"
+            val candidates = dir.listFiles { f ->
+                f.isFile && f.name.startsWith(prefix) && f.name.endsWith(suffix)
+            } ?: return
+            var bestVersion = BuildConfig.VERSION_CODE
+            var bestFile: File? = null
+            for (f in candidates) {
+                val versionStr = f.name.removePrefix(prefix).removeSuffix(suffix)
+                val v = versionStr.toIntOrNull() ?: continue
+                if (v > bestVersion && f.length() > 0L) {
+                    bestVersion = v
+                    bestFile = f
+                }
+            }
+            val ready = bestFile
+            if (ready != null) {
+                Logger.i(TAG, "Seeding UI ready from disk: v=$bestVersion file=${ready.absolutePath}")
+                setUiReady(bestVersion, ready)
+            }
+        } catch (t: Throwable) {
+            Logger.w(TAG, "Failed to seed UI from disk", t)
+        }
+    }
+
     suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean, hideExceptionButtons: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val client = ManagedHttpClient();

@@ -21,6 +21,7 @@ import java.io.InputStream
 import androidx.core.net.toUri
 import com.futo.platformplayer.dialogs.AutoUpdateDialog
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateUpdate
 
 object UpdateInstaller {
     private const val TAG = "UpdateInstaller"
@@ -61,6 +62,17 @@ object UpdateInstaller {
             var inputStream: InputStream? = null
             var session: PackageInstaller.Session? = null
             try {
+                val dataLength = apkFile.length()
+                val usable = try { context.filesDir.usableSpace } catch (_: Throwable) { -1L }
+                if (usable in 0 until dataLength) {
+                    val msg = "Not enough storage to install update. Need ${dataLength / 1_048_576L}MB, have ${usable / 1_048_576L}MB free."
+                    Logger.w(TAG, msg)
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(context, msg)
+                    }
+                    UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, msg)
+                    return@launch
+                }
 
                 val packageInstaller: PackageInstaller = context.packageManager.packageInstaller
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
@@ -68,7 +80,6 @@ object UpdateInstaller {
                 session = packageInstaller.openSession(sessionId)
 
                 inputStream = apkFile.inputStream()
-                val dataLength = apkFile.length()
 
                 session.openWrite("package", 0, dataLength).use { sessionStream ->
                     inputStream.copyToOutputStream(dataLength, sessionStream) { _ -> }
@@ -91,11 +102,18 @@ object UpdateInstaller {
             } catch (e: Throwable) {
                 Logger.w(TAG, "Exception while installing update", e)
                 session?.abandon()
+
+                val raw = e.message ?: ""
+                val friendly = if (raw.contains("Failed to allocate") || raw.contains("allocatable") || raw.contains("ENOSPC", ignoreCase = true)) {
+                    "Not enough storage to install update. Free up some space and try again."
+                } else {
+                    "Failed to install update: $raw"
+                }
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context, "Failed to install update: ${e.message}")
+                    UIDialogs.toast(context, friendly)
                 }
 
-                UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, e.message)
+                UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, friendly)
             } finally {
                 session?.close()
                 inputStream?.close()
@@ -110,10 +128,12 @@ object UpdateInstaller {
             if (result.isNullOrEmpty()) {
                 Logger.i(TAG, "Update install finished successfully")
                 UpdateNotificationManager.showInstallSucceededNotification(context, version)
+                StateUpdate.instance.clearUi()
             } else {
                 Logger.w(TAG, "Update install failed: $result")
                 UpdateNotificationManager.showInstallFailedNotification(context, version, apkFile, result)
                 UIDialogs.showGeneralErrorDialog(context, "Install failed due to:\n$result")
+                StateUpdate.instance.setUiReady(version, apkFile)
             }
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to handle install result", e)

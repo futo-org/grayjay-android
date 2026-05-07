@@ -1,17 +1,15 @@
 package com.futo.platformplayer
 
-import android.app.Dialog
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.SystemClock
-import com.futo.platformplayer.UIDialogs.ActionStyle
+import androidx.core.app.NotificationManagerCompat
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImageVariable
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.SessionAnnouncement
 import com.futo.platformplayer.states.StateAnnouncement
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateUpdate
 import kotlinx.coroutines.*
 import java.io.File
@@ -30,8 +28,6 @@ class UpdateDownloadService : Service() {
         private const val INITIAL_BACKOFF_MS = 5_000L
         private const val BUFFER_SIZE = 8 * 1024
         private const val MIN_PROGRESS_UPDATE_INTERVAL_MS = 500L
-
-        var updateDownloadedDialog: Dialog? = null
     }
 
     private val job = SupervisorJob()
@@ -56,6 +52,7 @@ class UpdateDownloadService : Service() {
         if (intent.getBooleanExtra(EXTRA_CANCEL, false)) {
             cancelRequested = true
             Logger.i(TAG, "Download cancel requested")
+            StateUpdate.Companion.instance.clearUi()
             stopForeground(Service.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
@@ -74,6 +71,10 @@ class UpdateDownloadService : Service() {
 
         isDownloading = true
         cancelRequested = false
+
+        StateUpdate.Companion.instance.setUiDownloading(version, 0, indeterminate = true)
+
+        NotificationManagerCompat.from(this).cancel(UpdateNotificationManager.NOTIF_ID_READY)
 
         val notification = UpdateNotificationManager.buildDownloadProgressNotification(this, version, 0, true)
         startForeground(UpdateNotificationManager.NOTIF_ID_DOWNLOADING, notification)
@@ -97,6 +98,7 @@ class UpdateDownloadService : Service() {
         if (force || now - lastProgressUpdateElapsedMs >= MIN_PROGRESS_UPDATE_INTERVAL_MS) {
             lastProgressUpdateElapsedMs = now
             UpdateNotificationManager.updateDownloadProgress(this, version, progress, indeterminate);
+            StateUpdate.Companion.instance.setUiDownloading(version, progress, indeterminate)
 
             if(onProgress != null)
                 onProgress.invoke(progress);
@@ -159,6 +161,7 @@ class UpdateDownloadService : Service() {
                     if (attempt == MAX_RETRIES - 1) {
                         Logger.e(TAG, "Download failed after ${attempt + 1} attempts", t)
                         UpdateNotificationManager.showDownloadFailedNotification(this, version, t)
+                        StateUpdate.Companion.instance.setUiFailed(version, t.message)
                         break
                     } else {
                         Logger.w(TAG, "Download attempt ${attempt + 1} failed, retrying in ${backoffMs / 1000}s", t)
@@ -264,39 +267,16 @@ class UpdateDownloadService : Service() {
     private fun onDownloadComplete(version: Int, apkFile: File) {
         Logger.i(TAG, "Download complete for version=$version, file=${apkFile.absolutePath}")
         UpdateNotificationManager.showDownloadCompleteNotification(this, version, apkFile)
+        StateUpdate.Companion.instance.setUiReady(version, apkFile)
 
-        if (StateApp.instance.isMainActive) {
-            StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
-                StateApp.withContext { ctx ->
-                    try {
-                        updateDownloadedDialog = UIDialogs.showDialog(ctx, R.drawable.foreground,
-                            "Update downloaded",
-                            "Would you like to install it now?", null, 0,
-                            UIDialogs.Action("Not now", {
-                                updateDownloadedDialog = null
-                            }, ActionStyle.NONE, true),
-                            UIDialogs.Action("Install", {
-                                UpdateNotificationManager.cancelAll(ctx)
-                                UpdateInstaller.startInstall(ctx, version, apkFile)
-                            }, ActionStyle.PRIMARY, true));
-
-                        try {
-                            StateAnnouncement.instance.registerAnnouncement("install-update-apk", "Grayjay v${version} is ready!", "You can now install the new Grayjay version.",
-                                AnnouncementType.SESSION,
-                                OffsetDateTime.now(), "update", "Install", {
-                                    UpdateNotificationManager.cancelAll(ctx)
-                                    UpdateInstaller.startInstall(ctx, version, apkFile)
-                                });
-                        }
-                        catch(ex: Throwable) {
-
-                        }
-                    } catch (t: Throwable) {
-                        Logger.w(TAG, "Failed to show in-app update downloaded dialog", t)
-                        updateDownloadedDialog = null
-                    }
-                }
+        try {
+            val ctx = applicationContext
+            StateAnnouncement.instance.registerAnnouncement("install-update-apk", "Grayjay v${version} is ready!", "You can now install the new Grayjay version.", AnnouncementType.SESSION, OffsetDateTime.now(), "update", "Install") {
+                UpdateNotificationManager.cancelAll(ctx)
+                UpdateInstaller.startInstall(ctx, version, apkFile)
             }
+        } catch (ex: Throwable) {
+            Logger.w(TAG, "Failed to register install announcement", ex)
         }
     }
 }

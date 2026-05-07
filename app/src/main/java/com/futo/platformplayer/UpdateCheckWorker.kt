@@ -1,11 +1,12 @@
 package com.futo.platformplayer
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateUpdate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,18 +36,16 @@ class UpdateCheckWorker(appContext: Context, workerParams: WorkerParameters) : C
                     return@withContext Result.success()
                 }
 
-                UpdateNotificationManager.showUpdateAvailableNotification(applicationContext, latestVersion)
+                StateUpdate.Companion.instance.setUiAvailable(latestVersion)
 
-                if (StateApp.instance.isMainActive) {
-                    withContext(Dispatchers.Main) {
-                        StateApp.withContext { ctx ->
-                            try {
-                                UIDialogs.showUpdateAvailableDialog(ctx, latestVersion, false)
-                            } catch (t: Throwable) {
-                                Logger.w(TAG, "Failed to show in-app update dialog from worker", t)
-                            }
-                        }
+                try {
+                    val serviceIntent = Intent(applicationContext, UpdateDownloadService::class.java).apply {
+                        putExtra(UpdateDownloadService.EXTRA_VERSION, latestVersion)
                     }
+                    ContextCompat.startForegroundService(applicationContext, serviceIntent)
+                } catch (t: Throwable) {
+                    Logger.w(TAG, "Failed to start UpdateDownloadService", t)
+                    StateUpdate.Companion.instance.setUiFailed(latestVersion, t.message)
                 }
 
                 Result.success()

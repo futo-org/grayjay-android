@@ -22,9 +22,6 @@ object UpdateNotificationManager {
     private const val CHANNEL_NAME = "App updates"
     private const val CHANNEL_DESCRIPTION = "Notifications about new app versions"
 
-    const val ACTION_UPDATE_YES = "com.futo.platformplayer.UPDATE_YES"
-    const val ACTION_UPDATE_NO = "com.futo.platformplayer.UPDATE_NO"
-    const val ACTION_UPDATE_NEVER = "com.futo.platformplayer.UPDATE_NEVER"
     const val ACTION_DOWNLOAD_CANCEL = "com.futo.platformplayer.UPDATE_CANCEL"
     const val ACTION_INSTALL_NOW = "com.futo.platformplayer.UPDATE_INSTALL"
     private const val REQUEST_CODE_INSTALL = 1001
@@ -32,7 +29,6 @@ object UpdateNotificationManager {
     const val EXTRA_VERSION = "version"
     const val EXTRA_APK_PATH = "apk_path"
 
-    const val NOTIF_ID_AVAILABLE = 2001
     const val NOTIF_ID_DOWNLOADING = 2002
     const val NOTIF_ID_READY = 2003
     const val NOTIF_ID_INSTALL_FAILED = 2004
@@ -82,43 +78,6 @@ object UpdateNotificationManager {
         }
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID_INSTALL_SUCCEEDED, builder.build())
-    }
-
-    fun showUpdateAvailableNotification(context: Context, version: Int) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
-        ensureChannel(context)
-
-        val yesIntent = Intent(context, UpdateActionReceiver::class.java).apply {
-            action = ACTION_UPDATE_YES
-            putExtra(EXTRA_VERSION, version)
-        }
-        val yesPendingIntent = getBroadcast(context, 0, yesIntent, FLAG_MUTABLE or FLAG_UPDATE_CURRENT)
-        val noIntent = Intent(context, UpdateActionReceiver::class.java).apply {
-            action = ACTION_UPDATE_NO
-            putExtra(EXTRA_VERSION, version)
-        }
-        val noPendingIntent = getBroadcast(context, 1, noIntent, FLAG_MUTABLE or FLAG_UPDATE_CURRENT)
-        val neverIntent = Intent(context, UpdateActionReceiver::class.java).apply {
-            action = ACTION_UPDATE_NEVER
-            putExtra(EXTRA_VERSION, version)
-        }
-        val neverPendingIntent = getBroadcast(context, 2, neverIntent, FLAG_MUTABLE or FLAG_UPDATE_CURRENT)
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.foreground)
-            .setContentTitle("Update available")
-            .setContentText("A new version ($version) is available.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .setContentIntent(yesPendingIntent)
-            .setSilent(true)
-            .addAction(0, "Never", neverPendingIntent)
-            .addAction(0, "Not now", noPendingIntent)
-            .addAction(0, "Download", yesPendingIntent)
-
-        NotificationManagerCompat.from(context).notify(NOTIF_ID_AVAILABLE, builder.build())
     }
 
     fun buildDownloadProgressNotification(context: Context, version: Int, progress: Int, indeterminate: Boolean): Notification {
@@ -223,11 +182,9 @@ object UpdateNotificationManager {
     }
 
     fun cancelAll(context: Context) {
-        NotificationManagerCompat.from(context).cancel(NOTIF_ID_AVAILABLE)
         NotificationManagerCompat.from(context).cancel(NOTIF_ID_DOWNLOADING)
         NotificationManagerCompat.from(context).cancel(NOTIF_ID_READY)
         NotificationManagerCompat.from(context).cancel(NOTIF_ID_INSTALL_FAILED)
         NotificationManagerCompat.from(context).cancel(NOTIF_ID_INSTALL_SUCCEEDED)
-
     }
 }
