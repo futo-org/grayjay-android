@@ -31,47 +31,37 @@ class StateUpdate {
         private set
     @Volatile var uiError: String? = null
         private set
-    @Volatile var uiDismissed: Boolean = false
-        private set
 
     val onUiChanged = Event0()
 
     fun setUiAvailable(version: Int) {
-        val transitioned = uiState != UpdateUiState.AVAILABLE
         uiState = UpdateUiState.AVAILABLE
         uiVersion = version
         uiError = null
-        if (transitioned) uiDismissed = false
         onUiChanged.emit()
     }
 
     fun setUiDownloading(version: Int, progress: Int, indeterminate: Boolean) {
-        val transitioned = uiState != UpdateUiState.DOWNLOADING
         uiState = UpdateUiState.DOWNLOADING
         uiVersion = version
         uiProgress = progress
         uiIndeterminate = indeterminate
         uiError = null
-        if (transitioned) uiDismissed = false
         onUiChanged.emit()
     }
 
     fun setUiReady(version: Int, apkFile: File) {
-        val transitioned = uiState != UpdateUiState.READY
         uiState = UpdateUiState.READY
         uiVersion = version
         uiApkFile = apkFile
         uiError = null
-        if (transitioned) uiDismissed = false
         onUiChanged.emit()
     }
 
     fun setUiFailed(version: Int, error: String?) {
-        val transitioned = uiState != UpdateUiState.FAILED
         uiState = UpdateUiState.FAILED
         uiVersion = version
         uiError = error
-        if (transitioned) uiDismissed = false
         onUiChanged.emit()
     }
 
@@ -82,12 +72,6 @@ class StateUpdate {
         uiIndeterminate = true
         uiApkFile = null
         uiError = null
-        uiDismissed = false
-        onUiChanged.emit()
-    }
-
-    fun dismissUi() {
-        uiDismissed = true
         onUiChanged.emit()
     }
 
