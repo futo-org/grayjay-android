@@ -47,7 +47,6 @@
             android:layout_marginLeft="10dp"
             android:layout_marginRight="4dp"
             android:max="100"
-            android:progressDrawable="@drawable/progress_update_banner"
             android:visibility="gone"
             tools:visibility="visible" />
 
