@@ -408,6 +408,16 @@ class V8Plugin {
             }
         }
     }
+    fun executeString(js: String) : String? = busy { 
+        catchScriptErrors("Plugin[${config.name}]") { 
+            executeTyped<V8ValueString>(js).value 
+        } 
+    }
+    fun executeString(js: String) : String? = busy { 
+        catchScriptErrors("Plugin[${config.name}]") { 
+            executeTyped<V8ValueString>(js).value 
+        } 
+    }
     fun <T : V8Value> executeTyped(js: String) : T {
         warnIfMainThread("V8Plugin.executeTyped");
         if(isStopped)

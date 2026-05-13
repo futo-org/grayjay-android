@@ -77,10 +77,21 @@ class SourceHeaderView : LinearLayout {
         val loadedIcon = StatePlugins.instance.getPluginIconOrNull(config.id);
         if(loadedIcon != null)
             loadedIcon.setImageView(_sourceImage);
-        else
-            Glide.with(_sourceImage)
-                .load(config.absoluteIconUrl)
-                .into(_sourceImage);
+        else {
+            StateApp.instance.scope.launch {
+                val dynamicIcon = StatePlugins.instance.getDynamicIcon(config.id)
+                val iconToLoad = dynamicIcon ?: config.absoluteIconUrl
+                withContext(Dispatchers.Main) {
+                    Glide.with(_sourceImage)
+                        .load(iconToLoad)
+                        .into(_sourceImage);
+                }
+            }
+        }
+
+                }
+            }
+        }
 
         _sourceTitle.text = config.name;
         _sourceBy.text = config.author
