@@ -89,11 +89,8 @@ class SourceHeaderView : LinearLayout {
             }
         }
 
-                }
-            }
-        }
-
         _sourceTitle.text = config.name;
+
         _sourceBy.text = config.author
         _sourceDescription.text = config.description;
         _sourceVersion.text = config.version.toString();
