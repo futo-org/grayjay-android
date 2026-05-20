@@ -124,3 +124,9 @@
 [submodule "app/src/stable/assets/sources/fosdem"]
 	path = app/src/stable/assets/sources/fosdem
 	url = ../plugins/fosdem.git
+[submodule "app/src/unstable/assets/sources/nasa-plus"]
+	path = app/src/unstable/assets/sources/nasa-plus
+	url = ../plugins/nasa-plus.git
+[submodule "app/src/stable/assets/sources/nasa-plus"]
+	path = app/src/stable/assets/sources/nasa-plus
+	url = ../plugins/nasa-plus.git
