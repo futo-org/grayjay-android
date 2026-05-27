@@ -26,6 +26,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.time.Duration
 import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
@@ -71,53 +72,8 @@ open class ManagedHttpClient {
     }
 
     private fun applyMergedTrustStore(builder: OkHttpClient.Builder) {
-        try {
-            val context = StateApp.instance.contextOrNull ?: return;
-            val bundleFile = File(context.noBackupFilesDir, "curl-ca-bundle.pem");
-            if (!bundleFile.exists()) {
-                Logger.w(TAG, "useDownloadedCABundle requested but bundle file not present yet");
-                return;
-            }
-
-            val defaultAlgo = TrustManagerFactory.getDefaultAlgorithm();
-
-            val platformTmf = TrustManagerFactory.getInstance(defaultAlgo);
-            platformTmf.init(null as KeyStore?);
-            val platformTm = platformTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
-                ?: return;
-
-            val bundleKeyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply { load(null, null) };
-            val cf = CertificateFactory.getInstance("X.509");
-            val certs = bundleFile.inputStream().use { cf.generateCertificates(it) };
-            certs.forEachIndexed { i, cert -> bundleKeyStore.setCertificateEntry("bundle-$i", cert) };
-            val bundleTmf = TrustManagerFactory.getInstance(defaultAlgo);
-            bundleTmf.init(bundleKeyStore);
-            val bundleTm = bundleTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
-                ?: return;
-
-            val composite = object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                    platformTm.checkClientTrusted(chain, authType);
-                }
-                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                    try {
-                        platformTm.checkServerTrusted(chain, authType);
-                    } catch (primary: CertificateException) {
-                        bundleTm.checkServerTrusted(chain, authType);
-                    }
-                }
-                override fun getAcceptedIssuers(): Array<X509Certificate> {
-                    return platformTm.acceptedIssuers + bundleTm.acceptedIssuers;
-                }
-            };
-
-            val sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, arrayOf<TrustManager>(composite), SecureRandom());
-            builder.sslSocketFactory(sslContext.socketFactory, composite);
-            Logger.i(TAG, "Applied platform+bundle composite trust manager (${certs.size} extra certs from cacert.pem)");
-        } catch (ex: Throwable) {
-            Logger.e(TAG, "Failed to apply downloaded CA bundle; falling back to platform default", ex);
-        }
+        val pair = getOrBuildCompositeTrustStore() ?: return;
+        builder.sslSocketFactory(pair.first, pair.second);
     }
 
     constructor(builder: OkHttpClient.Builder = OkHttpClient.Builder()) {
@@ -386,5 +342,76 @@ open class ManagedHttpClient {
 
     companion object {
         val TAG = "ManagedHttpClient";
+
+        @Volatile private var _cachedCompositePair: Pair<SSLSocketFactory, X509TrustManager>? = null;
+        @Volatile private var _cachedCompositeMtime: Long = -1L;
+        private val _compositeBuildLock = Any();
+
+        private fun getOrBuildCompositeTrustStore(): Pair<SSLSocketFactory, X509TrustManager>? {
+            val context = StateApp.instance.contextOrNull ?: return null;
+            val bundleFile = File(context.noBackupFilesDir, "curl-ca-bundle.pem");
+            if (!bundleFile.exists()) {
+                Logger.w(TAG, "useDownloadedCABundle requested but bundle file not present yet");
+                return null;
+            }
+            val modTime = bundleFile.lastModified();
+
+            val cached = _cachedCompositePair;
+            if (cached != null && _cachedCompositeMtime == modTime) {
+                return cached;
+            }
+
+            synchronized(_compositeBuildLock) {
+                val recheck = _cachedCompositePair;
+                if (recheck != null && _cachedCompositeMtime == modTime) {
+                    return recheck;
+                }
+
+                try {
+                    val defaultAlgo = TrustManagerFactory.getDefaultAlgorithm();
+
+                    val platformTmf = TrustManagerFactory.getInstance(defaultAlgo);
+                    platformTmf.init(null as KeyStore?);
+                    val platformTm = platformTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
+                        ?: return null;
+
+                    val bundleKeyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply { load(null, null) };
+                    val cf = CertificateFactory.getInstance("X.509");
+                    val certs = bundleFile.inputStream().use { cf.generateCertificates(it) };
+                    certs.forEachIndexed { i, cert -> bundleKeyStore.setCertificateEntry("bundle-$i", cert) };
+                    val bundleTmf = TrustManagerFactory.getInstance(defaultAlgo);
+                    bundleTmf.init(bundleKeyStore);
+                    val bundleTm = bundleTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
+                        ?: return null;
+
+                    val composite = object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                            platformTm.checkClientTrusted(chain, authType);
+                        }
+                        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                            try {
+                                platformTm.checkServerTrusted(chain, authType);
+                            } catch (primary: CertificateException) {
+                                bundleTm.checkServerTrusted(chain, authType);
+                            }
+                        }
+                        override fun getAcceptedIssuers(): Array<X509Certificate> {
+                            return platformTm.acceptedIssuers + bundleTm.acceptedIssuers;
+                        }
+                    };
+
+                    val sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(null, arrayOf<TrustManager>(composite), SecureRandom());
+                    val pair = Pair(sslContext.socketFactory, composite as X509TrustManager);
+                    _cachedCompositePair = pair;
+                    _cachedCompositeMtime = modTime;
+                    Logger.i(TAG, "Built platform+bundle composite trust manager (${certs.size} extra certs from cacert.pem); cached until bundle mtime changes");
+                    return pair;
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Failed to build downloaded CA bundle; will use platform default", ex);
+                    return null;
+                }
+            }
+        }
     }
 }
