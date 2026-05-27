@@ -290,6 +290,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             exIntent.putExtra(ExceptionActivity.EXTRA_STACK, message);
             startActivity(exIntent);
 
+            Logger.flushBlocking();
             Runtime.getRuntime().exit(0);
         }
     }

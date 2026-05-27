@@ -126,6 +126,7 @@ import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
+import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.models.SendToDevicePackage
@@ -364,7 +365,7 @@ class VideoDetailView : ConstraintLayout {
         Pair(-5 * 60, 30), //around 5 minutes, try every 30 seconds
         Pair(0, 10) //around live, try every 10 seconds
     );
-    private var _subtitleLanguage: String? = null
+    private var _subtitleLanguage: String? = _subtitleLanguageStore.value;
 
     @androidx.annotation.OptIn(UnstableApi::class)
     constructor(context: Context, attrs : AttributeSet? = null) : super(context, attrs) {
@@ -1289,6 +1290,7 @@ class VideoDetailView : ConstraintLayout {
         _taskLoadVideo.cancel();
         _commentsList.cancel();
         _player.clear();
+        _player.changePlayer(null);
         _cast.cleanup();
         _container_content_replies.cleanup();
         _container_content_queue.cleanup();
@@ -2807,6 +2809,7 @@ class VideoDetailView : ConstraintLayout {
         }
         _lastSubtitleSource = toSet;
         _subtitleLanguage = toSet?.language
+        _subtitleLanguageStore.setAndSave(_subtitleLanguage ?: "")
     }
 
     private fun handleUnavailableVideo(msg: String? = null) {
@@ -3641,6 +3644,7 @@ class VideoDetailView : ConstraintLayout {
         const val TAG_MORE = "MORE";
 
         private val _buttonPinStore = FragmentedStorage.get<StringArrayStorage>("videoPinnedButtons");
+        private val _subtitleLanguageStore = FragmentedStorage.get<StringStorage>("subtitleLanguage");
         private var _lastOfflinePlaybackToastTime: Long = 0
     }
 }

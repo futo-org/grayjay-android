@@ -14,6 +14,7 @@ class FileLogConsumer : ILogConsumer, Closeable {
     private var _shouldSubmitLogs = false;
     private val _linesToWrite = ConcurrentLinkedQueue<String>();
     private var _writer: BufferedWriter? = null;
+    private val _writerLock = Any();
     private var _running: Boolean = false;
     private var _file: File;
     private val _level: LogLevel;
@@ -42,12 +43,7 @@ class FileLogConsumer : ILogConsumer, Closeable {
                         submitLogs();
                     }
 
-                    while (_linesToWrite.isNotEmpty()) {
-                        val todo = _linesToWrite.remove()
-                        _writer?.appendLine(todo);
-                    }
-
-                    _writer?.flush();
+                    drainAndFlush();
                 } catch (e: Throwable) {
                     Log.e(TAG, "Failed to process logs.", e);
                 }
@@ -68,6 +64,25 @@ class FileLogConsumer : ILogConsumer, Closeable {
 
     override fun consume(level: LogLevel, tag: String, text: String?, e: Throwable?) {
         _linesToWrite.add(Logging.buildLogString(level, tag, text, e));
+        if (level == LogLevel.ERROR) {
+            try { drainAndFlush() } catch (_: Throwable) { /* best-effort */ }
+        }
+    }
+
+    fun flushBlocking() {
+        try { drainAndFlush() } catch (e: Throwable) {
+            Log.e(TAG, "flushBlocking failed", e);
+        }
+    }
+
+    private fun drainAndFlush() {
+        synchronized(_writerLock) {
+            val w = _writer ?: return
+            while (_linesToWrite.isNotEmpty()) {
+                w.appendLine(_linesToWrite.remove());
+            }
+            w.flush();
+        }
     }
 
     fun submitLogs() {
@@ -84,8 +99,10 @@ class FileLogConsumer : ILogConsumer, Closeable {
         Log.i(TAG, "Requesting log writer exit.");
 
         _running = false;
-        _writer?.close();
-        _writer = null;
+        synchronized(_writerLock) {
+            _writer?.close();
+            _writer = null;
+        }
         //_logThread?.join();
         _logThread = null;
     }

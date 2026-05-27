@@ -74,6 +74,14 @@ class Logger {
             return loggingEnabled;
         }
 
+        fun flushBlocking() {
+            for (logConsumer in _logConsumers) {
+                if (logConsumer is FileLogConsumer) {
+                    logConsumer.flushBlocking();
+                }
+            }
+        }
+
         private fun log(level: LogLevel, tag: String, e: Throwable? = null, textBuilder: () -> String?) {
             if (!_logConsumers.any { c -> c.willConsume(level, tag) }) {
                 return;

@@ -1024,6 +1024,31 @@ class VideoDownload {
                     }
                 }
             }
+
+            try {
+                val tailUrl = foundTemplateUrl.replace("\$Number\$", indexCounter.toString());
+                Logger.i(TAG, "Downloading tail segment (segIndex=$indexCounter)");
+                val tailData = executeOrGet(client, executor, modifier, tailUrl);
+                fileStream.write(tailData, 0, tailData.size);
+                speedTracker.addWork(tailData.size.toLong());
+                written += tailData.size;
+            } catch (ex: Throwable) {
+                Logger.w(TAG, "$name tail segment fetch (segIndex=$indexCounter) failed; continuing without it", ex);
+            }
+
+            if (foundCues2 != null && foundTemplateUrl2 != null && fileStream2 != null) {
+                try {
+                    val tailUrl2 = foundTemplateUrl2!!.replace("\$Number\$", foundCues2.size.toString());
+                    Logger.i(TAG, "Downloading audio tail segment (segIndex=${foundCues2.size})");
+                    val tailData2 = executeOrGet(client, executor, modifier, tailUrl2);
+                    fileStream2.write(tailData2, 0, tailData2.size);
+                    speedTracker.addWork(tailData2.size.toLong());
+                    written2 += tailData2.size;
+                } catch (ex: Throwable) {
+                    Logger.w(TAG, "$name(audio) tail segment fetch (segIndex=${foundCues2.size}) failed; continuing without it", ex);
+                }
+            }
+
             sourceLength = written;
             sourceLengthAudio = written2;
 

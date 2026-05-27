@@ -698,6 +698,11 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.enable_video_cache, FieldForm.TOGGLE, R.string.cache_to_quickly_load_previously_fetched_videos, 0)
         @Serializable(with = FlexibleBooleanSerializer::class)
         var videoCache: Boolean = false; //Temporary default disabled to prevent ui freeze?
+
+        @AdvancedField
+        @FormField(R.string.use_downloaded_ca_bundle, FieldForm.TOGGLE, R.string.use_downloaded_ca_bundle_description, 1)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var useDownloadedCABundle: Boolean = false;
     }
 
     @FormField(R.string.casting, "group", R.string.configure_casting, 9)
