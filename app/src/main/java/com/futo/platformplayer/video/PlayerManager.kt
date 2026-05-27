@@ -55,9 +55,18 @@ class PlayerManager {
     }
     fun modifyState(name: String, cb: (PlayerState) -> Unit) {
         val state = getState(name);
+        val previousListener = state.listener;
         cb(state);
-        if(_currentState == state)
+        if(_currentState == state) {
             applyState(state);
+            val newListener = state.listener;
+            if(previousListener !== newListener) {
+                if(previousListener != null)
+                    player.removeListener(previousListener);
+                if(newListener != null)
+                    player.addListener(newListener);
+            }
+        }
     }
     fun switchState(name: String) {
         val newState = getState(name);

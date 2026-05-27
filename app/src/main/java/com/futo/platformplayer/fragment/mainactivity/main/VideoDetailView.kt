@@ -1290,6 +1290,7 @@ class VideoDetailView : ConstraintLayout {
         _taskLoadVideo.cancel();
         _commentsList.cancel();
         _player.clear();
+        _player.changePlayer(null);
         _cast.cleanup();
         _container_content_replies.cleanup();
         _container_content_queue.cleanup();
