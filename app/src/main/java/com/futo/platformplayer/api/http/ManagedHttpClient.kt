@@ -1,6 +1,7 @@
 package com.futo.platformplayer.api.http
 
 import androidx.collection.arrayMapOf
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.SettingsDev
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.ensureNotMainThread
@@ -17,11 +18,16 @@ import okhttp3.Response
 import okhttp3.ResponseBody
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.io.File
+import java.security.KeyStore
 import java.security.SecureRandom
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.time.Duration
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
+import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
 import kotlin.system.measureTimeMillis
@@ -64,10 +70,62 @@ open class ManagedHttpClient {
         Logger.w(TAG, "Creating INSECURE client (TrustAll)");
     }
 
+    private fun applyMergedTrustStore(builder: OkHttpClient.Builder) {
+        try {
+            val context = StateApp.instance.contextOrNull ?: return;
+            val bundleFile = File(context.noBackupFilesDir, "curl-ca-bundle.pem");
+            if (!bundleFile.exists()) {
+                Logger.w(TAG, "useDownloadedCABundle requested but bundle file not present yet");
+                return;
+            }
+
+            val defaultAlgo = TrustManagerFactory.getDefaultAlgorithm();
+
+            val platformTmf = TrustManagerFactory.getInstance(defaultAlgo);
+            platformTmf.init(null as KeyStore?);
+            val platformTm = platformTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
+                ?: return;
+
+            val bundleKeyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply { load(null, null) };
+            val cf = CertificateFactory.getInstance("X.509");
+            val certs = bundleFile.inputStream().use { cf.generateCertificates(it) };
+            certs.forEachIndexed { i, cert -> bundleKeyStore.setCertificateEntry("bundle-$i", cert) };
+            val bundleTmf = TrustManagerFactory.getInstance(defaultAlgo);
+            bundleTmf.init(bundleKeyStore);
+            val bundleTm = bundleTmf.trustManagers.firstOrNull { it is X509TrustManager } as? X509TrustManager
+                ?: return;
+
+            val composite = object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                    platformTm.checkClientTrusted(chain, authType);
+                }
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                    try {
+                        platformTm.checkServerTrusted(chain, authType);
+                    } catch (primary: CertificateException) {
+                        bundleTm.checkServerTrusted(chain, authType);
+                    }
+                }
+                override fun getAcceptedIssuers(): Array<X509Certificate> {
+                    return platformTm.acceptedIssuers + bundleTm.acceptedIssuers;
+                }
+            };
+
+            val sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, arrayOf<TrustManager>(composite), SecureRandom());
+            builder.sslSocketFactory(sslContext.socketFactory, composite);
+            Logger.i(TAG, "Applied platform+bundle composite trust manager (${certs.size} extra certs from cacert.pem)");
+        } catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to apply downloaded CA bundle; falling back to platform default", ex);
+        }
+    }
+
     constructor(builder: OkHttpClient.Builder = OkHttpClient.Builder()) {
         _builderTemplate = builder;
         if(FragmentedStorage.isInitialized && StateApp.instance.isMainActive && SettingsDev.instance.developerMode && SettingsDev.instance.networking.allowAllCertificates)
             trustAllCertificates(builder);
+        else if(FragmentedStorage.isInitialized && Settings.instance.browsing.useDownloadedCABundle)
+            applyMergedTrustStore(builder);
         client = builder.addNetworkInterceptor { chain ->
             val request = beforeRequest(chain.request());
             val response = afterRequest(chain.proceed(request));
