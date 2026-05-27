@@ -26,6 +26,7 @@ import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
 import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -118,7 +119,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             return getPlaybackTrackerJS();
     }
     private fun getPlaybackTrackerJS(): IPlaybackTracker? {
-        return _plugin.busy {
+        return _content.requireSourcePlugin("VideoDetails.getPlaybackTracker").busy {
             V8Plugin.catchScriptErrors(_pluginConfig, "VideoDetails", "videoDetails.getPlaybackTracker()") {
                 val tracker = _content.invokeV8<V8Value>("getPlaybackTracker", arrayOf<Any>())
                     ?: return@catchScriptErrors null;
@@ -147,7 +148,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
         return null;
     }
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        return _plugin.busy {
+        return _content.requireSourcePlugin("VideoDetails.getContentRecommendations").busy {
             val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
             return@busy JSContentPager(_pluginConfig, client, contentPager);
         }
@@ -171,7 +172,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     }
 
     private fun getCommentsJS(client: JSClient): IPager<IPlatformComment>? {
-        return _plugin.busy {
+        return _content.requireSourcePlugin("VideoDetails.getComments").busy {
             val commentPager = _content.invokeV8<V8Value>("getComments", arrayOf<Any>());
             if (commentPager !is V8ValueObject) //TODO: Maybe handle this better?
                 return@busy null;
@@ -183,7 +184,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     fun hasVODEvents(): Boolean{
         return _hasGetVODEvents;
     }
-    fun getVODEvents(url: String): IPager<IPlatformLiveEvent>? = _plugin.busy {
+    fun getVODEvents(url: String): IPager<IPlatformLiveEvent>? = _content.requireSourcePlugin("VideoDetails.getVODEvents").busy {
         if(!_hasGetVODEvents)
             return@busy null;
 

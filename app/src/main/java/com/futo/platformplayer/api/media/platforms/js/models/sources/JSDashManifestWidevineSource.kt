@@ -11,6 +11,7 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Void
+import com.futo.platformplayer.requireSourcePlugin
 
 class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
     IDashManifestWidevineSource, JSSource {
@@ -49,7 +50,7 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
-        return _plugin.busy {
+        return _obj.requireSourcePlugin("JSDashManifestWidevineSource.getLicenseRequestExecutor").busy {
             if (!hasLicenseRequestExecutor || _obj.isClosed)
                 return@busy null
 

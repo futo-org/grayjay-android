@@ -134,6 +134,11 @@ inline fun V8Value.ensureIsBusy() {
     }
 }
 
+fun V8Value.requireSourcePlugin(context: String): V8Plugin {
+    return getSourcePlugin()
+        ?: throw IllegalStateException("$context: V8 object's plugin runtime is no longer available");
+}
+
 inline fun <reified T> V8Value.expectV8Variant(config: IV8PluginConfig, contextName: String): T {
     ensureIsBusy();
     return when(T::class) {

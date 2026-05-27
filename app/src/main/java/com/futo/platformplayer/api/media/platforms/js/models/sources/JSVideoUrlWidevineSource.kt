@@ -7,6 +7,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.requireSourcePlugin
 
 class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
     override val licenseUri: String
@@ -22,7 +23,7 @@ class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
-        return _plugin.busy {
+        return _obj.requireSourcePlugin("JSVideoUrlWidevineSource.getLicenseRequestExecutor").busy {
             if (!hasLicenseRequestExecutor || _obj.isClosed)
                 return@busy null
 

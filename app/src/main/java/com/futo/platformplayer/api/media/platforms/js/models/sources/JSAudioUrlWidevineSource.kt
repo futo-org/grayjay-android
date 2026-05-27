@@ -8,6 +8,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Void
+import com.futo.platformplayer.requireSourcePlugin
 
 class JSAudioUrlWidevineSource : JSAudioUrlSource, IAudioUrlWidevineSource {
     override val licenseUri: String
@@ -23,7 +24,7 @@ class JSAudioUrlWidevineSource : JSAudioUrlSource, IAudioUrlWidevineSource {
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
-        return _plugin.busy {
+        return _obj.requireSourcePlugin("JSAudioUrlWidevineSource.getLicenseRequestExecutor").busy {
             if (!hasLicenseRequestExecutor || _obj.isClosed)
                 return@busy null
 

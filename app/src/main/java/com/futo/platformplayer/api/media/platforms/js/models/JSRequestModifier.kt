@@ -13,6 +13,7 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Void
+import com.futo.platformplayer.requireSourcePlugin
 
 class JSRequestModifier: IRequestModifier {
     private val _plugin: JSClient;
@@ -36,7 +37,7 @@ class JSRequestModifier: IRequestModifier {
     }
 
     override fun modifyRequest(url: String, headers: Map<String, String>): IRequest {
-        return _plugin.busy {
+        return _modifier.requireSourcePlugin("JSRequestModifier.modifyRequest").busy {
             if (_modifier.isClosed) {
                 return@busy Request(url, headers);
             }

@@ -19,6 +19,7 @@ import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Async
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +91,8 @@ open class JSDashManifestRawSource(
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         if(!hasGenerate)
             return V8Deferred(CompletableDeferred(manifest));
-        if(_plugin.busy { _obj.isClosed })
+        val pluginV8 = _obj.requireSourcePlugin("DashManifestRawSource.generateAsync");
+        if(pluginV8.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
         val pregenerated = _pregenerate;
         if(pregenerated != null) {
@@ -98,26 +100,24 @@ open class JSDashManifestRawSource(
             return pregenerated;
         }
 
-        val plugin = _plugin.getUnderlyingPlugin();
-
         var result: V8Deferred<V8ValueString>? = null;
         if(_plugin is DevJSClient) {
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
-                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                    _plugin.isBusyWith("dashVideo.generate") {
+                pluginV8.catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                    pluginV8.busy {
                         _obj.invokeV8Async<V8ValueString>("generate");
                     }
                 });
             }
         }
         else
-            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                _plugin.isBusyWith("dashVideo.generate") {
+            result = pluginV8.catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                pluginV8.busy {
                     _obj.invokeV8Async<V8ValueString>("generate");
                 }
             });
 
-        return plugin.busy {
+        return pluginV8.busy {
             val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
             val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
             val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
@@ -142,28 +142,29 @@ open class JSDashManifestRawSource(
     override open fun generate(): String? {
         if(!hasGenerate)
             return manifest;
-        if(_plugin.busy { _obj.isClosed })
+        val pluginV8 = _obj.requireSourcePlugin("DashManifestRawSource.generate");
+        if(pluginV8.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
 
         var result: String? = null;
         if(_plugin is DevJSClient) {
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRawSource.generate()") {
-                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                    _plugin.isBusyWith("dashVideo.generate") {
+                pluginV8.catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                    pluginV8.busy {
                         _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 });
             }
         }
         else
-            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw.generate", "generate()", {
-                _plugin.isBusyWith("dashVideo.generate") {
+            result = pluginV8.catchScriptErrors("DashManifestRaw.generate", "generate()", {
+                pluginV8.busy {
                     _obj.invokeV8<V8ValueString>("generate").value;
                 }
             });
 
         if(result != null){
-            _plugin.busy {
+            pluginV8.busy {
                 val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
                 val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
                 val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;

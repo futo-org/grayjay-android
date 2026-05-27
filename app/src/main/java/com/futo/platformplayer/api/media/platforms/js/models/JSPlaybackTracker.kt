@@ -8,6 +8,7 @@ import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.warnIfMainThread
 
@@ -55,7 +56,7 @@ class JSPlaybackTracker: IPlaybackTracker {
             if(_hasCalledInit)
                 return;
 
-            _client.busy {
+            _obj.requireSourcePlugin("PlaybackTracker.onInit").busy {
                 if (_hasInit) {
                     Logger.i("JSPlaybackTracker", "onInit (${seconds})");
                     _obj.invokeV8Void("onInit", seconds);
@@ -72,7 +73,7 @@ class JSPlaybackTracker: IPlaybackTracker {
             if(!_hasCalledInit && _hasInit)
                 onInit(seconds);
             else {
-                _client.busy {
+                _obj.requireSourcePlugin("PlaybackTracker.onProgress").busy {
                     Logger.i("JSPlaybackTracker", "onProgress (${seconds}, ${isPlaying})");
                     _obj.invokeV8Void("onProgress", Math.floor(seconds), isPlaying);
                     nextRequest = Math.max(100, _obj.getOrThrow(_config, "nextRequest", "PlaybackTracker", false));
@@ -86,7 +87,7 @@ class JSPlaybackTracker: IPlaybackTracker {
         if(_hasOnConcluded) {
             synchronized(_obj) {
                 Logger.i("JSPlaybackTracker", "onConcluded");
-                _client.busy {
+                _obj.requireSourcePlugin("PlaybackTracker.onConcluded").busy {
                     _obj.invokeV8Void("onConcluded", -1);
                 }
             }

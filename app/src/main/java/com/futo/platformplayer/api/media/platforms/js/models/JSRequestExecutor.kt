@@ -14,9 +14,11 @@ import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.getSourcePlugin
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +60,7 @@ class JSRequestExecutor: AutoCloseable {
     //TODO: Executor properties?
     @Throws(ScriptException::class)
     open fun executeRequest(method: String, url: String, body: ByteArray?, headers: Map<String, String>): ByteArray {
-        return _plugin.getUnderlyingPlugin().busy {
+        return _executor.requireSourcePlugin("JSRequestExecutor.executeRequest").busy {
             if (_executor.isClosed)
                 throw IllegalStateException("Executor object is closed");
 
@@ -114,7 +116,8 @@ class JSRequestExecutor: AutoCloseable {
 
 
     open fun cleanup() {
-        _plugin.busy {
+        val pluginV8 = _executor.getSourcePlugin() ?: return;
+        pluginV8.busy {
             synchronized(_cleanLock) {
                 if (!hasCleanup || _executor.isClosed || _cleaned)
                     return@busy;
@@ -122,7 +125,7 @@ class JSRequestExecutor: AutoCloseable {
             }
         }
         Logger.i("JSRequestExecutor", "JSRequestExecutor cleanup requested");
-        _plugin.busy {
+        pluginV8.busy {
             if(_plugin is DevJSClient)
                 StateDeveloper.instance.handleDevCall(_plugin.devID, "requestExecutor.executeRequest()") {
                     V8Plugin.catchScriptErrors<Any>(

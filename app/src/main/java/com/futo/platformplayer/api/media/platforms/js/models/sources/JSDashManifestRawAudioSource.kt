@@ -19,6 +19,7 @@ import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.invokeV8Async
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.Language
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -67,7 +68,8 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override fun generateAsync(scope: CoroutineScope): V8Deferred<String?> {
         if(!hasGenerate)
             return V8Deferred(CompletableDeferred(manifest));
-        if(_plugin.busy { _obj.isClosed })
+        val pluginV8 = _obj.requireSourcePlugin("DashManifestRawAudioSource.generateAsync");
+        if(pluginV8.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
 
         val pregenerated = _pregenerate;
@@ -76,25 +78,23 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
             return pregenerated;
         }
 
-        val plugin = _plugin.getUnderlyingPlugin();
-
         var result: V8Deferred<V8ValueString>? = null;
         if(_plugin is DevJSClient)
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
-                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                    _plugin.isBusyWith("dashAudio.generate") {
+                pluginV8.catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                    pluginV8.busy {
                         _obj.invokeV8Async<V8ValueString>("generate");
                     }
                 }
             }
         else
-            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                _plugin.isBusyWith("dashAudio.generate") {
+            result = pluginV8.catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                pluginV8.busy {
                     _obj.invokeV8Async<V8ValueString>("generate");
                 }
             }
 
-        return plugin.busy {
+        return pluginV8.busy {
             val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
             val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
             val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;
@@ -111,29 +111,28 @@ class JSDashManifestRawAudioSource : JSSource, IAudioSource, IJSDashManifestRawS
     override fun generate(): String? {
         if(!hasGenerate)
             return manifest;
-        if(_plugin.busy { _obj.isClosed })
+        val pluginV8 = _obj.requireSourcePlugin("DashManifestRawAudioSource.generate");
+        if(pluginV8.busy { _obj.isClosed })
             throw IllegalStateException("Source object already closed");
-
-        val plugin = _plugin.getUnderlyingPlugin();
 
         var result: String? = null;
         if(_plugin is DevJSClient)
             result = StateDeveloper.instance.handleDevCall(_plugin.devID, "DashManifestRaw", false) {
-                _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                    _plugin.isBusyWith("dashAudio.generate") {
+                pluginV8.catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                    pluginV8.busy {
                         _obj.invokeV8<V8ValueString>("generate").value;
                     }
                 }
             }
         else
-            result = _plugin.getUnderlyingPlugin().catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
-                _plugin.isBusyWith("dashAudio.generate") {
+            result = pluginV8.catchScriptErrors("DashManifestRaw", "dashManifestRaw.generate()") {
+                pluginV8.busy {
                     _obj.invokeV8<V8ValueString>("generate").value;
                 }
             }
 
         if(result != null){
-            plugin.busy {
+            pluginV8.busy {
                 val initStart = _obj.getOrDefault<Int>(_config, "initStart", "JSDashManifestRawSource", null) ?: 0;
                 val initEnd = _obj.getOrDefault<Int>(_config, "initEnd", "JSDashManifestRawSource", null) ?: 0;
                 val indexStart = _obj.getOrDefault<Int>(_config, "indexStart", "JSDashManifestRawSource", null) ?: 0;

@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.getSourcePlugin
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.warnIfMainThread
 
@@ -23,14 +24,14 @@ abstract class JSPager<T> : IPager<T> {
     protected var _hasMorePages: Boolean = false;
     //private var _morePagesWasFalse: Boolean = false;
 
-    val isAvailable get() = plugin.getUnderlyingPlugin()._runtime?.let { !it.isClosed && !it.isDead } ?: false;
+    val isAvailable get() = !pager.v8Runtime.isClosed && !pager.v8Runtime.isDead;
 
     constructor(config: SourcePluginConfig, plugin: JSClient, pager: V8ValueObject) {
         this.plugin = plugin;
         this.pager = pager;
         this.config = config;
 
-        plugin.busy {
+        requirePagerPluginV8("init").busy {
             _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
         }
         getResults();
@@ -40,8 +41,13 @@ abstract class JSPager<T> : IPager<T> {
         return config;
     }
 
+    protected fun requirePagerPluginV8(context: String): V8Plugin {
+        return pager.getSourcePlugin()
+            ?: throw IllegalStateException("[${plugin.config.name}] JSPager.$context: pager runtime is no longer available");
+    }
+
     override fun hasMorePages(): Boolean {
-        return plugin.getUnderlyingPlugin().busy {
+        return requirePagerPluginV8("hasMorePages").busy {
             _hasMorePages && !pager.isClosed;
         }
     }
@@ -49,7 +55,7 @@ abstract class JSPager<T> : IPager<T> {
     override fun nextPage() {
         warnIfMainThread("JSPager.nextPage");
 
-        val pluginV8 = plugin.getUnderlyingPlugin();
+        val pluginV8 = requirePagerPluginV8("nextPage");
         pluginV8.busy {
             pager = pluginV8.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
                 pager.invokeV8("nextPage", arrayOf<Any>());
@@ -79,7 +85,7 @@ abstract class JSPager<T> : IPager<T> {
 
         warnIfMainThread("JSPager.getResults");
 
-        return plugin.getUnderlyingPlugin().busy {
+        return requirePagerPluginV8("getResults").busy {
             val items = pager.getOrThrow<V8ValueArray>(config, "results", "JSPager");
             if (items.v8Runtime.isDead || items.v8Runtime.isClosed)
                 throw IllegalStateException("Runtime closed");

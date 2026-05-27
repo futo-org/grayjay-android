@@ -22,6 +22,7 @@ import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullableList
 import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
 
 open class JSArticleDetails(
@@ -97,14 +98,14 @@ open class JSArticleDetails(
     }
 
     private fun getContentRecommendationsJS(client: JSClient): JSContentPager {
-        return client.busy {
+        return _content.requireSourcePlugin("ArticleDetails.getContentRecommendations").busy {
             val contentPager = _content.invokeV8<V8ValueObject>("getContentRecommendations", arrayOf<Any>());
             return@busy JSContentPager(_pluginConfig, client, contentPager);
         }
     }
 
     private fun getCommentsJS(client: JSClient): JSCommentPager {
-        return client.busy {
+        return _content.requireSourcePlugin("ArticleDetails.getComments").busy {
             val commentPager = _content.invokeV8<V8ValueObject>("getComments", arrayOf<Any>());
             return@busy JSCommentPager(_pluginConfig, client, commentPager);
         }

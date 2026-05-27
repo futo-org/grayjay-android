@@ -23,7 +23,7 @@ class JSVODEventPager : JSPager<IPlatformLiveEvent>, IPlatformLiveEventPager {
     fun nextPage(ms: Int) = plugin.isBusyWith("JSLiveEventPager.nextPage") {
         warnIfMainThread("VODEventPager.nextPage");
 
-        val pluginV8 = plugin.getUnderlyingPlugin();
+        val pluginV8 = requirePagerPluginV8("nextPage");
         pluginV8.busy {
             val newPager: V8Value = pluginV8.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage(...)") {
                 pager.invokeV8<V8Value>("nextPage", ms);
@@ -32,8 +32,8 @@ class JSVODEventPager : JSPager<IPlatformLiveEvent>, IPlatformLiveEventPager {
                 pager = newPager;
             _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
             _resultChanged = true;
+            nextRequest = pager.getOrThrow(config, "nextRequest", "LiveEventPager");
         }
-        nextRequest = pager.getOrThrow(config, "nextRequest", "LiveEventPager");
     }
 
     override fun nextPage() = nextPage(0);

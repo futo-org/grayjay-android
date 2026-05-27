@@ -19,6 +19,7 @@ import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.orNull
+import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 
 abstract class JSSource {
@@ -66,27 +67,27 @@ abstract class JSSource {
         hasRequestExecutor = parsedHasRequestExecutor;
     }
 
-    fun getRequestModifier(): IRequestModifier? = _plugin.isBusyWith("getRequestModifier") {
+    fun getRequestModifier(): IRequestModifier? = _obj.requireSourcePlugin("JSSource.getRequestModifier").busy {
         if(_requestModifier != null)
-            return@isBusyWith AdhocRequestModifier { url, headers ->
+            return@busy AdhocRequestModifier { url, headers ->
                   return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers);
             };
 
         if (!hasRequestModifier || _obj.isClosed)
-            return@isBusyWith null;
+            return@busy null;
 
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSVideoUrlSource", "obj.getRequestModifier()") {
             _obj.invokeV8("getRequestModifier", arrayOf<Any>());
         };
 
         if (result !is V8ValueObject)
-            return@isBusyWith null;
+            return@busy null;
 
-        return@isBusyWith JSRequestModifier(_plugin, result)
+        return@busy JSRequestModifier(_plugin, result)
     }
-    open fun getRequestExecutor(): JSRequestExecutor? = _plugin.isBusyWith("getRequestExecutor") {
+    open fun getRequestExecutor(): JSRequestExecutor? = _obj.requireSourcePlugin("JSSource.getRequestExecutor").busy {
         if (!hasRequestExecutor || _obj.isClosed)
-            return@isBusyWith null;
+            return@busy null;
 
         Logger.v("JSSource", "Request executor for [${type}] requesting");
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSSource", "obj.getRequestExecutor()") {
@@ -96,9 +97,9 @@ abstract class JSSource {
         Logger.v("JSSource", "Request executor for [${type}] received");
 
         if (result !is V8ValueObject)
-            return@isBusyWith null;
+            return@busy null;
 
-        return@isBusyWith JSRequestExecutor(_plugin, result)
+        return@busy JSRequestExecutor(_plugin, result)
     }
 
     fun getUnderlyingPlugin(): JSClient? {
