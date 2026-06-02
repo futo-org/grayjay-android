@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.activities.AddSourceOptionsActivity
 import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -29,7 +30,8 @@ import com.futo.platformplayer.views.adapters.EnabledSourceViewHolder
 import com.futo.platformplayer.views.adapters.ItemMoveCallback
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.sources.SourceUnderConstructionView
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Collections
 
 class SourcesFragment : MainFragment() {
@@ -231,8 +233,14 @@ class SourcesFragment : MainFragment() {
         }
 
         private fun onEnabledChanged(clients: List<IPlatformClient>) {
-            runBlocking {
-                StatePlatform.instance.selectClients(*clients.map { it.id }.toTypedArray());
+            val ids = clients.map { it.id }.toTypedArray();
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                try {
+                    StatePlatform.instance.selectClients(*ids);
+                }
+                catch (e: Throwable) {
+                    Logger.e(TAG, "selectClients failed", e);
+                }
             }
         }
 
