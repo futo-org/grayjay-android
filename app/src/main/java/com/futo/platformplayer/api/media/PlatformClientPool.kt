@@ -12,10 +12,12 @@ class PlatformClientPool {
     private val _parent: JSClient;
     private val _pool: HashMap<JSClient, Int> = hashMapOf();
     private var _poolCounter = 0;
+    private var _inFlight = 0;
     private val _poolName: String?;
     private val _privatePool: Boolean;
     private val _isolatedInitialization: Boolean
 
+    @Volatile
     var isDead: Boolean = false
         private set;
     val onDead = Event2<JSClient, PlatformClientPool>();
@@ -34,10 +36,10 @@ class PlatformClientPool {
             isDead = true;
             onDead.emit(parentClient, this);
 
-            synchronized(_pool) {
-                for (clientPair in _pool) {
-                    clientPair.key.disable();
-                }
+            val toDisable = synchronized(_pool) { _pool.keys.toList() };
+            for (client in toDisable) {
+                try { client.disable(); }
+                catch (ex: Throwable) { Logger.w(TAG, "Failed to disable pooled client", ex); }
             }
         };
     }
@@ -51,26 +53,52 @@ class PlatformClientPool {
             onDead.emit(_parent, this);
         }
 
-        var reserved: JSClient?;
         synchronized(_pool) {
-            _poolCounter++;
-            reserved = _pool.keys.find { !it.isBusy };
-            if(reserved == null && _pool.size < capacity) {
-                Logger.i(TAG, "Started additional [${_parent.name}] client in pool [${_poolName}] (${_pool.size + 1}/${capacity})");
-                reserved = _parent.getCopy(_privatePool, _isolatedInitialization);
-
-                reserved?.onCaptchaException?.subscribe { client, ex ->
-                    StateApp.instance.handleCaptchaException(client, ex);
-                };
-
-                reserved?.initialize();
-                _pool[reserved!!] = _poolCounter;
+            val free = _pool.keys.firstOrNull { !it.isBusy };
+            if(free != null) {
+                _poolCounter++;
+                _pool[free] = _poolCounter;
+                return free;
             }
-            else
-                reserved = _pool.entries.toList().sortedBy { it.value }.first().key;
-            _pool[reserved!!] = _poolCounter;
+            if(_pool.size + _inFlight < capacity || _pool.isEmpty()) {
+                _inFlight++;
+            }
+            else {
+                _poolCounter++;
+                val lru = _pool.entries.toList().sortedBy { it.value }.first().key;
+                _pool[lru] = _poolCounter;
+                return lru;
+            }
         }
-        return reserved!!;
+
+        val created: JSClient;
+        var pending: JSClient? = null;
+        try {
+            Logger.i(TAG, "Started additional [${_parent.name}] client in pool [${_poolName}]");
+            val client = _parent.getCopy(_privatePool, _isolatedInitialization);
+            pending = client;
+            client.onCaptchaException.subscribe { c, ex ->
+                StateApp.instance.handleCaptchaException(c, ex);
+            };
+            client.initialize();
+            created = client;
+        }
+        catch (ex: Throwable) {
+            synchronized(_pool) { _inFlight--; }
+            try { pending?.disable(); } catch (_: Throwable) {}
+            throw ex;
+        }
+
+        synchronized(_pool) {
+            _inFlight--;
+            if(isDead) {
+                try { created.disable(); } catch (_: Throwable) {}
+                throw IllegalStateException("Pool for [${_parent.name}] died during client creation");
+            }
+            _poolCounter++;
+            _pool[created] = _poolCounter;
+            return created;
+        }
     }
 
 

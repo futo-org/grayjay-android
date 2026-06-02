@@ -57,6 +57,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.lang.Thread.sleep
 import java.time.OffsetDateTime
@@ -81,6 +83,7 @@ class StatePlatform {
     private val _enabledClientsPersistent = FragmentedStorage.get<StringArrayStorage>("enabledClients");
     private val _platformOrderPersistent = FragmentedStorage.get<StringArrayStorage>("platformOrder");
     private val _clientsLock = Object();
+    private val _selectClientsMutex = Mutex();
     private val _availableClients : ArrayList<IPlatformClient> = ArrayList();
     private val _enabledClients : ArrayList<IPlatformClient> = ArrayList();
 
@@ -442,31 +445,33 @@ class StatePlatform {
     }
     suspend fun selectClients(afterLoad: (() -> Unit)?, vararg ids: String) {
         withContext(Dispatchers.IO) {
-            var removed: MutableList<IPlatformClient>;
-            synchronized(_clientsLock) {
-                removed = _enabledClients.toMutableList();
-                _enabledClients.clear();
-                for (id in ids) {
-                    val client = getClient(id);
-                    try {
-                        if (!removed.removeIf { it == client })
-                            client.initialize();
-                        _enabledClients.add(client);
+            _selectClientsMutex.withLock {
+                var removed: MutableList<IPlatformClient>;
+                synchronized(_clientsLock) {
+                    removed = _enabledClients.toMutableList();
+                    _enabledClients.clear();
+                    for (id in ids) {
+                        val client = getClient(id);
+                        try {
+                            if (!removed.removeIf { it == client })
+                                client.initialize();
+                            _enabledClients.add(client);
+                        }
+                        catch(ex: Exception) {
+                            Logger.e(TAG, "Plugin ${client.name} failed to load\n${ex.message}", ex)
+                            UIDialogs.toast("Plugin ${client.name} failed to load\n${ex.message}");
+                        }
                     }
-                    catch(ex: Exception) {
-                        Logger.e(TAG, "Plugin ${client.name} failed to load\n${ex.message}", ex)
-                        UIDialogs.toast("Plugin ${client.name} failed to load\n${ex.message}");
-                    }
+                    _enabledClientsPersistent.set(*ids);
+                    _enabledClientsPersistent.save();
                 }
-                _enabledClientsPersistent.set(*ids);
-                _enabledClientsPersistent.save();
-            }
 
-            for (oldClient in removed) {
-                oldClient.disable();
-                onSourceDisabled.emit(oldClient);
+                for (oldClient in removed) {
+                    oldClient.disable();
+                    onSourceDisabled.emit(oldClient);
+                }
+                afterLoad?.invoke();
             }
-            afterLoad?.invoke();
         };
     }
 
