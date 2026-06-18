@@ -56,8 +56,11 @@ jobs:
           # repo's origin. On this GitHub fork they'd point at
           # github.com/benben42/plugins/*.git (which don't exist -> "repository not
           # found"). The next step rewrites them back to the canonical upstream.
+          # LFS is intentionally NOT fetched here: this fork's GitHub LFS store is
+          # empty (the mirror never carried the blobs), so lfs:true makes checkout
+          # hard-fail with "Object does not exist on the server: [404]". The real
+          # binaries are pulled from upstream GitLab in a later step instead.
           submodules: false
-          lfs: true               # ffmpeg-kit.aar, sender-sdk*.aar and native jniLibs are stored via Git LFS
           fetch-depth: 0          # full history + tags so grgit can derive the version
 
       - name: Fetch submodules from upstream GitLab
@@ -70,17 +73,15 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
-      - name: Ensure Git LFS binaries are present
+      - name: Fetch Git LFS binaries from upstream GitLab
         run: |
-          # checkout's lfs:true pulls LFS objects from this fork. Mirrors don't always
-          # carry the LFS blobs, so if any pointer file is still in place (build would
-          # then fail with "zip END header not found"), fetch the real objects from the
-          # upstream GitLab LFS store instead.
-          if head -c 40 app/aar/ffmpeg-kit.aar | grep -q "git-lfs"; then
-            echo "LFS objects missing from fork -> pulling from upstream GitLab"
-            git config lfs.url https://gitlab.futo.org/videostreaming/grayjay.git/info/lfs
-            git lfs pull
-          fi
+          # ffmpeg-kit.aar, sender-sdk*.aar and the native jniLibs are stored via Git
+          # LFS, but this fork's GitHub LFS store has none of the objects. Point LFS at
+          # the upstream GitLab store and pull the real files (checkout left pointers,
+          # which would otherwise fail the build with "zip END header not found").
+          git lfs install --local
+          git config lfs.url https://gitlab.futo.org/videostreaming/grayjay.git/info/lfs
+          git lfs pull
           echo "Resolved LFS binaries:"
           ls -l app/aar
           file app/aar/ffmpeg-kit.aar
