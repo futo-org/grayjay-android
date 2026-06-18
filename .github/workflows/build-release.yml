@@ -57,6 +57,7 @@ jobs:
           # github.com/benben42/plugins/*.git (which don't exist -> "repository not
           # found"). The next step rewrites them back to the canonical upstream.
           submodules: false
+          lfs: true               # ffmpeg-kit.aar, sender-sdk*.aar and native jniLibs are stored via Git LFS
           fetch-depth: 0          # full history + tags so grgit can derive the version
 
       - name: Fetch submodules from upstream GitLab
@@ -68,6 +69,21 @@ jobs:
           git config --global url."https://gitlab.futo.org/videostreaming/".insteadOf "https://github.com/benben42/"
           git submodule sync --recursive
           git submodule update --init --recursive
+
+      - name: Ensure Git LFS binaries are present
+        run: |
+          # checkout's lfs:true pulls LFS objects from this fork. Mirrors don't always
+          # carry the LFS blobs, so if any pointer file is still in place (build would
+          # then fail with "zip END header not found"), fetch the real objects from the
+          # upstream GitLab LFS store instead.
+          if head -c 40 app/aar/ffmpeg-kit.aar | grep -q "git-lfs"; then
+            echo "LFS objects missing from fork -> pulling from upstream GitLab"
+            git config lfs.url https://gitlab.futo.org/videostreaming/grayjay.git/info/lfs
+            git lfs pull
+          fi
+          echo "Resolved LFS binaries:"
+          ls -l app/aar
+          file app/aar/ffmpeg-kit.aar
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
