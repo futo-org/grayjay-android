@@ -169,7 +169,7 @@ class UISlideOverlays {
                                     container.context,
                                     R.drawable.ic_download,
                                     container.context.getString(R.string.auto_download),
-                                    container.context.getString(R.string.auto_download_per_channel_description),
+                                    "",
                                     tag = "autoDownload",
                                     call = {
                                         subscription.autoDownload =
@@ -182,7 +182,7 @@ class UISlideOverlays {
                                     container.context,
                                     R.drawable.ic_edit,
                                     container.context.getString(R.string.auto_download_filters),
-                                    container.context.getString(R.string.auto_download_filters_description),
+                                    "",
                                     tag = "autoDownloadFilters",
                                     call = {
                                         showAutoDownloadFiltersOverlay(container, subscription);

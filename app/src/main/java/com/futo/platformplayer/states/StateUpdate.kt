@@ -107,44 +107,9 @@ class StateUpdate {
     }
 
     suspend fun checkForUpdates(context: Context, showUpToDateToast: Boolean, hideExceptionButtons: Boolean = false) = withContext(Dispatchers.IO) {
-        try {
-            val client = ManagedHttpClient();
-            val latestVersion = downloadVersionCode(client);
-
-            if (latestVersion != null) {
-                val currentVersion = BuildConfig.VERSION_CODE;
-                Logger.i(TAG, "Current version ${currentVersion} latest version ${latestVersion}.");
-
-                if (latestVersion > currentVersion) {
-                    withContext(Dispatchers.Main) {
-                        try {
-                            UIDialogs.showUpdateAvailableDialog(context, latestVersion, hideExceptionButtons);
-                        } catch (e: Throwable) {
-                            UIDialogs.toast(context, "Failed to show update dialog");
-                            Logger.w(TAG, "Error occurred in update dialog.");
-                        }
-                    }
-                } else {
-                    if (showUpToDateToast) {
-                        withContext(Dispatchers.Main) {
-                            UIDialogs.toast(context, "Already on latest version");
-                        }
-                    }
-                }
-            } else {
-                Logger.w(TAG, "Failed to retrieve version from version URL.");
-
-                withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context, "Failed to retrieve version");
-                }
-            }
-        } catch (e: Throwable) {
-            Logger.w(TAG, "Failed to check for updates.", e);
-            android.util.Log.e(TAG, "Failed to check for updates.", e);
-            withContext(Dispatchers.Main) {
-                UIDialogs.toast(context, "Failed to check for updates\n" + e.message);
-            }
-        }
+        //App self-update check disabled in this fork. Kept as a no-op so existing callers
+        //(startup, background worker, manual settings button, exception screen) compile and do nothing.
+        Logger.i(TAG, "App update check is disabled in this build; skipping.");
     }
 
     fun downloadVersionCode(client: ManagedHttpClient): Int? {

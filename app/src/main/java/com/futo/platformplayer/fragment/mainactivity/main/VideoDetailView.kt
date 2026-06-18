@@ -1753,7 +1753,8 @@ class VideoDetailView : ConstraintLayout {
                         StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
                     withContext(Dispatchers.Main) {
-                        _rating.visibility = View.VISIBLE;
+                        //Thumbs up/down disabled in this fork: keep the rating pill hidden.
+                        _rating.visibility = View.GONE;
                         _rating.setRating(
                             RatingLikeDislikes(likes, dislikes),
                             hasLiked,
@@ -1900,8 +1901,9 @@ class VideoDetailView : ConstraintLayout {
             _buttonSubscribe.visibility = View.VISIBLE
             _buttonMore.visibility = View.VISIBLE
             _buttonPins.visibility = View.VISIBLE
-            _layoutRating.visibility = View.VISIBLE
-            _rating.visibility = View.VISIBLE;
+            //Thumbs up/down disabled in this fork: hide both the platform rating and the polycentric pill.
+            _layoutRating.visibility = View.GONE
+            _rating.visibility = View.GONE;
             _layoutChangeBottomSection.visibility = View.VISIBLE
         }
 
