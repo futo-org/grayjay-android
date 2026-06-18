@@ -44,6 +44,7 @@ import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
 import com.futo.platformplayer.parsers.HLS
+import java.time.OffsetDateTime
 import com.futo.platformplayer.parsers.HLS.MediaRendition
 import com.futo.platformplayer.parsers.HLS.StreamInfo
 import com.futo.platformplayer.parsers.HLS.VariantPlaylistReference
@@ -132,6 +133,7 @@ class UISlideOverlays {
             val originalStream = subscription.doFetchStreams;
             val originalVideo = subscription.doFetchVideos;
             val originalPosts = subscription.doFetchPosts;
+            val originalAutoDownload = subscription.autoDownload;
 
             val menu = SlideUpMenuOverlay(
                 container.context,
@@ -160,6 +162,30 @@ class UISlideOverlays {
                                         subscription.doNotifications =
                                             menu?.selectOption(null, "notifications", true, true)
                                                 ?: subscription.doNotifications;
+                                    },
+                                    invokeParent = false
+                                ),
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_download,
+                                    container.context.getString(R.string.auto_download),
+                                    container.context.getString(R.string.auto_download_per_channel_description),
+                                    tag = "autoDownload",
+                                    call = {
+                                        subscription.autoDownload =
+                                            menu?.selectOption(null, "autoDownload", true, true)
+                                                ?: (subscription.autoDownload ?: false);
+                                    },
+                                    invokeParent = false
+                                ),
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_edit,
+                                    container.context.getString(R.string.auto_download_filters),
+                                    container.context.getString(R.string.auto_download_filters_description),
+                                    tag = "autoDownloadFilters",
+                                    call = {
+                                        showAutoDownloadFiltersOverlay(container, subscription);
                                     },
                                     invokeParent = false
                                 ),
@@ -304,6 +330,8 @@ class UISlideOverlays {
 
                         if (subscription.doNotifications)
                             menu.selectOption(null, "notifications", true, true);
+                        if (subscription.autoDownload == true)
+                            menu.selectOption(null, "autoDownload", true, true);
                         if (subscription.doFetchLive)
                             menu.selectOption(null, "fetchLive", true, true);
                         if (subscription.doFetchStreams)
@@ -314,6 +342,9 @@ class UISlideOverlays {
                             menu.selectOption(null, "fetchPosts", true, true);
 
                         menu.onOK.subscribe {
+                            //Arm the auto-download baseline when first enabled so only future uploads are grabbed
+                            if (subscription.autoDownload == true && subscription.autoDownloadSince == OffsetDateTime.MAX)
+                                subscription.autoDownloadSince = OffsetDateTime.now();
                             subscription.save();
                             menu.hide(true);
 
@@ -359,6 +390,7 @@ class UISlideOverlays {
                             subscription.doFetchStreams = originalStream;
                             subscription.doFetchVideos = originalVideo;
                             subscription.doFetchPosts = originalPosts;
+                            subscription.autoDownload = originalAutoDownload;
                         };
 
                         menu.setOk("Save");
@@ -371,6 +403,37 @@ class UISlideOverlays {
             }
 
             return menu;
+        }
+
+        //Per-subscription auto-download filter editor (title regex + length bounds; blank = inherit global default)
+        fun showAutoDownloadFiltersOverlay(container: ViewGroup, subscription: Subscription): SlideUpMenuOverlay {
+            val ctx = container.context;
+            val regexInput = SlideUpMenuTextInput(ctx, ctx.getString(R.string.auto_download_title_filter_hint));
+            regexInput.text = subscription.autoDownloadTitleRegex ?: "";
+            val minInput = SlideUpMenuTextInput(ctx, ctx.getString(R.string.auto_download_min_minutes_hint));
+            minInput.text = subscription.autoDownloadMinDurationSec?.let { (it / 60).toString() } ?: "";
+            val maxInput = SlideUpMenuTextInput(ctx, ctx.getString(R.string.auto_download_max_minutes_hint));
+            maxInput.text = subscription.autoDownloadMaxDurationSec?.let { (it / 60).toString() } ?: "";
+
+            val overlay = SlideUpMenuOverlay(ctx, container, ctx.getString(R.string.auto_download_filters), ctx.getString(R.string.save), true, regexInput, minInput, maxInput);
+            overlay.onOK.subscribe {
+                subscription.autoDownloadTitleRegex = regexInput.text.ifBlank { null };
+                subscription.autoDownloadMinDurationSec = minInput.text.trim().toLongOrNull()?.let { it * 60 };
+                subscription.autoDownloadMaxDurationSec = maxInput.text.trim().toLongOrNull()?.let { it * 60 };
+                subscription.save();
+                regexInput.deactivate();
+                minInput.deactivate();
+                maxInput.deactivate();
+                overlay.hide();
+            };
+            overlay.onCancel.subscribe {
+                regexInput.deactivate();
+                minInput.deactivate();
+                maxInput.deactivate();
+            };
+            overlay.show();
+            regexInput.activate();
+            return overlay;
         }
 
         fun showAddToGroupOverlay(channel: IPlatformVideo, container: ViewGroup) {

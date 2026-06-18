@@ -1355,7 +1355,7 @@ class VideoDetailView : ConstraintLayout {
         _videoResumePositionMilliseconds = resumeSeconds * 1000;
         _rating.visibility = View.GONE;
         _layoutRating.visibility = View.GONE;
-        _playWhenReady = playWhenReady;
+        _playWhenReady = playWhenReady && !Settings.instance.playback.openWithoutPlaying;
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
         _addCommentView.setContext(null, null);
 
@@ -1375,7 +1375,7 @@ class VideoDetailView : ConstraintLayout {
 
         switchContentView(_container_content_main);
     }
-    fun setVideoOverview(video: IPlatformVideo, fetch: Boolean = true, resumeSeconds: Long = 0, bypassSameVideoCheck: Boolean = false) {
+    fun setVideoOverview(video: IPlatformVideo, fetch: Boolean = true, resumeSeconds: Long = 0, bypassSameVideoCheck: Boolean = false, playWhenReady: Boolean = true) {
         Logger.i(TAG, "setVideoOverview")
 
         if(!bypassSameVideoCheck && this.video?.url == video.url)
@@ -1403,6 +1403,7 @@ class VideoDetailView : ConstraintLayout {
 
         val cachedVideo = StateDownloads.instance.getCachedVideo(video.id);
         if(cachedVideo != null) {
+            _playWhenReady = playWhenReady && !Settings.instance.playback.openWithoutPlaying;
             setVideoDetails(cachedVideo, true);
             return;
         }
@@ -1443,7 +1444,7 @@ class VideoDetailView : ConstraintLayout {
         _commentsList.clear();
         _platform.setPlatformFromClientID(video.id.pluginId);
         _subTitle.text = subTitleSegments.joinToString(" • ");
-        _playWhenReady = true;
+        _playWhenReady = playWhenReady && !Settings.instance.playback.openWithoutPlaying;
         if(video.author.subscribers != null) {
             _channelMeta.text = if((video.author.subscribers ?: 0) > 0) video.author.subscribers!!.toHumanNumber() + " " + context.getString(R.string.subscribers)else "";
             (_channelName.layoutParams as MarginLayoutParams).setMargins(0, (DP_5 * -1).toInt(), 0, 0);

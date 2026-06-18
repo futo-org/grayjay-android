@@ -122,6 +122,16 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         _overlayContainer.let {
             _videoOptionsOverlay = UISlideOverlays.showVideoOptionsOverlay(content, it, SlideUpMenuItem(
                 context,
+                R.drawable.ic_comment,
+                context.getString(R.string.open_comments_only),
+                context.getString(R.string.open_comments_only_description),
+                tag = "openWithoutPlaying",
+                call = {
+                    fragment.navigate<VideoDetailFragment>(content.withTimestamp(0, false)).maximizeVideoDetail();
+                },
+                invokeParent = false
+            ), SlideUpMenuItem(
+                context,
                 R.drawable.ic_visibility_off,
                 context.getString(R.string.hide),
                 context.getString(R.string.hide_from_home),

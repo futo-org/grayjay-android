@@ -1,9 +1,11 @@
 package com.futo.platformplayer.models
 
 import com.futo.platformplayer.api.media.models.ResultCapabilities
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.api.media.models.channels.SerializedChannel
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.getNowDiffDays
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.serializers.OffsetDateTimeSerializer
@@ -24,6 +26,16 @@ class Subscription {
     var doFetchStreams: Boolean = true;
     var doFetchVideos: Boolean = true;
     var doFetchPosts: Boolean = false;
+
+    //Auto-download settings (null = inherit the global default in Settings.autoDownload)
+    var autoDownload: Boolean? = null;
+    var autoDownloadTitleRegex: String? = null;
+    var autoDownloadMinDurationSec: Long? = null;
+    var autoDownloadMaxDurationSec: Long? = null;
+
+    //Baseline timestamp; only uploads newer than this are auto-downloaded (prevents grabbing the back-catalog)
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
+    var autoDownloadSince: OffsetDateTime = OffsetDateTime.MAX;
 
     //Last found content
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
@@ -74,6 +86,48 @@ class Subscription {
     fun shouldFetchPosts() = doFetchPosts && (lastPost.getNowDiffDays() < 5);
 
     fun getClient() = StatePlatform.instance.getChannelClientOrNull(channel.url);
+
+    //Whether auto-download is active for this subscription (per-channel value, or the global default when unset)
+    fun isAutoDownloadEnabled(): Boolean = autoDownload ?: Settings.instance.autoDownload.enabled;
+
+    fun getAutoDownloadQualityPixels(): Long = Settings.instance.autoDownload.getQualityPixelCount().toLong();
+
+    //Evaluates whether a newly discovered content item matches this subscription's auto-download rules.
+    //Assumes the caller has already armed autoDownloadSince (see SubscriptionAutoDownloader).
+    fun shouldAutoDownload(content: IPlatformContent): Boolean {
+        if(!isAutoDownloadEnabled())
+            return false;
+        if(content !is IPlatformVideo)
+            return false;
+        if(content.isLive)
+            return false;
+
+        //Only new uploads (published after auto-download was armed for this subscription)
+        val dt = content.datetime;
+        if(dt == null || dt <= autoDownloadSince)
+            return false;
+
+        val global = Settings.instance.autoDownload;
+        val minSec = autoDownloadMinDurationSec ?: global.getMinDurationSeconds();
+        val maxSec = autoDownloadMaxDurationSec ?: global.getMaxDurationSeconds();
+        if(minSec != null && minSec > 0 && content.duration < minSec)
+            return false;
+        if(maxSec != null && maxSec > 0 && content.duration > maxSec)
+            return false;
+
+        val regexStr = (autoDownloadTitleRegex?.ifBlank { null }) ?: global.titleRegex.ifBlank { null };
+        if(regexStr != null) {
+            val matches = try {
+                Regex(regexStr, RegexOption.IGNORE_CASE).containsMatchIn(content.name);
+            } catch(ex: Throwable) {
+                Logger.w("Subscription", "Invalid auto-download title regex [$regexStr], skipping", ex);
+                false;
+            };
+            if(!matches)
+                return false;
+        }
+        return true;
+    }
 
     fun save() {
         if(isOther)

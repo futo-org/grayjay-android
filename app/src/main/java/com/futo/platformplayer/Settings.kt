@@ -296,6 +296,9 @@ class Settings : FragmentedStorageFileJson() {
 
     @FormField(R.string.subscriptions, "group", R.string.configure_how_your_subscriptions_works_and_feels, 4)
     var subscriptions = SubscriptionsSettings();
+
+    @FormField(R.string.auto_download_subscriptions, "group", R.string.auto_download_subscriptions_description, 7)
+    var autoDownload = AutoDownloadSettings();
     @Serializable
     class SubscriptionsSettings {
         @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 4)
@@ -377,6 +380,49 @@ class Settings : FragmentedStorageFileJson() {
             UIDialogs.toast(StateApp.instance.activity!!, "Started clearing..");
             StateCache.instance.clear();
             UIDialogs.toast(StateApp.instance.activity!!, "Finished clearing");
+        }
+    }
+
+    @Serializable
+    class AutoDownloadSettings {
+        @FormField(R.string.auto_download_enabled, FieldForm.TOGGLE, R.string.auto_download_enabled_description, 0)
+        var enabled: Boolean = false;
+
+        @FormField(R.string.auto_download_quality, FieldForm.DROPDOWN, R.string.auto_download_quality_description, 1)
+        @DropdownFieldOptionsId(R.array.preferred_quality_array)
+        var quality: Int = 0;
+        fun getQualityPixelCount(): Int = preferedQualityToPixels(quality);
+
+        @FormField(R.string.auto_download_min_duration_title, FieldForm.DROPDOWN, R.string.auto_download_min_duration_description, 2)
+        @DropdownFieldOptionsId(R.array.auto_download_min_duration)
+        var minDuration: Int = 0;
+        fun getMinDurationSeconds(): Long? = when(minDuration) {
+            1 -> 60L; 2 -> 120L; 3 -> 300L; 4 -> 600L; 5 -> 1200L; else -> null;
+        };
+
+        @FormField(R.string.auto_download_max_duration_title, FieldForm.DROPDOWN, R.string.auto_download_max_duration_description, 3)
+        @DropdownFieldOptionsId(R.array.auto_download_max_duration)
+        var maxDuration: Int = 0;
+        fun getMaxDurationSeconds(): Long? = when(maxDuration) {
+            1 -> 300L; 2 -> 600L; 3 -> 1200L; 4 -> 1800L; 5 -> 3600L; 6 -> 7200L; else -> null;
+        };
+
+        //Edited via a dialog because the settings form has no free-text input
+        var titleRegex: String = "";
+
+        @FormField(R.string.auto_download_title_filter, FieldForm.BUTTON, R.string.auto_download_title_filter_description, 4)
+        fun editTitleRegex() {
+            val context = StateApp.instance.contextOrNull ?: return;
+            UIDialogs.showDialog(context, R.drawable.ic_download, false,
+                context.getString(R.string.auto_download_title_filter),
+                context.getString(R.string.auto_download_title_filter_description),
+                null, titleRegex, context.getString(R.string.auto_download_title_filter_hint), 1,
+                UIDialogs.Action.withInput(context.getString(R.string.save), { result ->
+                    titleRegex = result?.text ?: "";
+                    Settings.instance.save();
+                }, UIDialogs.ActionStyle.PRIMARY),
+                UIDialogs.Action(context.getString(R.string.cancel), { }, UIDialogs.ActionStyle.NONE)
+            );
         }
     }
 
@@ -523,6 +569,9 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.autoplay, FieldForm.TOGGLE, R.string.autoplay, 21)
         var autoplay: Boolean = false;
+
+        @FormField(R.string.open_without_playing, FieldForm.TOGGLE, R.string.open_without_playing_description, 21)
+        var openWithoutPlaying: Boolean = false;
 
         @AdvancedField
         @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
