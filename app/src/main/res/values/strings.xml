@@ -448,6 +448,29 @@
     <string name="allow_under_cutout_description">Allow video to go underneath the screen cutout in full screen.\nMay require restart</string>
     <string name="autoplay">Autoplay next video by default</string>
     <string name="autoplay_description">Autoplay next video will be enabled by default whenever you watch a video</string>
+    <string name="open_without_playing">Open videos without playing</string>
+    <string name="open_without_playing_description">When opening a video it stays paused instead of starting playback automatically, so you can read comments without streaming the video. Press play to start it.</string>
+    <string name="open_comments_only">Open without playing</string>
+    <string name="open_comments_only_description">Open the video paused (e.g. to only read the comments)</string>
+    <string name="auto_download_subscriptions">Subscription auto-download</string>
+    <string name="auto_download_subscriptions_description">Automatically download new videos from subscribed channels that match your filters</string>
+    <string name="auto_download_enabled">Auto-download new subscription videos</string>
+    <string name="auto_download_enabled_description">When enabled, new videos from your subscriptions that match the filters below are downloaded automatically. Only applies to channels that do not have their own override.</string>
+    <string name="auto_download_quality">Auto-download quality</string>
+    <string name="auto_download_quality_description">Target quality used when auto-downloading subscription videos</string>
+    <string name="auto_download_min_duration_title">Minimum length</string>
+    <string name="auto_download_min_duration_description">Skip videos shorter than this (useful to skip shorts)</string>
+    <string name="auto_download_max_duration_title">Maximum length</string>
+    <string name="auto_download_max_duration_description">Skip videos longer than this</string>
+    <string name="auto_download_title_filter">Default title filter (regex)</string>
+    <string name="auto_download_title_filter_description">Only auto-download videos whose title matches this regular expression (leave blank to match all)</string>
+    <string name="auto_download_title_filter_hint">e.g. (?i)tutorial|review</string>
+    <string name="auto_download">Auto-download new videos</string>
+    <string name="auto_download_per_channel_description">Automatically download new uploads from this channel</string>
+    <string name="auto_download_filters">Auto-download filters…</string>
+    <string name="auto_download_filters_description">Set a title regex and length limits for this channel (blank = use global default)</string>
+    <string name="auto_download_min_minutes_hint">Min minutes (blank = global)</string>
+    <string name="auto_download_max_minutes_hint">Max minutes (blank = global)</string>
     <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
@@ -1016,6 +1039,23 @@
     <string-array name="preferred_audio_download">
         <item>Low Bitrate</item>
         <item>High Bitrate</item>
+    </string-array>
+    <string-array name="auto_download_min_duration">
+        <item>Any length</item>
+        <item>At least 1 minute</item>
+        <item>At least 2 minutes</item>
+        <item>At least 5 minutes</item>
+        <item>At least 10 minutes</item>
+        <item>At least 20 minutes</item>
+    </string-array>
+    <string-array name="auto_download_max_duration">
+        <item>Any length</item>
+        <item>At most 5 minutes</item>
+        <item>At most 10 minutes</item>
+        <item>At most 20 minutes</item>
+        <item>At most 30 minutes</item>
+        <item>At most 1 hour</item>
+        <item>At most 2 hours</item>
     </string-array>
     <string-array name="auto_update_when_array">
         <item>On Startup</item>

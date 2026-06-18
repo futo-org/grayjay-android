@@ -257,7 +257,7 @@ class VideoDetailFragment() : MainFragment() {
         else if (parameter is IPlatformVideo)
             _viewDetail?.setVideoOverview(parameter);
         else if(parameter is PlatformVideoWithTime)
-            _viewDetail?.setVideoOverview(parameter.video, true, parameter.time);
+            _viewDetail?.setVideoOverview(parameter.video, true, parameter.time, playWhenReady = parameter.playWhenReady);
         else if (parameter is UrlVideoWithTime) {
             if (_viewDetail == null) {
                 _loadUrlOnCreate = parameter;

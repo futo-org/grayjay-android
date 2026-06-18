@@ -102,7 +102,7 @@ fun String.isHexColor(): Boolean {
 
 fun IPlatformClient.fromPool(pool: PlatformMultiClientPool) = pool.getClientPooled(this);
 
-fun IPlatformVideo.withTimestamp(sec: Long) = PlatformVideoWithTime(this, sec);
+fun IPlatformVideo.withTimestamp(sec: Long, playWhenReady: Boolean = true) = PlatformVideoWithTime(this, sec, playWhenReady);
 
 fun DocumentFile.getInputStream(context: Context) = context.contentResolver.openInputStream(this.uri);
 fun DocumentFile.getOutputStream(context: Context) = context.contentResolver.openOutputStream(this.uri);

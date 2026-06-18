@@ -22,6 +22,7 @@ import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateNotifications
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.subscription.SubscriptionAutoDownloader
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNowDiffStringMinDay
 import kotlinx.coroutines.Dispatchers
@@ -117,6 +118,7 @@ class BackgroundWorker(private val appContext: Context, private val workerParams
                     }
                     newItems.add(content);
                 }
+                SubscriptionAutoDownloader.onNewContent(sub, content);
             });
 
             //Only for testing notifications

@@ -1,0 +1,120 @@
+name: Build & Release APK
+
+# Manual ("workflow_dispatch") build for this fork.
+#
+# What it does:
+#   1. Checks out the repo + submodules (the player needs the Polycentric / FutoPay
+#      includeBuild deps and the bundled plugin sources).
+#   2. Builds an APK of the chosen flavor / build type.
+#   3. Publishes the APK(s) as a GitHub Release you can download on your phone.
+#
+# Defaults to the "unstable" flavor (applicationId com.futo.platformplayer.d) so the
+# fork installs side-by-side with the official Grayjay app, and to a "debug" build so
+# no signing secrets are required to get a working, installable APK.
+#
+# To produce a signed RELEASE build instead, pick build_type = release when running and
+# configure these repository secrets (Settings -> Secrets and variables -> Actions):
+#   KEYSTORE_BASE64    base64 of your release .keystore/.jks  (base64 -w0 my.keystore)
+#   KEYSTORE_PASSWORD  store password
+#   KEY_ALIAS          key alias
+#   KEY_PASSWORD       key password
+#
+# Keeping up to date with upstream (run locally, then trigger this workflow):
+#   git remote add upstream https://gitlab.futo.org/videostreaming/grayjay.git   # once
+#   git fetch upstream
+#   git checkout claude/android-player-fork-brainstorm-0sv2ly
+#   git merge upstream/master        # resolve any conflicts in the few feature files
+#   git push origin claude/android-player-fork-brainstorm-0sv2ly
+# Then run this workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: "Product flavor"
+        type: choice
+        default: unstable
+        options: [unstable, stable]
+      build_type:
+        description: "Build type (release needs signing secrets)"
+        type: choice
+        default: debug
+        options: [debug, release]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0          # full history + tags so grgit can derive the version
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Configure signing (release only)
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::build_type=release requires the KEYSTORE_* secrets. See workflow comments."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          # app/build.gradle reads signing config from /opt/key.properties
+          sudo mkdir -p /opt
+          sudo tee /opt/key.properties > /dev/null <<EOF
+          storeFile=$RUNNER_TEMP/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Compute capitalized names
+        id: names
+        run: |
+          flavor="${{ inputs.flavor }}"
+          btype="${{ inputs.build_type }}"
+          echo "flavorCap=$(echo "${flavor^}")" >> "$GITHUB_OUTPUT"
+          echo "typeCap=$(echo "${btype^}")" >> "$GITHUB_OUTPUT"
+
+      - name: Build APK
+        run: ./gradlew --stacktrace assemble${{ steps.names.outputs.flavorCap }}${{ steps.names.outputs.typeCap }}
+
+      - name: Collect APKs
+        id: collect
+        run: |
+          outdir="app/build/outputs/apk/${{ inputs.flavor }}/${{ inputs.build_type }}"
+          ls -la "$outdir" || true
+          mkdir -p dist
+          cp "$outdir"/*.apk dist/ 2>/dev/null || true
+          echo "Built APKs:"; ls -la dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: fork-build-${{ github.run_number }}
+          name: "Fork build #${{ github.run_number }} (${{ inputs.flavor }}/${{ inputs.build_type }})"
+          body: |
+            Automated fork build.
+            Flavor: `${{ inputs.flavor }}`  Build type: `${{ inputs.build_type }}`
+            Commit: ${{ github.sha }}
+
+            Install the `universal` APK unless you know your device's ABI.
+          files: dist/*.apk
+          fail_on_unmatched_files: true
