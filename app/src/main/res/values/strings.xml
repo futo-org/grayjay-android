@@ -450,6 +450,8 @@
     <string name="autoplay_description">Autoplay next video will be enabled by default whenever you watch a video</string>
     <string name="open_without_playing">Open videos without playing</string>
     <string name="open_without_playing_description">When opening a video it stays paused instead of starting playback automatically, so you can read comments without streaming the video. Press play to start it.</string>
+    <string name="show_like_dislike">Show like/dislike ratings</string>
+    <string name="show_like_dislike_description">Show the thumbs up/thumbs down rating on videos. Turn off to hide it.</string>
     <string name="open_comments_only">Open without playing</string>
     <string name="open_comments_only_description">Open the video paused (e.g. to only read the comments)</string>
     <string name="auto_download_subscriptions">Subscription auto-download</string>

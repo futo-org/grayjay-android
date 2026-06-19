@@ -573,6 +573,9 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.open_without_playing, FieldForm.TOGGLE, R.string.open_without_playing_description, 21)
         var openWithoutPlaying: Boolean = false;
 
+        @FormField(R.string.show_like_dislike, FieldForm.TOGGLE, R.string.show_like_dislike_description, 21)
+        var showLikeDislike: Boolean = false;
+
         @AdvancedField
         @FormField(R.string.delete_watchlist_on_finish, FieldForm.TOGGLE, R.string.delete_watchlist_on_finish_description, 22)
         var deleteFromWatchLaterAuto: Boolean = true;
