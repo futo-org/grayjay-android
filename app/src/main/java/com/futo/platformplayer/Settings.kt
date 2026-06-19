@@ -952,7 +952,8 @@ class Settings : FragmentedStorageFileJson() {
         }
 
         fun isAutoUpdateEnabled(): Boolean {
-            return check == 0 && !BuildConfig.IS_PLAYSTORE_BUILD;
+            //App self-update check disabled in this fork (updates are delivered via the fork's own releases).
+            return false;
         }
 
         @FormField(R.string.manual_check, FieldForm.BUTTON, R.string.manually_check_for_updates, 3)

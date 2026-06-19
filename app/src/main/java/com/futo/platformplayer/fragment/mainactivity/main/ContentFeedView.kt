@@ -124,7 +124,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
                 context,
                 R.drawable.ic_comment,
                 context.getString(R.string.open_comments_only),
-                context.getString(R.string.open_comments_only_description),
+                "",
                 tag = "openWithoutPlaying",
                 call = {
                     fragment.navigate<VideoDetailFragment>(content.withTimestamp(0, false)).maximizeVideoDetail();
