@@ -47,7 +47,8 @@ fun <R> V8Value?.orDefault(default: R, handler: (V8Value)->R): R {
 }
 
 inline fun V8Value.getSourcePlugin(): V8Plugin? {
-    return V8Plugin.getPluginFromRuntime(this.v8Runtime);
+    val runtime = this.v8Runtime ?: return null;
+    return V8Plugin.getPluginFromRuntime(runtime);
 }
 
 inline fun <reified T> V8Value.expectOrThrow(config: IV8PluginConfig, contextName: String): T  {

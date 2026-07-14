@@ -344,6 +344,7 @@ class DownloadService : Service() {
         Logger.i(TAG, "onDestroy");
         _instance = null;
         _scope.cancel("onDestroy");
+        if(this::_client.isInitialized) try { _client.close(); } catch(_: Throwable) {}
         super.onDestroy();
     }
 

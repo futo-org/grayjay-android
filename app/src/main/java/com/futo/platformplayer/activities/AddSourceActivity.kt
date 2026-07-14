@@ -133,8 +133,10 @@ class AddSourceActivity : AppCompatActivity() {
             val config: SourcePluginConfig;
             try {
                 val configResp = _client.get(url);
-                if(!configResp.isOk)
+                if(!configResp.isOk) {
+                    configResp.close();
                     throw IllegalStateException("Failed request with ${configResp.code}");
+                }
                 val configJson = configResp.body?.string();
                 if(configJson.isNullOrEmpty())
                     throw IllegalStateException("No response");
@@ -159,8 +161,10 @@ class AddSourceActivity : AppCompatActivity() {
             val script: String?
             try {
                 val scriptResp = _client.get(config.absoluteScriptUrl);
-                if (!scriptResp.isOk)
+                if (!scriptResp.isOk) {
+                    scriptResp.close();
                     throw IllegalStateException("script not available [${scriptResp.code}]");
+                }
                 script = scriptResp.body?.string();
                 if (script.isNullOrEmpty())
                     throw IllegalStateException("script empty");

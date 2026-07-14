@@ -82,7 +82,8 @@ class HttpFileHandler(method: String, path: String, private val contentType: Str
                     Logger.i(TAG, "Finished sending file (segment)")
                     outputStream.flush()
                 } catch (e: Exception) {
-                    httpContext.respondCode(500, headers)
+                    Logger.e(TAG, "Failed while sending file (segment)", e)
+                    throw e
                 }
             }
         }

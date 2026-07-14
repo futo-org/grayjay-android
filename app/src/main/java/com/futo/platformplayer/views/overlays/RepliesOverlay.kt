@@ -240,6 +240,7 @@ class RepliesOverlay : LinearLayout {
                 ))
 
                 if (!response.isOk) {
+                    response.close()
                     throw Exception("Failed to resolve claim (${response.code}).")
                 }
 

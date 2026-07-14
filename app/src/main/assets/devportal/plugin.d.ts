@@ -240,6 +240,47 @@ declare interface DashSourceDef {
 declare class DashSource implements IVideoSource {
     constructor(obj: DashSourceDef)
 }
+declare interface UMPFormatDef {
+    itag: integer,
+    lastModified: string,
+    xtags: string?,
+    mimeType: string,
+    codecs: string?,
+    bitrate: integer?,
+    width: integer?,
+    height: integer?,
+    fps: integer?,
+    audioChannels: integer?,
+    audioSampleRate: integer?,
+    language: string?,
+    original: boolean?,
+    isDrc: boolean?
+}
+declare interface UMPSourceDef {
+    name: string?,
+    url: string,
+    ustreamerConfig: string,
+    videoId: string?,
+    isLive: boolean?,
+    duration: integer?,
+    width: integer?,
+    height: integer?,
+    priority: boolean?,
+    language: string?,
+    original: boolean?,
+    clientName: integer?,
+    clientVersion: string?,
+    osName: string?,
+    osVersion: string?,
+    videoFormats: UMPFormatDef[],
+    audioFormats: UMPFormatDef[],
+    poToken: string?,
+    getPoToken: ((forceRefresh: boolean) => string)?,
+    requestModifier: RequestModifier?
+}
+declare class UMPSource implements IVideoSource {
+    constructor(obj: UMPSourceDef)
+}
 
 declare interface IRequest {
     url: string,

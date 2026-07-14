@@ -660,6 +660,7 @@ class SourceDetailFragment : MainFragment() {
 
                     if (!response.isOk || response.body == null) {
                         Logger.w(TAG, "Failed to check for updates (sourceUrl=${sourceUrl}, response.isOk=${response.isOk}, response.body=${response.body}).");
+                        response.close();
                         withContext(Dispatchers.Main) { UIDialogs.toast(context.getString(R.string.failed_to_check_for_updates)); };
                         return@launch;
                     }

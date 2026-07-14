@@ -24,7 +24,7 @@ abstract class JSPager<T> : IPager<T> {
     protected var _hasMorePages: Boolean = false;
     //private var _morePagesWasFalse: Boolean = false;
 
-    val isAvailable get() = !pager.v8Runtime.isClosed && !pager.v8Runtime.isDead;
+    val isAvailable get() = pager.v8Runtime?.let { !it.isClosed && !it.isDead } ?: false;
 
     constructor(config: SourcePluginConfig, plugin: JSClient, pager: V8ValueObject) {
         this.plugin = plugin;
@@ -47,7 +47,8 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun hasMorePages(): Boolean {
-        return requirePagerPluginV8("hasMorePages").busy {
+        val pluginV8 = pager.getSourcePlugin() ?: return false;
+        return pluginV8.busy {
             _hasMorePages && !pager.isClosed;
         }
     }

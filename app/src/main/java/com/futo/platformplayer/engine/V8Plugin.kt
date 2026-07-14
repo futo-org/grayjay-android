@@ -234,6 +234,12 @@ class V8Plugin {
                         pack.deinitialize();
                     }
                 }
+                try { _client.close(); } catch(_: Throwable) {}
+                try { _clientAuth.close(); } catch(_: Throwable) {}
+                synchronized(_clientOthers) {
+                    for(other in _clientOthers.values) { try { other.close(); } catch(_: Throwable) {} }
+                    _clientOthers.clear();
+                }
 
                 _runtime?.let {
                     _runtimeMap.remove(it);

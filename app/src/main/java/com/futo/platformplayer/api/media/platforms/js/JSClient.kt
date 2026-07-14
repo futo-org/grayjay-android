@@ -862,10 +862,14 @@ open class JSClient : IPlatformClient {
                         .map {
                             val url = "https://github.com/futo-org/grayjay-android/blob/master/docs/source/${it}.md";
                             val resp = client.head(url);
-                            if(resp.isOk)
-                                return@map Pair(it, url);
-                            else
-                                return@map null;
+                            try {
+                                if(resp.isOk)
+                                    return@map Pair(it, url);
+                                else
+                                    return@map null;
+                            } finally {
+                                try { resp.body?.close() } catch (_: Throwable) {}
+                            }
                         }.asSequence()
                         .filterNotNull()
                         .toMap();

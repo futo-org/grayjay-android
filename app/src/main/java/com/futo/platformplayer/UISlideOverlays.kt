@@ -35,6 +35,8 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPAudioSource
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
 import com.futo.platformplayer.helpers.VideoHelper
@@ -385,7 +387,10 @@ class UISlideOverlays {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 val modifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
                 val masterPlaylistResponse = ManagedHttpClient().get(sourceUrl, HashMap(), modifier)
-                check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
+                if (!masterPlaylistResponse.isOk) {
+                    masterPlaylistResponse.close();
+                    throw IllegalStateException("Failed to get master playlist: ${masterPlaylistResponse.code}")
+                }
 
                 val masterPlaylistContent = masterPlaylistResponse.body?.string()
                     ?: throw Exception("Master playlist content is empty")
@@ -565,6 +570,11 @@ class UISlideOverlays {
 
             val videoSources = descriptor.videoSources;
             val audioSources = if(descriptor is VideoUnMuxedSourceDescriptor) descriptor.audioSources else null;
+            val umpAudioSources = videoSources
+                ?.filterIsInstance<JSUMPSource>()
+                ?.filter { !it.isLive }
+                ?.flatMap { it.downloadAudioQualitySources() } ?: emptyList();
+            val effectiveAudioSources: List<IAudioSource> = (audioSources?.toList() ?: emptyList()) + umpAudioSources;
             val subtitleSources = video.subtitles;
 
             if(videoSources.isEmpty() && (audioSources?.size ?: 0) == 0) {
@@ -624,7 +634,7 @@ class UISlideOverlays {
 
             if(languageFilters != null) items.add(languageFilters)
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoSources,
-                listOf((if (audioSources != null) listOf(SlideUpMenuItem(
+                listOf((if (effectiveAudioSources.isNotEmpty()) listOf(SlideUpMenuItem(
                     container.context,
                     R.drawable.ic_movie,
                     container.context.getString(R.string.none),
@@ -640,6 +650,7 @@ class UISlideOverlays {
                 )) else listOf()) +
                 videoSources
                 .filter { it.isDownloadable() }
+                .flatMap { if (it is JSUMPSource) it.downloadQualitySources() else listOf(it) }
                 .map {
                     when (it) {
                         is IVideoUrlSource -> {
@@ -694,6 +705,28 @@ class UISlideOverlays {
                             }
                         }
 
+                        is JSUMPSource -> {
+                            val estSize = VideoHelper.estimateSourceSize(it);
+                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " · " else "";
+                            SlideUpMenuItem(
+                                container.context,
+                                R.drawable.ic_movie,
+                                it.name,
+                                "${it.width}x${it.height}",
+                                prefix + (it.format?.detailLabel ?: "UMP"),
+                                tag = it,
+                                call = {
+                                    selectedVideo = it
+                                    menu?.selectOption(videoSources, it);
+                                    if(selectedAudio != null || !requiresAudio)
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                },
+                                invokeParent = false
+                            ).apply {
+                                videoSourceItems.add(this);
+                            }
+                        }
+
                         is IHLSManifestSource -> {
                             SlideUpMenuItem(
                                 container.context,
@@ -724,15 +757,20 @@ class UISlideOverlays {
 
             if(Settings.instance.downloads.getDefaultVideoQualityPixels() > 0 && videoSources.isNotEmpty()) {
                 //TODO: Add HLS support here
-                selectedVideo = VideoHelper.selectBestVideoSource(
-                    videoSources.filter { it is IVideoSource && it.isDownloadable() }.asIterable(),
+                val selectableVideoSources = videoSources
+                    .filter { it is IVideoSource && it.isDownloadable() }
+                    .flatMap { if (it is JSUMPSource) it.downloadQualitySources() else listOf(it) };
+                val chosen = VideoHelper.selectBestVideoSource(
+                    selectableVideoSources.asIterable(),
                     Settings.instance.downloads.getDefaultVideoQualityPixels(),
                     FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS
                 ) as IVideoSource?;
+                selectedVideo = chosen;
+                if (chosen != null) menu?.selectOption(videoSources, chosen);
             }
 
-            if (audioSources != null) {
-                items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.audio), audioSources, audioSources
+            if (effectiveAudioSources.isNotEmpty()) {
+                items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.audio), effectiveAudioSources, effectiveAudioSources
                     .filter { VideoHelper.isDownloadable(it) }
                     .map {
                         when (it) {
@@ -748,7 +786,7 @@ class UISlideOverlays {
                                     tag = it,
                                     call = {
                                         selectedAudio = it
-                                        menu?.selectOption(audioSources, it);
+                                        menu?.selectOption(effectiveAudioSources, it);
                                         menu?.setOk(container.context.getString(R.string.download));
                                     },
                                     invokeParent = false
@@ -767,7 +805,24 @@ class UISlideOverlays {
                                     tag = it,
                                     call = {
                                         selectedAudio = it
-                                        menu?.selectOption(audioSources, it);
+                                        menu?.selectOption(effectiveAudioSources, it);
+                                        menu?.setOk(container.context.getString(R.string.download));
+                                    },
+                                    invokeParent = false
+                                );
+                            }
+
+                            is JSUMPAudioSource -> {
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_music,
+                                    it.name,
+                                    "",
+                                    it.format.detailLabel,
+                                    tag = it,
+                                    call = {
+                                        selectedAudio = it
+                                        menu?.selectOption(effectiveAudioSources, it);
                                         menu?.setOk(container.context.getString(R.string.download));
                                     },
                                     invokeParent = false
@@ -795,11 +850,13 @@ class UISlideOverlays {
                         }
                     }.filterNotNull()));
 
-                //TODO: Add HLS support here
-                selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioSource && it.isDownloadable() }.asIterable(),
-                    FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
-                    Settings.instance.playback.getPrimaryLanguage(container.context),
-                    if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioSource?;
+                if (audioSources != null) {
+                    //TODO: Add HLS support here
+                    selectedAudio = VideoHelper.selectBestAudioSource(audioSources.filter { it is IAudioSource && it.isDownloadable() }.asIterable(),
+                        FutoVideoPlayerBase.PREFERED_AUDIO_CONTAINERS,
+                        Settings.instance.playback.getPrimaryLanguage(container.context),
+                        if(Settings.instance.downloads.isHighBitrateDefault()) 9999999 else 1) as IAudioSource?;
+                }
             }
 
             if(contentResolver != null && subtitleSources.isNotEmpty()) {

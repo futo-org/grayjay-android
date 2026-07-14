@@ -560,6 +560,35 @@ class DashManifestRawSource {
     }
 }
 
+class UMPSource {
+    constructor(obj) {
+        obj = obj ?? {};
+        this.plugin_type = "UMPSource";
+        this.name = obj.name ?? "UMP";
+        this.url = obj.url;
+        this.ustreamerConfig = obj.ustreamerConfig;
+        this.videoId = obj.videoId ?? "";
+        this.isLive = obj.isLive ?? false;
+        this.duration = obj.duration ?? 0;
+        this.width = obj.width ?? 0;
+        this.height = obj.height ?? 0;
+        this.priority = obj.priority ?? false;
+        this.language = obj.language;
+        this.original = obj.original;
+        this.clientName = obj.clientName ?? 1;
+        this.clientVersion = obj.clientVersion ?? "2.20250923.08.00";
+        this.osName = obj.osName ?? "Windows";
+        this.osVersion = obj.osVersion ?? "10.0";
+        this.videoFormats = obj.videoFormats ?? [];
+        this.audioFormats = obj.audioFormats ?? [];
+        this.poToken = obj.poToken;
+        if(obj.getPoToken)
+            this.getPoToken = obj.getPoToken;
+        if(obj.requestModifier)
+            this.requestModifier = obj.requestModifier;
+    }
+}
+
 class DashManifestRawAudioSource {
     constructor(obj) {
         obj = obj ?? {};

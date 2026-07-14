@@ -438,8 +438,10 @@ class DeveloperEndpoints(private val context: Context) {
         val config = context.readContentJson<SourcePluginConfig>()
         try {
             val script = _client.get(config.absoluteScriptUrl);
-            if(!script.isOk)
+            if(!script.isOk) {
+                script.close();
                 throw IllegalStateException("URL ${config.scriptUrl} return code ${script.code}");
+            }
             if(script.body == null)
                 throw IllegalStateException("URL ${config.scriptUrl} return no body");
 
