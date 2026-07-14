@@ -4,6 +4,7 @@ import android.os.Build
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.CastingDeviceInfo
 import kotlinx.serialization.KSerializer
@@ -15,8 +16,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.fcast.sender_sdk.ApplicationInfo
 import org.fcast.sender_sdk.CastingDevice as RsCastingDevice
-import org.fcast.sender_sdk.KeyEvent
-import org.fcast.sender_sdk.MediaEvent
+import org.fcast.sender_sdk.MediaTrack
+import org.fcast.sender_sdk.MediaTrackType
 import java.net.InetAddress
 import org.fcast.sender_sdk.PlaybackState
 import org.fcast.sender_sdk.Source
@@ -26,12 +27,14 @@ import java.net.Inet6Address
 import org.fcast.sender_sdk.DeviceEventHandler as RsDeviceEventHandler;
 import org.fcast.sender_sdk.DeviceConnectionState
 import org.fcast.sender_sdk.DeviceFeature
-import org.fcast.sender_sdk.EventSubscription
+import org.fcast.sender_sdk.ReceiverCapabilities
 import org.fcast.sender_sdk.IpAddr
 import org.fcast.sender_sdk.LoadRequest
-import org.fcast.sender_sdk.MediaItemEventType
 import org.fcast.sender_sdk.Metadata
 import org.fcast.sender_sdk.ProtocolType
+import org.fcast.sender_sdk.QueueState
+import org.fcast.sender_sdk.ReceiverError
+import org.fcast.sender_sdk.TrackList
 
 enum class CastConnectionState {
     DISCONNECTED,
@@ -118,7 +121,11 @@ class CastingDevice(val device: RsCastingDevice) {
         }
 
         override fun playbackStateChanged(state: PlaybackState) {
-            onPlayChanged.emit(state == PlaybackState.PLAYING)
+            if (state == PlaybackState.ENDED) {
+                onMediaItemEnd.emit()
+            } else {
+                onPlayChanged.emit(state == PlaybackState.PLAYING)
+            }
         }
 
         override fun durationChanged(duration: Double) {
@@ -133,19 +140,21 @@ class CastingDevice(val device: RsCastingDevice) {
             // TODO
         }
 
-        override fun keyEvent(event: KeyEvent) {
-            // Unreachable
-        }
-
-        override fun mediaEvent(event: MediaEvent) {
-            if (event.type == MediaItemEventType.END) {
-                onMediaItemEnd.emit()
-            }
-        }
-
         override fun playbackError(message: String) {
             Logger.e(TAG, "Playback error: $message")
         }
+
+        override fun tracksAvailable(tracks: List<MediaTrack>) {}
+
+        override fun trackSelected(id: UInt?, typ: MediaTrackType) {}
+
+        override fun playbackStopped() {}
+
+        override fun tracksChanged(tracks: TrackList) {}
+
+        override fun queueChanged(queue: QueueState) {}
+
+        override fun commandError(error: ReceiverError) {}
     }
 
     val eventHandler = EventHandler()
@@ -155,6 +164,12 @@ class CastingDevice(val device: RsCastingDevice) {
         get() = device.name()
     var usedRemoteAddress: InetAddress? = null
     var localAddress: InetAddress? = null
+    // FCast V4 only, null for v2/v3/gcast
+    var receiverCapabilities: ReceiverCapabilities? = null
+        private set
+
+    fun isSabrSupported(): Boolean =
+        receiverCapabilities?.media?.protocols?.any { it == "sabr" } == true
     fun canSetVolume(): Boolean = device.supportsFeature(DeviceFeature.SET_VOLUME)
     fun canSetSpeed(): Boolean = device.supportsFeature(DeviceFeature.SET_SPEED)
 
@@ -204,6 +219,7 @@ class CastingDevice(val device: RsCastingDevice) {
             },
             addresses = info.addresses.map { urlFormatIpAddr(it) }.toTypedArray(),
             port = info.port.toInt(),
+            txtRecords = info.txtRecords,
         )
     }
 
@@ -228,7 +244,8 @@ class CastingDevice(val device: RsCastingDevice) {
             volume = volume,
             metadata = metadata,
             requestHeaders = null,
-        )
+        ),
+        500.toULong()
     )
 
     fun loadContent(
@@ -247,7 +264,8 @@ class CastingDevice(val device: RsCastingDevice) {
             volume = volume,
             metadata = metadata,
             requestHeaders = null,
-        )
+        ),
+        500.toULong()
     )
 
     var connectionState = CastConnectionState.DISCONNECTED
@@ -276,15 +294,10 @@ class CastingDevice(val device: RsCastingDevice) {
         eventHandler.onConnectionStateChanged.subscribe { newState ->
             when (newState) {
                 is DeviceConnectionState.Connected -> {
-                    if (device.supportsFeature(DeviceFeature.MEDIA_EVENT_SUBSCRIPTION)) {
-                        try {
-                            device.subscribeEvent(EventSubscription.MediaItemEnd)
-                        } catch (e: Exception) {
-                            Logger.e(TAG, "Failed to subscribe to MediaItemEnd events: $e")
-                        }
-                    }
                     usedRemoteAddress = ipAddrToInetAddress(newState.usedRemoteAddr)
                     localAddress = ipAddrToInetAddress(newState.localAddr)
+                    receiverCapabilities = newState.capabilities
+                    Logger.i(TAG, "Receiver capabilities: protocols=${newState.capabilities?.media?.protocols}, isSabrSupported=${isSabrSupported()}")
                     connectionState = CastConnectionState.CONNECTED
                     onConnectionStateChanged.emit(CastConnectionState.CONNECTED)
                 }

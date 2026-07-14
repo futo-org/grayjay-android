@@ -347,6 +347,7 @@ class StateCasting {
                 },
                 addresses = rsAddrs,
                 port = deviceInfo.port.toUShort(),
+                txtRecords = deviceInfo.txtRecords,
             )
 
             return CastingDevice(_context.createDeviceFromInfo(rsDeviceInfo))
@@ -516,6 +517,19 @@ class StateCasting {
                 return@withContext false;
             }
             val deviceProto = ad.protocolType
+
+            var videoSource = videoSource
+            var audioSource = audioSource
+            if (ad.isSabrSupported() && videoSource !is JSUMPSource) {
+                val umpSource = video.video.videoSources.firstOrNull { it is JSUMPSource } as? JSUMPSource
+                if (umpSource != null) {
+                    Logger.i(TAG, "Receiver supports SABR");
+                    videoSource = umpSource;
+                    audioSource = null;
+                } else {
+                    Logger.w(TAG, "Receiver supports SABR but video has no JSUMPSource. sources=${video.video.videoSources.map { it::class.simpleName }}");
+                }
+            }
 
             val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
             val castId = _castId.incrementAndGet()
@@ -1572,6 +1586,21 @@ class StateCasting {
             throw UnsupportedCastException("this video has no format the receiver can decode");
         if (source.audioFormats.isNotEmpty() && bestAudio == null)
             throw UnsupportedCastException("this video has no audio format the receiver can decode");
+
+        if (ad.isSabrSupported()) {
+            val sabrUrl = com.futo.platformplayer.sabr.buildSabrUmpUrl(source, bestVideo, bestAudio);
+            Logger.i(TAG, "Casting as native SABR (application/x-sabr-ump)");
+            ad.loadVideo(
+                if (video.isLive) "LIVE" else "BUFFERED",
+                "application/x-sabr-ump",
+                sabrUrl,
+                resumePosition,
+                video.duration.toDouble(),
+                speed,
+                metadataFromVideo(video)
+            );
+            return listOf(sabrUrl);
+        }
 
         val session = source.toStreamSpec({ ManagedHttpClient().apply {
             user_agent = FutoVideoPlayerBase.DEFAULT_USER_AGENT;
