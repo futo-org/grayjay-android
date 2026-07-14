@@ -36,6 +36,14 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestMergingRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.sabr.CastSupersededException
+import com.futo.platformplayer.sabr.SabrBlockedException
+import com.futo.platformplayer.sabr.SabrFormat
+import com.futo.platformplayer.sabr.SabrFormatSubstitutedException
+import com.futo.platformplayer.sabr.SabrReloadRequiredException
+import com.futo.platformplayer.sabr.SabrSession
+import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalAudioContentSource
 import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoContentSource
@@ -57,6 +65,7 @@ import com.futo.platformplayer.views.casting.CastView
 import com.futo.platformplayer.views.casting.CastView.Companion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -74,8 +83,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.fcast.sender_sdk.DeviceInfo as RsDeviceInfo
 
 class StateCasting {
-    val _scopeIO = CoroutineScope(Dispatchers.IO);
-    val _scopeMain = CoroutineScope(Dispatchers.Main);
+    var _scopeIO = CoroutineScope(Dispatchers.IO); private set
+    var _scopeMain = CoroutineScope(Dispatchers.Main); private set
     private val _storage: CastingDeviceInfoStorage = FragmentedStorage.get();
 
     val _castServer = ManagedHttpServer();
@@ -94,6 +103,84 @@ class StateCasting {
     var activeDevice: CastingDevice? = null;
     private var _videoExecutor: JSRequestExecutor? = null
     private var _audioExecutor: JSRequestExecutor? = null
+    @Volatile private var _sabrCastProxy: com.futo.platformplayer.sabr.SabrCastProxy? = null
+
+    private var _handBackState: SabrSession.Transferable? = null
+    private var _handBackVideoId: String? = null
+
+    @Synchronized
+    fun takeHandBackState(videoId: String): SabrSession.Transferable? {
+        val state = _handBackState ?: return null
+        if (_handBackVideoId != videoId) return null
+
+        _handBackState = null
+        _handBackVideoId = null
+        Logger.i(TAG, "Continuing the playback casting left behind for $videoId")
+        return state
+    }
+
+    @Synchronized
+    private fun installCastProxy(proxy: com.futo.platformplayer.sabr.SabrCastProxy, castId: Int, device: CastingDevice): Boolean {
+        if (castId != _castId.get() || activeDevice !== device || device.connectionState != CastConnectionState.CONNECTED)
+            return false
+
+        _sabrCastProxy?.release()
+        _sabrCastProxy = proxy
+        return true
+    }
+
+    @Synchronized
+    private fun retireProxy(proxy: com.futo.platformplayer.sabr.SabrCastProxy) {
+        if (_sabrCastProxy === proxy) {
+            _castProxyServing = false
+            _sabrCastProxy = null
+            _castServer.removeAllHandlers("castUMP")
+        }
+        proxy.release()
+    }
+
+    @Volatile private var _castProxyServing = false
+
+    @Synchronized
+    fun releaseCastProxyIfIdle() {
+        if (activeDevice != null && _castProxyServing) return
+        releaseCastProxy()
+    }
+
+    @Synchronized
+    fun releaseCastProxy() {
+        _castProxyServing = false
+        val proxy = _sabrCastProxy
+        if (proxy != null) {
+            _sabrCastProxy = null
+            proxy.release()
+            _castServer.removeAllHandlers("castUMP")
+        }
+        _handBackState = null
+        _handBackVideoId = null
+    }
+
+    private var _preparingCastProxy: com.futo.platformplayer.sabr.SabrCastProxy? = null
+
+    @Synchronized
+    private fun setPreparingCastProxy(proxy: com.futo.platformplayer.sabr.SabrCastProxy?) {
+        _preparingCastProxy = proxy
+    }
+
+    @Synchronized
+    private fun retireCastProxy() {
+        _castProxyServing = false
+        val proxy = _sabrCastProxy ?: _preparingCastProxy ?: return
+        if (_sabrCastProxy === proxy) _sabrCastProxy = null
+        if (_preparingCastProxy === proxy) _preparingCastProxy = null
+
+        _handBackState = proxy.exportTransferable()
+        _handBackVideoId = if (_handBackState != null) proxy.videoId else null
+        proxy.release()
+
+        _castServer.removeAllHandlers("castUMP")
+    }
+
     private val _client = ManagedHttpClient();
     var _resumeCastingDevice: CastingDeviceInfo? = null;
     val isCasting: Boolean get() = activeDevice != null;
@@ -159,7 +246,16 @@ class StateCasting {
 
         Logger.i(TAG, "CastingService starting...")
 
-        _castServer.start()
+        _scopeIO = CoroutineScope(Dispatchers.IO)
+        _scopeMain = CoroutineScope(Dispatchers.Main)
+
+        try {
+            _castServer.start()
+        } catch (ex: Throwable) {
+            _started = false
+            Logger.e(TAG, "Failed to start the cast server", ex)
+            return
+        }
         enableDeveloper(true)
 
         Logger.i(TAG, "CastingService started.")
@@ -225,6 +321,8 @@ class StateCasting {
 
         _castServer.stop()
         _castServer.removeAllHandlers()
+
+        releaseCastProxy()
 
         Logger.i(TAG, "CastingService stopped.")
 
@@ -319,6 +417,8 @@ class StateCasting {
                 device.onDurationChanged.clear();
                 device.onMediaItemEnd.clear();
                 activeDevice = null;
+                _castId.incrementAndGet();
+                retireCastProxy();
             }
 
             invokeInMainScopeIfRequired {
@@ -409,7 +509,7 @@ class StateCasting {
     }
 
     @Throws
-    suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
+    suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, ms: Long = -1, speed: Double?, preferredVideoHeight: Int = -1, sabrState: SabrSession.Transferable? = null, onError: ((Throwable) -> Unit)? = null, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null): Boolean {
         return withContext(Dispatchers.IO) {
             val ad = activeDevice ?: return@withContext false;
             if (ad.connectionState != CastConnectionState.CONNECTED) {
@@ -429,10 +529,21 @@ class StateCasting {
                 throw Exception("At least one source should be specified.");
             }
 
+            val castState = sabrState
+                ?: (videoSource as? JSUMPSource)?.let { takeRunningCastState(it.videoId) };
+
+            cleanExecutors()
+            _castServer.removeAllHandlers("cast")
+            _castServer.removeAllHandlers("castSingular")
+            _castServer.removeAllHandlers("castProxiedHlsVariant")
+
             if (sourceCount > 1) {
                 if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
                     Logger.i(TAG, "Casting as local DASH");
                     castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
+                } else if (videoSource is JSUMPSource) {
+                    Logger.i(TAG, "Casting as JSUMPSource (SABR)");
+                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading);
                 } else {
                     val isRawDash =
                         videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
@@ -537,6 +648,9 @@ class StateCasting {
                 } else if (audioSource is JSDashManifestRawAudioSource) {
                     Logger.i(TAG, "Casting as JSDashManifestRawSource audio");
                     castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
+                } else if (videoSource is JSUMPSource) {
+                    Logger.i(TAG, "Casting as JSUMPSource (SABR)");
+                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading);
                 } else {
                     var str = listOf(
                         if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
@@ -579,6 +693,7 @@ class StateCasting {
     }
 
     fun stopVideo(): Boolean {
+        _castProxyServing = false;
         val ad = activeDevice ?: return false;
         try {
             ad.stopPlayback();
@@ -796,7 +911,10 @@ class StateCasting {
 
                 val masterPlaylistResponse = _client.get(sourceUrl, mutableMapOf(), requestModifier)
 
-                check(masterPlaylistResponse.isOk) { "Failed to get master playlist: ${masterPlaylistResponse.code}" }
+                if (!masterPlaylistResponse.isOk) {
+                    try { masterPlaylistResponse.body?.close() } catch (_: Throwable) {}
+                    throw IllegalStateException("Failed to get master playlist: ${masterPlaylistResponse.code}")
+                }
 
                 val masterPlaylistContent = masterPlaylistResponse.body?.string()
                     ?: throw Exception("Master playlist content is empty")
@@ -848,7 +966,10 @@ class StateCasting {
                             vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
                             val response = _client.get(variantPlaylistRef.url, mutableMapOf(), requestModifier)
-                            check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
+                            if (!response.isOk) {
+                                    try { response.body?.close() } catch (_: Throwable) {}
+                                    throw IllegalStateException("Failed to get variant playlist: ${response.code}")
+                                }
 
                             val vpContent = response.body?.string()
                                 ?: throw Exception("Variant playlist content is empty")
@@ -885,7 +1006,10 @@ class StateCasting {
                                 vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
                                 val response = _client.get(mediaRendition.uri, mutableMapOf(), requestModifier)
-                                check(response.isOk) { "Failed to get variant playlist: ${response.code}" }
+                                if (!response.isOk) {
+                                    try { response.body?.close() } catch (_: Throwable) {}
+                                    throw IllegalStateException("Failed to get variant playlist: ${response.code}")
+                                }
 
                                 val vpContent = response.body?.string()
                                     ?: throw Exception("Variant playlist content is empty")
@@ -1067,6 +1191,7 @@ class StateCasting {
         return listOf(dashUrl, videoUrl ?: "", audioUrl ?: "", subtitlesUrl ?: "", videoSource?.getVideoUrl() ?: "", audioSource?.getAudioUrl() ?: "", subtitlesUri.toString());
     }
 
+    @Synchronized
     fun cleanExecutors() {
         if (_videoExecutor != null) {
             _videoExecutor?.cleanup()
@@ -1077,6 +1202,14 @@ class StateCasting {
             _audioExecutor?.cleanup()
             _audioExecutor = null
         }
+
+        val proxy = _sabrCastProxy
+        if (proxy != null) {
+            _sabrCastProxy = null
+            proxy.release()
+            _castServer.removeAllHandlers("castUMP")
+        }
+
     }
 
     private fun getLocalUrl(ad: CastingDevice): String {
@@ -1109,19 +1242,11 @@ class StateCasting {
         lang: String = "und",
         label: String = "Subtitles"
     ): String {
-        val mt = mimeType.lowercase()
-        val codecs = when (mt) {
-            "text/vtt", "text/webvtt" -> "wvtt"
-            "application/ttml+xml", "application/ttml" -> "stpp"
-            else -> null
-        }
-        val codecsAttr = codecs?.let { " codecs=\"${escapeXml(it)}\"" } ?: ""
-
         val adaptation = """
-        <AdaptationSet id="123456" contentType="text" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}">
+        <AdaptationSet contentType="text" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}" default="true">
           <Role schemeIdUri="urn:mpeg:dash:role:2011" value="subtitle"/>
           <Label>${escapeXml(label)}</Label>
-          <Representation id="123457"$codecsAttr bandwidth="256" mimeType="${escapeXml(mimeType)}">
+          <Representation id="caption_0" mimeType="${escapeXml(mimeType)}" lang="${escapeXml(lang)}" default="true" bandwidth="1000">
             <BaseURL>${escapeXml(subtitleUrl)}</BaseURL>
           </Representation>
         </AdaptationSet>
@@ -1130,7 +1255,7 @@ class StateCasting {
         val periodClose = Regex("</Period\\s*>", RegexOption.IGNORE_CASE)
 
         return if (periodClose.containsMatchIn(mpd)) {
-            mpd.replaceFirst(periodClose, adaptation + "\n</Period>")
+            mpd.replaceFirst(periodClose, Regex.escapeReplacement(adaptation + "\n</Period>"))
         } else {
             mpd
         }
@@ -1346,6 +1471,320 @@ class StateCasting {
         return listOf()
     }
 
+    private fun videoCodecRank(codecs: String): Int {
+        val c = codecs.lowercase();
+        return when {
+            c.startsWith("avc1") || c.startsWith("avc3") -> 0
+            c.startsWith("vp9") || c.startsWith("vp09") -> 1
+            c.startsWith("av01") -> 2
+            c.startsWith("vp8") -> 3
+            else -> 4
+        }
+    }
+
+    private fun audioCodecRank(codecs: String): Int {
+        val c = codecs.lowercase();
+        return when {
+            c.startsWith("mp4a") -> 0
+            c.startsWith("opus") -> 1
+            c.startsWith("vorbis") -> 2
+            else -> 3
+        }
+    }
+
+    fun previewCastVideoFormat(source: JSUMPSource, preferredHeight: Int): SabrFormat? =
+        selectCastVideoFormat(source, preferredHeight)
+
+    private fun castCanDecode(format: SabrFormat): Boolean {
+        if (format.codecs.isBlank()) return false;
+        return videoCodecRank(format.codecs) <= 1;
+    }
+
+    private fun selectCastVideoFormat(source: JSUMPSource, preferredHeight: Int): SabrFormat? {
+        val decodable = source.videoFormats.filter { castCanDecode(it) };
+        if (decodable.isEmpty()) {
+            Logger.w(TAG, "No cast-decodable video format (have: ${source.videoFormats.joinToString { it.codecs }})");
+            return null;
+        }
+
+        val pool = decodable.filter { it.height > 0 }.ifEmpty { decodable };
+        if (pool.isEmpty()) return null;
+
+        val bestAt = { height: Int ->
+            pool.filter { it.height == height }
+                .minWithOrNull(compareBy({ videoCodecRank(it.codecs) }, { -it.bitrate }))
+        };
+
+        val selected = if (preferredHeight > 0) {
+            bestAt(preferredHeight)
+                ?: pool.filter { it.height < preferredHeight }.maxByOrNull { it.height }?.let { bestAt(it.height) }
+                ?: pool.filter { it.height > preferredHeight }.minByOrNull { it.height }?.let { bestAt(it.height) }
+        } else {
+            val cap = pool.filter { it.height <= CAST_AUTO_MAX_HEIGHT }.maxByOrNull { it.height }?.height
+                ?: pool.minOf { it.height };
+            bestAt(cap)
+        };
+
+        if (selected != null && videoCodecRank(selected.codecs) > 0)
+            Logger.i(TAG, "UMP cast using non-AVC video (${selected.codecs} ${selected.height}p); older receivers may not decode this.");
+
+        return selected;
+    }
+
+    private fun selectCastAudioFormat(source: JSUMPSource): SabrFormat? {
+        val decodable = source.audioFormats.filter { it.codecs.isNotBlank() && audioCodecRank(it.codecs) <= 2 };
+        if (decodable.isEmpty()) {
+            Logger.w(TAG, "No cast-decodable audio format (have: ${source.audioFormats.joinToString { it.codecs }})");
+            return null;
+        }
+        val pool = decodable.filter { it.isOriginalAudio }.ifEmpty { decodable };
+        return pool.minWithOrNull(compareBy({ audioCodecRank(it.codecs) }, { -it.bitrate }));
+    }
+
+    @OptIn(UnstableApi::class)
+    @Synchronized
+    private fun takeRunningCastState(videoId: String): SabrSession.Transferable? {
+        val proxy = _sabrCastProxy ?: return null
+        if (proxy.videoId != videoId) return null
+        return proxy.exportTransferable()
+    }
+
+    private suspend fun castUMP(video: IPlatformVideoDetails, source: JSUMPSource, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, preferredVideoHeight: Int = -1, sabrState: SabrSession.Transferable? = null, onError: ((Throwable) -> Unit)? = null, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null) : List<String> {
+        val ad = activeDevice ?: throw Exception("The cast device disconnected before the stream could be prepared");
+
+        cleanExecutors();
+        _castServer.removeAllHandlers("castUMP");
+
+        val url = getLocalUrl(ad);
+        val id = UUID.randomUUID();
+        val dashPath = "/dash-$id";
+        val videoInitPath = "/umpvi-$id";
+        val videoSegPath = "/umpvs-$id";
+        val audioInitPath = "/umpai-$id";
+        val audioSegPath = "/umpas-$id";
+        val subtitlePath = "/umpsub-$id";
+        val timePath = "/umptime-$id";
+
+        val bestVideo = selectCastVideoFormat(source, preferredVideoHeight);
+        val bestAudio = selectCastAudioFormat(source);
+
+        if (source.videoFormats.isNotEmpty() && bestVideo == null)
+            throw UnsupportedCastException("this video has no format the receiver can decode");
+        if (source.audioFormats.isNotEmpty() && bestAudio == null)
+            throw UnsupportedCastException("this video has no audio format the receiver can decode");
+
+        val session = source.toStreamSpec({ ManagedHttpClient().apply {
+            user_agent = FutoVideoPlayerBase.DEFAULT_USER_AGENT;
+            setCallTimeout(FutoVideoPlayerBase.SABR_CALL_TIMEOUT_MS);
+            setReadTimeout(FutoVideoPlayerBase.SABR_READ_TIMEOUT_MS);
+        } }, ownsClient = true).createSession();
+        sabrState?.let { session.restore(it) };
+
+        val proxy = com.futo.platformplayer.sabr.SabrCastProxy(session, bestVideo, bestAudio);
+
+        var installed = false;
+        setPreparingCastProxy(proxy);
+        try {
+
+        proxy.playheadUs = {
+            val d = activeDevice;
+            if (d != null && castId == _castId.get() && d.hasReportedTime)
+                (d.expectedCurrentTime.coerceAtLeast(0.0) * 1_000_000.0).toLong()
+            else null
+        };
+
+        proxy.onBackoff = { delayMs ->
+            _scopeMain.launch {
+                if (castId == _castId.get()) {
+                    if (delayMs != null && delayMs >= SABR_BACKOFF_UI_THRESHOLD_MS)
+                        onLoadingEstimate?.invoke(delayMs.toInt());
+                    else if (delayMs == null)
+                        onLoading?.invoke(false);
+                }
+            }
+        };
+        proxy.onFatalError = { error ->
+            _scopeMain.launch {
+                if (castId == _castId.get()) {
+                    onLoading?.invoke(false);
+                    stopVideo();
+                    retireProxy(proxy);
+
+                    if (onError != null) {
+                        onError.invoke(error);
+                        return@launch;
+                    }
+
+                    UIDialogs.appToast(when (error) {
+                        is SabrBlockedException -> "Casting stopped: YouTube rejected the playback token. Reload the video and try again."
+                        is SabrReloadRequiredException -> "Casting stopped: the stream expired. Reload the video and try again."
+                        is SabrFormatSubstitutedException -> "Casting stopped: the stream format is out of sync. Update your plugins."
+                        else -> "Casting stopped: ${error.message ?: "stream failed"}"
+                    });
+                }
+            }
+        };
+
+        val manifest = withContext(Dispatchers.IO) {
+            stopVideo();
+            try {
+                if(!proxy.prepare((resumePosition * 1_000_000.0).toLong()))
+                    throw Exception("Failed to prepare SABR cast stream");
+                proxy.buildManifest(url + videoInitPath, url + videoSegPath, url + audioInitPath, url + audioSegPath, url + timePath)
+                    ?: throw Exception("Failed to build SABR cast manifest");
+            } catch(ex: Throwable) {
+                proxy.release();
+                throw ex;
+            } finally {
+                if(castId == _castId.get())
+                    onLoading?.let { withContext(Dispatchers.Main) { it(false) } }
+            }
+        };
+
+        if (castId != _castId.get()) {
+            Logger.i(TAG, "A newer cast superseded this one while it was preparing");
+            proxy.release();
+            throw CastSupersededException("Superseded by a newer cast");
+        }
+
+        if(!installCastProxy(proxy, castId, ad)) {
+            Logger.i(TAG, "Cast device went away while preparing; dropping the SABR cast");
+            proxy.release();
+            throw Exception("The cast device disconnected while the stream was being prepared");
+        }
+
+        installed = true;
+
+        try {
+        val subtitleMime = subtitleSource?.format ?: "text/vtt";
+        var subtitlesUrl: String? = null;
+        if(subtitleSource != null && !proxy.isLive) {
+            val subUri = withContext(Dispatchers.IO) { subtitleSource.getSubtitlesURI() };
+            val content = when(subUri?.scheme) {
+                "file", "content" -> withContext(Dispatchers.IO) {
+                    StateApp.instance.contextOrNull?.contentResolver?.openInputStream(subUri)?.use { it.bufferedReader().readText() }
+                }
+                else -> null
+            };
+            if(!content.isNullOrEmpty()) {
+                _castServer.addHandlerWithAllowAllOptions(
+                    HttpConstantHandler("GET", subtitlePath, content, subtitleMime)
+                        .withHeader("Access-Control-Allow-Origin", "*"), true
+                ).withTag("castUMP");
+                subtitlesUrl = url + subtitlePath;
+            } else if(subUri?.scheme == "http" || subUri?.scheme == "https") {
+                subtitlesUrl = subUri.toString();
+            }
+        }
+
+        val finalManifest = if(subtitlesUrl != null)
+            injectSubtitleAdaptationSet(manifest, subtitlesUrl!!, subtitleMime.substringBefore(';').trim(),
+                subtitleSource?.language?.takeIf { it.isNotBlank() } ?: "und", subtitleSource?.name ?: "Subtitles")
+        else manifest;
+
+        Logger.v(TAG) { "UMP DASH manifest: $finalManifest" };
+
+        if(proxy.isLive) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", timePath) { ctx ->
+                    val now = java.time.Instant.ofEpochMilli(System.currentTimeMillis()).toString();
+                    ctx.respondBytes(200, HttpHeaders().apply {
+                        put("Content-Type", "text/plain")
+                        put("Cache-Control", "no-cache, no-store, must-revalidate")
+                    }, now.toByteArray());
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", dashPath) { ctx ->
+                    val live = proxy.buildManifest(url + videoInitPath, url + videoSegPath, url + audioInitPath, url + audioSegPath, url + timePath);
+                    if(live == null) ctx.respondCode(503, "SABR live manifest unavailable")
+                    else ctx.respondBytes(200, HttpHeaders().apply {
+                        put("Content-Type", "application/dash+xml")
+                        put("Cache-Control", "no-cache, no-store, must-revalidate")
+                    }, live.toByteArray());
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+        } else {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpConstantHandler("GET", dashPath, finalManifest, "application/dash+xml")
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+        }
+
+        if(bestVideo != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", videoInitPath) { ctx ->
+                    val data = proxy.getInit(SabrSession.ROLE_VIDEO);
+                    if(data == null) ctx.respondCode(504, "SABR init unavailable")
+                    else ctx.respondBytes(200, HttpHeaders().apply { put("Content-Type", bestVideo.containerMimeType) }, data);
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", videoSegPath) { ctx ->
+                    val seq = ctx.query["n"]?.toIntOrNull();
+                    val data = seq?.let { proxy.getSegment(SabrSession.ROLE_VIDEO, it) };
+                    if(data == null) ctx.respondCode(404, "SABR segment unavailable")
+                    else ctx.respondBytes(200, HttpHeaders().apply { put("Content-Type", bestVideo.containerMimeType) }, data);
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+        }
+        if(bestAudio != null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", audioInitPath) { ctx ->
+                    val data = proxy.getInit(SabrSession.ROLE_AUDIO);
+                    if(data == null) ctx.respondCode(504, "SABR init unavailable")
+                    else ctx.respondBytes(200, HttpHeaders().apply { put("Content-Type", bestAudio.containerMimeType) }, data);
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpFunctionHandler("GET", audioSegPath) { ctx ->
+                    val seq = ctx.query["n"]?.toIntOrNull();
+                    val data = seq?.let { proxy.getSegment(SabrSession.ROLE_AUDIO, it) };
+                    if(data == null) ctx.respondCode(404, "SABR segment unavailable")
+                    else ctx.respondBytes(200, HttpHeaders().apply { put("Content-Type", bestAudio.containerMimeType) }, data);
+                }.withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castUMP");
+        }
+
+        val streamType = if(proxy.isLive) "LIVE" else "BUFFERED";
+        val startPosition = when {
+            proxy.isLive -> proxy.servableStartSeconds() ?: 0.0;
+            ad.protocolType == CastProtocolType.CHROMECAST && resumePosition == 0.0 -> 0.1;
+            else -> resumePosition;
+        };
+        val duration = if (!proxy.isLive && proxy.durationSeconds > 0.0) proxy.durationSeconds else video.duration.toDouble();
+
+        proxy.onReceiverLost = {
+            _scopeMain.launch {
+                if (castId == _castId.get() && _sabrCastProxy === proxy && activeDevice === ad) {
+                    val targetSeconds = proxy.servableStartSeconds();
+                    if (targetSeconds != null) {
+                        Logger.i(TAG, "Receiver drifted out of the servable window; seeking it to ${targetSeconds}s");
+                        try {
+                            ad.seekTo(targetSeconds);
+                        } catch (ex: Throwable) {
+                            Logger.w(TAG, "Failed to seek the receiver back into the window", ex);
+                        }
+                    }
+                }
+            }
+        };
+
+        ad.loadVideo(streamType, "application/dash+xml", url + dashPath, startPosition, duration, speed, metadataFromVideo(video));
+        _castProxyServing = true;
+        return listOf();
+        } catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to start the SABR cast; tearing it down", ex);
+            retireProxy(proxy);
+            throw ex;
+        }
+
+        } finally {
+            setPreparingCastProxy(null);
+            if (!installed) proxy.release();
+        }
+    }
+
     fun addRememberedDevice(deviceInfo: CastingDeviceInfo): CastingDeviceInfo? {
         return when (val device = deviceFromInfo(deviceInfo)) {
             null -> null
@@ -1395,5 +1834,9 @@ class StateCasting {
             Regex("(media|initiali[sz]ation)=\"([^\"]+)\"", RegexOption.DOT_MATCHES_ALL);
 
         private val TAG = "StateCasting";
+        private const val SABR_BACKOFF_UI_THRESHOLD_MS = 1500L;
+        private const val HAND_BACK_TTL_MS = 60_000L;
+
+        const val CAST_AUTO_MAX_HEIGHT = 1080;
     }
 }

@@ -100,7 +100,8 @@ class PackageBridge : V8Package {
         return arrayOf(
             "ReloadRequiredException",
             "HttpBatchClient",
-            "Async"
+            "Async",
+            "UMPSource"
         );
     }
 

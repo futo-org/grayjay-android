@@ -50,11 +50,12 @@ class StateTelemetry {
                 val json = Json.encodeToString(telemetry);
                 val url = "https://logs.grayjay.app/telemetry";
                 val client = ManagedHttpClient();
-                val response = client.post(url, json, headers);
-                if (response.isOk) {
-                    Logger.i(TAG, "Launch telemetry submitted.");
-                } else {
-                    Logger.w(TAG, "Failed to submit launch telemetry (${response.code}): '${response.body?.string()}'.");
+                client.post(url, json, headers).use { response ->
+                    if (response.isOk) {
+                        Logger.i(TAG, "Launch telemetry submitted.");
+                    } else {
+                        Logger.w(TAG, "Failed to submit launch telemetry (${response.code}): '${response.body?.string()}'.");
+                    }
                 }
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to submit launch telemetry.", e);

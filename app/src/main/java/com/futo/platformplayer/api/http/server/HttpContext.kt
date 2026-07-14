@@ -105,7 +105,7 @@ class HttpContext : AutoCloseable {
                             if(eqIndex > 0){
                                 when(keepAliveParam.substring(0, eqIndex)) {
                                     "timeout" -> keepAliveTimeout = keepAliveParam.substring(eqIndex+1).toInt();
-                                    "max" -> keepAliveTimeout = keepAliveParam.substring(eqIndex+1).toInt();
+                                    "max" -> keepAliveMax = keepAliveParam.substring(eqIndex+1).toInt();
                                 }
                             }
                         }
@@ -117,6 +117,8 @@ class HttpContext : AutoCloseable {
         }
     }
 
+    class ClientClosedException : IOException("The client closed the connection")
+
     private fun readHeaderBytes(): ByteArray {
         val headerBytes = ByteArrayOutputStream()
         var crlfCount = 0
@@ -124,6 +126,7 @@ class HttpContext : AutoCloseable {
         while (crlfCount < 4) {
             val b = _inputStream.read()
             if (b == -1) {
+                if (headerBytes.size() == 0) throw ClientClosedException()
                 throw IOException("Unexpected end of stream while reading headers")
             }
 
@@ -235,7 +238,7 @@ class HttpContext : AutoCloseable {
 
         if(keepAlive) {
             headersToRespond.put("connection", "keep-alive");
-            headersToRespond.put("keep-alive", "timeout=5, max=1000");
+            headersToRespond.put("keep-alive", "timeout=45, max=1000");
         }
 
         val responseHeader = HttpResponse(status, headersToRespond);

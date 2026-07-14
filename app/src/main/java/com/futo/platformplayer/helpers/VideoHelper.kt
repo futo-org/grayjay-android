@@ -25,6 +25,8 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlRangeSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.others.Language
@@ -49,8 +51,8 @@ class VideoHelper {
             return false
         }
 
-        fun isDownloadable(source: IVideoSource) = (source is IVideoUrlSource || source is IHLSManifestSource || source is JSDashManifestRawSource) && source !is IWidevineSource
-        fun isDownloadable(source: IAudioSource) = (source is IAudioUrlSource || source is IHLSManifestAudioSource || source is JSDashManifestRawAudioSource) && source !is IWidevineSource
+        fun isDownloadable(source: IVideoSource) = (source is IVideoUrlSource || source is IHLSManifestSource || source is JSDashManifestRawSource || (source is JSUMPSource && !source.isLive)) && source !is IWidevineSource
+        fun isDownloadable(source: IAudioSource) = (source is IAudioUrlSource || source is IHLSManifestAudioSource || source is JSDashManifestRawAudioSource || source is JSUMPAudioSource) && source !is IWidevineSource
 
         fun selectBestVideoSource(desc: IVideoSourceDescriptor, desiredPixelCount : Int, prefContainers : Array<String>, preferredLanguage: String? = null) : IVideoSource? = selectBestVideoSource(desc.videoSources.toList(), desiredPixelCount, prefContainers, preferredLanguage);
         fun selectBestVideoSource(sources: Iterable<IVideoSource>, desiredPixelCount : Int, prefContainers : Array<String>, preferredLanguage: String? = null) : IVideoSource? {

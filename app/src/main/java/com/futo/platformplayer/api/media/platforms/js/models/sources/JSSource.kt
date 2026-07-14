@@ -121,6 +121,7 @@ abstract class JSSource {
         const val TYPE_HLS = "HLSSource";
         const val TYPE_AUDIOURL_WIDEVINE = "AudioUrlWidevineSource"
         const val TYPE_VIDEOURL_WIDEVINE = "VideoUrlWidevineSource"
+        const val TYPE_UMP = "UMPSource"
 
         fun fromV8VideoNullable(plugin: JSClient, obj: V8Value?) : IVideoSource? {
             obj?.ensureIsBusy();
@@ -137,6 +138,7 @@ abstract class JSSource {
                 TYPE_DASH_WIDEVINE -> JSDashManifestWidevineSource(plugin, obj)
                 TYPE_DASH -> fromV8Dash(plugin, obj);
                 TYPE_DASH_RAW -> fromV8DashRaw(plugin, obj);
+                TYPE_UMP -> JSUMPSource(plugin, obj);
                 else -> {
                     Logger.w("JSSource", "Unknown video type ${type}");
                     null;

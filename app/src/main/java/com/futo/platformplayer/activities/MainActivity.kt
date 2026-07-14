@@ -673,9 +673,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                         )
                         try {
                             val response = client.post(url, json, headers)
+                            response.close()
                             // if it failed retry one time
                             if (!response.isOk) {
-                                client.post(url, json, headers)
+                                client.post(url, json, headers).close()
                             }
                         } catch (e: Exception) {
                             Logger.i(TAG, "Failed to submit subscription list.", e)

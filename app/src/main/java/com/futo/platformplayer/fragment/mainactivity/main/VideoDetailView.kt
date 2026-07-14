@@ -86,6 +86,12 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.sabr.CastSupersededException
+import com.futo.platformplayer.sabr.SabrBlockedException
+import com.futo.platformplayer.sabr.SabrFormatSubstitutedException
+import com.futo.platformplayer.sabr.SabrReloadRequiredException
+import com.futo.platformplayer.sabr.SabrSession
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.casting.CastConnectionState
 import com.futo.platformplayer.casting.StateCasting
@@ -130,6 +136,7 @@ import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.db.types.DBHistory
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.models.SendToDevicePackage
+import com.futo.platformplayer.sabr.SabrCodecs
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
@@ -311,6 +318,8 @@ class VideoDetailView : ConstraintLayout {
     private var _lastVideoSource: IVideoSource? = null;
     private var _lastAudioSource: IAudioSource? = null;
     private var _lastSubtitleSource: ISubtitleSource? = null;
+
+    private var _castVideoHeight: Int = -1;
     private var _isCasting: Boolean = false;
 
     var isPlaying: Boolean = false
@@ -708,6 +717,8 @@ class VideoDetailView : ConstraintLayout {
         if (!isInEditMode) {
             StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { device, connectionState ->
                 if (_onPauseCalled) {
+                    if (connectionState == CastConnectionState.DISCONNECTED && _isCasting)
+                        _pendingCastDisconnect = true;
                     return@subscribe;
                 }
 
@@ -718,10 +729,7 @@ class VideoDetailView : ConstraintLayout {
                         setCastEnabled(true);
                     }
                     CastConnectionState.DISCONNECTED -> {
-                        loadCurrentVideo(lastPositionMilliseconds, playWhenReady = device.isPlaying);
-                        updatePillButtonVisibilities();
-                        setCastEnabled(false);
-
+                        applyCastDisconnect(device.isPlaying);
                     }
                     else -> {}
                 }
@@ -1197,6 +1205,10 @@ class VideoDetailView : ConstraintLayout {
         Logger.v(TAG, "onResume");
         _onPauseCalled = false;
 
+        val hadPendingCastDisconnect = _pendingCastDisconnect;
+        if (hadPendingCastDisconnect)
+            applyCastDisconnect(true);
+
         val wasLoginCall = isLoginStop;
         isLoginStop = false;
 
@@ -1215,8 +1227,10 @@ class VideoDetailView : ConstraintLayout {
             _didStop = false;
             Logger.i(TAG, "loadCurrentVideo _lastPosition=${lastPositionMilliseconds}");
             StatePlayer.instance.startOrUpdateMediaSession(context, video);
-            loadCurrentVideo(lastPositionMilliseconds);
-            handlePause();
+            if (!_isCasting) {
+                loadCurrentVideo(lastPositionMilliseconds);
+                handlePause();
+            }
         }
 
         if(_player.isAudioMode) {
@@ -1291,6 +1305,7 @@ class VideoDetailView : ConstraintLayout {
         _commentsList.cancel();
         _player.clear();
         _player.changePlayer(null);
+        StateCasting.instance.releaseCastProxyIfIdle();
         _cast.cleanup();
         _container_content_replies.cleanup();
         _container_content_queue.cleanup();
@@ -1339,6 +1354,7 @@ class VideoDetailView : ConstraintLayout {
         _lastVideoSource = null;
         _lastAudioSource = null;
         _lastSubtitleSource = null;
+        resetCastState();
         clearChapters()
     }
     fun setVideo(url: String, resumeSeconds: Long = 0, playWhenReady: Boolean = true) {
@@ -1504,6 +1520,7 @@ class VideoDetailView : ConstraintLayout {
             _lastVideoSource = null;
             _lastAudioSource = null;
             _lastSubtitleSource = null;
+            resetCastState();
 
             Logger.i(TAG, "_didTriggerDatasourceErrorCount reset to 0 because new video")
             _didTriggerDatasourceErrorCount = 0;
@@ -2049,7 +2066,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     //Source Loads
-    private fun loadCurrentVideo(resumePositionMs: Long = 0, playWhenReady: Boolean = true) {
+    private fun loadCurrentVideo(resumePositionMs: Long = 0, playWhenReady: Boolean = true, forceLocal: Boolean = false) {
         _didStop = false;
 
         val video = (videoLocal ?: video) ?: return;
@@ -2066,7 +2083,8 @@ class VideoDetailView : ConstraintLayout {
                 return;
             }
 
-            val isCasting = StateCasting.instance.isCasting
+            val isCasting = StateCasting.instance.activeDevice?.connectionState == CastConnectionState.CONNECTED
+                && !forceLocal
             if (!isCasting) {
                 setCastEnabled(false);
 
@@ -2119,9 +2137,13 @@ class VideoDetailView : ConstraintLayout {
                 }
             }
             else {
+                val sabrState = if (videoSource is JSUMPSource && !_isCasting)
+                    _player.exportSabrState()
+                else null
+
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble());
+                        loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble(), sabrState);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "loadCurrentVideo failed (casting)", e)
                     }
@@ -2142,12 +2164,83 @@ class VideoDetailView : ConstraintLayout {
             UIDialogs.showGeneralErrorDialog(context, context.getString(R.string.failed_to_load_media), ex);
         }
     }
-    private suspend fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+    private suspend fun loadCurrentVideoCast(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?, sabrState: SabrSession.Transferable? = null) {
         Logger.i(TAG, "loadCurrentVideoCast(video=$video, videoSource=$videoSource, audioSource=$audioSource, resumePositionMs=$resumePositionMs)")
-        castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed)
+        castIfAvailable(context.contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, sabrState)
     }
 
-    private suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?) {
+    private fun handleSelectUmpCastQuality(height: Int) {
+        val video = video ?: return;
+        val device = StateCasting.instance.activeDevice ?: return;
+        if (device.connectionState != CastConnectionState.CONNECTED) return;
+
+        _castVideoHeight = height;
+        _slideUpOverlay?.hide();
+        fragment.lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, _lastSubtitleSource,
+                    (device.expectedCurrentTime * 1000.0).toLong(), device.speed);
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to change UMP cast quality", e);
+            }
+        }
+    }
+
+    private var _castReloadCount = 0;
+
+    private fun handleCastTokenRejected(error: Throwable) {
+        val currentVideo = video;
+
+        val recoverable = error is SabrBlockedException || error is SabrReloadRequiredException;
+        if (!recoverable || currentVideo == null || currentVideo !is IPluginSourced) {
+            UIDialogs.appToast(when (error) {
+                is SabrFormatSubstitutedException -> "Casting stopped: the stream format is out of sync. Update your plugins."
+                else -> "Casting stopped: ${error.message ?: "stream failed"}"
+            });
+            fallBackToLocalPlayback(lastPositionMilliseconds);
+            return;
+        }
+
+        if (_castReloadCount >= CAST_MAX_RELOADS) {
+            UIDialogs.appToast("Casting stopped: YouTube keeps rejecting the playback token. Try reopening the video.");
+            fallBackToLocalPlayback(lastPositionMilliseconds);
+            return;
+        }
+        _castReloadCount++;
+
+        Logger.i(TAG, "Cast token rejected, re-fetching the source and re-casting (attempt $_castReloadCount)", error);
+        UIDialogs.toast("Casting: refreshing the stream ($_castReloadCount)");
+
+        val device = StateCasting.instance.activeDevice;
+        val resumeMs = if (device != null && device.expectedCurrentTime > 0.0)
+            (device.expectedCurrentTime * 1000.0).toLong() else _videoResumePositionMilliseconds;
+
+        fragment.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val newDetails = StatePlatform.instance.getContentDetails(currentVideo.url, true).await();
+                if (newDetails !is IPlatformVideoDetails) return@launch;
+
+                val newVideoSource = newDetails.video.videoSources.firstOrNull { it is JSUMPSource }
+                    ?: VideoHelper.selectBestVideoSource(newDetails.video, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS);
+
+                withContext(Dispatchers.Main) {
+                    video = newDetails;
+                    _lastVideoSource = newVideoSource;
+                }
+
+                castIfAvailable(context.contentResolver, newDetails, newVideoSource, _lastAudioSource,
+                    _lastSubtitleSource, resumeMs, device?.speed);
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to refresh the source for casting", e);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.appToast("Casting stopped: could not refresh the stream.");
+                    fallBackToLocalPlayback(resumeMs);
+                }
+            }
+        }
+    }
+
+    private suspend fun castIfAvailable(contentResolver: ContentResolver, video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?, subtitleSource: ISubtitleSource?, resumePositionMs: Long, speed: Double?, sabrState: SabrSession.Transferable? = null) {
         try {
             val plugin = if (videoSource is JSSource) videoSource.getUnderlyingPlugin()
                 else if (audioSource is JSSource) audioSource.getUnderlyingPlugin()
@@ -2155,7 +2248,9 @@ class VideoDetailView : ConstraintLayout {
 
             val startId = plugin?.getUnderlyingPlugin()?.runtimeId
             try {
-                val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, onLoading = {
+                val castingSucceeded = StateCasting.instance.castIfAvailable(contentResolver, video, videoSource, audioSource, subtitleSource, resumePositionMs, speed, _castVideoHeight, sabrState, onError = { e ->
+                    handleCastTokenRejected(e)
+                }, onLoading = {
                     _cast.setLoading(it)
                 }, onLoadingEstimate = {
                     _cast.setLoading(it)
@@ -2166,6 +2261,10 @@ class VideoDetailView : ConstraintLayout {
                         _cast.setVideoDetails(video, resumePositionMs / 1000);
                         setCastEnabled(true);
                     }
+                }
+                else {
+                    Logger.w(TAG, "Casting did not start; restoring local playback")
+                    withContext(Dispatchers.Main) { fallBackToLocalPlayback(resumePositionMs) }
                 }
             } catch (e: ScriptReloadRequiredException) {
                 Log.i(TAG, "Reload required exception", e)
@@ -2179,9 +2278,52 @@ class VideoDetailView : ConstraintLayout {
                     fetchVideo()
                 });
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: CastSupersededException) {
+            Logger.i(TAG, "Cast superseded while preparing; leaving the newer one alone")
         } catch (e: Throwable) {
             Logger.e(TAG, "loadCurrentVideoCast", e)
+            withContext(Dispatchers.Main) {
+                if (StateCasting.instance.activeDevice != null) {
+                    UIDialogs.appToast(when (e) {
+                        is SabrFormatSubstitutedException -> "Casting failed: the stream format is out of sync. Update your plugins."
+                        is SabrBlockedException -> "Casting failed: YouTube rejected the playback token. Reload the video and try again."
+                        else -> "Casting failed: ${e.message ?: e.javaClass.simpleName}"
+                    })
+                }
+                fallBackToLocalPlayback(resumePositionMs)
+            }
         }
+    }
+
+    private fun fallBackToLocalPlayback(resumePositionMs: Long) {
+        _cast.setLoading(false)
+
+        if (_lastVideoSource !is JSUMPSource) {
+            Logger.i(TAG, "Cast failed for a non-UMP source; staying in cast mode")
+            return
+        }
+
+        if (!_isCasting && StateCasting.instance.activeDevice == null) {
+            Logger.i(TAG, "Not falling back; the disconnect handler already restored local playback")
+            return
+        }
+
+        val device = StateCasting.instance.activeDevice
+        if (device != null && device.connectionState == CastConnectionState.CONNECTED) {
+            Logger.i(TAG, "Casting failed; disconnecting from ${device.name}")
+            try {
+                device.disconnect()
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to disconnect; staying in cast mode", e)
+                return
+            }
+        }
+
+        _pendingCastDisconnect = false
+        setCastEnabled(false)
+        loadCurrentVideo(resumePositionMs, forceLocal = true)
     }
 
     //Events
@@ -2197,8 +2339,8 @@ class VideoDetailView : ConstraintLayout {
             }
         }
         //If LiveStream, set to end
-        if(videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
-            if (video?.isLive == true) {
+        if(videoSource is IDashManifestSource || videoSource is IHLSManifestSource || videoSource is JSUMPSource) {
+            if (video?.isLive == true && videoSource !is JSUMPSource) {
                 _player.seekToEnd(6000);
             }
 
@@ -2322,7 +2464,19 @@ class VideoDetailView : ConstraintLayout {
         _overlay_quality_selector?.selectOption("audio", _lastAudioSource);
         _overlay_quality_selector?.selectOption("subtitles", _lastSubtitleSource);
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        val castUmpSource = if (_isCasting)
+            (_lastVideoSource as? JSUMPSource)
+        else null;
+
+        if (castUmpSource != null) {
+            val selected = if (_castVideoHeight > 0)
+                StateCasting.instance.previewCastVideoFormat(castUmpSource, _castVideoHeight)
+            else null;
+
+            if (selected != null) _overlay_quality_selector?.selectOption("video", selected)
+            else _overlay_quality_selector?.selectOption("video", "auto");
+        }
+        else if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is JSUMPSource) {
 
             val videoTracks =
                 _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
@@ -2461,6 +2615,10 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
+        val castUmpSource = if (_isCasting)
+            (_lastVideoSource as? JSUMPSource)
+        else null;
+
         val doDedup = Settings.instance.playback.simplifySources;
 
         val allLanguages = videoSources?.map { it.language }?.distinct() ?: listOf();
@@ -2594,13 +2752,33 @@ class VideoDetailView : ConstraintLayout {
                                 call = { handleSelectSubtitleTrack(it) })
                         }.toList().toTypedArray())
             else null,
-            if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
+            if (castUmpSource != null) SlideUpMenuGroup(
+                this.context, context.getString(R.string.stream_video), "video", (listOf(
+                    SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto",
+                        call = { handleSelectUmpCastQuality(-1) })
+                ) + (castUmpSource.videoFormats
+                    .filter { it.height > 0 }
+                    .map { it.height }
+                    .distinct()
+                    .sortedDescending()
+                    .mapNotNull { height -> StateCasting.instance.previewCastVideoFormat(castUmpSource, height) }
+                    .distinct()
+                    .map { format ->
+                        SlideUpMenuItem(this.context, R.drawable.ic_movie, "${format.height}p",
+                            "${format.width}x${format.height}",
+                            SabrCodecs.codecName(format.codecs),
+                            tag = format, call = { handleSelectUmpCastQuality(format.height) });
+                    }))
+            )
+            else if (liveStreamVideoFormats?.isEmpty() == false) SlideUpMenuGroup(
                 this.context, context.getString(R.string.stream_video), "video", (listOf(
                     SlideUpMenuItem(this.context, R.drawable.ic_movie, "Auto", tag = "auto", call = { _player.selectVideoTrack(-1) })
                 ) + (liveStreamVideoFormats.map {
                     SlideUpMenuItem(this.context, R.drawable.ic_movie, it.label
                         ?: it.containerMimeType
-                        ?: it.bitrate.toString(), "${it.width}x${it.height}", tag = it, call = { _player.selectVideoTrack(it.height) });
+                        ?: it.bitrate.toString(), "${it.width}x${it.height}",
+                        it.codecs?.let { c -> SabrCodecs.codecName(c) } ?: "",
+                        tag = it, call = { _player.selectVideoTrack(it.height) });
                 }))
             )
             else null,
@@ -2610,8 +2788,9 @@ class VideoDetailView : ConstraintLayout {
                         .map {
                             SlideUpMenuItem(this.context,
                                 R.drawable.ic_music,
-                                "${it.label ?: it.containerMimeType} ${it.bitrate}",
+                                it.label ?: it.containerMimeType ?: it.bitrate.toString(),
                                 "",
+                                it.codecs?.let { c -> SabrCodecs.codecName(c) } ?: "",
                                 tag = it,
                                 call = { _player.selectAudioTrack(it.bitrate) });
                         }.toList().toTypedArray())
@@ -2904,6 +3083,24 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
+    @Volatile private var _pendingCastDisconnect = false;
+
+    private fun applyCastDisconnect(playWhenReady: Boolean) {
+        _pendingCastDisconnect = false;
+        if (!_isCasting) return;
+        video?.let { StatePlayer.instance.startOrUpdateMediaSession(context, it) };
+        val resumeMs = if (video?.isLive == true) 0L else lastPositionMilliseconds;
+        loadCurrentVideo(resumeMs, playWhenReady = playWhenReady);
+        updatePillButtonVisibilities();
+        setCastEnabled(false);
+    }
+
+    private fun resetCastState() {
+        _castVideoHeight = -1;
+        _castReloadCount = 0;
+        _pendingCastDisconnect = false;
+    }
+
     private fun setCastEnabled(isCasting: Boolean) {
         Logger.i(TAG, "setCastEnabled(isCasting=$isCasting)")
 
@@ -2914,7 +3111,7 @@ class VideoDetailView : ConstraintLayout {
 
         if(isCasting) {
             setFullscreen(false);
-            _player.stop();
+            _player.stopAndReleaseSabrSession();
             _player.hideControls(false);
             _cast.visibility = View.VISIBLE;
         } else {
@@ -3631,6 +3828,7 @@ class VideoDetailView : ConstraintLayout {
 
 
     companion object {
+        private const val CAST_MAX_RELOADS = 3;
         const val TAG_ADD = "add";
         const val TAG_BACKGROUND = "background";
         const val TAG_DOWNLOAD = "download";

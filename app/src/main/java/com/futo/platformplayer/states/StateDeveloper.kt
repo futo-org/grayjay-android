@@ -138,10 +138,17 @@ class StateDeveloper {
         if(_server != null)
             return;
         UIDialogs.toast("DevServer Booted");
-        _server = ManagedHttpServer(11337).apply {
+        val server = ManagedHttpServer(11337).apply {
             this.addBridgeHandlers(DeveloperEndpoints(StateApp.instance.context), "dev");
         };
-        _server?.start();
+        try {
+            server.start();
+        } catch (ex: Throwable) {
+            Logger.e("StateDeveloper", "Failed to start the dev server", ex);
+            UIDialogs.toast("DevServer failed to start: ${ex.message}");
+            return;
+        }
+        _server = server;
     }
     fun stopServer() {
         _server?.stop();

@@ -28,6 +28,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
@@ -365,7 +366,7 @@ class ShortView : FrameLayout {
         player.onPlaybackStateChanged.subscribe {
             val videoSource = _lastVideoSource
 
-            if (videoSource is IDashManifestSource || videoSource is IHLSManifestSource) {
+            if (videoSource is IDashManifestSource || videoSource is IHLSManifestSource || videoSource is JSUMPSource) {
                 val videoTracks =
                     player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
                 val audioTracks =
@@ -572,7 +573,7 @@ class ShortView : FrameLayout {
         overlayQualitySelector?.selectOption("audio", _lastAudioSource)
         overlayQualitySelector?.selectOption("subtitles", _lastSubtitleSource)
 
-        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource) {
+        if (_lastVideoSource is IDashManifestSource || _lastVideoSource is IHLSManifestSource || _lastVideoSource is JSUMPSource) {
             val videoTracks =
                 player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
 

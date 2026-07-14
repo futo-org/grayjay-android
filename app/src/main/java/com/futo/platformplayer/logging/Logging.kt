@@ -63,12 +63,13 @@ class Logging {
                 .build()
 
             val client = OkHttpClient()
-            val response: Response = client.newCall(request).execute()
-            return if (response.isSuccessful) {
-                response.body?.string();
-            } else {
-                Logger.e("Failed to submit log.") { "Failed to submit logs (${response.code}): ${response.body?.string()}" };
-                null;
+            client.newCall(request).execute().use { response ->
+                return if (response.isSuccessful) {
+                    response.body?.string();
+                } else {
+                    Logger.e("Failed to submit log.") { "Failed to submit logs (${response.code}): ${response.body?.string()}" };
+                    null;
+                }
             }
         }
     }

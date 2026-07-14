@@ -126,6 +126,7 @@ class StatePlugins {
             Logger.i(TAG, "Downloading source config '$sourceUrl'.");
 
             if (!response.isOk || response.body == null) {
+                response.close();
                 return@withContext null;
             }
 
@@ -337,8 +338,10 @@ class StatePlugins {
             val config: SourcePluginConfig;
             try {
                 val configResp = client.get(sourceUrl);
-                if(!configResp.isOk)
+                if(!configResp.isOk) {
+                    configResp.close();
                     throw IllegalStateException("Failed request with ${configResp.code}");
+                }
                 val configJson = configResp.body?.string();
                 if(configJson.isNullOrEmpty())
                     throw IllegalStateException("No response");
@@ -370,8 +373,10 @@ class StatePlugins {
             val script: String?
             try {
                 val scriptResp = client.get(config.absoluteScriptUrl);
-                if (!scriptResp.isOk)
+                if (!scriptResp.isOk) {
+                    scriptResp.close();
                     throw IllegalStateException("script not available [${scriptResp.code}]");
+                }
                 script = scriptResp.body?.string();
                 if (script.isNullOrEmpty())
                     throw IllegalStateException("script empty");
@@ -420,6 +425,7 @@ class StatePlugins {
                             val iconResp = client.get(absIconUrl);
                             if(iconResp.isOk)
                                 return@let iconResp.body?.byteStream()?.use { it.readBytes() };
+                            iconResp.close();
                             return@let null;
                         }
 
@@ -516,6 +522,7 @@ class StatePlugins {
                         val iconResp = client.get(absIconUrl);
                         if (iconResp.isOk)
                             return@let iconResp.body?.byteStream()?.use { it.readBytes() };
+                        iconResp.close();
                         return@let null;
                     }
                     withContext(Dispatchers.Main) {

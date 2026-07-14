@@ -52,6 +52,14 @@ open class ManagedHttpClient {
         }
     }
 
+    fun setCallTimeout(timeoutMs: Long) {
+        rebuildClient { it.callTimeout(Duration.ofMillis(timeoutMs)) }
+    }
+
+    fun setReadTimeout(timeoutMs: Long) {
+        rebuildClient { it.readTimeout(Duration.ofMillis(timeoutMs)) }
+    }
+
     private val trustAllCerts = arrayOf<TrustManager>(
       object: X509TrustManager {
           override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) { }
@@ -82,20 +90,24 @@ open class ManagedHttpClient {
             trustAllCertificates(builder);
         else if(FragmentedStorage.isInitialized && Settings.instance.browsing.useDownloadedCABundle)
             applyMergedTrustStore(builder);
-        client = builder.addNetworkInterceptor { chain ->
-            val request = beforeRequest(chain.request());
-            val response = afterRequest(chain.proceed(request));
-            return@addNetworkInterceptor response;
-        }.build();
+        client = buildClientFrom(builder);
     }
 
     fun rebuildClient(modify: (OkHttpClient.Builder) -> OkHttpClient.Builder) {
         _builderTemplate = modify(_builderTemplate);
-        client = _builderTemplate.addNetworkInterceptor { chain ->
-            val request = beforeRequest(chain.request());
-            val response = afterRequest(chain.proceed(request));
-            return@addNetworkInterceptor response;
-        }.build();
+        client = buildClientFrom(_builderTemplate);
+    }
+
+    private fun buildClientFrom(builder: OkHttpClient.Builder): OkHttpClient =
+        builder.build().newBuilder()
+            .addNetworkInterceptor { chain ->
+                val request = beforeRequest(chain.request());
+                return@addNetworkInterceptor afterRequest(chain.proceed(request));
+            }.build();
+
+    fun close() {
+        try { client.dispatcher.executorService.shutdown(); } catch(_: Throwable) {}
+        try { client.connectionPool.evictAll(); } catch(_: Throwable) {}
     }
 
     open fun clone(): ManagedHttpClient {
@@ -114,6 +126,7 @@ open class ManagedHttpClient {
         ensureNotMainThread()
         try {
             val result = head(url, HashMap(), modifier);
+            result.body?.close();
             if(result.isOk)
                 return result.getHeadersFlat();
             else
@@ -156,6 +169,7 @@ open class ManagedHttpClient {
             }
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
                 super.onFailure(webSocket, t, response);
+                try { response?.close() } catch (_: Throwable) {}
                 listener.failure(t);
             }
         });
@@ -221,13 +235,18 @@ open class ManagedHttpClient {
             val call = client.newCall(requestBuilder.build());
             request.onCallCreated.emit(call);
             response = call.execute()
-            resp = Response(
-                response.code,
-                response.request.url.toString(),
-                response.message,
-                response.headers.toMultimap(),
-                response.body
-            )
+            try {
+                resp = Response(
+                    response.code,
+                    response.request.url.toString(),
+                    response.message,
+                    response.headers.toMultimap(),
+                    response.body
+                )
+            } catch (ex: Throwable) {
+                try { response.close() } catch (_: Throwable) {}
+                throw ex
+            }
         }
         if(true)
             Logger.v(TAG, "HTTP Response [${request.method}] ${request.url} - [${time}ms]");
@@ -270,7 +289,7 @@ open class ManagedHttpClient {
     }
 
     //TODO: Wrap ResponseBody into a non-library class?
-    class Response
+    class Response : java.io.Closeable
     {
         val code : Int;
         val url : String;
@@ -279,6 +298,10 @@ open class ManagedHttpClient {
         val body : ResponseBody?;
 
         val isOk : Boolean get() = code >= 200 && code < 300;
+
+        override fun close() {
+            try { body?.close() } catch (_: Throwable) {}
+        }
 
         constructor(code : Int, url : String, msg : String, headers : Map<String, List<String>>, body : ResponseBody?) {
             this.code = code;

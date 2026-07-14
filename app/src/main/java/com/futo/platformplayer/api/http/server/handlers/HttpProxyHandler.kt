@@ -75,9 +75,19 @@ class HttpProxyHandler(method: String, path: String, val targetUrl: String, priv
         };
 
         Logger.i(TAG, "Proxied Response [${resp.code}]");
-        val headersFiltered = HttpHeaders(resp.getHeadersFlat().filter { !_ignoreResponseHeaders.contains(it.key.lowercase()) });
+        val hopByHop = setOf("transfer-encoding", "connection", "keep-alive");
+        val headersFiltered = HttpHeaders(resp.getHeadersFlat().filter {
+            !_ignoreResponseHeaders.contains(it.key.lowercase()) && !hopByHop.contains(it.key.lowercase())
+        });
         for(newHeader in headers)
             headersFiltered.put(newHeader.key, newHeader.value);
+
+        val bodyLength = resp.body?.contentLength() ?: -1L;
+        if (bodyLength >= 0) headersFiltered.put("content-length", bodyLength.toString());
+        else if (resp.body != null) {
+            headersFiltered.put("connection", "close");
+            context.keepAlive = false;
+        }
 
         if(resp.body == null)
             context.respondCode(resp.code, headersFiltered);

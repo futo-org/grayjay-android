@@ -25,63 +25,101 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
 
     var active : Boolean = false
         private set;
-    private var _stopCount = 0;
+    @Volatile private var _stopCount = 0;
+    @Volatile private var _serverSocket: ServerSocket? = null;
     var port = 0
             private set;
 
     private val _handlers = hashMapOf<String, HashMap<String, HttpHandler>>()
     private val _headHandlers = hashMapOf<String, HttpHandler>()
-    private var _workerPool: ExecutorService? = null;
+    @Volatile private var _workerPool: ExecutorService? = null;
+    private val _sockets = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<Socket, Boolean>());
 
     @Synchronized
     fun start() {
         if (active)
             return;
+
+        val socket = ServerSocket(_requestedPort);
+        _serverSocket = socket;
+        port = socket.localPort;
         active = true;
         _workerPool = Executors.newCachedThreadPool();
 
+        val stopCount = _stopCount;
         Thread {
-            try {
-                val socket = ServerSocket(_requestedPort);
-                port = socket.localPort;
+            var failures = 0;
+            while (_stopCount == stopCount) {
+                if(_logVerbose)
+                    Logger.i(TAG, "Waiting for connection...");
 
-                val stopCount = _stopCount;
-                while (_stopCount == stopCount) {
-                    if(_logVerbose)
-                        Logger.i(TAG, "Waiting for connection...");
-                    val s = socket.accept() ?: continue;
+                val s = try {
+                    socket.accept()
+                } catch (e: Throwable) {
+                    if (_stopCount != stopCount || socket.isClosed) return@Thread;
 
-                    try {
-                        handleClientRequest(s);
+                    failures++;
+                    Logger.e(TAG, "Failed to accept socket ($failures/$MAX_ACCEPT_FAILURES).", e);
+                    if (failures >= MAX_ACCEPT_FAILURES) {
+                        Logger.e(TAG, "Giving up on the HTTP server accept loop.");
+                        stopGeneration(stopCount);
+                        return@Thread;
                     }
-                    catch(ex : Exception) {
-                        Logger.e(TAG, "Client disconnected due to: " + ex.message, ex);
-                    }
+                    try { Thread.sleep(ACCEPT_RETRY_DELAY_MS); } catch (_: InterruptedException) { return@Thread; }
+                    continue;
+                } ?: continue;
+                failures = 0;
+
+                try {
+                    handleClientRequest(s);
                 }
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to accept socket.", e);
-                stop();
+                catch(ex : Exception) {
+                    Logger.e(TAG, "Client disconnected due to: " + ex.message, ex);
+                    try { s.close(); } catch (_: Throwable) {}
+                }
             }
         }.start();
 
         Logger.i(TAG, "Started HTTP Server ${port}. \n" + getAddresses().map { it.hostAddress }.joinToString("\n"));
     }
+
+    @Synchronized
+    private fun stopGeneration(stopCount: Int) {
+        if (_stopCount != stopCount) return;
+        stop();
+    }
+
     @Synchronized
     fun stop() {
         _stopCount++;
         active = false;
-        _workerPool?.shutdown();
+        try { _serverSocket?.close(); } catch (_: Throwable) {}
+        _serverSocket = null;
+
+        for (socket in _sockets) try { socket.close(); } catch (_: Throwable) {}
+        _sockets.clear();
+
+        _workerPool?.shutdownNow();
         _workerPool = null;
         port = 0;
     }
 
     private fun handleClientRequest(socket: Socket) {
-        _workerPool?.submit {
-            val requestStream = BufferedInputStream(socket.getInputStream());
-            val responseStream = socket.getOutputStream();
+        val pool = _workerPool;
+        if (pool == null) {
+            try { socket.close(); } catch (_: Throwable) {}
+            return;
+        }
+
+        _sockets.add(socket);
+        try {
+            pool.submit {
+            try { socket.soTimeout = KEEPALIVE_TIMEOUT_MS; } catch (_: Throwable) {}
 
             val requestId = UUID.randomUUID().toString().substring(0, 5);
             try {
+                val requestStream = BufferedInputStream(socket.getInputStream());
+                val responseStream = socket.getOutputStream();
                 keepAliveLoop(requestStream, responseStream, requestId) { req ->
                     req.use { httpContext ->
                         if(!httpContext.path.startsWith("/plugin/"))
@@ -104,14 +142,34 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
                 if(_logVerbose)
                     Logger.i(TAG, "[${requestId}] Request ended due to empty request: ${emptyRequest.message}");
             }
+            catch(timeout: java.net.SocketTimeoutException) {
+                if(_logVerbose)
+                    Logger.i(TAG, "[${requestId}] Idle keep-alive connection timed out");
+            }
+            catch(closed: HttpContext.ClientClosedException) {
+                if(_logVerbose)
+                    Logger.i(TAG, "[${requestId}] The client closed the connection");
+            }
+            catch(broken: java.net.SocketException) {
+                if(broken.message?.contains("Broken pipe", true) != true &&
+                   broken.message?.contains("reset", true) != true)
+                    Logger.e(TAG, "Failed to handle client request.", broken);
+                else if(_logVerbose)
+                    Logger.i(TAG, "[${requestId}] The client closed the connection while we were responding");
+            }
             catch (e: Throwable) {
                 Logger.e(TAG, "Failed to handle client request.", e);
             }
             finally {
-                requestStream.close();
-                responseStream.close();
+                _sockets.remove(socket);
+                try { socket.close(); } catch (_: Throwable) {}
             }
-        };
+            };
+        } catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to submit client request.", ex);
+            _sockets.remove(socket);
+            try { socket.close(); } catch (_: Throwable) {}
+        }
     }
 
     fun getHandler(method: String, path: String) : HttpHandler? {
@@ -142,20 +200,20 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
         return handler;
     }
 
-    fun addHandlerWithAllowAllOptions(handler: HttpHandler, withHEAD: Boolean = false) : HttpHandler {
+    fun addHandlerWithAllowAllOptions(handler: HttpHandler, withHEAD: Boolean = false, tag: String? = null) : HttpHandler {
         val allowedMethods = arrayListOf(handler.method, "OPTIONS")
         if (withHEAD) {
             allowedMethods.add("HEAD")
         }
 
-        val tag = handler.tag
+        val tag = tag ?: handler.tag
         if (tag != null) {
             addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods).withTag(tag))
         } else {
             addHandler(HttpOptionsAllowHandler(handler.path, allowedMethods))
         }
 
-        return addHandler(handler, withHEAD)
+        return addHandler(handler, withHEAD).let { if (tag != null) it.withTag(tag) else it }
     }
 
     fun removeHandler(method: String, path: String) {
@@ -169,24 +227,35 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
     }
     fun removeAllHandlers(tag: String? = null) {
         synchronized(_handlers) {
-            if(tag == null)
+            if(tag == null) {
                 _handlers.clear();
-            else {
-                for (pair in _handlers) {
-                    val toRemove = ArrayList<String>()
-                    for (innerPair in pair.value) {
-                        if (innerPair.value.tag == tag) {
-                            toRemove.add(innerPair.key)
+                _headHandlers.clear();
+                return;
+            }
 
-                            if (pair.key == "HEAD" || innerPair.value.allowHEAD) {
-                                _headHandlers.remove(innerPair.key)
-                            }
+            val removedPaths = HashSet<String>()
+            for (pair in _handlers) {
+                val toRemove = ArrayList<String>()
+                for (innerPair in pair.value) {
+                    if (innerPair.value.tag == tag) {
+                        toRemove.add(innerPair.key)
+
+                        if (pair.key == "HEAD" || innerPair.value.allowHEAD) {
+                            _headHandlers.remove(innerPair.key)
                         }
                     }
-
-                    for (x in toRemove)
-                        pair.value.remove(x)
                 }
+
+                for (x in toRemove) {
+                    pair.value.remove(x)
+                    removedPaths.add(x)
+                }
+            }
+
+            _handlers["OPTIONS"]?.let { options ->
+                for (path in removedPaths)
+                    if (_handlers.none { it.key != "OPTIONS" && it.value.containsKey(path) })
+                        options.remove(path)
             }
         }
     }
@@ -238,26 +307,20 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
     private fun keepAliveLoop(requestReader: BufferedInputStream, responseStream: OutputStream, requestId: String, handler: (HttpContext)->Unit) {
         val stopCount = _stopCount;
         var keepAlive: Boolean;
-        var requestsMax = 0;
-        var requestsTotal = 0;
         do {
             val req = HttpContext(requestReader, responseStream, requestId);
 
             //Handle Request
             handler(req);
 
-            requestsTotal++;
             if(req.keepAlive) {
                 keepAlive = true;
-                if(req.keepAliveMax > 0)
-                    requestsMax = req.keepAliveMax;
-
                 req.skipBody();
             } else {
                 keepAlive = false;
             }
         }
-        while (keepAlive && (requestsMax == 0 || requestsTotal < requestsMax) && _stopCount == stopCount);
+        while (keepAlive && _stopCount == stopCount);
     }
 
     fun getAddressByIP(addresses: List<InetAddress>) : String = getAddress(addresses.map { it.address }.toList());
@@ -305,5 +368,8 @@ class ManagedHttpServer(private val _requestedPort: Int = 0) {
 
     companion object {
         val TAG = "ManagedHttpServer";
+        private const val KEEPALIVE_TIMEOUT_MS = 60_000;
+        private const val MAX_ACCEPT_FAILURES = 20;
+        private const val ACCEPT_RETRY_DELAY_MS = 200L;
     }
 }

@@ -263,10 +263,12 @@ class CastingDevice(val device: RsCastingDevice) {
     var speed: Double = 0.0
     var isPlaying: Boolean = false
 
+    val hasReportedTime: Boolean get() = lastTimeChangeTime_ms > 0
+
     val expectedCurrentTime: Double
         get() {
             val diff =
-                if (isPlaying) ((System.currentTimeMillis() - lastTimeChangeTime_ms).toDouble() / 1000.0) else 0.0;
+                if (isPlaying && lastTimeChangeTime_ms > 0) ((System.currentTimeMillis() - lastTimeChangeTime_ms).toDouble() / 1000.0) else 0.0;
             return time + diff
         }
 
@@ -307,7 +309,10 @@ class CastingDevice(val device: RsCastingDevice) {
                 }
             }
         }
-        eventHandler.onPlayChanged.subscribe { isPlaying = it }
+        eventHandler.onPlayChanged.subscribe {
+            if (isPlaying != it && lastTimeChangeTime_ms > 0) lastTimeChangeTime_ms = System.currentTimeMillis()
+            isPlaying = it
+        }
         eventHandler.onTimeChanged.subscribe {
             lastTimeChangeTime_ms = System.currentTimeMillis()
             time = it

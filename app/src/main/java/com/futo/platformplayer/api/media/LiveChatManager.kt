@@ -196,23 +196,25 @@ class LiveChatManager {
         private val _download_drawable =
             BatchedTaskHandler<String, Drawable?>(StateApp.instance.scope, { url ->
                 val req = _client.get(url);
-                if (req.isOk && req.body != null) {
-                    val contentType = req.body.contentType();
-                    return@BatchedTaskHandler when (contentType?.toString()) {
-                        //TODO: Get scaling to work with drawable (no bitmap conversion)
-                        "image/svg+xml" -> {
-                            val bitmap = PictureDrawable(SVG.getFromString(req.body.string()).renderToPicture(150, 150)).toBitmap(150,150,null);
-                            return@BatchedTaskHandler BitmapDrawable(bitmap)
-                        };
-                        //"image/svg+xml" -> PictureDrawable(SVG.getFromString(req.body.string()).renderToPicture(15, 15));
-                        else -> {
-                            val bytes = req.body.bytes();
-                            BitmapDrawable(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+                try {
+                    if (req.isOk && req.body != null) {
+                        val contentType = req.body.contentType();
+                        return@BatchedTaskHandler when (contentType?.toString()) {
+                            "image/svg+xml" -> {
+                                val bitmap = PictureDrawable(SVG.getFromString(req.body.string()).renderToPicture(150, 150)).toBitmap(150,150,null);
+                                return@BatchedTaskHandler BitmapDrawable(bitmap)
+                            };
+                            else -> {
+                                val bytes = req.body.bytes();
+                                BitmapDrawable(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+                            }
                         }
+                    } else {
+                        Logger.w(TAG, "Failed to request emoji (${req.code}) [${req.url}]");
+                        return@BatchedTaskHandler null;
                     }
-                } else {
-                    Logger.w(TAG, "Failed to request emoji (${req.code}) [${req.url}]");
-                    return@BatchedTaskHandler null;
+                } finally {
+                    try { req.body?.close() } catch (_: Throwable) {}
                 }
             }, { url ->
                 synchronized(_cache_lock) {

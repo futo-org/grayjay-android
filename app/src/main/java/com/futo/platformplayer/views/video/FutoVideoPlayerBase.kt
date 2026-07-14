@@ -63,6 +63,9 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSAudioUrlR
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestMergingRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.sabr.media3.SabrMediaSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
@@ -82,6 +85,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.CreatorSearchResultsFr
 import com.futo.platformplayer.getNowDiffMiliseconds
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.video.PlayerManager
@@ -109,7 +113,26 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     var lastAudioSource: IAudioSource? = null
         private set;
 
-    private var _lastVideoMediaSource: MediaSource? = null;
+    @OptIn(UnstableApi::class)
+    private var _lastVideoMediaSource: MediaSource? = null
+        set(value) {
+            if (field === value) return;
+            (field as? SabrMediaSource)?.let { synchronized(_retiredSources) { _retiredSources.add(it) } };
+            field = value;
+        }
+
+    @OptIn(UnstableApi::class)
+    private val _retiredSources = mutableListOf<SabrMediaSource>();
+
+    @OptIn(UnstableApi::class)
+    private fun releaseRetiredSources() {
+        val retired = synchronized(_retiredSources) {
+            val copy = _retiredSources.toList();
+            _retiredSources.clear();
+            copy;
+        }
+        for (source in retired) source.releaseSession();
+    }
     private var _lastGeneratedDash: String? = null;
     private var _lastAudioMediaSource: MediaSource? = null;
     private var _lastSubtitleMediaSource: MediaSource? = null;
@@ -398,8 +421,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return withContext(Dispatchers.Main) {
             if (didSet)
                 return@withContext loadSelectedSources(play, resume)
-            else
-                return@withContext true
+            releaseRetiredSources()
+            return@withContext true
         }
     }
     suspend fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
@@ -412,8 +435,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         return withContext(Dispatchers.Main) {
             if (didSet)
                 return@withContext loadSelectedSources(play, resume);
-            else
-                return@withContext true;
+            releaseRetiredSources();
+            return@withContext true;
         }
     }
     suspend fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
@@ -485,6 +508,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is IDashManifestWidevineSource -> { swapVideoSourceDashWidevine(videoSource); true }
             is IDashManifestSource -> { swapVideoSourceDash(videoSource); true;}
             is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource, play, resume, swapId);
+            is JSUMPSource -> { swapVideoSourceUMP(videoSource); true; }
             is IHLSManifestSource -> { swapVideoSourceHLS(videoSource); true; }
             is IVideoUrlWidevineSource -> { swapVideoSourceUrlWidevine(videoSource); true; }
             is IVideoUrlSource -> { swapVideoSourceUrl(videoSource); true; }
@@ -724,6 +748,49 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             .createMediaSource(MediaItem.fromUri(videoSource.url));
     }
 
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceUMP(videoSource: JSUMPSource) {
+        Logger.i(TAG, "Loading VideoSource [UMP]");
+        val spec = videoSource.toStreamSpec({ ManagedHttpClient().apply {
+            user_agent = DEFAULT_USER_AGENT;
+            setCallTimeout(SABR_CALL_TIMEOUT_MS);
+            setReadTimeout(SABR_READ_TIMEOUT_MS);
+        } }, ownsClient = true);
+        val mediaItem = MediaItem.fromUri("sabr://${videoSource.videoId}");
+
+        val display = context.resources.displayMetrics;
+
+        val bandwidthBytesPerSec = androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
+            .getSingletonInstance(context).bitrateEstimate / 8;
+
+        _lastVideoMediaSource = SabrMediaSource.Factory(spec)
+            .setInitialStateProvider { StateCasting.instance.takeHandBackState(videoSource.videoId) }
+            .setBackoffListener { delayMs: Long? -> post { onSabrBackoff(delayMs) } }
+            .setViewport(maxOf(display.widthPixels, display.heightPixels),
+                minOf(display.widthPixels, display.heightPixels))
+            .setInitialBandwidth(bandwidthBytesPerSec)
+            .createMediaSource(mediaItem);
+        _lastAudioMediaSource = null;
+    }
+
+    @OptIn(UnstableApi::class)
+    fun exportSabrState(): com.futo.platformplayer.sabr.SabrSession.Transferable? =
+        (_lastVideoMediaSource as? SabrMediaSource)?.exportTransferable();
+
+    @OptIn(UnstableApi::class)
+    fun stopAndReleaseSabrSession() {
+        stop();
+        (_lastVideoMediaSource as? SabrMediaSource)?.releaseSession();
+    }
+
+    private fun onSabrBackoff(delayMs: Long?) {
+        if (lastVideoSource !is JSUMPSource) return;
+        if (delayMs != null && delayMs >= SABR_BACKOFF_UI_THRESHOLD_MS)
+            setLoading(delayMs.toInt());
+        else if (delayMs == null)
+            setLoading(false);
+    }
+
 
     //Audio loads
     @OptIn(UnstableApi::class)
@@ -932,11 +999,14 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         beforeSourceChanged();
 
         val source = mergeMediaSources(sourceVideo, sourceAudio, sourceSubs);
-        if(source == null)
+        if(source == null) {
+            releaseRetiredSources();
             return false;
+        }
         _mediaSource = source;
 
         reloadMediaSource(play, resume);
+        releaseRetiredSources();
         return true;
     }
 
@@ -986,6 +1056,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         _swapIdVideo.incrementAndGet()
         _swapIdAudio.incrementAndGet()
         _lastVideoMediaSource = null;
+        releaseRetiredSources();
         _lastAudioMediaSource = null;
         _lastSubtitleMediaSource = null;
         _mediaSource = null;
@@ -1081,6 +1152,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     companion object {
         val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";
+        private const val SABR_BACKOFF_UI_THRESHOLD_MS = 1500L;
+        const val SABR_CALL_TIMEOUT_MS = 0L;
+        const val SABR_READ_TIMEOUT_MS = 30000L;
 
         val PREFERED_VIDEO_CONTAINERS_MP4Pref = arrayOf("video/mp4", "video/webm", "video/3gpp");
         val PREFERED_VIDEO_CONTAINERS_WEBMPref = arrayOf("video/webm", "video/mp4", "video/3gpp");
