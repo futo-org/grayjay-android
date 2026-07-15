@@ -145,6 +145,7 @@ class VideoDetailFragment() : MainFragment() {
             _viewDetail?.setFullscreen(true)
         }
 
+        _viewDetail?.updateResumeClickability(state == State.MAXIMIZED)
         updateOrientation()
     }
 

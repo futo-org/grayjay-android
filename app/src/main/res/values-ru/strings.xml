@@ -607,6 +607,7 @@
     <string name="last_week">На прошлой неделе</string>
     <string name="last_year">В прошлом году</string>
     <string name="all_time">За все время</string>
+    <string name="resume_at">Продолжить с %1$s</string>
     <string-array name="home_screen_array">
         <item>Рекомендации</item>
         <item>Подписки</item>
