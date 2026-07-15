@@ -1177,6 +1177,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.i(TAG, "onRestart");
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState);
+        outState.remove(FRAGMENTS_TAG);
+    }
+
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
 
@@ -1513,6 +1518,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     companion object {
         private val TAG = "MainActivity"
+        private const val FRAGMENTS_TAG = "android:support:fragments"
 
         fun getTabIntent(context: Context, tab: String): Intent {
             val sourcesIntent = Intent(context, MainActivity::class.java);
