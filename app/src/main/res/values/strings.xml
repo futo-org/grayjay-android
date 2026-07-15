@@ -289,6 +289,7 @@
     <string name="stripe_is_a_secure_online_payment_service_that_accepts_major_credit_cards_debit_cards_and_various_localized_payment_methods">Stripe is a secure online payment service that accepts major credit cards, debit cards, and various localized payment methods.</string>
     <string name="add_a_comment">Add a comment…</string>
     <string name="dismiss">Dismiss</string>
+    <string name="dismiss_all">Dismiss all</string>
     <string name="scan_a_qr_code_to_install">Scan a QR code to install</string>
     <string name="toggle_fullscreen">Toggle full-screen</string>
     <string name="by">By</string>

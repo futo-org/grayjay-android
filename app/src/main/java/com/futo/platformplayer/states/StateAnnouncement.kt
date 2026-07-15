@@ -264,6 +264,46 @@ class StateAnnouncement {
         onAnnouncementChanged?.emit();
     }
 
+    fun closeAllAnnouncements(category: String? = null) {
+        val cancelActions = mutableListOf<Pair<(announcement: Announcement)->Unit, Announcement>>();
+        synchronized(_lock) {
+            val visible = getVisibleAnnouncements(category);
+            for (item in visible) {
+                if (item.announceType == AnnouncementType.ONGOING)
+                    continue;
+                when (item.announceType) {
+                    AnnouncementType.DELETABLE -> {
+                        if (_announcementsStore.hasItem { it.id == item.id } && !_announcementsNever.contains(item.id))
+                            _announcementsNever.add(item.id);
+                        if (_sessionAnnouncements.containsKey(item.id) && !_sessionAnnouncementsNever.contains(item.id))
+                            _sessionAnnouncementsNever.add(item.id);
+                    }
+                    AnnouncementType.SESSION -> {
+                        val storeItem = _announcementsStore.findItem { it.id == item.id };
+                        if (storeItem != null)
+                            _announcementsStore.delete(storeItem);
+                        if (_sessionAnnouncements.remove(item.id) != null && item is SessionAnnouncement && item.cancelActionId != null) {
+                            val cancelAction = _sessionActions[item.cancelActionId];
+                            if (cancelAction != null)
+                                cancelActions.add(Pair(cancelAction, item));
+                        }
+                    }
+                    else -> {
+                        _announcementsClosed.add(item.id);
+                    }
+                }
+            }
+        }
+
+        _sessionAnnouncementsNever.save();
+        _announcementsNever.save();
+
+        for (cancel in cancelActions)
+            cancel.first.invoke(cancel.second);
+
+        onAnnouncementChanged.emit();
+    }
+
     fun deleteAllAnnouncements() {
         synchronized(_lock) {
             val items = _announcementsStore.getItems().toList();

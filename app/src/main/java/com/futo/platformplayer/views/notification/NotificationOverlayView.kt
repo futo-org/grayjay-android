@@ -33,6 +33,7 @@ class NotificationOverlayView: ConstraintLayout {
 
     lateinit var recycler: RecyclerView;
     lateinit var emptyView: NoResultsView;
+    private val _buttonDismissAll: TextView;
     var adapterNotifications: AnyAdapterView<Announcement, ViewHolder>;
 
     constructor(context: Context) : super(context) {
@@ -40,27 +41,31 @@ class NotificationOverlayView: ConstraintLayout {
 
         recycler = findViewById<RecyclerView>(R.id.container_notifications);
         emptyView = findViewById<NoResultsView>(R.id.no_results);
+        _buttonDismissAll = findViewById<TextView>(R.id.button_dismiss_all);
         adapterNotifications = recycler.asAny<Announcement, ViewHolder>(RecyclerView.VERTICAL, false, {
 
         });
         emptyView.setText("Nothing to see here", "You don't have any notifications", R.drawable.ic_notifications)
+
+        _buttonDismissAll.setOnClickListener {
+            StateAnnouncement.instance.closeAllAnnouncements();
+        }
+    }
+
+    private fun refresh() {
+        val announcements = StateAnnouncement.instance.getVisibleAnnouncements();
+        adapterNotifications.adapter.setData(announcements);
+        emptyView.isVisible = announcements.isEmpty();
+        _buttonDismissAll.isVisible = announcements.any { it.announceType != AnnouncementType.ONGOING };
     }
 
     fun onShown(parameter: Any?) {
-        val announcements = StateAnnouncement.instance.getVisibleAnnouncements();
-        adapterNotifications.adapter.setData(announcements);
-
-        if(announcements.any())
-            emptyView.isVisible = false;
-        else
-            emptyView.isVisible = true;
+        refresh();
 
         StateAnnouncement.instance.onAnnouncementChanged.subscribe(this) {
             StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
                 Logger.i("NotificationOverlayView", "Announcements Changed");
-                val adapter = adapterNotifications;
-                val announcements = StateAnnouncement.instance.getVisibleAnnouncements();
-                adapter.adapter.setData(announcements);
+                refresh();
             }
         }
     }
