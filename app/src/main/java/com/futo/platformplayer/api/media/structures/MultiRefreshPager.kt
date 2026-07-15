@@ -40,14 +40,21 @@ abstract class MultiRefreshPager<T>: IRefreshPager<T>, IPager<T> {
                 synchronized(_pending) {
                     _pending.remove(pendingPager);
                 }
-                if(error != null) {
-                    onPagerError.emit(error);
-                    val replacing = _placeHolderPagersPaired[pendingPager];
-                    if(replacing != null)
-                        updatePager(null, replacing, error);
+                try {
+                    if(error != null) {
+                        onPagerError.emit(error);
+                        val replacing = _placeHolderPagersPaired[pendingPager];
+                        if(replacing != null)
+                            updatePager(null, replacing, error);
+                    }
+                    else
+                        updatePager(pendingPager.getCompleted());
+                } catch(interrupt: InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    Logger.i("RefreshMultiDistributionContentPager", "Pager refresh interrupted", interrupt);
+                } catch(ex: Throwable) {
+                    Logger.e("RefreshMultiDistributionContentPager", "Failed to update pager on completion", ex);
                 }
-                else
-                    updatePager(pendingPager.getCompleted());
             }
         synchronized(_pagersReusable) {
             _currentPager = recreatePager(getCurrentSubPagers());
