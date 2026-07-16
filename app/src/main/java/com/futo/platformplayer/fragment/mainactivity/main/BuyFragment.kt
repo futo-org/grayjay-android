@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.futo.futopay.PaymentConfigurations
 import com.futo.futopay.PaymentManager
@@ -24,6 +27,7 @@ import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuTextInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.max
 
 class BuyFragment : MainFragment() {
     override val isMainView : Boolean = true;
@@ -64,6 +68,15 @@ class BuyFragment : MainFragment() {
             _buttonPaid = findViewById(R.id.button_paid);
             _overlayLoading = findViewById(R.id.overlay_loading);
             _overlayPaying = findViewById(R.id.overlay_paying);
+
+            ViewCompat.setOnApplyWindowInsetsListener(_overlayPaying) { v, insets ->
+                val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+                val location = IntArray(2);
+                v.getLocationInWindow(location);
+                val belowOverlay = v.rootView.height - (location[1] + v.height);
+                v.updatePadding(bottom = max(ime - belowOverlay, 0));
+                insets;
+            }
 
             _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, _, exception ->
                 if(success) {
