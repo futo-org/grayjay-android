@@ -34,7 +34,6 @@ import kotlin.system.measureTimeMillis
 @UnstableApi
 class ShortsFragment : MainFragment() {
     override val isMainView: Boolean = true
-    override val isTab: Boolean = true
     override val hasBottomBar: Boolean get() = true
 
     private var loadPagerTask: TaskHandler<ShortsFragment, IPager<IPlatformVideo>>? = null

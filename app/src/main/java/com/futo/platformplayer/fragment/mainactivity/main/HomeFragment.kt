@@ -43,7 +43,6 @@ import java.time.OffsetDateTime
 
 class HomeFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
     private var _view: HomeView? = null;

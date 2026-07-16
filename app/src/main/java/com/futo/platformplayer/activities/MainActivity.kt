@@ -548,15 +548,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
         fragCurrent = _fragMainHome;
 
-        val defaultTab = Settings.instance.tabs.mapNotNull {
-            val buttonDefinition =
-                MenuBottomBarFragment.buttonDefinitions.firstOrNull { bd -> it.id == bd.id };
-            if (buttonDefinition == null) {
-                return@mapNotNull null;
-            } else {
-                return@mapNotNull Pair(it, buttonDefinition);
-            }
-        }.first { it.first.enabled }.second;
+        val defaultTab = getDefaultTab();
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_top_bar, _fragTopBarGeneral)
@@ -1221,6 +1213,18 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         navigate(segment as MainFragment, parameter, withHistory, isBack);
     }
 
+    fun getDefaultTab(): MenuBottomBarFragment.ButtonDefinition {
+        return Settings.instance.tabs
+            .filter { it.enabled }
+            .firstNotNullOfOrNull { setting -> MenuBottomBarFragment.buttonDefinitions.firstOrNull { it.id == setting.id } }
+            ?: MenuBottomBarFragment.buttonDefinitions.first();
+    }
+
+    fun navigateTab(segment: MainFragment, parameter: Any? = null) {
+        _queue.clear();
+        navigate(segment, parameter, false, false);
+    }
+
     /**
      * Navigate takes a MainFragment, and makes them the current main visible view
      * A parameter can be provided which becomes available in the onShow of said fragment
@@ -1287,8 +1291,21 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
 
         segment.topBar?.onShown(parameter);
+        (segment.topBar as? NavigationTopBarFragment)?.setBackVisible(!_fragBotBarMenu.isAtTabRoot());
         segment.onShown(parameter, isBack);
         onNavigated.emit(segment);
+    }
+
+    private fun navigateToDefaultTab(): Boolean {
+        if (!_fragBotBarMenu.isAtTabRoot())
+            return false;
+
+        val defaultTab = getDefaultTab();
+        if (defaultTab.isActive(_fragBotBarMenu))
+            return false;
+
+        defaultTab.action(_fragBotBarMenu);
+        return true;
     }
 
     /**
@@ -1308,6 +1325,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (last != null) {
                 _queue.remove(last);
                 navigate(last.first, last.second, false, true);
+            } else if (navigateToDefaultTab()) {
+                Logger.i(TAG, "Navigated to default tab because back was pressed on a non-default tab root");
             } else {
                 if (_fragVideoDetail.state == VideoDetailFragment.State.CLOSED) {
                     Logger.i(TAG, "Closing activity because _fragVideoDetail.state == closed");

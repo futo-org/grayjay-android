@@ -68,6 +68,13 @@ class MenuBottomBarFragment : MainActivityFragment() {
         return _view?.onBackPressed() ?: false;
     }
 
+    @UnstableApi
+    fun isAtTabRoot() : Boolean {
+        if (activity !is MainActivity)
+            return false;
+        return buttonDefinitions.any { it.isActive(this) };
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
@@ -597,24 +604,24 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     currentMain.scrollToTop(false)
                     currentMain.reloadFeed()
                 } else {
-                    it.navigate<HomeFragment>(withHistory = false)
+                    it.navigateTab<HomeFragment>()
                 }
             }),
-            ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigate<SubscriptionsFeedFragment>(withHistory = false) }),
+            ButtonDefinition(1, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscriptions, canToggle = true, { it.currentMain is SubscriptionsFeedFragment }, { it.navigateTab<SubscriptionsFeedFragment>() }),
             //if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P)
-                ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigate<LibraryFragment>(withHistory = false) })
+                ButtonDefinition(12, R.drawable.ic_library, R.drawable.ic_library, R.string.library, canToggle = false, { it.currentMain is LibraryFragment }, { it.navigateTab<LibraryFragment>() })
             ,//else null,
-            ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigate<CreatorsFragment>(withHistory = false) }),
-            ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigate<SourcesFragment>(withHistory = false) }),
-            ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigate<PlaylistsFragment>(withHistory = false) }),
-            ButtonDefinition(11, R.drawable.ic_smart_display, R.drawable.ic_smart_display_filled, R.string.shorts, canToggle = true, { it.currentMain is ShortsFragment && !(it.currentMain as ShortsFragment).isChannelShortsMode }, { it.navigate<ShortsFragment>(withHistory = false) }),
-            ButtonDefinition(5, R.drawable.ic_history, R.drawable.ic_history, R.string.history, canToggle = false, { it.currentMain is HistoryFragment }, { it.navigate<HistoryFragment>() }),
-            ButtonDefinition(6, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigate<DownloadsFragment>(withHistory = false) }),
-            ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigate<CommentsFragment>(withHistory = false) }),
-            ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigate<SubscriptionGroupListFragment>(withHistory = false) }),
-            ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigate<TutorialFragment>(withHistory = false) }),
+            ButtonDefinition(2, R.drawable.ic_creators, R.drawable.ic_creators_filled, R.string.creators, canToggle = false, { it.currentMain is CreatorsFragment }, { it.navigateTab<CreatorsFragment>() }),
+            ButtonDefinition(3, R.drawable.ic_sources, R.drawable.ic_sources_filled, R.string.sources, canToggle = false, { it.currentMain is SourcesFragment }, { it.navigateTab<SourcesFragment>() }),
+            ButtonDefinition(4, R.drawable.ic_playlist, R.drawable.ic_playlist_filled, R.string.playlists, canToggle = false, { it.currentMain is PlaylistsFragment }, { it.navigateTab<PlaylistsFragment>() }),
+            ButtonDefinition(11, R.drawable.ic_smart_display, R.drawable.ic_smart_display_filled, R.string.shorts, canToggle = true, { it.currentMain is ShortsFragment && !(it.currentMain as ShortsFragment).isChannelShortsMode }, { it.navigateTab<ShortsFragment>() }),
+            ButtonDefinition(5, R.drawable.ic_history, R.drawable.ic_history, R.string.history, canToggle = false, { it.currentMain is HistoryFragment }, { it.navigateTab<HistoryFragment>() }),
+            ButtonDefinition(6, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigateTab<DownloadsFragment>() }),
+            ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigateTab<CommentsFragment>() }),
+            ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigateTab<SubscriptionGroupListFragment>() }),
+            ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigateTab<TutorialFragment>() }),
             ButtonDefinition(7, R.drawable.ic_settings, R.drawable.ic_settings_filled, R.string.settings, canToggle = false, { it.currentMain is SettingsFragment }, {
-                it.navigate<SettingsFragment>();
+                it.navigateTab<SettingsFragment>();
                 /*
                 val c = it.context ?: return@ButtonDefinition;
                 Logger.i(TAG, "settings preventPictureInPicture()");
@@ -636,7 +643,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                     }, UIDialogs.ActionStyle.PRIMARY));
             }),*/
             ButtonDefinition(97, R.drawable.ic_quiz, R.drawable.ic_quiz_fill, R.string.faq, canToggle = true, { false }, {
-                it.navigate<BrowserFragment>(Settings.URL_FAQ, withHistory = false);
+                it.navigate<BrowserFragment>(Settings.URL_FAQ, withHistory = true);
             })
             //96 is reserved for privacy button
             //98 is reserved for buy button

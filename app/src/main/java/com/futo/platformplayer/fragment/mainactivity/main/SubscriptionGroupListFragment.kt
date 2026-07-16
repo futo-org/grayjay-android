@@ -31,7 +31,6 @@ import java.util.Collections
 
 class SubscriptionGroupListFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
     private var _touchHelper: ItemTouchHelper? = null;

@@ -23,6 +23,16 @@ class NavigationTopBarFragment : TopFragment() {
     private var _buttonCast: CastButton? = null;
     private var _textTitle: TextView? = null;
     private var _menuItems: LinearLayout? = null;
+    private var _backVisible = true;
+
+    fun setBackVisible(visible: Boolean) {
+        _backVisible = visible;
+        _buttonBack?.visibility = if (visible) View.VISIBLE else View.GONE;
+        _textTitle?.let {
+            val padding = if (visible) 0 else TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, it.resources.displayMetrics).toInt();
+            it.setPadding(padding, 0, 0, 0);
+        }
+    }
 
     override fun onShown(parameter: Any?) {
         if(parameter is IPlatformChannel) {
@@ -58,6 +68,7 @@ class NavigationTopBarFragment : TopFragment() {
         };
 
         _buttonBack = buttonBack;
+        setBackVisible(_backVisible);
 
         return view;
     }

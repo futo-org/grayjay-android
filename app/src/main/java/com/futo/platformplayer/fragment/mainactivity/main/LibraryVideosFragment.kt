@@ -52,7 +52,6 @@ import com.futo.platformplayer.views.platform.PlatformIndicator
 
 class LibraryVideosFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
     private var _toggleBuckets = StateLibrary.instance.getVideoBucketNames().map { it.name }.toMutableList();

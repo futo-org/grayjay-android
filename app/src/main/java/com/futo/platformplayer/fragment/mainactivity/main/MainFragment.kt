@@ -11,7 +11,6 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.TopFragment
 
 abstract class MainFragment : MainActivityFragment() {
     open val isMainView: Boolean = false;
-    open val isTab: Boolean = false;
     open val isOverlay: Boolean = false;
     open val isHistory: Boolean = true;
     open val hasBottomBar: Boolean = true;

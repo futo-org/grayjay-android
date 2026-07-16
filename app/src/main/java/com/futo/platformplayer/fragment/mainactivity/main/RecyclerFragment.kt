@@ -19,7 +19,6 @@ import com.futo.platformplayer.stores.StringStorage
 
 class RecyclerFragment : MainFragment(){
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
     private var view: View? = null;

@@ -19,7 +19,6 @@ import com.futo.platformplayer.views.adapters.SubscriptionAdapter
 
 class BrowserFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = false;
     override val hasBottomBar: Boolean get() = true;
 
     private var _root: LinearLayout? = null;

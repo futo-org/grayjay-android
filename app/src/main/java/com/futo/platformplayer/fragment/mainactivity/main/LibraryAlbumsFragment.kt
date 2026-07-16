@@ -47,7 +47,6 @@ import com.futo.platformplayer.views.platform.PlatformIndicator
 
 class LibraryAlbumsFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
 

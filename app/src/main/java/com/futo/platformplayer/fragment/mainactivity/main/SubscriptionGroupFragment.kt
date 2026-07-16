@@ -39,7 +39,6 @@ import com.google.android.material.shape.ShapeAppearanceModel
 
 class SubscriptionGroupFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = false;
     override val hasBottomBar: Boolean get() = true;
 
     private var _view: SubscriptionGroupView? = null;

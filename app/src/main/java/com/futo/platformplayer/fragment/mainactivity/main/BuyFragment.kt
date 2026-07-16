@@ -27,7 +27,6 @@ import kotlinx.coroutines.withContext
 
 class BuyFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = false;
     override val hasBottomBar: Boolean get() = true;
 
     private var _view: BuyView? = null;

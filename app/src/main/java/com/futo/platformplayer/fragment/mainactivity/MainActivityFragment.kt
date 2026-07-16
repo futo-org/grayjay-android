@@ -34,6 +34,20 @@ open class MainActivityFragment : Fragment() {
         return target;
     }
 
+    fun navigateTab(frag: MainFragment, parameter: Any? = null) {
+        val a = activity
+        if (a is MainActivity)
+            a.navigateTab(frag, parameter)
+        else
+            Log.e(TAG, "Failed to navigate to tab due to activity not being a main activity.")
+    }
+
+    inline fun <reified T : MainFragment> navigateTab(parameter: Any? = null): T {
+        val target = requireFragment<T>();
+        navigateTab(target, parameter);
+        return target;
+    }
+
     inline fun <reified T : Fragment> requireFragment() : T {
         isValidMainActivity();
         return (activity as MainActivity).getFragment<T>();

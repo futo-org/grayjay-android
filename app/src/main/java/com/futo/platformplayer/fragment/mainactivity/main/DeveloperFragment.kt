@@ -17,7 +17,6 @@ import com.futo.platformplayer.views.fields.IField
 
 class DeveloperFragment : MainFragment() {
     override val isMainView : Boolean = true;
-    override val isTab: Boolean = true;
     override val hasBottomBar: Boolean get() = true;
 
     private var view: FragView? = null;
