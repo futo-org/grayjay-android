@@ -195,6 +195,47 @@
         app:layout_constraintTop_toTopOf="@id/text_position"
         app:layout_constraintBottom_toBottomOf="@id/text_position"/>
 
+    <!-- LIVE pill: hidden by default; shown by FutoVideoPlayer when isLive=true.
+         Constrained next to the duration text so it occupies the same row but does not
+         reflow when toggled (alpha/visibility only). Tap to jump to live edge. -->
+    <LinearLayout
+        android:id="@+id/live_pill_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/background_live_pill"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:layout_marginStart="6dp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/cd_button_jump_to_live"
+        app:layout_constraintLeft_toRightOf="@id/text_duration"
+        app:layout_constraintTop_toTopOf="@id/text_position"
+        app:layout_constraintBottom_toBottomOf="@id/text_position">
+
+        <View
+            android:id="@+id/live_pill_dot"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dot_live_edge" />
+
+        <TextView
+            android:id="@+id/live_pill_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:text="@string/live_capitalized"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/text_chapter_current"
         android:layout_width="0dp"
@@ -204,7 +245,7 @@
         android:paddingRight="10dp"
         android:textSize="11sp"
         android:gravity="left"
-        app:layout_constraintLeft_toRightOf="@id/text_duration"
+        app:layout_constraintLeft_toRightOf="@id/live_pill_container"
         app:layout_constraintTop_toTopOf="@id/text_duration"
         app:layout_constraintBottom_toBottomOf="@id/text_duration"
         app:layout_constraintRight_toLeftOf="@id/button_fullscreen"
