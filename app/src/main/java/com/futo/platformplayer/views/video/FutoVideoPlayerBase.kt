@@ -17,6 +17,8 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackGroup
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -170,6 +172,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     var targetTrackVideoHeight = -1
         private set
     private var _targetTrackAudioBitrate = -1
+    @get:OptIn(UnstableApi::class)
+    private var _targetTrackAudioOverride: TrackSelectionOverride? = null
 
     private var _toResume = false;
 
@@ -350,7 +354,20 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         updateTrackSelector();
     }
     fun selectAudioTrack(bitrate: Int) {
+        _targetTrackAudioOverride = null;
         _targetTrackAudioBitrate = bitrate;
+        updateTrackSelector();
+    }
+    @OptIn(UnstableApi::class)
+    fun selectAudioTrack(group: TrackGroup, index: Int) {
+        _targetTrackAudioBitrate = -1;
+        _targetTrackAudioOverride = TrackSelectionOverride(group, listOf(index));
+        updateTrackSelector();
+    }
+    @OptIn(UnstableApi::class)
+    fun clearAudioTrackSelection() {
+        _targetTrackAudioOverride = null;
+        _targetTrackAudioBitrate = -1;
         updateTrackSelector();
     }
     @OptIn(UnstableApi::class)
@@ -362,7 +379,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 .setMaxVideoSize(9999, targetTrackVideoHeight + 10);
         }
 
-        if(_targetTrackAudioBitrate > 0) {
+        val audioOverride = _targetTrackAudioOverride;
+        if(audioOverride != null) {
+            builder = builder.addOverride(audioOverride);
+        }
+        else if(_targetTrackAudioBitrate > 0) {
             builder = builder.setMaxAudioBitrate(_targetTrackAudioBitrate);
         }
 

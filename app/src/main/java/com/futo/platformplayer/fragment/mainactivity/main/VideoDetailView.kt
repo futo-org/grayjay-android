@@ -38,6 +38,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
+import androidx.media3.common.TrackGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.ui.PlayerControlView
@@ -2345,23 +2346,27 @@ class VideoDetailView : ConstraintLayout {
             }
 
             val videoTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_VIDEO }
-            val audioTracks = _player.exoPlayer?.player?.currentTracks?.groups?.firstOrNull { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO }
+            val audioTracks = _player.exoPlayer?.player?.currentTracks?.groups?.filter { it.mediaTrackGroup.type == C.TRACK_TYPE_AUDIO } ?: listOf();
 
             val videoTrackFormats = mutableListOf<Format>();
-            val audioTrackFormats = mutableListOf<Format>();
+            val audioTrackOptions = mutableListOf<AudioTrackOption>();
 
             if(videoTracks != null) {
                 for (i in 0 until videoTracks.mediaTrackGroup.length)
                     videoTrackFormats.add(videoTracks.mediaTrackGroup.getFormat(i));
             }
-            if(audioTracks != null) {
-                for (i in 0 until audioTracks.mediaTrackGroup.length)
-                    audioTrackFormats.add(audioTracks.mediaTrackGroup.getFormat(i));
+            for(audioTrack in audioTracks) {
+                for (i in 0 until audioTrack.mediaTrackGroup.length)
+                    audioTrackOptions.add(AudioTrackOption(audioTrack.mediaTrackGroup, i, audioTrack.mediaTrackGroup.getFormat(i)));
             }
 
             updateQualityFormatsOverlay(
                 videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
-                audioTrackFormats.distinctBy { it.bitrate }.sortedByDescending { it.bitrate });
+                audioTrackOptions
+                    .distinctBy { listOf(it.format.label, it.format.language, it.format.bitrate, it.format.roleFlags) }
+                    .sortedWith(compareBy<AudioTrackOption> { it.format.language ?: "" }
+                        .thenBy { it.format.roleFlags }
+                        .thenByDescending { it.format.bitrate }));
         }
 
         _layoutPlayerContainer.post {
@@ -2573,12 +2578,23 @@ class VideoDetailView : ConstraintLayout {
 
 
     //Quality Selector data
-    private fun updateQualityFormatsOverlay(liveStreamVideoFormats : List<Format>?, liveStreamAudioFormats : List<Format>?) {
+    @UnstableApi
+    private class AudioTrackOption(val group: TrackGroup, val index: Int, val format: Format);
+
+    @androidx.annotation.OptIn(UnstableApi::class)
+    private fun audioTrackLabel(format: Format): String {
+        format.label?.let { return it };
+        val parts = listOfNotNull(format.language, if(format.bitrate > 0) "${format.bitrate / 1000}kbps" else null);
+        return if(parts.isNotEmpty()) parts.joinToString(" ")
+            else format.containerMimeType ?: format.bitrate.toString();
+    }
+
+    private fun updateQualityFormatsOverlay(liveStreamVideoFormats : List<Format>?, liveStreamAudioFormats : List<AudioTrackOption>?) {
         val v = video ?: return;
         updateQualitySourcesOverlay(v, videoLocal, liveStreamVideoFormats, liveStreamAudioFormats);
     }
     @androidx.annotation.OptIn(UnstableApi::class)
-    private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<Format>? = null) {
+    private fun updateQualitySourcesOverlay(videoDetails: IPlatformVideoDetails?, videoLocal: VideoLocal? = null, liveStreamVideoFormats: List<Format>? = null, liveStreamAudioFormats: List<AudioTrackOption>? = null) {
         Logger.i(TAG, "updateQualitySourcesOverlay");
 
         val video: IPlatformVideoDetails?;
@@ -2783,17 +2799,20 @@ class VideoDetailView : ConstraintLayout {
             )
             else null,
             if(liveStreamAudioFormats?.isEmpty() == false)
-                SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio",
-                    *liveStreamAudioFormats
-                        .map {
+                SlideUpMenuGroup(this.context, context.getString(R.string.stream_audio), "audio", (listOf(
+                    SlideUpMenuItem(this.context, R.drawable.ic_music, "Auto", tag = "auto",
+                        call = { _player.clearAudioTrackSelection() })
+                ) + liveStreamAudioFormats
+                        .map { option ->
+                            val format = option.format;
                             SlideUpMenuItem(this.context,
                                 R.drawable.ic_music,
-                                it.label ?: it.containerMimeType ?: it.bitrate.toString(),
+                                audioTrackLabel(format),
                                 "",
-                                it.codecs?.let { c -> SabrCodecs.codecName(c) } ?: "",
-                                tag = it,
-                                call = { _player.selectAudioTrack(it.bitrate) });
-                        }.toList().toTypedArray())
+                                format.codecs?.let { c -> SabrCodecs.codecName(c) } ?: "",
+                                tag = option,
+                                call = { _player.selectAudioTrack(option.group, option.index) });
+                        }))
             else null,
             if(languageFilters != null) languageFilters else null,
             if(bestVideoSources.isNotEmpty())
