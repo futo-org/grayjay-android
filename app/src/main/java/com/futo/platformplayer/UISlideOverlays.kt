@@ -577,6 +577,13 @@ class UISlideOverlays {
             val effectiveAudioSources: List<IAudioSource> = (audioSources?.toList() ?: emptyList()) + umpAudioSources;
             val subtitleSources = video.subtitles;
 
+            val updateOk: () -> Unit = {
+                if(selectedAudio != null || (!requiresAudio && selectedVideo != null))
+                    menu?.setOk(container.context.getString(R.string.download));
+                else
+                    menu?.setOk(null);
+            };
+
             if(videoSources.isEmpty() && (audioSources?.size ?: 0) == 0) {
                 UIDialogs.toast(container.context.getString(R.string.no_downloads_available), false);
                 return null;
@@ -643,8 +650,12 @@ class UISlideOverlays {
                     call = {
                         selectedVideo = null;
                         menu?.selectOption(videoSources, "none");
-                        if(selectedAudio != null || !requiresAudio)
-                            menu?.setOk(container.context.getString(R.string.download));
+                        if(selectedAudio == null) {
+                            selectedAudio = umpAudioSources.firstOrNull();
+                            if(selectedAudio != null)
+                                menu?.selectOption(effectiveAudioSources, selectedAudio);
+                        }
+                        updateOk();
                     },
                     invokeParent = false
                 )) else listOf()) +
@@ -666,8 +677,7 @@ class UISlideOverlays {
                                 call = {
                                     selectedVideo = it
                                     menu?.selectOption(videoSources, it);
-                                    if(selectedAudio != null || !requiresAudio)
-                                        menu?.setOk(container.context.getString(R.string.download));
+                                    updateOk();
                                 },
                                 invokeParent = false
                             ).apply {
@@ -692,8 +702,7 @@ class UISlideOverlays {
                                 call = {
                                     selectedVideo = it
                                     menu?.selectOption(videoSources, it);
-                                    if(selectedAudio != null || !requiresAudio)
-                                        menu?.setOk(container.context.getString(R.string.download));
+                                    updateOk();
                                 },
                                 invokeParent = false
                             ).apply {
@@ -718,8 +727,7 @@ class UISlideOverlays {
                                 call = {
                                     selectedVideo = it
                                     menu?.selectOption(videoSources, it);
-                                    if(selectedAudio != null || !requiresAudio)
-                                        menu?.setOk(container.context.getString(R.string.download));
+                                    updateOk();
                                 },
                                 invokeParent = false
                             ).apply {
@@ -890,9 +898,7 @@ class UISlideOverlays {
             if(selectedAudio != null) {
                 audioSources?.let { audioSources -> menu.selectOption(audioSources, selectedAudio); };
             }
-            if(selectedAudio != null || (!requiresAudio && selectedVideo != null)) {
-                menu.setOk(container.context.getString(R.string.download));
-            }
+            updateOk();
 
             menu.onOK.subscribe {
                 val sv = selectedVideo
@@ -909,7 +915,7 @@ class UISlideOverlays {
 
                 menu.hide();
                 val subtitleToDownload = selectedSubtitle;
-                if(selectedAudio != null || !requiresAudio) {
+                if(selectedAudio != null || (!requiresAudio && selectedVideo != null)) {
                     if (subtitleToDownload == null) {
                         StateDownloads.instance.download(video, selectedVideo, selectedAudio, null);
                     } else {
