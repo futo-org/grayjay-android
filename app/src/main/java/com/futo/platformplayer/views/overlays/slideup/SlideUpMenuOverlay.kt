@@ -12,9 +12,11 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import com.futo.platformplayer.R
+import com.futo.platformplayer.applyBottomOverlayInsets
 import com.futo.platformplayer.constructs.Event0
 
 class SlideUpMenuOverlay : RelativeLayout {
@@ -90,6 +92,8 @@ class SlideUpMenuOverlay : RelativeLayout {
 
     private fun init(animated: Boolean, okText: String?){
         LayoutInflater.from(context).inflate(R.layout.overlay_slide_up_menu, this, true);
+
+        applyBottomOverlayInsets(WindowInsetsCompat.Type.systemBars());
 
         _animated = animated;
 
