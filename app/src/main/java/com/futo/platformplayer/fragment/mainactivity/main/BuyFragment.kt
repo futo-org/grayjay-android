@@ -7,9 +7,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.futo.futopay.PaymentConfigurations
 import com.futo.futopay.PaymentManager
@@ -18,6 +16,7 @@ import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
+import com.futo.platformplayer.applyBottomOverlayInsets
 import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePayment
@@ -69,14 +68,7 @@ class BuyFragment : MainFragment() {
             _overlayLoading = findViewById(R.id.overlay_loading);
             _overlayPaying = findViewById(R.id.overlay_paying);
 
-            ViewCompat.setOnApplyWindowInsetsListener(_overlayPaying) { v, insets ->
-                val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-                val location = IntArray(2);
-                v.getLocationInWindow(location);
-                val belowOverlay = v.rootView.height - (location[1] + v.height);
-                v.updatePadding(bottom = max(ime - belowOverlay, 0));
-                insets;
-            }
+            _overlayPaying.applyBottomOverlayInsets(WindowInsetsCompat.Type.ime());
 
             _paymentManager = PaymentManager(StatePayment.instance, fragment, _overlayPaying) { success, _, exception ->
                 if(success) {

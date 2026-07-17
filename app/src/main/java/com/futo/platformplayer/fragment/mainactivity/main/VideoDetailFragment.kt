@@ -313,6 +313,7 @@ class VideoDetailFragment() : MainFragment() {
     }
     fun closeVideoDetails() {
         Logger.i(TAG, "closeVideoDetails()")
+        _viewDetail?.setFullscreen(false);
         state = State.CLOSED;
         _viewDetail?.onStop();
         close();
@@ -601,7 +602,6 @@ class VideoDetailFragment() : MainFragment() {
 
     private fun hideSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
             activity?.window?.insetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars())
                 controller.hide(WindowInsets.Type.systemBars())
@@ -624,7 +624,6 @@ class VideoDetailFragment() : MainFragment() {
 
     private fun showSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowCompat.setDecorFitsSystemWindows(requireActivity().window, true)
             activity?.window?.insetsController?.let { controller ->
                 controller.show(WindowInsets.Type.statusBars())
                 controller.show(WindowInsets.Type.systemBars())
