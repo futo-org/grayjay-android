@@ -130,3 +130,9 @@
 [submodule "app/src/stable/assets/sources/nasa-plus"]
 	path = app/src/stable/assets/sources/nasa-plus
 	url = ../plugins/nasa-plus.git
+[submodule "app/src/unstable/assets/sources/internet-archive"]
+	path = app/src/unstable/assets/sources/internet-archive
+	url = ../plugins/internet-archive.git
+[submodule "app/src/stable/assets/sources/internet-archive"]
+	path = app/src/stable/assets/sources/internet-archive
+	url = ../plugins/internet-archive.git
