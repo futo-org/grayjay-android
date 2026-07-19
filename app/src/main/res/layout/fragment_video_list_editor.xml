@@ -62,11 +62,28 @@
                             android:gravity="center"
                             android:layout_marginStart="5dp"
                             android:layout_marginRight="10dp"
-                            app:layout_constraintRight_toLeftOf="@id/button_export"
+                            app:layout_constraintRight_toLeftOf="@id/button_sync"
                             app:layout_constraintTop_toTopOf="@id/button_share"
                             android:orientation="horizontal"
                             android:scaleType="fitCenter"
                             app:srcCompat="@drawable/ic_edit"
+                            android:padding="10dp"
+                            app:tint="@color/white" />
+
+                        <ImageButton
+                            android:id="@+id/button_sync"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:contentDescription="@string/cd_button_sync"
+                            android:background="@drawable/background_button_round"
+                            android:gravity="center"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginRight="10dp"
+                            app:layout_constraintRight_toLeftOf="@id/button_export"
+                            app:layout_constraintTop_toTopOf="@id/button_share"
+                            android:orientation="horizontal"
+                            android:scaleType="fitCenter"
+                            app:srcCompat="@drawable/ic_sync"
                             android:padding="10dp"
                             app:tint="@color/white" />
 
