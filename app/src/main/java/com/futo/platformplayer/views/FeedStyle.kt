@@ -6,7 +6,8 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 enum class FeedStyle(val value: Int) {
     UNKNOWN(-1),
     THUMBNAIL(1),
-    PREVIEW(2);
+    PREVIEW(2),
+    ACCESSIBILITY(3);
 
 
 
