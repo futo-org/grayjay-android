@@ -7,5 +7,6 @@ class CastingDeviceInfo(
     var name: String,
     var type: CastProtocolType,
     var addresses: Array<String>,
-    var port: Int
+    var port: Int,
+    var txtRecords: Map<String, String> = emptyMap()
 )
