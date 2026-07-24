@@ -3,8 +3,10 @@ package com.futo.platformplayer.dialogs
 import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.widget.Button
+import android.widget.EditText
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
@@ -58,8 +60,19 @@ class ImportOptionsDialog: AlertDialog {
                 }
             };
         }
-        _button_import_ezip.setOnClickListener {
-
+        _button_import_ezip.onClick.subscribe {
+            dismiss();
+            StateApp.instance.requestFileReadAccess(_context, null, "*/*") {
+                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                    val zipBytes = it?.readBytes(context) ?: return@launch;
+                    withContext(Dispatchers.Main) {
+                        if (StateBackup.requiresPasswordForBytes(zipBytes))
+                            promptPasswordAndImport(zipBytes);
+                        else
+                            importEzip(zipBytes, "");
+                    }
+                }
+            };
         }
         _button_import_txt.onClick.subscribe  {
             dismiss();
@@ -101,6 +114,35 @@ class ImportOptionsDialog: AlertDialog {
         };
         _button_close.setOnClickListener {
             dismiss();
+        }
+    }
+
+    private fun promptPasswordAndImport(zipBytes: ByteArray) {
+        val input = EditText(_context);
+        input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD;
+        input.hint = "Password";
+
+        AlertDialog.Builder(_context)
+            .setTitle("Backup password")
+            .setMessage("This backup is encrypted. Enter the password to restore it.")
+            .setView(input)
+            .setPositiveButton("Restore") { _, _ ->
+                importEzip(zipBytes, input.text?.toString() ?: "");
+            }
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private fun importEzip(zipBytes: ByteArray, password: String) {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            try {
+                StateBackup.importEncryptedZipBytes(_context, StateApp.instance.scope, zipBytes, password);
+            }
+            catch(ex: Throwable) {
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast("Failed to import, invalid format or wrong password?\n" + ex.message);
+                }
+            }
         }
     }
 

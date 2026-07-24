@@ -98,7 +98,6 @@
                 app:buttonIcon="@drawable/ic_encrypted"
                 android:scaleY="0.9"
                 android:scaleX="0.9"
-                android:alpha="0.5"
                 app:buttonBackground="@drawable/background_big_button_black"
                 app:buttonText="Import Grayjay Auto-Backup (.ezip)"
                 app:buttonSubText="Pick a Grayjay auto-backup encrypted zip file" />

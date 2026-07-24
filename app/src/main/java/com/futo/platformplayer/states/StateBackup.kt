@@ -214,7 +214,19 @@ class StateBackup {
             Logger.i(TAG, "Finished AutoBackup restore")
         }
 
-        private fun importEncryptedZipBytes(context: Context, scope: CoroutineScope, backupBytesEncrypted: ByteArray, password: String) {
+        fun requiresPasswordForBytes(bytes: ByteArray): Boolean {
+            if (bytes.startsWithZipSignature())
+                return false;
+
+            if (bytes.hasNewAutoHeader()) {
+                val flags = bytes[7].toInt();
+                return (flags and FLAG_ENCRYPTED.toInt()) != 0;
+            }
+
+            return true;
+        }
+
+        fun importEncryptedZipBytes(context: Context, scope: CoroutineScope, backupBytesEncrypted: ByteArray, password: String) {
             if (backupBytesEncrypted.startsWithZipSignature()) {
                 importZipBytes(context, scope, backupBytesEncrypted)
                 return
