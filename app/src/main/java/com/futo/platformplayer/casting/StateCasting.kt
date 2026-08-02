@@ -3,6 +3,7 @@ package com.futo.platformplayer.casting
 import android.app.AlertDialog
 import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.OptIn
@@ -75,6 +76,7 @@ import org.fcast.sender_sdk.DeviceInfo
 import org.fcast.sender_sdk.Metadata
 import org.fcast.sender_sdk.NsdDeviceDiscoverer
 import org.fcast.sender_sdk.ProtocolType
+import org.fcast.sender_sdk.SubtitleContent
 import java.net.Inet6Address
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -1563,6 +1565,88 @@ class StateCasting {
         return proxy.exportTransferable()
     }
 
+    private suspend fun readSubtitleBytes(uri: Uri?): ByteArray? {
+        if (uri?.scheme != "file" && uri?.scheme != "content") {
+            return null;
+        }
+        return withContext(Dispatchers.IO) {
+            StateApp.instance.contextOrNull?.contentResolver?.openInputStream(uri)?.use {
+                it.readBytes()
+            }
+        };
+    }
+
+    private fun isReceiverFetchableUrl(uri: Uri?): Boolean {
+        if (uri?.scheme != "http" && uri?.scheme != "https") {
+            return false;
+        }
+        val host = uri.host ?: return false;
+        return host != "127.0.0.1" && host != "localhost" && host != "[::1]";
+    }
+
+    private suspend fun resolveCastSubtitleContent(subtitleSource: ISubtitleSource): SubtitleContent? {
+        val contentType = (subtitleSource.format ?: "text/vtt").substringBefore(';').trim();
+        val subUri = withContext(Dispatchers.IO) {
+            subtitleSource.getSubtitlesURI()
+        };
+
+        val bytes = readSubtitleBytes(subUri);
+        if (bytes != null && bytes.isNotEmpty()) {
+            return SubtitleContent.Data(bytes, contentType);
+        }
+        val direct = subtitleSource.url;
+        val directBytes = readSubtitleBytes(direct?.toUri());
+        if (directBytes != null && directBytes.isNotEmpty()) {
+            return SubtitleContent.Data(directBytes, contentType);
+        }
+
+        if (subtitleSource.hasFetch) {
+            val text = withContext(Dispatchers.IO) {
+                subtitleSource.getSubtitles()
+            };
+            if (!text.isNullOrEmpty()) {
+                return SubtitleContent.Data(text.toByteArray(), contentType);
+            }
+        }
+
+        if (isReceiverFetchableUrl(subUri)) {
+            return SubtitleContent.Url(subUri.toString());
+        }
+        val directUri = direct?.toUri();
+        if (isReceiverFetchableUrl(directUri)) {
+            return SubtitleContent.Url(directUri.toString());
+        }
+
+        return null;
+    }
+
+    suspend fun changeSubtitleOnActiveCast(subtitleSource: ISubtitleSource?): Boolean {
+        val ad = activeDevice ?: return false;
+        if (!ad.supportsExternalSubtitles()) {
+            return false;
+        }
+        return try {
+            if (subtitleSource == null) {
+                ad.disableSubtitles();
+                Logger.i(TAG, "Disabled subtitles on active cast");
+                true;
+            } else {
+                val content = resolveCastSubtitleContent(subtitleSource);
+                if (content == null) {
+                    Logger.w(TAG, "Could not resolve subtitle source to castable content");
+                    false;
+                } else {
+                    ad.addSubtitleSource(content, true, subtitleSource.name.takeIf { it.isNotBlank() });
+                    Logger.i(TAG, "Attached external subtitle on active cast (${if (content is SubtitleContent.Data) "companion" else "url"})");
+                    true;
+                }
+            }
+        } catch (ex: Throwable) {
+            Logger.w(TAG, "changeSubtitleOnActiveCast failed", ex);
+            false;
+        }
+    }
+
     private suspend fun castUMP(video: IPlatformVideoDetails, source: JSUMPSource, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, preferredVideoHeight: Int = -1, sabrState: SabrSession.Transferable? = null, onError: ((Throwable) -> Unit)? = null, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null) : List<String> {
         val ad = activeDevice ?: throw Exception("The cast device disconnected before the stream could be prepared");
 
@@ -1599,6 +1683,9 @@ class StateCasting {
                 speed,
                 metadataFromVideo(video)
             );
+            if (!video.isLive && subtitleSource != null) {
+                changeSubtitleOnActiveCast(subtitleSource);
+            }
             return listOf(sabrUrl);
         }
 
