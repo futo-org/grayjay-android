@@ -175,18 +175,12 @@ class CastingDevice(val device: RsCastingDevice) {
 
     val onConnectionStateChanged =
         Event1<CastConnectionState>()
-    val onPlayChanged: Event1<Boolean>
-        get() = eventHandler.onPlayChanged
-    val onTimeChanged: Event1<Double>
-        get() = eventHandler.onTimeChanged
-    val onDurationChanged: Event1<Double>
-        get() = eventHandler.onDurationChanged
-    val onVolumeChanged: Event1<Double>
-        get() = eventHandler.onVolumeChanged
-    val onSpeedChanged: Event1<Double>
-        get() = eventHandler.onSpeedChanged
-    val onMediaItemEnd: Event0
-        get() = eventHandler.onMediaItemEnd
+    val onPlayChanged = Event1<Boolean>()
+    val onTimeChanged = Event1<Double>()
+    val onDurationChanged = Event1<Double>()
+    val onVolumeChanged = Event1<Double>()
+    val onSpeedChanged = Event1<Double>()
+    val onMediaItemEnd = Event0()
 
     fun resumePlayback() = device.resumePlayback()
     fun pausePlayback() = device.pausePlayback()
@@ -241,7 +235,7 @@ class CastingDevice(val device: RsCastingDevice) {
             url = contentId,
             resumePosition = resumePosition,
             speed = speed,
-            volume = volume,
+            volume = null,
             metadata = metadata,
             requestHeaders = null,
         ),
@@ -261,7 +255,7 @@ class CastingDevice(val device: RsCastingDevice) {
             content = content,
             resumePosition = resumePosition,
             speed = speed,
-            volume = volume,
+            volume = null,
             metadata = metadata,
             requestHeaders = null,
         ),
@@ -325,14 +319,26 @@ class CastingDevice(val device: RsCastingDevice) {
         eventHandler.onPlayChanged.subscribe {
             if (isPlaying != it && lastTimeChangeTime_ms > 0) lastTimeChangeTime_ms = System.currentTimeMillis()
             isPlaying = it
+            onPlayChanged.emit(it)
         }
         eventHandler.onTimeChanged.subscribe {
             lastTimeChangeTime_ms = System.currentTimeMillis()
             time = it
+            onTimeChanged.emit(it)
         }
-        eventHandler.onDurationChanged.subscribe { duration = it }
-        eventHandler.onVolumeChanged.subscribe { volume = it }
-        eventHandler.onSpeedChanged.subscribe { speed = it }
+        eventHandler.onDurationChanged.subscribe {
+            duration = it
+            onDurationChanged.emit(it)
+        }
+        eventHandler.onVolumeChanged.subscribe {
+            volume = it
+            onVolumeChanged.emit(it)
+        }
+        eventHandler.onSpeedChanged.subscribe {
+            speed = it
+            onSpeedChanged.emit(it)
+        }
+        eventHandler.onMediaItemEnd.subscribe { onMediaItemEnd.emit() }
     }
 
     fun ensureThreadStarted() {}
