@@ -396,12 +396,12 @@ class StateCasting {
         val ad = activeDevice;
         if (ad != null) {
             Logger.i(TAG, "Stopping previous device because a new one is being connected.")
-            device.onConnectionStateChanged.clear();
-            device.onPlayChanged.clear();
-            device.onTimeChanged.clear();
-            device.onVolumeChanged.clear();
-            device.onDurationChanged.clear();
-            device.onMediaItemEnd.clear();
+            ad.onConnectionStateChanged.clear();
+            ad.onPlayChanged.clear();
+            ad.onTimeChanged.clear();
+            ad.onVolumeChanged.clear();
+            ad.onDurationChanged.clear();
+            ad.onMediaItemEnd.clear();
             ad.disconnect()
         }
 
