@@ -672,7 +672,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             //videoControlsBar.visibility = View.GONE;
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
 
-            _videoControls_fullscreen.show();
+            _videoControls_fullscreen.visibility = View.VISIBLE;
             videoControls.hideImmediately();
             videoControls.visibility = View.GONE;
         }
@@ -686,7 +686,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             //videoControlsBar.visibility = View.VISIBLE;
             _videoView.resizeMode = _desiredResizeModePortrait;
 
-            videoControls.show();
+            videoControls.visibility = View.VISIBLE;
             _videoControls_fullscreen.hideImmediately();
             _videoControls_fullscreen.visibility = View.GONE;
         }
