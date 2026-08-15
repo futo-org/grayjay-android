@@ -205,10 +205,29 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
         if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
             setTabIndex(2, true)
         } else {
-            when (Settings.instance.comments.defaultCommentSection) {
-                0 -> if (Settings.instance.other.polycentricEnabled) setTabIndex(0, true) else setTabIndex(1, true)
-                1 -> setTabIndex(1, true)
-                2 -> setTabIndex(StateMeta.instance.getLastCommentSection(), true)
+            val index = when (Settings.instance.comments.defaultCommentSection) {
+                2 -> StateMeta.instance.getLastCommentSection()
+                else -> Settings.instance.comments.defaultCommentSection
+            }
+            when (index) {
+                0 -> {
+                    if (Settings.instance.other.polycentricEnabled && !Settings.instance.comments.hidePolycentricComments) {
+                        setTabIndex(0, true)
+                    } else {
+                        if (Settings.instance.comments.hidePlatformComments) {
+                            setTabIndex(null, true)
+                        } else {
+                            setTabIndex(1, true)
+                        }
+                    }
+                }
+                1 -> {
+                    if (Settings.instance.comments.hidePlatformComments) {
+                        setTabIndex(null, true)
+                    } else {
+                        setTabIndex(1, true)
+                    }
+                }
             }
         }
 
