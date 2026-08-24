@@ -67,6 +67,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -332,7 +333,19 @@ class StateCasting {
     fun startUpdateTimeJob(
         onTimeJobTimeChanged_s: Event1<Long>,
         setTime: (Long) -> Unit
-    ): Job? = null
+    ): Job? {
+        return CoroutineScope(Dispatchers.Main).launch {
+            while (isActive) {
+                val t_s = activeDevice?.expectedCurrentTime
+                if (t_s != null) {
+                    val t_ms = (t_s * 1000.0).toLong()
+                    setTime(t_ms)
+                    onTimeJobTimeChanged_s.emit(t_s.toLong())
+                }
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
 
     fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice? {
         try {
