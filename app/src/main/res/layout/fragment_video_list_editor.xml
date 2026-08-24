@@ -54,6 +54,23 @@
 
 
                         <ImageButton
+                            android:id="@+id/button_sort"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:contentDescription="@string/cd_button_sort"
+                            android:background="@drawable/background_button_round"
+                            android:gravity="center"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginRight="10dp"
+                            app:layout_constraintRight_toLeftOf="@id/button_edit"
+                            app:layout_constraintTop_toTopOf="@id/button_share"
+                            android:orientation="horizontal"
+                            android:scaleType="fitCenter"
+                            app:srcCompat="@drawable/ic_sort"
+                            android:padding="10dp"
+                            app:tint="@color/white" />
+
+                        <ImageButton
                             android:id="@+id/button_edit"
                             android:layout_width="40dp"
                             android:layout_height="40dp"
