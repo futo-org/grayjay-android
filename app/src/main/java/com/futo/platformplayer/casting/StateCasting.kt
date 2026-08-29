@@ -1060,7 +1060,8 @@ class StateCasting {
                         mediaRendition.type,
                         newPlaylistUrl,
                         mediaRendition.groupID,
-                        mediaRendition.language,
+                        //ChromeCast rejects the "und" language tag
+                        mediaRendition.language?.takeIf { it != "und" },
                         mediaRendition.name,
                         mediaRendition.isDefault,
                         mediaRendition.isAutoSelect,
