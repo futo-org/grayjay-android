@@ -27,6 +27,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudi
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
+import com.futo.platformplayer.api.media.models.streams.sources.IWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalSubtitleSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
@@ -541,6 +542,11 @@ class StateCasting {
 
             if (sourceCount < 1) {
                 throw Exception("At least one source should be specified.");
+            }
+
+            if (videoSource is IWidevineSource || audioSource is IWidevineSource) {
+                throw Exception(StateApp.instance.contextOrNull?.getString(R.string.drm_content_cannot_be_cast)
+                    ?: "DRM protected content cannot be cast.");
             }
 
             val castState = sabrState

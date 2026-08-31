@@ -518,6 +518,16 @@ class HLSSource {
         this.original = obj?.original;
     }
 }
+class HLSWidevineSource extends HLSSource {
+    constructor(obj) {
+        super(obj);
+        this.plugin_type = "HLSWidevineSource";
+
+        this.licenseUri = obj.licenseUri;
+        if(obj.getLicenseRequestExecutor)
+            this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
+    }
+}
 class DashSource {
     constructor(obj) {
         obj = obj ?? {};

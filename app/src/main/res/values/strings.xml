@@ -782,6 +782,7 @@
     <string name="exception_retrieving_live_chat_window">Exception retrieving live chat window:</string>
     <string name="live_chat_failed_to_load">Live chat failed to load</string>
     <string name="unsupported_cast_format">Unsupported Cast format</string>
+    <string name="drm_content_cannot_be_cast">DRM protected content cannot be cast.</string>
     <string name="failed_to_load_media">Failed to load media</string>
     <string name="offline_playback">Offline Playback</string>
     <string name="media_error">Media Error</string>
