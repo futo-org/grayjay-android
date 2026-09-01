@@ -2996,9 +2996,11 @@ class VideoDetailView : ConstraintLayout {
         fragment.lifecycleScope.launch(Dispatchers.Main) {
             try {
                 val d = StateCasting.instance.activeDevice;
-                if (d != null && d.connectionState == CastConnectionState.CONNECTED)
-                    castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
-                else {
+                if (d != null && d.connectionState == CastConnectionState.CONNECTED) {
+                    if (!StateCasting.instance.changeSubtitleOnActiveCast(toSet)) {
+                        castIfAvailable(context.contentResolver, video, _lastVideoSource, _lastAudioSource, toSet, (d.expectedCurrentTime * 1000.0).toLong(), d.speed);
+                    }
+                } else {
                     _player.swapSubtitles(toSet);
                 }
             } catch (e: Throwable) {

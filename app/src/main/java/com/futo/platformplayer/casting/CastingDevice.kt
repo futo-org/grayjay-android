@@ -34,6 +34,8 @@ import org.fcast.sender_sdk.Metadata
 import org.fcast.sender_sdk.ProtocolType
 import org.fcast.sender_sdk.QueueState
 import org.fcast.sender_sdk.ReceiverError
+import org.fcast.sender_sdk.SubtitleContent
+import org.fcast.sender_sdk.SubtitleSource
 import org.fcast.sender_sdk.TrackList
 
 enum class CastConnectionState {
@@ -170,8 +172,15 @@ class CastingDevice(val device: RsCastingDevice) {
 
     fun isSabrSupported(): Boolean =
         receiverCapabilities?.media?.protocols?.any { it == "sabr" } == true
+    // FCast V4 only
+    fun supportsExternalSubtitles(): Boolean =
+        receiverCapabilities?.media?.externalSubtitles == true
     fun canSetVolume(): Boolean = device.supportsFeature(DeviceFeature.SET_VOLUME)
     fun canSetSpeed(): Boolean = device.supportsFeature(DeviceFeature.SET_SPEED)
+
+    fun addSubtitleSource(content: SubtitleContent, select: Boolean, name: String?) =
+        device.addSubtitleSource(SubtitleSource(content, select, name))
+    fun disableSubtitles() = device.changeTrack(null, MediaTrackType.SUBTITLE)
 
     val onConnectionStateChanged =
         Event1<CastConnectionState>()
