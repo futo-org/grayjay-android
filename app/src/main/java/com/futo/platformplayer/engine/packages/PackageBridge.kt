@@ -2,6 +2,8 @@ package com.futo.platformplayer.engine.packages
 
 import android.media.MediaCodec
 import android.media.MediaCodecList
+import android.media.MediaDrm
+import androidx.media3.common.C
 import com.caoccao.javet.annotations.V8Function
 import com.caoccao.javet.annotations.V8Property
 import com.caoccao.javet.interop.callback.JavetCallbackContext
@@ -97,12 +99,15 @@ class PackageBridge : V8Package {
 
     @V8Property
     fun supportedFeatures(): Array<String> {
-        return arrayOf(
-            "ReloadRequiredException",
-            "HttpBatchClient",
-            "Async",
-            "UMPSource"
-        );
+        return buildList {
+            add("ReloadRequiredException");
+            add("HttpBatchClient");
+            add("Async");
+            add("UMPSource");
+            if (isWidevineSupported()) {
+                add("HLSWidevineSource");
+            }
+        }.toTypedArray();
     }
 
     @V8Property
@@ -268,6 +273,20 @@ class PackageBridge : V8Package {
 
         private var _mediaCodecList: MutableList<String> = mutableListOf();
         private var _mediaCodecListHardware: MutableList<String> = mutableListOf();
+
+        private val _isWidevineSupported: Boolean by lazy {
+            try {
+                MediaDrm.isCryptoSchemeSupported(C.WIDEVINE_UUID);
+            }
+            catch (ex: Throwable) {
+                Logger.w(TAG, "Failed to query Widevine support, assuming unsupported.", ex);
+                false;
+            }
+        }
+
+        fun isWidevineSupported(): Boolean {
+            return _isWidevineSupported;
+        }
 
         fun getSupportedMediaCodecs(): List<String>{
             synchronized(_mediaCodecList) {

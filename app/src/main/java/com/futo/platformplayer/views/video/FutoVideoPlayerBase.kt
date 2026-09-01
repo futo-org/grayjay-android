@@ -30,6 +30,7 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.exoplayer.drm.MediaDrmCallback
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker
 import androidx.media3.exoplayer.source.BehindLiveWindowException
@@ -54,9 +55,12 @@ import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSou
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestWidevineAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoUrlWidevineSource
+import com.futo.platformplayer.api.media.models.streams.sources.IWidevineSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
@@ -530,6 +534,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is IDashManifestSource -> { swapVideoSourceDash(videoSource); true;}
             is JSDashManifestRawSource -> swapVideoSourceDashRaw(videoSource, play, resume, swapId);
             is JSUMPSource -> { swapVideoSourceUMP(videoSource); true; }
+            is IHLSManifestWidevineSource -> { swapVideoSourceHLSWidevine(videoSource); true; }
             is IHLSManifestSource -> { swapVideoSourceHLS(videoSource); true; }
             is IVideoUrlWidevineSource -> { swapVideoSourceUrlWidevine(videoSource); true; }
             is IVideoUrlSource -> { swapVideoSourceUrl(videoSource); true; }
@@ -547,6 +552,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val didSet = when(audioSource) {
             is LocalAudioSource -> {swapAudioSourceLocal(audioSource); true; }
             is JSAudioUrlRangeSource -> { swapAudioSourceUrlRange(audioSource); true; }
+            is IHLSManifestWidevineAudioSource -> { swapAudioSourceHLSWidevine(audioSource); true; }
             is JSHLSManifestAudioSource -> { swapAudioSourceHLS(audioSource); true; }
             is JSDashManifestRawAudioSource -> swapAudioSourceDashRaw(audioSource, play, resume, swapId);
             is IAudioUrlWidevineSource -> { swapAudioSourceUrlWidevine(audioSource); true; }
@@ -619,6 +625,21 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             .createMediaSource(MediaItem.fromUri(videoSource.getVideoUrl()));
     }
     @OptIn(UnstableApi::class)
+    private fun createDrmCallback(source: IWidevineSource, dataSource: HttpDataSource.Factory): MediaDrmCallback {
+        val baseCallback = HttpMediaDrmCallback(source.licenseUri, dataSource)
+        if (!source.hasLicenseRequestExecutor)
+            return baseCallback
+
+        val executor = source.getLicenseRequestExecutor()
+        if (executor == null) {
+            Logger.w(TAG, "License request executor unavailable, falling back to direct license requests")
+            return baseCallback
+        }
+
+        return PluginMediaDrmCallback(baseCallback, executor, source.licenseUri)
+    }
+
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrlWidevine(videoSource: IVideoUrlWidevineSource) {
         Logger.i(TAG, "Loading VideoSource [UrlWidevine]");
         val dataSource = if(videoSource is JSSource && videoSource.requiresCustomDatasource)
@@ -626,13 +647,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
 
-        val baseCallback = HttpMediaDrmCallback(videoSource.licenseUri, dataSource)
-
-        val callback = if (videoSource.hasLicenseRequestExecutor) {
-            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseRequestExecutor()!!, videoSource.licenseUri)
-        } else {
-            baseCallback
-        }
+        val callback = createDrmCallback(videoSource, dataSource)
 
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
@@ -661,13 +676,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             if (videoSource is JSSource && (videoSource.requiresCustomDatasource)) videoSource.getHttpDataSourceFactory()
             else DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
 
-        val baseCallback = HttpMediaDrmCallback(videoSource.licenseUri, dataSource)
-
-        val callback = if (videoSource.hasLicenseRequestExecutor) {
-            PluginMediaDrmCallback(baseCallback, videoSource.getLicenseRequestExecutor()!!, videoSource.licenseUri)
-        } else {
-            baseCallback
-        }
+        val callback = createDrmCallback(videoSource, dataSource)
 
         _lastVideoMediaSource = DashMediaSource.Factory(dataSource).setDrmSessionManagerProvider {
                 DefaultDrmSessionManager.Builder().setMultiSession(true).build(callback)
@@ -766,6 +775,25 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
         _lastVideoMediaSource = HlsMediaSource.Factory(dataSource)
+            .createMediaSource(MediaItem.fromUri(videoSource.url));
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceHLSWidevine(videoSource: IHLSManifestWidevineSource) {
+        Logger.i(TAG, "Loading VideoSource [HLSWidevine]");
+        val dataSource = if(videoSource is JSSource && videoSource.requiresCustomDatasource)
+            videoSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+
+        val callback = createDrmCallback(videoSource, dataSource)
+
+        _lastVideoMediaSource = HlsMediaSource.Factory(dataSource)
+            .setDrmSessionManagerProvider {
+                DefaultDrmSessionManager.Builder()
+                    .setMultiSession(true)
+                    .build(callback)
+            }
             .createMediaSource(MediaItem.fromUri(videoSource.url));
     }
 
@@ -882,6 +910,25 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     @OptIn(UnstableApi::class)
+    private fun swapAudioSourceHLSWidevine(audioSource: IHLSManifestWidevineAudioSource) {
+        Logger.i(TAG, "Loading AudioSource [HLSWidevine]");
+        val dataSource = if(audioSource is JSSource && audioSource.requiresCustomDatasource)
+            audioSource.getHttpDataSourceFactory()
+        else
+            DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT);
+
+        val callback = createDrmCallback(audioSource, dataSource)
+
+        _lastAudioMediaSource = HlsMediaSource.Factory(dataSource)
+            .setDrmSessionManagerProvider {
+                DefaultDrmSessionManager.Builder()
+                    .setMultiSession(true)
+                    .build(callback)
+            }
+            .createMediaSource(MediaItem.fromUri(audioSource.url));
+    }
+
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceDashRaw(audioSource: JSDashManifestRawAudioSource, play: Boolean, resume: Boolean, swapId: Int): Boolean {
         Logger.i(TAG, "Loading AudioSource [DashRaw]");
         if(audioSource.hasGenerate) {
@@ -964,13 +1011,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         else
             DefaultHttpDataSource.Factory().setUserAgent(DEFAULT_USER_AGENT)
 
-        val baseCallback = HttpMediaDrmCallback(audioSource.licenseUri, dataSource)
-
-        val callback = if (audioSource.hasLicenseRequestExecutor) {
-            PluginMediaDrmCallback(baseCallback, audioSource.getLicenseRequestExecutor()!!, audioSource.licenseUri)
-        } else {
-            baseCallback
-        }
+        val callback = createDrmCallback(audioSource, dataSource)
 
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
