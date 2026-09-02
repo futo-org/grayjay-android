@@ -573,6 +573,23 @@ class StateCasting {
                         Logger.i(TAG, "Casting as raw DASH");
 
                         castDashRaw(contentResolver, video, videoSource as JSDashManifestRawSource?, audioSource as JSDashManifestRawAudioSource?, subtitleSource, resumePosition, speed, castId, onLoadingEstimate, onLoading);
+                    } else if (videoSource is IHLSManifestSource) {
+                        //Some plugins (e.g. Nebula) report unmuxed video+audio that are actually the same HLS manifest - treat as one HLS source
+                        Logger.i(TAG, "Casting as proxied HLS (video+audio both from same HLS manifest)");
+                        val proxyStreams = shouldProxyStreams(ad, videoSource, audioSource)
+                        if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
+                            castProxiedHls(video, videoSource.url, videoSource.codec, resumePosition, speed, (videoSource as? JSSource)?.getRequestModifier());
+                        } else {
+                            ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", videoSource.container, videoSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
+                        }
+                    } else if (audioSource is IHLSManifestAudioSource) {
+                        Logger.i(TAG, "Casting as proxied HLS (audio-only HLS manifest)");
+                        val proxyStreams = shouldProxyStreams(ad, videoSource, audioSource)
+                        if (proxyStreams || deviceProto == CastProtocolType.CHROMECAST) {
+                            castProxiedHls(video, audioSource.url, audioSource.codec, resumePosition, speed, (audioSource as? JSSource)?.getRequestModifier());
+                        } else {
+                            ad.loadVideo(if (video.isLive) "LIVE" else "BUFFERED", audioSource.container, audioSource.url, resumePosition, video.duration.toDouble(), speed, metadataFromVideo(video));
+                        }
                     } else {
                         Logger.i(TAG, "Casting as DASH indirect");
                         castDashIndirect(contentResolver, video, videoSource as IVideoUrlSource?, audioSource as IAudioUrlSource?, subtitleSource, resumePosition, speed);
@@ -943,7 +960,7 @@ class StateCasting {
 
                 val masterPlaylist: HLS.MasterPlaylist
                 try {
-                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, sourceUrl)
+                    masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, masterPlaylistResponse.url)
                 } catch (e: Throwable) {
                     if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
                         //This is a variant playlist, not a master playlist
@@ -953,7 +970,7 @@ class StateCasting {
                         vpHeaders["Content-Type"] = "application/vnd.apple.mpegurl";
 
                         val variantPlaylist =
-                            HLS.parseVariantPlaylist(masterPlaylistContent, sourceUrl)
+                            HLS.parseVariantPlaylist(masterPlaylistContent, masterPlaylistResponse.url)
                         val proxiedVariantPlaylist =
                             proxyVariantPlaylist(url, id, variantPlaylist,  video.isLive, requestModifier)
                         val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
@@ -997,7 +1014,7 @@ class StateCasting {
                                 ?: throw Exception("Variant playlist content is empty")
 
                             val variantPlaylist =
-                                HLS.parseVariantPlaylist(vpContent, variantPlaylistRef.url)
+                                HLS.parseVariantPlaylist(vpContent, response.url)
                             val proxiedVariantPlaylist =
                                 proxyVariantPlaylist(url, playlistId, variantPlaylist, video.isLive, requestModifier)
                             val proxiedVariantPlaylist_m3u8 = proxiedVariantPlaylist.buildM3U8()
@@ -1037,7 +1054,7 @@ class StateCasting {
                                     ?: throw Exception("Variant playlist content is empty")
 
                                 val variantPlaylist =
-                                    HLS.parseVariantPlaylist(vpContent, mediaRendition.uri)
+                                    HLS.parseVariantPlaylist(vpContent, response.url)
                                 val proxiedVariantPlaylist = proxyVariantPlaylist(
                                     url, playlistId, variantPlaylist, video.isLive, requestModifier
                                 )
@@ -1051,7 +1068,8 @@ class StateCasting {
                         mediaRendition.type,
                         newPlaylistUrl,
                         mediaRendition.groupID,
-                        mediaRendition.language,
+                        //ChromeCast rejects the "und" language tag
+                        mediaRendition.language?.takeIf { it != "und" },
                         mediaRendition.name,
                         mediaRendition.isDefault,
                         mediaRendition.isAutoSelect,
@@ -1093,6 +1111,12 @@ class StateCasting {
             newSegments.addAll(variantPlaylist.segments)
         }
 
+        val newMapUrl = if (proxySegments) {
+            variantPlaylist.mapUrl?.let { proxyInitSegment(url, playlistId, it, requestModifier) }
+        } else {
+            variantPlaylist.mapUrl
+        }
+
         return HLS.VariantPlaylist(
             variantPlaylist.version,
             variantPlaylist.targetDuration,
@@ -1101,8 +1125,29 @@ class StateCasting {
             variantPlaylist.programDateTime,
             variantPlaylist.playlistType,
             variantPlaylist.streamInfo,
-            newSegments
+            newSegments,
+            variantPlaylist.decryptionInfo,
+            newMapUrl,
+            variantPlaylist.mapBytesStart,
+            variantPlaylist.mapBytesLength,
+            variantPlaylist.unhandled
         )
+    }
+
+    private fun proxyInitSegment(url: String, playlistId: UUID, mapUrl: String, requestModifier: IRequestModifier?): String {
+        val newSegmentPath = "/hls-playlist-${playlistId}-init"
+        val newSegmentUrl = url + newSegmentPath;
+
+        if (_castServer.getHandler("GET", newSegmentPath) == null) {
+            _castServer.addHandlerWithAllowAllOptions(
+                HttpProxyHandler("GET", newSegmentPath, mapUrl, true)
+                    .withIRequestModifier(requestModifier)
+                    .withInjectedHost()
+                    .withHeader("Access-Control-Allow-Origin", "*"), true
+            ).withTag("castProxiedHlsVariant")
+        }
+
+        return newSegmentUrl
     }
 
     private fun proxySegment(url: String, playlistId: UUID, segment: HLS.Segment, index: Long, requestModifier: IRequestModifier?): HLS.Segment {
