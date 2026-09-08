@@ -29,6 +29,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.FrameworkMediaDrm
 import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.drm.MediaDrmCallback
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -640,6 +641,28 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     @OptIn(UnstableApi::class)
+    private fun createDrmSessionManager(source: IWidevineSource, callback: MediaDrmCallback): DefaultDrmSessionManager {
+        val builder = DefaultDrmSessionManager.Builder().setMultiSession(true)
+        val certificate = source.serviceCertificate
+        if (certificate != null) {
+            builder.setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID) { uuid ->
+                FrameworkMediaDrm.newInstance(uuid).apply {
+                    // Privacy mode: the CDM encrypts its client id with the provider certificate.
+                    // Both the privacyMode flag and the certificate are required; the flag alone
+                    // keeps plaintext client ids, the certificate alone is ignored on some CDMs.
+                    try {
+                        setPropertyString("privacyMode", "enable")
+                        setPropertyByteArray("serviceCertificate", certificate)
+                    } catch (e: Throwable) {
+                        Logger.w(TAG, "Failed to set Widevine service certificate, continuing without it", e)
+                    }
+                }
+            }
+        }
+        return builder.build(callback)
+    }
+
+    @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrlWidevine(videoSource: IVideoUrlWidevineSource) {
         Logger.i(TAG, "Loading VideoSource [UrlWidevine]");
         val dataSource = if(videoSource is JSSource && videoSource.requiresCustomDatasource)
@@ -651,9 +674,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
-                DefaultDrmSessionManager.Builder()
-                    .setMultiSession(true)
-                    .build(callback)
+                createDrmSessionManager(videoSource, callback)
             }
             .createMediaSource(
                 MediaItem.fromUri(videoSource.getVideoUrl())
@@ -679,7 +700,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         val callback = createDrmCallback(videoSource, dataSource)
 
         _lastVideoMediaSource = DashMediaSource.Factory(dataSource).setDrmSessionManagerProvider {
-                DefaultDrmSessionManager.Builder().setMultiSession(true).build(callback)
+                createDrmSessionManager(videoSource, callback)
             }.createMediaSource(MediaItem.fromUri(videoSource.url))
     }
     @OptIn(UnstableApi::class)
@@ -790,9 +811,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         _lastVideoMediaSource = HlsMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
-                DefaultDrmSessionManager.Builder()
-                    .setMultiSession(true)
-                    .build(callback)
+                createDrmSessionManager(videoSource, callback)
             }
             .createMediaSource(MediaItem.fromUri(videoSource.url));
     }
@@ -921,9 +940,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         _lastAudioMediaSource = HlsMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
-                DefaultDrmSessionManager.Builder()
-                    .setMultiSession(true)
-                    .build(callback)
+                createDrmSessionManager(audioSource, callback)
             }
             .createMediaSource(MediaItem.fromUri(audioSource.url));
     }
@@ -1015,9 +1032,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(dataSource)
             .setDrmSessionManagerProvider {
-                DefaultDrmSessionManager.Builder()
-                    .setMultiSession(true)
-                    .build(callback)
+                createDrmSessionManager(audioSource, callback)
             }
             .createMediaSource(
                 MediaItem.fromUri(audioSource.getAudioUrl())
