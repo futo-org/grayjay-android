@@ -425,6 +425,8 @@ class VideoUrlWidevineSource extends VideoUrlSource {
         this.plugin_type = "VideoUrlWidevineSource";
 
         this.licenseUri = obj.licenseUri;
+        if(obj.serviceCertificate)
+            this.serviceCertificate = obj.serviceCertificate;
         if(obj.getLicenseRequestExecutor)
             this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
     }
@@ -462,6 +464,8 @@ class AudioUrlWidevineSource extends AudioUrlSource {
         this.plugin_type = "AudioUrlWidevineSource";
 
         this.licenseUri = obj.licenseUri;
+        if(obj.serviceCertificate)
+            this.serviceCertificate = obj.serviceCertificate;
         if(obj.getLicenseRequestExecutor)
             this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
 
@@ -524,6 +528,8 @@ class HLSWidevineSource extends HLSSource {
         this.plugin_type = "HLSWidevineSource";
 
         this.licenseUri = obj.licenseUri;
+        if(obj.serviceCertificate)
+            this.serviceCertificate = obj.serviceCertificate;
         if(obj.getLicenseRequestExecutor)
             this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
     }
@@ -549,6 +555,8 @@ class DashWidevineSource extends DashSource {
         this.plugin_type = "DashWidevineSource";
 
         this.licenseUri = obj.licenseUri;
+        if(obj.serviceCertificate)
+            this.serviceCertificate = obj.serviceCertificate;
         if(obj.getLicenseRequestExecutor)
             this.getLicenseRequestExecutor = obj.getLicenseRequestExecutor;
     }

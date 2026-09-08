@@ -1,10 +1,12 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
+import android.util.Base64
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestWidevineAudioSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.engine.V8Plugin
+import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.invokeV8
@@ -24,6 +26,7 @@ class JSHLSManifestWidevineAudioSource : IHLSManifestWidevineAudioSource, JSSour
 
     override val licenseUri: String;
     override val hasLicenseRequestExecutor: Boolean;
+    override val serviceCertificate: ByteArray?;
 
     constructor(plugin: JSClient, obj: V8ValueObject) : super(TYPE_HLS, plugin, obj) {
         val contextName = "HLSWidevineAudioSource";
@@ -39,6 +42,8 @@ class JSHLSManifestWidevineAudioSource : IHLSManifestWidevineAudioSource, JSSour
 
         licenseUri = _obj.getOrThrow(config, "licenseUri", contextName);
         hasLicenseRequestExecutor = plugin.busy { obj.has("getLicenseRequestExecutor") };
+        serviceCertificate = _obj.getOrDefault<String>(config, "serviceCertificate", contextName, null)
+            ?.let { Base64.decode(it, Base64.NO_PADDING or Base64.NO_WRAP) };
     }
 
     override fun getLicenseRequestExecutor(): JSRequestExecutor? {
