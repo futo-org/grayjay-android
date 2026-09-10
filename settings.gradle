@@ -11,6 +11,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        // Polycentric Kotlin SDK, published by the Harbor Gitlab project.
+        // TODO: when the Harbor Forgejo project publishes the SDK, switch to that URL.
+        maven { url 'https://gitlab.futo.org/api/v4/projects/42/packages/maven' }
     }
 }
 
