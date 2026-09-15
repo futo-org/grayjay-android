@@ -33,6 +33,7 @@ import com.futo.platformplayer.api.media.models.live.LiveEventRaid
 import com.futo.platformplayer.api.media.models.live.LiveEventViewCount
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.isHexColor
 import com.futo.platformplayer.logging.Logger
@@ -52,6 +53,7 @@ class LiveChatOverlay : LinearLayout {
     val onClose = Event0();
 
     private val _closeButton: ImageView;
+    private val _backToChatButton: ImageView;
     private val _donationList: LinearLayout;
 
     private val _overlay: View;
@@ -97,7 +99,7 @@ class LiveChatOverlay : LinearLayout {
 
     val onRaidNow = Event1<LiveEventRaid>();
     val onRaidPrevent = Event1<LiveEventRaid>();
-    val onUrlClick = Event1<Uri>()
+    val onUrlClick = Event2<Uri, ILiveChatWindowDescriptor?>()
 
     private val _argJsonSerializer = Json;
 
@@ -110,6 +112,9 @@ class LiveChatOverlay : LinearLayout {
         _chatWindowContainer.webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url);
+                if (!isChatUrl(url)) {
+                    return;
+                }
                 _window?.let {
                     var toRemoveJS = "";
                     for(req in it.removeElements)
@@ -123,15 +128,20 @@ class LiveChatOverlay : LinearLayout {
                 };
             }
 
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                super.doUpdateVisitedHistory(view, url, isReload);
+                updateBackToChat(url);
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                onUrlClick.emit(request.url)
+                onUrlClick.emit(request.url, _window)
                 return true
             }
 
             // API < 24
             @Suppress("DEPRECATION")
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-                onUrlClick.emit(url.toUri())
+                onUrlClick.emit(url.toUri(), _window)
                 return true
             }
         };
@@ -191,6 +201,11 @@ class LiveChatOverlay : LinearLayout {
             close();
         };
 
+        _backToChatButton = findViewById(R.id.button_back_to_chat);
+        _backToChatButton.setOnClickListener {
+            returnToChat();
+        };
+
         hideOverlay();
         updateDonationUI();
     }
@@ -209,6 +224,44 @@ class LiveChatOverlay : LinearLayout {
         onClose.emit();
     }
 
+    fun loadInChat(uri: Uri, origin: ILiveChatWindowDescriptor?) {
+        if (origin == null || origin !== _window) {
+            return;
+        }
+
+        val referer = _window?.url;
+        if (referer != null && (referer.startsWith("https://") || referer.startsWith("http://"))) {
+            _chatWindowContainer.loadUrl(uri.toString(), mapOf("Referer" to referer));
+        } else {
+            _chatWindowContainer.loadUrl(uri.toString());
+        }
+    }
+
+    private fun isChatUrl(url: String?): Boolean {
+        val chatUrl = _window?.url;
+        if (chatUrl == null || url == null) {
+            return false;
+        }
+
+        return url.substringBefore('#').trimEnd('/') == chatUrl.substringBefore('#').trimEnd('/');
+    }
+
+    private fun updateBackToChat(url: String?) {
+        val isAwayFromChat = _window != null && url != null && url != "about:blank" && !isChatUrl(url);
+        _backToChatButton.visibility = if (isAwayFromChat) View.VISIBLE else View.GONE;
+    }
+
+    fun returnToChat(): Boolean {
+        val window = _window;
+        if (window == null || _backToChatButton.visibility != View.VISIBLE) {
+            return false;
+        }
+
+        _backToChatButton.visibility = View.GONE;
+        _chatWindowContainer.loadUrl(window.url);
+        return true;
+    }
+
     fun load(scope: CoroutineScope, manager: LiveChatManager?, window: ILiveChatWindowDescriptor? = null, viewerCount: Long? = null) {
         _scope = scope;
         _donationList.removeAllViews();
@@ -217,6 +270,7 @@ class LiveChatOverlay : LinearLayout {
         _chatAdapter.notifyDataSetChanged();
         _manager = manager;
         _window = window;
+        _backToChatButton.visibility = View.GONE;
 
         if(viewerCount != null)
             _textViewers.text = viewerCount.toHumanNumber() + " " + context.getString(R.string.viewers);
@@ -272,10 +326,12 @@ class LiveChatOverlay : LinearLayout {
         _chats.clear();
         //_chatAdapter.notifyContentChanged();
         _chatWindowContainer.loadUrl("about:blank");
+        _backToChatButton.visibility = View.GONE;
         _chatAdapter.notifyDataSetChanged();
         _manager?.unfollow(this);
         _manager?.stop(); //TODO: Remove this after proper manager gets stopped in videodetail for reuse
         _manager = null;
+        _window = null;
     }
 
     fun handleLiveEvent(liveEvent: IPlatformLiveEvent) {

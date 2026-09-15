@@ -26,7 +26,7 @@
             android:textSize="18dp"
             android:textColor="@color/white"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/button_back_to_chat"
             android:layout_margin="10dp"
             android:text="@string/live_chat" />
 
@@ -61,6 +61,18 @@
 
             </LinearLayout>
         </HorizontalScrollView>
+
+        <ImageView
+            android:id="@+id/button_back_to_chat"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/cd_button_back"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_margin="7dp"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:src="@drawable/ic_back_thin_white_16dp" />
 
         <ImageView
             android:id="@+id/button_close"

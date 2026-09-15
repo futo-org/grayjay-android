@@ -470,26 +470,34 @@ class VideoDetailView : ConstraintLayout {
             fragment.navigate<VideoDetailFragment>(it.targetUrl);
         };
 
-        _container_content_liveChat.onUrlClick.subscribe { uri ->
+        _container_content_liveChat.onUrlClick.subscribe { uri, window ->
+            val openExternally = { target: Uri ->
+                Intent(Intent.ACTION_VIEW, target).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                    context.startActivity(this)
+                }
+            }
+            val openFallback = { target: Uri ->
+                val scheme = target.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https") {
+                    _container_content_liveChat.loadInChat(target, window)
+                } else {
+                    openExternally(target)
+                }
+            }
             val c = context
             if (c is MainActivity) {
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
                         if (!c.handleUrl(uri.toString())) {
-                            Intent(Intent.ACTION_VIEW, uri).apply {
-                                addCategory(Intent.CATEGORY_BROWSABLE)
-                                context.startActivity(this)
-                            }
+                            openFallback(uri)
                         }
                     } catch (e: Throwable) {
-                        Log.e(TAG, "Failed to handle live chat URL")
+                        Logger.e(TAG, "Failed to handle live chat URL", e)
                     }
                 }
             } else {
-                Intent(Intent.ACTION_VIEW, uri).apply {
-                    addCategory(Intent.CATEGORY_BROWSABLE)
-                    context.startActivity(this)
-                }
+                openFallback(uri)
             }
         }
 
@@ -3212,6 +3220,10 @@ class VideoDetailView : ConstraintLayout {
             } else {
                 _slideUpOverlay = null;
             }
+        }
+
+        if (_container_content_current == _container_content_liveChat && _container_content_liveChat.returnToChat()) {
+            return true;
         }
 
         if (_container_content_current != _container_content_main) {
