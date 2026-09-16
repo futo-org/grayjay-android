@@ -3,6 +3,7 @@ package com.futo.platformplayer.stores.v2
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StateApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -263,6 +264,16 @@ class ManagedStore<T>{
             else null;
 
             var file = getFile(obj);
+            try {
+                if (file == null && (obj as Playlist).id.isNotEmpty() && onlyExisting) {
+                    val files = _files.filter { (key, _) -> (key as Playlist).id == (obj as Playlist).id }
+                    if (files.size == 1) {
+                        file = files.values.first();
+                    }
+                }
+            } catch (_: ClassCastException) {
+                // not a playlist
+            }
             if (file != null) {
                 Logger.v(TAG, "Saving file ${logName(file.id)}");
                 val encoded = _serializer.serialize(_class, obj);
