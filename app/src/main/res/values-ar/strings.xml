@@ -683,6 +683,7 @@
     <string-array name="feed_style">
         <item>معاينة</item>
         <item>قائمة</item>
+        <item>إمكانية الوصول</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>لا شيء</item>
