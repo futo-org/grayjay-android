@@ -35,7 +35,7 @@ import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
 import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
-import com.futo.polycentric.core.toBase64Url
+import com.futo.platformplayer.toBase64Url
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
 import kotlinx.coroutines.Dispatchers

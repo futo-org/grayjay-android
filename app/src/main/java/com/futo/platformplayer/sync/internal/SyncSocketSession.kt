@@ -9,8 +9,8 @@ import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.HandshakeState
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
-import com.futo.polycentric.core.base64ToByteArray
-import com.futo.polycentric.core.toBase64
+import com.futo.platformplayer.base64ToByteArray
+import com.futo.platformplayer.toBase64
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

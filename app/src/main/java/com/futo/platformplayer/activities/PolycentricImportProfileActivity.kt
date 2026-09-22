@@ -23,7 +23,7 @@ import com.futo.polycentric.core.Process
 import com.futo.polycentric.core.ProcessSecret
 import com.futo.polycentric.core.SignedEvent
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.base64UrlToByteArray
+import com.futo.platformplayer.base64UrlToByteArray
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

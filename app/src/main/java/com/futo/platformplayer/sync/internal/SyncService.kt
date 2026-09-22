@@ -13,9 +13,9 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.noise.protocol.DHState
 import com.futo.platformplayer.noise.protocol.Noise
 import com.futo.platformplayer.states.StateSync
-import com.futo.polycentric.core.base64ToByteArray
-import com.futo.polycentric.core.base64UrlToByteArray
-import com.futo.polycentric.core.toBase64
+import com.futo.platformplayer.base64ToByteArray
+import com.futo.platformplayer.base64UrlToByteArray
+import com.futo.platformplayer.toBase64
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

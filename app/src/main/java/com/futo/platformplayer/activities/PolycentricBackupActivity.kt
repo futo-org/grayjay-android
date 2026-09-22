@@ -30,7 +30,7 @@ import com.futo.polycentric.core.SignedEvent
 import com.futo.polycentric.core.StorageTypeCRDTItem
 import com.futo.polycentric.core.StorageTypeCRDTSetItem
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.toBase64Url
+import com.futo.platformplayer.toBase64Url
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter

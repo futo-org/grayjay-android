@@ -7,7 +7,7 @@ import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
-import com.futo.polycentric.core.combineHashCodes
+import com.futo.platformplayer.combineHashCodes
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

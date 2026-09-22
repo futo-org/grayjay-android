@@ -39,9 +39,9 @@ import com.futo.polycentric.core.SignedEvent
 import com.futo.polycentric.core.SqlLiteDbHelper
 import com.futo.polycentric.core.Store
 import com.futo.polycentric.core.SystemState
-import com.futo.polycentric.core.base64ToByteArray
+import com.futo.platformplayer.base64ToByteArray
 import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
-import com.futo.polycentric.core.toBase64
+import com.futo.platformplayer.toBase64
 import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.CoroutineScope

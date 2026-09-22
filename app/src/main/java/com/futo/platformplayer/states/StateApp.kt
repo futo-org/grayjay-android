@@ -54,7 +54,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
 import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.toBase64Url
+import com.futo.platformplayer.toBase64Url
 import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
