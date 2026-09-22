@@ -61,7 +61,7 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSpeed
-import com.futo.polycentric.core.hexStringToByteArray
+import com.futo.platformplayer.hexStringToByteArray
 import hasAnySource
 import isDownloadable
 import kotlinx.coroutines.CancellationException

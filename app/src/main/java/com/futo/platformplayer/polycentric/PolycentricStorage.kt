@@ -6,8 +6,8 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.polycentric.core.ProcessSecret
 import com.futo.polycentric.core.PublicKey
-import com.futo.polycentric.core.base64ToByteArray
-import com.futo.polycentric.core.toBase64
+import com.futo.platformplayer.base64ToByteArray
+import com.futo.platformplayer.toBase64
 import userpackage.Protocol
 
 class PolycentricStorage {

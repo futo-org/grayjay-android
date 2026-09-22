@@ -2,6 +2,7 @@ package com.futo.platformplayer.engine.packages
 
 import android.util.Base64
 import com.caoccao.javet.annotations.V8Function
+import com.futo.platformplayer.toBase64
 import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.google.common.hash.Hashing.md5
@@ -22,7 +23,7 @@ class PackageUtilities : V8Package {
 
     @V8Function
     fun toBase64(arr: ByteArray): String {
-        return Base64.encodeToString(arr, Base64.NO_PADDING or Base64.NO_WRAP);
+        return arr.toBase64();
     }
 
     @V8Function
