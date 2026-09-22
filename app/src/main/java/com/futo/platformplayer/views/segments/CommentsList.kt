@@ -169,7 +169,7 @@ class CommentsList : ConstraintLayout {
 
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
-                        processHandle.delete(comment.eventPointer.process, comment.eventPointer.logicalClock)
+                        comment.eventPointer?.let { processHandle.delete(it.process, it.logicalClock) }
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to delete event.", e);
                         return@launch;
