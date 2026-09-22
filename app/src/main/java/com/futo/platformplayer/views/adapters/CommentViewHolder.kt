@@ -243,7 +243,7 @@ class CommentViewHolder : ViewHolder {
         }
 
         val processHandle = StatePolycentric.instance.processHandle
-        if (processHandle != null && comment is PolycentricPlatformComment && processHandle.system == comment.eventPointer.system) {
+        if (processHandle != null && comment is PolycentricPlatformComment && processHandle.system == comment.eventPointer?.system) {
             _buttonDelete.visibility = View.VISIBLE
         } else {
             _buttonDelete.visibility = View.GONE
