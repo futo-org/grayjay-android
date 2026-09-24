@@ -139,6 +139,7 @@ import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.models.SendToDevicePackage
 import com.futo.platformplayer.sabr.SabrCodecs
 import com.futo.platformplayer.toHumanBitrate
+import com.futo.platformplayer.toLanguageDisplayName
 import com.futo.platformplayer.toHumanBytesSize
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
@@ -2592,7 +2593,7 @@ class VideoDetailView : ConstraintLayout {
     @androidx.annotation.OptIn(UnstableApi::class)
     private fun audioTrackLabel(format: Format): String {
         format.label?.let { return it };
-        val parts = listOfNotNull(format.language, if(format.bitrate > 0) "${format.bitrate / 1000}kbps" else null);
+        val parts = listOfNotNull(format.language?.toLanguageDisplayName(), if(format.bitrate > 0) "${format.bitrate / 1000}kbps" else null);
         return if(parts.isNotEmpty()) parts.joinToString(" ")
             else format.containerMimeType ?: format.bitrate.toString();
     }

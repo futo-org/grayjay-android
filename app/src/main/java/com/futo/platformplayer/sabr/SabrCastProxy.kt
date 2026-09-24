@@ -12,6 +12,7 @@ class SabrCastProxy(
 
     val isLive: Boolean get() = session.isLive
     val videoId: String get() = session.videoId
+    val serverAbrStreamingUrl: String get() = session.serverAbrStreamingUrl
 
     @Volatile private var videoFirstSeq = 0
     @Volatile private var audioFirstSeq = 0
@@ -432,7 +433,8 @@ class SabrCastProxy(
     private fun reportedPlayheadUs(): Long {
         val head = session.liveMetadata?.takeIf { it.headSequenceTimeMs > 0 }?.headSequenceTimeMs
             ?: return receiverPlayheadUs()
-        val headUs = head * 1000L
+        val sinceMetadataMs = (System.currentTimeMillis() - session.liveMetadataAtMs).coerceIn(0L, LIVE_HEAD_EXTRAPOLATE_MAX_MS)
+        val headUs = (head + sinceMetadataMs) * 1000L
 
         val playhead = receiverPlayheadUs().takeIf { it != Long.MIN_VALUE && it <= headUs } ?: Long.MIN_VALUE
         val floor = headUs - LIVE_MAX_REPORTED_LAG_US
@@ -1521,6 +1523,7 @@ class SabrCastProxy(
         private const val FORWARD_GAP_SLACK_US = 30_000_000L
         private const val VOD_KEEP_BEHIND_US = 60_000_000L
         private const val LIVE_KEEP_BEHIND_US = 90_000_000L
+        private const val LIVE_HEAD_EXTRAPOLATE_MAX_MS = 60_000L
         private const val TAG = "SabrCastProxy"
     }
 }
