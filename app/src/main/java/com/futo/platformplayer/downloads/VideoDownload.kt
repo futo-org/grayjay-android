@@ -29,6 +29,7 @@ import com.futo.platformplayer.api.media.models.streams.sources.LocalVideoSource
 import com.futo.platformplayer.api.media.models.streams.sources.SubtitleRawSource
 import com.futo.platformplayer.api.media.models.streams.sources.VideoUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.StreamMetaData
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
@@ -45,6 +46,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPAudioS
 import com.futo.platformplayer.sabr.SabrFormat
 import com.futo.platformplayer.sabr.SabrSession
 import com.futo.platformplayer.sabr.SabrStreamSpec
+import com.futo.platformplayer.sabr.proto.FormatInitializationMetadata
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.engine.exceptions.ScriptException
@@ -192,6 +194,7 @@ class VideoDownload {
     var videoFileNameExt: String? = null;
     val videoFileName: String? get() = if(videoFileNameBase.isNullOrEmpty()) null else videoFileNameBase + (if(!videoFileNameExt.isNullOrEmpty()) "." + videoFileNameExt else "");
     var videoOverrideContainer: String? = null;
+    var videoStreamMetaData: StreamMetaData? = null;
     var videoFileSize: Long? = null;
 
     var audioFilePath: String? = null;
@@ -199,6 +202,7 @@ class VideoDownload {
     var audioFileNameExt: String? = null;
     val audioFileName: String? get() = if(audioFileNameBase.isNullOrEmpty()) null else audioFileNameBase + (if(!audioFileNameExt.isNullOrEmpty()) "." + audioFileNameExt else "");
     var audioOverrideContainer: String? = null;
+    var audioStreamMetaData: StreamMetaData? = null;
     var audioFileSize: Long? = null;
 
     var subtitleFilePath: String? = null;
@@ -301,12 +305,14 @@ class VideoDownload {
             videoSource = null;
             videoSourceLive = null;
             videoOverrideContainer = null;
+            videoStreamMetaData = null;
         }
         if(requiresLiveAudioSource && !isLiveAudioSourceValid) {
             videoDetails = null;
             audioSource = null;
             videoSourceLive = null;
             audioOverrideContainer = null;
+            audioStreamMetaData = null;
         }
         if(video == null && videoDetails == null)
             throw IllegalStateException("Missing information for download to complete");
@@ -1133,6 +1139,7 @@ class VideoDownload {
     }
 
     private fun selectBestUMPVideoFormat(source: JSUMPSource): SabrFormat? {
+        source.format?.let { return it };
         if(source.videoFormats.isEmpty()) return null;
         val target = targetPixelCount;
         return if(target != null && target > 0)
@@ -1396,9 +1403,14 @@ class VideoDownload {
         if(n <= 1 || totalUs <= 0L) {
             val session = spec.createSession().apply { keepBehindUs = UMP_DOWNLOAD_KEEP_BEHIND_US };
             session.start();
-            try { return downloadUMPTrack(session, role, format, targetFile, fallbackEstimate, onRead); }
+            try {
+                val length = downloadUMPTrack(session, role, format, targetFile, fallbackEstimate, onRead);
+                recordUMPStreamMetaData(role, session.formatInitializationFor(format));
+                return length;
+            }
             finally { session.release(); }
         }
+        val formatInitHolder = java.util.concurrent.atomic.AtomicReference<FormatInitializationMetadata?>(null);
 
         if(targetFile.exists()) targetFile.delete();
         val tmpDir = File(targetFile.parentFile, targetFile.name + ".umpparts");
@@ -1470,8 +1482,9 @@ class VideoDownload {
                                 session.setPlaybackPosition(segment.endUs);
                                 session.setDemand(role, format, segment.endUs);
                                 lastProgressMs = System.currentTimeMillis();
-                                session.formatInitializationFor(format)?.endSegmentNumber?.let {
-                                    if(it > 0) endSegment.set(it);
+                                session.formatInitializationFor(format)?.let { formatInit ->
+                                    formatInitHolder.compareAndSet(null, formatInit);
+                                    if(formatInit.endSegmentNumber > 0) endSegment.set(formatInit.endSegmentNumber);
                                 }
                                 if(claimed.add(segment.sequenceNumber)) {
                                     val bytes = segment.toByteArray();
@@ -1506,8 +1519,18 @@ class VideoDownload {
             }
         }
         tmpDir.deleteRecursively();
+        recordUMPStreamMetaData(role, formatInitHolder.get());
         onRead(total, total);
         return total;
+    }
+
+    private fun recordUMPStreamMetaData(role: Int, meta: FormatInitializationMetadata?) {
+        if(meta == null || meta.indexRange.end <= 0 || meta.initRange.end <= 0) {
+            Logger.w(TAG, "No init/index ranges for UMP role=$role; the download cannot be cast");
+            return;
+        }
+        val data = StreamMetaData(meta.initRange.start.toInt(), meta.initRange.end.toInt(), meta.indexRange.start.toInt(), meta.indexRange.end.toInt());
+        if(role == SabrSession.ROLE_VIDEO) videoStreamMetaData = data else audioStreamMetaData = data;
     }
 
     fun createNewPluginClient() {
@@ -1913,6 +1936,11 @@ class VideoDownload {
 
         if(localAudioSource != null && localAudioSource.streamMetaData == null && videoSourceToUse is JSDashManifestRawSource)
             localAudioSource.streamMetaData = (videoSourceToUse as JSDashManifestRawSource).audioStreamMetaData;
+
+        if(localVideoSource != null && localVideoSource.streamMetaData == null && videoStreamMetaData != null)
+            localVideoSource.streamMetaData = videoStreamMetaData;
+        if(localAudioSource != null && localAudioSource.streamMetaData == null && audioStreamMetaData != null)
+            localAudioSource.streamMetaData = audioStreamMetaData;
 
         if(existing != null) {
             existing.videoSerialized = videoDetails!!;

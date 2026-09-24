@@ -42,7 +42,7 @@ interface SabrSessionListener {
 
 class SabrSession(
     private val httpClient: ManagedHttpClient,
-    serverAbrStreamingUrl: String,
+    val serverAbrStreamingUrl: String,
     private val ustreamerConfig: ByteArray,
     val videoId: String,
     private val clientInfo: ClientInfo,
@@ -200,6 +200,23 @@ class SabrSession(
 
         sabrLog("Restored SABR contexts: ${state.sabrContexts.keys.sorted()} " +
             "active=${state.activeSabrContexts.sorted()} (the session's own identity is NOT inherited)")
+    }
+
+    fun continueFrom(state: Transferable) {
+        restore(state)
+        playbackCookie = state.playbackCookie
+        requestNumber.set(state.requestNumber)
+        if (state.streamingUrl.isNotEmpty()) streamingUrl = state.streamingUrl
+        serverBackoffUntilMs = state.serverBackoffUntilMs
+        backoffUntilMs = state.backoffUntilMs
+        formatInitialization.putAll(state.formatInitialization)
+        if (state.mediaBaseSet) {
+            mediaBaseUs = state.mediaBaseUs
+            mediaBaseSet = true
+        }
+        val remainingMs = state.backoffUntilMs - System.currentTimeMillis()
+        sabrLog("Continuing session state: rn=${state.requestNumber} cookie=${state.playbackCookie?.size() ?: 0}b " +
+            "backoffRemaining=${if (remainingMs > 0) remainingMs else 0}ms")
     }
 
     @Volatile private var inheritedContexts = false

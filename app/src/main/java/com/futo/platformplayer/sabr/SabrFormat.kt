@@ -1,6 +1,7 @@
 package com.futo.platformplayer.sabr
 
 import com.futo.platformplayer.sabr.proto.FormatId
+import com.futo.platformplayer.toLanguageDisplayName
 
 class SabrFormat(
     val itag: Int,
@@ -42,7 +43,7 @@ class SabrFormat(
 
     val audioLabel: String get() = buildString {
         val lang = language?.takeIf { it.isNotBlank() && !it.equals("Unknown", true) }
-        if (lang != null) append("$lang ")
+        if (lang != null) append("${lang.toLanguageDisplayName()} ")
         if (bitrate > 0) append("${bitrate / 1000}kbps") else append("itag $itag")
         if (audioChannels > 2) append(" ${audioChannels}ch")
         if (isDrc) append(" (normalized)")

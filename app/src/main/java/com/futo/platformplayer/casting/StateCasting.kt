@@ -39,6 +39,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManifestRawSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.helpers.VttHelper
 import com.futo.platformplayer.sabr.CastSupersededException
 import com.futo.platformplayer.sabr.SabrBlockedException
 import com.futo.platformplayer.sabr.SabrFormat
@@ -65,6 +66,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.toUrlAddress
 import com.futo.platformplayer.views.casting.CastView
 import com.futo.platformplayer.views.casting.CastView.Companion
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -551,8 +553,8 @@ class StateCasting {
                     ?: "DRM protected content cannot be cast.");
             }
 
-            val castState = sabrState
-                ?: (videoSource as? JSUMPSource)?.let { takeRunningCastState(it.videoId) };
+            val runningCastState = if (sabrState == null) (videoSource as? JSUMPSource)?.let { takeRunningCastState(it.videoId, it.url) } else null;
+            val castState = sabrState ?: runningCastState;
 
             cleanExecutors()
             _castServer.removeAllHandlers("cast")
@@ -565,7 +567,7 @@ class StateCasting {
                     castLocalDash(video, videoSource as LocalVideoSource?, audioSource as LocalAudioSource?, subtitleSource as LocalSubtitleSource?, resumePosition, speed);
                 } else if (videoSource is JSUMPSource) {
                     Logger.i(TAG, "Casting as JSUMPSource (SABR)");
-                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading);
+                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading, continueSession = runningCastState != null);
                 } else {
                     val isRawDash =
                         videoSource is JSDashManifestRawSource || audioSource is JSDashManifestRawAudioSource
@@ -672,7 +674,7 @@ class StateCasting {
                     castDashRaw(contentResolver, video, null, audioSource as JSDashManifestRawAudioSource?, null, resumePosition, speed, castId, onLoadingEstimate, onLoading);
                 } else if (videoSource is JSUMPSource) {
                     Logger.i(TAG, "Casting as JSUMPSource (SABR)");
-                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading);
+                    castUMP(video, videoSource as JSUMPSource, subtitleSource, resumePosition, speed, castId, preferredVideoHeight, castState, onError, onLoadingEstimate, onLoading, continueSession = runningCastState != null);
                 } else {
                     var str = listOf(
                         if(videoSource != null) "Video: ${videoSource::class.java.simpleName}" else null,
@@ -893,7 +895,7 @@ class StateCasting {
         }
         if (subtitleSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
-                HttpFileHandler("GET", subtitlePath, subtitleSource.format ?: "text/vtt", subtitleSource.filePath)
+                HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleSource.format, File(subtitleSource.filePath).readText()), subtitleSource.format ?: "text/vtt")
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
         }
@@ -1170,7 +1172,7 @@ class StateCasting {
 
                 if (content != null) {
                     _castServer.addHandlerWithAllowAllOptions(
-                        HttpConstantHandler("GET", subtitlePath, content!!, subtitleSource?.format ?: "text/vtt")
+                        HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleSource?.format, content!!), subtitleSource?.format ?: "text/vtt")
                             .withHeader("Access-Control-Allow-Origin", "*"), true
                     ).withTag("cast");
                 }
@@ -1323,7 +1325,7 @@ class StateCasting {
 
                     if (!content.isNullOrEmpty()) {
                         _castServer.addHandlerWithAllowAllOptions(
-                            HttpConstantHandler("GET", subtitlePath, content, subtitleMimeTypeFull)
+                            HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleMimeTypeFull, content), subtitleMimeTypeFull)
                                 .withHeader("Access-Control-Allow-Origin", "*"),
                             true
                         ).withTag("castDashRaw")
@@ -1565,9 +1567,9 @@ class StateCasting {
 
     @OptIn(UnstableApi::class)
     @Synchronized
-    private fun takeRunningCastState(videoId: String): SabrSession.Transferable? {
+    private fun takeRunningCastState(videoId: String, url: String): SabrSession.Transferable? {
         val proxy = _sabrCastProxy ?: return null
-        if (proxy.videoId != videoId) return null
+        if (proxy.videoId != videoId || proxy.serverAbrStreamingUrl != url) return null
         return proxy.exportTransferable()
     }
 
@@ -1598,12 +1600,12 @@ class StateCasting {
 
         val bytes = readSubtitleBytes(subUri);
         if (bytes != null && bytes.isNotEmpty()) {
-            return SubtitleContent.Data(bytes, contentType);
+            return SubtitleContent.Data(VttHelper.clean(contentType, bytes), contentType);
         }
         val direct = subtitleSource.url;
         val directBytes = readSubtitleBytes(direct?.toUri());
         if (directBytes != null && directBytes.isNotEmpty()) {
-            return SubtitleContent.Data(directBytes, contentType);
+            return SubtitleContent.Data(VttHelper.clean(contentType, directBytes), contentType);
         }
 
         if (subtitleSource.hasFetch) {
@@ -1611,7 +1613,7 @@ class StateCasting {
                 subtitleSource.getSubtitles()
             };
             if (!text.isNullOrEmpty()) {
-                return SubtitleContent.Data(text.toByteArray(), contentType);
+                return SubtitleContent.Data(VttHelper.clean(contentType, text).toByteArray(), contentType);
             }
         }
 
@@ -1653,7 +1655,7 @@ class StateCasting {
         }
     }
 
-    private suspend fun castUMP(video: IPlatformVideoDetails, source: JSUMPSource, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, preferredVideoHeight: Int = -1, sabrState: SabrSession.Transferable? = null, onError: ((Throwable) -> Unit)? = null, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null) : List<String> {
+    private suspend fun castUMP(video: IPlatformVideoDetails, source: JSUMPSource, subtitleSource: ISubtitleSource?, resumePosition: Double, speed: Double?, castId: Int, preferredVideoHeight: Int = -1, sabrState: SabrSession.Transferable? = null, onError: ((Throwable) -> Unit)? = null, onLoadingEstimate: ((Int) -> Unit)? = null, onLoading: ((Boolean) -> Unit)? = null, continueSession: Boolean = false) : List<String> {
         val ad = activeDevice ?: throw Exception("The cast device disconnected before the stream could be prepared");
 
         cleanExecutors();
@@ -1700,7 +1702,7 @@ class StateCasting {
             setCallTimeout(FutoVideoPlayerBase.SABR_CALL_TIMEOUT_MS);
             setReadTimeout(FutoVideoPlayerBase.SABR_READ_TIMEOUT_MS);
         } }, ownsClient = true).createSession();
-        sabrState?.let { session.restore(it) };
+        sabrState?.let { if (continueSession) session.continueFrom(it) else session.restore(it) };
 
         val proxy = com.futo.platformplayer.sabr.SabrCastProxy(session, bestVideo, bestAudio);
 
@@ -1790,7 +1792,7 @@ class StateCasting {
             };
             if(!content.isNullOrEmpty()) {
                 _castServer.addHandlerWithAllowAllOptions(
-                    HttpConstantHandler("GET", subtitlePath, content, subtitleMime)
+                    HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleMime, content), subtitleMime)
                         .withHeader("Access-Control-Allow-Origin", "*"), true
                 ).withTag("castUMP");
                 subtitlesUrl = url + subtitlePath;

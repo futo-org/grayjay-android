@@ -13,6 +13,7 @@ import java.lang.IllegalStateException
 import java.text.DecimalFormat
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -39,6 +40,14 @@ val decimalDigits2 = DecimalFormat("#.##");
 val countInKbit = 1000;
 val countInMbit = countInKbit * 1000;
 val countInGbit = countInMbit * 1000;
+
+fun String.toLanguageDisplayName(): String {
+    val locale = Locale.forLanguageTag(this.replace('_', '-'))
+    if (locale.language.isNullOrEmpty()) return this
+    val name = locale.getDisplayName(Locale.getDefault())
+    if (name.isBlank() || name.equals(this, ignoreCase = true) || name.equals(locale.language, ignoreCase = true)) return this
+    return name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+}
 
 fun Int.toHumanBitrate() = this.toLong().toHumanBitrate();
 fun Long.toHumanBitrate(): String{
