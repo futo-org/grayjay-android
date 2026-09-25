@@ -683,6 +683,7 @@
     <string-array name="feed_style">
         <item>Pré-visualização</item>
         <item>Lista</item>
+        <item>Acessibilidade</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Nenhum</item>
