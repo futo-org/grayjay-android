@@ -3,16 +3,16 @@ package com.futo.platformplayer.views.overlays.slideup
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.RelativeLayout
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import com.futo.platformplayer.R
 
-class SlideUpMenuItem : ConstraintLayout {
+class SlideUpMenuItem : FrameLayout {
 
-    private lateinit var _root: ConstraintLayout;
+    private lateinit var _root: LinearLayout;
     private lateinit var _image: ImageView;
     private lateinit var _text: TextView;
     private lateinit var _subtext: TextView;

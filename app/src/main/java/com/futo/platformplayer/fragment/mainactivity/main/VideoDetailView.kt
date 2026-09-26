@@ -2373,8 +2373,9 @@ class VideoDetailView : ConstraintLayout {
                 videoTrackFormats.distinctBy { it.height }.sortedByDescending { it.height },
                 audioTrackOptions
                     .distinctBy { listOf(it.format.label, it.format.language, it.format.bitrate, it.format.roleFlags) }
-                    .sortedWith(compareBy<AudioTrackOption> { it.format.language ?: "" }
-                        .thenBy { it.format.roleFlags }
+                    .sortedWith(compareBy<AudioTrackOption> { it.format.roleFlags and C.ROLE_FLAG_MAIN == 0 }
+                        .thenBy { it.format.language?.toLanguageDisplayName()?.lowercase() ?: "" }
+                        .thenBy { it.format.roleFlags and C.ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND != 0 }
                         .thenByDescending { it.format.bitrate }));
         }
 
