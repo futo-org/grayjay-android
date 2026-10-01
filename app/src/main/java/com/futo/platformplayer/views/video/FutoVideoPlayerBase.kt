@@ -819,6 +819,14 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceUMP(videoSource: JSUMPSource) {
         Logger.i(TAG, "Loading VideoSource [UMP]");
+        val playbackSettings = Settings.instance.playback;
+        val quality = if (StateApp.instance.isCurrentMetered()) playbackSettings.preferredMeteredQuality
+            else playbackSettings.preferredQuality;
+        val targetPixels = playbackSettings.getCurrentPreferredQualityPixelCount();
+        targetTrackVideoHeight = if (quality > 0)
+            videoSource.videoFormats.minByOrNull { kotlin.math.abs(it.width.toLong() * it.height - targetPixels) }?.height ?: -1
+        else -1;
+
         val spec = videoSource.toStreamSpec({ ManagedHttpClient().apply {
             user_agent = DEFAULT_USER_AGENT;
             setCallTimeout(SABR_CALL_TIMEOUT_MS);

@@ -275,7 +275,6 @@ declare interface UMPSourceDef {
     videoFormats: UMPFormatDef[],
     audioFormats: UMPFormatDef[],
     poToken: string?,
-    getPoToken: ((forceRefresh: boolean) => string)?,
     requestModifier: RequestModifier?
 }
 declare class UMPSource implements IVideoSource {

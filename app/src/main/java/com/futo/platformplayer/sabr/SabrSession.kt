@@ -691,8 +691,8 @@ class SabrSession(
             response.body?.close()
             currentResponse = null
             currentCall = null
-            if (response.code == 403)
-                throw SabrBlockedException("SABR request returned HTTP 403")
+            if (response.code == 401 || response.code == 403)
+                throw SabrBlockedException("SABR request returned HTTP ${response.code}")
             throw SabrException("SABR request returned HTTP ${response.code}")
         }
 
