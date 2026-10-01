@@ -586,16 +586,16 @@ class VideoDownload {
                         videoFileSize = downloadDashFileSource("Video", client, actualVideoSource, File(downloadDir, videoFileName!!), progressCallback, 1);
                 }
                 else if(actualVideoSource is JSUMPSource) {
-                    val umpAudioFile = if(actualAudioSource == null && audioFileName != null) File(downloadDir, audioFileName!!) else null;
+                    val umpAudioFile = if((actualAudioSource == null || actualAudioSource is JSUMPAudioSource) && audioFileName != null) File(downloadDir, audioFileName!!) else null;
                     val sizes = downloadUMPSource(client, actualVideoSource, File(downloadDir, videoFileName!!),
-                        umpAudioFile, progressCallback);
+                        umpAudioFile, progressCallback, (actualAudioSource as? JSUMPAudioSource)?.format);
                     videoFileSize = sizes.first;
                     if(sizes.second > 0) audioFileSize = sizes.second;
                 }
                 else throw NotImplementedError("NotImplemented video download: " + actualVideoSource.javaClass.name);
             });
         }
-        if(actualAudioSource != null) {
+        if(actualAudioSource != null && !(actualVideoSource is JSUMPSource && actualAudioSource is JSUMPAudioSource)) {
             sourcesToDownload.add(async {
                 Logger.i(TAG, "Started downloading audio");
 
@@ -1160,11 +1160,11 @@ class VideoDownload {
         else -> "mp4";
     }
 
-    private fun downloadUMPSource(client: ManagedHttpClient, source: JSUMPSource, videoFile: File, audioFile: File?, onProgress: (Long, Long, Long) -> Unit): Pair<Long, Long> {
+    private fun downloadUMPSource(client: ManagedHttpClient, source: JSUMPSource, videoFile: File, audioFile: File?, onProgress: (Long, Long, Long) -> Unit, audioFormat: SabrFormat? = null): Pair<Long, Long> {
         if(source.isLive)
             throw DownloadException("Live streams cannot be downloaded", false);
         val video = selectBestUMPVideoFormat(source);
-        val audio = selectBestUMPAudioFormat(source);
+        val audio = audioFormat ?: selectBestUMPAudioFormat(source);
         if(video == null && audio == null)
             throw DownloadException("UMP source has no downloadable formats", false);
 
@@ -1188,21 +1188,15 @@ class VideoDownload {
         if(video != null) progress.seed(SabrSession.ROLE_VIDEO, videoEstimate);
         if(audio != null && audioFile != null) progress.seed(SabrSession.ROLE_AUDIO, audioEstimate);
 
-        var videoLength = 0L;
-        var audioLength = 0L;
-        if(video != null) {
-            videoLength = downloadUMPTrackParallel(spec, SabrSession.ROLE_VIDEO, video, durationSec, videoFile, concurrency, videoEstimate) { read, estimate ->
-                progress.report(SabrSession.ROLE_VIDEO, read, estimate);
-            };
-            progress.complete(SabrSession.ROLE_VIDEO, videoLength);
-        }
-        if(audio != null && audioFile != null) {
-            audioLength = downloadUMPTrackParallel(spec, SabrSession.ROLE_AUDIO, audio, durationSec, audioFile, concurrency, audioEstimate) { read, estimate ->
-                progress.report(SabrSession.ROLE_AUDIO, read, estimate);
-            };
-            progress.complete(SabrSession.ROLE_AUDIO, audioLength);
-        }
-        return Pair(videoLength, audioLength);
+        val tracks = ArrayList<UMPDownloadTrack>();
+        if(video != null) tracks.add(UMPDownloadTrack(SabrSession.ROLE_VIDEO, video, videoFile, videoEstimate) { read, estimate ->
+            progress.report(SabrSession.ROLE_VIDEO, read, estimate);
+        });
+        if(audio != null && audioFile != null) tracks.add(UMPDownloadTrack(SabrSession.ROLE_AUDIO, audio, audioFile, audioEstimate) { read, estimate ->
+            progress.report(SabrSession.ROLE_AUDIO, read, estimate);
+        });
+        val lengths = downloadUMPTracksParallel(spec, tracks, durationSec, concurrency);
+        return Pair(lengths[SabrSession.ROLE_VIDEO] ?: 0L, lengths[SabrSession.ROLE_AUDIO] ?: 0L);
     }
 
     private fun downloadUMPAudioOnly(client: ManagedHttpClient, source: JSUMPAudioSource, audioFile: File, onProgress: (Long, Long, Long) -> Unit): Long {
@@ -1275,73 +1269,6 @@ class VideoDownload {
         }
     }
 
-    private fun downloadUMPTrack(session: SabrSession, role: Int, format: SabrFormat, targetFile: File, fallbackEstimate: Long, onRead: (Long, Long) -> Unit): Long {
-        if(targetFile.exists()) targetFile.delete();
-        targetFile.createNewFile();
-
-        val buffer = session.bufferFor(format);
-        var initSize = 0L;
-        var segmentBytes = 0L;
-        var segmentCount = 0;
-
-        val report = {
-            val written = initSize + segmentBytes;
-            val endSegment = session.formatInitializationFor(format)?.endSegmentNumber ?: 0;
-            val estimate = if(endSegment > 0 && segmentCount > 0) initSize + segmentBytes * endSegment / segmentCount
-                else fallbackEstimate;
-            onRead(written, maxOf(estimate, written));
-        }
-
-        FileOutputStream(targetFile).use { out ->
-            session.setPlaybackPosition(0);
-            session.setDemand(role, format, 0);
-
-            var init = awaitUMPSegment(session, buffer, isInit = true, sequence = -1);
-            val initDeadline = System.currentTimeMillis() + UMP_DOWNLOAD_MAX_STALL_MS;
-            while(init == null && System.currentTimeMillis() < initDeadline) {
-                if(isCancelled) throw CancellationException("Download got cancelled");
-                session.fatalError?.let { throw it };
-                init = awaitUMPSegment(session, buffer, isInit = true, sequence = -1);
-            }
-            if(init == null)
-                throw DownloadException("UMP init segment for itag ${format.itag} never arrived", false);
-            val initBytes = init.toByteArray();
-            out.write(initBytes);
-            initSize = initBytes.size.toLong();
-            report();
-
-            var nextSeq = -1;
-            var lastProgressMs = System.currentTimeMillis();
-            while(true) {
-                if(isCancelled) throw CancellationException("Download got cancelled");
-                session.fatalError?.let { throw it };
-
-                val endSeg = session.formatInitializationFor(format)?.endSegmentNumber ?: 0;
-                if(endSeg > 0 && nextSeq > endSeg) break;
-
-                val segment = if(nextSeq < 0) awaitUMPSegmentAt(session, buffer, 0)
-                    else awaitUMPSegment(session, buffer, isInit = false, sequence = nextSeq);
-                if(segment == null) {
-                    if(session.isComplete(format)) break;
-                    if(System.currentTimeMillis() - lastProgressMs > UMP_DOWNLOAD_MAX_STALL_MS)
-                        throw DownloadException("UMP download stalled for itag ${format.itag} before reaching the end", false);
-                    continue;
-                }
-                val bytes = segment.toByteArray();
-                out.write(bytes);
-                segmentBytes += bytes.size;
-                segmentCount++;
-                lastProgressMs = System.currentTimeMillis();
-                report();
-
-                nextSeq = segment.sequenceNumber + 1;
-                session.setPlaybackPosition(segment.endUs);
-                session.setDemand(role, format, segment.endUs);
-            }
-        }
-        return initSize + segmentBytes;
-    }
-
     private fun awaitUMPSegment(session: SabrSession, buffer: com.futo.platformplayer.sabr.SabrTrackBuffer, isInit: Boolean, sequence: Int): com.futo.platformplayer.sabr.SabrSegment? {
         val deadline = System.currentTimeMillis() + UMP_DOWNLOAD_POLL_MS;
         while(System.currentTimeMillis() < deadline) {
@@ -1396,34 +1323,18 @@ class VideoDownload {
         return null;
     }
 
-    private fun downloadUMPTrackParallel(spec: SabrStreamSpec, role: Int, format: SabrFormat, durationSec: Long, targetFile: File, concurrency: Int, fallbackEstimate: Long, onRead: (Long, Long) -> Unit): Long {
-        val maxBySlice = if(durationSec > 0) (durationSec / UMP_PARALLEL_MIN_SLICE_SEC).toInt() else 1;
-        val n = concurrency.coerceIn(1, 6).coerceAtMost(maxBySlice.coerceAtLeast(1));
-        val totalUs = durationSec * 1_000_000L;
-        if(n <= 1 || totalUs <= 0L) {
-            val session = spec.createSession().apply { keepBehindUs = UMP_DOWNLOAD_KEEP_BEHIND_US };
-            session.start();
-            try {
-                val length = downloadUMPTrack(session, role, format, targetFile, fallbackEstimate, onRead);
-                recordUMPStreamMetaData(role, session.formatInitializationFor(format));
-                return length;
-            }
-            finally { session.release(); }
-        }
-        val formatInitHolder = java.util.concurrent.atomic.AtomicReference<FormatInitializationMetadata?>(null);
-
-        if(targetFile.exists()) targetFile.delete();
+    private class UMPDownloadTrack(val role: Int, val format: SabrFormat, val targetFile: File,
+        val fallbackEstimate: Long, val onRead: (Long, Long) -> Unit) {
         val tmpDir = File(targetFile.parentFile, targetFile.name + ".umpparts");
-        if(tmpDir.exists()) tmpDir.deleteRecursively();
-        tmpDir.mkdirs();
-
         val claimed = ConcurrentHashMap.newKeySet<Int>();
         val initSize = AtomicLong(0);
         val segmentBytes = AtomicLong(0);
         val endSegment = AtomicInteger(0);
-        val initHolder = java.util.concurrent.atomic.AtomicReference<ByteArray?>(null);
+        val initBytes = java.util.concurrent.atomic.AtomicReference<ByteArray?>(null);
+        val formatInit = java.util.concurrent.atomic.AtomicReference<FormatInitializationMetadata?>(null);
+        private val progressLock = Any();
 
-        val report = {
+        fun report() = synchronized(progressLock) {
             val init = initSize.get();
             val segments = segmentBytes.get();
             val count = claimed.size;
@@ -1432,96 +1343,151 @@ class VideoDownload {
             val estimate = if(end > 0 && count > 0) init + segments * end / count else fallbackEstimate;
             onRead(written, maxOf(estimate, written));
         }
+    }
 
-        val pool = Executors.newFixedThreadPool(n);
+    private fun downloadUMPTrackParallel(spec: SabrStreamSpec, role: Int, format: SabrFormat, durationSec: Long,
+        targetFile: File, concurrency: Int, fallbackEstimate: Long, onRead: (Long, Long) -> Unit): Long {
+        return downloadUMPTracksParallel(spec, listOf(UMPDownloadTrack(role, format, targetFile, fallbackEstimate, onRead)),
+            durationSec, concurrency).getValue(role);
+    }
+
+    private fun downloadUMPTracksParallel(spec: SabrStreamSpec, tracks: List<UMPDownloadTrack>, durationSec: Long,
+        concurrency: Int): Map<Int, Long> {
+        if(tracks.isEmpty()) throw DownloadException("No UMP tracks selected", false);
+        val totalUs = durationSec * 1_000_000L;
+        val maxBySlice = if(durationSec > 0) (durationSec / UMP_PARALLEL_MIN_SLICE_SEC).toInt() else 1;
+        val n = if(totalUs > 0) concurrency.coerceIn(1, 6).coerceAtMost(maxBySlice.coerceAtLeast(1)) else 1;
+        val failure = java.util.concurrent.atomic.AtomicReference<Throwable?>(null);
+        val sessions = java.util.concurrent.CopyOnWriteArrayList<SabrSession>();
+        val pool = Executors.newFixedThreadPool(n * tracks.size);
         try {
-            val futures = (0 until n).map { i ->
-                pool.submit {
-                    val startUs = i * totalUs / n;
-                    val endUs = if(i == n - 1) Long.MAX_VALUE else (i + 1) * totalUs / n;
-                    val session = spec.createSession().apply { keepBehindUs = UMP_DOWNLOAD_KEEP_BEHIND_US };
-                    val buffer = session.bufferFor(format);
-                    try {
-                        session.start();
-                        session.setPlaybackPosition(startUs);
-                        session.setDemand(role, format, startUs);
-                        session.restart(startUs);
-
-                        if(i == 0) {
-                            var init = awaitUMPSegment(session, buffer, isInit = true, sequence = -1);
-                            val initDeadline = System.currentTimeMillis() + UMP_DOWNLOAD_MAX_STALL_MS;
-                            while(init == null && System.currentTimeMillis() < initDeadline) {
-                                if(isCancelled) throw CancellationException("Download got cancelled");
-                                session.fatalError?.let { throw it };
-                                init = awaitUMPSegment(session, buffer, isInit = true, sequence = -1);
-                            }
-                            if(init == null) throw DownloadException("UMP init segment for itag ${format.itag} never arrived", false);
-                            val b = init.toByteArray();
-                            initHolder.set(b);
-                            initSize.set(b.size.toLong());
-                            report();
+            for(track in tracks) {
+                if(track.targetFile.exists()) track.targetFile.delete();
+                if(track.tmpDir.exists()) track.tmpDir.deleteRecursively();
+                if(!track.tmpDir.mkdirs()) throw IOException("Could not create UMP download directory");
+            }
+            val futures = (0 until n).flatMap { i ->
+                val startUs = if(totalUs > 0) i * totalUs / n else 0;
+                val endUs = if(i == n - 1) Long.MAX_VALUE else (i + 1) * totalUs / n;
+                val session = spec.createSession().apply { keepBehindUs = UMP_DOWNLOAD_KEEP_BEHIND_US };
+                sessions.add(session);
+                val positions = tracks.associate { it.role to startUs }.toMutableMap();
+                val positionLock = Any();
+                val remaining = AtomicInteger(tracks.size);
+                session.setPlaybackPosition(startUs);
+                for(track in tracks) session.setDemand(track.role, track.format, startUs);
+                if(startUs > 0) session.restart(startUs, true);
+                session.start();
+                tracks.map { track ->
+                    pool.submit {
+                        val buffer = session.bufferFor(track.format);
+                        fun checkState() {
+                            failure.get()?.let { throw it };
+                            if(isCancelled) throw CancellationException("Download got cancelled");
+                            session.fatalError?.let { throw it };
                         }
-
-                        FileOutputStream(File(tmpDir, "part_$i")).use { out ->
-                            var nextSeq = -1;
-                            var lastProgressMs = System.currentTimeMillis();
-                            while(true) {
-                                if(isCancelled) throw CancellationException("Download got cancelled");
-                                session.fatalError?.let { throw it };
-
-                                val segment = if(nextSeq < 0) awaitUMPSegmentAt(session, buffer, startUs)
-                                    else awaitUMPSegment(session, buffer, isInit = false, sequence = nextSeq);
-                                if(segment == null) {
-                                    if(session.isComplete(format)) break;
-                                    if(System.currentTimeMillis() - lastProgressMs > UMP_DOWNLOAD_MAX_STALL_MS)
-                                        throw DownloadException("UMP download stalled for itag ${format.itag} before reaching the end", false);
-                                    continue;
+                        try {
+                            if(i == 0) {
+                                var init: com.futo.platformplayer.sabr.SabrSegment? = null;
+                                val deadline = System.currentTimeMillis() + UMP_DOWNLOAD_MAX_STALL_MS;
+                                while(init == null) {
+                                    checkState();
+                                    init = awaitUMPSegment(session, buffer, isInit = true, sequence = -1);
+                                    if(init == null && System.currentTimeMillis() > deadline)
+                                        throw DownloadException("UMP init segment for itag ${track.format.itag} never arrived", false);
                                 }
-                                if(segment.startUs >= endUs) break;
-                                nextSeq = segment.sequenceNumber + 1;
-                                session.setPlaybackPosition(segment.endUs);
-                                session.setDemand(role, format, segment.endUs);
-                                lastProgressMs = System.currentTimeMillis();
-                                session.formatInitializationFor(format)?.let { formatInit ->
-                                    formatInitHolder.compareAndSet(null, formatInit);
-                                    if(formatInit.endSegmentNumber > 0) endSegment.set(formatInit.endSegmentNumber);
-                                }
-                                if(claimed.add(segment.sequenceNumber)) {
-                                    val bytes = segment.toByteArray();
-                                    out.write(bytes);
-                                    segmentBytes.addAndGet(bytes.size.toLong());
-                                    report();
-                                }
-                                val lastSeg = endSegment.get();
-                                if(lastSeg > 0 && nextSeq > lastSeg) break;
+                                val bytes = init.toByteArray();
+                                track.initBytes.set(bytes);
+                                track.initSize.set(bytes.size.toLong());
+                                track.report();
                             }
+                            FileOutputStream(File(track.tmpDir, "part_$i")).use { out ->
+                                var nextSeq = -1;
+                                var lastProgressMs = System.currentTimeMillis();
+                                while(true) {
+                                    checkState();
+                                    val segment = if(nextSeq < 0) awaitUMPSegmentAt(session, buffer, startUs)
+                                        else awaitUMPSegment(session, buffer, isInit = false, sequence = nextSeq);
+                                    session.formatInitializationFor(track.format)?.let { metadata ->
+                                        track.formatInit.compareAndSet(null, metadata);
+                                        if(metadata.endSegmentNumber > 0) track.endSegment.set(metadata.endSegmentNumber);
+                                    }
+                                    if(segment == null) {
+                                        if(session.isComplete(track.format)) break;
+                                        if(System.currentTimeMillis() - lastProgressMs > UMP_DOWNLOAD_MAX_STALL_MS)
+                                            throw DownloadException("UMP download stalled for itag ${track.format.itag} before reaching the end", false);
+                                        continue;
+                                    }
+                                    if(segment.startUs >= endUs) break;
+                                    nextSeq = segment.sequenceNumber + 1;
+                                    if(track.claimed.add(segment.sequenceNumber)) {
+                                        val bytes = segment.toByteArray();
+                                        out.write(bytes);
+                                        track.segmentBytes.addAndGet(bytes.size.toLong());
+                                        track.report();
+                                    }
+                                    synchronized(positionLock) {
+                                        positions[track.role] = segment.endUs;
+                                        session.setDemand(track.role, track.format, segment.endUs);
+                                        session.setPlaybackPosition(positions.values.minOrNull()!!);
+                                    }
+                                    lastProgressMs = System.currentTimeMillis();
+                                    buffer.evictBeforeSequence(segment.sequenceNumber);
+                                    val lastSeg = track.endSegment.get();
+                                    if(lastSeg > 0 && nextSeq > lastSeg) break;
+                                }
+                            }
+                        } catch(ex: Throwable) {
+                            failure.compareAndSet(null, ex);
+                            sessions.forEach { it.release() };
+                            throw ex;
+                        } finally {
+                            synchronized(positionLock) {
+                                positions.remove(track.role);
+                                session.clearDemand(track.role);
+                                positions.values.minOrNull()?.let { session.setPlaybackPosition(it) };
+                            }
+                            if(remaining.decrementAndGet() == 0) session.release();
                         }
                     }
-                    finally { session.release(); }
                 }
-            };
-            var firstError: Throwable? = null;
+            }
             for(future in futures) {
                 try { future.get(); }
-                catch(ex: ExecutionException) { if(firstError == null) firstError = ex.cause ?: ex; }
-                catch(ex: Throwable) { if(firstError == null) firstError = ex; }
+                catch(ex: Throwable) {
+                    failure.compareAndSet(null, if(ex is ExecutionException) ex.cause ?: ex else ex);
+                    sessions.forEach { it.release() };
+                }
             }
-            firstError?.let { tmpDir.deleteRecursively(); throw it; }
-        }
-        finally { pool.shutdownNow(); }
-
-        var total = 0L;
-        FileOutputStream(targetFile).use { out ->
-            initHolder.get()?.let { out.write(it); total += it.size; }
-            for(i in 0 until n) {
-                val part = File(tmpDir, "part_$i");
-                if(part.exists()) FileInputStream(part).use { total += it.copyTo(out); }
+            failure.get()?.let { throw it };
+            val lengths = HashMap<Int, Long>();
+            for(track in tracks) {
+                val expected = track.endSegment.get();
+                if(expected > 0) {
+                    val missing = (1..expected).firstOrNull { !track.claimed.contains(it) };
+                    if(missing != null) throw DownloadException("UMP download for itag ${track.format.itag} is missing segment $missing", false);
+                }
+                var total = 0L;
+                FileOutputStream(track.targetFile).use { out ->
+                    track.initBytes.get()?.let { out.write(it); total += it.size; };
+                    for(i in 0 until n) FileInputStream(File(track.tmpDir, "part_$i")).use { total += it.copyTo(out); };
+                }
+                recordUMPStreamMetaData(track.role, track.formatInit.get());
+                track.onRead(total, total);
+                lengths[track.role] = total;
             }
+            return lengths;
+        } finally {
+            sessions.forEach { it.release() };
+            pool.shutdownNow();
+            var interrupted = false;
+            while(!pool.isTerminated) {
+                try { pool.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS); }
+                catch(_: InterruptedException) { interrupted = true; }
+            }
+            tracks.forEach { it.tmpDir.deleteRecursively() };
+            if(interrupted) Thread.currentThread().interrupt();
         }
-        tmpDir.deleteRecursively();
-        recordUMPStreamMetaData(role, formatInitHolder.get());
-        onRead(total, total);
-        return total;
     }
 
     private fun recordUMPStreamMetaData(role: Int, meta: FormatInitializationMetadata?) {

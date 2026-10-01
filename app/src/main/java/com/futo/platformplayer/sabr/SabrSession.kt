@@ -653,11 +653,6 @@ class SabrSession(
 
         val videoBefore = video?.let { Pair(bufferFor(it).highestSequence, bufferFor(it).bufferedEndUs(demandFromUs(it))) }
         val audioBefore = audio?.let { Pair(bufferFor(it).highestSequence, bufferFor(it).bufferedEndUs(demandFromUs(it))) }
-        val videoCountBefore = video?.let { bufferFor(it).segmentCount } ?: 0
-        val audioCountBefore = audio?.let { bufferFor(it).segmentCount } ?: 0
-        val videoInitBefore = video?.let { bufferFor(it).initSegment }
-        val audioInitBefore = audio?.let { bufferFor(it).initSegment }
-
         lastRequestMs = System.currentTimeMillis()
         val request = ManagedHttpClient.Request(finalUrl, "POST", body, finalHeaders)
         request.onCallCreated.subscribe { currentCall = it }
@@ -703,12 +698,12 @@ class SabrSession(
         val acceptedKeys = (videoDemand?.alternates.orEmpty() + audioDemand?.alternates.orEmpty())
             .map { it.key }.toSet()
 
-        val redirected: Boolean
+        val consumed: Pair<Boolean, Boolean>
         val bytesBefore = mediaBytes
         val mediaUsBefore = mediaUsDelivered
         try {
             val stream = response.body?.byteStream() ?: throw SabrException("SABR response had no body")
-            redirected = stream.use { consume(UmpReader(it), positionUs, acceptedKeys) }
+            consumed = stream.use { consume(UmpReader(it), positionUs, acceptedKeys) }
         } finally {
             recordThroughput(
                 mediaBytes - bytesBefore,
@@ -726,10 +721,7 @@ class SabrSession(
             return
         }
 
-        val advanced = (video != null && bufferFor(video).segmentCount > videoCountBefore) ||
-            (audio != null && bufferFor(audio).segmentCount > audioCountBefore) ||
-            (video != null && videoInitBefore == null && bufferFor(video).initSegment != null) ||
-            (audio != null && audioInitBefore == null && bufferFor(audio).initSegment != null)
+        val (redirected, advanced) = consumed
 
         clearSeekIfLanded(advanced)
 
@@ -894,7 +886,8 @@ class SabrSession(
         seekPendingUs = null
     }
 
-    private fun consume(reader: UmpReader, requestedPositionUs: Long, requestedKeys: Set<SabrFormatKey> = emptySet()): Boolean {
+    private fun consume(reader: UmpReader, requestedPositionUs: Long, requestedKeys: Set<SabrFormatKey> = emptySet()): Pair<Boolean, Boolean> {
+        var advanced = false
         val pending = HashMap<Int, SabrSegment>()
         var redirect: String? = null
         var seekToUs: Long? = null
@@ -923,6 +916,9 @@ class SabrSession(
                                 sabrLog("Dropping truncated seq=${segment.sequenceNumber} itag=${segment.formatKey.itag} got=${segment.size} want=${segment.contentLength}")
                                 bufferFor(segment.formatKey).discard(segment)
                             } else {
+                                val buffer = bufferFor(segment.formatKey)
+                                val tracked = (if(segment.isInit) buffer.initSegment else buffer.get(segment.sequenceNumber)) === segment
+                                if(tracked && segment.size > 0 && requestedKeys.contains(segment.formatKey)) advanced = true
                                 segment.markComplete()
                                 bufferFor(segment.formatKey).notifyChanged()
                                 onSegmentsChanged?.run()
@@ -1047,11 +1043,11 @@ class SabrSession(
                 throw SabrException("SABR redirected $consecutiveRedirects times without delivering media")
             backoffUntilMs = serverBackoffUntilMs
             resumePositionUs = requestedPositionUs
-            return true
+            return Pair(true, advanced)
         }
 
         seekToUs?.let { applySabrSeek(it, requestedPositionUs) }
-        return false
+        return Pair(false, advanced)
     }
 
     private fun onMediaHeader(header: MediaHeader, pending: HashMap<Int, SabrSegment>, requestedKeys: Set<SabrFormatKey>) {
