@@ -44,11 +44,13 @@ abstract class VideoListEditorView : LinearLayout {
     protected var _buttonExport: ImageButton;
     private var _buttonShare: ImageButton;
     private var _buttonEdit: ImageButton;
+    private var _buttonSort: ImageButton;
     private var _buttonSearch: ImageButton;
 
     private var _search: SearchView;
 
     private var _onShare: (()->Unit)? = null;
+    private var _onSort: (()->Unit)? = null;
 
     private var _loadedVideos: List<IPlatformVideo>? = null;
     private var _loadedVideosCanEdit: Boolean = false;
@@ -110,6 +112,14 @@ abstract class VideoListEditorView : LinearLayout {
         buttonShuffle.setOnClickListener { hideSearchKeyboard();onShuffleClick(); hideSearchKeyboard(); };
 
         _buttonEdit.setOnClickListener {  hideSearchKeyboard(); onEditClick(); };
+        _buttonSort = findViewById(R.id.button_sort);
+        val onSort = _onSort;
+        if(onSort != null) {
+            _buttonSort.setOnClickListener {  hideSearchKeyboard(); onSort.invoke() };
+            _buttonSort.visibility = View.VISIBLE;
+        }
+        else
+            _buttonSort.visibility = View.GONE;
         setButtonExportVisible(false);
         setButtonDownloadVisible(canEdit());
 
@@ -128,6 +138,15 @@ abstract class VideoListEditorView : LinearLayout {
             onShare?.invoke();
         };
         _buttonShare.visibility = View.VISIBLE;
+    }
+
+    fun setOnSort(onSort: (()-> Unit)? = null) {
+        _onSort = onSort;
+        _buttonSort.setOnClickListener {
+            hideSearchKeyboard();
+            onSort?.invoke();
+        };
+        _buttonSort.visibility = View.VISIBLE;
     }
 
     open fun canEdit(): Boolean { return false; }
