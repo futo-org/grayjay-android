@@ -1013,6 +1013,7 @@
     <string-array name="feed_style">
         <item>Anteprima</item>
         <item>Lista</item>
+        <item>Accessibilità</item>
     </string-array>
     <string-array name="app_languages">
         <item>Sistema</item>
