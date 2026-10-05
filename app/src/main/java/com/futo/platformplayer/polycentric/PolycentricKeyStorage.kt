@@ -57,8 +57,7 @@ class PolycentricKeyStorage {
                 val secret = StorageTypeProcessSecret.parseFrom(
                     GEncryptionProviderV1.instance.decrypt(p.base64ToByteArray()),
                 )
-                val key = secret.system.key
-                if (secret.system.keyType == KEY_TYPE_ED25519 && key.toByteArray().contentEquals(publicKey))
+                if (secretMatchesPublicKey(secret, publicKey))
                     _processSecrets.remove(p)
             } catch (e: Throwable) {
                 Logger.i(TAG, "Failed to decrypt process secret", e)
@@ -78,6 +77,13 @@ class PolycentricKeyStorage {
                     _instance = PolycentricKeyStorage()
                 return _instance!!
             }
+
+        /** Whether the secret's Ed25519 seed derives the given public key. */
+        internal fun secretMatchesPublicKey(secret: StorageTypeProcessSecret, publicKey: ByteArray): Boolean {
+            val key = secret.system.key
+            if (secret.system.keyType != KEY_TYPE_ED25519 || key.size() != 32) return false
+            return deriveEd25519PublicKey(key.toByteArray()).contentEquals(publicKey)
+        }
 
         /** Ed25519 public key (32 bytes) derived from a 32-byte seed. */
         internal fun deriveEd25519PublicKey(seed: ByteArray): ByteArray {

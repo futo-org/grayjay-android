@@ -98,6 +98,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val parent: Polyc
                 return@setOnClickListener;
             }
 
+            _buttonCreate.isEnabled = false;
             val comment = _editComment.text.toString();
             val parent = this@CommentDialog.parent;
 
@@ -153,8 +154,10 @@ class CommentDialog(context: Context?, val contextUrl: String, val parent: Polyc
     }
 
     private fun clearFocus() {
-        _editComment.clearFocus();
-        currentFocus?.let { _inputMethodManager.hideSoftInputFromWindow(it.windowToken, 0) };
+        val view = currentFocus;
+        if (view != null) {
+            _inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0);
+        }
     }
 
     companion object {

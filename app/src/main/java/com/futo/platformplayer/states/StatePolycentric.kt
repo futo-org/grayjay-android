@@ -1,12 +1,7 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
-import android.content.Intent
-import android.util.Log
-import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -19,10 +14,7 @@ import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricAdapter
-import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.resolveChannelUrl
-import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.polycentric.getComment
 import com.futo.platformplayer.polycentric.getCommentPager
 import com.futo.platformplayer.polycentric.deleteComment
@@ -36,14 +28,19 @@ import com.futo.platformplayer.polycentric.postComment
 import com.futo.platformplayer.polycentric.postReply
 import com.futo.platformplayer.polycentric.setCommentRating
 import com.futo.platformplayer.polycentric.setVideoRating
+import com.futo.platformplayer.polycentric.AvatarVariant
+import com.futo.platformplayer.polycentric.PolycentricChannelProfile
+import com.futo.platformplayer.polycentric.isLoggedIn
+import com.futo.platformplayer.polycentric.activeIdentity
+import com.futo.platformplayer.polycentric.createIdentity
+import com.futo.platformplayer.polycentric.listIdentities
+import com.futo.platformplayer.polycentric.switchIdentity
+import com.futo.platformplayer.polycentric.getIdentityProfile
+import com.futo.platformplayer.polycentric.updateProfile
+import com.futo.platformplayer.polycentric.logout
+import com.futo.platformplayer.polycentric.deleteActiveIdentity
 import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.ProcessHandle
-import com.futo.polycentric.core.PublicKey
-import com.futo.polycentric.core.SqlLiteDbHelper
-import com.futo.polycentric.core.Store
-import com.futo.platformplayer.base64ToByteArray
-import com.futo.platformplayer.toBase64
-import com.futo.polycentric.core.ensureServerAndBackfill
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -51,8 +48,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import polycentric.v2.EventKey
-import userpackage.Protocol
 
 
 class StatePolycentric {
@@ -65,149 +63,97 @@ class StatePolycentric {
      */
     val adapter: PolycentricAdapter by lazy { PolycentricAdapter() }
 
-    var processHandle: ProcessHandle? = null; private set;
-    private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
     private var _transientEnabled = true
     val enabled get() = _transientEnabled && Settings.instance.other.polycentricEnabled
 
     private val _backgroundJob = SupervisorJob()
     private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
+    private val _initMutex = Mutex()
 
     fun load(context: Context) {
         if (!enabled) {
             return
         }
 
-        for (i in 0 .. 1) {
-            try {
-                val db = SqlLiteDbHelper(context);
-                Store.initializeSqlLiteStore(db);
-
-                val activeProcessHandleString = _activeProcessHandle.value;
-                if (activeProcessHandleString.isNotEmpty()) {
-                    try {
-                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
-                    } catch (e: Throwable) {
-                        db.upgradeOldSecrets(db.writableDatabase);
-
-                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
-
-                        Log.i(TAG, "Failed to initialize Polycentric.", e)
-                    }
-                }
-
-                getProcessHandles()
-
-                // Initialize the Harbor v2 adapter in the background so comment/rating
-                // reads only have to await readiness.
-                _backgroundScope.launch {
-                    try {
-                        adapter.initialize()
-                        adapter.awaitReady()
-                    } catch (e: Throwable) {
-                        Logger.w(TAG, "Failed to initialize Polycentric adapter: " + e.message)
-                    }
-                }
-
-                break;
-            } catch (e: Throwable) {
-                if (i == 0) {
-                    Logger.i(TAG, "Clearing Polycentric database due to corruption");
-                    val db = SqlLiteDbHelper(context);
-                    db.recreate()
-                } else {
-                    _transientEnabled = false
-                    UIDialogs.showGeneralErrorDialog(context, "Failed to initialize Polycentric.", e);
-                    Log.i(TAG, "Failed to initialize Polycentric.", e)
-                }
-            }
+        _backgroundScope.launch {
+            awaitAdapter()
         }
     }
 
+    // ── Multi-identity (Harbor v2) ──────────────────────────────────
+    // Stateless wrappers over the adapter's identity extensions; identity
+    // management is independent of the comment/rating facade below.
     fun ensureEnabled() {
         if (!enabled) {
             throw Exception("Polycentric is disabled")
         }
     }
 
-    fun getProcessHandles(): List<ProcessHandle> {
+
+    val isLoggedIn: Boolean
+        get() = enabled && adapter.isReady && adapter.isLoggedIn
+
+    /**
+     * Suspends until the adapter is initialized (throwing on failure), so login checks
+     * never false-negative during background hydration. No-op when disabled.
+     */
+    suspend fun awaitReady() {
         if (!enabled) {
-            return listOf()
-        }
-
-        val storeProcessSecrets = Store.instance.getProcessSecrets().toMutableList()
-        val processSecrets = PolycentricStorage.instance.getProcessSecrets()
-
-        for (processSecret in processSecrets)
-        {
-            if (!storeProcessSecrets.contains(processSecret)) {
-                try {
-                    Store.instance.addProcessSecret(processSecret)
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill process secret.")
-                }
-            }
-        }
-
-        for (processSecret in storeProcessSecrets)
-        {
-            if (!processSecrets.contains(processSecret)) {
-                try {
-                    PolycentricStorage.instance.addProcessSecret(processSecret)
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill process secret.")
-                }
-            }
-        }
-
-        return (storeProcessSecrets + processSecrets).distinct().map { it.toProcessHandle() }
-    }
-
-    fun setProcessHandle(processHandle: ProcessHandle?) {
-        ensureEnabled()
-        this.processHandle = processHandle;
-
-        if (processHandle != null) {
-            _activeProcessHandle.setAndSave(processHandle.system.toProto().toByteArray().toBase64());
-
-            // Ensure current server is registered & synced
-            _backgroundScope.launch {
-                try {
-                    processHandle.ensureServerAndBackfill()
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to ensure server and backfill: "+e.message)
-                }
-            }
-        } else {
-            _activeProcessHandle.setAndSave("");
-        }
-    }
-
-
-    fun requireLogin(context: Context, text: String, action: (processHandle: ProcessHandle) -> Unit) {
-        if (!enabled) {
-            UIDialogs.toast(context, "Polycentric is disabled")
             return
         }
-
-        val p = processHandle;
-        if (p == null) {
-            Logger.i(TAG, "requireLogin preventPictureInPicture.emit()");
-            StateApp.instance.preventPictureInPicture.emit();
-            UIDialogs.showDialog(context, R.drawable.ic_login,
-                text, null, null,
-                1,
-                UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.ACCENT),
-                UIDialogs.Action("OK", {
-                    context.startActivity(Intent(context, PolycentricHomeActivity::class.java));
-                }, UIDialogs.ActionStyle.PRIMARY)
-            );
-        } else {
-            action(p);
-        }
+        adapter.initialize()
+        adapter.awaitReady()
     }
+
+    fun activeIdentity(): String? {
+        if (!enabled || !adapter.isReady) {
+            return null
+        }
+        return adapter.activeIdentity()
+    }
+
+    suspend fun createIdentity(name: String): String {
+        ensureEnabled()
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        return adapter.createIdentity(name)
+    }
+
+    suspend fun listIdentities(): List<String> {
+        ensureEnabled()
+        awaitAdapter() ?: return listOf()
+        return adapter.listIdentities()
+    }
+
+    suspend fun switchIdentity(identity: String) {
+        ensureEnabled()
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.switchIdentity(identity)
+    }
+
+    suspend fun getIdentityProfile(identity: String): PolycentricChannelProfile {
+        ensureEnabled()
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        return adapter.getIdentityProfile(identity)
+    }
+
+    suspend fun updateProfile(name: String, avatar: List<AvatarVariant>?, mimeType: String = "image/png") {
+        ensureEnabled()
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.updateProfile(name, avatar, mimeType)
+    }
+
+    suspend fun logout() {
+        ensureEnabled()
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.logout()
+    }
+
+    suspend fun deleteIdentity() {
+        ensureEnabled()
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.deleteActiveIdentity()
+    }
+
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {
         return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly, doCacheNull).second;
@@ -277,9 +223,17 @@ class StatePolycentric {
         }
 
         return try {
-            adapter.initialize()
+            // initialize() is not idempotent (it re-hydrates storage and re-runs the
+            // keypair restore); ensure it runs once per adapter.
+            _initMutex.withLock {
+                if (!adapter.isReady) {
+                    adapter.initialize()
+                }
+            }
             adapter.awaitReady()
             adapter
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             Logger.e(TAG, "Polycentric adapter not available.", e)
             null
@@ -413,5 +367,10 @@ class StatePolycentric {
                     _instance = StatePolycentric();
                 return _instance!!;
             };
+        /** Adapter singleton teardown. */
+        fun dispose() {
+            _instance?.cleanup()
+            _instance = null;
+        }
     }
 }

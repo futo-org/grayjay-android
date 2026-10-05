@@ -63,6 +63,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
+import com.futo.platformplayer.polycentric.PolycentricLoginFlow
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanBitrate
 import com.futo.platformplayer.toHumanBytesSize
@@ -290,7 +291,7 @@ class ShortView : FrameLayout {
 
         likeButton.onClick.subscribe {
             val checked = likeButton.iconId == R.drawable.ic_thumb_up_s // !likeButton.isChecked
-            StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+            PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_like)) {
                 if (checked) {
                     likes++
                 } else {
@@ -310,7 +311,7 @@ class ShortView : FrameLayout {
 
                 onLikeDislikeUpdated.emit(
                     OnLikeDislikeUpdatedArgs(
-                        it, likes, checked, dislikes, !checked
+                        likes, checked, dislikes, !checked
                     )
                 )
             }
@@ -318,7 +319,7 @@ class ShortView : FrameLayout {
 
         dislikeButton.onClick.subscribe {
             val checked =  dislikeButton.iconId == R.drawable.ic_thumb_down_s //!dislikeButton.isChecked
-            StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+            PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_dislike)) {
                 if (checked) {
                     dislikes++
                 } else {
@@ -339,7 +340,7 @@ class ShortView : FrameLayout {
 
                 onLikeDislikeUpdated.emit(
                     OnLikeDislikeUpdatedArgs(
-                        it, likes, !checked, dislikes, checked
+                        likes, !checked, dislikes, checked
                     )
                 )
             }

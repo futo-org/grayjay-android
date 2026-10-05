@@ -33,6 +33,7 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.UnknownHostException
 
 class CommentsFragment : MainFragment() {
@@ -205,11 +206,9 @@ class CommentsFragment : MainFragment() {
                 return@onAuthorClick;
             }
 
-            Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
-            if(c.author.id.value?.startsWith("polycentric://") ?: false) {
-                val navUrl = PolycentricAdapter.WEB_BASE_URL + "/" + c.author.id.value?.substring("polycentric://".length);
-                _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
-                //_fragment.navigate<BrowserFragment>(navUrl);
+            Logger.i(TAG, "onAuthorClick: " + c.author.url);
+            if (c.author.url.isNotEmpty()) {
+                _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(c.author.url)))
             }
         }
 
@@ -316,14 +315,21 @@ class CommentsFragment : MainFragment() {
         fun onShown() {
             _layoutPolycentricNotEnabled.visibility = if (!StatePolycentric.instance.enabled) View.VISIBLE else View.GONE
 
-            val processHandle = StatePolycentric.instance.processHandle
-            if (processHandle != null) {
-                _layoutNotLoggedIn.visibility = View.GONE
-                _recyclerComments.visibility = View.VISIBLE
-                fetchComments()
-            } else {
-                _layoutNotLoggedIn.visibility = View.VISIBLE
-                _recyclerComments.visibility=  View.GONE
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                try {
+                    StatePolycentric.instance.awaitReady()
+                    val isLoggedIn = StatePolycentric.instance.isLoggedIn
+
+                    withContext(Dispatchers.Main) {
+                        _layoutNotLoggedIn.visibility = if (isLoggedIn) View.GONE else View.VISIBLE
+                        _recyclerComments.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
+                        if (isLoggedIn) {
+                            fetchComments()
+                        }
+                    }
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to await Polycentric readiness.", e)
+                }
             }
         }
     }
