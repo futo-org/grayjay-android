@@ -16,6 +16,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -98,28 +99,12 @@ class PolycentricProfileActivity : AppCompatActivity() {
         };
 
         _buttonLogout.onClick.subscribe {
-            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                try {
-                    StatePolycentric.instance.logout();
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to log out.", e);
-                }
-            }
-            startActivity(Intent(this, PolycentricHomeActivity::class.java));
-            finish();
+            runIdentityChangeThenGoHome("Failed to log out.", R.string.failed_to_log_out) { StatePolycentric.instance.logout() };
         }
 
         _buttonDelete.onClick.subscribe {
             UIDialogs.showConfirmationDialog(this, getString(R.string.are_you_sure_you_want_to_remove_this_profile), {
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    try {
-                        StatePolycentric.instance.deleteIdentity();
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to delete identity.", e);
-                    }
-                }
-                startActivity(Intent(this, PolycentricHomeActivity::class.java));
-                finish();
+                runIdentityChangeThenGoHome("Failed to delete identity.", R.string.failed_to_delete_profile) { StatePolycentric.instance.deleteIdentity() };
             });
         }
 
@@ -163,6 +148,42 @@ class PolycentricProfileActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Ensures an identity change completes before navigating to the home page, such that the home
+     * page does not display stale information.
+     */
+    private fun runIdentityChangeThenGoHome(logMessage: String, @StringRes errorMessage: Int, change: suspend () -> Unit) {
+        _buttonLogout.setButtonEnabled(false);
+        _buttonDelete.setButtonEnabled(false);
+        _loaderOverlay.show();
+
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            val success = try {
+                change();
+                true
+            } catch (e: Throwable) {
+                Logger.e(TAG, logMessage, e);
+                false
+            }
+
+            withContext(Dispatchers.Main) {
+                if (isFinishing || isDestroyed) {
+                    return@withContext;
+                }
+
+                if (success) {
+                    startActivity(Intent(this@PolycentricProfileActivity, PolycentricHomeActivity::class.java));
+                    finish();
+                } else {
+                    UIDialogs.toast(this@PolycentricProfileActivity, getString(errorMessage));
+                    _buttonLogout.setButtonEnabled(true);
+                    _buttonDelete.setButtonEnabled(true);
+                    _loaderOverlay.hide();
+                }
+            }
+        }
+    }
+
     private fun saveIfRequired() {
         if (!::_username.isInitialized) {
             return;
@@ -180,19 +201,31 @@ class PolycentricProfileActivity : AppCompatActivity() {
             return;
         }
 
+        // Consume the pending identity changes so a repeated call can't save them twice.
+        _username = username;
+        _avatarUri = null;
+        val appContext = applicationContext;
+
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            try {
-                val avatar = avatarUri?.let { buildAvatarVariants(it) };
-                StatePolycentric.instance.updateProfile(username, avatar?.first, avatar?.second ?: "image/png");
-                _username = username;
-                _avatarUri = null;
+            val avatar = avatarUri?.let { buildAvatarVariants(it) };
+            if (avatarUri != null && avatar == null) {
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.changes_have_been_saved));
+                    UIDialogs.toast(appContext, appContext.getString(R.string.failed_to_read_image));
+                }
+                if (!nameChanged) {
+                    return@launch;
+                }
+            }
+
+            try {
+                StatePolycentric.instance.updateProfile(username, avatar?.first, avatar?.second ?: "image/png");
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(appContext, appContext.getString(R.string.changes_have_been_saved));
                 }
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to save polycentric profile.", e);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_synchronize_changes));
+                    UIDialogs.toast(appContext, appContext.getString(R.string.failed_to_synchronize_changes));
                 }
             }
         }

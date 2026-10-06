@@ -33,7 +33,6 @@ import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.overlays.RepliesOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.net.UnknownHostException
 
 class CommentsFragment : MainFragment() {
@@ -55,6 +54,7 @@ class CommentsFragment : MainFragment() {
 
     override fun onDestroyMainView() {
         super.onDestroyMainView()
+        _view?.cleanup()
         _view = null
     }
 
@@ -99,6 +99,21 @@ class CommentsFragment : MainFragment() {
                 UIDialogs.toast(context, context.getString(R.string.failed_to_load_comments) + "\n" + (it.message ?: ""));
                 setLoading(false);
             } else TaskHandler(IPlatformVideoDetails::class.java, StateApp.instance.scopeGetter);
+
+        private val _taskCheckLoggedIn = TaskHandler<Unit, Boolean>(StateApp.instance.scopeGetter, {
+            StatePolycentric.instance.awaitAdapter()
+            StatePolycentric.instance.isLoggedIn
+        })
+            .success { isLoggedIn ->
+                _layoutNotLoggedIn.visibility = if (isLoggedIn) View.GONE else View.VISIBLE
+                _recyclerComments.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
+                if (isLoggedIn) {
+                    fetchComments()
+                }
+            }
+            .exception<Throwable> {
+                Logger.w(TAG, "Failed to await Polycentric readiness.", it)
+            };
 
         constructor(fragment: CommentsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment
@@ -315,22 +330,12 @@ class CommentsFragment : MainFragment() {
         fun onShown() {
             _layoutPolycentricNotEnabled.visibility = if (!StatePolycentric.instance.enabled) View.VISIBLE else View.GONE
 
-            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                try {
-                    StatePolycentric.instance.awaitReady()
-                    val isLoggedIn = StatePolycentric.instance.isLoggedIn
+            _taskCheckLoggedIn.run(Unit)
+        }
 
-                    withContext(Dispatchers.Main) {
-                        _layoutNotLoggedIn.visibility = if (isLoggedIn) View.GONE else View.VISIBLE
-                        _recyclerComments.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
-                        if (isLoggedIn) {
-                            fetchComments()
-                        }
-                    }
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to await Polycentric readiness.", e)
-                }
-            }
+        fun cleanup() {
+            _taskCheckLoggedIn.cancel()
+            _taskLoadComments.cancel()
         }
     }
 }

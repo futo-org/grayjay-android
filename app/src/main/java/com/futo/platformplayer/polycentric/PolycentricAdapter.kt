@@ -34,9 +34,6 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
     /** Whether [initialize] has finished and the keypair is set. */
     val isReady: Boolean get() = client.isReady
 
-    /** Suspends until [initialize] completes; throws if it failed. */
-    suspend fun awaitReady() = client.awaitReady()
-
     /**
      * The active identity key, or an [IllegalStateException] when nobody is
      * logged in. Called at the head of every write path.

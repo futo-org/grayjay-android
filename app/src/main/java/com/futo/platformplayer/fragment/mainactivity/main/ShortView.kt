@@ -290,8 +290,9 @@ class ShortView : FrameLayout {
         }
 
         likeButton.onClick.subscribe {
-            val checked = likeButton.iconId == R.drawable.ic_thumb_up_s // !likeButton.isChecked
             PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_like)) {
+                // Read state after login resolves, as the user might re-tap
+                val checked = likeButton.iconId == R.drawable.ic_thumb_up_s // !likeButton.isChecked
                 if (checked) {
                     likes++
                 } else {
@@ -318,8 +319,9 @@ class ShortView : FrameLayout {
         }
 
         dislikeButton.onClick.subscribe {
-            val checked =  dislikeButton.iconId == R.drawable.ic_thumb_down_s //!dislikeButton.isChecked
             PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_dislike)) {
+                // Read state after login resolves, as the user might re-tap
+                val checked = dislikeButton.iconId == R.drawable.ic_thumb_down_s //!dislikeButton.isChecked
                 if (checked) {
                     dislikes++
                 } else {

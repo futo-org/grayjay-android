@@ -43,12 +43,14 @@ import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
 import polycentric.v2.EventKey
 
@@ -69,6 +71,7 @@ class StatePolycentric {
     private val _backgroundJob = SupervisorJob()
     private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
     private val _initMutex = Mutex()
+    private val _identityMutex = Mutex()
 
     fun load(context: Context) {
         if (!enabled) {
@@ -94,15 +97,14 @@ class StatePolycentric {
         get() = enabled && adapter.isReady && adapter.isLoggedIn
 
     /**
-     * Suspends until the adapter is initialized (throwing on failure), so login checks
-     * never false-negative during background hydration. No-op when disabled.
+     * Runs a serialized, non-cancellable identity mutation.
      */
-    suspend fun awaitReady() {
-        if (!enabled) {
-            return
+    private suspend fun <T> mutateIdentity(block: suspend (PolycentricAdapter) -> T): T {
+        ensureEnabled()
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        return withContext(NonCancellable) {
+            _identityMutex.withLock { block(adapter) }
         }
-        adapter.initialize()
-        adapter.awaitReady()
     }
 
     fun activeIdentity(): String? {
@@ -112,11 +114,7 @@ class StatePolycentric {
         return adapter.activeIdentity()
     }
 
-    suspend fun createIdentity(name: String): String {
-        ensureEnabled()
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        return adapter.createIdentity(name)
-    }
+    suspend fun createIdentity(name: String): String = mutateIdentity { it.createIdentity(name) }
 
     suspend fun listIdentities(): List<String> {
         ensureEnabled()
@@ -124,11 +122,7 @@ class StatePolycentric {
         return adapter.listIdentities()
     }
 
-    suspend fun switchIdentity(identity: String) {
-        ensureEnabled()
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.switchIdentity(identity)
-    }
+    suspend fun switchIdentity(identity: String) = mutateIdentity { it.switchIdentity(identity) }
 
     suspend fun getIdentityProfile(identity: String): PolycentricChannelProfile {
         ensureEnabled()
@@ -136,23 +130,12 @@ class StatePolycentric {
         return adapter.getIdentityProfile(identity)
     }
 
-    suspend fun updateProfile(name: String, avatar: List<AvatarVariant>?, mimeType: String = "image/png") {
-        ensureEnabled()
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.updateProfile(name, avatar, mimeType)
-    }
+    suspend fun updateProfile(name: String, avatar: List<AvatarVariant>?, mimeType: String = "image/png") =
+        mutateIdentity { it.updateProfile(name, avatar, mimeType) }
 
-    suspend fun logout() {
-        ensureEnabled()
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.logout()
-    }
+    suspend fun logout() = mutateIdentity { it.logout() }
 
-    suspend fun deleteIdentity() {
-        ensureEnabled()
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.deleteActiveIdentity()
-    }
+    suspend fun deleteIdentity() = mutateIdentity { it.deleteActiveIdentity() }
 
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {
@@ -223,21 +206,27 @@ class StatePolycentric {
         }
 
         return try {
-            // initialize() is not idempotent (it re-hydrates storage and re-runs the
-            // keypair restore); ensure it runs once per adapter.
-            _initMutex.withLock {
-                if (!adapter.isReady) {
-                    adapter.initialize()
-                }
-            }
-            adapter.awaitReady()
-            adapter
+            requireAdapter()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
             Logger.e(TAG, "Polycentric adapter not available.", e)
             null
         }
+    }
+
+    /**
+     * Returns the Harbor adapter once its client is initialized, throwing when
+     * Polycentric is disabled or with the cause when initialization failed.
+     */
+    suspend fun requireAdapter(): PolycentricAdapter {
+        ensureEnabled()
+        _initMutex.withLock {
+            if (!adapter.isReady) {
+                adapter.initialize()
+            }
+        }
+        return adapter
     }
 
     suspend fun getCommentPager(videoUrl: String): IPager<IPlatformComment> {
@@ -362,12 +351,13 @@ class StatePolycentric {
 
         private var _instance: StatePolycentric? = null;
         val instance: StatePolycentric
-            get(){
+            @Synchronized get(){
                 if(_instance == null)
                     _instance = StatePolycentric();
                 return _instance!!;
             };
         /** Adapter singleton teardown. */
+        @Synchronized
         fun dispose() {
             _instance?.cleanup()
             _instance = null;

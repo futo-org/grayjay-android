@@ -34,6 +34,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _layoutButtons: LinearLayout;
     private lateinit var _scroll: ScrollView;
     private lateinit var _loader: LoaderView;
+    private var _switching = false;
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
@@ -103,11 +104,21 @@ class PolycentricHomeActivity : AppCompatActivity() {
             profileButton.withPrimaryText(profile.name ?: getString(R.string.unknown));
             profileButton.withSecondaryText(getString(R.string.sign_in_to_this_identity));
             profileButton.onClick.subscribe {
+                // Ignore further taps until this switch resolves, so a double tap can't run two
+                // switches and open the profile screen twice.
+                if (_switching) {
+                    return@subscribe;
+                }
+                _switching = true;
+
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         StatePolycentric.instance.switchIdentity(identity);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to switch identity.", e)
+                        withContext(Dispatchers.Main) {
+                            _switching = false;
+                        }
                         return@launch;
                     }
 

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.polycentric
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import com.futo.platformplayer.R
@@ -27,31 +28,49 @@ object PolycentricLoginFlow {
 
         Logger.i(TAG, "requireLogin()")
         StateApp.instance.preventPictureInPicture.emit();
+
+				// First, we see if we can immediately report that the adapter is ready, and call the next
+				// screen
+        if (StatePolycentric.instance.adapter.isReady) {
+            runOrPrompt(context, text, StatePolycentric.instance.isLoggedIn, action)
+            return
+        }
+
+				// Second, if it is not ready, we start the async process of awaiting the adapter's init
+				// before the next screen
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
-                StatePolycentric.instance.awaitReady()
+                StatePolycentric.instance.requireAdapter()
                 val isLoggedIn = StatePolycentric.instance.isLoggedIn
 
                 withContext(Dispatchers.Main) {
-                    if (!isLoggedIn) {
-                        UIDialogs.showDialog(context, R.drawable.ic_login,
-                            text, null, null,
-                            1,
-                            UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.ACCENT),
-                            UIDialogs.Action("OK", {
-                                context.startActivity(Intent(context, PolycentricHomeActivity::class.java));
-                            }, UIDialogs.ActionStyle.PRIMARY)
-                        );
-                    } else {
-                        action();
+                    if (context is Activity && (context.isFinishing || context.isDestroyed)) {
+                        return@withContext
                     }
+                    runOrPrompt(context, text, isLoggedIn, action)
                 }
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to await polycentric readiness.", e);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context, "Failed to initialize Polycentric: ${e.message}");
+                    UIDialogs.toast(context.applicationContext, "Failed to initialize Polycentric: ${e.message}");
                 }
             }
         }
+    }
+
+    private fun runOrPrompt(context: Context, text: String, isLoggedIn: Boolean, action: () -> Unit) {
+        if (isLoggedIn) {
+            action();
+            return
+        }
+
+        UIDialogs.showDialog(context, R.drawable.ic_login,
+            text, null, null,
+            1,
+            UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.ACCENT),
+            UIDialogs.Action("OK", {
+                context.startActivity(Intent(context, PolycentricHomeActivity::class.java));
+            }, UIDialogs.ActionStyle.PRIMARY)
+        );
     }
 }

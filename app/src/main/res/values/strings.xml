@@ -674,6 +674,7 @@
     <string name="must_be_at_least_3_characters_long">Must be at least 3 characters long.</string>
     <string name="failed_to_create_profile">Failed to create profile.</string>
     <string name="failed_to_delete_profile">Failed to delete profile.</string>
+    <string name="failed_to_log_out">Failed to log out.</string>
     <string name="failed_to_fully_backfill_servers">Failed to fully backfill servers.</string>
     <string name="sign_in_to_this_identity">Sign in to this identity</string>
     <string name="text_field_does_not_contain_any_data">Text field does not contain any data</string>
