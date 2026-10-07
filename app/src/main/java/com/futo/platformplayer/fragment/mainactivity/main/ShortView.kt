@@ -80,17 +80,10 @@ import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_AUDIO_CONTAINERS
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase.Companion.PREFERED_VIDEO_CONTAINERS
 import com.futo.platformplayer.withMaxSizePx
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.ContentType
-import com.futo.polycentric.core.Models
-import com.futo.polycentric.core.Opinion
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.google.android.material.button.MaterialButton
 //import com.google.android.material.button.MaterialButton
-import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import userpackage.Protocol
 
 @UnstableApi
 class ShortView : FrameLayout {
@@ -141,8 +134,7 @@ class ShortView : FrameLayout {
     private var _lastSubtitleSource: ISubtitleSource? = null
 
     private var loadVideoTask: TaskHandler<String, IPlatformVideoDetails>? = null
-    private var loadLikesTask: TaskHandler<IPlatformVideo, Pair<Protocol.Reference, Protocol.QueryReferencesResponse>>? =
-        null
+    private var loadLikesTask: TaskHandler<IPlatformVideo, Pair<RatingLikeDislikes, Boolean?>>? = null
 
     val onResetTriggered = Event0()
     private val onPlayingToggled = Event1<Boolean>()
@@ -691,55 +683,28 @@ class ShortView : FrameLayout {
         loadLikesTask?.cancel()
         onLikeDislikeUpdated.remove(this@ShortView)
         loadLikesTask =
-            TaskHandler<IPlatformVideo, Pair<Protocol.Reference, Protocol.QueryReferencesResponse>>(
+            TaskHandler<IPlatformVideo, Pair<RatingLikeDislikes, Boolean?>>(
                 StateApp.instance.scopeGetter, {
-                    val ref = Models.referenceFromBuffer(video.url.toByteArray())
-                    val extraBytesRef =
-                        video.id.value?.let { if (it.isNotEmpty()) it.toByteArray() else null }
-
-                    val queryReferencesResponse = ApiMethods.getQueryReferences(
-                        ApiMethods.SERVER, ref, null, null, arrayListOf(
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                                .setFromType(ContentType.OPINION.value).setValue(
-                                    ByteString.copyFrom(Opinion.like.data)
+                    val rating = StatePolycentric.instance.getLiveVideoRating(video.url);
+                    val liked = StatePolycentric.instance.myVideoRating(video.url);
+                    Pair(rating, liked)
+                }).success { (rating, liked) ->
+                    onLikesLoaded.emit(rating, liked == true, liked == false)
+                    onLikeDislikeUpdated.subscribe(this@ShortView) { args ->
+                        fragment.lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                StatePolycentric.instance.setVideoRating(
+                                    video.url,
+                                    if (args.hasLiked) true else if (args.hasDisliked) false else null,
                                 )
-                                .build(), Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                                .setFromType(ContentType.OPINION.value).setValue(
-                                    ByteString.copyFrom(Opinion.dislike.data)
-                                ).build()
-                        ), extraByteReferences = listOfNotNull(extraBytesRef)
-                    )
-
-                    Pair(ref, queryReferencesResponse)
-                }).success { (ref, queryReferencesResponse) ->
-                val likes = queryReferencesResponse.countsList[0]
-                val dislikes = queryReferencesResponse.countsList[1]
-                val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())
-                val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())
-                onLikesLoaded.emit(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked)
-                onLikeDislikeUpdated.subscribe(this@ShortView) { args ->
-                    if (args.hasLiked) {
-                        args.processHandle.opinion(ref, Opinion.like)
-                    } else if (args.hasDisliked) {
-                        args.processHandle.opinion(ref, Opinion.dislike)
-                    } else {
-                        args.processHandle.opinion(ref, Opinion.neutral)
-                    }
-
-                    fragment.lifecycleScope.launch(Dispatchers.IO) {
-                        try {
-                            Logger.i(TAG, "Started backfill")
-                            args.processHandle.fullyBackfillServersAnnounceExceptions()
-                            Logger.i(TAG, "Finished backfill")
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to backfill servers", e)
+                            } catch (e: Throwable) {
+                                Logger.w(TAG, "Failed to set video rating.", e)
+                            }
                         }
                     }
-
-                    StatePolycentric.instance.updateLikeMap(
-                        ref, args.hasLiked, args.hasDisliked
-                    )
-                }
+                    Unit
+                }.exception<Throwable> {
+                Logger.w(TAG, "Failed to load short likes.", it)
             }
 
         loadLikesTask?.run(video)

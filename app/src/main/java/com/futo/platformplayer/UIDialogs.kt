@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
+import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.dialogs.AutoUpdateDialog
@@ -52,7 +53,6 @@ import com.futo.platformplayer.views.ToastView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import userpackage.Protocol
 import java.io.File
 
 class UIDialogs {
@@ -538,8 +538,8 @@ class UIDialogs {
             toast.show()
         }
 
-        fun showCommentDialog(context: Context, contextUrl: String, ref: Protocol.Reference, onCommentAdded: (comment: IPlatformComment) -> Unit) {
-            val dialog = CommentDialog(context, contextUrl, ref);
+        fun showCommentDialog(context: Context, contextUrl: String, parent: PolycentricPlatformComment?, onCommentAdded: (comment: IPlatformComment) -> Unit) {
+            val dialog = CommentDialog(context, contextUrl, parent);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.onCommentAdded.subscribe { onCommentAdded(it); };

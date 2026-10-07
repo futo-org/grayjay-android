@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -31,8 +32,6 @@ import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.Opinion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -86,21 +85,19 @@ class CommentViewHolder : ViewHolder {
                 throw Exception("Not implemented for non polycentric comments")
             }
 
-            val newOpinion: Opinion = if (args.hasLiked) {
-                Opinion.like
-            } else if (args.hasDisliked) {
-                Opinion.dislike
-            } else {
-                Opinion.neutral
-            }
-
             _layoutComment.alpha = if (args.dislikes > 2 && args.dislikes.toFloat() / (args.likes + args.dislikes).toFloat() >= 0.7f) 0.5f else 1.0f;
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                ApiMethods.setOpinion(args.processHandle, c.reference, newOpinion)
+                try {
+                    StatePolycentric.instance.setCommentRating(
+                        c,
+                        if (args.hasLiked) true else if (args.hasDisliked) false else null,
+                    )
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to set comment rating.", e)
+                    UIDialogs.toast(itemView.context, "Failed to set rating: " + e.message)
+                }
             }
-
-            StatePolycentric.instance.updateLikeMap(c.reference, args.hasLiked, args.hasDisliked)
         };
 
         _buttonCopy.setTransparant()
@@ -226,8 +223,9 @@ class CommentViewHolder : ViewHolder {
             _pillRatingLikesDislikes.visibility = View.VISIBLE;
 
             if (comment is PolycentricPlatformComment) {
-                val hasLiked = StatePolycentric.instance.hasLiked(comment.reference.toByteArray());
-                val hasDisliked = StatePolycentric.instance.hasDisliked(comment.reference.toByteArray());
+                val mine = StatePolycentric.instance.myCommentRating(comment);
+                val hasLiked = mine == true;
+                val hasDisliked = mine == false;
                 _pillRatingLikesDislikes.setRating(comment.rating, hasLiked, hasDisliked);
             } else {
                 _pillRatingLikesDislikes.setRating(comment.rating);
@@ -242,8 +240,7 @@ class CommentViewHolder : ViewHolder {
             _buttonReplies.visibility = View.GONE;
         }
 
-        val processHandle = StatePolycentric.instance.processHandle
-        if (processHandle != null && comment is PolycentricPlatformComment && processHandle.system == comment.eventPointer?.system) {
+        if (comment is PolycentricPlatformComment && StatePolycentric.instance.isMyComment(comment)) {
             _buttonDelete.visibility = View.VISIBLE
         } else {
             _buttonDelete.visibility = View.GONE

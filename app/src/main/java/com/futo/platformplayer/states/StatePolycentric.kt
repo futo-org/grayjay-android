@@ -8,68 +8,68 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
-import com.futo.platformplayer.api.media.models.comments.LazyComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
-import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.resolveChannelUrl
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.ensureServerAndBackfill
-import com.futo.polycentric.core.ClaimType
-import com.futo.polycentric.core.ContentType
-import com.futo.polycentric.core.Opinion
+import com.futo.platformplayer.polycentric.getComment
+import com.futo.platformplayer.polycentric.getCommentPager
+import com.futo.platformplayer.polycentric.deleteComment
+import com.futo.platformplayer.polycentric.getLiveVideoRating
+import com.futo.platformplayer.polycentric.getMyComments
+import com.futo.platformplayer.polycentric.getReplies
+import com.futo.platformplayer.polycentric.isMyComment
+import com.futo.platformplayer.polycentric.myCommentRating
+import com.futo.platformplayer.polycentric.myVideoRating
+import com.futo.platformplayer.polycentric.postComment
+import com.futo.platformplayer.polycentric.postReply
+import com.futo.platformplayer.polycentric.setCommentRating
+import com.futo.platformplayer.polycentric.setVideoRating
 import com.futo.polycentric.core.PolycentricProfile
 import com.futo.polycentric.core.ProcessHandle
 import com.futo.polycentric.core.PublicKey
-import com.futo.polycentric.core.SignedEvent
 import com.futo.polycentric.core.SqlLiteDbHelper
 import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.SystemState
 import com.futo.platformplayer.base64ToByteArray
-import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
 import com.futo.platformplayer.toBase64
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
-import com.google.protobuf.ByteString
+import com.futo.polycentric.core.ensureServerAndBackfill
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import polycentric.v2.EventKey
 import userpackage.Protocol
-import userpackage.Protocol.Reference
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.util.concurrent.ForkJoinPool
+
 
 class StatePolycentric {
-    private data class LikeDislikeEntry(val unixMilliseconds: Long, val hasLiked: Boolean, val hasDisliked: Boolean);
+    /**
+     * Harbor/Polycentric v2 adapter, which wraps the PolycentricCore provided
+		 * by the Kotlin SDK.
+		 *
+     * Constructed lazily; reads should await the initialization using
+		 * [awaitAdapter].
+     */
+    val adapter: PolycentricAdapter by lazy { PolycentricAdapter() }
 
     var processHandle: ProcessHandle? = null; private set;
-    private var _likeDislikeMap = hashMapOf<String, LikeDislikeEntry>()
     private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
     private var _transientEnabled = true
     val enabled get() = _transientEnabled && Settings.instance.other.polycentricEnabled
 
-    private val _commentPool = ForkJoinPool(2);
-    private val _commentPoolDispatcher = _commentPool.asCoroutineDispatcher();
     private val _backgroundJob = SupervisorJob()
     private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
 
@@ -99,6 +99,17 @@ class StatePolycentric {
                 }
 
                 getProcessHandles()
+
+                // Initialize the Harbor v2 adapter in the background so comment/rating
+                // reads only have to await readiness.
+                _backgroundScope.launch {
+                    try {
+                        adapter.initialize()
+                        adapter.awaitReady()
+                    } catch (e: Throwable) {
+                        Logger.w(TAG, "Failed to initialize Polycentric adapter: " + e.message)
+                    }
+                }
 
                 break;
             } catch (e: Throwable) {
@@ -161,24 +172,6 @@ class StatePolycentric {
         if (processHandle != null) {
             _activeProcessHandle.setAndSave(processHandle.system.toProto().toByteArray().toBase64());
 
-            val newMap = hashMapOf<String, LikeDislikeEntry>()
-            Store.instance.enumerateSignedEvents(processHandle.system, ContentType.OPINION) {
-                try {
-                    for (ref in it.event.references) {
-                        val refd = ref.toByteArray().toBase64();
-                        val e = newMap[refd];
-                        if (e == null || it.event.unixMilliseconds!! > e.unixMilliseconds) {
-                            val data = it.event.lwwElement?.value ?: continue;
-                            newMap[refd] = LikeDislikeEntry(it.event.unixMilliseconds!!, Opinion(data) == Opinion.like, Opinion(data) == Opinion.dislike);
-                        }
-                    }
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to get opinion, skipped.")
-                }
-            }
-
-            _likeDislikeMap = newMap
-
             // Ensure current server is registered & synced
             _backgroundScope.launch {
                 try {
@@ -189,32 +182,9 @@ class StatePolycentric {
             }
         } else {
             _activeProcessHandle.setAndSave("");
-            _likeDislikeMap = hashMapOf()
         }
     }
 
-    fun updateLikeMap(ref: Protocol.Reference, hasLiked: Boolean, hasDisliked: Boolean) {
-        ensureEnabled()
-        _likeDislikeMap[ref.toByteArray().toBase64()] = LikeDislikeEntry(System.currentTimeMillis(), hasLiked, hasDisliked);
-    }
-
-    fun hasDisliked(data: ByteArray): Boolean {
-        if (!enabled) {
-            return false
-        }
-
-        val entry = _likeDislikeMap[data.toBase64()] ?: return false;
-        return entry.hasDisliked;
-    }
-
-    fun hasLiked(data: ByteArray): Boolean {
-        if (!enabled) {
-            return false
-        }
-
-        val entry = _likeDislikeMap[data.toBase64()] ?: return false;
-        return entry.hasLiked;
-    }
 
     fun requireLogin(context: Context, text: String, action: (processHandle: ProcessHandle) -> Unit) {
         if (!enabled) {
@@ -296,286 +266,141 @@ class StatePolycentric {
             StatePlatform.instance.getEnabledClients().map { it.id }
         );*/
     }
-    fun getSystemComments(context: Context, system: PublicKey): List<IPlatformComment> {
+
+    /**
+     * Returns the Harbor adapter once its client is initialized, or null when
+     * Polycentric is disabled or initialization failed.
+     */
+    suspend fun awaitAdapter(): PolycentricAdapter? {
         if (!enabled) {
-            return listOf()
+            return null
         }
 
-        val dp_25 = 25.dp(context.resources)
-        val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(system))
-        val author = system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable())
-        val posts = arrayListOf<PolycentricPlatformComment>()
-        Store.instance.enumerateSignedEvents(system, ContentType.POST) { se ->
-            val ev = se.event
-            val post = Protocol.Post.parseFrom(ev.content)
-
-            posts.add(PolycentricPlatformComment(
-                contextUrl = author,
-                author = PlatformAuthorLink(
-                    id = PlatformID("polycentric", author, null, ClaimType.POLYCENTRIC.value.toInt()),
-                    name = systemState.username,
-                    url = author,
-                    thumbnail = systemState.avatar?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
-                    subscribers = null
-                ),
-                msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
-                rating = RatingLikeDislikes(0, 0),
-                date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
-                replyCount = 0,
-                eventPointer = se.toPointer(),
-                parentReference = se.event.references.getOrNull(0)
-            ))
-        }
-
-        return posts
-    }
-
-    data class LikesDislikesReplies(
-        var likes: Long,
-        var dislikes: Long,
-        var replyCount: Long
-    )
-
-    suspend fun getLikesDislikesReplies(reference: Protocol.Reference): LikesDislikesReplies {
-        ensureEnabled()
-
-        val response = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, null,
-            null,
-            listOf(
-                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                    .setFromType(ContentType.OPINION.value)
-                    .setValue(ByteString.copyFrom(Opinion.like.data))
-                    .build(),
-                Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                    .setFromType(ContentType.OPINION.value)
-                    .setValue(ByteString.copyFrom(Opinion.dislike.data))
-                    .build()
-            ),
-            listOf(
-                Protocol.QueryReferencesRequestCountReferences.newBuilder()
-                    .setFromType(ContentType.POST.value)
-                    .build()
-            )
-        );
-
-        val likes = response.countsList[0];
-        val dislikes = response.countsList[1];
-        val replyCount = response.countsList[2];
-        return LikesDislikesReplies(likes, dislikes, replyCount)
-    }
-
-    suspend fun getComment(contextUrl: String, reference: Reference): PolycentricPlatformComment {
-        ensureEnabled()
-
-        if (reference.referenceType != 2L) {
-            throw Exception("Not a pointer")
-        }
-
-        val pointer = Protocol.Pointer.parseFrom(reference.reference)
-        val events = ApiMethods.getEvents(ApiMethods.SERVER, pointer.system, Protocol.RangesForSystem.newBuilder()
-            .addRangesForProcesses(Protocol.RangesForProcess.newBuilder()
-                .setProcess(pointer.process)
-                .addRanges(Protocol.Range.newBuilder()
-                    .setLow(pointer.logicalClock)
-                    .setHigh(pointer.logicalClock)
-                    .build())
-                .build())
-            .build())
-
-        val sev = SignedEvent.fromProto(events.getEvents(0))
-        val ev = sev.event
-
-        if (ev.contentType != ContentType.POST.value) {
-            throw Exception("This is not a comment")
-        }
-
-        val post = Protocol.Post.parseFrom(ev.content);
-        val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(ApiMethods.SERVER));
-        val dp_25 = 25.dp(StateApp.instance.context.resources)
-
-        val profileEvents = ApiMethods.getQueryLatest(
-            ApiMethods.SERVER,
-            ev.system.toProto(),
-            listOf(
-                ContentType.AVATAR.value,
-                ContentType.USERNAME.value
-            )
-        ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
-            .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
-
-        val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
-        val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };
-        val imageBundle = if (avatarEvent != null) {
-            val lwwElementValue = avatarEvent.event.lwwElement?.value;
-            if (lwwElementValue != null) {
-                Protocol.ImageBundle.parseFrom(lwwElementValue)
-            } else {
-                null
-            }
-        } else {
+        return try {
+            adapter.initialize()
+            adapter.awaitReady()
+            adapter
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Polycentric adapter not available.", e)
             null
         }
-
-        val ldr = getLikesDislikesReplies(reference)
-        return PolycentricPlatformComment(
-            contextUrl = contextUrl,
-            author = PlatformAuthorLink(
-                id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
-                name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
-                url = systemLinkUrl,
-                thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
-                subscribers = null
-            ),
-            msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
-            rating = RatingLikeDislikes(ldr.likes, ldr.dislikes),
-            date = if (ev.unixMilliseconds != null) Instant.ofEpochMilli(ev.unixMilliseconds!!).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
-            replyCount = ldr.replyCount.toInt(),
-            eventPointer = sev.toPointer(),
-            parentReference = sev.event.references.getOrNull(0)
-        )
     }
 
-    suspend fun getCommentPager(contextUrl: String, reference: Reference, extraByteReferences: List<ByteArray>? = null): IPager<IPlatformComment> {
-        if (!enabled) {
-            return EmptyPager()
+    suspend fun getCommentPager(videoUrl: String): IPager<IPlatformComment> {
+        val adapter = awaitAdapter() ?: return EmptyPager()
+        return try {
+            adapter.getCommentPager(videoUrl)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to load comments.", e)
+            EmptyPager()
         }
-
-        val response = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, null,
-            Protocol.QueryReferencesRequestEvents.newBuilder()
-                .setFromType(ContentType.POST.value)
-                .addAllCountLwwElementReferences(arrayListOf(
-                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                        .setFromType(ContentType.OPINION.value)
-                        .setValue(ByteString.copyFrom(Opinion.like.data))
-                        .build(),
-                    Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                        .setFromType(ContentType.OPINION.value)
-                        .setValue(ByteString.copyFrom(Opinion.dislike.data))
-                        .build()
-                ))
-                .addCountReferences(
-                    Protocol.QueryReferencesRequestCountReferences.newBuilder()
-                    .setFromType(ContentType.POST.value)
-                    .build())
-                .build(),
-            extraByteReferences = extraByteReferences
-        );
-
-        val results = mapQueryReferences(contextUrl, response);
-        val nextCursor = if (response.hasCursor()) response.cursor.toByteArray() else null
-        return object : IAsyncPager<IPlatformComment>, IPager<IPlatformComment> {
-            private var _results: List<IPlatformComment> = results
-            private var _cursor: ByteArray? = nextCursor
-
-            override fun hasMorePages(): Boolean {
-                return _cursor != null;
-            }
-
-            override fun nextPage() {
-                runBlocking { nextPageAsync() }
-            }
-
-            override suspend fun nextPageAsync() {
-                val nextPageResponse = ApiMethods.getQueryReferences(ApiMethods.SERVER, reference, _cursor,
-                    Protocol.QueryReferencesRequestEvents.newBuilder()
-                        .setFromType(ContentType.POST.value)
-                        .addAllCountLwwElementReferences(arrayListOf(
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                                .setFromType(ContentType.OPINION.value)
-                                .setValue(ByteString.copyFrom(Opinion.like.data))
-                                .build(),
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder()
-                                .setFromType(ContentType.OPINION.value)
-                                .setValue(ByteString.copyFrom(Opinion.dislike.data))
-                                .build()
-                        ))
-                        .addCountReferences(
-                            Protocol.QueryReferencesRequestCountReferences.newBuilder()
-                                .setFromType(ContentType.POST.value)
-                                .build())
-                        .build()
-                );
-
-                _cursor = if (nextPageResponse.hasCursor()) nextPageResponse.cursor.toByteArray() else null
-                _results = mapQueryReferences(contextUrl, nextPageResponse)
-            }
-
-            override fun getResults(): List<IPlatformComment> {
-                return _results;
-            }
-        };
     }
 
-    private suspend fun mapQueryReferences(contextUrl: String, response: Protocol.QueryReferencesResponse): List<IPlatformComment> {
-        return response.itemsList.mapNotNull {
-            val sev = SignedEvent.fromProto(it.event);
-            val ev = sev.event;
-            if (ev.contentType != ContentType.POST.value) {
-                return@mapNotNull null;
-            }
+    suspend fun getReplies(comment: PolycentricPlatformComment): IPager<IPlatformComment> {
+        val adapter = awaitAdapter() ?: return EmptyPager()
+        return try {
+            adapter.getReplies(comment)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to load replies.", e)
+            EmptyPager()
+        }
+    }
 
-            try {
-                val post = Protocol.Post.parseFrom(ev.content);
-                val likes = it.countsList[0];
-                val dislikes = it.countsList[1];
-                val replies = it.countsList[2];
+    suspend fun getComment(key: EventKey): PolycentricPlatformComment? {
+        val adapter = awaitAdapter() ?: return null
+        return try {
+            adapter.getComment(key)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to load comment.", e)
+            null
+        }
+    }
 
-                val scope = StateApp.instance.scopeOrNull ?: return@mapNotNull null;
-                return@mapNotNull LazyComment(scope.async(_commentPoolDispatcher){
-                    Logger.i(TAG, "Fetching comment data for [" + ev.system.key.toBase64() + "]");
-                    val profileEvents = ApiMethods.getQueryLatest(
-                        ApiMethods.SERVER,
-                        ev.system.toProto(),
-                        listOf(
-                            ContentType.AVATAR.value,
-                            ContentType.USERNAME.value
-                        )
-                    ).eventsList.map { e -> SignedEvent.fromProto(e) }.groupBy { e -> e.event.contentType }
-                        .map { (_, events) -> events.maxBy { x -> x.event.unixMilliseconds ?: 0 } };
+    suspend fun getMyComments(): List<IPlatformComment> {
+        val adapter = awaitAdapter() ?: return listOf()
+        return try {
+            adapter.getMyComments()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to load my comments.", e)
+            listOf()
+        }
+    }
 
-                    val nameEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.USERNAME.value };
-                    val avatarEvent = profileEvents.firstOrNull { e -> e.event.contentType == ContentType.AVATAR.value };
-                    val imageBundle = if (avatarEvent != null) {
-                        val lwwElementValue = avatarEvent.event.lwwElement?.value;
-                        if (lwwElementValue != null) {
-                            Protocol.ImageBundle.parseFrom(lwwElementValue)
-                        } else {
-                            null
-                        }
-                    } else {
-                        null
-                    }
+    suspend fun getLiveVideoRating(videoUrl: String): RatingLikeDislikes {
+        val adapter = awaitAdapter() ?: return RatingLikeDislikes(0, 0)
+        return try {
+            adapter.getLiveVideoRating(videoUrl)
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to load video rating.", e)
+            RatingLikeDislikes(0, 0)
+        }
+    }
 
-                    val unixMilliseconds = ev.unixMilliseconds
-                    //TODO: Don't use single hardcoded sderver here
-                    val systemLinkUrl = ev.system.systemToURLInfoSystemLinkUrl(listOf(ApiMethods.SERVER));
-                    val dp_25 = 25.dp(StateApp.instance.context.resources)
-                    return@async PolycentricPlatformComment(
-                        contextUrl = contextUrl,
-                        author = PlatformAuthorLink(
-                            id = PlatformID("polycentric", systemLinkUrl, null, ClaimType.POLYCENTRIC.value.toInt()),
-                            name = nameEvent?.event?.lwwElement?.value?.decodeToString() ?: "Unknown",
-                            url = systemLinkUrl,
-                            thumbnail =  imageBundle?.selectBestImage(dp_25 * dp_25)?.let { img -> img.toURLInfoSystemLinkUrl(ev.system.toProto(), img.process, listOf(ApiMethods.SERVER)) },
-                            subscribers = null
-                        ),
-                        msg = if (post.content.count() > PolycentricPlatformComment.MAX_COMMENT_SIZE) post.content.substring(0, PolycentricPlatformComment.MAX_COMMENT_SIZE) else post.content,
-                        rating = RatingLikeDislikes(likes, dislikes),
-                        date = if (unixMilliseconds != null) Instant.ofEpochMilli(unixMilliseconds).atOffset(ZoneOffset.UTC) else OffsetDateTime.MIN,
-                        replyCount = replies.toInt(),
-                        eventPointer = sev.toPointer(),
-                        parentReference = sev.event.references.getOrNull(0)
-                    );
-                });
-            } catch (e: Throwable) {
-                return@mapNotNull null;
-            }
-        };
+    /** Whether the active Harbor identity has liked (true) or disliked (false) a video. */
+    fun myVideoRating(videoUrl: String): Boolean? {
+        if (!enabled) {
+            return null
+        }
+        return try {
+            adapter.myVideoRating(videoUrl)
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    /** Whether the active Harbor identity has liked (true) or disliked (false) a comment. */
+    fun myCommentRating(comment: PolycentricPlatformComment): Boolean? {
+        if (!enabled) {
+            return null
+        }
+        return try {
+            adapter.myCommentRating(comment)
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    /** Whether the comment was authored by the active Harbor identity (deletable). */
+    fun isMyComment(comment: PolycentricPlatformComment): Boolean {
+        if (!enabled) {
+            return false
+        }
+        return try {
+            adapter.isMyComment(comment)
+        } catch (e: Throwable) {
+            false
+        }
+    }
+
+    // Writes delegate to the adapter; they throw when no Harbor identity is
+    // available (the v2 identity system is not wired up yet).
+    suspend fun postComment(videoUrl: String, text: String): PolycentricPlatformComment {
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        return adapter.postComment(videoUrl, text)
+    }
+
+    suspend fun postReply(parent: PolycentricPlatformComment, text: String): PolycentricPlatformComment {
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        return adapter.postReply(parent, text)
+    }
+
+    suspend fun deleteComment(comment: PolycentricPlatformComment) {
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.deleteComment(comment)
+    }
+
+    suspend fun setVideoRating(videoUrl: String, positive: Boolean?) {
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.setVideoRating(videoUrl, positive)
+    }
+
+    suspend fun setCommentRating(comment: PolycentricPlatformComment, positive: Boolean?) {
+        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        adapter.setCommentRating(comment, positive)
     }
 
     fun cleanup() {
         _backgroundJob.cancel()
-        _commentPool.shutdown()
     }
 
     companion object {

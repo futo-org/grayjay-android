@@ -272,7 +272,7 @@
                         android:lines="1"
                         android:maxWidth="100dp"
                         android:padding="10dp"
-                        android:text="@string/polycentric"
+                        android:text="@string/harbor"
                         android:textColor="#fff"
                         android:textSize="11sp" />
 

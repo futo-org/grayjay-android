@@ -36,7 +36,7 @@ class PolycentricWhyActivity : AppCompatActivity() {
         };
 
         _buttonTechnical.onClick.subscribe {
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://docs.polycentric.io"));
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://join.harbor.social/docs"));
             startActivity(browserIntent);
         };
     }

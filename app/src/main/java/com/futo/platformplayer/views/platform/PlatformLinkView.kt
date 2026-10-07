@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat.startActivity
 import com.futo.platformplayer.R
+import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.polycentric.core.ClaimType
 
@@ -43,7 +44,7 @@ class PlatformLinkView : LinearLayout {
 
     fun setPlatform(name: String, url: String) {
 
-        if(url.startsWith("https://harbor.social")) {
+        if(url.startsWith(PolycentricAdapter.WEB_BASE_URL)) {
             _imagePlatform.setImageResource(R.drawable.neopass);
         }
         else {

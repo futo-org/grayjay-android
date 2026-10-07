@@ -77,20 +77,14 @@ import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.ContentType
-import com.futo.polycentric.core.Models
-import com.futo.polycentric.core.Opinion
 import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.ShapeAppearanceModel
-import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import userpackage.Protocol
 import java.lang.Integer.min
 
 class ArticleDetailFragment : MainFragment {
@@ -260,15 +254,15 @@ class ArticleDetailFragment : MainFragment {
 
                 if (c is PolycentricPlatformComment) {
                     var parentComment: PolycentricPlatformComment = c;
-                    _repliesOverlay.load(_commentType!!, metadata, c.contextUrl, c.reference, c,
-                        { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
+                    _repliesOverlay.load(_commentType!!, metadata, c.contextUrl, c,
+                        { StatePolycentric.instance.getReplies(c) },
                         {
                             val newComment = parentComment.cloneWithUpdatedReplyCount((parentComment.replyCount ?: 0) + 1);
                             _commentsList.replaceComment(parentComment, newComment);
                             parentComment = newComment;
                         });
                 } else {
-                    _repliesOverlay.load(_commentType!!, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                    _repliesOverlay.load(_commentType!!, metadata, null, c, { StatePlatform.instance.getSubComments(c) });
                 }
 
                 setRepliesOverlayVisible(isVisible = true, animate = true);
@@ -323,8 +317,7 @@ class ArticleDetailFragment : MainFragment {
         private fun updatePolycentricRating() {
             _rating.visibility = View.GONE;
 
-            val ref = Models.referenceFromBuffer((_article?.url ?: _articleOverview?.url)?.toByteArray() ?: return)
-            val extraBytesRef = (_article?.id?.value ?: _articleOverview?.id?.value)?.let { if (it.isNotEmpty()) it.toByteArray() else null }
+            val url = (_article?.url ?: _articleOverview?.url) ?: return
             val version = _version;
 
             _rating.onLikeDislikeUpdated.remove(this);
@@ -338,26 +331,13 @@ class ArticleDetailFragment : MainFragment {
                 }
 
                 try {
-                    val queryReferencesResponse = ApiMethods.getQueryReferences(ApiMethods.SERVER, ref, null,null,
-                        arrayListOf(
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(
-                                ContentType.OPINION.value).setValue(
-                                ByteString.copyFrom(Opinion.like.data)).build(),
-                            Protocol.QueryReferencesRequestCountLWWElementReferences.newBuilder().setFromType(
-                                ContentType.OPINION.value).setValue(
-                                ByteString.copyFrom(Opinion.dislike.data)).build()
-                        ),
-                        extraByteReferences = listOfNotNull(extraBytesRef)
-                    );
+                    val rating = StatePolycentric.instance.getLiveVideoRating(url);
+                    val hasLiked = StatePolycentric.instance.myVideoRating(url) == true;
+                    val hasDisliked = StatePolycentric.instance.myVideoRating(url) == false;
 
                     if (version != _version) {
                         return@launch;
                     }
-
-                    val likes = queryReferencesResponse.countsList[0];
-                    val dislikes = queryReferencesResponse.countsList[1];
-                    val hasLiked = StatePolycentric.instance.hasLiked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasLiked(it) } ?: false*/;
-                    val hasDisliked = StatePolycentric.instance.hasDisliked(ref.toByteArray())/* || extraBytesRef?.let { StatePolycentric.instance.hasDisliked(it) } ?: false*/;
 
                     withContext(Dispatchers.Main) {
                         if (version != _version) {
@@ -365,27 +345,18 @@ class ArticleDetailFragment : MainFragment {
                         }
 
                         _rating.visibility = VISIBLE;
-                        _rating.setRating(RatingLikeDislikes(likes, dislikes), hasLiked, hasDisliked);
+                        _rating.setRating(rating, hasLiked, hasDisliked);
                         _rating.onLikeDislikeUpdated.subscribe(this@ArticleDetailView) { args ->
-                            if (args.hasLiked) {
-                                args.processHandle.opinion(ref, Opinion.like);
-                            } else if (args.hasDisliked) {
-                                args.processHandle.opinion(ref, Opinion.dislike);
-                            } else {
-                                args.processHandle.opinion(ref, Opinion.neutral);
-                            }
-
                             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                                 try {
-                                    Logger.i(TAG, "Started backfill");
-                                    args.processHandle.fullyBackfillServersAnnounceExceptions();
-                                    Logger.i(TAG, "Finished backfill");
+                                    StatePolycentric.instance.setVideoRating(
+                                        url,
+                                        if (args.hasLiked) true else if (args.hasDisliked) false else null,
+                                    )
                                 } catch (e: Throwable) {
-                                    Logger.e(TAG, "Failed to backfill servers", e)
+                                    Logger.w(TAG, "Failed to set video rating.", e)
                                 }
                             }
-
-                            StatePolycentric.instance.updateLikeMap(ref, args.hasLiked, args.hasDisliked)
                         };
                     }
                 } catch (e: Throwable) {
@@ -511,7 +482,7 @@ class ArticleDetailFragment : MainFragment {
             if (_articleOverview == null) {
                 fetchPolycentricProfile();
                 updatePolycentricRating();
-                _addCommentView.setContext(value.url, Models.referenceFromBuffer(value.url.toByteArray()));
+                _addCommentView.setContext(value.url, null);
             }
 
             val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
@@ -532,7 +503,7 @@ class ArticleDetailFragment : MainFragment {
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
 
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
-            _addCommentView.setContext(value.url, Models.referenceFromBuffer(value.url.toByteArray()));
+            _addCommentView.setContext(value.url, null);
 
             updatePolycentricRating();
             fetchPolycentricProfile();
@@ -641,16 +612,15 @@ class ArticleDetailFragment : MainFragment {
         private fun fetchPolycentricComments() {
             Logger.i(TAG, "fetchPolycentricComments")
             val post = _article;
-            val ref = (_article?.url ?: _articleOverview?.url)?.toByteArray()?.let { Models.referenceFromBuffer(it) }
-            val extraBytesRef = (_article?.id?.value ?: _articleOverview?.id?.value)?.let { if (it.isNotEmpty()) it.toByteArray() else null }
+            val url = (_article?.url ?: _articleOverview?.url)
 
-            if (ref == null) {
+            if (url == null) {
                 Logger.w(TAG, "Failed to fetch polycentric comments because url was not set null")
                 _commentsList.clear();
                 return
             }
 
-            _commentsList.load(false) { StatePolycentric.instance.getCommentPager(post!!.url, ref, listOfNotNull(extraBytesRef)); };
+            _commentsList.load(false) { StatePolycentric.instance.getCommentPager(post!!.url); };
         }
 
         private fun updateCommentType(commentType: Boolean?, forceReload: Boolean = false) {

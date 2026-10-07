@@ -28,7 +28,7 @@ private fun splitHttpUrl(raw: String): HttpUrl? {
     val authEnd = listOf(rest.indexOf('/'), rest.indexOf('?'), rest.indexOf('#'))
         .filter { it >= 0 }
         .minOrNull() ?: rest.length
-    val host = rest.substring(0, authEnd).substringBefore(':').let { stripHostPrefixes(it.lowercase()) }
+    val host = rest.substring(0, authEnd).substringBefore(':').let { canonicalHost(it.lowercase()) }
     if (host.isEmpty()) return null
 
     val afterAuthority = rest.substring(authEnd)
@@ -37,12 +37,15 @@ private fun splitHttpUrl(raw: String): HttpUrl? {
     return HttpUrl(host, path, query)
 }
 
-/** Drop vanity subdomains; keep everything else (e.g. `open.` in `open.lbry.com`). */
-private fun stripHostPrefixes(host: String): String {
-    for (prefix in listOf("www.", "m.", "mobile.")) {
-        if (host.startsWith(prefix)) return host.substring(prefix.length)
-    }
-    return host
+/**
+ * Canonicalize the host: drop mobile vanity prefixes, then enforce `www.`.
+ */
+private fun canonicalHost(host: String): String {
+    val withoutMobile = listOf("m.", "mobile.")
+        .firstOrNull { host.startsWith(it) }
+        ?.let { host.substring(it.length) }
+        ?: host
+    return if (withoutMobile.startsWith("www.")) withoutMobile else "www.$withoutMobile"
 }
 
 private fun trimSlashes(path: String): String = path.trimStart('/').trimEnd('/')

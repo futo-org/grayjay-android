@@ -55,21 +55,13 @@ import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.ContentType
-import com.futo.polycentric.core.Models
-import com.futo.polycentric.core.Opinion
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.ShapeAppearanceModel
-import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import userpackage.Protocol
 import java.lang.Integer.min
 
 class WebDetailFragment : MainFragment {

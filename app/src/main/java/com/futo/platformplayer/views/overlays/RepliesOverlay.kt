@@ -1,7 +1,6 @@
 package com.futo.platformplayer.views.overlays
 
 import android.content.Context
-import android.net.Uri
 import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
@@ -10,7 +9,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.structures.IPager
@@ -28,11 +26,6 @@ import com.futo.platformplayer.views.segments.CommentsList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import userpackage.Protocol
 
 class RepliesOverlay : LinearLayout {
     val onClose = Event0();
@@ -50,7 +43,6 @@ class RepliesOverlay : LinearLayout {
     private var _parentComment: IPlatformComment? = null;
     private var _onCommentAdded: ((comment: IPlatformComment) -> Unit)? = null;
     private val _loaderOverlay: LoaderOverlay
-    private val _client = ManagedHttpClient()
     private val _layoutItems: LinearLayout
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
@@ -89,9 +81,9 @@ class RepliesOverlay : LinearLayout {
             }
 
             if (c is PolycentricPlatformComment) {
-                load(false, metadata, c.contextUrl, c.reference, c, { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) });
+                load(false, metadata, c.contextUrl, c, { StatePolycentric.instance.getReplies(c) });
             } else {
-                load(true, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                load(true, metadata, null, c, { StatePlatform.instance.getSubComments(c) });
             }
         };
 
@@ -101,21 +93,20 @@ class RepliesOverlay : LinearLayout {
                 return@setOnClickListener
             }
 
-            val ref = p.parentReference ?: return@setOnClickListener
-            handleParentClick(p.contextUrl, ref)
+            handleParentClick(p)
         }
 
         _topbar.onClose.subscribe(this, onClose::emit);
-        _topbar.setInfo(context.getString(R.string.Replies), "");
     }
 
-    fun load(readonly: Boolean, metadata: String, contextUrl: String?, ref: Protocol.Reference?, parentComment: IPlatformComment? = null, loader: suspend () -> IPager<IPlatformComment>, onCommentAdded: ((comment: IPlatformComment) -> Unit)? = null, onParentClick: ((comment: IPlatformComment) -> Unit)? = null) {
+
+    fun load(readonly: Boolean, metadata: String, contextUrl: String?, parentComment: IPlatformComment? = null, loader: suspend () -> IPager<IPlatformComment>, onCommentAdded: ((comment: IPlatformComment) -> Unit)? = null, onParentClick: ((comment: IPlatformComment) -> Unit)? = null) {
         _readonly = readonly;
         if (readonly) {
             _addCommentView.visibility = View.GONE;
         } else {
             _addCommentView.visibility = View.VISIBLE;
-            _addCommentView.setContext(contextUrl, ref);
+            _addCommentView.setContext(contextUrl, parentComment as? PolycentricPlatformComment);
         }
 
         if (parentComment == null) {
@@ -145,121 +136,46 @@ class RepliesOverlay : LinearLayout {
         _parentComment = parentComment;
     }
 
-    fun handleParentClick(contextUrl: String, ref: Protocol.Reference): Boolean {
+    /**
+     * Navigate to the parent of [parentComment] (if present) such that the whole
+     * reply chain is one level higher.
+     */
+    fun handleParentClick(parentComment: PolycentricPlatformComment): Boolean {
         val ctx = context
         if (ctx !is MainActivity) {
             return false
         }
 
-        return when (ref.referenceType) {
-            2L -> {
-                setLoading(true)
+        val parentKey = parentComment.parent ?: return false
+        setLoading(true)
 
-                StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    try {
-                        val parentComment = StatePolycentric.instance.getComment(contextUrl, ref)
-                        val replyCount = parentComment.replyCount ?: 0;
-                        var metadata = "";
-                        if (replyCount > 0) {
-                            metadata += "$replyCount " + context.getString(R.string.replies);
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            setLoading(false)
-
-                            load(false, metadata, parentComment.contextUrl, parentComment.reference, parentComment,
-                                { StatePolycentric.instance.getCommentPager(contextUrl, ref) })
-                        }
-                    } catch (e: Throwable) {
-                        withContext(Dispatchers.Main) {
-                            setLoading(false)
-                        }
-
-                        Logger.e(TAG, "Failed to load parent comment.", e)
-                        UIDialogs.toast("Failed to load comment")
-                    }
-                }
-
-                true
-            }
-            3L -> {
-                StateApp.instance.scopeOrNull?.launch {
-                    try {
-                        val url = referenceToUrl(_client, ref) ?: return@launch
-                        withContext(Dispatchers.Main) {
-                            ctx.handleUrl(url)
-                            onClose.emit()
-                        }
-                    } catch (e: Throwable) {
-                        Logger.i(TAG, "Failed to open ref.", e)
-                    }
-                }
-
-                false
-            }
-            else -> false
-        }
-    }
-
-    private fun referenceToUrl(client: ManagedHttpClient, parentRef: Protocol.Reference): String? {
-        val refBytes = parentRef.reference?.toByteArray() ?: return null
-        val ref = refBytes.decodeToString()
-
-        try {
-            Uri.parse(ref)
-            return ref
-        } catch (e: Throwable) {
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
-                return oldReferenceToUrl(client, ref)
-            } catch (f: Throwable) {
-                Logger.i(TAG, "Failed to handle URL.", f)
+                val parent = StatePolycentric.instance.getComment(parentKey)
+                    ?: throw IllegalStateException("Comment not found.")
+
+                val replyCount = parent.replyCount ?: 0;
+                var metadata = "";
+                if (replyCount > 0) {
+                    metadata += "$replyCount " + context.getString(R.string.replies);
+                }
+
+                withContext(Dispatchers.Main) {
+                    setLoading(false)
+
+                    load(false, metadata, parent.contextUrl, parent, { StatePolycentric.instance.getReplies(parent) })
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) {
+                    setLoading(false)
+                }
+
+                Logger.e(TAG, "Failed to load parent comment.", e)
+                UIDialogs.toast("Failed to load comment")
             }
         }
 
-        return null
-    }
-
-    private fun oldReferenceToUrl(client: ManagedHttpClient, reference: String): String? {
-        return when {
-            reference.startsWith("video_episode:") -> {
-                val response = client.get("https://content.api.nebula.app/video_episodes/$reference")
-                if (!response.isOk) {
-                    throw Exception("Failed to resolve nebula video (${response.code}).")
-                }
-
-                val respString = response.body?.string()
-                val jsonElement = respString?.let { Json.parseToJsonElement(it) }
-                return jsonElement?.jsonObject?.get("share_url")?.jsonPrimitive?.content
-            }
-
-            reference.length == 11 -> "https://www.youtube.com/watch?v=$reference"
-
-            reference.length == 40 -> {
-                val response = client.post("https://api.na-backend.odysee.com/api/v1/proxy?m=claim_search", hashMapOf(
-                    "Content-Type" to "application/json"
-                ))
-
-                if (!response.isOk) {
-                    response.close()
-                    throw Exception("Failed to resolve claim (${response.code}).")
-                }
-
-                val jsonElement = response.body?.string()?.let { Json.parseToJsonElement(it) }
-                val canonicalUrl = jsonElement?.jsonObject?.get("result")
-                    ?.jsonObject?.get("items")
-                    ?.jsonArray?.get(0)
-                    ?.jsonObject?.get("canonical_url")
-                    ?.jsonPrimitive?.content
-
-                canonicalUrl ?: throw Exception("Failed to get canonical URL.")
-            }
-
-            reference.startsWith("v") && (reference.length == 7 || reference.length == 6) -> "https://rumble.com/$reference"
-
-            Regex("^\\d+\$").matches(reference) -> "https://www.twitch.tv/videos/$reference"
-
-            else -> null
-        }
+        return true
     }
 
     private fun setLoading(loading: Boolean) {

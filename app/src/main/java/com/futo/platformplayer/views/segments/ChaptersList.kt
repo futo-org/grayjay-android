@@ -29,7 +29,6 @@ import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.ChapterViewHolder
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException

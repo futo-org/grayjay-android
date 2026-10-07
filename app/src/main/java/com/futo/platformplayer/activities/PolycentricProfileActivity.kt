@@ -23,6 +23,7 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
@@ -76,8 +77,11 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _buttonDelete = findViewById(R.id.button_delete);
         _loaderOverlay = findViewById(R.id.loader_overlay);
         _textSystem = findViewById(R.id.text_system)
-        findViewById<TextView>(R.id.text_cta2).setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://harbor.social")))
+        findViewById<TextView>(R.id.text_cta2).apply {
+            text = PolycentricAdapter.WEB_BASE_URL
+            setOnClickListener {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PolycentricAdapter.WEB_BASE_URL)))
+            }
         }
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             saveIfRequired();

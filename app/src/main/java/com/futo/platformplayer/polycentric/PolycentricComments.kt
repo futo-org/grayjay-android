@@ -7,16 +7,12 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.futo.polycentric.core.Collections
 import org.futo.polycentric.core.getAttributionFeed
 import org.futo.polycentric.core.getEvent
 import org.futo.polycentric.core.getIdentityFeed
 import org.futo.polycentric.core.getPostThread
-import org.futo.polycentric.core.getProfile
 import polycentric.v2.AttributedTo
 import polycentric.v2.Content
 import polycentric.v2.Delete
@@ -27,6 +23,7 @@ import polycentric.v2.EventKey
 import polycentric.v2.Link
 import polycentric.v2.Post
 import polycentric.v2.PostReply
+import polycentric.v2.ProfileUpdate
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -59,32 +56,38 @@ suspend fun PolycentricAdapter.getCommentPager(videoUrl: String, omitLabels: Lis
     }
 }
 
-/** Returns a list of all replies to a comment. */
-suspend fun PolycentricAdapter.getReplies(comment: PolycentricPlatformComment, omitLabels: List<String> = emptyList()): List<IPlatformComment> {
-    val key = comment.key ?: return emptyList()
-    val resp = client.getPostThread(key, omitLabels = omitLabels) ?: return emptyList()
-    val labelMap = decodeLabels(resp.event_hints)
-    return coroutineScope {
-        resp.thread.map { async { toComment(comment.contextUrl, it, labelMap) } }.awaitAll()
-    }
-        .filterNotNull()
+/**
+ * Returns a pager over all replies to a comment. The thread is fetched in a
+ * single request, so the pager only has a single page.
+ */
+suspend fun PolycentricAdapter.getReplies(comment: PolycentricPlatformComment, omitLabels: List<String> = emptyList()): IPager<IPlatformComment> {
+    val key = comment.key ?: return staticCommentPager(emptyList())
+    val resp = client.getPostThread(key, omitLabels = omitLabels) ?: return staticCommentPager(emptyList())
+    val replies = toComments(resp.thread, resp.event_hints) { comment.contextUrl }
         .filter { it.key != comment.key }
+    return staticCommentPager(replies)
 }
+
+/** A simple single-page pager over an in-memory list of comments. */
+private fun staticCommentPager(comments: List<IPlatformComment>): IPager<IPlatformComment> =
+    object : IAsyncPager<IPlatformComment>, IPager<IPlatformComment> {
+        override fun hasMorePages(): Boolean = false
+        override fun nextPage() = runBlocking { nextPageAsync() }
+        override suspend fun nextPageAsync() = Unit
+        override fun getResults(): List<IPlatformComment> = comments
+    }
 
 /** Fetch a single comment by its event key. */
 suspend fun PolycentricAdapter.getComment(key: EventKey): PolycentricPlatformComment? {
     val bundle = client.getEvent(key.identity, key.collection, key.sequence) ?: return null
-    return toComment(contextUrlOf(bundle) ?: "", bundle)
+    return toComment(contextUrlOf(bundle) ?: "", bundle) { fetchLocalAuthor(it) }
 }
 
 /** Return a list of the active identity's comments, in reverse-chronological order. */
 suspend fun PolycentricAdapter.getMyComments(): List<IPlatformComment> {
     val identity = client.activeIdentityKey ?: return emptyList()
     val resp = client.getIdentityFeed(identity) ?: return emptyList()
-    val labelMap = decodeLabels(resp.event_hints)
-    return coroutineScope {
-        resp.event_bundles.map { async { toComment(contextUrlOf(it) ?: "", it, labelMap) } }.awaitAll().filterNotNull()
-    }
+    return toComments(resp.event_bundles, resp.event_hints) { contextUrlOf(it) ?: "" }
 }
 
 /**
@@ -128,19 +131,27 @@ suspend fun PolycentricAdapter.deleteComment(comment: PolycentricPlatformComment
 private suspend fun PolycentricAdapter.fetchPage(url: String, cursor: String?, omitLabels: List<String> = emptyList()): Pair<List<IPlatformComment>, String?> {
     val resp = client.getAttributionFeed(AttributedTo(link = Link(url = url)), forwardToken = cursor, omitLabels = omitLabels)
         ?: return emptyList<IPlatformComment>() to null
-    val labelMap = decodeLabels(resp.event_hints)
-    val comments = coroutineScope {
-        resp.event_bundles.map { async { toComment(url, it, labelMap) } }.awaitAll().filterNotNull()
-    }
+    val comments = toComments(resp.event_bundles, resp.event_hints) { url }
     val next = resp.page_info?.takeIf { it.has_next_page }?.end_cursor
     return comments to next
 }
 
 /**
- * Turn a generic event bundle retrieved from polycentric-core into a [PolycentricPlatformComment],
- * if it is a `Post` or `PostReply` event.
+ * Turn a batch of event bundles into comments. Author profiles and moderation labels are read from
+ * the response's [hints]. Authors without a profile hint show as "Unknown".
  */
-private suspend fun PolycentricAdapter.toComment(contextUrl: String, bundle: EventBundle, labelMap: Map<String, List<String>> = emptyMap()): PolycentricPlatformComment? {
+private fun PolycentricAdapter.toComments(bundles: List<EventBundle>, hints: List<EventHint>, contextUrl: (EventBundle) -> String): List<PolycentricPlatformComment> {
+    val labelMap = decodeLabels(hints)
+    val profiles = decodeProfiles(hints)
+    return bundles.mapNotNull { toComment(contextUrl(it), it, labelMap) { identity -> authorLink(identity, profiles[identity]) } }
+}
+
+/**
+ * Turn a generic event bundle retrieved from polycentric-core into a [PolycentricPlatformComment],
+ * if it is a `Post` or `PostReply` event. The comment's author is produced by [author] from the
+ * author's identity.
+ */
+private fun PolycentricAdapter.toComment(contextUrl: String, bundle: EventBundle, labelMap: Map<String, List<String>> = emptyMap(), author: (String) -> PlatformAuthorLink): PolycentricPlatformComment? {
     val signed = bundle.signed_event ?: return null
     val event = Event.ADAPTER.decode(signed.event_bytes)
     val key = event.key ?: return null
@@ -149,7 +160,7 @@ private suspend fun PolycentricAdapter.toComment(contextUrl: String, bundle: Eve
     val meta = bundle.meta
     return PolycentricPlatformComment(
         contextUrl = contextUrl,
-        author = resolveAuthor(key.identity),
+        author = author(key.identity),
         msg = post.text.take(PolycentricPlatformComment.MAX_COMMENT_SIZE),
         rating = RatingLikeDislikes((meta?.upvote_count ?: 0).toLong(), (meta?.downvote_count ?: 0).toLong()),
         date = OffsetDateTime.ofInstant(Instant.ofEpochMilli(event.created_at), ZoneOffset.UTC),
@@ -165,10 +176,10 @@ private suspend fun PolycentricAdapter.toComment(contextUrl: String, bundle: Eve
  * Produce a new [PolycentricPlatformComment] with the given metadata and zero ratings and replies,
  * for when the client authors a new comment.
  */
-private suspend fun PolycentricAdapter.localComment(contextUrl: String, text: String, key: EventKey, root: EventKey?, parent: EventKey?) =
+private fun PolycentricAdapter.localComment(contextUrl: String, text: String, key: EventKey, root: EventKey?, parent: EventKey?) =
     PolycentricPlatformComment(
         contextUrl = contextUrl,
-        author = resolveAuthor(client.activeIdentityKey ?: key.identity),
+        author = fetchLocalAuthor(client.activeIdentityKey ?: key.identity),
         msg = text,
         rating = RatingLikeDislikes(0, 0),
         date = OffsetDateTime.now(),
@@ -200,6 +211,24 @@ private fun PolycentricAdapter.decodeLabels(hints: List<EventHint>): Map<String,
     return map
 }
 
+/**
+ * Decode the latest `ProfileUpdate` for each identity whose profile events are carried in a feed's
+ * `event_hints` field. Feed responses include the latest profile event of every author they return.
+ */
+private fun PolycentricAdapter.decodeProfiles(hints: List<EventHint>): Map<String, ProfileUpdate> {
+    val bundlesByIdentity = HashMap<String, MutableList<EventBundle>>()
+    for (hint in hints) {
+        val bundle = hint.event_bundle ?: continue
+        val signed = bundle.signed_event ?: continue
+        val key = Event.ADAPTER.decode(signed.event_bytes).key ?: continue
+        if (key.collection != Collections.PROFILE) continue
+        bundlesByIdentity.getOrPut(key.identity) { mutableListOf() }.add(bundle)
+    }
+    return bundlesByIdentity.mapNotNull { (identity, bundles) ->
+        latestProfileUpdate(bundles)?.let { identity to it }
+    }.toMap()
+}
+
 /** Stable string key for an [EventKey], used to match labels to comments. */
 private fun labelKeyOf(k: EventKey): String =
     "${k.collection}|${k.identity}|${k.signed_by?.key_type}|${k.signed_by?.key?.hex()}|${k.sequence}"
@@ -207,17 +236,27 @@ private fun labelKeyOf(k: EventKey): String =
 // PlatformID Polycentric claim constant, used below
 private const val POLYCENTRIC_CLAIM_TYPE = 25
 
-/** Create a Grayjay [PlatformAuthorLink] for the given Harbor identity. */
-private suspend fun PolycentricAdapter.resolveAuthor(identity: String): PlatformAuthorLink {
-    val profile = client.getProfile(identity)
-    val update = profile?.let { latestProfileUpdate(it.event_bundles) }
-    return PlatformAuthorLink(
+/**
+ * Fetches the latest profile info for [identity] from the local store, then creates a
+ * [PlatformAuthorLink] for it. If no corresponding info is available, shows "Unknown" for the
+ * profile.
+ */
+private fun PolycentricAdapter.fetchLocalAuthor(identity: String): PlatformAuthorLink {
+    val bundles = client.listValidEvents(identity, Collections.PROFILE)
+    return authorLink(identity, latestProfileUpdate(bundles))
+}
+
+/**
+ * Create a Grayjay [PlatformAuthorLink] for a Harbor identity from its explicitly passed latest
+ * profile update.
+ */
+private fun PolycentricAdapter.authorLink(identity: String, update: ProfileUpdate?): PlatformAuthorLink =
+    PlatformAuthorLink(
         id = PlatformID("polycentric", authorUrl(identity), null, POLYCENTRIC_CLAIM_TYPE),
         name = update?.name ?: "Unknown",
         url = authorUrl(identity),
         thumbnail = bestBlobUrl(update?.avatar),
     )
-}
 
 /** Return the URL for the profile view of a Harbor identity. */
-private fun authorUrl(identity: String) = "https://harbor.social/$identity"
+private fun authorUrl(identity: String) = "${PolycentricAdapter.WEB_BASE_URL}/$identity"

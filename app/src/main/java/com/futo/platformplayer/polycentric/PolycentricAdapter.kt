@@ -101,7 +101,15 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         /**
          * TODO: make the seed server list configurable, rather than hard-coded.
          */
-        val SEED_SERVERS: List<String> = listOf("https://srv.harbor.social")
+        val SEED_SERVERS: List<String> = listOf("https://srv.staging.harbor.social")
+
+        /**
+         * Base URL of the Harbor web app, used to build the outbound links
+         * the comment and profile UI opens in a browser.
+         *
+         * TODO: make this configurable alongside the seed server list.
+         */
+        const val WEB_BASE_URL: String = "https://staging.harbor.social"
 
         /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
