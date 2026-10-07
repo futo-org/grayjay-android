@@ -132,14 +132,19 @@ class PolycentricHomeActivity : AppCompatActivity() {
             Glide.with(profileButton)
                 .asBitmap()
                 .load(profile.avatarUrl)
-                .placeholder(R.drawable.ic_loader)
-                .fallback(R.drawable.placeholder_profile)
                 .into(object : CustomTarget<Bitmap>() {
+                    override fun onLoadStarted(placeholder: Drawable?) {
+                        profileButton.withIcon(R.drawable.placeholder_avatar, true)
+                    }
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         profileButton.withIcon(resource, true)
                     }
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        // Also reached when the profile has no avatar (null model).
+                        profileButton.withIcon(R.drawable.placeholder_avatar, true)
+                    }
                     override fun onLoadCleared(placeholder: Drawable?) {
-                        profileButton.withIcon(R.drawable.placeholder_profile)
+                        profileButton.withIcon(R.drawable.placeholder_avatar, true)
                     }
                 })
 

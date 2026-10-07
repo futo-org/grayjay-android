@@ -29,7 +29,7 @@
         android:id="@+id/image_polycentric"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        app:srcCompat="@drawable/neopass"
+        app:srcCompat="@drawable/harbor_logo"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/button_help"
