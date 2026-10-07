@@ -85,7 +85,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginBottom="20dp"
             app:buttonText="Install by Store"
-            app:buttonSubText="Browse plugins published through Polycentric."
+            app:buttonSubText="Browse plugins published through Harbor."
             app:buttonIcon="@drawable/ic_sources" />
     </LinearLayout>
 

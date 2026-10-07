@@ -152,7 +152,7 @@
     <string name="export">Esporta</string>
     <string name="delete">Elimina</string>
     <string name="loading_update">Caricamento aggiornamento…</string>
-    <string name="polycentric_explanation">Quando navighi tra i video online e desideri lasciare un commento, prendi in considerazione Polycentric, un nuovo modo di gestire la tua presenza online che è sia facile da usare che incentrato sulle tue esigenze. Ecco perché creare un profilo Polycentric è un\'ottima scelta:\n\n 1. Hai il controllo: Con Polycentric, i tuoi dati non sono archiviati in un unico luogo controllato da una singola azienda. Invece, sono distribuiti su più posizioni, offrendoti un maggiore controllo sulla tua presenza online. Decidi tu dove vengono archiviati i tuoi dati e puoi facilmente passare da un fornitore all\'altro o aggiungerne di nuovi.\n\n 2. Privacy e sicurezza: Polycentric mantiene le tue informazioni al sicuro utilizzando tecniche di sicurezza avanzate. Puoi star certo che i tuoi dati personali sono ben protetti e accessibili solo a coloro con cui scegli di condividerli.\n\n 3. Networking senza interruzioni: Polycentric ti consente di connetterti con altri e interagire con i loro contenuti senza essere legato a un\'unica piattaforma. Se un fornitore diventa inaffidabile o tenta di bloccare l\'accesso, il tuo client Polycentric troverà automaticamente le informazioni da altre fonti, mantenendoti connesso.\n\n 4. Ricerca e suggerimenti intelligenti: Polycentric utilizza più fonti per la ricerca ed i suggerimenti, offrendoti prestazioni di prim\'ordine e garantendo che nessun singolo fornitore abbia eccessiva influenza sui risultati che vedi.\n\n 5. Adattabile e aperto: Polycentric è progettato per essere flessibile e aperto a nuovi sviluppi, consentendo miglioramenti costanti e nuove funzionalità che si adattano alle esigenze dei suoi utenti.\n\n 6. Creando un profilo Polycentric, puoi lasciare commenti sui video online e goderti un\'esperienza più personalizzata. Scopri tu stesso come questa soluzione intuitiva ti mette al centro della tua vita digitale. Iscriviti oggi stesso a Polycentric!</string>
+    <string name="polycentric_explanation">Quando navighi tra i video online e desideri lasciare un commento, prendi in considerazione Harbor, un nuovo modo di gestire la tua presenza online che è sia facile da usare che incentrato sulle tue esigenze. Ecco perché creare un profilo Harbor è un\'ottima scelta:\n\n 1. Hai il controllo: Con Harbor, i tuoi dati non sono archiviati in un unico luogo controllato da una singola azienda. Invece, sono distribuiti su più posizioni, offrendoti un maggiore controllo sulla tua presenza online. Decidi tu dove vengono archiviati i tuoi dati e puoi facilmente passare da un fornitore all\'altro o aggiungerne di nuovi.\n\n 2. Privacy e sicurezza: Harbor mantiene le tue informazioni al sicuro utilizzando tecniche di sicurezza avanzate. Puoi star certo che i tuoi dati personali sono ben protetti e accessibili solo a coloro con cui scegli di condividerli.\n\n 3. Networking senza interruzioni: Harbor ti consente di connetterti con altri e interagire con i loro contenuti senza essere legato a un\'unica piattaforma. Se un fornitore diventa inaffidabile o tenta di bloccare l\'accesso, il tuo client Harbor troverà automaticamente le informazioni da altre fonti, mantenendoti connesso.\n\n 4. Ricerca e suggerimenti intelligenti: Harbor utilizza più fonti per la ricerca ed i suggerimenti, offrendoti prestazioni di prim\'ordine e garantendo che nessun singolo fornitore abbia eccessiva influenza sui risultati che vedi.\n\n 5. Adattabile e aperto: Harbor è progettato per essere flessibile e aperto a nuovi sviluppi, consentendo miglioramenti costanti e nuove funzionalità che si adattano alle esigenze dei suoi utenti.\n\n 6. Creando un profilo Harbor, puoi lasciare commenti sui video online e goderti un\'esperienza più personalizzata. Scopri tu stesso come questa soluzione intuitiva ti mette al centro della tua vita digitale. Iscriviti oggi stesso a Harbor!</string>
     <string name="publish">Pubblica</string>
     <string name="usage">Utilizzo</string>
     <string name="enable_in_home">Attiva in home</string>
@@ -177,7 +177,7 @@
     <string name="send_your_identity_to_another_app">Invia la tua identità ad un\'altra app</string>
     <string name="copy">Copia</string>
     <string name="copy_your_identity_to_clipboard">Copia la tua identità negli appunti</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="profile_name">Nome Profilo</string>
     <string name="this_will_be_visible_to_other_users">Questo sarà visibile ad altri utenti</string>
     <string name="create_profile">Crea Profilo</string>
@@ -243,7 +243,7 @@
     <string name="remove">Rimuovi</string>
     <string name="space_videos">Video</string>
     <string name="playlist">Playlist</string>
-    <string name="neopass_channel">Canale Polycentric</string>
+    <string name="neopass_channel">Canale Harbor</string>
     <string name="enable">Attiva</string>
     <string name="under_construction">In Costruzione</string>
     <string name="under">IN</string>
@@ -454,8 +454,8 @@
     <string name="view_license_status">Visualizza stato licenza</string>
     <string name="sync_grayjay">Sincronizza Grayjay</string>
     <string name="sync_grayjay_description">Sincronizza i tuoi dati su più dispositivi</string>
-    <string name="manage_polycentric_identity">Gestisci identità Polycentric</string>
-    <string name="manage_your_polycentric_identity">Gestisci la tua identità Polycentric</string>
+    <string name="manage_polycentric_identity">Gestisci identità Harbor</string>
+    <string name="manage_your_polycentric_identity">Gestisci la tua identità Harbor</string>
     <string name="manual_check">Verifica manuale</string>
     <string name="manually_check_for_updates">Verifica manualmente gli aggiornamenti</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Numero di thread concorrenti per moltiplicare le velocità di download da fonti limitate</string>
@@ -466,9 +466,9 @@
     <string name="playlist_delete_confirmation_description">Mostra la finestra di dialogo di conferma quando si elimina un media da una playlist</string>
     <string name="playlist_allow_dups">Consenti video duplicati nella playlist</string>
     <string name="playlist_allow_dups_description">Consenti l\'aggiunta di video duplicati alle playlist</string>
-    <string name="enable_polycentric">Attiva Polycentric</string>
-    <string name="polycentric_local_cache">Attiva Memorizzazione Locale Polycentric</string>
-    <string name="polycentric_local_cache_description">Memorizza i risultati Polycentric sul dispositivo per ridurre i tempi di caricamento, la modifica richiede il riavvio dell\'app</string>
+    <string name="enable_polycentric">Attiva Harbor</string>
+    <string name="polycentric_local_cache">Attiva Memorizzazione Locale Harbor</string>
+    <string name="polycentric_local_cache_description">Memorizza i risultati Harbor sul dispositivo per ridurre i tempi di caricamento, la modifica richiede il riavvio dell\'app</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Può essere disattivato quando si riscontrano problemi</string>
     <string name="bypass_rotation_prevention_description">Consente la rotazione quando si visualizza un media non-video.\nATTENZIONE: Non è progettato per questo</string>
     <string name="bypass_rotation_prevention_warning">Ciò potrebbe causare un comportamento inaspettato ed è per lo più non testato.</string>
@@ -621,7 +621,7 @@
     <string name="invalid_license_format">Formato licenza non valido</string>
     <string name="unknown_content_format">Formato contenuto sconosciuto</string>
     <string name="unknown_file_format">Formato file sconosciuto</string>
-    <string name="unknown_polycentric_format">Formato Polycentric sconosciuto</string>
+    <string name="unknown_polycentric_format">Formato Harbor sconosciuto</string>
     <string name="unknown_url_format">Formato url sconosciuto</string>
     <string name="failed_to_handle_file">Gestione file non riuscita</string>
     <string name="unknown_reconstruction_type">Tipo di ricostruzione sconosciuto</string>
@@ -823,7 +823,7 @@
     <string name="select_your_pins_in_order">Seleziona i tuoi elementi fissati in ordine</string>
     <string name="more_options">Altre opzioni</string>
     <string name="save">Salva</string>
-    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">Questo creatore non ha impostato alcuna opzione di supporto su Harbor (Polycentric)</string>
+    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">Questo creatore non ha impostato alcuna opzione di supporto su Harbor</string>
     <string name="load_more">Carica altro</string>
     <string name="stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more">Fermato dopo {requestCount} richieste per evitare di superare limite del tasso di frequenza, clicca su carica altro per caricare altre informazioni.</string>
     <string name="this_creator_has_not_setup_any_monetization_features">Questo creatore non ha impostato alcuna funzionalità di monetizzazione</string>
@@ -847,7 +847,7 @@
     <string name="fcast_website">Sito web di FCast</string>
     <string name="fcast_technical_documentation">Documentazione tecnica di FCast</string>
     <string name="login_to_view_your_comments">Accedi per visualizzare i tuoi commenti</string>
-    <string name="polycentric_is_disabled">Polycentric è disattivato</string>
+    <string name="polycentric_is_disabled">Harbor è disattivato</string>
     <string name="play_pause">Riproduci/Pausa</string>
     <string name="position">Posizione</string>
     <string name="tutorials">Tutorial</string>
@@ -910,7 +910,7 @@
     <string name="cd_button_stop">Ferma</string>
     <string name="cd_button_scan_qr">Scansiona codice QR</string>
     <string name="cd_button_help">Aiuto</string>
-    <string name="cd_image_polycentric">Modifica immagine di profilo Polycentric</string>
+    <string name="cd_image_polycentric">Modifica immagine di profilo Harbor</string>
     <string-array name="home_screen_array">
         <item>Suggerimenti</item>
         <item>Sottoscrizioni</item>
@@ -1046,7 +1046,7 @@
         <item>120</item>
     </string-array>
     <string-array name="comment_sections">
-        <item>Polycentric</item>
+        <item>Harbor</item>
         <item>Piattaforma</item>
         <item>Ultima selezione</item>
     </string-array>

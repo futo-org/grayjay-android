@@ -109,7 +109,7 @@
     <string name="send_your_identity_to_another_app">Enviar tu identidad a otra aplicación</string>
     <string name="copy">Copiar</string>
     <string name="copy_your_identity_to_clipboard">Copia tu identidad al portapapeles</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="profile_name">Nombre de Perfil</string>
     <string name="this_will_be_visible_to_other_users">Esto será visible para otros usuarios</string>
     <string name="create_profile">Crear Perfil</string>
@@ -164,7 +164,7 @@
     <string name="remove">Eliminar</string>
     <string name="space_videos">Vídeos</string>
     <string name="playlist">Lista de reproducción</string>
-    <string name="neopass_channel">Canal Polycentric</string>
+    <string name="neopass_channel">Canal Harbor</string>
     <string name="enable">Habilitar</string>
     <string name="under_construction">En construcción</string>
     <string name="under">BAJO</string>
@@ -266,8 +266,8 @@
     <string name="live_chat_webview">Chat en vivo en vista web</string>
     <string name="log_level">Nivel de registro</string>
     <string name="logging">Registro</string>
-    <string name="manage_polycentric_identity">Gestionar identidad Polycentric</string>
-    <string name="manage_your_polycentric_identity">Gestionar tu identidad Polycentric</string>
+    <string name="manage_polycentric_identity">Gestionar identidad Harbor</string>
+    <string name="manage_your_polycentric_identity">Gestionar tu identidad Harbor</string>
     <string name="manual_check">Verificación manual</string>
     <string name="manually_check_for_updates">Verificar actualizaciones manualmente</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Número de hilos concurrentes para multiplicar las velocidades de descarga de fuentes limitadas</string>
@@ -599,7 +599,7 @@
     <string name="export">Exportar</string>
     <string name="delete">Eliminar</string>
     <string name="loading_update">Cargando actualización…</string>
-    <string name="polycentric_explanation">Mientras navegas por videos en línea y quieres dejar un comentario, considera probar Polycentric, una nueva forma de gestionar tu presencia en línea que es fácil de usar y se centra en tus necesidades. Aquí te decimos por qué crear un perfil en Polycentric es una excelente opción:\n\n 1. Estás en control: Con Polycentric, tus datos no se almacenan en un solo lugar controlado por una sola empresa. En cambio, se distribuyen en múltiples ubicaciones, lo que te da más control sobre tu presencia en línea. Tú decides dónde se almacenan tus datos y puedes cambiar fácilmente entre proveedores o agregar nuevos.\n\n 2. Privacidad y seguridad: Polycentric mantiene tu información segura mediante técnicas de seguridad avanzadas. Puedes confiar en que tus datos personales están bien protegidos y solo accesibles por aquellos con los que elijas compartirlos.\n\n 3. Redes sin fisuras: Polycentric te permite conectarte con otros e interactuar con su contenido sin estar atado a una sola plataforma. Si un proveedor se vuelve poco confiable o intenta bloquear el acceso, tu cliente Polycentric encontrará automáticamente información de otras fuentes, manteniéndote conectado.\n\n 4. Búsqueda inteligente y recomendaciones: Polycentric utiliza múltiples fuentes para la búsqueda y recomendaciones, ofreciéndote un rendimiento de primera clase al mismo tiempo que garantiza que ningún proveedor tenga demasiada influencia sobre los resultados que ves.\n\n 5. Adaptable y abierto: Polycentric está diseñado para ser flexible y abierto a nuevos desarrollos, lo que permite mejoras constantes y nuevas funciones que se adaptan a las necesidades de sus usuarios.\n\n 6. Al crear un perfil en Polycentric, puedes dejar comentarios en videos en línea y disfrutar de una experiencia en línea más personalizada. Descubre por ti mismo cómo esta solución fácil de usar te pone en control de tu vida digital. Regístrate en Polycentric hoy!</string>
+    <string name="polycentric_explanation">Mientras navegas por videos en línea y quieres dejar un comentario, considera probar Harbor, una nueva forma de gestionar tu presencia en línea que es fácil de usar y se centra en tus necesidades. Aquí te decimos por qué crear un perfil en Harbor es una excelente opción:\n\n 1. Estás en control: Con Harbor, tus datos no se almacenan en un solo lugar controlado por una sola empresa. En cambio, se distribuyen en múltiples ubicaciones, lo que te da más control sobre tu presencia en línea. Tú decides dónde se almacenan tus datos y puedes cambiar fácilmente entre proveedores o agregar nuevos.\n\n 2. Privacidad y seguridad: Harbor mantiene tu información segura mediante técnicas de seguridad avanzadas. Puedes confiar en que tus datos personales están bien protegidos y solo accesibles por aquellos con los que elijas compartirlos.\n\n 3. Redes sin fisuras: Harbor te permite conectarte con otros e interactuar con su contenido sin estar atado a una sola plataforma. Si un proveedor se vuelve poco confiable o intenta bloquear el acceso, tu cliente Harbor encontrará automáticamente información de otras fuentes, manteniéndote conectado.\n\n 4. Búsqueda inteligente y recomendaciones: Harbor utiliza múltiples fuentes para la búsqueda y recomendaciones, ofreciéndote un rendimiento de primera clase al mismo tiempo que garantiza que ningún proveedor tenga demasiada influencia sobre los resultados que ves.\n\n 5. Adaptable y abierto: Harbor está diseñado para ser flexible y abierto a nuevos desarrollos, lo que permite mejoras constantes y nuevas funciones que se adaptan a las necesidades de sus usuarios.\n\n 6. Al crear un perfil en Harbor, puedes dejar comentarios en videos en línea y disfrutar de una experiencia en línea más personalizada. Descubre por ti mismo cómo esta solución fácil de usar te pone en control de tu vida digital. Regístrate en Harbor hoy!</string>
     <string name="publish">Publicar</string>
     <string name="usage">Uso</string>
     <string name="enable_in_home">Habilitar en inicio</string>

@@ -145,7 +145,7 @@
     <string name="export">Dışa aktar</string>
     <string name="delete">Kaldır</string>
     <string name="loading_update">Güncelleme yükleniyor…</string>
-    <string name="polycentric_explanation">Çevrimiçi videolara göz atarken ve yorum bırakmak istediğinizde, çevrimiçi varlığınızı yönetmenin hem kolay hem de ihtiyaçlarınıza odaklanmış yeni bir yolu olan Polycentric\'i deneyin. İşte bir Polycentric profili oluşturmanın harika bir seçim olmasının nedenleri:\n\n 1. Kontrol Sizde: Polycentric ile verileriniz tek bir şirket tarafından kontrol edilen tek bir yerde saklanmaz. Bunun yerine, birden fazla konuma yayılır ve çevrimiçi varlığınız üzerinde daha fazla kontrol sahibi olursunuz. Verilerinizin nerede saklanacağına siz karar verirsiniz ve sağlayıcılar arasında kolayca geçiş yapabilir veya yeni sağlayıcılar ekleyebilirsiniz.\n\n 2. Gizlilik ve Güvenlik: Polycentric, gelişmiş güvenlik teknikleri kullanarak bilgilerinizi güvende tutar. Kişisel bilgilerinizin iyi korunduğundan ve yalnızca bunları paylaşmayı seçtiğiniz kişiler tarafından erişilebilir olduğundan emin olabilirsiniz.\n\n 3. Sorunsuz Ağ Oluşturma: Polycentric, tek bir platforma bağlı kalmadan başkalarıyla bağlantı kurmanızı ve içerikleriyle etkileşim kurmanızı sağlar. Bir sağlayıcı güvenilmez hale gelirse veya erişimi engellemeye çalışırsa, Polycentric istemciniz otomatik olarak diğer kaynaklardan bilgi bularak sizi bağlı tutar.\n\n 4. Akıllı Arama ve Öneriler: Polycentric, arama ve öneriler için birden fazla kaynak kullanır ve size en üst düzey performansı sunarken hiçbir sağlayıcının gördüğünüz sonuçlar üzerinde fazla etkisi olmamasını sağlar.\n\n 5. Uyumlu ve Açık: Polycentric, kullanıcılarının ihtiyaçlarına uyum sağlayan sürekli iyileştirmeler ve yeni özellikler sunarak esnek ve yeni gelişmelere açık olacak şekilde tasarlanmıştır.\n\n 6. Bir Polycentric profili oluşturarak çevrimiçi videolara yorum bırakabilir ve daha kişiselleştirilmiş bir çevrimiçi deneyimin keyfini çıkarabilirsiniz. Bu kullanıcı dostu çözümün dijital hayatınızın kontrolünü nasıl size verdiğini kendiniz görün. Bugün Polycentric\'e kaydolun!</string>
+    <string name="polycentric_explanation">Çevrimiçi videolara göz atarken ve yorum bırakmak istediğinizde, çevrimiçi varlığınızı yönetmenin hem kolay hem de ihtiyaçlarınıza odaklanmış yeni bir yolu olan Harbor\'i deneyin. İşte bir Harbor profili oluşturmanın harika bir seçim olmasının nedenleri:\n\n 1. Kontrol Sizde: Harbor ile verileriniz tek bir şirket tarafından kontrol edilen tek bir yerde saklanmaz. Bunun yerine, birden fazla konuma yayılır ve çevrimiçi varlığınız üzerinde daha fazla kontrol sahibi olursunuz. Verilerinizin nerede saklanacağına siz karar verirsiniz ve sağlayıcılar arasında kolayca geçiş yapabilir veya yeni sağlayıcılar ekleyebilirsiniz.\n\n 2. Gizlilik ve Güvenlik: Harbor, gelişmiş güvenlik teknikleri kullanarak bilgilerinizi güvende tutar. Kişisel bilgilerinizin iyi korunduğundan ve yalnızca bunları paylaşmayı seçtiğiniz kişiler tarafından erişilebilir olduğundan emin olabilirsiniz.\n\n 3. Sorunsuz Ağ Oluşturma: Harbor, tek bir platforma bağlı kalmadan başkalarıyla bağlantı kurmanızı ve içerikleriyle etkileşim kurmanızı sağlar. Bir sağlayıcı güvenilmez hale gelirse veya erişimi engellemeye çalışırsa, Harbor istemciniz otomatik olarak diğer kaynaklardan bilgi bularak sizi bağlı tutar.\n\n 4. Akıllı Arama ve Öneriler: Harbor, arama ve öneriler için birden fazla kaynak kullanır ve size en üst düzey performansı sunarken hiçbir sağlayıcının gördüğünüz sonuçlar üzerinde fazla etkisi olmamasını sağlar.\n\n 5. Uyumlu ve Açık: Harbor, kullanıcılarının ihtiyaçlarına uyum sağlayan sürekli iyileştirmeler ve yeni özellikler sunarak esnek ve yeni gelişmelere açık olacak şekilde tasarlanmıştır.\n\n 6. Bir Harbor profili oluşturarak çevrimiçi videolara yorum bırakabilir ve daha kişiselleştirilmiş bir çevrimiçi deneyimin keyfini çıkarabilirsiniz. Bu kullanıcı dostu çözümün dijital hayatınızın kontrolünü nasıl size verdiğini kendiniz görün. Bugün Harbor\'e kaydolun!</string>
     <string name="publish">Yayınla</string>
     <string name="usage">Kullanım</string>
     <string name="enable_in_home">Ana sayfada etkinleştir</string>
@@ -170,7 +170,7 @@
     <string name="send_your_identity_to_another_app">Kişiliğini başka bir uygulamaya gönder</string>
     <string name="copy">Kopyala</string>
     <string name="copy_your_identity_to_clipboard">Kişiğini panoya kopyala</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="profile_name">Profil İsmi</string>
     <string name="this_will_be_visible_to_other_users">Bu diğer kullanıcılara görünecek</string>
     <string name="create_profile">Profil Oluştur</string>
@@ -233,7 +233,7 @@
     <string name="remove">Kaldır</string>
     <string name="space_videos">Videolar</string>
     <string name="playlist">Oynatma listesi</string>
-    <string name="neopass_channel">Polycentric kanal</string>
+    <string name="neopass_channel">Harbor kanal</string>
     <string name="enable">Etkinleştir</string>
     <string name="under_construction">Yapım aşamasında</string>
     <string name="under">ALTINDA</string>
@@ -418,8 +418,8 @@
     <string name="logging">Loglama</string>
     <string name="sync_grayjay">Grayjay\'i Senkronize Et</string>
     <string name="sync_grayjay_description">Verilerinizi birden fazla cihaz arasında senkronize edin</string>
-    <string name="manage_polycentric_identity">Polycentric kişiliği düzenle</string>
-    <string name="manage_your_polycentric_identity">Polycentric kişiliğinizi düzenleyin</string>
+    <string name="manage_polycentric_identity">Harbor kişiliği düzenle</string>
+    <string name="manage_your_polycentric_identity">Harbor kişiliğinizi düzenleyin</string>
     <string name="manual_check">Manuel kontrol</string>
     <string name="manually_check_for_updates">Güncellemeleri manuel olarak kontrol edin</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Hız sınırlandırılmış kaynaklardan indirme hızlarını artırmak için eşzamanlı thread sayısı.</string>
@@ -430,9 +430,9 @@
     <string name="playlist_delete_confirmation_description">Bir oynatma listesinden bir medya silerken onay diyaloğu göster</string>
     <string name="playlist_allow_dups">Kopya oynatma listesi videolarına izin ver</string>
     <string name="playlist_allow_dups_description">Bir videonun oynatma listelerine birçok kere eklenmesine izin ver</string>
-    <string name="enable_polycentric">Polycentric\'i Etkinleştir</string>
-    <string name="polycentric_local_cache">Polycentric Lokal Önbelleğe İzin Ver </string>
-    <string name="polycentric_local_cache_description">Yükleme sürelerini azaltmak için Polycentric sonuçlarını cihazda önbelleğe alır, değişiklik uygulamanın yeniden başlatılmasını gerektirir</string>
+    <string name="enable_polycentric">Harbor\'i Etkinleştir</string>
+    <string name="polycentric_local_cache">Harbor Lokal Önbelleğe İzin Ver </string>
+    <string name="polycentric_local_cache_description">Yükleme sürelerini azaltmak için Harbor sonuçlarını cihazda önbelleğe alır, değişiklik uygulamanın yeniden başlatılmasını gerektirir</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Sorun yaşıyorsanız devre dışı bırakılabilir</string>
     <string name="bypass_rotation_prevention_description">Video olmayan görüntülerde döndürmeyi etkinleştirir.\nUYARI: Bunun için tasarlanmamıştır</string>
     <string name="bypass_rotation_prevention_warning">Bu beklenmeyen davranışlara neden olabilir ve çoğunlukla test edilmemiştir.</string>
@@ -585,7 +585,7 @@
     <string name="invalid_license_format">Geçersiz lisans formatı</string>
     <string name="unknown_content_format">Bilinmeyen içerik formatı</string>
     <string name="unknown_file_format">Bilinmeyen dosya formatı</string>
-    <string name="unknown_polycentric_format">Bilinmeyen Polycentric formatı</string>
+    <string name="unknown_polycentric_format">Bilinmeyen Harbor formatı</string>
     <string name="unknown_url_format">Bilinmeyen URL formatı</string>
     <string name="failed_to_handle_file">Dosya işleme başarısız oldu</string>
     <string name="unknown_reconstruction_type">Bilinmeyen yeniden yapılandırma türü</string>
@@ -786,7 +786,7 @@
     <string name="select_your_pins_in_order">Pinlerinizi sırayla seçin</string>
     <string name="more_options">Daha Fazla Seçenek</string>
     <string name="save">Kaydet</string>
-    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">Bu üretici henüz Harbor (Polycentric) için bir destek seçeneği koymadı</string>
+    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">Bu üretici henüz Harbor için bir destek seçeneği koymadı</string>
     <string name="load_more">Daha Fazla Yükle</string>
     <string name="stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more">Oran sınırınından kaçınmak için {requestCount} istekten sonra durdu, daha fazla yüklemek için Daha Fazla Yükle\'ye dokunun.</string>
     <string name="this_creator_has_not_setup_any_monetization_features">Bu üretici henüz bir para kazanma yönetemi ayarlamadı</string>
@@ -810,7 +810,7 @@
     <string name="fcast_website">FCast Website</string>
     <string name="fcast_technical_documentation">FCast Teknik Dokümantasyon</string>
     <string name="login_to_view_your_comments">Yorumlarınızı görüntülemek için giriş yapın</string>
-    <string name="polycentric_is_disabled">Polycentric devre dışı</string>
+    <string name="polycentric_is_disabled">Harbor devre dışı</string>
     <string name="play_pause">Oynat Duraklat</string>
     <string name="position">Pozisyon</string>
     <string name="tutorials">Öğreticiler</string>
@@ -873,7 +873,7 @@
     <string name="cd_button_stop">Durdur</string>
     <string name="cd_button_scan_qr">QR kodu okut</string>
     <string name="cd_button_help">Yardım</string>
-    <string name="cd_image_polycentric">Polycentric profil resmini değiştir</string>
+    <string name="cd_image_polycentric">Harbor profil resmini değiştir</string>
     <string-array name="home_screen_array">
         <item>Önerilenler</item>
         <item>Abonelikler</item>
@@ -999,7 +999,7 @@
         <item>120</item>
     </string-array>
     <string-array name="comment_sections">
-        <item>Polycentric</item>
+        <item>Harbor</item>
         <item>Platform</item>
         <item>Son Seçilen</item>
     </string-array>
