@@ -83,22 +83,16 @@ class StatePolycentric {
         }
     }
 
-    // ── Multi-identity (Harbor v2) ──────────────────────────────────
-    // Stateless wrappers over the adapter's identity extensions; identity
-    // management is independent of the comment/rating facade below.
     fun ensureEnabled() {
         if (!enabled) {
             throw IllegalStateException("Harbor is disabled")
         }
     }
 
-
     val isLoggedIn: Boolean
         get() = enabled && adapter.isReady && adapter.isLoggedIn
 
-    /**
-     * Runs a serialized, non-cancellable identity mutation.
-     */
+    /** Runs a serialized, non-cancellable identity mutation. */
     private suspend fun <T> mutateIdentity(block: suspend (PolycentricAdapter) -> T): T {
         ensureEnabled()
         val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
@@ -356,7 +350,6 @@ class StatePolycentric {
                     _instance = StatePolycentric();
                 return _instance!!;
             };
-        /** Adapter singleton teardown. */
         @Synchronized
         fun dispose() {
             _instance?.cleanup()

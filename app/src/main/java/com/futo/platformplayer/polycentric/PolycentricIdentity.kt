@@ -8,8 +8,8 @@ import polycentric.v2.ImageSet
 import polycentric.v2.ProfileUpdate
 
 /**
- * [PolycentricAdapter] functions for identity lifecycle (create / list / switch / logout / delete),
- * profile read/write, and server configuration.
+ * [PolycentricAdapter] functions for identity and profile lifecycle,
+ * includingserver configuration.
  */
 
 /** An avatar image variant at a specific size, stored as a byte array */

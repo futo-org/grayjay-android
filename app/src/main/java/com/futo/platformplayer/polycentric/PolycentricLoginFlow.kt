@@ -29,15 +29,15 @@ object PolycentricLoginFlow {
         Logger.i(TAG, "requireLogin()")
         StateApp.instance.preventPictureInPicture.emit();
 
-				// First, we see if we can immediately report that the adapter is ready, and call the next
-				// screen
+        // First, we see if we can immediately report that the adapter is ready, and call the next
+        // screen
         if (StatePolycentric.instance.adapter.isReady) {
             runOrPrompt(context, text, StatePolycentric.instance.isLoggedIn, action)
             return
         }
 
-				// Second, if it is not ready, we start the async process of awaiting the adapter's init
-				// before the next screen
+        // Second, if it is not ready, we start the async process of awaiting the adapter's init
+        // before the next screen
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
                 StatePolycentric.instance.requireAdapter()
