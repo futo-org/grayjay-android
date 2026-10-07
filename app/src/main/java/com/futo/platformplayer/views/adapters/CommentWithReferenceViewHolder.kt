@@ -105,7 +105,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
     fun bind(comment: IPlatformComment) {
         _creatorThumbnail.setThumbnail(comment.author.thumbnail, false);
         val polycentricComment = if (comment is PolycentricPlatformComment) comment else null
-        _creatorThumbnail.setHarborAvailable(polycentricComment != null,false, polycentricComment?.eventPointer?.system?.toProto());
+        _creatorThumbnail.setHarborAvailableForIdentity(polycentricComment != null, false, polycentricComment?.key?.identity);
         _textAuthor.text = comment.author.name;
 
         val date = comment.date;

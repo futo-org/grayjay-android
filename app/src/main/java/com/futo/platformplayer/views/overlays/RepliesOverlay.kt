@@ -127,7 +127,7 @@ class RepliesOverlay : LinearLayout {
 
             _creatorThumbnail.setThumbnail(parentComment.author.thumbnail, false);
             val polycentricPlatformComment = if (parentComment is PolycentricPlatformComment) parentComment else null
-            _creatorThumbnail.setHarborAvailable(polycentricPlatformComment != null,false, polycentricPlatformComment?.eventPointer?.system?.toProto());
+            _creatorThumbnail.setHarborAvailableForIdentity(polycentricPlatformComment != null, false, polycentricPlatformComment?.key?.identity);
         }
 
         _topbar.setInfo(context.getString(R.string.Replies), metadata);

@@ -5,7 +5,10 @@
             <solid android:color="#000000" />
         </shape>
     </item>
-    <item android:inset="5%">
-        <bitmap android:src="@drawable/harbor_logo" />
+    <!-- Layer-list item insets only take dimensions; an <inset> drawable accepts fractions. -->
+    <item>
+        <inset android:inset="20%">
+            <bitmap android:src="@drawable/harbor_logo" />
+        </inset>
     </item>
 </layer-list>
