@@ -25,6 +25,7 @@ import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
+import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
@@ -698,10 +699,12 @@ class ShortView : FrameLayout {
                             try {
                                 StatePolycentric.instance.setVideoRating(
                                     video.url,
+                                    video.name,
                                     if (args.hasLiked) true else if (args.hasDisliked) false else null,
                                 )
                             } catch (e: Throwable) {
                                 Logger.w(TAG, "Failed to set video rating.", e)
+                                UIDialogs.toast(context.getString(R.string.failed_to_set_rating) + " " + e.toHarborErrorMessage())
                             }
                         }
                     }

@@ -846,8 +846,8 @@ class StateApp {
         }
         /*
         if(!Settings.instance.comments.didAskPolycentricDefault) {
-            UIDialogs.showDialog(context, R.drawable.harbor_logo, "Default Comment Section", "Grayjay supports 2 comment sections, the Platform comments and Polycentric comments. You can easily toggle between them, but which would you like to be selected by default? This choice can be changed in settings.\n\nPolycentric is still under active development.", null, 1,
-                UIDialogs.Action("Polycentric", {
+            UIDialogs.showDialog(context, R.drawable.harbor_logo, "Default Comment Section", "Grayjay supports 2 comment sections, the Platform comments and Harbor comments. You can easily toggle between them, but which would you like to be selected by default? This choice can be changed in settings.\n\nHarbor is still under active development.", null, 1,
+                UIDialogs.Action("Harbor", {
                     Settings.instance.comments.didAskPolycentricDefault = true;
                     Settings.instance.comments.defaultCommentSection = 0;
                     Settings.instance.save();

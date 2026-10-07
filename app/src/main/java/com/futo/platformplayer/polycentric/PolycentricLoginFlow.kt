@@ -52,7 +52,7 @@ object PolycentricLoginFlow {
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to await polycentric readiness.", e);
                 withContext(Dispatchers.Main) {
-                    UIDialogs.toast(context.applicationContext, "Failed to initialize Polycentric: ${e.message}");
+                    UIDialogs.toast(context.applicationContext, "Failed to initialize Harbor: ${e.message}");
                 }
             }
         }

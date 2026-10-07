@@ -76,7 +76,7 @@ suspend fun PolycentricAdapter.switchIdentity(identityKey: String) {
  */
 suspend fun PolycentricAdapter.deleteActiveIdentity() {
     client.activeIdentityKey
-        ?: throw IllegalStateException("Not logged in to Polycentric")
+        ?: throw IllegalStateException("Not logged in to Harbor")
     client.keyPairManager.removeKeyPair(client.currentSystem)
     client.setActiveIdentityKey(null)
 }

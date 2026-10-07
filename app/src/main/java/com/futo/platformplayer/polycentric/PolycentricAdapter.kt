@@ -40,10 +40,14 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
      */
     internal fun requireActiveIdentity(): String =
         client.activeIdentityKey
-            ?: throw IllegalStateException("Not logged in to Polycentric")
+            ?: throw IllegalStateException("Not logged in to Harbor")
 
     /**
-     * Build, sign, commit locally, and push one event.
+     * Build, sign, commit locally, and push one event. The event stays in local storage whether
+     * the push succeeds or not.
+     *
+     * TODO: when polycentric-core throws publish errors for us to catch, we should catch them and
+     * display the error.
      */
     internal suspend fun publish(content: Content, collection: Int): EventKey {
         val event = client.buildEvent(content, collection)
@@ -130,4 +134,13 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
             )
         }
     }
+}
+
+/**
+ * A short, user-facing description of why a Harbor write failed, suitable for appending to a
+ * "Failed to ..." toast.
+ */
+fun Throwable.toHarborErrorMessage(): String = when (this) {
+    is IllegalStateException, is IllegalArgumentException -> message ?: "Harbor is unavailable"
+    else -> "Could not reach Harbor" + (message?.let { " ($it)" } ?: "")
 }

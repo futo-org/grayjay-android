@@ -55,15 +55,15 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                 return@setOnClickListener;
             }
 
+            val username = _profileName.text.toString();
+            if (username.length < 3) {
+                UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
+                return@setOnClickListener;
+            }
+
             _creating = true;
 
             try {
-                val username = _profileName.text.toString();
-                if (username.length < 3) {
-                    UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
-                    return@setOnClickListener;
-                }
-
                 _profileName.isEnabled = false;
                 _buttonCreate.visibility = View.GONE;
                 _loader.start();

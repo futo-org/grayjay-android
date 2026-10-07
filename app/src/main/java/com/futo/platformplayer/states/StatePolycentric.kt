@@ -88,7 +88,7 @@ class StatePolycentric {
     // management is independent of the comment/rating facade below.
     fun ensureEnabled() {
         if (!enabled) {
-            throw Exception("Polycentric is disabled")
+            throw IllegalStateException("Harbor is disabled")
         }
     }
 
@@ -101,7 +101,7 @@ class StatePolycentric {
      */
     private suspend fun <T> mutateIdentity(block: suspend (PolycentricAdapter) -> T): T {
         ensureEnabled()
-        val adapter = awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         return withContext(NonCancellable) {
             _identityMutex.withLock { block(adapter) }
         }
@@ -126,7 +126,7 @@ class StatePolycentric {
 
     suspend fun getIdentityProfile(identity: String): PolycentricChannelProfile {
         ensureEnabled()
-        val adapter = awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         return adapter.getIdentityProfile(identity)
     }
 
@@ -317,28 +317,28 @@ class StatePolycentric {
 
     // Writes delegate to the adapter; they throw when no Harbor identity is
     // available (the v2 identity system is not wired up yet).
-    suspend fun postComment(videoUrl: String, text: String): PolycentricPlatformComment {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        return adapter.postComment(videoUrl, text)
+    suspend fun postComment(videoUrl: String, videoTitle: String?, text: String): PolycentricPlatformComment {
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return adapter.postComment(videoUrl, videoTitle, text)
     }
 
     suspend fun postReply(parent: PolycentricPlatformComment, text: String): PolycentricPlatformComment {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         return adapter.postReply(parent, text)
     }
 
     suspend fun deleteComment(comment: PolycentricPlatformComment) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         adapter.deleteComment(comment)
     }
 
-    suspend fun setVideoRating(videoUrl: String, positive: Boolean?) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.setVideoRating(videoUrl, positive)
+    suspend fun setVideoRating(videoUrl: String, videoTitle: String?, positive: Boolean?) {
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        adapter.setVideoRating(videoUrl, videoTitle, positive)
     }
 
     suspend fun setCommentRating(comment: PolycentricPlatformComment, positive: Boolean?) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         adapter.setCommentRating(comment, positive)
     }
 

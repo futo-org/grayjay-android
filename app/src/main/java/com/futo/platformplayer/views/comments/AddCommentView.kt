@@ -16,6 +16,7 @@ class AddCommentView : LinearLayout {
     private val _textComment: TextView;
 
     private var _contextUrl: String? = null
+    private var _contextTitle: String? = null
     private var _parent: PolycentricPlatformComment? = null
     private var _lastClickTime = 0L
 
@@ -32,7 +33,7 @@ class AddCommentView : LinearLayout {
             if (now - _lastClickTime > 3000) {
                 PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_post_a_comment)) {
                     try {
-                        UIDialogs.showCommentDialog(context, cu, _parent) { onCommentAdded.emit(it) };
+                        UIDialogs.showCommentDialog(context, cu, _contextTitle, _parent) { onCommentAdded.emit(it) };
                     } catch (e: Throwable) {
                         Logger.w(TAG, "Failed to post comment", e);
                         UIDialogs.toast(context, context.getString(R.string.failed_to_post_comment) + " ${e.message}");
@@ -46,10 +47,12 @@ class AddCommentView : LinearLayout {
 
     /**
      * [parent] is set when this view posts replies to an existing comment,
-     * and null when it posts top-level comments attributed to [contextUrl].
+     * and null when it posts top-level comments attributed to [contextUrl]. [contextTitle] is the
+     * title of the content at [contextUrl], used when attributing top-level comments to it.
      */
-    fun setContext(contextUrl: String?, parent: PolycentricPlatformComment?) {
+    fun setContext(contextUrl: String?, parent: PolycentricPlatformComment?, contextTitle: String? = null) {
         _contextUrl = contextUrl;
+        _contextTitle = contextTitle;
         _parent = parent;
     }
 
