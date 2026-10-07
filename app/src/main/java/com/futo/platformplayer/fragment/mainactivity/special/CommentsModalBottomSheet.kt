@@ -32,6 +32,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
 import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateMeta
@@ -159,7 +160,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
 
             Logger.i(TAG, "onAuthorClick: $id")
             if (id != null && id.startsWith("polycentric://")) {
-                val navUrl = "https://harbor.social/" + id.substring("polycentric://".length)
+                val navUrl = PolycentricAdapter.WEB_BASE_URL + "/" + id.substring("polycentric://".length)
                 mainFragment!!.startActivity(Intent(Intent.ACTION_VIEW, navUrl.toUri()))
             }
         }
@@ -172,7 +173,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
 
             if (c is PolycentricPlatformComment) {
                 var parentComment: PolycentricPlatformComment = c
-                containerContentReplies.load(tabIndex!! != 0, metadata, c.contextUrl, c.reference, c, { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) }, {
+                containerContentReplies.load(tabIndex!! != 0, metadata, c.contextUrl, c, { StatePolycentric.instance.getReplies(c) }, {
                     val newComment = parentComment.cloneWithUpdatedReplyCount(
                         (parentComment.replyCount ?: 0) + 1
                     )
@@ -180,7 +181,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
                     parentComment = newComment
                 })
             } else {
-                containerContentReplies.load(tabIndex!! != 0, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) })
+                containerContentReplies.load(tabIndex!! != 0, metadata, null, c, { StatePlatform.instance.getSubComments(c) })
             }
             animateOpenOverlayView(containerContentReplies)
         }
@@ -199,8 +200,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
             StateMeta.instance.setLastCommentSection(1)
         }
 
-        val ref = Models.referenceFromBuffer(video.url.toByteArray())
-        addCommentView.setContext(video.url, ref)
+        addCommentView.setContext(video.url, null)
 
         if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
             setTabIndex(2, true)
@@ -392,16 +392,13 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
     private fun fetchPolycentricComments() {
         Logger.i(TAG, "fetchPolycentricComments")
         val video = video
-        val idValue = video.id.value
         if (video.url.isEmpty()) {
             Logger.w(TAG, "Failed to fetch polycentric comments because url was null")
             commentsList.clear()
             return
         }
 
-        val ref = Models.referenceFromBuffer(video.url.toByteArray())
-        val extraBytesRef = idValue?.let { if (it.isNotEmpty()) it.toByteArray() else null }
-        commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url, ref, listOfNotNull(extraBytesRef)); }
+        commentsList.load(false) { StatePolycentric.instance.getCommentPager(video.url); }
     }
 
     private fun updateDescriptionUI(text: Spanned) {

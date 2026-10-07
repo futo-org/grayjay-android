@@ -246,7 +246,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="?android:attr/selectableItemBackground"
-                android:text="Polycentric"
+                android:text="@string/harbor"
                 android:textColor="#fff"
                 android:textSize="10dp"
                 android:lines="1"

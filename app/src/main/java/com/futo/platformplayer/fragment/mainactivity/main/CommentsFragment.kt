@@ -24,18 +24,16 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.CommentWithReferenceViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.overlays.RepliesOverlay
-import com.futo.polycentric.core.PublicKey
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException
-import java.util.IdentityHashMap
 
 class CommentsFragment : MainFragment() {
     override val isMainView : Boolean = true
@@ -87,10 +85,9 @@ class CommentsFragment : MainFragment() {
         private var _loading = false;
         private val _repliesOverlay: RepliesOverlay;
         private var _repliesAnimator: ViewPropertyAnimator? = null;
-        private val _cache: IdentityHashMap<IPlatformComment, StatePolycentric.LikesDislikesReplies> = IdentityHashMap()
 
-        private val _taskLoadComments = if(!isInEditMode) TaskHandler<PublicKey, List<IPlatformComment>>(
-            StateApp.instance.scopeGetter, { StatePolycentric.instance.getSystemComments(context, it) })
+        private val _taskLoadComments = if(!isInEditMode) TaskHandler<Unit, List<IPlatformComment>>(
+            StateApp.instance.scopeGetter, { StatePolycentric.instance.getMyComments() })
             .success { pager -> onCommentsLoaded(pager); }
             .exception<UnknownHostException> {
                 UIDialogs.toast("Failed to load comments");
@@ -115,7 +112,7 @@ class CommentsFragment : MainFragment() {
                 childCountGetter = { _comments.size },
                 childViewHolderBinder = { viewHolder, position -> viewHolder.bind(_comments[position]); },
                 childViewHolderFactory = { viewGroup, _ ->
-                    val holder = CommentWithReferenceViewHolder(viewGroup, _cache);
+                    val holder = CommentWithReferenceViewHolder(viewGroup);
                     holder.onDelete.subscribe(::onDelete);
                     holder.onRepliesClick.subscribe(::onRepliesClick);
                     holder.onClick.subscribe(::onClick);
@@ -164,7 +161,6 @@ class CommentsFragment : MainFragment() {
 
         private fun onDelete(comment: IPlatformComment) {
             UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete this comment?", {
-                val processHandle = StatePolycentric.instance.processHandle ?: return@showConfirmationDialog
                 if (comment !is PolycentricPlatformComment) {
                     return@showConfirmationDialog
                 }
@@ -176,18 +172,10 @@ class CommentsFragment : MainFragment() {
 
                     StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                         try {
-                            comment.eventPointer?.let { processHandle.delete(it.process, it.logicalClock) }
+                            StatePolycentric.instance.deleteComment(comment)
                         } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to delete event.", e);
+                            Logger.e(TAG, "Failed to delete comment.", e)
                             return@launch
-                        }
-
-                        try {
-                            Logger.i(TAG, "Started backfill");
-                            processHandle.fullyBackfillServersAnnounceExceptions();
-                            Logger.i(TAG, "Finished backfill");
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, "Failed to fully backfill servers.", e);
                         }
                     }
                 }
@@ -208,8 +196,7 @@ class CommentsFragment : MainFragment() {
                 return
             }
 
-            val parentRef = c.parentReference
-            if (parentRef != null && _repliesOverlay.handleParentClick(c.contextUrl, parentRef)) {
+            if (_repliesOverlay.handleParentClick(c)) {
                 setRepliesOverlayVisible(true, true)
             }
         }
@@ -220,8 +207,7 @@ class CommentsFragment : MainFragment() {
 
             Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
             if(c.author.id.value?.startsWith("polycentric://") ?: false) {
-                val navUrl = "https://harbor.social/" + c.author.id.value?.substring("polycentric://".length);
-                //val navUrl = "https://polycentric.io/user/" + c.author.id.value?.substring("polycentric://".length);
+                val navUrl = PolycentricAdapter.WEB_BASE_URL + "/" + c.author.id.value?.substring("polycentric://".length);
                 _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
                 //_fragment.navigate<BrowserFragment>(navUrl);
             }
@@ -235,13 +221,9 @@ class CommentsFragment : MainFragment() {
             }
 
             if (c is PolycentricPlatformComment) {
-                _repliesOverlay.load(false, metadata, c.contextUrl, c.reference, c,
-                    { StatePolycentric.instance.getCommentPager(c.contextUrl, c.reference) },
+                _repliesOverlay.load(false, metadata, c.contextUrl, c,
+                    { StatePolycentric.instance.getReplies(c) },
                     { newComment ->
-                        synchronized(_cache) {
-                            _cache.remove(c)
-                        }
-
                         val newCommentIndex = if (_spinnerSortBy.selectedItemPosition == 0) {
                             _comments.indexOfFirst { it.date!! < newComment.date!! }.takeIf { it != -1 } ?: _comments.size
                         } else {
@@ -252,7 +234,7 @@ class CommentsFragment : MainFragment() {
                         _adapterComments.notifyItemInserted(_adapterComments.childToParentPosition(newCommentIndex))
                     });
             } else {
-                _repliesOverlay.load(true, metadata, null, null, c, { StatePlatform.instance.getSubComments(c) });
+                _repliesOverlay.load(true, metadata, null, c, { StatePlatform.instance.getSubComments(c) });
             }
 
             setRepliesOverlayVisible(isVisible = true, animate = true);
@@ -311,11 +293,10 @@ class CommentsFragment : MainFragment() {
         }
 
         private fun fetchComments() {
-            val system = StatePolycentric.instance.processHandle?.system ?: return
             _comments.clear()
             _adapterComments.notifyDataSetChanged()
             setLoading(true)
-            _taskLoadComments.run(system)
+            _taskLoadComments.run(Unit)
         }
 
         private fun onCommentsLoaded(comments: List<IPlatformComment>) {

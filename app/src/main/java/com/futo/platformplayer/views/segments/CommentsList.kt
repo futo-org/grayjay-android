@@ -28,7 +28,6 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.adapters.CommentViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException
@@ -157,7 +156,6 @@ class CommentsList : ConstraintLayout {
 
     private fun onDelete(comment: IPlatformComment) {
         UIDialogs.showConfirmationDialog(context, "Are you sure you want to delete this comment?", {
-            val processHandle = StatePolycentric.instance.processHandle ?: return@showConfirmationDialog
             if (comment !is PolycentricPlatformComment) {
                 return@showConfirmationDialog
             }
@@ -169,18 +167,10 @@ class CommentsList : ConstraintLayout {
 
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                     try {
-                        comment.eventPointer?.let { processHandle.delete(it.process, it.logicalClock) }
+                        StatePolycentric.instance.deleteComment(comment)
                     } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to delete event.", e);
+                        Logger.e(TAG, "Failed to delete comment.", e);
                         return@launch;
-                    }
-
-                    try {
-                        Logger.i(TAG, "Started backfill");
-                        processHandle.fullyBackfillServersAnnounceExceptions();
-                        Logger.i(TAG, "Finished backfill");
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to fully backfill servers.", e);
                     }
                 }
             }

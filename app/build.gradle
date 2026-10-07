@@ -212,7 +212,7 @@ dependencies {
     implementation 'com.google.protobuf:protobuf-javalite:4.33.0'
 
     // Polycentric v2 Kotlin SDK
-    implementation 'org.futo:polycentric-core:2.16.0'
+    implementation 'org.futo:polycentric-core:2.18.0'
     // The Polycentric v2 SDK depends on bouncycastle
     implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
     // Polycentric v1 SDK: legacy UI (comments/profile/backup) still compiles against it.

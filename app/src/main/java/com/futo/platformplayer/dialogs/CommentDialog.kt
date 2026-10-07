@@ -15,31 +15,19 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.PlatformID
-import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
-import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
-import com.futo.polycentric.core.ClaimType
-import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.SystemState
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
-import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import userpackage.Protocol
-import java.time.OffsetDateTime
 
 
-class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol.Reference) : AlertDialog(context) {
+class CommentDialog(context: Context?, val contextUrl: String, val parent: PolycentricPlatformComment?) : AlertDialog(context) {
     private lateinit var _buttonCreate: LinearLayout;
     private lateinit var _buttonCancel: MaterialButton;
     private lateinit var _editComment: EditText;
@@ -111,37 +99,32 @@ class CommentDialog(context: Context?, val contextUrl: String, val ref: Protocol
             }
 
             val comment = _editComment.text.toString();
-            val processHandle = StatePolycentric.instance.processHandle!!
-            val eventPointer = processHandle.post(comment, ref)
+            val parent = this@CommentDialog.parent;
 
+            _buttonCreate.isEnabled = false;
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                try {
-                    Logger.i(TAG, "Started backfill");
-                    processHandle.fullyBackfillServersAnnounceExceptions()
-                    Logger.i(TAG, "Finished backfill");
+                val newComment = try {
+                    if (parent == null) {
+                        StatePolycentric.instance.postComment(contextUrl, comment)
+                    } else {
+                        StatePolycentric.instance.postReply(parent, comment)
+                    }
                 } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill servers.", e);
+                    Logger.w(TAG, "Failed to post comment.", e)
+                    null
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (newComment == null) {
+                        _buttonCreate.isEnabled = true;
+                        UIDialogs.toast(context, "Failed to post comment: " +
+                            (if (!StatePolycentric.instance.enabled) "Polycentric is disabled" else "not logged in to Polycentric"));
+                    } else {
+                        onCommentAdded.emit(newComment);
+                        dismiss();
+                    }
                 }
             }
-            val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(processHandle.system))
-            val dp_25 = 25.dp(context.resources)
-            onCommentAdded.emit(PolycentricPlatformComment(
-                contextUrl = contextUrl,
-                author = PlatformAuthorLink(
-                    id = PlatformID("polycentric", processHandle.system.systemToURLInfoSystemLinkUrl(systemState.servers.toList()), null, ClaimType.POLYCENTRIC.value.toInt()),
-                    name = systemState.username,
-                    url = processHandle.system.systemToURLInfoSystemLinkUrl(systemState.servers.toList()),
-                    thumbnail = systemState.avatar.selectBestImage(dp_25 * dp_25)?.toURLInfoSystemLinkUrl(processHandle, systemState.servers.toList()),
-                    subscribers = null
-                ),
-                msg = comment,
-                rating = RatingLikeDislikes(0, 0),
-                date = OffsetDateTime.now(),
-                eventPointer = eventPointer,
-                parentReference = ref
-            ));
-
-            dismiss();
         };
 
         window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
