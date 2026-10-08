@@ -256,7 +256,7 @@ class CastView : ConstraintLayout {
         stopTimeJob()
 
         if(isPlaying) {
-            StateCasting.instance.startUpdateTimeJob(
+            _updateTimeJob = StateCasting.instance.startUpdateTimeJob(
                 onTimeJobTimeChanged_s
             ) { setTime(it) }
 
