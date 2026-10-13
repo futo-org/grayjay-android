@@ -39,6 +39,7 @@ class HistoryListViewHolder : ViewHolder {
 
     val onClick = Event1<HistoryVideo>();
     val onRemove = Event1<HistoryVideo>();
+    val onLongPress = Event1<HistoryVideo>();
 
     constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_history, viewGroup, false)) {
         _root = itemView.findViewById(R.id.root);
@@ -57,6 +58,12 @@ class HistoryListViewHolder : ViewHolder {
         _root.setOnClickListener {
             val v = video ?: return@setOnClickListener;
             onClick.emit(v);
+        };
+
+        _root.setOnLongClickListener {
+            val v = video ?: return@setOnLongClickListener false;
+            onLongPress.emit(v);
+            true
         };
 
         _imageRemove.setOnClickListener {

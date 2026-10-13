@@ -372,6 +372,47 @@ class StatePlayer {
                 UIDialogs.toast(context, context.getString(R.string.already_queued), false);
             }
     }
+    /***
+     * Places the video directly after the current queue item, so it plays when the current one finishes.
+     * A video that is already queued is moved instead of added twice.
+     */
+    fun playNext(video: IPlatformVideo) {
+        var didAdd = false;
+        synchronized(_queue) {
+            if(_queue.isEmpty()) {
+                setQueueType(TYPE_QUEUE);
+                currentVideo?.let {
+                    _queue.add(it);
+                }
+            }
+
+            val currentItem = getCurrentQueueItem();
+            if(currentItem?.url == video.url) {
+                return@synchronized;
+            }
+
+            insertAfter(_queue, currentItem, video) { it.url };
+            val queueShuffled = _queueShuffled;
+            if (queueShuffled != null) {
+                insertAfter(queueShuffled, currentItem, video) { it.url };
+            }
+
+            val queue = if (queueShuffle && queueShuffled != null) queueShuffled else _queue;
+            _queuePosition = if (currentItem != null) queue.indexOf(currentItem) else 0;
+            didAdd = true;
+        }
+        if(didAdd) {
+            onQueueChanged.emit(true);
+            StateApp.instance.contextOrNull?.let { context ->
+                val name = if (video.name.length > 20) (video.name.subSequence(0, 20).toString() + "...") else video.name;
+                UIDialogs.toast(context, context.getString(R.string.playing_next) + " [$name]", false);
+            }
+        }
+        else
+            StateApp.instance.contextOrNull?.let { context ->
+                UIDialogs.toast(context, context.getString(R.string.already_playing), false);
+            }
+    }
     fun insertToQueue(video: IPlatformVideo, playNow: Boolean = false) {
         synchronized(_queue) {
             if(_queue.isEmpty()) {
@@ -753,6 +794,17 @@ class StatePlayer {
             _instance = null;
             instance?.dispose();
             Logger.i(TAG, "Disposed StatePlayer");
+        }
+
+        /***
+         * Inserts item directly after current (at the start if current is null or not in the list).
+         * Other entries with the same key as item are removed first, so the item is moved rather than duplicated.
+         */
+        fun <T> insertAfter(list: MutableList<T>, current: T?, item: T, key: (T) -> Any?) {
+            val itemKey = key(item);
+            list.removeAll { it !== current && key(it) == itemKey };
+            val index = if (current != null) list.indexOf(current) + 1 else 0;
+            list.add(index, item);
         }
     }
 }

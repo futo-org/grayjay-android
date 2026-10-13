@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.core.widget.addTextChangedListener
@@ -33,6 +34,8 @@ import com.futo.platformplayer.views.adapters.HistoryListViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.others.TagsView
 import com.futo.platformplayer.views.others.Toggle
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
+import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -52,6 +55,13 @@ class HistoryFragment : MainFragment() {
     override fun onDestroyMainView() {
         super.onDestroyMainView();
         _view = null;
+    }
+
+    override fun onBackPressed(): Boolean {
+        if (_view?.onBackPressed() == true)
+            return true
+
+        return super.onBackPressed()
     }
 
     override fun onShownWithView(parameter: Any?, isBack: Boolean) {
@@ -75,6 +85,8 @@ class HistoryFragment : MainFragment() {
         private val _results = arrayListOf<HistoryVideo>();
         private var _loading = false;
         private val _toggleBar: ToggleBar
+        private val _overlayContainer: FrameLayout
+        private var _videoOptionsOverlay: SlideUpMenuOverlay? = null
         private var _togglePluginsDisabled = hashSetOf<String>()
 
         private var _automaticNextPageCounter = 0;
@@ -88,6 +100,7 @@ class HistoryFragment : MainFragment() {
             _editSearch = findViewById(R.id.edit_search);
             _tagsView = findViewById(R.id.tags_text);
             _toggleBar = findViewById(R.id.toggle_bar)
+            _overlayContainer = findViewById(R.id.overlay_container)
             _tagsView.setPairs(listOf(
                 Pair(context.getString(R.string.last_hour), 60L),
                 Pair(context.getString(R.string.last_24_hours), 24L * 60L),
@@ -119,6 +132,7 @@ class HistoryFragment : MainFragment() {
                     val holder = HistoryListViewHolder(view);
                     holder.onRemove.subscribe(::onHistoryVideoRemove);
                     holder.onClick.subscribe(::onHistoryVideoClick);
+                    holder.onLongPress.subscribe(::onHistoryVideoLongPress);
                     return@InsertedViewAdapterWithLoader holder;
                 },
                 { viewHolder, position ->
@@ -235,6 +249,27 @@ class HistoryFragment : MainFragment() {
             StateHistory.instance.removeHistory(v.video.url);
             _results.removeAt(index);
             _adapter.notifyItemRemoved(index);
+        }
+
+        private fun onHistoryVideoLongPress(v: HistoryVideo) {
+            _videoOptionsOverlay = UISlideOverlays.showVideoOptionsOverlay(v.video, _overlayContainer, SlideUpMenuItem(
+                context,
+                R.drawable.ic_trash,
+                context.getString(R.string.remove_from_history),
+                "",
+                tag = "remove_history",
+                call = { onHistoryVideoRemove(v) }
+            ));
+        }
+
+        fun onBackPressed(): Boolean {
+            val videoOptionsOverlay = _videoOptionsOverlay ?: return false
+            _videoOptionsOverlay = null
+            if (videoOptionsOverlay.isVisible) {
+                videoOptionsOverlay.hide();
+                return true;
+            }
+            return false
         }
 
         private fun onHistoryVideoClick(v: HistoryVideo) {

@@ -1244,6 +1244,13 @@ class UISlideOverlays {
                     container.context, container.context.getString(R.string.add_to), "addto",
                     SlideUpMenuItem(
                         container.context,
+                        R.drawable.ic_skip_next,
+                        container.context.getString(R.string.play_next),
+                        container.context.getString(R.string.play_next_description),
+                        tag = "playnext",
+                        call = { StatePlayer.instance.playNext(video); }),
+                    SlideUpMenuItem(
+                        container.context,
                         R.drawable.ic_queue_add,
                         container.context.getString(R.string.add_to_queue),
                         "${queue.size} " + container.context.getString(R.string.videos),
