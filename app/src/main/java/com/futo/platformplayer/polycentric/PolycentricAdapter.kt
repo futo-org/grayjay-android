@@ -119,7 +119,7 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
          *
          * TODO: set the production hostname
          */
-        val MIGRATOR_URL: String? = null
+        val MIGRATOR_URL: String = "https://grayjay-migrator.staging.harbor.social"
 
         /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
