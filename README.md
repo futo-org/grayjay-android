@@ -206,3 +206,7 @@ Click on the CI/CD tab, you should now see the tests and build are in progress. 
 ## Documentation
 
 The documentation can be found [here](https://gitlab.futo.org/videostreaming/documents/-/wikis/API-Overview).
+
+## Third-party assets
+
+The pairing fingerprint emoji fonts in `app/src/main/res/font/twemoji_fingerprint*.ttf` are [Twemoji](https://github.com/jdecked/twemoji) v17.0.3, Copyright Twitter, Inc. and other contributors, licensed under [CC-BY 4.0](./app/src/main/assets/licenses/TWEMOJI-LICENSE.txt). See `scripts/generate_harbor_emoji.py`.
