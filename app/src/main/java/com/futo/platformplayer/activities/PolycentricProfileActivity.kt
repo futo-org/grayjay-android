@@ -45,7 +45,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonModeration: BigButton;
     private lateinit var _buttonLogout: BigButton;
     private lateinit var _buttonDelete: BigButton;
-    private lateinit var _username: String;
+    private var _username: String = "";
     private lateinit var _imagePolycentric: ImageView;
     private lateinit var _loaderOverlay: LoaderOverlay;
     private lateinit var _textSystem: TextView;
@@ -185,10 +185,6 @@ class PolycentricProfileActivity : AppCompatActivity() {
     }
 
     private fun saveIfRequired() {
-        if (!::_username.isInitialized) {
-            return;
-        }
-
         val username = _editName.text.toString();
         val avatarUri = _avatarUri;
         val nameChanged = _username != username;
