@@ -35,6 +35,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _scroll: ScrollView;
     private lateinit var _loader: LoaderView;
     private var _switching = false;
+    private val _profileButtons = arrayListOf<BigButton>();
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(StateApp.instance.getLocaleContext(newBase))
@@ -69,6 +70,19 @@ class PolycentricHomeActivity : AppCompatActivity() {
             finish();
         };
 
+        StatePolycentric.instance.onIdentitiesChanged.subscribe(this) {
+            loadProfiles();
+        };
+
+        loadProfiles();
+    }
+
+    override fun onDestroy() {
+        super.onDestroy();
+        StatePolycentric.instance.onIdentitiesChanged.remove(this);
+    }
+
+    private fun loadProfiles() {
         _loader.start();
         _loader.visibility = View.VISIBLE;
 
@@ -96,6 +110,11 @@ class PolycentricHomeActivity : AppCompatActivity() {
     }
 
     private fun showProfiles(profiles: List<Pair<String, PolycentricChannelProfile>>) {
+        for (button in _profileButtons) {
+            _layoutButtons.removeView(button);
+        }
+        _profileButtons.clear();
+
         for ((identity, profile) in profiles) {
             val profileButton = BigButton(this);
             profileButton.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -149,6 +168,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
                 })
 
             _layoutButtons.addView(profileButton, 0);
+            _profileButtons.add(profileButton);
         }
         _scroll.invalidate();
     }

@@ -1,5 +1,6 @@
 package com.futo.platformplayer.polycentric
 
+import com.futo.platformplayer.polycentric.Key as LegacyKey
 import com.google.protobuf.ByteString
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters
@@ -19,7 +20,7 @@ class PolycentricKeyStorageTests {
 
     private fun secretFor(seed: ByteArray): StorageTypeProcessSecret =
         StorageTypeProcessSecret.newBuilder()
-            .setSystem(PrivateKey.newBuilder()
+            .setSystem(LegacyKey.newBuilder()
                 .setKeyType(PolycentricKeyStorage.KEY_TYPE_ED25519)
                 .setKey(ByteString.copyFrom(seed)))
             .setProcess(Process.newBuilder().setProcess(ByteString.copyFrom(ByteArray(16))))
@@ -61,14 +62,14 @@ class PolycentricKeyStorageTests {
         val seed = randomSeed()
 
         val wrongType = StorageTypeProcessSecret.newBuilder()
-            .setSystem(PrivateKey.newBuilder()
+            .setSystem(LegacyKey.newBuilder()
                 .setKeyType(2L)
                 .setKey(ByteString.copyFrom(seed)))
             .build()
         assertFalse(PolycentricKeyStorage.secretMatchesPublicKey(wrongType, PolycentricKeyStorage.deriveEd25519PublicKey(seed)))
 
         val shortKey = StorageTypeProcessSecret.newBuilder()
-            .setSystem(PrivateKey.newBuilder()
+            .setSystem(LegacyKey.newBuilder()
                 .setKeyType(PolycentricKeyStorage.KEY_TYPE_ED25519)
                 .setKey(ByteString.copyFrom(ByteArray(16))))
             .build()

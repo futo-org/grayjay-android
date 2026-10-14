@@ -9,7 +9,7 @@ import polycentric.v2.ProfileUpdate
 
 /**
  * [PolycentricAdapter] functions for identity and profile lifecycle,
- * includingserver configuration.
+ * including server configuration.
  */
 
 /** An avatar image variant at a specific size, stored as a byte array */
@@ -35,10 +35,7 @@ fun PolycentricAdapter.activeIdentity(): String? = client.activeIdentityKey
 
 /** Create a new identity, optionally naming it, and log in to it. */
 suspend fun PolycentricAdapter.createIdentity(name: String? = null): String {
-    val current = client.currentKeyPair
-    if (current != null && client.getIdentityKeyFor(current) != null) {
-        client.keyPairManager.createKeyPair(setAsCurrent = true)
-    }
+    client.keyPairManager.createKeyPair(setAsCurrent = true)
 
     // IdentityManager.publish also binds the identity to the current keypair
     // (setActiveIdentityKey), which is what makes it appear in listIdentities().

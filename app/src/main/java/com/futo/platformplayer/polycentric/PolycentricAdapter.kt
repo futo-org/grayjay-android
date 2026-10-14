@@ -113,6 +113,15 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         const val WEB_BASE_URL: String = "https://staging.harbor.social"
 
         /**
+         * Base URL of Harbor's `grayjay-migrator` lookup service, which maps legacy v1 system
+         * keys to their migrated v2 identities. The v1 identity migration is skipped while unset.
+         * Migrated identities live on [SEED_SERVERS] (the migrator's `IDENTITY_SERVERS`).
+         *
+         * TODO: set the production hostname
+         */
+        val MIGRATOR_URL: String? = null
+
+        /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
          * global app context to construct arguments.
          */

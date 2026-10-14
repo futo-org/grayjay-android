@@ -1,6 +1,16 @@
 package com.futo.platformplayer.states
 
 import android.content.Context
+import android.content.Intent
+import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.activities.PolycentricCreateProfileActivity
+import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.polycentric.claimMigratedIdentity
+import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
+import com.futo.platformplayer.polycentric.legacyKeyPairs
+import com.futo.platformplayer.polycentric.lookupMigratedIdentity
+import java.util.concurrent.atomic.AtomicBoolean
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
@@ -52,7 +62,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.futo.polycentric.core.StoredKeyPair
 import polycentric.v2.EventKey
+import kotlin.coroutines.resume
 
 
 class StatePolycentric {
@@ -72,6 +85,13 @@ class StatePolycentric {
     private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
     private val _initMutex = Mutex()
     private val _identityMutex = Mutex()
+    private val _migrationStarted = AtomicBoolean(false)
+
+    /**
+     * Emitted on the main thread when identities are added or the active identity changes in the
+     * background.
+     */
+    val onIdentitiesChanged = Event0()
 
     fun load(context: Context) {
         if (!enabled) {
@@ -79,7 +99,128 @@ class StatePolycentric {
         }
 
         _backgroundScope.launch {
-            awaitAdapter()
+            awaitAdapter() ?: return@launch
+            migrateLegacyIdentities(context)
+        }
+    }
+
+    /**
+     * Claims the v2 identities that Harbor's Grayjay migrator service created for the legacy v1
+     * keys on this device, then restores the user's session. A key that fails to migrate asks the
+     * user to retry or delete it.
+     */
+    private suspend fun migrateLegacyIdentities(context: Context) {
+        val migratorUrl = PolycentricAdapter.MIGRATOR_URL ?: return
+        if (!enabled || !_migrationStarted.compareAndSet(false, true)) {
+            return
+        }
+
+        val claimed = mutableListOf<String>()
+        var deleted = false
+        try {
+            for (keyPair in adapter.legacyKeyPairs()) {
+                when (val outcome = migrateLegacyKeyPair(context, migratorUrl, keyPair)) {
+                    is LegacyKeyOutcome.Claimed -> claimed.add(outcome.identity)
+                    LegacyKeyOutcome.Deleted -> deleted = true
+                    LegacyKeyOutcome.Skipped -> {}
+                }
+            }
+
+            if (claimed.isNotEmpty()) {
+                mutateIdentity {
+                    // If no active identity, activate the newly migrated one
+                    if (it.activeIdentity() == null) {
+                        it.switchIdentity(claimed.first())
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Legacy identity migration failed.", e)
+        }
+
+        if (claimed.isNotEmpty()) {
+            val text = context.getString(
+                if (claimed.size > 1) R.string.polycentric_migration_complete_multiple else R.string.polycentric_migration_complete
+            )
+            UIDialogs.toast(text, long = true)
+        }
+        withContext(Dispatchers.Main) {
+            if (claimed.isNotEmpty()) {
+                onIdentitiesChanged.emit()
+            }
+            // If the user decided to delete old v1 identity, prompt to create a new v2 identity.
+            if (deleted && activeIdentity() == null) {
+                StateApp.instance.activity?.let {
+                    it.startActivity(Intent(it, PolycentricCreateProfileActivity::class.java))
+                }
+            }
+        }
+    }
+
+    private sealed interface LegacyKeyOutcome {
+        class Claimed(val identity: String) : LegacyKeyOutcome
+        object Deleted : LegacyKeyOutcome
+        /** The user dismissed the failure prompt; the key is retried on a later start. */
+        object Skipped : LegacyKeyOutcome
+    }
+
+    /**
+     * Looks up and claims the migrated identity of one legacy key. On failure, asks the user to
+     * retry or to delete the key.
+     */
+    private suspend fun migrateLegacyKeyPair(context: Context, migratorUrl: String, keyPair: StoredKeyPair): LegacyKeyOutcome {
+        // While loop used when the user selects to retry a key migration
+        while (true) {
+            val error = try {
+                val identity = lookupMigratedIdentity(migratorUrl, keyPair.publicKey)
+                    ?: throw IllegalStateException(context.getString(R.string.polycentric_migration_not_found))
+                mutateIdentity { it.claimMigratedIdentity(keyPair, identity) }
+                Logger.i(TAG, "Claimed migrated identity $identity")
+                return LegacyKeyOutcome.Claimed(identity)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to migrate legacy identity.", e)
+                e
+            }
+
+            when (promptMigrationFailure(error)) {
+                MigrationFailureChoice.RETRY -> continue
+                MigrationFailureChoice.DELETE -> {
+                    mutateIdentity { it.deleteLegacyKeyPair(keyPair) }
+                    return LegacyKeyOutcome.Deleted
+                }
+                null -> return LegacyKeyOutcome.Skipped
+            }
+        }
+    }
+
+    private enum class MigrationFailureChoice { RETRY, DELETE }
+
+    /** Shows the migration error and waits for the user's choice; null when dismissed. */
+    private suspend fun promptMigrationFailure(error: Throwable): MigrationFailureChoice? = withContext(Dispatchers.Main) {
+        val activity = StateApp.instance.activity ?: return@withContext null
+        suspendCancellableCoroutine { continuation ->
+            val choose = { choice: MigrationFailureChoice? ->
+                if (continuation.isActive) {
+                    // Implicitly returns choice from [suspendCancellableCoroutine]
+                    continuation.resume(choice)
+                }
+            }
+            val dialog = UIDialogs.showDialog(activity, R.drawable.ic_error_pred,
+                activity.getString(R.string.polycentric_migration_failed),
+                error.message ?: error.javaClass.simpleName, null, -1,
+                UIDialogs.Action(activity.getString(R.string.polycentric_migration_delete), {
+                    choose(MigrationFailureChoice.DELETE)
+                }, UIDialogs.ActionStyle.DANGEROUS),
+                UIDialogs.Action(activity.getString(R.string.retry), {
+                    choose(MigrationFailureChoice.RETRY)
+                }, UIDialogs.ActionStyle.PRIMARY)
+            )
+            dialog.setOnCancelListener { choose(null) }
+            continuation.invokeOnCancellation { dialog.dismiss() }
         }
     }
 

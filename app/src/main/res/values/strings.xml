@@ -898,6 +898,11 @@
     <string name="fcast_technical_documentation">FCast Technical Documentation</string>
     <string name="login_to_view_your_comments">Login to view your comments</string>
     <string name="polycentric_is_disabled">Harbor is disabled</string>
+    <string name="polycentric_migration_complete">Your Polycentric profile has been moved to Harbor. You will need to reupload your profile picture.</string>
+    <string name="polycentric_migration_complete_multiple">Your Polycentric profiles have been moved to Harbor. You will need to reupload your profile pictures.</string>
+    <string name="polycentric_migration_failed">Your Polycentric profile could not be moved to Harbor</string>
+    <string name="polycentric_migration_not_found">No Harbor account was found for this profile.</string>
+    <string name="polycentric_migration_delete">Delete and create new</string>
     <string name="play_pause">Play Pause</string>
     <string name="position">Position</string>
     <string name="tutorials">Tutorials</string>

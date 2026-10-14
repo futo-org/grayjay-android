@@ -6,6 +6,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import java.security.SecureRandom
 import com.google.protobuf.ByteString
+import com.futo.platformplayer.polycentric.Key as LegacyKey
 
 /**
  * Stores signing keys using [FragmentedStorage] such that keys are kept
@@ -24,7 +25,7 @@ class PolycentricKeyStorage {
     fun addProcessSecret(publicKey: ByteArray, privateKey: ByteArray) {
         val process = ByteArray(16).also { SecureRandom().nextBytes(it) }
         val encoded = StorageTypeProcessSecret.newBuilder()
-            .setSystem(PrivateKey.newBuilder()
+            .setSystem(LegacyKey.newBuilder()
                 .setKeyType(KEY_TYPE_ED25519)
                 .setKey(ByteString.copyFrom(privateKey)))
             .setProcess(Process.newBuilder().setProcess(ByteString.copyFrom(process)))

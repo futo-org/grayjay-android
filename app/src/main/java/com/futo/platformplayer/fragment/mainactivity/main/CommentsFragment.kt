@@ -174,6 +174,10 @@ class CommentsFragment : MainFragment() {
 
             _repliesOverlay = findViewById(R.id.replies_overlay);
             _repliesOverlay.onClose.subscribe { setRepliesOverlayVisible(isVisible = false, animate = true); };
+
+            StatePolycentric.instance.onIdentitiesChanged.subscribe(this) {
+                _taskCheckLoggedIn.run(Unit)
+            }
         }
 
         private fun onDelete(comment: IPlatformComment) {
@@ -336,6 +340,7 @@ class CommentsFragment : MainFragment() {
         }
 
         fun cleanup() {
+            StatePolycentric.instance.onIdentitiesChanged.remove(this)
             _taskCheckLoggedIn.cancel()
             _taskLoadComments.cancel()
         }
