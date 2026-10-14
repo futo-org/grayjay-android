@@ -1,5 +1,7 @@
 package com.futo.platformplayer.polycentric
 
+import com.futo.platformplayer.logging.Logger
+import kotlinx.coroutines.CancellationException
 import org.futo.polycentric.core.Collections
 import org.futo.polycentric.core.getProfile
 import polycentric.v2.Content
@@ -83,8 +85,15 @@ suspend fun PolycentricAdapter.deleteActiveIdentity() {
  * network fetch fails or yields nothing.
  */
 suspend fun PolycentricAdapter.getIdentityProfile(identity: String): PolycentricChannelProfile {
-    val bundles = client.getProfile(identity)?.event_bundles
-        ?.takeIf { it.isNotEmpty() }
+    val remote = try {
+        client.getProfile(identity)?.event_bundles
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        Logger.w(TAG, "Failed to fetch profile, falling back to local events.", e)
+        null
+    }
+    val bundles = remote?.takeIf { it.isNotEmpty() }
         ?: client.listValidEvents(identity, Collections.PROFILE)
     val update = latestProfileUpdate(bundles)
     return PolycentricChannelProfile(
@@ -150,3 +159,5 @@ suspend fun PolycentricAdapter.addServer(url: String) = client.identityManager.a
 
 /** Remove a server from the active identity's identity document. */
 suspend fun PolycentricAdapter.removeServer(url: String) = client.identityManager.removeServer(url)
+
+private const val TAG = "PolycentricIdentity"

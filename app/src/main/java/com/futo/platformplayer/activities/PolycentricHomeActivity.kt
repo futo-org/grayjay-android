@@ -16,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricChannelProfile
 import com.futo.platformplayer.setNavigationBarColorAndIcons
@@ -23,6 +24,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.buttons.BigButton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -88,12 +90,15 @@ class PolycentricHomeActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val profiles = try {
-                StatePolycentric.instance.listIdentities().mapNotNull { identity ->
+                StatePolycentric.instance.listIdentities().map { identity ->
                     try {
                         identity to StatePolycentric.instance.getIdentityProfile(identity)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Throwable) {
+                        // Keep the identity selectable; signing in only needs its key.
                         Logger.w(TAG, "Failed to load profile for identity.", e)
-                        null
+                        identity to PolycentricChannelProfile(identity, null, null, null, null)
                     }
                 }
             } catch (e: Throwable) {
@@ -136,6 +141,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Failed to switch identity.", e)
                         withContext(Dispatchers.Main) {
+                            UIDialogs.toast(this@PolycentricHomeActivity, getString(R.string.failed_to_switch_identity));
                             _switching = false;
                         }
                         return@launch;
