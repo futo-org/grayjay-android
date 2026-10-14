@@ -168,7 +168,14 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
         // sets migrated identities' servers to production)
         client.adoptServers(PolycentricAdapter.SEED_SERVERS)
         client.sync(SyncStrategy.PARTIAL_PUSH)
-        client.identityManager.publish(identity, state.rotationKeys, state.signingKeys, PolycentricAdapter.SEED_SERVERS)
+        client.identityManager.publish(
+            identityKey = identity,
+            rotationKeys = state.rotationKeys,
+            signingKeys = state.signingKeys,
+            servers = PolycentricAdapter.SEED_SERVERS,
+            revocationBounds = state.revocationBounds,
+            recoveryKey = state.recoveryKey,
+        )
 
         Logger.i(TAG, "Claimed $identity: rotation keys ${state.rotationKeys.map { it.key.hex() }}, " +
             "signing keys ${state.signingKeys.map { it.key.hex() }}, servers ${state.servers}")
