@@ -10,6 +10,7 @@ import com.futo.platformplayer.polycentric.claimMigratedIdentity
 import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
 import com.futo.platformplayer.polycentric.legacyKeyPairs
 import com.futo.platformplayer.polycentric.lookupMigratedIdentity
+import com.futo.platformplayer.toHexString
 import java.util.concurrent.atomic.AtomicBoolean
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.PlatformID
@@ -134,6 +135,7 @@ class StatePolycentric {
                     }
                 }
             }
+            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, deleted $deleted, active identity ${adapter.activeIdentity()}")
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
@@ -173,6 +175,7 @@ class StatePolycentric {
     private suspend fun migrateLegacyKeyPair(context: Context, migratorUrl: String, keyPair: StoredKeyPair): LegacyKeyOutcome {
         // While loop used when the user selects to retry a key migration
         while (true) {
+            Logger.i(TAG, "Migrating legacy key ${keyPair.publicKey.toHexString()}")
             val error = try {
                 val identity = lookupMigratedIdentity(migratorUrl, keyPair.publicKey)
                     ?: throw IllegalStateException(context.getString(R.string.polycentric_migration_not_found))
