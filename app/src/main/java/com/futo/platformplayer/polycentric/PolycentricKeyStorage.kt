@@ -42,14 +42,25 @@ class PolycentricKeyStorage {
                 val secret = StorageTypeProcessSecret.parseFrom(
                     GEncryptionProviderV1.instance.decrypt(p.base64ToByteArray()),
                 )
-                val key = secret.system.key
-                if (secret.system.keyType != KEY_TYPE_ED25519 || key.size() != 32) continue
-                secrets.add(ProcessSecret(publicKey = deriveEd25519PublicKey(key.toByteArray()), privateKey = key.toByteArray()))
+                val seed = ed25519SeedOf(secret) ?: continue
+                secrets.add(ProcessSecret(publicKey = deriveEd25519PublicKey(seed), privateKey = seed))
             } catch (e: Throwable) {
                 Logger.i(TAG, "Failed to decrypt process secret", e)
             }
         }
         return secrets
+    }
+
+    /**
+     * Adds the key of a decrypted v1 `StorageTypeProcessSecret` unless it is already stored.
+     * Returns whether the key was added.
+     */
+    fun importProcessSecret(decrypted: ByteArray): Boolean {
+        val seed = ed25519SeedOf(StorageTypeProcessSecret.parseFrom(decrypted)) ?: return false
+        val publicKey = deriveEd25519PublicKey(seed)
+        if (getProcessSecrets().any { it.publicKey.contentEquals(publicKey) }) return false
+        addProcessSecret(publicKey, seed)
+        return true
     }
 
     fun removeProcessSecret(publicKey: ByteArray) {
@@ -81,9 +92,15 @@ class PolycentricKeyStorage {
 
         /** Whether the secret's Ed25519 seed derives the given public key. */
         internal fun secretMatchesPublicKey(secret: StorageTypeProcessSecret, publicKey: ByteArray): Boolean {
+            val seed = ed25519SeedOf(secret) ?: return false
+            return deriveEd25519PublicKey(seed).contentEquals(publicKey)
+        }
+
+        /** The secret's Ed25519 seed, or null when it holds another kind of key. */
+        internal fun ed25519SeedOf(secret: StorageTypeProcessSecret): ByteArray? {
             val key = secret.system.key
-            if (secret.system.keyType != KEY_TYPE_ED25519 || key.size() != 32) return false
-            return deriveEd25519PublicKey(key.toByteArray()).contentEquals(publicKey)
+            if (secret.system.keyType != KEY_TYPE_ED25519 || key.size() != 32) return null
+            return key.toByteArray()
         }
 
         /** Ed25519 public key (32 bytes) derived from a 32-byte seed. */

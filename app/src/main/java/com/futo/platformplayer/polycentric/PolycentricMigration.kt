@@ -1,7 +1,13 @@
 package com.futo.platformplayer.polycentric
 
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringStorage
+import com.futo.polycentric.core.PEncryptionProviderV0
+import com.futo.polycentric.core.PEncryptionProviderV1
 import com.futo.platformplayer.toHexString
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +40,50 @@ private class MigratorLookupResponse(
 
 private val LOOKUP_JSON = Json { ignoreUnknownKeys = true }
 private val IDENTITY_REGEX = Regex("^[0-9a-f]{64}$")
+
+private const val LEGACY_DATABASE_NAME = "polycentric_core.db"
+
+/**
+ * Import of the keys in the v1 Polycentric SDK database into v2 [PolycentricKeyStorage]. The v1
+ * SDK kept keys both in the database and Grayjay's FragmentedStorage; see [PolycentricKeyStorage]
+ * for how we access FragmentedStorage keys.
+ */
+fun importLegacyDatabaseKeys(context: Context, storage: PolycentricKeyStorage = PolycentricKeyStorage.instance) {
+    val imported = FragmentedStorage.get<StringStorage>("polycentricLegacyDatabaseImported")
+    if (imported.value.isNotEmpty()) return
+
+    try {
+        val file = context.getDatabasePath(LEGACY_DATABASE_NAME)
+        var added = 0
+        if (file.exists()) {
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+                db.rawQuery("SELECT value FROM process_secrets", null).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val value = cursor.getBlob(0) ?: continue
+                        try {
+                            if (storage.importProcessSecret(decryptLegacySecret(value))) added++
+                        } catch (e: Throwable) {
+                            Logger.w(TAG, "Failed to import legacy database key.", e)
+                        }
+                    }
+                }
+            }
+        }
+        imported.setAndSaveBlocking("true")
+        Logger.i(TAG, "Legacy database key import finished: added $added")
+    } catch (e: Throwable) {
+        // Retried on the next start
+        Logger.e(TAG, "Failed to read legacy database keys.", e)
+    }
+}
+
+/** Decrypts with [PEncryptionProviderV1], or [PEncryptionProviderV0] as fallback. */
+private fun decryptLegacySecret(value: ByteArray): ByteArray =
+    try {
+        PEncryptionProviderV1.instance.decrypt(value)
+    } catch (e: Throwable) {
+        PEncryptionProviderV0.instance.decrypt(value)
+    }
 
 /**
  * Look up the v2 identity the migrator created for a legacy system key: null when the migrator
