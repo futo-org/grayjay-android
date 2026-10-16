@@ -205,7 +205,7 @@ class TutorialFragment : MainFragment() {
             TutorialVideo(
                 uuid = "d2238d88-4252-4a91-a12d-b90c049bb7cf",
                 name = "Comments",
-                description = "Learn about Polycentric comments in Grayjay.",
+                description = "Learn about Harbor comments in Grayjay.",
                 thumbnailUrl = "https://releases.grayjay.app/tutorials/polycentric.jpg",
                 videoUrl = "https://releases.grayjay.app/tutorials/polycentric.mp4",
                 duration = 64

@@ -150,12 +150,6 @@
 
                 <data android:mimeType="application/zip" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="polycentric" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".activities.TestActivity"
@@ -201,10 +195,6 @@
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
-            android:name=".activities.PolycentricBackupActivity"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
-        <activity
             android:name=".activities.PolycentricCreateProfileActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
@@ -214,10 +204,6 @@
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
             android:name=".activities.PolycentricWhyActivity"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
-        <activity
-            android:name=".activities.PolycentricImportProfileActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity

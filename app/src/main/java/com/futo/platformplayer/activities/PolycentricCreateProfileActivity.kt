@@ -12,15 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.LoaderView
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.ProcessHandle
-import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,67 +55,45 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                 return@setOnClickListener;
             }
 
+            val username = _profileName.text.toString();
+            if (username.length < 3) {
+                UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
+                return@setOnClickListener;
+            }
+
             _creating = true;
 
             try {
-                val username = _profileName.text.toString();
-                if (username.length < 3) {
-                    UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
-                    return@setOnClickListener;
-                }
-
                 _profileName.isEnabled = false;
                 _buttonCreate.visibility = View.GONE;
                 _loader.start();
                 _loader.visibility = View.VISIBLE;
-                
+
                 lifecycleScope.launch(Dispatchers.IO) {
-                    val processHandle: ProcessHandle;
                     try {
-                        try {
-                            processHandle = ProcessHandle.create();
-                            Store.instance.addProcessSecret(processHandle.processSecret);
+                        StatePolycentric.instance.createIdentity(username);
 
-                            try {
-                                PolycentricStorage.instance.addProcessSecret(processHandle.processSecret)
-                            } catch (e: Throwable) {
-                                Logger.e(TAG, "Failed to save process secret to secret storage.", e)
-                            }
-
-                            processHandle.addServer(ApiMethods.SERVER);
-                            processHandle.setUsername(username);
-                            StatePolycentric.instance.setProcessHandle(processHandle);
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, getString(R.string.failed_to_create_profile), e);
-                            return@launch;
-                        } finally {
-                            _creating = false;
-                        }
-
-                        try {
-                            Logger.i(TAG, "Started backfill");
-                            processHandle.fullyBackfillServersAnnounceExceptions();
-                            Logger.i(TAG, "Finished backfill");
-                        } catch (e: Throwable) {
-                            Logger.e(TAG, getString(R.string.failed_to_fully_backfill_servers), e);
-                        }
-                    }
-                    finally {
                         withContext(Dispatchers.Main) {
+                            _loader.stop();
+                            _loader.visibility = View.GONE;
+                            startActivity(Intent(this@PolycentricCreateProfileActivity, PolycentricProfileActivity::class.java));
+                            finish();
+                        }
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, getString(R.string.failed_to_create_profile), e);
+                        withContext(Dispatchers.Main) {
+                            UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.failed_to_create_profile));
                             _profileName.isEnabled = true;
                             _buttonCreate.visibility = View.VISIBLE;
                             _loader.stop();
                             _loader.visibility = View.GONE;
+                            _creating = false;
                         }
                     }
-
-                    withContext(Dispatchers.Main) {
-                        startActivity(Intent(this@PolycentricCreateProfileActivity, PolycentricProfileActivity::class.java));
-                        finish();
-                    }
                 }
-            } finally {
+            } catch (e: Throwable) {
                 _creating = false;
+                throw e;
             }
         };
     }

@@ -10,39 +10,31 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.AvatarVariant
 import com.futo.platformplayer.polycentric.PolycentricAdapter
-import com.futo.platformplayer.polycentric.PolycentricStorage
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.overlays.LoaderOverlay
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.Store
-import com.futo.polycentric.core.SystemState
-import com.futo.polycentric.core.fullyBackfillServersAnnounceExceptions
-import com.futo.polycentric.core.systemToURLInfoSystemLinkUrl
-import com.futo.platformplayer.toBase64Url
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.github.dhaval2404.imagepicker.ImagePicker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import userpackage.Protocol
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
@@ -53,7 +45,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonModeration: BigButton;
     private lateinit var _buttonLogout: BigButton;
     private lateinit var _buttonDelete: BigButton;
-    private lateinit var _username: String;
+    private var _username: String = "";
     private lateinit var _imagePolycentric: ImageView;
     private lateinit var _loaderOverlay: LoaderOverlay;
     private lateinit var _textSystem: TextView;
@@ -99,33 +91,20 @@ class PolycentricProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, PolycentricWhyActivity::class.java));
         };
 
-        _buttonExport.onClick.subscribe {
-            startActivity(Intent(this, PolycentricBackupActivity::class.java));
-        };
+        // TODO: reuse this button for Harbor's backup key concept
+        _buttonExport.visibility = View.GONE;
 
         _buttonModeration.onClick.subscribe {
             startActivity(Intent(this, PolycentricModerationActivity::class.java));
         };
 
         _buttonLogout.onClick.subscribe {
-            StatePolycentric.instance.setProcessHandle(null);
-            startActivity(Intent(this, PolycentricHomeActivity::class.java));
-            finish();
+            runIdentityChangeThenGoHome("Failed to log out.", R.string.failed_to_log_out) { StatePolycentric.instance.logout() };
         }
 
         _buttonDelete.onClick.subscribe {
             UIDialogs.showConfirmationDialog(this, getString(R.string.are_you_sure_you_want_to_remove_this_profile), {
-                val processHandle = StatePolycentric.instance.processHandle;
-                if (processHandle == null) {
-                    UIDialogs.toast(this, getString(R.string.no_process_handle_set));
-                    return@showConfirmationDialog;
-                }
-
-                StatePolycentric.instance.setProcessHandle(null);
-                Store.instance.removeProcessSecret(processHandle.system);
-                PolycentricStorage.instance.removeProcessSecret(processHandle.system);
-                startActivity(Intent(this, PolycentricHomeActivity::class.java));
-                finish();
+                runIdentityChangeThenGoHome("Failed to delete identity.", R.string.failed_to_delete_profile) { StatePolycentric.instance.deleteIdentity() };
             });
         }
 
@@ -137,144 +116,136 @@ class PolycentricProfileActivity : AppCompatActivity() {
         }
 
         updateUI()
+    }
 
-        StatePolycentric.instance.processHandle?.let { processHandle ->
-            _loaderOverlay.show()
+    private fun updateUI() {
+        val identity = StatePolycentric.instance.activeIdentity();
+        if (identity == null) {
+            finish();
+            return;
+        }
+        _textSystem.text = identity;
+        _loaderOverlay.show();
 
-            lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    processHandle.fullyBackfillClient(ApiMethods.SERVER)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val profile = runCatching { StatePolycentric.instance.getIdentityProfile(identity) }.getOrNull();
+            withContext(Dispatchers.Main) {
+                val name = profile?.name;
+                if (name != null) {
+                    _username = name;
+                    _editName.text.clear();
+                    _editName.text.append(name);
+                }
 
-                    withContext(Dispatchers.Main) {
-                        updateUI();
-                    }
-                } catch (e: Throwable) {
-                    withContext(Dispatchers.Main) {
-                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_backfill_client));
-                    }
-                } finally {
-                    withContext(Dispatchers.Main) {
-                        _loaderOverlay.hide()
-                    }
+                Glide.with(_imagePolycentric)
+                    .load(profile?.avatarUrl)
+                    .placeholder(R.drawable.placeholder_profile)
+                    .crossfade()
+                    .into(_imagePolycentric)
+
+                _loaderOverlay.hide();
+            }
+        }
+    }
+
+    /**
+     * Ensures an identity change completes before navigating to the home page, such that the home
+     * page does not display stale information.
+     */
+    private fun runIdentityChangeThenGoHome(logMessage: String, @StringRes errorMessage: Int, change: suspend () -> Unit) {
+        _buttonLogout.setButtonEnabled(false);
+        _buttonDelete.setButtonEnabled(false);
+        _loaderOverlay.show();
+
+        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            val success = try {
+                change();
+                true
+            } catch (e: Throwable) {
+                Logger.e(TAG, logMessage, e);
+                false
+            }
+
+            withContext(Dispatchers.Main) {
+                if (isFinishing || isDestroyed) {
+                    return@withContext;
+                }
+
+                if (success) {
+                    startActivity(Intent(this@PolycentricProfileActivity, PolycentricHomeActivity::class.java));
+                    finish();
+                } else {
+                    UIDialogs.toast(this@PolycentricProfileActivity, getString(errorMessage));
+                    _buttonLogout.setButtonEnabled(true);
+                    _buttonDelete.setButtonEnabled(true);
+                    _loaderOverlay.hide();
                 }
             }
         }
     }
 
     private fun saveIfRequired() {
+        val username = _editName.text.toString();
+        val avatarUri = _avatarUri;
+        val nameChanged = _username != username;
+        if (!nameChanged && avatarUri == null) {
+            return;
+        }
+
+        if (username.length < 3) {
+            UIDialogs.toast(this, getString(R.string.name_must_be_at_least_3_characters_long));
+            return;
+        }
+
+        // Consume the pending identity changes so a repeated call can't save them twice.
+        _username = username;
+        _avatarUri = null;
+        val appContext = applicationContext;
+
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+            val avatar = avatarUri?.let { buildAvatarVariants(it) };
+            if (avatarUri != null && avatar == null) {
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(appContext, appContext.getString(R.string.failed_to_read_image));
+                }
+                if (!nameChanged) {
+                    return@launch;
+                }
+            }
+
             try {
-                var hasChanges = false;
-                val username = _editName.text.toString();
-                if (username.length < 3) {
-                    withContext(Dispatchers.Main) {
-                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.name_must_be_at_least_3_characters_long));
-                    }
-                    return@launch;
-                }
-
-                val processHandle = StatePolycentric.instance.processHandle;
-                if (processHandle == null) {
-                    withContext(Dispatchers.Main) {
-                        UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.process_handle_unset));
-                    }
-                    return@launch;
-                }
-
-                if (_username != username) {
-                    _username = username;
-                    processHandle.setUsername(username);
-                    hasChanges = true;
-                }
-
-                val avatarUri = _avatarUri;
-                if (avatarUri != null) {
-                    val bytes = readBytesFromUri(applicationContext.contentResolver, avatarUri);
-                    if (bytes == null) {
-                        withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_read_image));
-                        }
-
-                        return@launch;
-                    }
-
-                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size);
-                    val imageBundleBuilder = Protocol.ImageBundle.newBuilder();
-                    val resolutions = arrayListOf(256, 128, 32);
-                    for (resolution in resolutions) {
-                        val image = Bitmap.createScaledBitmap(bitmap, resolution, resolution, true)
-
-                        val outputStream = ByteArrayOutputStream()
-                        val originalMimeType = getMimeType(applicationContext.contentResolver, avatarUri) ?: "image/png"
-                        val compressFormat = when(originalMimeType) {
-                            "image/png" -> Pair(Bitmap.CompressFormat.PNG, "image/png")
-                            "image/jpeg" -> Pair(Bitmap.CompressFormat.JPEG, "image/jpeg")
-                            else -> Pair(Bitmap.CompressFormat.PNG, "image/png")
-                        }
-                        image.compress(compressFormat.first, 100, outputStream)
-                        val imageBytes = outputStream.toByteArray()
-
-                        val imageRanges = processHandle.publishBlob(imageBytes)
-                        val imageManifest = Protocol.ImageManifest.newBuilder()
-                            .setMime(compressFormat.second)
-                            .setWidth(image.width.toLong())
-                            .setHeight(image.height.toLong())
-                            .setByteCount(imageBytes.size.toLong())
-                            .setProcess(processHandle.processSecret.process.toProto())
-                            .addAllSections(imageRanges.map { it.toProto() })
-                            .build()
-
-                        imageBundleBuilder.addImageManifests(imageManifest)
-                    }
-
-                    processHandle.setAvatar(imageBundleBuilder.build())
-                    hasChanges = true;
-
-                    _avatarUri = null;
-                }
-
-                if (hasChanges) {
-                    try {
-                        Logger.i(TAG, "Started backfill");
-                        processHandle.fullyBackfillServersAnnounceExceptions();
-                        Logger.i(TAG, "Finished backfill");
-                        withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.changes_have_been_saved));
-                        }
-                    } catch (e: Throwable) {
-                        Logger.w(TAG, "Failed to synchronize changes", e);
-                        withContext(Dispatchers.Main) {
-                            UIDialogs.toast(this@PolycentricProfileActivity, getString(R.string.failed_to_synchronize_changes));
-                        }
-                    }
+                StatePolycentric.instance.updateProfile(username, avatar?.first, avatar?.second ?: "image/png");
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(appContext, appContext.getString(R.string.changes_have_been_saved));
                 }
             } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to save polycentric profile.", e)
+                Logger.w(TAG, "Failed to save polycentric profile.", e);
+                withContext(Dispatchers.Main) {
+                    UIDialogs.toast(appContext, appContext.getString(R.string.failed_to_synchronize_changes));
+                }
             }
         }
+    }
+
+    private fun buildAvatarVariants(uri: Uri): Pair<List<AvatarVariant>, String>? {
+        val bytes = readBytesFromUri(applicationContext.contentResolver, uri) ?: return null;
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null;
+        val mime = getMimeType(applicationContext.contentResolver, uri) ?: "image/png";
+        val compressFormat = if (mime == "image/jpeg") Bitmap.CompressFormat.JPEG else Bitmap.CompressFormat.PNG;
+        val outMime = if (compressFormat == Bitmap.CompressFormat.JPEG) "image/jpeg" else "image/png";
+
+        val variants = arrayListOf(256, 128, 32).map { resolution ->
+            val scaled = Bitmap.createScaledBitmap(bitmap, resolution, resolution, true);
+            val outputStream = ByteArrayOutputStream();
+            scaled.compress(compressFormat, 100, outputStream);
+            AvatarVariant(outputStream.toByteArray(), resolution, resolution);
+        };
+        return Pair(variants, outMime);
     }
 
     override fun onBackPressed() {
         saveIfRequired();
         super.onBackPressed();
-    }
-
-    private fun updateUI() {
-        val processHandle = StatePolycentric.instance.processHandle!!;
-        val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(processHandle.system))
-        _textSystem.text = processHandle.system.key.toBase64Url()
-        _username = systemState.username;
-        _editName.text.clear();
-        _editName.text.append(_username);
-
-        val dp_80 = 80.dp(resources)
-        val avatar = systemState.avatar.selectBestImage(dp_80 * dp_80);
-
-        Glide.with(_imagePolycentric)
-            .load(avatar?.toURLInfoSystemLinkUrl(processHandle.system.toProto(), avatar.process, systemState.servers.toList()))
-            .placeholder(R.drawable.placeholder_profile)
-            .crossfade()
-            .into(_imagePolycentric)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -293,16 +264,11 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
     private fun getMimeType(contentResolver: ContentResolver, uri: Uri): String? {
         var mimeType: String?;
-
-        // Try to get MIME type from the content URI
         mimeType = contentResolver.getType(uri);
-
-        // If the MIME type couldn't be determined from the content URI, try using the file extension
         if (mimeType == null) {
             val fileExtension = MimeTypeMap.getFileExtensionFromUrl(uri.toString());
             mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension.lowercase());
         }
-
         return mimeType;
     }
 

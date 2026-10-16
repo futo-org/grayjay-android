@@ -20,6 +20,7 @@ import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.PlatformID
@@ -354,10 +355,12 @@ class PostDetailFragment : MainFragment {
                                 try {
                                     StatePolycentric.instance.setVideoRating(
                                         url,
+                                        _post?.name ?: _postOverview?.name,
                                         if (args.hasLiked) true else if (args.hasDisliked) false else null,
                                     )
                                 } catch (e: Throwable) {
                                     Logger.w(TAG, "Failed to set video rating.", e)
+                                    UIDialogs.toast(context.getString(R.string.failed_to_set_rating) + " " + e.toHarborErrorMessage())
                                 }
                             }
                         };
@@ -456,7 +459,7 @@ class PostDetailFragment : MainFragment {
             if (_postOverview == null) {
                 fetchPolycentricProfile();
                 updatePolycentricRating();
-                _addCommentView.setContext(value.url, null);
+                _addCommentView.setContext(value.url, null, value.name);
             }
 
             val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
@@ -477,7 +480,7 @@ class PostDetailFragment : MainFragment {
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
             _textContent.text = value.description.fixHtmlWhitespace();
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
-            _addCommentView.setContext(value.url, null);
+            _addCommentView.setContext(value.url, null, value.name);
 
             updatePolycentricRating();
             fetchPolycentricProfile();

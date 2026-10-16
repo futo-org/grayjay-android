@@ -3,8 +3,8 @@ package com.futo.platformplayer.polycentric
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.futo.polycentric.core.IKeysRepository
+import org.futo.polycentric.core.KeyTypes
 import org.futo.polycentric.core.StoredKeyPair
-
 /**
  * Wraps [PolycentricKeyStorage] to implement [IKeysRepository] from Polycentric core.
  */
@@ -13,7 +13,7 @@ class PolycentricKeyRepository(private val storage: PolycentricKeyStorage = Poly
 
     override suspend fun save(publicKey: ByteArray, keyType: Int, privateKey: ByteArray) =
         withContext(Dispatchers.IO) {
-            if (keyType != KEY_TYPE_ED25519_INT)
+            if (keyType != KeyTypes.ED25519)
                 throw IllegalArgumentException("Unsupported key type $keyType")
             if (privateKey.size != 32)
                 throw IllegalArgumentException("Ed25519 seed must be 32 bytes")
@@ -37,9 +37,6 @@ class PolycentricKeyRepository(private val storage: PolycentricKeyStorage = Poly
     }
 
     private fun PolycentricKeyStorage.ProcessSecret.toStoredKeyPair() =
-        StoredKeyPair(keyType = KEY_TYPE_ED25519_INT, publicKey = publicKey, privateKey = privateKey)
-
-    companion object {
-        const val KEY_TYPE_ED25519_INT = 1
-    }
+        StoredKeyPair(keyType = KeyTypes.ED25519, publicKey = publicKey, privateKey = privateKey)
 }
+

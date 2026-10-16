@@ -200,7 +200,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
             StateMeta.instance.setLastCommentSection(1)
         }
 
-        addCommentView.setContext(video.url, null)
+        addCommentView.setContext(video.url, null, video.name)
 
         if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
             setTabIndex(2, true)

@@ -13,14 +13,12 @@ import org.futo.polycentric.core.getAttributionFeed
 import org.futo.polycentric.core.getEvent
 import org.futo.polycentric.core.getIdentityFeed
 import org.futo.polycentric.core.getPostThread
-import polycentric.v2.AttributedTo
 import polycentric.v2.Content
 import polycentric.v2.Delete
 import polycentric.v2.Event
 import polycentric.v2.EventBundle
 import polycentric.v2.EventHint
 import polycentric.v2.EventKey
-import polycentric.v2.Link
 import polycentric.v2.Post
 import polycentric.v2.PostReply
 import polycentric.v2.ProfileUpdate
@@ -92,13 +90,15 @@ suspend fun PolycentricAdapter.getMyComments(): List<IPlatformComment> {
 
 /**
  * Publishes a new comment as a `Post` attributed to the video on the Harbor network. Then returns
- * a [PolycentricPlatformComment] object representing the new comment.
+ * a [PolycentricPlatformComment] object representing the new comment. [videoTitle] is used as the
+ * attribution link's title.
  */
-suspend fun PolycentricAdapter.postComment(videoUrl: String, text: String): PolycentricPlatformComment {
+suspend fun PolycentricAdapter.postComment(videoUrl: String, videoTitle: String?, text: String): PolycentricPlatformComment {
     requireActiveIdentity()
     val url = normalizeUrl(videoUrl)
+    requirePublishableUrl(url)
     val content = Content(
-        post = Post(text = text, attributed_to = listOf(AttributedTo(link = Link(url = url)))),
+        post = Post(text = text, attributed_to = listOf(attributionLink(url, videoTitle))),
     )
     val key = publish(content, Collections.FEED)
     return localComment(url, text, key, root = null, parent = null)
@@ -129,7 +129,7 @@ suspend fun PolycentricAdapter.deleteComment(comment: PolycentricPlatformComment
 
 /** Retrieves a page of comments using polycentric-core's attribution feed. */
 private suspend fun PolycentricAdapter.fetchPage(url: String, cursor: String?, omitLabels: List<String> = emptyList()): Pair<List<IPlatformComment>, String?> {
-    val resp = client.getAttributionFeed(AttributedTo(link = Link(url = url)), forwardToken = cursor, omitLabels = omitLabels)
+    val resp = client.getAttributionFeed(attributionLink(url, null), forwardToken = cursor, omitLabels = omitLabels)
         ?: return emptyList<IPlatformComment>() to null
     val comments = toComments(resp.event_bundles, resp.event_hints) { url }
     val next = resp.page_info?.takeIf { it.has_next_page }?.end_cursor

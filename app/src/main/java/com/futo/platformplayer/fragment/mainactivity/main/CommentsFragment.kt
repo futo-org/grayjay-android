@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
@@ -54,6 +55,7 @@ class CommentsFragment : MainFragment() {
 
     override fun onDestroyMainView() {
         super.onDestroyMainView()
+        _view?.cleanup()
         _view = null
     }
 
@@ -98,6 +100,21 @@ class CommentsFragment : MainFragment() {
                 UIDialogs.toast(context, context.getString(R.string.failed_to_load_comments) + "\n" + (it.message ?: ""));
                 setLoading(false);
             } else TaskHandler(IPlatformVideoDetails::class.java, StateApp.instance.scopeGetter);
+
+        private val _taskCheckLoggedIn = TaskHandler<Unit, Boolean>(StateApp.instance.scopeGetter, {
+            StatePolycentric.instance.awaitAdapter()
+            StatePolycentric.instance.isLoggedIn
+        })
+            .success { isLoggedIn ->
+                _layoutNotLoggedIn.visibility = if (isLoggedIn) View.GONE else View.VISIBLE
+                _recyclerComments.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
+                if (isLoggedIn) {
+                    fetchComments()
+                }
+            }
+            .exception<Throwable> {
+                Logger.w(TAG, "Failed to await Polycentric readiness.", it)
+            };
 
         constructor(fragment: CommentsFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment
@@ -157,6 +174,10 @@ class CommentsFragment : MainFragment() {
 
             _repliesOverlay = findViewById(R.id.replies_overlay);
             _repliesOverlay.onClose.subscribe { setRepliesOverlayVisible(isVisible = false, animate = true); };
+
+            StatePolycentric.instance.onIdentitiesChanged.subscribe(this) {
+                _taskCheckLoggedIn.run(Unit)
+            }
         }
 
         private fun onDelete(comment: IPlatformComment) {
@@ -175,6 +196,7 @@ class CommentsFragment : MainFragment() {
                             StatePolycentric.instance.deleteComment(comment)
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Failed to delete comment.", e)
+                            UIDialogs.toast(context.getString(R.string.failed_to_delete_comment) + " " + e.toHarborErrorMessage())
                             return@launch
                         }
                     }
@@ -205,11 +227,9 @@ class CommentsFragment : MainFragment() {
                 return@onAuthorClick;
             }
 
-            Logger.i(TAG, "onAuthorClick: " + c.author.id.value);
-            if(c.author.id.value?.startsWith("polycentric://") ?: false) {
-                val navUrl = PolycentricAdapter.WEB_BASE_URL + "/" + c.author.id.value?.substring("polycentric://".length);
-                _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
-                //_fragment.navigate<BrowserFragment>(navUrl);
+            Logger.i(TAG, "onAuthorClick: " + c.author.url);
+            if (c.author.url.isNotEmpty()) {
+                _fragment.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(c.author.url)))
             }
         }
 
@@ -316,15 +336,13 @@ class CommentsFragment : MainFragment() {
         fun onShown() {
             _layoutPolycentricNotEnabled.visibility = if (!StatePolycentric.instance.enabled) View.VISIBLE else View.GONE
 
-            val processHandle = StatePolycentric.instance.processHandle
-            if (processHandle != null) {
-                _layoutNotLoggedIn.visibility = View.GONE
-                _recyclerComments.visibility = View.VISIBLE
-                fetchComments()
-            } else {
-                _layoutNotLoggedIn.visibility = View.VISIBLE
-                _recyclerComments.visibility=  View.GONE
-            }
+            _taskCheckLoggedIn.run(Unit)
+        }
+
+        fun cleanup() {
+            StatePolycentric.instance.onIdentitiesChanged.remove(this)
+            _taskCheckLoggedIn.cancel()
+            _taskLoadComments.cancel()
         }
     }
 }

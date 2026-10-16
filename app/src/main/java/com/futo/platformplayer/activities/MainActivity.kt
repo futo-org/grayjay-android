@@ -896,17 +896,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 }
             }
 
-            "polycentric" -> {
-                if (!handlePolycentric(url)) {
-                    UIDialogs.showSingleButtonDialog(
-                        this,
-                        R.drawable.ic_play,
-                        getString(R.string.unknown_polycentric_format) + " [${url}]",
-                        "Ok",
-                        { });
-                }
-            }
-
             "fcast" -> {
                 if (!handleFCast(url)) {
                     UIDialogs.showSingleButtonDialog(
@@ -1109,12 +1098,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         return true;
     }
 
-
-    fun handlePolycentric(url: String): Boolean {
-        Logger.i(TAG, "handlePolycentric");
-        startActivity(Intent(this, PolycentricImportProfileActivity::class.java).apply { putExtra("url", url) })
-        return true;
-    }
 
     fun handleFCast(url: String): Boolean {
         Logger.i(TAG, "handleFCast");

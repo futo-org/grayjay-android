@@ -25,6 +25,7 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
@@ -351,10 +352,12 @@ class ArticleDetailFragment : MainFragment {
                                 try {
                                     StatePolycentric.instance.setVideoRating(
                                         url,
+                                        _article?.name ?: _articleOverview?.name,
                                         if (args.hasLiked) true else if (args.hasDisliked) false else null,
                                     )
                                 } catch (e: Throwable) {
                                     Logger.w(TAG, "Failed to set video rating.", e)
+                                    UIDialogs.toast(context.getString(R.string.failed_to_set_rating) + " " + e.toHarborErrorMessage())
                                 }
                             }
                         };
@@ -482,7 +485,7 @@ class ArticleDetailFragment : MainFragment {
             if (_articleOverview == null) {
                 fetchPolycentricProfile();
                 updatePolycentricRating();
-                _addCommentView.setContext(value.url, null);
+                _addCommentView.setContext(value.url, null, value.name);
             }
 
             val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
@@ -503,7 +506,7 @@ class ArticleDetailFragment : MainFragment {
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
 
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
-            _addCommentView.setContext(value.url, null);
+            _addCommentView.setContext(value.url, null, value.name);
 
             updatePolycentricRating();
             fetchPolycentricProfile();
