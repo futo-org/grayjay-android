@@ -21,7 +21,7 @@
     <string name="hide_hidden_from_search_description">Əsas səhifədən gizlədilmiş videoları və yaradıcıları axtarış nəticələrində də gizlət</string>
     <string name="recommendations">Tövsiyələr</string>
     <string name="more">Daha çox</string>
-    <string name="playlists">Oxutma siyahıları</string>
+    <string name="playlists">Oynatma siyahıları</string>
     <string name="subscriptions">Abunəliklər</string>
     <string name="loading">Yüklənir</string>
     <string name="retry">Yenidən cəhd et</string>
