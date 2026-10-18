@@ -1087,18 +1087,19 @@
     </string-array>
     <string-array name="app_languages">
         <item>Sistem</item>
-        <item>İngilis (EN)</item>
-        <item>Alman (DE)</item>
-        <item>İspan (ES)</item>
-        <item>Portuqal (PT)</item>
-        <item>Fransız (FR)</item>
-        <item>Yapon (JA)</item>
-        <item>Koreya (KO)</item>
-        <item>Çin (ZH)</item>
-        <item>Rus (RU)</item>
-        <item>Ərəb (AR)</item>
-        <item>İtalyan (IT)</item>
-        <item>Türk (TR)</item>
+        <item>İngiliscə (EN)</item>
+        <item>Almanca (DE)</item>
+        <item>İspanca (ES)</item>
+        <item>Portuqalca (PT)</item>
+        <item>Fransızca (FR)</item>
+        <item>Yaponca (JA)</item>
+        <item>Koreyaca (KO)</item>
+        <item>Çincə (ZH)</item>
+        <item>Rusca (RU)</item>
+        <item>Ərəbcə (AR)</item>
+        <item>Azərbaycanca (AZ)</item>
+        <item>İtalyanca (IT)</item>
+        <item>Türkcə (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Heç biri</item>
@@ -1122,22 +1123,23 @@
         <item>Son seçilmiş</item>
     </string-array>
     <string-array name="audio_languages">
-        <item>İngilis</item>
-        <item>İspan</item>
-        <item>Alman</item>
-        <item>Fransız</item>
-        <item>Yapon</item>
-        <item>Koreya</item>
-        <item>Tay</item>
-        <item>Vyetnam</item>
-        <item>İndoneziya</item>
-        <item>Hind</item>
-        <item>Ərəb</item>
-        <item>Türk</item>
-        <item>Rus</item>
-        <item>Portuqal</item>
-        <item>Çin</item>
-        <item>İtalyan</item>
+        <item>İngiliscə</item>
+        <item>İspanca</item>
+        <item>Almanca</item>
+        <item>Fransızca</item>
+        <item>Yaponca</item>
+        <item>Koreyaca</item>
+        <item>Tayca</item>
+        <item>Vyetnamca</item>
+        <item>İndoneziyaca</item>
+        <item>Hindcə</item>
+        <item>Ərəbcə</item>
+        <item>Azərbaycanca</item>
+        <item>Türkcə</item>
+        <item>Rusca</item>
+        <item>Portuqalca</item>
+        <item>Çincə</item>
+        <item>İtalyanca</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>
